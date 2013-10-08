@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
@@ -18,10 +17,10 @@
 
 import sys
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-import gns3_server
+import gns3server
 
 class Tox(TestCommand):
     def finalize_options(self):
@@ -37,7 +36,7 @@ class Tox(TestCommand):
 setup(
     name = 'gns3-server',
     scripts = ['gns3-server.py'],
-    version = gns3_server.__version__,
+    version = gns3server.__version__,
     url = 'http://github.com/GNS3/gns3-server',
     license = 'GNU General Public License v3 (GPLv3)',
     tests_require = ['tox'],
@@ -47,7 +46,7 @@ setup(
     author_email = 'package-maintainer@gns3.net',
     description = 'GNS3 server with HTTP REST API to manage emulators',
     long_description = open('README.rst', 'r').read(),
-    packages = ['gns3_server'],
+    packages = find_packages(),
     include_package_data = True,
     platforms = 'any',
     classifiers = [         

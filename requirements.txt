@@ -1,0 +1,5 @@
+Yapsy==1.10.2-pythons2n3
+astroid==1.0.0
+logilab-common==0.60.0
+networkx==1.8.1
+tornado==3.1.1

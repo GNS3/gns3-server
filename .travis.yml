@@ -12,6 +12,10 @@ install:
 
 script: "python setup.py test"
 
+branches:
+  only:
+    - master
+
 notifications:
   email: false
   irc:
