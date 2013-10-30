@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -16,17 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import os
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-import gns3server
 
 class Tox(TestCommand):
+
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
         self.test_suite = True
+
     def run_tests(self):
         #import here, cause outside the eggs aren't loaded
         import tox
@@ -34,32 +34,41 @@ class Tox(TestCommand):
         sys.exit(errcode)
 
 setup(
-    name = 'gns3-server',
-    scripts = ['gns3-server.py'],
-    version = gns3server.__version__,
-    url = 'http://github.com/GNS3/gns3-server',
-    license = 'GNU General Public License v3 (GPLv3)',
-    tests_require = ['tox'],
-    cmdclass = {'test': Tox},
-    install_requires = [],
-    author = 'Jeremy Grossmann',
-    author_email = 'package-maintainer@gns3.net',
-    description = 'GNS3 server with HTTP REST API to manage emulators',
-    long_description = open('README.rst', 'r').read(),
-    packages = find_packages(),
-    include_package_data = True,
-    platforms = 'any',
-    classifiers = [         
-        'Development Status :: 1 - Planning',
-        'Environment :: Console',
-        'Intended Audience :: Information Technology',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Operating System :: OS Independent',
+    name="gns3-server",
+    version=__import__("gns3server").__version__,
+    url="http://github.com/GNS3/gns3-server",
+    license="GNU General Public License v3 (GPLv3)",
+    tests_require=["tox"],
+    cmdclass={"test": Tox},
+    author="Jeremy Grossmann",
+    author_email="package-maintainer@gns3.net",
+    description="GNS3 server with HTTP REST API to manage emulators",
+    long_description=open("README.rst", "r").read(),
+    install_requires=[
+        "tornado >= 2.0",
+        ],
+    entry_points={
+        "console_scripts": [
+            "gns3server = gns3server.main:main",
+            ]
+        },
+    packages=find_packages(),
+    include_package_data=True,
+    platforms="any",
+    classifiers=[
+        "Development Status :: 1 - Planning",
+        "Environment :: Console",
+        "Intended Audience :: Information Technology",
+        "Topic :: System :: Networking",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         'Natural Language :: English',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.3',
-        'Topic :: System :: Networking'
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
         ],
 )

@@ -23,6 +23,4 @@ notifications:
       - "chat.freenode.net#gns3"
     on_success: change
     on_failure: always
-    use_notice: true
-    skip_join: true
 

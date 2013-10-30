@@ -15,22 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 
-PY2 = sys.version_info[0] == 2
+class IPlugin(object):
+    """Plugin interface
+    """
 
-if not PY2:
-    unichr = chr
-    range_type = range
-    text_type = str
-    string_types = (str,)
-else:
-    unichr = unichr
-    text_type = unicode  # @UndefinedVariable
-    range_type = xrange  # @UndefinedVariable
-    string_types = (str, unicode)  # @UndefinedVariable
+    def __init__(self):
+        pass
 
-try:
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
+    def setup(self):
+        """Called before the plugin is asked to do anything
+        """
+
+        raise NotImplementedError()

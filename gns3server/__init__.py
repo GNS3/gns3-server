@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -22,6 +22,9 @@
 # is zero for an official release, positive for a development branch,
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
+
+from gns3server.plugin_manager import PluginManager
+from gns3server.server import Server
 
 __version__ = "0.1.dev"
 __version_info__ = (0, 1, 0, -99)

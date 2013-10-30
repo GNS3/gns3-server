@@ -6,6 +6,6 @@ include MANIFEST.in
 include tox.ini
 recursive-include tests *
 recursive-include docs *
-recursive-include gns3_server *
+recursive-include gns3server *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]

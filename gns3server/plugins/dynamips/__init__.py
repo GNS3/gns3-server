@@ -15,22 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import logging
+import tornado.web
+from gns3server.plugins import IPlugin
 
-PY2 = sys.version_info[0] == 2
+logger = logging.getLogger(__name__)
 
-if not PY2:
-    unichr = chr
-    range_type = range
-    text_type = str
-    string_types = (str,)
-else:
-    unichr = unichr
-    text_type = unicode  # @UndefinedVariable
-    range_type = xrange  # @UndefinedVariable
-    string_types = (str, unicode)  # @UndefinedVariable
 
-try:
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
+class TestHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("This is my test handler")
+
+
+class Dynamips(IPlugin):
+
+    def __init__(self):
+        IPlugin.__init__(self)
+        logger.info("Dynamips plugin is initializing")
+
+    def handlers(self):
+        """Returns tornado web request handlers that the plugin manages
+
+        :returns: List of tornado.web.RequestHandler
+        """
+
+        return [(r"/test", TestHandler)]
