@@ -24,10 +24,15 @@ import tornado.options
 
 # command line options
 from tornado.options import define
+define("host", default="127.0.0.1", help="run on the given host/IP address", type=str)
 define("port", default=8000, help="run on the given port", type=int)
+define("ipc", default=False, help="use IPC for module communication", type=bool)
 
 
 def main():
+    """
+    Entry point for GNS3 server
+    """
 
     current_year = datetime.date.today().year
     print("GNS3 server version {}".format(gns3server.__version__))
@@ -45,13 +50,15 @@ def main():
         tornado.options.print_help()
         raise SystemExit
 
-    #FIXME: log everything for now (excepting DEBUG)
+    # FIXME: log everything for now (excepting DEBUG)
     logging.basicConfig(level=logging.INFO)
 
-    server = gns3server.Server()
-    server.load_plugins()
+    from tornado.options import options
+    server = gns3server.Server(options.host,
+                               options.port,
+                               ipc=options.ipc)
+    server.load_modules()
     server.run()
-
 
 if __name__ == '__main__':
     main()

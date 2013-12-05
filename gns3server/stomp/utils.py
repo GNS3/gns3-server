@@ -15,16 +15,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Utilitary functions for STOMP implementation
+"""
 
-class IPlugin(object):
-    """Plugin interface
-    """
+import sys
 
-    def __init__(self):
-        pass
+PY2 = sys.version_info[0] == 2
 
-    def setup(self):
-        """Called before the plugin is asked to do anything
-        """
+if not PY2:
+    def encode(char_data):
+        if type(char_data) is str:
+            return char_data.encode()
+        elif type(char_data) is bytes:
+            return char_data
+        else:
+            raise TypeError('message should be a string or bytes')
+else:
+    def encode(char_data):
+        if type(char_data) is unicode:
+            return char_data.encode('utf-8')
+        else:
+            return char_data
 
-        raise NotImplementedError()
+
+def hasbyte(byte, byte_data):
+    return bytes([byte]) in byte_data

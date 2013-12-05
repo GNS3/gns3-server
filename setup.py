@@ -42,10 +42,11 @@ setup(
     cmdclass={"test": Tox},
     author="Jeremy Grossmann",
     author_email="package-maintainer@gns3.net",
-    description="GNS3 server with HTTP REST API to manage emulators",
+    description="GNS3 server to asynchronously to manage emulators",
     long_description=open("README.rst", "r").read(),
     install_requires=[
         "tornado >= 2.0",
+        "pyzmq",
         ],
     entry_points={
         "console_scripts": [

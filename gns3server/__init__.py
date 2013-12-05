@@ -23,8 +23,6 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-from gns3server.plugin_manager import PluginManager
-from gns3server.server import Server
-
-__version__ = "0.1.dev"
-__version_info__ = (0, 1, 0, -99)
+from .module_manager import ModuleManager
+from .server import Server
+from .version import __version__

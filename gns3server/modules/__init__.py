@@ -15,28 +15,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-import tornado.web
-from gns3server.plugins import IPlugin
-
-logger = logging.getLogger(__name__)
-
-
-class TestHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write("This is my test handler")
-
-
-class Dynamips(IPlugin):
-
-    def __init__(self):
-        IPlugin.__init__(self)
-        logger.info("Dynamips plugin is initializing")
-
-    def handlers(self):
-        """Returns tornado web request handlers that the plugin manages
-
-        :returns: List of tornado.web.RequestHandler
-        """
-
-        return [(r"/test", TestHandler)]
+from .base import IModule

@@ -15,66 +15,142 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
+import zmq
+from zmq.eventloop import ioloop, zmqstream
+ioloop.install()
+
+import os
+import functools
 import socket
 import tornado.ioloop
 import tornado.web
-import gns3server
+import tornado.autoreload
+from .version import __version__
+from .stomp_websocket import StompWebSocket
+from .module_manager import ModuleManager
 
-logger = logging.getLogger(__name__)
-
-
-class MainHandler(tornado.web.RequestHandler):
-
-    def get(self):
-        self.write("Welcome to the GNS3 server!")
+import logging
+log = logging.getLogger(__name__)
 
 
 class VersionHandler(tornado.web.RequestHandler):
 
     def get(self):
-        response = {'version': gns3server.__version__}
+        response = {'version': __version__}
         self.write(response)
 
 
 class Server(object):
 
     # built-in handlers
-    handlers = [(r"/", MainHandler),
-                (r"/version", VersionHandler)]
+    handlers = [(r"/version", VersionHandler)]
 
-    def __init__(self):
+    def __init__(self, host, port, ipc=False):
 
-        self._plugins = []
+        self._host = host
+        self._port = port
+        if ipc:
+            self._zmq_port = 0  # this forces module to use IPC for communications
+        else:
+            self._zmq_port = port + 1  # this server port + 1
+        self._ipc = ipc
+        self._modules = []
 
-    def load_plugins(self):
+    def load_modules(self):
         """Loads the plugins
         """
 
-        plugin_manager = gns3server.PluginManager()
-        plugin_manager.load_plugins()
-        for plugin in plugin_manager.get_all_plugins():
-            instance = plugin_manager.activate_plugin(plugin)
-            self._plugins.append(instance)
-            plugin_handlers = instance.handlers()
-            self.handlers.extend(plugin_handlers)
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        module_path = os.path.join(cwd, 'modules')
+        log.info("loading modules from {}".format(module_path))
+        module_manager = ModuleManager([module_path])
+        module_manager.load_modules()
+        for module in module_manager.get_all_modules():
+            instance = module_manager.activate_module(module, ("127.0.0.1", self._zmq_port))
+            self._modules.append(instance)
+            destinations = instance.destinations()
+            for destination in destinations:
+                StompWebSocket.register_destination(destination, module.name)
+            instance.start()  # starts the new process
 
     def run(self):
-        """Starts the tornado web server
+        """
+        Starts the Tornado web server and ZeroMQ server
         """
 
-        from tornado.options import options
-        tornado_app = tornado.web.Application(self.handlers)
+        router = self._create_zmq_router()
+        # Add our Stomp Websocket handler to Tornado
+        self.handlers.extend([(r"/", StompWebSocket, dict(zmq_router=router))])
+        tornado_app = tornado.web.Application(self.handlers, debug=True)  # FIXME: debug mode!
         try:
-            port = options.port
-            print("Starting server on port {}".format(port))
-            tornado_app.listen(port)
+            print("Starting server on port {}".format(self._port))
+            tornado_app.listen(self._port)
         except socket.error as e:
             if e.errno is 48:  # socket already in use
-                logging.critical("socket in use for port {}".format(port))
+                logging.critical("socket in use for port {}".format(self._port))
                 raise SystemExit
+
+        ioloop = tornado.ioloop.IOLoop.instance()
+        stream = zmqstream.ZMQStream(router, ioloop)
+        stream.on_recv(StompWebSocket.dispatch_message)
+        tornado.autoreload.add_reload_hook(functools.partial(self._cleanup, stop=False))
+
         try:
-            tornado.ioloop.IOLoop.instance().start()
+            ioloop.start()
         except (KeyboardInterrupt, SystemExit):
             print("\nExiting...")
-            tornado.ioloop.IOLoop.instance().stop()
+            self._cleanup()
+
+    def _create_zmq_router(self):
+        """
+        Creates the ZeroMQ router socket to send
+        requests to modules.
+
+        :returns: ZeroMQ socket
+        """
+
+        context = zmq.Context()
+        context.linger = 0
+        router = context.socket(zmq.ROUTER)
+        if self._ipc:
+            try:
+                router.bind("ipc:///tmp/gns3.ipc")
+            except zmq.error.ZMQError as e:
+                log.critical("Could not start ZeroMQ server on ipc:///tmp/gns3.ipc, reason: {}".format(e))
+                self._cleanup()
+                raise SystemExit
+            log.info("ZeroMQ server listening to ipc:///tmp/gns3.ipc")
+        else:
+            try:
+                router.bind("tcp://127.0.0.1:{}".format(self._zmq_port))
+            except zmq.error.ZMQError as e:
+                log.critical("Could not start ZeroMQ server on 127.0.0.1:{}, reason: {}".format(self._zmq_port, e))
+                self._cleanup()
+                raise SystemExit
+            log.info("ZeroMQ server listening to 127.0.0.1:{}".format(self._zmq_port))
+        return router
+
+    def _cleanup(self, stop=True):
+        """
+        Shutdowns running module processes
+        and close remaining Tornado ioloop file descriptors
+
+        :param stop: Stop the ioloop if True (default)
+        """
+
+        # terminate all modules
+        for module in self._modules:
+            log.info("terminating {}".format(module.name))
+            module.terminate()
+            module.join(timeout=1)
+
+        ioloop = tornado.ioloop.IOLoop.instance()
+        # close any fd that would have remained open...
+        for fd in ioloop._handlers.keys():
+            try:
+                os.close(fd)
+            except Exception:
+                pass
+
+        if stop:
+            ioloop.stop()
