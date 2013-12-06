@@ -85,6 +85,7 @@ class serverProtocol(object):
 
             :param session: A session identifier that uniquely identifies the session.
             :param server:  A field that contains information about the STOMP server.
+
             :returns: STOMP Frame object
             """
 
@@ -109,6 +110,7 @@ class serverProtocol(object):
             :param body: Data to be added in the frame body
             :param content_type: MIME type which describes the format of the body
             :param message_id: Unique identifier for that message
+
             :returns: STOMP Frame object
             """
 
@@ -133,6 +135,7 @@ class serverProtocol(object):
             Sends an acknowledgment for client frame that requests a receipt.
 
             :param receipt_id: Receipt ID to send back to the client
+
             :returns: STOMP Frame object
             """
 
@@ -147,6 +150,7 @@ class serverProtocol(object):
             :param message: Short description of the error
             :param body: Detailed information
             :param content_type: MIME type which describes the format of the body
+
             :returns: STOMP Frame object
             """
 
@@ -176,6 +180,7 @@ class clientProtocol(object):
 
             :param host: Host name that the socket was established against.
             :param accept_version: The versions of the STOMP protocol the client supports.
+
             :returns: STOMP Frame object
             """
 
@@ -195,6 +200,7 @@ class clientProtocol(object):
             Disconnects to a STOMP server.
 
             :param receipt: unique identifier
+
             :returns: STOMP Frame object
             """
 
@@ -211,6 +217,7 @@ class clientProtocol(object):
             :param destination: Destination string
             :param body: Data to be added in the frame body
             :param content_type: MIME type which describes the format of the body
+
             :returns: STOMP Frame object
             """
 

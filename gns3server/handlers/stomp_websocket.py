@@ -22,10 +22,10 @@ STOMP protocol over Websockets
 import zmq
 import uuid
 import tornado.websocket
-from .version import __version__
 from tornado.escape import json_decode
-from .stomp import frame as stomp_frame
-from .stomp import protocol as stomp_protocol
+from ..version import __version__
+from ..stomp import frame as stomp_frame
+from ..stomp import protocol as stomp_protocol
 
 import logging
 log = logging.getLogger(__name__)
@@ -48,12 +48,15 @@ class StompWebSocket(tornado.websocket.WebSocketHandler):
     def __init__(self, application, request, zmq_router):
         tornado.websocket.WebSocketHandler.__init__(self, application, request)
         self._session_id = str(uuid.uuid4())
+        self._connected = False
         self.zmq_router = zmq_router
 
     @property
     def session_id(self):
         """
         Session ID uniquely representing a Websocket client
+
+        :returns: the session id
         """
 
         return self._session_id
@@ -63,7 +66,7 @@ class StompWebSocket(tornado.websocket.WebSocketHandler):
         """
         Sends a message to Websocket client
 
-        :param message: message from a module
+        :param message: message from a module (received via ZeroMQ)
         """
 
         # Module name that is replying
@@ -117,6 +120,7 @@ class StompWebSocket(tornado.websocket.WebSocketHandler):
         else:
             self.write_message(self.stomp.connected(self.session_id,
                                                     'gns3server/' + __version__))
+            self._connected = True
 
     def stomp_handle_send(self, frame):
         """
@@ -211,6 +215,11 @@ class StompWebSocket(tornado.websocket.WebSocketHandler):
 
         if frame.cmd == stomp_protocol.CMD_STOMP or frame.cmd == stomp_protocol.CMD_CONNECT:
             self.stomp_handle_connect(frame)
+
+        # Do not enforce that the client must have send a
+        # STOMP CONNECT frame for now (need to refactor unit tests)
+        #elif not self._connected:
+        #    self.stomp_error("Not connected")
 
         elif frame.cmd == stomp_protocol.CMD_SEND:
             self.stomp_handle_send(frame)

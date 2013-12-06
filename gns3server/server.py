@@ -15,29 +15,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Set up and run the server
+"""
+
 import zmq
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
 import os
+import errno
 import functools
 import socket
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
-from .version import __version__
-from .stomp_websocket import StompWebSocket
+from .handlers.stomp_websocket import StompWebSocket
+from .handlers.version_handler import VersionHandler
 from .module_manager import ModuleManager
 
 import logging
 log = logging.getLogger(__name__)
-
-
-class VersionHandler(tornado.web.RequestHandler):
-
-    def get(self):
-        response = {'version': __version__}
-        self.write(response)
 
 
 class Server(object):
@@ -57,7 +55,8 @@ class Server(object):
         self._modules = []
 
     def load_modules(self):
-        """Loads the plugins
+        """
+        Loads the modules
         """
 
         cwd = os.path.dirname(os.path.abspath(__file__))
@@ -86,7 +85,7 @@ class Server(object):
             print("Starting server on port {}".format(self._port))
             tornado_app.listen(self._port)
         except socket.error as e:
-            if e.errno is 48:  # socket already in use
+            if e.errno == errno.EADDRINUSE:  # socket already in use
                 logging.critical("socket in use for port {}".format(self._port))
                 raise SystemExit
 
@@ -106,7 +105,7 @@ class Server(object):
         Creates the ZeroMQ router socket to send
         requests to modules.
 
-        :returns: ZeroMQ socket
+        :returns: ZeroMQ router socket
         """
 
         context = zmq.Context()

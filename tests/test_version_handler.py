@@ -1,37 +1,40 @@
 from tornado.testing import AsyncHTTPTestCase
+from tornado.escape import json_decode
 from gns3server.server import VersionHandler
-from gns3server._compat import urlencode
+from gns3server.version import __version__
 import tornado.web
-import json
 
-# URL to test
-URL = "/version"
+"""
+Tests for the web server version handler
+"""
 
 
 class TestVersionHandler(AsyncHTTPTestCase):
 
+    URL = "/version"
+
     def get_app(self):
-        return tornado.web.Application([(URL, VersionHandler)])
+
+        return tornado.web.Application([(self.URL, VersionHandler)])
 
     def test_endpoint(self):
-        self.http_client.fetch(self.get_url(URL), self.stop)
+        """
+        Tests if the response HTTP code is 200 (success)
+        """
+
+        self.http_client.fetch(self.get_url(self.URL), self.stop)
         response = self.wait()
         assert response.code == 200
 
-#     def test_post(self):
-#         data = urlencode({'test': 'works'})
-#         req = tornado.httpclient.HTTPRequest(self.get_url(URL),
-#                                              method='POST',
-#                                              body=data)
-#         self.http_client.fetch(req, self.stop)
-#         response = self.wait()
-#         assert response.code == 200
-# 
-#     def test_endpoint_differently(self):
-#         self.http_client.fetch(self.get_url(URL), self.stop)
-#         response = self.wait()
-#         assert(response.headers['Content-Type'].startswith('application/json'))
-#         assert(response.body != "")
-#         body = json.loads(response.body.decode('utf-8'))
-#         assert body['version'] == "0.1.dev"
+    def test_received_version(self):
+        """
+        Tests if the returned content type is JSON and
+        if the received version is the same as the server
+        """
 
+        self.http_client.fetch(self.get_url(self.URL), self.stop)
+        response = self.wait()
+        assert(response.headers['Content-Type'].startswith('application/json'))
+        assert(response.body)
+        body = json_decode(response.body)
+        assert body['version'] == __version__

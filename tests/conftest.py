@@ -7,6 +7,9 @@ import time
 
 @pytest.fixture(scope="session", autouse=True)
 def server(request):
+    """
+    Starts GNS3 server for all the tests.
+    """
 
     cwd = os.path.dirname(os.path.abspath(__file__))
     server_script = os.path.join(cwd, "../gns3server/main.py")

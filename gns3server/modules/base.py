@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Base class (interface) for modules
+"""
+
 import multiprocessing
 import zmq
 
@@ -44,16 +48,16 @@ class IModule(multiprocessing.Process):
         self._current_session = None
         self._current_destination = None
 
-    def setup(self):
+    def _setup(self):
         """
         Sets up PyZMQ and creates the stream to handle requests
         """
 
         self._context = zmq.Context()
         self._ioloop = zmq.eventloop.ioloop.IOLoop.instance()
-        self._stream = self.create_stream(self._host, self._port, self.decode_request)
+        self._stream = self._create_stream(self._host, self._port, self._decode_request)
 
-    def create_stream(self, host=None, port=0, callback=None):
+    def _create_stream(self, host=None, port=0, callback=None):
         """
         Creates a new ZMQ stream
         """
@@ -82,10 +86,10 @@ class IModule(multiprocessing.Process):
 
     def run(self):
         """
-        Sets up everything and starts the event loop
+        Starts the event loop
         """
 
-        self.setup()
+        self._setup()
         try:
             self._ioloop.start()
         except KeyboardInterrupt:
@@ -102,6 +106,8 @@ class IModule(multiprocessing.Process):
     def send_response(self, response):
         """
         Sends a response back to the requester
+
+        :param response:
         """
 
         # add session and destination to the response
@@ -109,9 +115,11 @@ class IModule(multiprocessing.Process):
         log.debug("ZeroMQ client ({}) sending: {}".format(self.name, response))
         self._stream.send_json(response)
 
-    def decode_request(self, request):
+    def _decode_request(self, request):
         """
         Decodes the request to JSON
+
+        :param request: request from ZeroMQ server
         """
 
         try:
@@ -132,7 +140,9 @@ class IModule(multiprocessing.Process):
 
     def destinations(self):
         """
-        Channels handled by this modules.
+        Destinations handled by this module.
+
+        :returns: list of destinations
         """
 
         return self.destination.keys()
@@ -141,6 +151,8 @@ class IModule(multiprocessing.Process):
     def route(cls, destination):
         """
         Decorator to register a destination routed to a method
+
+        :param destination: destination to be routed
         """
 
         def wrapper(method):

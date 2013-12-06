@@ -47,7 +47,6 @@ class Module(object):
     def name(self, new_name):
         self._name = new_name
 
-    #@property
     def cls(self):
         return self._cls
 
@@ -93,7 +92,7 @@ class ModuleManager(object):
         """
         Returns all modules.
 
-        :return: list of Module objects
+        :returns: list of Module objects
         """
 
         return self._modules
@@ -105,7 +104,8 @@ class ModuleManager(object):
         :param module: module to activate (Module object)
         :param args: args passed to the module
         :param kwargs: kwargs passed to the module
-        :return: instantiated module class
+
+        :returns: instantiated module class
         """
 
         module_class = module.cls()

@@ -106,6 +106,7 @@ class Frame(object):
 
         :param lines: Frame preamble lines
         :param offset: To start parsing at the given offset
+
         :returns: Headers in dict header:value
         """
 
@@ -124,6 +125,7 @@ class Frame(object):
         Parses a frame
 
         :params frame: The frame data to be parsed
+
         :returns: STOMP Frame object
         """
 
