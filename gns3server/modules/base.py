@@ -89,6 +89,7 @@ class IModule(multiprocessing.Process):
         Starts the event loop
         """
 
+        log.info("{} module running with PID {}".format(self.name, self.pid))
         self._setup()
         try:
             self._ioloop.start()

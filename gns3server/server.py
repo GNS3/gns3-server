@@ -24,6 +24,7 @@ from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
 import os
+import signal
 import errno
 import functools
 import socket
@@ -93,6 +94,13 @@ class Server(object):
         stream = zmqstream.ZMQStream(router, ioloop)
         stream.on_recv(StompWebSocket.dispatch_message)
         tornado.autoreload.add_reload_hook(functools.partial(self._cleanup, stop=False))
+
+        def signal_handler(signum=None, frame=None):
+            log.warning("Got signal {}, exiting...".format(signum))
+            self._cleanup()
+
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+            signal.signal(sig, signal_handler)
 
         try:
             ioloop.start()
