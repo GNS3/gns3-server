@@ -31,7 +31,7 @@ import socket
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
-from .handlers.stomp_websocket import StompWebSocket
+from .handlers.jsonrpc_websocket import JSONRPCWebSocket
 from .handlers.version_handler import VersionHandler
 from .module_manager import ModuleManager
 
@@ -57,7 +57,7 @@ class Server(object):
 
     def load_modules(self):
         """
-        Loads the modules
+        Loads the modules.
         """
 
         cwd = os.path.dirname(os.path.abspath(__file__))
@@ -70,17 +70,17 @@ class Server(object):
             self._modules.append(instance)
             destinations = instance.destinations()
             for destination in destinations:
-                StompWebSocket.register_destination(destination, module.name)
+                JSONRPCWebSocket.register_destination(destination, module.name)
             instance.start()  # starts the new process
 
     def run(self):
         """
-        Starts the Tornado web server and ZeroMQ server
+        Starts the Tornado web server and ZeroMQ server.
         """
 
         router = self._create_zmq_router()
-        # Add our Stomp Websocket handler to Tornado
-        self.handlers.extend([(r"/", StompWebSocket, dict(zmq_router=router))])
+        # Add our JSON-RPC Websocket handler to Tornado
+        self.handlers.extend([(r"/", JSONRPCWebSocket, dict(zmq_router=router))])
         tornado_app = tornado.web.Application(self.handlers, debug=True)  # FIXME: debug mode!
         try:
             print("Starting server on port {}".format(self._port))
@@ -92,7 +92,7 @@ class Server(object):
 
         ioloop = tornado.ioloop.IOLoop.instance()
         stream = zmqstream.ZMQStream(router, ioloop)
-        stream.on_recv(StompWebSocket.dispatch_message)
+        stream.on_recv(JSONRPCWebSocket.dispatch_message)
         tornado.autoreload.add_reload_hook(functools.partial(self._cleanup, stop=False))
 
         def signal_handler(signum=None, frame=None):

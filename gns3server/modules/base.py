@@ -19,6 +19,7 @@
 Base class (interface) for modules
 """
 
+import gns3server.jsonrpc as jsonrpc
 import multiprocessing
 import zmq
 
@@ -28,7 +29,11 @@ log = logging.getLogger(__name__)
 
 class IModule(multiprocessing.Process):
     """
-    Module interface
+    Module interface.
+
+    :param name: module name
+    :param args: arguments for the module
+    :param kwargs: named arguments for the module
     """
 
     destination = {}
@@ -47,6 +52,7 @@ class IModule(multiprocessing.Process):
         self._port = args[1]
         self._current_session = None
         self._current_destination = None
+        self._current_call_id = None
 
     def _setup(self):
         """
@@ -59,7 +65,9 @@ class IModule(multiprocessing.Process):
 
     def _create_stream(self, host=None, port=0, callback=None):
         """
-        Creates a new ZMQ stream
+        Creates a new ZMQ stream.
+
+        :returns: ZMQ stream object
         """
 
         socket = self._context.socket(zmq.DEALER)
@@ -98,27 +106,66 @@ class IModule(multiprocessing.Process):
 
     def stop(self):
         """
-        Stops the event loop
+        Stops the event loop.
         """
 
-        #zmq.eventloop.ioloop.IOLoop.instance().stop()
         self._ioloop.stop()
 
-    def send_response(self, response):
+    def send_response(self, results):
         """
-        Sends a response back to the requester
+        Sends a response back to the requester.
 
-        :param response:
+        :param results: JSON results to the ZeroMQ server
         """
 
-        # add session and destination to the response
-        response = [self._current_session, self._current_destination, response]
+        jsonrpc_response = jsonrpc.JSONRPCResponse(results, self._current_call_id)()
+
+        # add session to the response
+        response = [self._current_session, jsonrpc_response]
         log.debug("ZeroMQ client ({}) sending: {}".format(self.name, response))
+        self._stream.send_json(response)
+
+    def send_param_error(self):
+        """
+        Sends a param error back to the requester.
+        """
+
+        jsonrpc_response = jsonrpc.JSONRPCInvalidParams(self._current_call_id)()
+
+        # add session to the response
+        response = [self._current_session, jsonrpc_response]
+        log.info("ZeroMQ client ({}) sending JSON-RPC param error for call id {}".format(self.name, self._current_call_id))
+        self._stream.send_json(response)
+
+    def send_internal_error(self):
+        """
+        Sends a param error back to the requester.
+        """
+
+        jsonrpc_response = jsonrpc.JSONRPCInternalError()()
+
+        # add session to the response
+        response = [self._current_session, jsonrpc_response]
+        log.critical("ZeroMQ client ({}) sending JSON-RPC internal error".format(self.name))
+        self._stream.send_json(response)
+
+    def send_custom_error(self, message, code=-3200):
+        """
+        Sends a custom error back to the requester.
+        """
+
+        jsonrpc_response = jsonrpc.JSONRPCCustomError(code, message, self._current_call_id)()
+
+        # add session to the response
+        response = [self._current_session, jsonrpc_response]
+        log.info("ZeroMQ client ({}) sending JSON-RPC custom error {} for call id {}".format(self.name,
+                                                                                             message,
+                                                                                             self._current_call_id))
         self._stream.send_json(response)
 
     def _decode_request(self, request):
         """
-        Decodes the request to JSON
+        Decodes the request to JSON.
 
         :param request: request from ZeroMQ server
         """
@@ -126,18 +173,22 @@ class IModule(multiprocessing.Process):
         try:
             request = zmq.utils.jsonapi.loads(request[0])
         except ValueError:
-            self.send_response("ValueError")  # FIXME: explicit json error
+            self._current_session = None
+            self.send_internal_error()
             return
 
         log.debug("ZeroMQ client ({}) received: {}".format(self.name, request))
         self._current_session = request[0]
-        self._current_destination = request[1]
+        self._current_call_id = request[1].get("id")
+        destination = request[1].get("method")
+        params = request[1].get("params")
 
-        if self._current_destination not in self.destination:
-            # FIXME: return error if destination not found!
+        if destination not in self.destination:
+            self.send_internal_error()
             return
-        log.debug("Routing request to {}: {}".format(self._current_destination, request[2]))
-        self.destination[self._current_destination](self, request[2])
+
+        log.debug("Routing request to {}: {}".format(destination, request[1]))
+        self.destination[destination](self, params)
 
     def destinations(self):
         """

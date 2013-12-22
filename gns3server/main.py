@@ -19,8 +19,8 @@
 import datetime
 import sys
 import logging
-import gns3server
 import tornado.options
+import gns3server
 
 # command line options
 from tornado.options import define

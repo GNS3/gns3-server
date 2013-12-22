@@ -6,7 +6,7 @@ from gns3server.stomp import frame as stomp_frame
 from gns3server.stomp import protocol as stomp_protocol
 
 """
-Tests STOMP protocol over Websockets
+Tests for STOMP protocol over Websockets
 """
 
 
@@ -64,7 +64,7 @@ class Stomp(AsyncTestCase):
         and check for a STOMP MESSAGE with echoed message and destination.
         """
 
-        destination = "dynamips/echo"
+        destination = "dynamips.echo"
         message = {"ping": "test"}
         request = self.stomp.send(destination, json_encode(message), "application/json")
         AsyncWSRequest(self.URL, self.io_loop, self.stop, request)
@@ -109,7 +109,7 @@ class Stomp(AsyncTestCase):
 
 class AsyncWSRequest(TornadoWebSocketClient):
     """
-    Very basic Websocket client for the tests
+    Very basic Websocket client for tests
     """
 
     def __init__(self, url, io_loop, callback, message):
