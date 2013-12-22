@@ -15,29 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Utilitary functions for STOMP implementation
-"""
-
-import sys
-
-PY2 = sys.version_info[0] == 2
-
-if not PY2:
-    def encode(char_data):
-        if type(char_data) is str:
-            return char_data.encode()
-        elif type(char_data) is bytes:
-            return char_data
-        else:
-            raise TypeError('message should be a string or bytes')
-else:
-    def encode(char_data):
-        if type(char_data) is unicode:
-            return char_data.encode('utf-8')
-        else:
-            return char_data
+from .adapter import Adapter
 
 
-def hasbyte(byte, byte_data):
-    return bytes([byte]) in byte_data
+class NM_1FE_TX(Adapter):
+    """
+    NM-1FE-TX FastEthernet network module.
+    """
+
+    def __init__(self):
+        Adapter.__init__(self, interfaces=1)
+
+    def __str__(self):
+
+        return "NM-1FE-TX"
+
+    def interface_type(self):
+
+        return "FastEthernet"
+
+    def medium(self):
+
+        return "Ethernet"
