@@ -21,6 +21,9 @@ Interface for TAP NIOs (UNIX based OSes only).
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_TAP(NIO):
     """
@@ -44,6 +47,17 @@ class NIO_TAP(NIO):
 
         self._hypervisor.send("nio create_tap {name} {tap}".format(name=self._name,
                                                                    tap=tap_device))
+
+        log.info("NIO TAP {name} created with device {device}".format(name=self._name,
+                                                                      device=tap_device))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
 
     @property
     def tap_device(self):

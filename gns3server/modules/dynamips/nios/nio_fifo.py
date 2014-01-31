@@ -21,6 +21,9 @@ Interface for FIFO NIOs.
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_FIFO(NIO):
     """
@@ -42,6 +45,16 @@ class NIO_FIFO(NIO):
 
         self._hypervisor.send("nio create_fifo {}".format(self._name))
 
+        log.info("NIO FIFO {name} created.".format(name=self._name))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
+
     def crossconnect(self, nio):
         """
         Establishes a cross-connect between this FIFO NIO and another one.
@@ -51,3 +64,5 @@ class NIO_FIFO(NIO):
 
         self._hypervisor.send("nio crossconnect_fifo {name} {nio}".format(name=self._name,
                                                                           nio=nio))
+
+        log.info("NIO FIFO {name} crossconnected with {nio_name}.".format(name=self._name, nio_name=nio.name))

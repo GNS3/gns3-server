@@ -21,6 +21,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L46
 """
 
 import socket
+import errno
 import re
 import logging
 from .dynamips_error import DynamipsError
@@ -54,6 +55,7 @@ class DynamipsHypervisor(object):
         self._baseconsole = 2000
         self._baseaux = 2100
         self._baseudp = 10000
+        self._current_udp_port = self._baseudp
         self._version = "N/A"
         self._timeout = 30
         self._socket = None
@@ -145,7 +147,7 @@ class DynamipsHypervisor(object):
     @working_dir.setter
     def working_dir(self, working_dir):
         """
-        Set the working directory for this hypervisor.
+        Sets the working directory for this hypervisor.
 
         :param working_dir: path to the working directory
         """
@@ -198,7 +200,7 @@ class DynamipsHypervisor(object):
     @devices.setter
     def devices(self, devices):
         """
-        Set the list of devices managed by this hypervisor instance.
+        Sets the list of devices managed by this hypervisor instance.
         This method is for internal use.
 
         :param devices: a list of device objects
@@ -219,7 +221,7 @@ class DynamipsHypervisor(object):
     @baseconsole.setter
     def baseconsole(self, baseconsole):
         """
-        Set the base console TCP port for this hypervisor.
+        Sets the base console TCP port for this hypervisor.
 
         :param baseconsole: base console value (integer)
         """
@@ -239,7 +241,7 @@ class DynamipsHypervisor(object):
     @baseaux.setter
     def baseaux(self, baseaux):
         """
-        Set the base auxiliary TCP port for this hypervisor.
+        Sets the base auxiliary TCP port for this hypervisor.
 
         :param baseaux: base auxiliary port value (integer)
         """
@@ -259,12 +261,16 @@ class DynamipsHypervisor(object):
     @baseudp.setter
     def baseudp(self, baseudp):
         """
-        Set the next open UDP port for NIOs for this hypervisor.
+        Sets the next open UDP port for NIOs for this hypervisor.
 
         :param baseudp: base UDP port value (integer)
         """
 
         self._baseudp = baseudp
+        self._current_udp_port = self._baseudp
+
+        #FIXME
+        log.info("hypervisor a new base UDP {}".format(self._baseudp))
 
     @property
     def ghosts(self):
@@ -294,7 +300,7 @@ class DynamipsHypervisor(object):
         :returns: JIT sharing groups dict (image_name -> group number)
         """
 
-        return self._ghosts
+        return self._jitsharing_groups
 
     def add_jitsharing_group(self, image_name, group_number):
         """
@@ -325,6 +331,42 @@ class DynamipsHypervisor(object):
         """
 
         return self._port
+
+    def allocate_udp_port(self, max_port=100):
+        """
+        Allocates a new UDP port for creating an UDP NIO.
+
+        :param max_port: maximum number of port to scan in
+        order to find one available for use.
+
+        :returns: port number (integer)
+        """
+
+        #FIXME: better check for IPv6
+        start_port = self._current_udp_port
+        print("start port = {}".format(start_port))
+        end_port = start_port + max_port
+        for port in range(start_port, end_port):
+            print(port)
+            if port > end_port:
+                raise DynamipsError("Could not find a free port between {0} and {1}".format(start_port, max_port))
+            try:
+                if self.host.__contains__(':'):
+                    # IPv6 address support
+                    s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+                else:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # the port is available if bind is a success
+                s.bind((self._host, port))
+                #FIXME: increment?
+                self._current_udp_port += 1
+                print("current port = {}".format(self._current_udp_port))
+                return port
+            except socket.error as e:
+                if e.errno == errno.EADDRINUSE:  # socket already in use
+                    continue
+                else:
+                    raise DynamipsError("UDP port allocation: {}".format(e))
 
     def send_raw(self, string):
         """

@@ -23,6 +23,9 @@ from __future__ import unicode_literals
 from .bridge import Bridge
 from ..dynamips_error import DynamipsError
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class Hub(Bridge):
     """
@@ -32,10 +35,41 @@ class Hub(Bridge):
     :param name: name for this hub
     """
 
+    _instance_count = 1
+
     def __init__(self, hypervisor, name):
 
-        Bridge.__init__(self, hypervisor, name)
+        # create an unique ID
+        self._id = Hub._instance_count
+        Hub._instance_count += 1
+
+        # let's create a unique name if none has been chosen
+        if not name:
+            name = "Hub" + str(self._id)
+
         self._mapping = {}
+        Bridge.__init__(self, hypervisor, name)
+
+        log.info("Ethernet hub {name} [id={id}] has been created".format(name=self._name,
+                                                                         id=self._id))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 1
+
+    @property
+    def id(self):
+        """
+        Returns the unique ID for this Ethernet switch.
+
+        :returns: id (integer)
+        """
+
+        return self._id
 
     @property
     def mapping(self):
@@ -46,6 +80,15 @@ class Hub(Bridge):
         """
 
         return self._mapping
+
+    def delete(self):
+        """
+        Deletes this hub.
+        """
+
+        Bridge.delete(self)
+        log.info("Ethernet hub {name} [id={id}] has been deleted".format(name=self._name,
+                                                                         id=self._id))
 
     def add_nio(self, nio, port):
         """
@@ -59,6 +102,11 @@ class Hub(Bridge):
             raise DynamipsError("Port {} isn't free".format(port))
 
         Bridge.add_nio(self, nio)
+
+        log.info("Ethernet hub {name} [id={id}]: NIO {nio} bound to port {port}".format(name=self._name,
+                                                                                        id=self._id,
+                                                                                        nio=nio,
+                                                                                        port=port))
         self._mapping[port] = nio
 
     def remove_nio(self, port):
@@ -66,6 +114,8 @@ class Hub(Bridge):
         Removes the specified NIO as member of this hub.
 
         :param port: allocated port
+
+        :returns: the NIO that was bound to the allocated port
         """
 
         if port not in self._mapping:
@@ -73,4 +123,11 @@ class Hub(Bridge):
 
         nio = self._mapping[port]
         Bridge.remove_nio(self, nio)
+
+        log.info("Ethernet switch {name} [id={id}]: NIO {nio} removed from port {port}".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               nio=nio,
+                                                                                               port=port))
+
         del self._mapping[port]
+        return nio

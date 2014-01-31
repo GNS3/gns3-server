@@ -22,6 +22,9 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L451
 
 from ..dynamips_error import DynamipsError
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO(object):
     """
@@ -55,6 +58,7 @@ class NIO(object):
         """
 
         self._hypervisor.send("nio delete {}".format(self._name))
+        log.info("NIO {name} has been deleted".format(name=self._name))
 
     def rename(self, new_name):
         """
@@ -65,6 +69,9 @@ class NIO(object):
 
         self._hypervisor.send("nio rename {name} {new_name}".format(name=self._name,
                                                                     new_name=new_name))
+
+        log.info("NIO {name} renamed to {new_name}".format(name=self._name,
+                                                           new_name=new_name))
         self._name = new_name
 
     def debug(self, debug):
@@ -197,7 +204,7 @@ class NIO(object):
 
     def set_bandwidth(self, bandwidth):
         """
-        Set bandwidth constraint.
+        Sets bandwidth constraint.
 
         :param bandwidth: bandwidth integer value (in Kb/s)
         """

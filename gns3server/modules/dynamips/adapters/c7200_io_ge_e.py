@@ -33,11 +33,3 @@ class C7200_IO_GE_E(Adapter):
     def removable(self):
 
         return False
-
-    def interface_type(self):
-
-        return "GigabitEthernet"
-
-    def medium(self):
-
-        return "Ethernet"

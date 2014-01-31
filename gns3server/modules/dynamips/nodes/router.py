@@ -24,28 +24,35 @@ from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
 import os
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class Router(object):
     """
-    Dynamips router
+    Dynamips router implementation.
 
     :param hypervisor: Dynamips hypervisor object
     :param name: name for this router
     :param platform: c7200, c3745, c3725, c3600, c2691, c2600 or c1700
-    :param console_flag: create console ports if True.
+    :param ghost_flag: used when creating a ghost IOS.
     """
 
-    _instance_count = 0
+    _instance_count = 1
     _status = {0: "inactive",
                1: "shutting down",
                2: "running",
                3: "suspended"}
 
-    def __init__(self, hypervisor, name, platform="c7200", console_flag=True):
+    def __init__(self, hypervisor, name=None, platform="c7200", ghost_flag=False):
 
         # create an unique ID
         self._id = Router._instance_count
         Router._instance_count += 1
+
+        # let's create a unique name if none has been chosen
+        if not name:
+            name = "R" + str(self._id)
 
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
@@ -76,11 +83,65 @@ class Router(object):
                                                                         id=self._id,
                                                                         platform=self._platform))
 
-        if console_flag:
+        if not ghost_flag:
+            log.info("router {platform} {name} [id={id}] has been created".format(name=self._name,
+                                                                                  platform=platform,
+                                                                                  id=self._id))
             self.console = self._hypervisor.baseconsole + self._id
             self.aux = self._hypervisor.baseaux + self._id
+        else:
+            log.info("creating a new ghost IOS file")
+            Router._instance_count -= 1
 
         self._hypervisor.devices.append(self)
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 1
+
+    def defaults(self):
+        """
+        Returns all the default base attribute values for routers.
+
+        :returns: default values (dictionary)
+        """
+
+        router_defaults = {"platform": self._platform,
+                           "image": self._image,
+                           "ram": self._ram,
+                           "nvram": self._nvram,
+                           "mmap": self._mmap,
+                           "sparsemem": self._sparsemem,
+                           "clock_divisor": self._clock_divisor,
+                           "idlepc": self._idlepc,
+                           "idlemax": self._idlemax,
+                           "idlesleep": self._idlesleep,
+                           "exec_area": self._exec_area,
+                           "jit_sharing_group": self._jit_sharing_group,
+                           "disk0": self._disk0,
+                           "disk1": self._disk1,
+                           "confreg": self._confreg,
+                           "console": self._console,
+                           "aux": self._aux,
+                           "mac_addr": self._mac_addr,
+                           "system_id": self._system_id}
+
+        slot_id = 0
+        for slot in self._slots:
+            if slot:
+                slot = str(slot)
+            router_defaults["slot" + str(slot_id)] = slot
+            slot_id += 1
+
+        if self._slots[0] and self._slots[0].wics:
+            for wic_slot_id in range(0, len(self._slots[0].wics)):
+                router_defaults["wic" + str(wic_slot_id)] = None
+
+        return router_defaults
 
     @property
     def id(self):
@@ -151,6 +212,11 @@ class Router(object):
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,
                                                                    new_name=new_name))
+
+        log.info("router {name} [id={id}]: renamed to {new_name}".format(name=self._name,
+                                                                         id=self._id,
+                                                                         new_name=new_name))
+
         self._name = new_name
 
     def delete(self):
@@ -161,13 +227,19 @@ class Router(object):
         self._hypervisor.send("vm delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
 
+        log.info("router {name} [id={id}] has been deleted".format(name=self._name, id=self._id))
+
     def start(self):
         """
         Starts this router.
-        At least the IOS image must be set.
+        At least the IOS image must be set before starting it.
         """
 
-        self._hypervisor.send("vm start {}".format(self._name))
+        if self.get_status() == "suspended":
+            self.resume()
+        else:
+            self._hypervisor.send("vm start {}".format(self._name))
+            log.info("router {name} [id={id}] has been started".format(name=self._name, id=self._id))
 
     def stop(self):
         """
@@ -176,13 +248,16 @@ class Router(object):
         """
 
         self._hypervisor.send("vm stop {}".format(self._name))
+        log.info("router {name} [id={id}] has been stopped".format(name=self._name, id=self._id))
 
     def suspend(self):
         """
         Suspends this router
         """
 
-        self._hypervisor.send("vm suspend {}".format(self._name))
+        if self.get_status() == "running":
+            self._hypervisor.send("vm suspend {}".format(self._name))
+            log.info("router {name} [id={id}] has been suspended".format(name=self._name, id=self._id))
 
     def resume(self):
         """
@@ -190,12 +265,13 @@ class Router(object):
         """
 
         self._hypervisor.send("vm resume {}".format(self._name))
+        log.info("router {name} [id={id}] has been resumed".format(name=self._name, id=self._id))
 
     def get_status(self):
         """
         Returns the status of this router
 
-        :returns: 0=inactive, 1=shutting down, 2=running, 3=suspended
+        :returns: inactive, shutting down, running or suspended.
         """
 
         status_id = int(self._hypervisor.send("vm get_status {}".format(self._name))[0])
@@ -225,7 +301,7 @@ class Router(object):
     @jit_sharing_group.setter
     def jit_sharing_group(self, group_id):
         """
-        Set the translation sharing group (unstable).
+        Sets the translation sharing group (unstable).
 
         :param group_id: translation sharing group ID
         """
@@ -236,12 +312,16 @@ class Router(object):
         self._hypervisor.send("vm set_tsg {name} {group_id}".format(name=self._name,
                                                                     group_id=group_id))
 
+        log.info("router {name} [id={id}]: set in JIT sharing group {group_id}".format(name=self._name,
+                                                                                       id=self._id,
+                                                                                       group_id=group_id))
+
         self._jit_sharing_group = group_id
         self._hypervisor.add_jitsharing_group(os.path.basename(self._image), group_id)
 
     def set_debug_level(self, level):
         """
-        Set the debug level for this router (default is 0).
+        Sets the debug level for this router (default is 0).
 
         :param level: level number
         """
@@ -262,7 +342,7 @@ class Router(object):
     @image.setter
     def image(self, image):
         """
-        Set the IOS image for this router.
+        Sets the IOS image for this router.
         There is no default.
 
         :param image: path to IOS image file
@@ -271,11 +351,16 @@ class Router(object):
         # encase image in quotes to protect spaces in the path
         self._hypervisor.send("vm set_ios {name} {image}".format(name=self._name,
                                                                  image='"' + image + '"'))
+
+        log.info("router {name} [id={id}]: has a new IOS image set: {image}".format(name=self._name,
+                                                                                    id=self._id,
+                                                                                    image='"' + image + '"'))
+
         self._image = image
 
     def set_config(self, startup_config, private_config=''):
         """
-        Set the config files that are pushed to startup-config and
+        Sets the config files that are pushed to startup-config and
         private-config in NVRAM when the instance is started.
 
         :param startup_config: path to statup-config file
@@ -286,6 +371,15 @@ class Router(object):
         self._hypervisor.send("vm set_config {name} {startup} {private}".format(name=self._name,
                                                                                 startup='"' + startup_config + '"',
                                                                                 private='"' + private_config + '"'))
+
+        log.info("router {name} [id={id}]: has a startup-config set: {startup}".format(name=self._name,
+                                                                                       id=self._id,
+                                                                                       startup='"' + startup_config + '"'))
+
+        if private_config:
+            log.info("router {name} [id={id}]: has a private-config set: {private}".format(name=self._name,
+                                                                                           id=self._id,
+                                                                                           private='"' + private_config + '"'))
 
     def extract_config(self):
         """
@@ -318,6 +412,13 @@ class Router(object):
                                                                                  startup=startup_config,
                                                                                  private=private_config))
 
+        log.info("router {name} [id={id}]: new startup-config pushed".format(name=self._name,
+                                                                             id=self._id))
+
+        if private_config != '(keep)':
+            log.info("router {name} [id={id}]: new private-config pushed".format(name=self._name,
+                                                                                 id=self._id))
+
     @property
     def ram(self):
         """
@@ -331,13 +432,22 @@ class Router(object):
     @ram.setter
     def ram(self, ram):
         """
-        Set amount of RAM allocated to this router
+        Sets amount of RAM allocated to this router
 
         :param ram: amount of RAM in Mbytes (integer)
         """
 
+        if self._ram == ram:
+            return
+
         self._hypervisor.send("vm set_ram {name} {ram}".format(name=self._name,
-                                                               ram=self._ram))
+                                                               ram=ram))
+
+        log.info("router {name} [id={id}]: RAM updated from {old_ram}MB to {new_ram}MB".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               old_ram=self._ram,
+                                                                                               new_ram=ram))
+
         self._hypervisor.decrease_memory_load(self._ram)
         self._ram = ram
         self._hypervisor.increase_memory_load(self._ram)
@@ -355,13 +465,21 @@ class Router(object):
     @nvram.setter
     def nvram(self, nvram):
         """
-        Set amount of NVRAM allocated to this router
+        Sets amount of NVRAM allocated to this router
 
         :param nvram: amount of NVRAM in Kbytes (integer)
         """
 
+        if self._nvram == nvram:
+            return
+
         self._hypervisor.send("vm set_nvram {name} {nvram}".format(name=self._name,
-                                                                   nvram=self._nvram))
+                                                                   nvram=nvram))
+
+        log.info("router {name} [id={id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB".format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     old_nvram=self._nvram,
+                                                                                                     new_nvram=nvram))
         self._nvram = nvram
 
     @property
@@ -389,6 +507,13 @@ class Router(object):
             flag = 0
         self._hypervisor.send("vm set_ram_mmap {name} {mmap}".format(name=self._name,
                                                                      mmap=flag))
+
+        if mmap:
+            log.info("router {name} [id={id}]: mmap enabled".format(name=self._name,
+                                                                    id=self._id))
+        else:
+            log.info("router {name} [id={id}]: mmap disabled".format(name=self._name,
+                                                                     id=self._id))
         self._mmap = mmap
 
     @property
@@ -415,6 +540,13 @@ class Router(object):
             flag = 0
         self._hypervisor.send("vm set_sparse_mem {name} {sparsemem}".format(name=self._name,
                                                                      sparsemem=flag))
+
+        if sparsemem:
+            log.info("router {name} [id={id}]: sparse memory enabled".format(name=self._name,
+                                                                             id=self._id))
+        else:
+            log.info("router {name} [id={id}]: sparse memory disabled".format(name=self._name,
+                                                                              id=self._id))
         self._sparsemem = sparsemem
 
     @property
@@ -430,7 +562,7 @@ class Router(object):
     @clock_divisor.setter
     def clock_divisor(self, clock_divisor):
         """
-        Set the clock divisor value. The higher is the value, the faster is the clock in the
+        Sets the clock divisor value. The higher is the value, the faster is the clock in the
         virtual machine. The default is 4, but it is often required to adjust it.
 
         :param clock_divisor: clock divisor value (integer)
@@ -438,6 +570,11 @@ class Router(object):
 
         self._hypervisor.send("vm set_clock_divisor {name} {clock}".format(name=self._name,
                                                                            clock=clock_divisor))
+
+        log.info("router {name} [id={id}]: clock divisor updated from {old_clock} to {new_clock}".format(name=self._name,
+                                                                                                         id=self._id,
+                                                                                                         old_clock=self._clock_divisor,
+                                                                                                         new_clock=clock_divisor))
         self._clock_divisor = clock_divisor
 
     @property
@@ -453,7 +590,7 @@ class Router(object):
     @idlepc.setter
     def idlepc(self, idlepc):
         """
-        Set the idle Pointer Counter (PC)
+        Sets the idle Pointer Counter (PC)
 
         :param idlepc: idlepc value (string)
         """
@@ -465,6 +602,11 @@ class Router(object):
         else:
             self._hypervisor.send("vm set_idle_pc_online {name} 0 {idlepc}".format(name=self._name,
                                                                                    idlepc=idlepc))
+
+        log.info("router {name} [id={id}]: idle-PC set to {idlepc}".format(name=self._name,
+                                                                           id=self._id,
+                                                                           idlepc=idlepc))
+
         self._idlepc = idlepc
 
     def get_idle_pc_prop(self):
@@ -500,7 +642,7 @@ class Router(object):
     @idlemax.setter
     def idlemax(self, idlemax):
         """
-        Set CPU idle max value
+        Sets CPU idle max value
 
         :param idlemax: idle max value (integer)
         """
@@ -508,6 +650,12 @@ class Router(object):
         if self.is_running():  # router is running
             self._hypervisor.send("vm set_idle_max {name} 0 {idlemax}".format(name=self._name,
                                                                               idlemax=idlemax))
+
+        log.info("router {name} [id={id}]: idlemax updated from {old_idlemax} to {new_idlemax}".format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       old_idlemax=self._idlemax,
+                                                                                                       new_idlemax=idlemax))
+
         self._idlemax = idlemax
 
     @property
@@ -523,7 +671,7 @@ class Router(object):
     @idlesleep.setter
     def idlesleep(self, idlesleep):
         """
-        Set CPU idle sleep time value.
+        Sets CPU idle sleep time value.
 
         :param idlesleep: idle sleep value (integer)
         """
@@ -531,6 +679,12 @@ class Router(object):
         if self.is_running():  # router is running
             self._hypervisor.send("vm set_idle_sleep_time {name} 0 {idlesleep}".format(name=self._name,
                                                                                        idlesleep=idlesleep))
+
+        log.info("router {name} [id={id}]: idlesleep updated from {old_idlesleep} to {new_idlesleep}".format(name=self._name,
+                                                                                                             id=self._id,
+                                                                                                             old_idlesleep=self._idlesleep,
+                                                                                                             new_idlesleep=idlesleep))
+
         self._idlesleep = idlesleep
 
     def show_timer_drift(self):
@@ -555,16 +709,21 @@ class Router(object):
     @ghost_file.setter
     def ghost_file(self, ghost_file):
         """
-        Set ghost RAM file
+        Sets ghost RAM file
 
         :ghost_file: path to ghost file
         """
 
         self._hypervisor.send("vm set_ghost_file {name} {ghost_file}".format(name=self._name,
                                                                              ghost_file=ghost_file))
+
+        log.info("router {name} [id={id}]: ghost file set to {ghost_file}".format(name=self._name,
+                                                                                  id=self._id,
+                                                                                  ghost_file=ghost_file))
+
         self._ghost_file = ghost_file
 
-        # If this is a ghost instance, track this as a hosted ghost instance by this hypervisor
+        # if this is a ghost instance, track this as a hosted ghost instance by this hypervisor
         if self.ghost_status == 1:
             self._hypervisor.add_ghost(ghost_file, self)
 
@@ -575,8 +734,8 @@ class Router(object):
         :returns: formatted ghost_file name (string)
         """
 
-        # Replace specials characters in 'drive:\filename' in Linux and Dynamips in MS Windows or viceversa.
-        ghost_file = os.path.basename(self._image) + '-' + self._hypervisor.host + '.ghost'
+        # replace specials characters in 'drive:\filename' in Linux and Dynamips in MS Windows or viceversa.
+        ghost_file = "{}-{}.ghost".format(os.path.basename(self._image), self._ram)
         ghost_file = ghost_file.replace('\\', '-').replace('/', '-').replace(':', '-')
         return ghost_file
 
@@ -592,7 +751,7 @@ class Router(object):
     @ghost_status.setter
     def ghost_status(self, ghost_status):
         """
-        Set ghost RAM status
+        Sets ghost RAM status
 
         :param ghost_status: state flag indicating status
         0 => Do not use IOS ghosting
@@ -602,6 +761,10 @@ class Router(object):
 
         self._hypervisor.send("vm set_ghost_status {name} {ghost_status}".format(name=self._name,
                                                                                  ghost_status=ghost_status))
+
+        log.info("router {name} [id={id}]: ghost status set to {ghost_status}".format(name=self._name,
+                                                                                      id=self._id,
+                                                                                      ghost_status=ghost_status))
         self._ghost_status = ghost_status
 
     @property
@@ -617,7 +780,7 @@ class Router(object):
     @exec_area.setter
     def exec_area(self, exec_area):
         """
-        Set the exec area value.
+        Sets the exec area value.
         The exec area is a pool of host memory used to store pages
         translated by the JIT (they contain the native code
         corresponding to MIPS code pages).
@@ -627,6 +790,11 @@ class Router(object):
 
         self._hypervisor.send("vm set_exec_area {name} {exec_area}".format(name=self._name,
                                                                            exec_area=exec_area))
+
+        log.info("router {name} [id={id}]: exec area updated from {old_exec}MB to {new_exec}MB".format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       old_exec=self._exec_area,
+                                                                                                       new_exec=exec_area))
         self._exec_area = exec_area
 
     @property
@@ -642,13 +810,18 @@ class Router(object):
     @disk0.setter
     def disk0(self, disk0):
         """
-        Set the size (MB) for PCMCIA disk0.
+        Sets the size (MB) for PCMCIA disk0.
 
         :param disk0: disk0 size (integer)
         """
 
         self._hypervisor.send("vm set_disk0 {name} {disk0}".format(name=self._name,
                                                                    disk0=disk0))
+
+        log.info("router {name} [id={id}]: disk0 updated from {old_disk0}MB to {new_disk0}MB".format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     old_disk0=self._disk0,
+                                                                                                     new_disk0=disk0))
         self._disk0 = disk0
 
     @property
@@ -664,13 +837,18 @@ class Router(object):
     @disk1.setter
     def disk1(self, disk1):
         """
-        Set the size (MB) for PCMCIA disk1.
+        Sets the size (MB) for PCMCIA disk1.
 
         :param disk1: disk1 size (integer)
         """
 
         self._hypervisor.send("vm set_disk1 {name} {disk1}".format(name=self._name,
                                                                    disk1=disk1))
+
+        log.info("router {name} [id={id}]: disk1 updated from {old_disk1}MB to {new_disk1}MB".format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     old_disk1=self._disk1,
+                                                                                                     new_disk1=disk1))
         self._disk1 = disk1
 
     @property
@@ -687,13 +865,18 @@ class Router(object):
     @confreg.setter
     def confreg(self, confreg):
         """
-        Set the configuration register.
+        Sets the configuration register.
 
         :param confreg: configuration register value (string)
         """
 
         self._hypervisor.send("vm set_conf_reg {name} {confreg}".format(name=self._name,
                                                                         confreg=confreg))
+
+        log.info("router {name} [id={id}]: confreg updated from {old_confreg} to {new_confreg}".format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       old_confreg=self._confreg,
+                                                                                                       new_confreg=confreg))
         self._confreg = confreg
 
     @property
@@ -709,7 +892,7 @@ class Router(object):
     @console.setter
     def console(self, console):
         """
-        Set the TCP console port.
+        Sets the TCP console port.
 
         :param console: console port (integer)
         """
@@ -719,6 +902,11 @@ class Router(object):
 
         self._hypervisor.send("vm set_con_tcp_port {name} {console}".format(name=self._name,
                                                                             console=console))
+
+        log.info("router {name} [id={id}]: console port updated from {old_console} to {new_console}".format(name=self._name,
+                                                                                                            id=self._id,
+                                                                                                            old_console=self._console,
+                                                                                                            new_console=console))
         self._console = console
 
     @property
@@ -734,7 +922,7 @@ class Router(object):
     @aux.setter
     def aux(self, aux):
         """
-        Set the TCP auxiliary port.
+        Sets the TCP auxiliary port.
 
         :param aux: console auxiliary port (integer)
         """
@@ -744,6 +932,11 @@ class Router(object):
 
         self._hypervisor.send("vm set_aux_tcp_port {name} {aux}".format(name=self._name,
                                                                         aux=aux))
+
+        log.info("router {name} [id={id}]: aux port updated from {old_aux} to {new_aux}".format(name=self._name,
+                                                                                                id=self._id,
+                                                                                                old_aux=self._aux,
+                                                                                                new_aux=aux))
         self._aux = aux
 
     def get_cpu_info(self, cpu_id=0):
@@ -801,7 +994,7 @@ class Router(object):
     @mac_addr.setter
     def mac_addr(self, mac_addr):
         """
-        Set the MAC address.
+        Sets the MAC address.
 
         :param mac_addr: a MAC address (hexadecimal format: hh:hh:hh:hh:hh:hh)
         """
@@ -809,6 +1002,11 @@ class Router(object):
         self._hypervisor.send("{platform} set_mac_addr {name} {mac_addr}".format(platform=self._platform,
                                                                                  name=self._name,
                                                                                  mac_addr=mac_addr))
+
+        log.info("router {name} [id={id}]: MAC address updated from {old_mac} to {new_mac}".format(name=self._name,
+                                                                                                   id=self._id,
+                                                                                                   old_mac=self._mac_addr,
+                                                                                                   new_mac=mac_addr))
         self._mac_addr = mac_addr
 
     @property
@@ -824,7 +1022,7 @@ class Router(object):
     @system_id.setter
     def system_id(self, system_id):
         """
-        Set the system ID.
+        Sets the system ID.
 
         :param system_id: a system ID (also called board processor ID)
         """
@@ -832,6 +1030,11 @@ class Router(object):
         self._hypervisor.send("{platform} set_system_id {name} {system_id}".format(platform=self._platform,
                                                                                    name=self._name,
                                                                                    system_id=system_id))
+
+        log.info("router {name} [id={id}]: system ID updated from {old_id} to {new_id}".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               old_id=self._system_id,
+                                                                                               new_id=system_id))
         self._system_id = system_id
 
     def get_hardware_info(self):
@@ -841,7 +1044,7 @@ class Router(object):
         :returns: ? (could not test)
         """
 
-        #  FIXME: nothing returned by Dynamips.
+        # FIXME: nothing returned by Dynamips.
         return (self._hypervisor.send("{platform} show_hardware {name}".format(platform=self._platform,
                                                                                name=self._name)))
 
@@ -856,7 +1059,7 @@ class Router(object):
 
     def slot_add_binding(self, slot_id, adapter):
         """
-        Adds a slot binding.
+        Adds a slot binding (a module into a slot).
 
         :param slot_id: slot ID
         :param adapter: device to add in the corresponding slot (object)
@@ -877,6 +1080,12 @@ class Router(object):
         self._hypervisor.send("vm slot_add_binding {name} {slot_id} 0 {adapter}".format(name=self._name,
                                                                                         slot_id=slot_id,
                                                                                         adapter=adapter))
+
+        log.info("router {name} [id={id}]: adapter {adapter} inserted into slot {slot_id}".format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  adapter=adapter,
+                                                                                                  slot_id=slot_id))
+
         self._slots[slot_id] = adapter
 
         # Generate an OIR event if the router is running and
@@ -888,33 +1097,48 @@ class Router(object):
             self._hypervisor.send("vm slot_oir_start {name} {slot_id} 0".format(name=self._name,
                                                                                 slot_id=slot_id))
 
+            log.info("router {name} [id={id}]: OIR start event sent to slot {slot_id}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              slot_id=slot_id))
+
     def slot_remove_binding(self, slot_id):
         """
-        Removes a slot binding.
+        Removes a slot binding (a module from a slot).
 
         :param slot_id: slot ID
         """
 
         try:
-            slot = self._slots[slot_id]
+            adapter = self._slots[slot_id]
         except IndexError:
             raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
-        if slot == None:
+        if adapter == None:
             return
+
+        #FIXME: check if adapter can be removed!
 
         # Generate an OIR event if the router is running and
         # only for c7200, c3600 and c3745 (NM-4T only)
         if self.is_running() and self._platform == 'c7200' \
         or (self._platform == 'c3600' and self.chassis == '3660') \
-        or (self._platform == 'c3745' and slot == 'NM-4T'):
+        or (self._platform == 'c3745' and adapter == 'NM-4T'):
 
             self._hypervisor.send("vm slot_oir_stop {name} {slot_id} 0".format(name=self._name,
                                                                                slot_id=slot_id))
 
+            log.info("router {name} [id={id}]: OIR stop event sent to slot {slot_id}".format(name=self._name,
+                                                                                             id=self._id,
+                                                                                             slot_id=slot_id))
+
         self._hypervisor.send("vm slot_remove_binding {name} {slot_id} 0".format(name=self._name,
-                                                                                     slot_id=slot_id))
+                                                                                 slot_id=slot_id))
+
+        log.info("router {name} [id={id}]: adapter {adapter} removed from slot {slot_id}".format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 adapter=adapter,
+                                                                                                 slot_id=slot_id))
         self._slots[slot_id] = None
 
     def install_wic(self, wic_slot_id, wic):
@@ -947,6 +1171,12 @@ class Router(object):
                                                                                                 slot_id=slot_id,
                                                                                                 wic_slot_id=internal_wic_slot_id,
                                                                                                 wic=wic))
+
+        log.info("router {name} [id={id}]: {wic} inserted into WIC slot {wic_slot_id}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              wic=wic,
+                                                                                              wic_slot_id=wic_slot_id))
+
         adapter.install_wic(wic_slot_id, wic)
 
     def uninstall_wic(self, wic_slot_id):
@@ -976,6 +1206,11 @@ class Router(object):
         self._hypervisor.send("vm slot_remove_binding {name} {slot_id} {wic_slot_id}".format(name=self._name,
                                                                                          slot_id=slot_id,
                                                                                          wic_slot_id=internal_wic_slot_id))
+
+        log.info("router {name} [id={id}]: {wic} removed from WIC slot {wic_slot_id}".format(name=self._name,
+                                                                                             id=self._id,
+                                                                                             wic=adapter.wics[wic_slot_id],
+                                                                                             wic_slot_id=wic_slot_id))
         adapter.uninstall_wic(wic_slot_id)
 
     def get_slot_nio_bindings(self, slot_id):
@@ -1012,6 +1247,13 @@ class Router(object):
                                                                                                 slot_id=slot_id,
                                                                                                 port_id=port_id,
                                                                                                 nio=nio))
+
+        log.info("router {name} [id={id}]: NIO {nio_name} bound to port {slot_id}/{port_id}".format(name=self._name,
+                                                                                                    id=self._id,
+                                                                                                    nio_name=nio.name,
+                                                                                                    slot_id=slot_id,
+                                                                                                    port_id=port_id))
+
         self.slot_enable_nio(slot_id, port_id)
         adapter.add_nio(port_id, nio)
 
@@ -1021,6 +1263,8 @@ class Router(object):
 
         :param slot_id: slot ID
         :param port_id: port ID
+
+        :returns: removed NIO object
         """
 
         try:
@@ -1033,11 +1277,20 @@ class Router(object):
                                                                                            port_id=port_id))
 
         self.slot_disable_nio(slot_id, port_id)
-        self._hypervisor.send("vm slot_remove_binding {name} {slot_id} {port_id}".format(name=self._name,
-                                                                                         slot_id=slot_id,
-                                                                                         port_id=port_id))
+        self._hypervisor.send("vm slot_remove_nio_binding {name} {slot_id} {port_id}".format(name=self._name,
+                                                                                             slot_id=slot_id,
+                                                                                             port_id=port_id))
 
+        nio = adapter.get_nio(port_id)
         adapter.remove_nio(port_id)
+
+        log.info("router {name} [id={id}]: NIO {nio_name} removed from port {slot_id}/{port_id}".format(name=self._name,
+                                                                                                        id=self._id,
+                                                                                                        nio_name=nio.name,
+                                                                                                        slot_id=slot_id,
+                                                                                                        port_id=port_id))
+
+        return nio
 
     def slot_enable_nio(self, slot_id, port_id):
         """
@@ -1052,6 +1305,11 @@ class Router(object):
                                                                                          slot_id=slot_id,
                                                                                          port_id=port_id))
 
+            log.info("router {name} [id={id}]: NIO enabled on port {slot_id}/{port_id}".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               slot_id=slot_id,
+                                                                                               port_id=port_id))
+
     def slot_disable_nio(self, slot_id, port_id):
         """
         Disables a slot NIO binding.
@@ -1064,6 +1322,11 @@ class Router(object):
             self._hypervisor.send("vm slot_disable_nio {name} {slot_id} {port_id}".format(name=self._name,
                                                                                           slot_id=slot_id,
                                                                                           port_id=port_id))
+
+            log.info("router {name} [id={id}]: NIO disabled on port {slot_id}/{port_id}".format(name=self._name,
+                                                                                                id=self._id,
+                                                                                                slot_id=slot_id,
+                                                                                                port_id=port_id))
 
     def _create_slots(self, numslots):
         """

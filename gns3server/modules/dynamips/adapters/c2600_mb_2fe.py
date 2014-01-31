@@ -33,11 +33,3 @@ class C2600_MB_2FE(Adapter):
     def removable(self):
 
         return False
-
-    def interface_type(self):
-
-        return "FastEthernet"
-
-    def medium(self):
-
-        return "Ethernet"

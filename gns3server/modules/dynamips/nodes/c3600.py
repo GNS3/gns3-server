@@ -24,6 +24,9 @@ from __future__ import unicode_literals
 from .router import Router
 from ..adapters.leopard_2fe import Leopard_2FE
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class C3600(Router):
     """
@@ -35,7 +38,7 @@ class C3600(Router):
     3620, 3640 or 3660 (default = 3640).
     """
 
-    def __init__(self, hypervisor, name, chassis="3640"):
+    def __init__(self, hypervisor, name=None, chassis="3640"):
         Router.__init__(self, hypervisor, name, platform="c3600")
 
         # Set default values for this platform
@@ -52,6 +55,27 @@ class C3600(Router):
 
         self._setup_chassis()
 
+    def defaults(self):
+        """
+        Returns all the default attribute values for this platform.
+
+        :returns: default values (dictionary)
+        """
+
+        router_defaults = Router.defaults(self)
+
+        platform_defaults = {"ram": self._ram,
+                             "nvram": self._nvram,
+                             "disk0": self._disk0,
+                             "disk1": self._disk1,
+                             "iomem": self._iomem,
+                             "chassis": self._chassis,
+                             "clock_divisor": self._clock_divisor}
+
+        # update the router defaults with the platform specific defaults
+        router_defaults.update(platform_defaults)
+        return router_defaults
+
     def list(self):
         """
         Returns all c3600 instances
@@ -63,7 +87,7 @@ class C3600(Router):
 
     def _setup_chassis(self):
         """
-        Set up the router with the corresponding chassis
+        Sets up the router with the corresponding chassis
         (create slots and insert default adapters).
         """
 
@@ -88,13 +112,18 @@ class C3600(Router):
     @chassis.setter
     def chassis(self, chassis):
         """
-        Set the chassis.
+        Sets the chassis.
 
         :param: chassis string: 3620, 3640 or 3660
         """
 
         self._hypervisor.send("c3600 set_chassis {name} {chassis}".format(name=self._name,
                                                                           chassis=chassis))
+
+        log.info("router {name} [id={id}]: chassis set to {chassis}".format(name=self._name,
+                                                                            id=self._id,
+                                                                            chassis=chassis))
+
         self._chassis = chassis
         self._setup_chassis()
 
@@ -118,4 +147,9 @@ class C3600(Router):
 
         self._hypervisor.send("c3600 set_iomem {name} {size}".format(name=self._name,
                                                                      size=iomem))
+
+        log.info("router {name} [id={id}]: I/O memory updated from {old_iomem}% to {new_iomem}%".format(name=self._name,
+                                                                                                        id=self._id,
+                                                                                                        old_iomem=self._iomem,
+                                                                                                        new_iomem=iomem))
         self._iomem = iomem

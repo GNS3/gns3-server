@@ -28,16 +28,8 @@ class C7200_IO_2FE(Adapter):
 
     def __str__(self):
 
-        return "C7200_IO_2FE"
+        return "C7200-IO-2FE"
 
     def removable(self):
 
         return False
-
-    def interface_type(self):
-
-        return "FastEthernet"
-
-    def medium(self):
-
-        return "Ethernet"

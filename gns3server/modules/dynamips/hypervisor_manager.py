@@ -45,27 +45,29 @@ class HypervisorManager(object):
                  path,
                  workingdir,
                  host='127.0.0.1',
-                 base_port=7200,
-                 base_console=2000,
-                 base_aux=3000,
-                 base_udp=10000):
+                 base_hypervisor_port=7200,
+                 base_console_port=2000,
+                 base_aux_port=3000,
+                 base_udp_port=10000):
 
         self._hypervisors = []
         self._path = path
         self._workingdir = workingdir
-        self._base_port = base_port
-        self._current_port = self._base_port
-        self._base_console = base_console
-        self._base_aux = base_aux
-        self._base_udp = base_udp
         self._host = host
-        self._clean_workingdir = False
-        self._ghost_ios = True
-        self._mmap = True
-        self._jit_sharing = False
-        self._sparsemem = True
+        self._base_hypervisor_port = base_hypervisor_port
+        self._current_port = self._base_hypervisor_port
+        self._base_console_port = base_console_port
+        self._base_aux_port = base_aux_port
+        self._base_udp_port = base_udp_port
+        self._current_base_udp_port = self._base_udp_port
+        self._udp_incrementation_per_hypervisor = 100
+        self._ghost_ios_support = True
+        self._mmap_support = True
+        self._jit_sharing_support = False
+        self._sparse_memory_support = True
+        self._allocate_hypervisor_per_device = True
         self._memory_usage_limit_per_hypervisor = 1024
-        self._group_ios_per_hypervisor = True
+        self._allocate_hypervisor_per_ios_image = True
 
     def __del__(self):
         """
@@ -85,6 +87,263 @@ class HypervisorManager(object):
         return self._hypervisors
 
     @property
+    def path(self):
+        """
+        Returns the Dynamips path.
+
+        :returns: path to Dynamips
+        """
+
+        return self._path
+
+    @path.setter
+    def path(self, path):
+        """
+        Set a new Dynamips path.
+
+        :param path: path to Dynamips
+        """
+
+        self._path = path
+        log.info("Dynamips path set to {}".format(self._path))
+
+    @property
+    def workingdir(self):
+        """
+        Returns the Dynamips working directory path.
+
+        :returns: path to Dynamips working directory
+        """
+
+        return self._workingdir
+
+    @workingdir.setter
+    def workingdir(self, workingdir):
+        """
+        Sets a new path to the Dynamips working directory.
+
+        :param workingdir: path to Dynamips working directory
+        """
+
+        self._workingdir = workingdir
+        log.info("working directory set to {}".format(self._workingdir))
+
+    @property
+    def base_hypervisor_port(self):
+        """
+        Returns the base hypervisor port.
+
+        :returns: base hypervisor port (integer)
+        """
+
+        return self._base_hypervisor_port
+
+    @base_hypervisor_port.setter
+    def base_hypervisor_port(self, base_hypervisor_port):
+        """
+        Set a new base hypervisor port.
+
+        :param base_hypervisor_port: base hypervisor port (integer)
+        """
+
+        if self._base_hypervisor_port != base_hypervisor_port:
+            self._base_hypervisor_port = base_hypervisor_port
+            self._current_port = self._base_hypervisor_port
+            log.info("base hypervisor port set to {}".format(self._base_hypervisor_port))
+
+    @property
+    def base_console_port(self):
+        """
+        Returns the base console port.
+
+        :returns: base console port (integer)
+        """
+
+        return self._base_console_port
+
+    @base_console_port.setter
+    def base_console_port(self, base_console_port):
+        """
+        Set a new base console port.
+
+        :param base_console_port: base console port (integer)
+        """
+
+        if self._base_console_port != base_console_port:
+            self._base_console_port = base_console_port
+            log.info("base console port set to {}".format(self._base_console_port))
+
+    @property
+    def base_aux_port(self):
+        """
+        Returns the base auxiliary console port.
+
+        :returns: base auxiliary console  port (integer)
+        """
+
+        return self._base_aux_port
+
+    @base_aux_port.setter
+    def base_aux_port(self, base_aux_port):
+        """
+        Set a new base auxiliary console port.
+
+        :param base_aux_port: base auxiliary console port (integer)
+        """
+
+        if self._base_aux_port != base_aux_port:
+            self._base_aux_port = base_aux_port
+            log.info("base aux port set to {}".format(self._base_aux_port))
+
+    @property
+    def base_udp_port(self):
+        """
+        Returns the base UDP port.
+
+        :returns: base UDP  port (integer)
+        """
+
+        return self._base_udp_port
+
+    @base_udp_port.setter
+    def base_udp_port(self, base_udp_port):
+        """
+        Set a new base UDP port.
+
+        :param base_udp_port: base UDP port (integer)
+        """
+
+        if self._base_udp_port != base_udp_port:
+            self._base_udp_port = base_udp_port
+            self._current_base_udp_port = self._base_udp_port
+            log.info("base UDP port set to {}".format(self._base_udp_port))
+
+    @property
+    def ghost_ios_support(self):
+        """
+        Returns either ghost IOS is activated or not.
+
+        :returns: boolean
+        """
+
+        return self._ghost_ios_support
+
+    @ghost_ios_support.setter
+    def ghost_ios_support(self, ghost_ios_support):
+        """
+        Sets ghost IOS support.
+
+        :param ghost_ios_support: boolean
+        """
+
+        if self._ghost_ios_support != ghost_ios_support:
+            self._ghost_ios_support = ghost_ios_support
+            if ghost_ios_support:
+                log.info("ghost IOS support enabled")
+            else:
+                log.info("ghost IOS support disabled")
+
+    @property
+    def mmap_support(self):
+        """
+        Returns either mmap is activated or not.
+
+        :returns: boolean
+        """
+
+        return self._mmap_support
+
+    @mmap_support.setter
+    def mmap_support(self, mmap_support):
+        """
+        Sets mmap support.
+
+        :param mmap_support: boolean
+        """
+
+        if self._mmap_support != mmap_support:
+            self._mmap_support = mmap_support
+            if mmap_support:
+                log.info("mmap support enabled")
+            else:
+                log.info("mmap support disabled")
+
+    @property
+    def sparse_memory_support(self):
+        """
+        Returns either sparse memory is activated or not.
+
+        :returns: boolean
+        """
+
+        return self._sparse_memory_support
+
+    @sparse_memory_support.setter
+    def sparse_memory_support(self, sparse_memory_support):
+        """
+        Sets sparse memory support.
+
+        :param sparse_memory_support: boolean
+        """
+
+        if self._sparse_memory_support != sparse_memory_support:
+            self._sparse_memory_support = sparse_memory_support
+            if sparse_memory_support:
+                log.info("sparse memory support enabled")
+            else:
+                log.info("sparse memory support disabled")
+
+    @property
+    def jit_sharing_support(self):
+        """
+        Returns either JIT sharing is activated or not.
+
+        :returns: boolean
+        """
+
+        return self._jit_sharing_support
+
+    @jit_sharing_support.setter
+    def jit_sharing_support(self, jit_sharing_support):
+        """
+        Sets JIT sharing support.
+
+        :param jit_sharing_support: boolean
+        """
+
+        if self._jit_sharing_support != jit_sharing_support:
+            self._jit_sharing_support = jit_sharing_support
+            if jit_sharing_support:
+                log.info("JIT sharing support enabled")
+            else:
+                log.info("JIT sharing support disabled")
+
+    @property
+    def allocate_hypervisor_per_device(self):
+        """
+        Returns either an hypervisor is created for each device.
+
+        :returns: True or False
+        """
+
+        return self._allocate_hypervisor_per_device
+
+    @allocate_hypervisor_per_device.setter
+    def allocate_hypervisor_per_device(self, value):
+        """
+        Sets if an hypervisor is created for each device.
+
+        :param value: True or False
+        """
+
+        if self._allocate_hypervisor_per_device != value:
+            self._allocate_hypervisor_per_device = value
+            if value:
+                log.info("allocating an hypervisor per device enabled")
+            else:
+                log.info("allocating an hypervisor per device disabled")
+
+    @property
     def memory_usage_limit_per_hypervisor(self):
         """
         Returns the memory usage limit per hypervisor
@@ -97,15 +356,17 @@ class HypervisorManager(object):
     @memory_usage_limit_per_hypervisor.setter
     def memory_usage_limit_per_hypervisor(self, memory_limit):
         """
-        Set the memory usage limit per hypervisor
+        Sets the memory usage limit per hypervisor
 
         :param memory_limit: memory limit value (integer)
         """
 
-        self._memory_usage_limit_per_hypervisor = memory_limit
+        if self._memory_usage_limit_per_hypervisor != memory_limit:
+            self._memory_usage_limit_per_hypervisor = memory_limit
+            log.info("memory usage limit per hypervisor set to {}".format(memory_limit))
 
     @property
-    def group_ios_per_hypervisor(self):
+    def allocate_hypervisor_per_ios_image(self):
         """
         Returns if router are grouped per hypervisor
         based on their IOS image.
@@ -113,18 +374,23 @@ class HypervisorManager(object):
         :returns: True or False
         """
 
-        return self._group_ios_per_hypervisor
+        return self._allocate_hypervisor_per_ios_image
 
-    @group_ios_per_hypervisor.setter
-    def group_ios_per_hypervisor(self, value):
+    @allocate_hypervisor_per_ios_image.setter
+    def allocate_hypervisor_per_ios_image(self, value):
         """
-        Set if router are grouped per hypervisor
+        Sets if routers are grouped per hypervisor
         based on their IOS image.
 
         :param value: True or False
         """
 
-        self._group_ios_per_hypervisor = value
+        if self._allocate_hypervisor_per_ios_image != value:
+            self._allocate_hypervisor_per_ios_image = value
+            if value:
+                log.info("allocating an hypervisor per IOS image enabled")
+            else:
+                log.info("allocating an hypervisor per IOS image disabled")
 
     def wait_for_hypervisor(self, host, port, timeout=10):
         """
@@ -172,6 +438,10 @@ class HypervisorManager(object):
         log.info("hypervisor {}:{} has successfully started".format(hypervisor.host, hypervisor.port))
 
         hypervisor.connect()
+        hypervisor.baseconsole = self._base_console_port
+        hypervisor.baseaux = self._base_aux_port
+        hypervisor.baseudp = self._current_base_udp_port
+        self._current_base_udp_port += self._udp_incrementation_per_hypervisor
         self._hypervisors.append(hypervisor)
         self._current_port += 1
         return hypervisor
@@ -187,16 +457,21 @@ class HypervisorManager(object):
         :returns: the allocated hypervisor object
         """
 
-        for hypervisor in self._hypervisors:
-            if self._group_ios_per_hypervisor and hypervisor.image_ref != router_ios_image:
-                continue
-            if (hypervisor.memory_load + router_ram) <= self._memory_usage_limit_per_hypervisor:
-                current_memory_load = hypervisor.memory_load
-                hypervisor.increase_memory_load(router_ram)
-                log.info("allocating existing hypervisor {}:{}, RAM={}+{}".format(hypervisor.host,
-                                                                                  hypervisor.port,
-                                                                                  current_memory_load,
-                                                                                  router_ram))
+        # allocate an hypervisor for each router by default
+        if not self._allocate_hypervisor_per_device:
+            for hypervisor in self._hypervisors:
+                if self._allocate_hypervisor_per_ios_image:
+                    if not hypervisor.image_ref:
+                        hypervisor.image_ref = router_ios_image
+                    elif hypervisor.image_ref != router_ios_image:
+                        continue
+                if (hypervisor.memory_load + router_ram) <= self._memory_usage_limit_per_hypervisor:
+                    current_memory_load = hypervisor.memory_load
+                    hypervisor.increase_memory_load(router_ram)
+                    log.info("allocating existing hypervisor {}:{}, RAM={}+{}".format(hypervisor.host,
+                                                                                      hypervisor.port,
+                                                                                      current_memory_load,
+                                                                                      router_ram))
                 return hypervisor
 
         hypervisor = self.start_new_hypervisor()
@@ -226,6 +501,22 @@ class HypervisorManager(object):
             hypervisor.stop()
             self._hypervisors.remove(hypervisor)
 
+    def allocate_hypervisor_for_switch(self):
+        """
+        Allocates a Dynamips hypervisor for a specific switch
+
+        :returns: the allocated hypervisor object
+        """
+
+        # For now always allocate the first hypervisor available,
+        # in the future we could randomly allocate.
+
+        if self._hypervisors:
+            return self._hypervisors[0]
+
+        # no hypervisor, let's start one!
+        return self.start_new_hypervisor()
+
     def stop_all_hypervisors(self):
         """
         Stops all hypervisors.
@@ -233,3 +524,4 @@ class HypervisorManager(object):
 
         for hypervisor in self._hypervisors:
             hypervisor.stop()
+        self._hypervisors = []

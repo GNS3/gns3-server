@@ -20,6 +20,7 @@ Represents a Dynamips hypervisor and starts/stops the associated Dynamips proces
 """
 
 import os
+import time
 import subprocess
 import logging
 
@@ -82,7 +83,7 @@ class Hypervisor(DynamipsHypervisor):
     @path.setter
     def path(self, path):
         """
-        Set the path to the Dynamips executable.
+        Sets the path to the Dynamips executable.
 
         :param path: path to Dynamips
         """
@@ -102,7 +103,7 @@ class Hypervisor(DynamipsHypervisor):
     @port.setter
     def port(self, port):
         """
-        Set the port used to start the Dynamips hypervisor.
+        Sets the port used to start the Dynamips hypervisor.
 
         :param port: port number (integer)
         """
@@ -122,7 +123,7 @@ class Hypervisor(DynamipsHypervisor):
     @host.setter
     def host(self, host):
         """
-        Set the host (binding) used to start the Dynamips hypervisor.
+        Sets the host (binding) used to start the Dynamips hypervisor.
 
         :param host: host/address (string)
         """
@@ -142,7 +143,7 @@ class Hypervisor(DynamipsHypervisor):
     @workingdir.setter
     def workingdir(self, workingdir):
         """
-        Set the working directory used to start the Dynamips hypervisor.
+        Sets the working directory used to start the Dynamips hypervisor.
 
         :param workingdir: path to a working directory
         """
@@ -163,7 +164,7 @@ class Hypervisor(DynamipsHypervisor):
     @image_ref.setter
     def image_ref(self, ios_image_name):
         """
-        Set the reference IOS image name
+        Sets the reference IOS image name
         (used by the hypervisor manager for load-balancing purposes).
 
         :param ios_image_name: image reference name
@@ -230,8 +231,13 @@ class Hypervisor(DynamipsHypervisor):
         """
 
         if self.is_running():
+            DynamipsHypervisor.stop(self)
             logger.info("Stopping Dynamips PID={}".format(self._process.pid))
+            # give some time for the hypervisor to properly stop.
+            # time to delete UNIX NIOs for instance.
+            time.sleep(0.01)
             self._process.kill()
+            self._process.wait()
 
     def read_stdout(self):
         """

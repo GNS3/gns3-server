@@ -24,7 +24,7 @@ import gns3server
 
 # command line options
 from tornado.options import define
-define("host", default="127.0.0.1", help="run on the given host/IP address", type=str)
+define("host", default="0.0.0.0", help="run on the given host/IP address", type=str)
 define("port", default=8000, help="run on the given port", type=int)
 define("ipc", default=False, help="use IPC for module communication", type=bool)
 

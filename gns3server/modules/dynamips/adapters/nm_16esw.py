@@ -29,11 +29,3 @@ class NM_16ESW(Adapter):
     def __str__(self):
 
         return "NM-16ESW"
-
-    def interface_type(self):
-
-        return "FastEthernet"
-
-    def medium(self):
-
-        return "Ethernet"

@@ -79,7 +79,7 @@ class ModuleManager(object):
                         if issubclass(module_class[1], IModule):
                             # make sure the module class has IModule as a parent
                             if module_class[1].__module__ == name:
-                                log.info("found and loading {} module".format(module_class[0].lower()))
+                                log.info("loading {} module".format(module_class[0].lower()))
                                 info = Module(name=module_class[0].lower(), cls=module_class[1])
                                 self._modules.append(info)
                 except:

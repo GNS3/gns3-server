@@ -29,11 +29,3 @@ class PA_8E(Adapter):
     def __str__(self):
 
         return "PA-8E"
-
-    def interface_type(self):
-
-        return "Ethernet"
-
-    def medium(self):
-
-        return "Ethernet"

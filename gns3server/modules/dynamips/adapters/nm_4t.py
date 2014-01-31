@@ -29,11 +29,3 @@ class NM_4T(Adapter):
     def __str__(self):
 
         return "NM-4T"
-
-    def interface_type(self):
-
-        return "Serial"
-
-    def medium(self):
-
-        return "Serial"

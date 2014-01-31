@@ -29,11 +29,3 @@ class PA_8T(Adapter):
     def __str__(self):
 
         return "PA-8T"
-
-    def interface_type(self):
-
-        return "Serial"
-
-    def medium(self):
-
-        return "Serial"

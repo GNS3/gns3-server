@@ -124,6 +124,17 @@ class Adapter(object):
 
         self._ports[port_id] = None
 
+    def get_nio(self, port_id):
+        """
+        Returns the NIO assigned to a port.
+
+        :params port_id: port ID (integer)
+
+        :returns: NIO object
+        """
+
+        return self._ports[port_id]
+
     @property
     def ports(self):
         """

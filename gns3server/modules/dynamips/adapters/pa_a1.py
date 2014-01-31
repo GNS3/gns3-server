@@ -29,11 +29,3 @@ class PA_A1(Adapter):
     def __str__(self):
 
         return "PA-A1"
-
-    def interface_type(self):
-
-        return "ATM"
-
-    def medium(self):
-
-        return "Serial"

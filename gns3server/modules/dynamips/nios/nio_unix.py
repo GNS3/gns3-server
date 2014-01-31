@@ -21,6 +21,9 @@ Interface for UNIX NIOs (Unix based OSes only).
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_UNIX(NIO):
     """
@@ -47,6 +50,18 @@ class NIO_UNIX(NIO):
         self._hypervisor.send("nio create_unix {name} {local} {remote}".format(name=self._name,
                                                                                local=local_file,
                                                                                remote=remote_file))
+
+        log.info("NIO UNIX {name} created with local file {local} and remote file {remote}".format(name=self._name,
+                                                                                                   local=local_file,
+                                                                                                   remote=remote_file))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
 
     @property
     def local_file(self):

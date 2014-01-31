@@ -29,14 +29,6 @@ class WIC_1T(object):
 
         return "WIC-1T"
 
-    def interface_type(self):
-
-        return "Serial"
-
-    def medium(self):
-
-        return "Serial"
-
     @property
     def interfaces(self):
         """

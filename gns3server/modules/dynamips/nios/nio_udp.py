@@ -21,6 +21,9 @@ Interface for UDP NIOs.
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_UDP(NIO):
     """
@@ -50,6 +53,19 @@ class NIO_UDP(NIO):
                                                                                      lport=lport,
                                                                                      rhost=rhost,
                                                                                      rport=rport))
+
+        log.info("NIO UDP {name} created with lport={lport}, rhost={rhost}, rport={rport}".format(name=self._name,
+                                                                                                  lport=lport,
+                                                                                                  rhost=rhost,
+                                                                                                  rport=rport))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
 
     @property
     def lport(self):

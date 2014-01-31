@@ -21,6 +21,9 @@ Interface for multicast NIOs.
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_Mcast(NIO):
     """
@@ -48,6 +51,18 @@ class NIO_Mcast(NIO):
         self._hypervisor.send("nio create_mcast {name} {mgroup} {mport}".format(name=self._name,
                                                                                 mgroup=group,
                                                                                 mport=port))
+
+        log.info("NIO Multicast {name} created with mgroup={group}, mport={port}".format(name=self._name,
+                                                                                         group=group,
+                                                                                         port=port))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
 
     @property
     def group(self):
@@ -82,7 +97,7 @@ class NIO_Mcast(NIO):
     @ttl.setter
     def ttl(self, ttl):
         """
-        Set the TTL for the multicast address
+        Sets the TTL for the multicast address
 
         :param ttl: TTL value
         """

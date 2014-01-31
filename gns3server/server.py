@@ -84,7 +84,7 @@ class Server(object):
         tornado_app = tornado.web.Application(self.handlers, debug=True)  # FIXME: debug mode!
         try:
             print("Starting server on port {}".format(self._port))
-            tornado_app.listen(self._port)
+            tornado_app.listen(self._port, address=self._host)
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:  # socket already in use
                 logging.critical("socket in use for port {}".format(self._port))
@@ -92,7 +92,7 @@ class Server(object):
 
         ioloop = tornado.ioloop.IOLoop.instance()
         stream = zmqstream.ZMQStream(router, ioloop)
-        stream.on_recv(JSONRPCWebSocket.dispatch_message)
+        stream.on_recv_stream(JSONRPCWebSocket.dispatch_message)
         tornado.autoreload.add_reload_hook(functools.partial(self._cleanup, stop=False))
 
         def signal_handler(signum=None, frame=None):

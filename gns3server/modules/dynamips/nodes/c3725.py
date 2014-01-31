@@ -24,6 +24,9 @@ from __future__ import unicode_literals
 from .router import Router
 from ..adapters.gt96100_fe import GT96100_FE
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class C3725(Router):
     """
@@ -33,7 +36,7 @@ class C3725(Router):
     :param name: name for this router
     """
 
-    def __init__(self, hypervisor, name):
+    def __init__(self, hypervisor, name=None):
         Router.__init__(self, hypervisor, name, platform="c3725")
 
         # Set default values for this platform
@@ -46,6 +49,26 @@ class C3725(Router):
 
         self._create_slots(3)
         self._slots[0] = GT96100_FE()
+
+    def defaults(self):
+        """
+        Returns all the default attribute values for this platform.
+
+        :returns: default values (dictionary)
+        """
+
+        router_defaults = Router.defaults(self)
+
+        platform_defaults = {"ram": self._ram,
+                             "nvram": self._nvram,
+                             "disk0": self._disk0,
+                             "disk1": self._disk1,
+                             "iomem": self._iomem,
+                             "clock_divisor": self._clock_divisor}
+
+        # update the router defaults with the platform specific defaults
+        router_defaults.update(platform_defaults)
+        return router_defaults
 
     def list(self):
         """
@@ -69,11 +92,16 @@ class C3725(Router):
     @iomem.setter
     def iomem(self, iomem):
         """
-        Set I/O memory size for this router.
+        Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
         self._hypervisor.send("c3725 set_iomem {name} {size}".format(name=self._name,
                                                                      size=iomem))
+
+        log.info("router {name} [id={id}]: I/O memory updated from {old_iomem}% to {new_iomem}%".format(name=self._name,
+                                                                                                        id=self._id,
+                                                                                                        old_iomem=self._iomem,
+                                                                                                        new_iomem=iomem))
         self._iomem = iomem

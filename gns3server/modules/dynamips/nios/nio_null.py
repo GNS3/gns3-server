@@ -21,6 +21,9 @@ Interface for dummy NIOs (mostly for tests).
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_Null(NIO):
     """
@@ -41,3 +44,12 @@ class NIO_Null(NIO):
         self._name = 'nio_null' + str(self._id)
 
         self._hypervisor.send("nio create_null {}".format(self._name))
+        log.info("NIO NULL {name} created.".format(name=self._name))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0

@@ -21,6 +21,9 @@ Interface for automatic UDP NIOs.
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_UDP_auto(NIO):
     """
@@ -48,8 +51,21 @@ class NIO_UDP_auto(NIO):
                                                                                                                       laddr=laddr,
                                                                                                                       lport_start=lport_start,
                                                                                                                       lport_end=lport_end))[0])
+
+        log.info("NIO UDP AUTO {name} created with laddr={laddr}, lport_start={start}, lport_end={end}".format(name=self._name,
+                                                                                                               laddr=laddr,
+                                                                                                               start=lport_start,
+                                                                                                               end=lport_end))
         self._raddr = None
         self._rport = None
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
 
     @property
     def laddr(self):
@@ -104,3 +120,7 @@ class NIO_UDP_auto(NIO):
                                                                                    rport=rport))
         self._raddr = raddr
         self._rport = rport
+
+        log.info("NIO UDP AUTO {name} connected to {raddr}:{rport}".format(name=self._name,
+                                                                           raddr=raddr,
+                                                                           rport=rport))

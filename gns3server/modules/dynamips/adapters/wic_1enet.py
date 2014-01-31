@@ -29,14 +29,6 @@ class WIC_1ENET(object):
 
         return "WIC-1ENET"
 
-    def interface_type(self):
-
-        return "Ethernet"
-
-    def medium(self):
-
-        return "Ethernet"
-
     @property
     def interfaces(self):
         """

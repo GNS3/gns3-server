@@ -21,6 +21,9 @@ Interface for Linux Ethernet NIOs (Linux only).
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_LinuxEthernet(NIO):
     """
@@ -44,6 +47,17 @@ class NIO_LinuxEthernet(NIO):
 
         self._hypervisor.send("nio create_linux_eth {name} {eth_device}".format(name=self._name,
                                                                                 eth_device=ethernet_device))
+
+        log.info("NIO Linux Ethernet {name} created with device {device}".format(name=self._name,
+                                                                                 device=ethernet_device))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
 
     @property
     def ethernet_device(self):

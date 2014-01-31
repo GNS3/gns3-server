@@ -29,11 +29,3 @@ class PA_2FE_TX(Adapter):
     def __str__(self):
 
         return "PA-2FE-TX"
-
-    def interface_type(self):
-
-        return "FastEthernet"
-
-    def medium(self):
-
-        return "Ethernet"

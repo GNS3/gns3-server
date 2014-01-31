@@ -15,13 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Dynamips server module.
+"""
+
 from gns3server.modules import IModule
 import gns3server.jsonrpc as jsonrpc
+
 from .hypervisor import Hypervisor
 from .hypervisor_manager import HypervisorManager
 from .dynamips_error import DynamipsError
 
-# nodes
+# Nodes
 from .nodes.router import Router
 from .nodes.c1700 import C1700
 from .nodes.c2600 import C2600
@@ -37,7 +42,7 @@ from .nodes.atm_bridge import ATMBridge
 from .nodes.frame_relay_switch import FrameRelaySwitch
 from .nodes.hub import Hub
 
-# adapters
+# Adapters
 from .adapters.c7200_io_2fe import C7200_IO_2FE
 from .adapters.c7200_io_fe import C7200_IO_FE
 from .adapters.c7200_io_ge_e import C7200_IO_GE_E
@@ -71,35 +76,188 @@ from .nios.nio_fifo import NIO_FIFO
 from .nios.nio_mcast import NIO_Mcast
 from .nios.nio_null import NIO_Null
 
+from .backends import vm
+from .backends import ethsw
+from .backends import ethhub
+from .backends import frsw
+from .backends import atmsw
 
 import logging
 log = logging.getLogger(__name__)
 
 
 class Dynamips(IModule):
+    """
+    Dynamips module.
+
+    :param name: module name
+    :param args: arguments for the module
+    :param kwargs: named arguments for the module
+    """
 
     def __init__(self, name=None, args=(), kwargs={}):
         IModule.__init__(self, name=name, args=args, kwargs=kwargs)
 
-        # start the hypervisor manager
-        #self._hypervisor_manager = HypervisorManager("/usr/bin/dynamips", "/tmp")
+        self._hypervisor_manager = None
+        self._routers = {}
+        self._ethernet_switches = {}
+        self._frame_relay_switches = {}
+        self._atm_switches = {}
+        self._ethernet_hubs = {}
+
+#     def __del__(self):
+# 
+#         self._hypervisor_manager.stop_all_hypervisors()
+
+    @IModule.route("dynamips.reset")
+    def reset(self, request):
+        """
+        Resets the module.
+
+        :param request: JSON request
+        """
+
+        # stop all Dynamips hypervisors
+        self._hypervisor_manager.stop_all_hypervisors()
+
+        # resets the instance counters
+        Router.reset()
+        EthernetSwitch.reset()
+        Hub.reset()
+        FrameRelaySwitch.reset()
+        ATMSwitch.reset()
+        NIO_UDP.reset()
+        NIO_UDP_auto.reset()
+        NIO_UNIX.reset()
+        NIO_VDE.reset()
+        NIO_TAP.reset()
+        NIO_GenericEthernet.reset()
+        NIO_LinuxEthernet.reset()
+        NIO_FIFO.reset()
+        NIO_Mcast.reset()
+        NIO_Null.reset()
+
+        self._routers.clear()
+        self._ethernet_switches.clear()
+        self._frame_relay_switches.clear()
+        self._atm_switches.clear()
+
+        log.info("dynamips module has been reset")
+
+    @IModule.route("dynamips.settings")
+    def settings(self, request):
+        """
+        Set or update settings.
+
+        :param request: JSON request
+        """
+
+        print("Create")
+        if not self._hypervisor_manager:
+            self._hypervisor_manager = HypervisorManager(request["path"], "/tmp")
+
+        for name, value in request.items():
+            if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:
+                setattr(self._hypervisor_manager, name, value)
 
     @IModule.route("dynamips.echo")
     def echo(self, request):
+        """
+        Echo end point for testing purposes.
+
+        :param request: JSON request
+        """
+
         if request == None:
             self.send_param_error()
-            return
-        log.debug("received request {}".format(request))
-        self.send_response(request)
+        else:
+            log.debug("received request {}".format(request))
+            self.send_response(request)
 
-    @IModule.route("dynamips.create_vm")
-    def create_vm(self, request):
-        print("Create VM!")
-        log.debug("received request {}".format(request))
-        self.send_response(request)
+    def create_nio(self, node, request):
 
-    @IModule.route("dynamips.start_vm")
-    def start_vm(self, request):
-        print("Start VM!")
-        log.debug("received request {}".format(request))
-        self.send_response(request)
+        nio = None
+        if request["nio"] == "NIO_UDP":
+            lport = request["lport"]
+            rhost = request["rhost"]
+            rport = request["rport"]
+            nio = NIO_UDP(node.hypervisor, lport, rhost, rport)
+        elif request["nio"] == "NIO_GenericEthernet":
+            ethernet_device = request["ethernet_device"]
+            nio = NIO_GenericEthernet(node.hypervisor, ethernet_device)
+        elif request["nio"] == "NIO_LinuxEthernet":
+            ethernet_device = request["ethernet_device"]
+            nio = NIO_LinuxEthernet(node.hypervisor, ethernet_device)
+        elif request["nio"] == "NIO_TAP":
+            tap_device = request["tap_device"]
+            nio = NIO_TAP(node.hypervisor, tap_device)
+        elif request["nio"] == "NIO_UNIX":
+            local_file = request["local_file"]
+            remote_file = request["remote_file"]
+            nio = NIO_UNIX(node.hypervisor, local_file, remote_file)
+        elif request["nio"] == "NIO_VDE":
+            control_file = request["control_file"]
+            local_file = request["local_file"]
+            nio = NIO_VDE(node.hypervisor, control_file, local_file)
+        elif request["nio"] == "NIO_Null":
+            nio = NIO_Null(node.hypervisor)
+        return nio
+
+    def allocate_udp_port(self, node):
+        """
+        Allocates a UDP port in order to create an UDP NIO.
+
+        :param node: the node that needs to allocate an UDP port
+        """
+
+        port = node.hypervisor.allocate_udp_port()
+        host = node.hypervisor.host
+
+        log.info("{} [id={}] has allocated UDP port {} with host {}".format(node.name,
+                                                                            node.id,
+                                                                            port,
+                                                                            host))
+        response = {"lport": port,
+                    "lhost": host}
+
+        return response
+
+    def set_ghost_ios(self, router):
+
+        if not router.mmap:
+            raise DynamipsError("mmap support is required to enable ghost IOS support")
+
+        ghost_instance = router.formatted_ghost_file()
+        all_ghosts = []
+
+        # search of an existing ghost instance across all hypervisors
+        for hypervisor in self._hypervisor_manager.hypervisors:
+            all_ghosts.extend(hypervisor.ghosts)
+
+        if ghost_instance not in all_ghosts:
+            # create a new ghost IOS instance
+            ghost = Router(router.hypervisor, "ghost-" + ghost_instance, router.platform, ghost_flag=True)
+            ghost.image = router.image
+            # for 7200s, the NPE must be set when using an NPE-G2.
+            if router.platform == "c7200":
+                ghost.npe = router.npe
+            ghost.ghost_status = 1
+            ghost.ghost_file = ghost_instance
+            ghost.ram = router.ram
+            ghost.start()
+            ghost.stop()
+            ghost.delete()
+
+        router.ghost_status = 2
+        router.ghost_file = ghost_instance
+
+    @IModule.route("dynamips.nio.get_interfaces")
+    def nio_get_interfaces(self, request):
+        """
+        Get all the network interfaces on this host.
+
+        :param request: JSON request
+        """
+
+        import netifaces
+        self.send_response(netifaces.interfaces())

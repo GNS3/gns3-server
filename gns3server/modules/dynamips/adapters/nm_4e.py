@@ -29,11 +29,3 @@ class NM_4E(Adapter):
     def __str__(self):
 
         return "NM-4E"
-
-    def interface_type(self):
-
-        return "Ethernet"
-
-    def medium(self):
-
-        return "Ethernet"

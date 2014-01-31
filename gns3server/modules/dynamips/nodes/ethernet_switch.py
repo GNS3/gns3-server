@@ -24,6 +24,9 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class EthernetSwitch(object):
     """
@@ -33,14 +36,46 @@ class EthernetSwitch(object):
     :param name: name for this switch
     """
 
-    def __init__(self, hypervisor, name):
+    _instance_count = 1
+
+    def __init__(self, hypervisor, name=None):
+
+        # create an unique ID
+        self._id = EthernetSwitch._instance_count
+        EthernetSwitch._instance_count += 1
+
+        # let's create a unique name if none has been chosen
+        if not name:
+            name = "SW" + str(self._id)
 
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("ethsw create {}".format(self._name))
+
+        log.info("Ethernet switch {name} [id={id}] has been created".format(name=self._name,
+                                                                            id=self._id))
+
         self._hypervisor.devices.append(self)
         self._nios = {}
         self._mapping = {}
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 1
+
+    @property
+    def id(self):
+        """
+        Returns the unique ID for this Ethernet switch.
+
+        :returns: id (integer)
+        """
+
+        return self._id
 
     @property
     def name(self):
@@ -101,6 +136,11 @@ class EthernetSwitch(object):
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("ethsw rename {name} {new_name}".format(name=self._name,
                                                                       new_name=new_name))
+
+        log.info("Ethernet switch {name} [id={id}]: renamed to {new_name}".format(name=self._name,
+                                                                                  id=self._id,
+                                                                                  new_name=new_name))
+
         self._name = new_name
 
     def delete(self):
@@ -109,6 +149,9 @@ class EthernetSwitch(object):
         """
 
         self._hypervisor.send("ethsw delete {}".format(self._name))
+
+        log.info("Ethernet switch {name} [id={id}] has been deleted".format(name=self._name,
+                                                                            id=self._id))
         self._hypervisor.devices.remove(self)
 
     def add_nio(self, nio, port):
@@ -124,6 +167,11 @@ class EthernetSwitch(object):
 
         self._hypervisor.send("ethsw add_nio {name} {nio}".format(name=self._name,
                                                                   nio=nio))
+
+        log.info("Ethernet switch {name} [id={id}]: NIO {nio} bound to port {port}".format(name=self._name,
+                                                                                           id=self._id,
+                                                                                           nio=nio,
+                                                                                           port=port))
         self._nios[port] = nio
 
     def remove_nio(self, port):
@@ -131,6 +179,8 @@ class EthernetSwitch(object):
         Removes the specified NIO as member of this Ethernet switch.
 
         :param port: allocated port
+
+        :returns: the NIO that was bound to the port
         """
 
         if port not in self._nios:
@@ -139,14 +189,22 @@ class EthernetSwitch(object):
         nio = self._nios[port]
         self._hypervisor.send("ethsw remove_nio {name} {nio}".format(name=self._name,
                                                                      nio=nio))
+
+        log.info("Ethernet switch {name} [id={id}]: NIO {nio} removed from port {port}".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               nio=nio,
+                                                                                               port=port))
+
         del self._nios[port]
 
         if port in self._mapping:
             del self._mapping[port]
 
+        return nio
+
     def set_access_port(self, port, vlan_id):
         """
-        Set the specified port as an ACCESS port.
+        Sets the specified port as an ACCESS port.
 
         :param port: allocated port
         :param vlan_id: VLAN number membership
@@ -159,11 +217,16 @@ class EthernetSwitch(object):
         self._hypervisor.send("ethsw set_access_port {name} {nio} {vlan_id}".format(name=self._name,
                                                                                     nio=nio,
                                                                                     vlan_id=vlan_id))
+
+        log.info("Ethernet switch {name} [id={id}]: port {port} set as an access port in VLAN {vlan_id}".format(name=self._name,
+                                                                                                                id=self._id,
+                                                                                                                port=port,
+                                                                                                                vlan_id=vlan_id))
         self._mapping[port] = ("access", vlan_id)
 
     def set_dot1q_port(self, port, native_vlan):
         """
-        Set the specified port as a 802.1Q trunk port.
+        Sets the specified port as a 802.1Q trunk port.
 
         :param port: allocated port
         :param native_vlan: native VLAN for this trunk port
@@ -176,11 +239,17 @@ class EthernetSwitch(object):
         self._hypervisor.send("ethsw set_dot1q_port {name} {nio} {native_vlan}".format(name=self._name,
                                                                                        nio=nio,
                                                                                        native_vlan=native_vlan))
+
+        log.info("Ethernet switch {name} [id={id}]: port {port} set as a 802.1Q port with native VLAN {vlan_id}".format(name=self._name,
+                                                                                                                        id=self._id,
+                                                                                                                        port=port,
+                                                                                                                        vlan_id=native_vlan))
+
         self._mapping[port] = ("dot1q", native_vlan)
 
     def set_qinq_port(self, port, outer_vlan):
         """
-        Set the specified port as a trunk (QinQ) port.
+        Sets the specified port as a trunk (QinQ) port.
 
         :param port: allocated port
         :param outer_vlan: outer VLAN (transport VLAN) for this QinQ port
@@ -193,6 +262,11 @@ class EthernetSwitch(object):
         self._hypervisor.send("ethsw set_qinq_port {name} {nio} {outer_vlan}".format(name=self._name,
                                                                                      nio=nio,
                                                                                      outer_vlan=outer_vlan))
+
+        log.info("Ethernet switch {name} [id={id}]: port {port} set as a QinQ port with outer VLAN {vlan_id}".format(name=self._name,
+                                                                                                                       id=self._id,
+                                                                                                                       port=port,
+                                                                                                                       vlan_id=outer_vlan))
         self._mapping[port] = ("qinq", outer_vlan)
 
     def get_mac_addr_table(self):

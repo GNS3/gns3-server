@@ -29,11 +29,3 @@ class PA_POS_OC3(Adapter):
     def __str__(self):
 
         return "PA-POS-OC3"
-
-    def interface_type(self):
-
-        return "POS"
-
-    def medium(self):
-
-        return "SONET"

@@ -20,12 +20,14 @@ Interface for Dynamips virtual Cisco 7200 instances module ("c7200")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L294
 """
 
-
 from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
 from .router import Router
 from ..adapters.c7200_io_2fe import C7200_IO_2FE
 from ..adapters.c7200_io_ge_e import C7200_IO_GE_E
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class C7200(Router):
@@ -37,7 +39,7 @@ class C7200(Router):
     :param npe: default NPE
     """
 
-    def __init__(self, hypervisor, name, npe="npe-400"):
+    def __init__(self, hypervisor, name=None, npe="npe-400"):
         Router.__init__(self, hypervisor, name, platform="c7200")
 
         # Set default values for this platform
@@ -70,6 +72,27 @@ class C7200(Router):
         else:
             self._slots[0] = C7200_IO_2FE()
 
+    def defaults(self):
+        """
+        Returns all the default attribute values for this platform.
+
+        :returns: default values (dictionary)
+        """
+
+        router_defaults = Router.defaults(self)
+
+        platform_defaults = {"ram": self._ram,
+                             "nvram": self._nvram,
+                             "disk0": self._disk0,
+                             "disk1": self._disk1,
+                             "npe": self._npe,
+                             "midplane": self._midplane,
+                             "clock_divisor": self._clock_divisor}
+
+        # update the router defaults with the platform specific defaults
+        router_defaults.update(platform_defaults)
+        return router_defaults
+
     def list(self):
         """
         Returns all c7200 instances.
@@ -92,7 +115,7 @@ class C7200(Router):
     @npe.setter
     def npe(self, npe):
         """
-        Set the NPE model.
+        Sets the NPE model.
 
         :params npe: NPE model string (e.g. "npe-200")
         NPE models are npe-100, npe-150, npe-175, npe-200,
@@ -104,6 +127,11 @@ class C7200(Router):
 
         self._hypervisor.send("c7200 set_npe {name} {npe}".format(name=self._name,
                                                                   npe=npe))
+
+        log.info("router {name} [id={id}]: NPE updated from {old_npe} to {new_npe}".format(name=self._name,
+                                                                                           id=self._id,
+                                                                                           old_npe=self._npe,
+                                                                                           new_npe=npe))
         self._npe = npe
 
     @property
@@ -119,13 +147,18 @@ class C7200(Router):
     @midplane.setter
     def midplane(self, midplane):
         """
-        Set the midplane model.
+        Sets the midplane model.
 
         :returns: midplane model string (e.g. "vxr" or "std")
         """
 
         self._hypervisor.send("c7200 set_midplane {name} {midplane}".format(name=self._name,
                                                                             midplane=midplane))
+
+        log.info("router {name} [id={id}]: midplane updated from {old_midplane} to {new_midplane}".format(name=self._name,
+                                                                                                          id=self._id,
+                                                                                                          old_midplane=self._midplane,
+                                                                                                          new_midplane=midplane))
         self._midplane = midplane
 
     @property
@@ -141,7 +174,7 @@ class C7200(Router):
     @sensors.setter
     def sensors(self, sensors):
         """
-        Set the 4 sensors with temperature in degree Celcius.
+        Sets the 4 sensors with temperature in degree Celcius.
 
         :param sensors: list of 4 sensor temperatures corresponding to
         sensor 1 = I/0 controller inlet
@@ -156,6 +189,13 @@ class C7200(Router):
             self._hypervisor.send("c7200 set_temp_sensor {name} {sensor_id} {temp}".format(name=self._name,
                                                                                            sensor_id=sensor_id,
                                                                                            temp=sensor))
+
+            log.info("router {name} [id={id}]: sensor {sensor_id} temperature updated from {old_temp}C to {new_temp}C".format(name=self._name,
+                                                                                                                              id=self._id,
+                                                                                                                              sensor_id=sensor_id,
+                                                                                                                              old_temp=self._sensors[sensor_id],
+                                                                                                                              new_temp=sensors[sensor_id]))
+
             sensor_id += 1
         self._sensors = sensors
 
@@ -172,7 +212,7 @@ class C7200(Router):
     @power_supplies.setter
     def power_supplies(self, power_supplies):
         """
-        Set the 2 power supplies with 0 = off, 1 = on.
+        Sets the 2 power supplies with 0 = off, 1 = on.
 
         :param power_supplies: list of 2 power supplies.
         Example: [1, 0] = first power supply is on, second is off.
@@ -183,5 +223,11 @@ class C7200(Router):
             self._hypervisor.send("c7200 set_power_supply {name} {power_supply_id} {powered_on}".format(name=self._name,
                                                                                                         power_supply_id=power_supply_id,
                                                                                                         powered_on=power_supply))
+
+            log.info("router {name} [id={id}]: power supply {power_supply_id} state updated to {powered_on}".format(name=self._name,
+                                                                                                                            id=self._id,
+                                                                                                                            power_supply_id=power_supply_id,
+                                                                                                                            powered_on=power_supply))
             power_supply_id += 1
+
         self._power_supplies = power_supplies

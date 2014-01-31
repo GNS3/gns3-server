@@ -25,6 +25,9 @@ from .router import Router
 from ..adapters.c1700_mb_1fe import C1700_MB_1FE
 from ..adapters.c1700_mb_wic1 import C1700_MB_WIC1
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class C1700(Router):
     """
@@ -37,7 +40,7 @@ class C1700(Router):
     1710 is not supported.
     """
 
-    def __init__(self, hypervisor, name, chassis="1720"):
+    def __init__(self, hypervisor, name=None, chassis="1720"):
         Router.__init__(self, hypervisor, name, platform="c1700")
 
         # Set default values for this platform
@@ -54,6 +57,27 @@ class C1700(Router):
 
         self._setup_chassis()
 
+    def defaults(self):
+        """
+        Returns all the default attribute values for this platform.
+
+        :returns: default values (dictionary)
+        """
+
+        router_defaults = Router.defaults(self)
+
+        platform_defaults = {"ram": self._ram,
+                             "nvram": self._nvram,
+                             "disk0": self._disk0,
+                             "disk1": self._disk1,
+                             "chassis": self._chassis,
+                             "iomem": self._iomem,
+                             "clock_divisor": self._clock_divisor}
+
+        # update the router defaults with the platform specific defaults
+        router_defaults.update(platform_defaults)
+        return router_defaults
+
     def list(self):
         """
         Returns all c1700 instances
@@ -65,7 +89,7 @@ class C1700(Router):
 
     def _setup_chassis(self):
         """
-        Set up the router with the corresponding chassis
+        Sets up the router with the corresponding chassis
         (create slots and insert default adapters).
         """
 
@@ -91,7 +115,7 @@ class C1700(Router):
     @chassis.setter
     def chassis(self, chassis):
         """
-        Set the chassis.
+        Sets the chassis.
 
         :param: chassis string:
         1720, 1721, 1750, 1751 or 1760
@@ -99,6 +123,11 @@ class C1700(Router):
 
         self._hypervisor.send("c1700 set_chassis {name} {chassis}".format(name=self._name,
                                                                           chassis=chassis))
+
+        log.info("router {name} [id={id}]: chassis set to {chassis}".format(name=self._name,
+                                                                            id=self._id,
+                                                                            chassis=chassis))
+
         self._chassis = chassis
         self._setup_chassis()
 
@@ -115,11 +144,16 @@ class C1700(Router):
     @iomem.setter
     def iomem(self, iomem):
         """
-        Set I/O memory size for this router.
+        Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
         self._hypervisor.send("c1700 set_iomem {name} {size}".format(name=self._name,
                                                                      size=iomem))
+
+        log.info("router {name} [id={id}]: I/O memory updated from {old_iomem}% to {new_iomem}%".format(name=self._name,
+                                                                                                        id=self._id,
+                                                                                                        old_iomem=self._iomem,
+                                                                                                        new_iomem=iomem))
         self._iomem = iomem

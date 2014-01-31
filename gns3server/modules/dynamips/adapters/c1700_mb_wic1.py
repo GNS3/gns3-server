@@ -29,16 +29,8 @@ class C1700_MB_WIC1(Adapter):
 
     def __str__(self):
 
-        return "C1700_MB_WIC1"
+        return "C1700-MB-WIC1"
 
     def removable(self):
 
         return False
-
-    def interface_type(self):
-
-        return "N/A"
-
-    def medium(self):
-
-        return "N/A"

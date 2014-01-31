@@ -36,7 +36,7 @@ class JSONRPC(AsyncTestCase):
 
     def test_request_with_invalid_version(self):
 
-        request = {"jsonrpc": "1.0", "method": "dynamips.echo", "id": 1}
+        request = {"jsonrpc": 1.0, "method": "dynamips.echo", "id": 1}
         AsyncWSRequest(self.URL, self.io_loop, self.stop, json_encode(request))
         response = self.wait()
         json_response = json_decode(response)

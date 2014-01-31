@@ -92,6 +92,10 @@ class IModule(multiprocessing.Process):
             stream.on_recv(callback)
         return stream
 
+#     def add_periodic_callback(self, callback, time):
+# 
+#         self.test = zmq.eventloop.ioloop.PeriodicCallback(callback, time, self._ioloop).start()
+
     def run(self):
         """
         Starts the event loop
@@ -158,9 +162,9 @@ class IModule(multiprocessing.Process):
 
         # add session to the response
         response = [self._current_session, jsonrpc_response]
-        log.info("ZeroMQ client ({}) sending JSON-RPC custom error {} for call id {}".format(self.name,
-                                                                                             message,
-                                                                                             self._current_call_id))
+        log.info("ZeroMQ client ({}) sending JSON-RPC custom error: {} for call id {}".format(self.name,
+                                                                                              message,
+                                                                                              self._current_call_id))
         self._stream.send_json(response)
 
     def _decode_request(self, request):
@@ -188,7 +192,12 @@ class IModule(multiprocessing.Process):
             return
 
         log.debug("Routing request to {}: {}".format(destination, request[1]))
-        self.destination[destination](self, params)
+
+        try:
+            self.destination[destination](self, params)
+        except Exception as e:
+            log.error("uncaught exception {type}".format(type=type(e)), exc_info=1)
+            self.send_custom_error("uncaught exception {type}: {string}".format(type=type(e), string=str(e)))
 
     def destinations(self):
         """

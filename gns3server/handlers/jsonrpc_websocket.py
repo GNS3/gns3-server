@@ -23,7 +23,7 @@ import zmq
 import uuid
 import tornado.websocket
 from tornado.escape import json_decode
-from ..jsonrpc import JSONRPCParseError, JSONRPCInvalidRequest, JSONRPCMethodNotFound
+from ..jsonrpc import JSONRPCParseError, JSONRPCInvalidRequest, JSONRPCMethodNotFound, JSONRPCNotification
 
 import logging
 log = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         return self._session_id
 
     @classmethod
-    def dispatch_message(cls, message):
+    def dispatch_message(cls, stream, message):
         """
         Sends a message to Websocket client
 
@@ -71,7 +71,13 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
 
         # ZMQ responses are encoded in JSON
         # format is a JSON array: [session ID, JSON-RPC response]
-        json_message = json_decode(message[1])
+        try:
+            json_message = json_decode(message[1])
+        except ValueError as e:
+            stream.send_string("Cannot decode message!")
+            log.critical("Couldn't decode message: {}".format(e))
+            return
+
         session_id = json_message[0]
         jsonrpc_response = json_message[1]
 
@@ -94,8 +100,8 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         # Make sure the destination is not already registered
         # by another module for instance
         assert destination not in cls.destinations
-        log.info("registering {} as a destination for {}".format(destination,
-                                                                 module))
+        log.debug("registering {} as a destination for the {} module".format(destination,
+                                                                            module))
         cls.destinations[destination] = module
 
     def open(self):
@@ -119,8 +125,8 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
             request = json_decode(message)
             jsonrpc_version = request["jsonrpc"]
             method = request["method"]
-            # warning: notifications cannot be sent by a client because check for an "id" here
-            request_id = request["id"]
+            # This is a JSON-RPC notification if request_id is None
+            request_id = request.get("id")
         except:
             return self.write_message(JSONRPCParseError()())
 
@@ -128,7 +134,11 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
             return self.write_message(JSONRPCInvalidRequest()())
 
         if method not in self.destinations:
-            return self.write_message(JSONRPCMethodNotFound(request_id)())
+            if request_id:
+                return self.write_message(JSONRPCMethodNotFound(request_id)())
+            else:
+                # This is a notification, silently ignore this error...
+                return
 
         module = self.destinations[method]
         # ZMQ requests are encoded in JSON
@@ -136,7 +146,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         zmq_request = [self.session_id, request]
         # Route to the correct module
         self.zmq_router.send_string(module, zmq.SNDMORE)
-        # Send the encoded JSON request
+        # Send the JSON request
         self.zmq_router.send_json(zmq_request)
 
     def on_close(self):
@@ -146,3 +156,14 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
 
         log.info("Websocket client {} disconnected".format(self.session_id))
         self.clients.remove(self)
+
+        # Reset the modules if there are no clients anymore
+        # Modules must implement a reset destination
+        if not self.clients:
+            for destination, module in self.destinations.items():
+                if destination.endswith("reset"):
+                    # Route to the correct module
+                    self.zmq_router.send_string(module, zmq.SNDMORE)
+                    # Send the JSON request
+                    notification = JSONRPCNotification(destination)()
+                    self.zmq_router.send_json([self.session_id, notification])

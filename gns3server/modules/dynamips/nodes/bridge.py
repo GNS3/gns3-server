@@ -88,6 +88,7 @@ class Bridge(object):
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("nio_bridge rename {name} {new_name}".format(name=self._name,
                                                                            new_name=new_name))
+
         self._name = new_name
 
     def delete(self):

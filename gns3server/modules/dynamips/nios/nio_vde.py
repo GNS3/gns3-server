@@ -21,6 +21,9 @@ Interface for VDE (Virtual Distributed Ethernet) NIOs (Unix based OSes only).
 
 from .nio import NIO
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NIO_VDE(NIO):
     """
@@ -47,6 +50,18 @@ class NIO_VDE(NIO):
         self._hypervisor.send("nio create_vde {name} {control} {local}".format(name=self._name,
                                                                                control=control_file,
                                                                                local=local_file))
+
+        log.info("NIO VDE {name} created with control={control}, local={local}".format(name=self._name,
+                                                                                       control=control_file,
+                                                                                       local=local_file))
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 0
 
     @property
     def control_file(self):

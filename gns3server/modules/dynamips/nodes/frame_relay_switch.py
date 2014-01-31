@@ -23,6 +23,9 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L642
 from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class FrameRelaySwitch(object):
     """
@@ -32,14 +35,46 @@ class FrameRelaySwitch(object):
     :param name: name for this switch
     """
 
-    def __init__(self, hypervisor, name):
+    _instance_count = 1
+
+    def __init__(self, hypervisor, name=None):
+
+        # create an unique ID
+        self._id = FrameRelaySwitch._instance_count
+        FrameRelaySwitch._instance_count += 1
+
+        # let's create a unique name if none has been chosen
+        if not name:
+            name = "FR" + str(self._id)
 
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("frsw create {}".format(self._name))
+
+        log.info("Frame Relay switch {name} [id={id}] has been created".format(name=self._name,
+                                                                               id=self._id))
+
         self._hypervisor.devices.append(self)
         self._nios = {}
         self._mapping = {}
+
+    @classmethod
+    def reset(cls):
+        """
+        Reset the instance count.
+        """
+
+        cls._instance_count = 1
+
+    @property
+    def id(self):
+        """
+        Returns the unique ID for this Frame Relay switch.
+
+        :returns: id (integer)
+        """
+
+        return self._id
 
     @property
     def name(self):
@@ -100,6 +135,11 @@ class FrameRelaySwitch(object):
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("frsw rename {name} {new_name}".format(name=self._name,
                                                                      new_name=new_name))
+
+        log.info("Frame Relay switch {name} [id={id}]: renamed to {new_name}".format(name=self._name,
+                                                                                     id=self._id,
+                                                                                     new_name=new_name))
+
         self._name = new_name
 
     def delete(self):
@@ -108,7 +148,21 @@ class FrameRelaySwitch(object):
         """
 
         self._hypervisor.send("frsw delete {}".format(self._name))
+
+        log.info("Frame Relay switch {name} [id={id}] has been deleted".format(name=self._name,
+                                                                               id=self._id))
         self._hypervisor.devices.remove(self)
+
+    def has_port(self, port):
+        """
+        Checks if a port exists on this Frame Relay switch.
+
+        :returns: boolean
+        """
+
+        if port in self._nios:
+            return True
+        return False
 
     def add_nio(self, nio, port):
         """
@@ -121,6 +175,11 @@ class FrameRelaySwitch(object):
         if port in self._nios:
             raise DynamipsError("Port {} isn't free".format(port))
 
+        log.info("Frame Relay switch {name} [id={id}]: NIO {nio} bound to port {port}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              nio=nio,
+                                                                                              port=port))
+
         self._nios[port] = nio
 
     def remove_nio(self, port):
@@ -128,12 +187,21 @@ class FrameRelaySwitch(object):
         Removes the specified NIO as member of this Frame Relay switch.
 
         :param port: allocated port
+
+        :returns: the NIO that was bound to the allocated port
         """
 
         if port not in self._nios:
             raise DynamipsError("Port {} is not allocated".format(port))
 
+        nio = self._nios[port]
+        log.info("Frame Relay switch {name} [id={id}]: NIO {nio} removed from port {port}".format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  nio=nio,
+                                                                                                  port=port))
+
         del self._nios[port]
+        return nio
 
     def map_vc(self, port1, dlci1, port2, dlci2):
         """
@@ -159,6 +227,14 @@ class FrameRelaySwitch(object):
                                                                                                                  input_dlci=dlci1,
                                                                                                                  output_nio=nio2,
                                                                                                                  output_dlci=dlci2))
+
+        log.info("Frame Relay switch {name} [id={id}]: VC from port {port1} DLCI {dlci1} to port {port2} DLCI {dlci2} created".format(name=self._name,
+                                                                                                                                      id=self._id,
+                                                                                                                                      port1=port1,
+                                                                                                                                      dlci1=dlci1,
+                                                                                                                                      port2=port2,
+                                                                                                                                      dlci2=dlci2))
+
         self._mapping[(port1, dlci1)] = (port2, dlci2)
 
     def unmap_vc(self, port1, dlci1, port2, dlci2):
@@ -185,4 +261,11 @@ class FrameRelaySwitch(object):
                                                                                                                  input_dlci=dlci1,
                                                                                                                  output_nio=nio2,
                                                                                                                  output_dlci=dlci2))
+
+        log.info("Frame Relay switch {name} [id={id}]: VC from port {port1} DLCI {dlci1} to port {port2} DLCI {dlci2} deleted".format(name=self._name,
+                                                                                                                                      id=self._id,
+                                                                                                                                      port1=port1,
+                                                                                                                                      dlci1=dlci1,
+                                                                                                                                      port2=port2,
+                                                                                                                                      dlci2=dlci2))
         del self._mapping[(port1, dlci1)]

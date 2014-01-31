@@ -27,6 +27,9 @@ from ..adapters.c2600_mb_2e import C2600_MB_2E
 from ..adapters.c2600_mb_1fe import C2600_MB_1FE
 from ..adapters.c2600_mb_2fe import C2600_MB_2FE
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class C2600(Router):
     """
@@ -52,7 +55,7 @@ class C2600(Router):
                            '2650XM': C2600_MB_1FE,
                            '2651XM': C2600_MB_2FE}
 
-    def __init__(self, hypervisor, name, chassis="2610"):
+    def __init__(self, hypervisor, name=None, chassis="2610"):
         Router.__init__(self, hypervisor, name, platform="c2600")
 
         # Set default values for this platform
@@ -69,6 +72,27 @@ class C2600(Router):
 
         self._setup_chassis()
 
+    def defaults(self):
+        """
+        Returns all the default attribute values for this platform.
+
+        :returns: default values (dictionary)
+        """
+
+        router_defaults = Router.defaults(self)
+
+        platform_defaults = {"ram": self._ram,
+                             "nvram": self._nvram,
+                             "disk0": self._disk0,
+                             "disk1": self._disk1,
+                             "iomem": self._iomem,
+                             "chassis": self._chassis,
+                             "clock_divisor": self._clock_divisor}
+
+        # update the router defaults with the platform specific defaults
+        router_defaults.update(platform_defaults)
+        return router_defaults
+
     def list(self):
         """
         Returns all c2600 instances
@@ -80,7 +104,7 @@ class C2600(Router):
 
     def _setup_chassis(self):
         """
-        Set up the router with the corresponding chassis
+        Sets up the router with the corresponding chassis
         (create slots and insert default adapters).
         """
 
@@ -100,7 +124,7 @@ class C2600(Router):
     @chassis.setter
     def chassis(self, chassis):
         """
-        Set the chassis.
+        Sets the chassis.
 
         :param: chassis string:
         2610, 2611, 2620, 2621, 2610XM, 2611XM
@@ -109,6 +133,10 @@ class C2600(Router):
 
         self._hypervisor.send("c2600 set_chassis {name} {chassis}".format(name=self._name,
                                                                           chassis=chassis))
+
+        log.info("router {name} [id={id}]: chassis set to {chassis}".format(name=self._name,
+                                                                            id=self._id,
+                                                                            chassis=chassis))
         self._chassis = chassis
         self._setup_chassis()
 
@@ -125,11 +153,16 @@ class C2600(Router):
     @iomem.setter
     def iomem(self, iomem):
         """
-        Set I/O memory size for this router.
+        Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
         self._hypervisor.send("c2600 set_iomem {name} {size}".format(name=self._name,
                                                                      size=iomem))
+
+        log.info("router {name} [id={id}]: I/O memory updated from {old_iomem}% to {new_iomem}%".format(name=self._name,
+                                                                                                        id=self._id,
+                                                                                                        old_iomem=self._iomem,
+                                                                                                        new_iomem=iomem))
         self._iomem = iomem

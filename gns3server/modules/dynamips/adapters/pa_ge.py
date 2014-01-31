@@ -29,11 +29,3 @@ class PA_GE(Adapter):
     def __str__(self):
 
         return "PA-GE"
-
-    def interface_type(self):
-
-        return "GigabitEthernet"
-
-    def medium(self):
-
-        return "Ethernet"
