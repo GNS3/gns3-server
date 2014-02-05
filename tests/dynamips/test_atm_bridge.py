@@ -19,7 +19,7 @@ def test_atm_bridge_exists(atm_bridge):
 
 def test_rename_atm_bridge(atm_bridge):
 
-    atm_bridge.rename("new ATM bridge")
+    atm_bridge.name = "new ATM bridge"
     assert atm_bridge.name == "new ATM bridge"
 
 

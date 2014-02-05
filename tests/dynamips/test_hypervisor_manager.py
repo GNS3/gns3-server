@@ -11,6 +11,7 @@ def hypervisor_manager(request):
     dynamips_path = os.path.join(cwd, "dynamips.stable")
     print("\nStarting Dynamips Hypervisor: {}".format(dynamips_path))
     manager = HypervisorManager(dynamips_path, "/tmp", "127.0.0.1", 9000)
+
     #manager.start_new_hypervisor()
 
     def stop():
@@ -23,6 +24,7 @@ def hypervisor_manager(request):
 
 def test_allocate_hypervisor_for_router(hypervisor_manager):
 
+    hypervisor_manager.allocate_hypervisor_per_device = False
     # default of 1GB of RAM per hypervisor instance
     assert hypervisor_manager.memory_usage_limit_per_hypervisor == 1024
     hypervisor = hypervisor_manager.allocate_hypervisor_for_router("c3725.image", 512)

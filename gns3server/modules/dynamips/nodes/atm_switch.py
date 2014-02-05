@@ -86,6 +86,24 @@ class ATMSwitch(object):
 
         return self._name[1:-1]  # remove quotes
 
+    @name.setter
+    def name(self, new_name):
+        """
+        Renames this ATM switch.
+
+        :param new_name: New name for this switch
+        """
+
+        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
+        self._hypervisor.send("atmsw rename {name} {new_name}".format(name=self._name,
+                                                                      new_name=new_name))
+
+        log.info("ATM switch {name} [id={id}]: renamed to {new_name}".format(name=self._name,
+                                                                             id=self._id,
+                                                                             new_name=new_name))
+
+        self._name = new_name
+
     @property
     def hypervisor(self):
         """
@@ -124,23 +142,6 @@ class ATMSwitch(object):
         """
 
         return self._mapping
-
-    def rename(self, new_name):
-        """
-        Renames this ATM switch.
-
-        :param new_name: New name for this switch
-        """
-
-        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
-        self._hypervisor.send("atmsw rename {name} {new_name}".format(name=self._name,
-                                                                      new_name=new_name))
-
-        log.info("ATM switch {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                             id=self._id,
-                                                                             new_name=new_name))
-
-        self._name = new_name
 
     def delete(self):
         """

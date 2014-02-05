@@ -19,7 +19,7 @@ def test_ethsw_exists(ethsw):
 
 def test_rename_ethsw(ethsw):
 
-    ethsw.rename("new Ethernet switch")
+    ethsw.name = "new Ethernet switch"
     assert ethsw.name == "new Ethernet switch"
 
 

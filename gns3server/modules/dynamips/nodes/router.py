@@ -163,6 +163,24 @@ class Router(object):
 
         return self._name[1:-1]  # remove quotes
 
+    @name.setter
+    def name(self, new_name):
+        """
+        Renames this router.
+
+        :param new_name: new name string
+        """
+
+        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
+        self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,
+                                                                   new_name=new_name))
+
+        log.info("router {name} [id={id}]: renamed to {new_name}".format(name=self._name,
+                                                                         id=self._id,
+                                                                         new_name=new_name))
+
+        self._name = new_name
+
     @property
     def platform(self):
         """
@@ -201,23 +219,6 @@ class Router(object):
         """
 
         return self._hypervisor.send("vm list_con_ports")
-
-    def rename(self, new_name):
-        """
-        Renames this router.
-
-        :param new_name: new name string
-        """
-
-        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
-        self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,
-                                                                   new_name=new_name))
-
-        log.info("router {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                         id=self._id,
-                                                                         new_name=new_name))
-
-        self._name = new_name
 
     def delete(self):
         """

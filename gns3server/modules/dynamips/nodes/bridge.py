@@ -49,6 +49,20 @@ class Bridge(object):
 
         return self._name[1:-1]  # remove quotes
 
+    @name.setter
+    def name(self, new_name):
+        """
+        Renames this bridge.
+
+        :param new_name: New name for this bridge
+        """
+
+        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
+        self._hypervisor.send("nio_bridge rename {name} {new_name}".format(name=self._name,
+                                                                           new_name=new_name))
+
+        self._name = new_name
+
     @property
     def hypervisor(self):
         """
@@ -77,19 +91,6 @@ class Bridge(object):
         """
 
         return self._nios
-
-    def rename(self, new_name):
-        """
-        Renames this bridge.
-
-        :param new_name: New name for this bridge
-        """
-
-        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
-        self._hypervisor.send("nio_bridge rename {name} {new_name}".format(name=self._name,
-                                                                           new_name=new_name))
-
-        self._name = new_name
 
     def delete(self):
         """

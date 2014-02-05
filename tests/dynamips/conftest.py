@@ -9,7 +9,7 @@ def hypervisor(request):
     cwd = os.path.dirname(os.path.abspath(__file__))
     dynamips_path = os.path.join(cwd, "dynamips.stable")
     print("\nStarting Dynamips Hypervisor: {}".format(dynamips_path))
-    manager = HypervisorManager(dynamips_path, "/tmp", base_port=9000)
+    manager = HypervisorManager(dynamips_path, "/tmp", "127.0.0.1", 9000)
     hypervisor = manager.start_new_hypervisor()
 
     def stop():

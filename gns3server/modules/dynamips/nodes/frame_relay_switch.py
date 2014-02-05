@@ -86,6 +86,24 @@ class FrameRelaySwitch(object):
 
         return self._name[1:-1]  # remove quotes
 
+    @name.setter
+    def name(self, new_name):
+        """
+        Renames this Frame Relay switch.
+
+        :param new_name: New name for this switch
+        """
+
+        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
+        self._hypervisor.send("frsw rename {name} {new_name}".format(name=self._name,
+                                                                     new_name=new_name))
+
+        log.info("Frame Relay switch {name} [id={id}]: renamed to {new_name}".format(name=self._name,
+                                                                                     id=self._id,
+                                                                                     new_name=new_name))
+
+        self._name = new_name
+
     @property
     def hypervisor(self):
         """
@@ -124,23 +142,6 @@ class FrameRelaySwitch(object):
         """
 
         return self._mapping
-
-    def rename(self, new_name):
-        """
-        Renames this Frame Relay switch.
-
-        :param new_name: New name for this switch
-        """
-
-        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
-        self._hypervisor.send("frsw rename {name} {new_name}".format(name=self._name,
-                                                                     new_name=new_name))
-
-        log.info("Frame Relay switch {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                                     id=self._id,
-                                                                                     new_name=new_name))
-
-        self._name = new_name
 
     def delete(self):
         """

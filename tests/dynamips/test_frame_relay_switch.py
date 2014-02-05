@@ -19,7 +19,7 @@ def test_frsw_exists(frsw):
 
 def test_rename_frsw(frsw):
 
-    frsw.rename("new Frame Relay switch")
+    frsw.name = "new Frame Relay switch"
     assert frsw.name == "new Frame Relay switch"
 
 

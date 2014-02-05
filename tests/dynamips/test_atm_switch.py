@@ -19,7 +19,7 @@ def test_atmsw_exists(atmsw):
 
 def test_rename_atmsw(atmsw):
 
-    atmsw.rename("new ATM switch")
+    atmsw.name = "new ATM switch"
     assert atmsw.name == "new ATM switch"
 
 

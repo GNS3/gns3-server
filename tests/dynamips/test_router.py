@@ -30,14 +30,13 @@ def test_create_and_delete_router(hypervisor):
         router.get_status()
 
 
-# def test_rename_router(router):
-#
-#     assert router.name == "router"
-#     router.rename("my_router")
-#     assert router.name == "my_router"
-#     router.rename("router")
-#     assert router.name == "router"
-    #router.delete()  # FIXME: fails with current Dynamips version
+def test_rename_router(hypervisor):
+
+    router = Router(hypervisor, "my router to rename")
+    assert router.name == "my router to rename"
+    router.name = "my_router"
+    assert router.name == "my_router"
+    router.delete()
 
 
 def test_image(router):

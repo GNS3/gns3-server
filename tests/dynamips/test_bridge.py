@@ -18,7 +18,7 @@ def test_bridge_exists(bridge):
 
 def test_rename_bridge(bridge):
 
-    bridge.rename("new bridge")
+    bridge.name = "new bridge"
     assert bridge.name == "new bridge"
 
 

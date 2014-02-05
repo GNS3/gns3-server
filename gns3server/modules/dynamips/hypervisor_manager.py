@@ -472,7 +472,7 @@ class HypervisorManager(object):
                                                                                       hypervisor.port,
                                                                                       current_memory_load,
                                                                                       router_ram))
-                return hypervisor
+                    return hypervisor
 
         hypervisor = self.start_new_hypervisor()
         hypervisor.image_ref = router_ios_image

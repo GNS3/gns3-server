@@ -118,7 +118,8 @@ class Dynamips(IModule):
         """
 
         # stop all Dynamips hypervisors
-        self._hypervisor_manager.stop_all_hypervisors()
+        if self._hypervisor_manager:
+            self._hypervisor_manager.stop_all_hypervisors()
 
         # resets the instance counters
         Router.reset()
