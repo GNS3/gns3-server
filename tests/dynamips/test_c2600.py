@@ -165,7 +165,7 @@ def test_iomem(router_c2600):
 
 def test_mac_addr(router_c2600):
 
-    assert router_c2600.mac_addr == None  # default value
+    assert router_c2600.mac_addr != None
     router_c2600.mac_addr = "aa:aa:aa:aa:aa:aa"
     assert router_c2600.mac_addr == "aa:aa:aa:aa:aa:aa"
 
@@ -178,7 +178,7 @@ def test_bogus_mac_addr(router_c2600):
 
 def test_system_id(router_c2600):
 
-    assert router_c2600.system_id == None  # default value
+    assert router_c2600.system_id == "FTX0945W0MY"  # default value
     router_c2600.system_id = "FTX0945W0MO"
     assert router_c2600.system_id == "FTX0945W0MO"
 

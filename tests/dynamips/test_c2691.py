@@ -29,7 +29,7 @@ def test_iomem(router_c2691):
 
 def test_mac_addr(router_c2691):
 
-    assert router_c2691.mac_addr == None  # default value
+    assert router_c2691.mac_addr != None
     router_c2691.mac_addr = "aa:aa:aa:aa:aa:aa"
     assert router_c2691.mac_addr == "aa:aa:aa:aa:aa:aa"
 
@@ -40,12 +40,11 @@ def test_bogus_mac_addr(router_c2691):
         router_c2691.mac_addr = "zz:zz:zz:zz:zz:zz"
 
 
-def test_system_id(hypervisor):
-    router = C2691(hypervisor, "test system id")
-    assert router.system_id == None  # default value
-    router.system_id = "FTX0945W0MO"
-    assert router.system_id == "FTX0945W0MO"
-    router.delete()
+def test_system_id(router_c2691):
+
+    assert router_c2691.system_id == "FTX0945W0MY"  # default value
+    router_c2691.system_id = "FTX0945W0MO"
+    assert router_c2691.system_id == "FTX0945W0MO"
 
 
 def test_get_hardware_info(router_c2691):

@@ -22,6 +22,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L77
 
 from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
+import sys
 import os
 
 import logging
@@ -68,15 +69,18 @@ class Router(object):
         self._idlesleep = 30
         self._ghost_file = ""
         self._ghost_status = 0
-        self._exec_area = None  # Megabytes (None = default for the router platform)
+        if sys.platform.startswith("win"):
+            self._exec_area = 16  # 16 MB by default on Windows (Cygwin)
+        else:
+            self._exec_area = 64  # 64 MB on other systems
         self._jit_sharing_group = None
         self._disk0 = 0  # Megabytes
         self._disk1 = 0  # Megabytes
-        self._confreg = '0x2102'
+        self._confreg = "0x2102"
         self._console = None
         self._aux = None
         self._mac_addr = None
-        self._system_id = None  # processor board ID in IOS
+        self._system_id = "FTX0945W0MY"  # processor board ID in IOS
         self._slots = []
 
         self._hypervisor.send("vm create {name} {id} {platform}".format(name=self._name,
@@ -90,6 +94,7 @@ class Router(object):
             self.console = self._hypervisor.baseconsole + self._id
             self.aux = self._hypervisor.baseaux + self._id
 
+            # get the default base MAC address
             self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
                                                                                      name=self._name))[0]
         else:

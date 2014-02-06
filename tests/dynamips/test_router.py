@@ -1,5 +1,6 @@
 from gns3server.modules.dynamips import Router
 from gns3server.modules.dynamips import DynamipsError
+import sys
 import pytest
 import tempfile
 import base64
@@ -140,9 +141,12 @@ def test_idlesleep(router):
 
 def test_exec_area(router):
 
-    assert router.exec_area == None  # default value
-    router.exec_area = 64
-    assert router.exec_area == 64
+    if sys.platform.startswith("win"):
+        assert router.exec_area == 16  # default value
+    else:
+        assert router.exec_area == 64  # default value
+    router.exec_area = 48
+    assert router.exec_area == 48
 
 
 def test_disk0(router):
@@ -218,7 +222,7 @@ def test_bogus_mac_addr(router):
 
 def test_system_id(router):
 
-    assert router.system_id == None  # default value
+    assert router.system_id == "FTX0945W0MY"  # default value
     router.system_id = "FTX0945W0MO"
     assert router.system_id == "FTX0945W0MO"
 
