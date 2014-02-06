@@ -89,6 +89,9 @@ class Router(object):
                                                                                   id=self._id))
             self.console = self._hypervisor.baseconsole + self._id
             self.aux = self._hypervisor.baseaux + self._id
+
+            self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
+                                                                                     name=self._name))[0]
         else:
             log.info("creating a new ghost IOS file")
             Router._instance_count -= 1

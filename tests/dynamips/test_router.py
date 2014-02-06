@@ -205,7 +205,7 @@ def test_get_slot_nio_bindings(router):
 
 def test_mac_addr(router):
 
-    assert router.mac_addr == None  # default value
+    assert router.mac_addr != None
     router.mac_addr = "aa:aa:aa:aa:aa:aa"
     assert router.mac_addr == "aa:aa:aa:aa:aa:aa"
 
