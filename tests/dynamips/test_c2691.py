@@ -40,13 +40,12 @@ def test_bogus_mac_addr(router_c2691):
         router_c2691.mac_addr = "zz:zz:zz:zz:zz:zz"
 
 
-# FIXME: no implemented within Dynamips
-# def test_system_id(hypervisor):
-#     router = C2691(hypervisor, "test system id")
-#     assert router.system_id == None  # default value
-#     router.system_id = "FTX0945W0MO"
-#     assert router.system_id == "FTX0945W0MO"
-#     router.delete()
+def test_system_id(hypervisor):
+    router = C2691(hypervisor, "test system id")
+    assert router.system_id == None  # default value
+    router.system_id = "FTX0945W0MO"
+    assert router.system_id == "FTX0945W0MO"
+    router.delete()
 
 
 def test_get_hardware_info(router_c2691):
