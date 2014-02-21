@@ -38,7 +38,7 @@ class FRSW(object):
             name = request["name"]
 
         try:
-            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_switch()
+            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_simulated_device()
             frsw = FrameRelaySwitch(hypervisor, name)
         except DynamipsError as e:
             self.send_custom_error(str(e))
@@ -64,6 +64,7 @@ class FRSW(object):
         frsw = self._frame_relay_switches[frsw_id]
         try:
             frsw.delete()
+            self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(frsw)
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -104,6 +105,7 @@ class FRSW(object):
             self.send_custom_error(str(e))
             return
 
+        response["port_name"] = request["port_name"]
         self.send_response(response)
 
     @IModule.route("dynamips.frsw.add_nio")
@@ -120,7 +122,7 @@ class FRSW(object):
         frsw = self._frame_relay_switches[frsw_id]
 
         port = request["port"]
-        mapping = request["mapping"]
+        mappings = request["mappings"]
 
         try:
             nio = self.create_nio(frsw, request)
@@ -132,7 +134,7 @@ class FRSW(object):
             frsw.add_nio(nio, port)
 
             # add the VCs mapped with this port/nio
-            for source, destination in mapping.items():
+            for source, destination in mappings.items():
                 source_port, source_dlci = map(int, source.split(':'))
                 destination_port, destination_dlci = map(int, destination.split(':'))
                 if frsw.has_port(destination_port):

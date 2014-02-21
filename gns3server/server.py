@@ -96,7 +96,7 @@ class Server(object):
         tornado.autoreload.add_reload_hook(functools.partial(self._cleanup, stop=False))
 
         def signal_handler(signum=None, frame=None):
-            log.warning("Got signal {}, exiting...".format(signum))
+            log.warning("Server got signal {}, exiting...".format(signum))
             self._cleanup()
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
@@ -139,17 +139,19 @@ class Server(object):
 
     def _cleanup(self, stop=True):
         """
-        Shutdowns running module processes
+        Shutdowns any running module processes
         and close remaining Tornado ioloop file descriptors
 
-        :param stop: Stop the ioloop if True (default)
+        :param stop: stops the ioloop if True (default)
         """
 
         # terminate all modules
         for module in self._modules:
-            log.info("terminating {}".format(module.name))
-            module.terminate()
             module.join(timeout=1)
+            if module.is_alive():
+                log.info("terminating {}".format(module.name))
+                module.terminate()
+                module.join(timeout=1)
 
         ioloop = tornado.ioloop.IOLoop.instance()
         # close any fd that would have remained open...

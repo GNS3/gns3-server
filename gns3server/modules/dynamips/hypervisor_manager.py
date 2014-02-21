@@ -401,23 +401,30 @@ class HypervisorManager(object):
         :param timeout: timeout value (default is 10 seconds)
         """
 
-        # try to connect 5 times
-        for _ in range(0, 5):
+        connection_success = False
+        begin = time.time()
+        # try to connect for 10 seconds
+        while(time.time() - begin < 10.0):
+            time.sleep(0.01)
+            sock = None
             try:
-                s = socket.create_connection((host, port), timeout)
+                sock = socket.create_connection((host, port), timeout)
             except socket.error as e:
-                time.sleep(0.5)
                 last_exception = e
+                #time.sleep(0.01)
                 continue
+            finally:
+                if sock:
+                    sock.close()
             connection_success = True
             break
 
-        if connection_success:
-            s.close()
-            #time.sleep(0.1)
-        else:
+        if not connection_success:
+            # FIXME: throw exception here
             log.critical("Couldn't connect to hypervisor on {}:{} :{}".format(host, port,
                                                                              last_exception))
+        else:
+            log.info("Dynamips server ready after {:.4f} seconds".format(time.time() - begin))
 
     def start_new_hypervisor(self):
         """
@@ -501,9 +508,9 @@ class HypervisorManager(object):
             hypervisor.stop()
             self._hypervisors.remove(hypervisor)
 
-    def allocate_hypervisor_for_switch(self):
+    def allocate_hypervisor_for_simulated_device(self):
         """
-        Allocates a Dynamips hypervisor for a specific switch
+        Allocates a Dynamips hypervisor for a specific Dynamips simulated device.
 
         :returns: the allocated hypervisor object
         """
@@ -516,6 +523,18 @@ class HypervisorManager(object):
 
         # no hypervisor, let's start one!
         return self.start_new_hypervisor()
+
+    def unallocate_hypervisor_for_simulated_device(self, device):
+        """
+        Unallocates a Dynamips hypervisor for a specific Dynamips simulated device.
+
+        :param device: device object
+        """
+
+        hypervisor = device.hypervisor
+        if not hypervisor.devices:
+            hypervisor.stop()
+            self._hypervisors.remove(hypervisor)
 
     def stop_all_hypervisors(self):
         """

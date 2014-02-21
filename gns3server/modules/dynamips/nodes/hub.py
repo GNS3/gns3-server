@@ -45,8 +45,15 @@ class Hub(Bridge):
 
         # let's create a unique name if none has been chosen
         if not name:
-            name = "Hub" + str(self._id)
+            name_id = self._id
+            while True:
+                name = "Hub" + str(name_id)
+                # check if the name has already been allocated to another switch
+                if name not in self._allocated_names:
+                    break
+                name_id += 1
 
+        self._allocated_names.append(name)
         self._mapping = {}
         Bridge.__init__(self, hypervisor, name)
 
@@ -56,10 +63,11 @@ class Hub(Bridge):
     @classmethod
     def reset(cls):
         """
-        Reset the instance count.
+        Resets the instance count and the allocated names list.
         """
 
         cls._instance_count = 1
+        cls._allocated_names.clear()
 
     @property
     def id(self):

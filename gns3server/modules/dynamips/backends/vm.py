@@ -99,18 +99,27 @@ class VM(object):
             log.debug("received request {}".format(request))
 
             #TODO: JSON schema validation
-            #name = request["name"]
+            name = None
+            if "name" in request:
+                name = request["name"]
             platform = request["platform"]
             image = request["image"]
             ram = request["ram"]
 
             try:
                 hypervisor = self._hypervisor_manager.allocate_hypervisor_for_router(image, ram)
-                router = PLATFORMS[platform](hypervisor)
+
+                router = PLATFORMS[platform](hypervisor, name)
                 router.ram = ram
                 router.image = image
                 router.sparsemem = self._hypervisor_manager.sparse_memory_support
                 router.mmap = self._hypervisor_manager.mmap_support
+                if "console" in request:
+                    router.console = request["console"]
+                if "aux" in request:
+                    router.aux = request["aux"]
+                if "mac_addr" in request:
+                    router.mac_addr = request["mac_addr"]
 
                 # JIT sharing support
                 if self._hypervisor_manager.jit_sharing_support:
@@ -161,6 +170,7 @@ class VM(object):
         router = self._routers[router_id]
         try:
             router.delete()
+            self._hypervisor_manager.unallocate_hypervisor_for_router(router)
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -218,6 +228,27 @@ class VM(object):
         router = self._routers[router_id]
         try:
             router.suspend()
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+        self.send_response(request)
+
+    @IModule.route("dynamips.vm.reload")
+    def vm_reload(self, request):
+        """
+        Reloads a VM (router)
+
+        :param request: JSON request
+        """
+
+        #TODO: JSON schema validation for the request
+        log.debug("received request {}".format(request))
+        router_id = request["id"]
+        router = self._routers[router_id]
+        try:
+            if router.get_status() != "inactive":
+                router.stop()
+            router.start()
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -286,6 +317,34 @@ class VM(object):
         # for now send back the original request
         self.send_response(request)
 
+    @IModule.route("dynamips.vm.idlepcs")
+    def vm_idlepcs(self, request):
+        """
+        Get idle-pc proposals.
+
+        :param request: JSON request
+        """
+
+        #TODO: JSON schema validation for the request
+        log.debug("received request {}".format(request))
+        router_id = request["id"]
+        router = self._routers[router_id]
+
+        try:
+            if "compute" in request and request["compute"] == False:
+                idlepcs = router.show_idle_pc_prop()
+            else:
+                # reset the current idlepc value
+                router.idlepc = "0x0"
+                idlepcs = router.get_idle_pc_prop()
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"id": router_id,
+                    "idlepcs": idlepcs}
+        self.send_response(response)
+
     @IModule.route("dynamips.vm.allocate_udp_port")
     def vm_allocate_udp_port(self, request):
         """
@@ -306,6 +365,7 @@ class VM(object):
             self.send_custom_error(str(e))
             return
 
+        response["port_name"] = request["port_name"]
         self.send_response(response)
 
     @IModule.route("dynamips.vm.add_nio")
@@ -323,8 +383,6 @@ class VM(object):
 
         slot = request["slot"]
         port = request["port"]
-
-        print(request)
 
         try:
             nio = self.create_nio(router, request)

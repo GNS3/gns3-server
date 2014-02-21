@@ -38,7 +38,7 @@ class ETHHUB(object):
             name = request["name"]
 
         try:
-            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_switch()
+            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_simulated_device()
             ethhub = Hub(hypervisor, name)
         except DynamipsError as e:
             self.send_custom_error(str(e))
@@ -64,6 +64,7 @@ class ETHHUB(object):
         ethhub = self._ethernet_hubs[ethhub_id]
         try:
             ethhub.delete()
+            self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(ethhub)
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -106,6 +107,7 @@ class ETHHUB(object):
             self.send_custom_error(str(e))
             return
 
+        response["port_name"] = request["port_name"]
         self.send_response(response)
 
     @IModule.route("dynamips.ethhub.add_nio")

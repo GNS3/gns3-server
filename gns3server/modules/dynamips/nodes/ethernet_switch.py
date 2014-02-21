@@ -36,6 +36,7 @@ class EthernetSwitch(object):
     :param name: name for this switch
     """
 
+    _allocated_names = []
     _instance_count = 1
 
     def __init__(self, hypervisor, name=None):
@@ -46,8 +47,15 @@ class EthernetSwitch(object):
 
         # let's create a unique name if none has been chosen
         if not name:
-            name = "SW" + str(self._id)
+            name_id = self._id
+            while True:
+                name = "SW" + str(name_id)
+                # check if the name has already been allocated to another switch
+                if name not in self._allocated_names:
+                    break
+                name_id += 1
 
+        self._allocated_names.append(name)
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("ethsw create {}".format(self._name))
@@ -62,10 +70,11 @@ class EthernetSwitch(object):
     @classmethod
     def reset(cls):
         """
-        Reset the instance count.
+        Resets the instance count and the allocated names list.
         """
 
         cls._instance_count = 1
+        cls._allocated_names.clear()
 
     @property
     def id(self):
@@ -95,6 +104,7 @@ class EthernetSwitch(object):
         :param new_name: New name for this switch
         """
 
+        new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("ethsw rename {name} {new_name}".format(name=self._name,
                                                                       new_name=new_name))
@@ -103,7 +113,9 @@ class EthernetSwitch(object):
                                                                                   id=self._id,
                                                                                   new_name=new_name))
 
+        self._allocated_names.remove(self.name)
         self._name = new_name
+        self._allocated_names.append(new_name_no_quotes)
 
     @property
     def hypervisor(self):
@@ -154,6 +166,7 @@ class EthernetSwitch(object):
         log.info("Ethernet switch {name} [id={id}] has been deleted".format(name=self._name,
                                                                             id=self._id))
         self._hypervisor.devices.remove(self)
+        self._allocated_names.remove(self.name)
 
     def add_nio(self, nio, port):
         """

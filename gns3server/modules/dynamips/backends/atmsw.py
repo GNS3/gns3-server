@@ -39,7 +39,7 @@ class ATMSW(object):
             name = request["name"]
 
         try:
-            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_switch()
+            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_simulated_device()
             atmsw = ATMSwitch(hypervisor, name)
         except DynamipsError as e:
             self.send_custom_error(str(e))
@@ -65,6 +65,7 @@ class ATMSW(object):
         atmsw = self._atm_switches[atmsw_id]
         try:
             atmsw.delete()
+            self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(atmsw)
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -105,6 +106,7 @@ class ATMSW(object):
             self.send_custom_error(str(e))
             return
 
+        response["port_name"] = request["port_name"]
         self.send_response(response)
 
     @IModule.route("dynamips.atmsw.add_nio")
@@ -121,7 +123,7 @@ class ATMSW(object):
         atmsw = self._atm_switches[atmsw_id]
 
         port = request["port"]
-        mapping = request["mapping"]
+        mappings = request["mappings"]
 
         try:
             nio = self.create_nio(atmsw, request)
@@ -132,7 +134,7 @@ class ATMSW(object):
         try:
             atmsw.add_nio(nio, port)
             pvc_entry = re.compile(r"""^([0-9]*):([0-9]*):([0-9]*)$""")
-            for source, destination in mapping.items():
+            for source, destination in mappings.items():
                 match_source_pvc = pvc_entry.search(source)
                 match_destination_pvc = pvc_entry.search(destination)
                 if match_source_pvc and match_destination_pvc:

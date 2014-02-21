@@ -105,9 +105,11 @@ class Dynamips(IModule):
         self._atm_switches = {}
         self._ethernet_hubs = {}
 
-#     def __del__(self):
-# 
-#         self._hypervisor_manager.stop_all_hypervisors()
+    def stop(self):
+
+        if self._hypervisor_manager:
+            self._hypervisor_manager.stop_all_hypervisors()
+        IModule.stop(self)
 
     @IModule.route("dynamips.reset")
     def reset(self, request):
@@ -153,7 +155,6 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
-        print("Create")
         if not self._hypervisor_manager:
             self._hypervisor_manager = HypervisorManager(request["path"], "/tmp")
 
@@ -183,6 +184,11 @@ class Dynamips(IModule):
             rhost = request["rhost"]
             rport = request["rport"]
             nio = NIO_UDP(node.hypervisor, lport, rhost, rport)
+#         elif request["nio"] == "NIO_UDP_Auto":
+#             lhost = request["lhost"]
+#             lport_start = request["lport_start"]
+#             lport_end = request["lport_end"]
+#             nio = NIO_UDP_auto(node.hypervisor, lhost, lport_start, lport_end)
         elif request["nio"] == "NIO_GenericEthernet":
             ethernet_device = request["ethernet_device"]
             nio = NIO_GenericEthernet(node.hypervisor, ethernet_device)
@@ -223,6 +229,20 @@ class Dynamips(IModule):
 
         return response
 
+#     def allocate_udp_port_auto(self, node, lport_start, lport_end):
+#         """
+#         Allocates a UDP port in order to create an UDP NIO Auto.
+# 
+#         :param node: the node that needs to allocate an UDP port
+#         """
+# 
+#         self._nio_udp_auto = NIO_UDP_auto(node.hypervisor, node.hypervisor.host, lport_start, lport_end)
+# 
+#         response = {"lport": self._nio_udp_auto.lport,
+#                     "lhost": self._nio_udp_auto.lhost}
+# 
+#         return response
+
     def set_ghost_ios(self, router):
 
         if not router.mmap:
@@ -249,8 +269,9 @@ class Dynamips(IModule):
             ghost.stop()
             ghost.delete()
 
-        router.ghost_status = 2
-        router.ghost_file = ghost_instance
+        if router.ghost_file != ghost_instance:
+            router.ghost_status = 2
+            router.ghost_file = ghost_instance
 
     @IModule.route("dynamips.nio.get_interfaces")
     def nio_get_interfaces(self, request):

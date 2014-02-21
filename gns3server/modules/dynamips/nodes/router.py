@@ -22,6 +22,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L77
 
 from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
+import time
 import sys
 import os
 
@@ -39,6 +40,7 @@ class Router(object):
     :param ghost_flag: used when creating a ghost IOS.
     """
 
+    _allocated_names = []
     _instance_count = 1
     _status = {0: "inactive",
                1: "shutting down",
@@ -53,8 +55,15 @@ class Router(object):
 
         # let's create a unique name if none has been chosen
         if not name:
-            name = "R" + str(self._id)
+            name_id = self._id
+            while True:
+                name = "R" + str(name_id)
+                # check if the name has already been allocated to another router
+                if name not in self._allocated_names:
+                    break
+                name_id += 1
 
+        self._allocated_names.append(name)
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._platform = platform
@@ -106,10 +115,11 @@ class Router(object):
     @classmethod
     def reset(cls):
         """
-        Reset the instance count.
+        Resets the instance count and the allocated names list.
         """
 
         cls._instance_count = 1
+        cls._allocated_names.clear()
 
     def defaults(self):
         """
@@ -179,6 +189,10 @@ class Router(object):
         :param new_name: new name string
         """
 
+        if new_name in self._allocated_names:
+            raise DynamipsError('Name "{}" is already used by another router'.format(new_name))
+
+        new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,
                                                                    new_name=new_name))
@@ -187,7 +201,9 @@ class Router(object):
                                                                          id=self._id,
                                                                          new_name=new_name))
 
+        self._allocated_names.remove(self.name)
         self._name = new_name
+        self._allocated_names.append(new_name_no_quotes)
 
     @property
     def platform(self):
@@ -237,6 +253,7 @@ class Router(object):
         self._hypervisor.devices.remove(self)
 
         log.info("router {name} [id={id}] has been deleted".format(name=self._name, id=self._id))
+        self._allocated_names.remove(self.name)
 
     def start(self):
         """
@@ -457,7 +474,7 @@ class Router(object):
                                                                                                old_ram=self._ram,
                                                                                                new_ram=ram))
 
-        self._hypervisor.decrease_memory_load(self._ram)
+        self._hypervisor.decrease_memory_load(ram)
         self._ram = ram
         self._hypervisor.increase_memory_load(self._ram)
 
@@ -627,7 +644,17 @@ class Router(object):
         :returns: list of idle PC proposal
         """
 
-        return self._hypervisor.send("vm get_idle_pc_prop {} 0".format(self._name))
+        if not self.is_running():
+            # router is not running
+            raise DynamipsError("router {name} is not running".format(name=self._name))
+
+        log.info("router {name} [id={id}] has started calculating idle-pc values".format(name=self._name, id=self._id))
+        begin = time.time()
+        idlepcs = self._hypervisor.send("vm get_idle_pc_prop {} 0".format(self._name))
+        log.info("router {name} [id={id}] has finished calculating idle-pc values after {time:.4f} seconds".format(name=self._name,
+                                                                                                                   id=self._id,
+                                                                                                                   time=time.time() - begin))
+        return idlepcs
 
     def show_idle_pc_prop(self):
         """
@@ -635,6 +662,10 @@ class Router(object):
 
         :returns: list of idle PC proposal
         """
+
+        if not self.is_running():
+            # router is not running
+            raise DynamipsError("router {name} is not running".format(name=self._name))
 
         return self._hypervisor.send("vm show_idle_pc_prop {} 0".format(self._name))
 

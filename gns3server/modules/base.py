@@ -22,6 +22,7 @@ Base class (interface) for modules
 import gns3server.jsonrpc as jsonrpc
 import multiprocessing
 import zmq
+import signal
 
 import logging
 log = logging.getLogger(__name__)
@@ -101,6 +102,13 @@ class IModule(multiprocessing.Process):
         Starts the event loop
         """
 
+        def signal_handler(signum=None, frame=None):
+            log.warning("Module {} got signal {}, exiting...".format(self.name, signum))
+            self.stop()
+
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+            signal.signal(sig, signal_handler)
+
         log.info("{} module running with PID {}".format(self.name, self.pid))
         self._setup()
         try:
@@ -113,7 +121,8 @@ class IModule(multiprocessing.Process):
         Stops the event loop.
         """
 
-        self._ioloop.stop()
+        if self._ioloop:
+            self._ioloop.stop()
 
     def send_response(self, results):
         """

@@ -35,6 +35,7 @@ class ATMSwitch(object):
     :param name: name for this switch
     """
 
+    _allocated_names = []
     _instance_count = 1
 
     def __init__(self, hypervisor, name=None):
@@ -45,8 +46,15 @@ class ATMSwitch(object):
 
         # let's create a unique name if none has been chosen
         if not name:
-            name = "ATM" + str(self._id)
+            name_id = self._id
+            while True:
+                name = "ATM" + str(name_id)
+                # check if the name has already been allocated to another switch
+                if name not in self._allocated_names:
+                    break
+                name_id += 1
 
+        self._allocated_names.append(name)
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("atmsw create {}".format(self._name))
@@ -61,10 +69,11 @@ class ATMSwitch(object):
     @classmethod
     def reset(cls):
         """
-        Reset the instance count.
+        Resets the instance count and the allocated names list.
         """
 
         cls._instance_count = 1
+        cls._allocated_names.clear()
 
     @property
     def id(self):
@@ -94,6 +103,7 @@ class ATMSwitch(object):
         :param new_name: New name for this switch
         """
 
+        new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("atmsw rename {name} {new_name}".format(name=self._name,
                                                                       new_name=new_name))
@@ -102,7 +112,9 @@ class ATMSwitch(object):
                                                                              id=self._id,
                                                                              new_name=new_name))
 
+        self._allocated_names.remove(self.name)
         self._name = new_name
+        self._allocated_names.append(new_name_no_quotes)
 
     @property
     def hypervisor(self):
@@ -153,6 +165,7 @@ class ATMSwitch(object):
         log.info("ATM switch {name} [id={id}] has been deleted".format(name=self._name,
                                                                        id=self._id))
         self._hypervisor.devices.remove(self)
+        self._allocated_names.remove(self.name)
 
     def has_port(self, port):
         """

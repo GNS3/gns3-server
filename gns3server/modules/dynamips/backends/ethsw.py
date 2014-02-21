@@ -38,7 +38,7 @@ class ETHSW(object):
             name = request["name"]
 
         try:
-            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_switch()
+            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_simulated_device()
             ethsw = EthernetSwitch(hypervisor, name)
         except DynamipsError as e:
             self.send_custom_error(str(e))
@@ -64,6 +64,7 @@ class ETHSW(object):
         ethsw = self._ethernet_switches[ethsw_id]
         try:
             ethsw.delete()
+            self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(ethsw)
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -116,6 +117,7 @@ class ETHSW(object):
             self.send_custom_error(str(e))
             return
 
+        response["port_name"] = request["port_name"]
         self.send_response(response)
 
     @IModule.route("dynamips.ethsw.add_nio")

@@ -44,16 +44,16 @@ class C2600(Router):
 
     # adapters to insert by default corresponding the
     # chosen chassis.
-    integrated_adapters = {'2610': C2600_MB_1E,
-                           '2611': C2600_MB_2E,
-                           '2620': C2600_MB_1FE,
-                           '2621': C2600_MB_2FE,
-                           '2610XM': C2600_MB_1FE,
-                           '2611XM': C2600_MB_2FE,
-                           '2620XM': C2600_MB_1FE,
-                           '2621XM': C2600_MB_2FE,
-                           '2650XM': C2600_MB_1FE,
-                           '2651XM': C2600_MB_2FE}
+    integrated_adapters = {"2610": C2600_MB_1E,
+                           "2611": C2600_MB_2E,
+                           "2620": C2600_MB_1FE,
+                           "2621": C2600_MB_2FE,
+                           "2610XM": C2600_MB_1FE,
+                           "2611XM": C2600_MB_2FE,
+                           "2620XM": C2600_MB_1FE,
+                           "2621XM": C2600_MB_2FE,
+                           "2650XM": C2600_MB_1FE,
+                           "2651XM": C2600_MB_2FE}
 
     def __init__(self, hypervisor, name=None, chassis="2610"):
         Router.__init__(self, hypervisor, name, platform="c2600")
