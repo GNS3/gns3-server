@@ -90,79 +90,105 @@ class VM(object):
         """
         Creates a new VM (router).
 
+        Mandatory request parameters:
+        - platform (platform name e.g. c7200)
+        - image (path to IOS image)
+        - ram (amount of RAM in MB)
+
+        Optional request parameters:
+        - name (vm name)
+        - console (console port number)
+        - aux (auxiliary console port number)
+        - mac_addr (MAC address)
+
+        Response parameters:
+        - id (vm identifier)
+        - name (vm name)
+
         :param request: JSON request
         """
 
         if request == None:
             self.send_param_error()
-        else:
-            log.debug("received request {}".format(request))
+            return
 
-            #TODO: JSON schema validation
-            name = None
-            if "name" in request:
-                name = request["name"]
-            platform = request["platform"]
-            image = request["image"]
-            ram = request["ram"]
+        log.debug("received request {}".format(request))
 
-            try:
-                hypervisor = self._hypervisor_manager.allocate_hypervisor_for_router(image, ram)
+        #TODO: JSON schema validation
+        name = None
+        if "name" in request:
+            name = request["name"]
+        platform = request["platform"]
+        image = request["image"]
+        ram = request["ram"]
 
-                router = PLATFORMS[platform](hypervisor, name)
-                router.ram = ram
-                router.image = image
-                router.sparsemem = self._hypervisor_manager.sparse_memory_support
-                router.mmap = self._hypervisor_manager.mmap_support
-                if "console" in request:
-                    router.console = request["console"]
-                if "aux" in request:
-                    router.aux = request["aux"]
-                if "mac_addr" in request:
-                    router.mac_addr = request["mac_addr"]
+        try:
+            hypervisor = self._hypervisor_manager.allocate_hypervisor_for_router(image, ram)
 
-                # JIT sharing support
-                if self._hypervisor_manager.jit_sharing_support:
-                    jitsharing_groups = hypervisor.jitsharing_groups
-                    ios_image = os.path.basename(image)
-                    if ios_image in jitsharing_groups:
-                        router.jit_sharing_group = jitsharing_groups[ios_image]
-                    else:
-                        new_jit_group = -1
-                        for jit_group in range(0, 127):
-                            if jit_group not in jitsharing_groups.values():
-                                new_jit_group = jit_group
-                                break
-                        if new_jit_group == -1:
-                            raise DynamipsError("All JIT groups are allocated!")
-                        router.jit_sharing_group = new_jit_group
+            router = PLATFORMS[platform](hypervisor, name)
+            router.ram = ram
+            router.image = image
+            router.sparsemem = self._hypervisor_manager.sparse_memory_support
+            router.mmap = self._hypervisor_manager.mmap_support
+            if "console" in request:
+                router.console = request["console"]
+            if "aux" in request:
+                router.aux = request["aux"]
+            if "mac_addr" in request:
+                router.mac_addr = request["mac_addr"]
 
-                # Ghost IOS support
-                if self._hypervisor_manager.ghost_ios_support:
-                    self.set_ghost_ios(router)
+            # JIT sharing support
+            if self._hypervisor_manager.jit_sharing_support:
+                jitsharing_groups = hypervisor.jitsharing_groups
+                ios_image = os.path.basename(image)
+                if ios_image in jitsharing_groups:
+                    router.jit_sharing_group = jitsharing_groups[ios_image]
+                else:
+                    new_jit_group = -1
+                    for jit_group in range(0, 127):
+                        if jit_group not in jitsharing_groups.values():
+                            new_jit_group = jit_group
+                            break
+                    if new_jit_group == -1:
+                        raise DynamipsError("All JIT groups are allocated!")
+                    router.jit_sharing_group = new_jit_group
 
-            except DynamipsError as e:
-                hypervisor.decrease_memory_load(ram)
-                if hypervisor.memory_load == 0 and not hypervisor.devices:
-                    hypervisor.stop()
-                    self._hypervisor_manager.hypervisors.remove(hypervisor)
-                self.send_custom_error(str(e))
-                return
+            # Ghost IOS support
+            if self._hypervisor_manager.ghost_ios_support:
+                self.set_ghost_ios(router)
 
-            response = {"name": router.name,
-                        "id": router.id}
-            defaults = router.defaults()
-            response.update(defaults)
-            self._routers[router.id] = router
-            self.send_response(response)
+        except DynamipsError as e:
+            hypervisor.decrease_memory_load(ram)
+            if hypervisor.memory_load == 0 and not hypervisor.devices:
+                hypervisor.stop()
+                self._hypervisor_manager.hypervisors.remove(hypervisor)
+            self.send_custom_error(str(e))
+            return
+
+        response = {"name": router.name,
+                    "id": router.id}
+        defaults = router.defaults()
+        response.update(defaults)
+        self._routers[router.id] = router
+        self.send_response(response)
 
     @IModule.route("dynamips.vm.delete")
     def vm_delete(self, request):
         """
         Deletes a VM (router).
 
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -181,8 +207,18 @@ class VM(object):
         """
         Starts a VM (router)
 
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -200,8 +236,18 @@ class VM(object):
         """
         Stops a VM (router)
 
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -219,8 +265,18 @@ class VM(object):
         """
         Suspends a VM (router)
 
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -238,8 +294,18 @@ class VM(object):
         """
         Reloads a VM (router)
 
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -259,8 +325,21 @@ class VM(object):
         """
         Updates settings for a VM (router).
 
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Optional request parameters:
+        - any setting to update
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -322,8 +401,22 @@ class VM(object):
         """
         Get idle-pc proposals.
 
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Optional request parameters:
+        - compute (returns previously compute idle-pc values if False)
+
+        Response parameters:
+        - id (vm identifier)
+        - idlepcs (idle-pc values in an array)
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -334,7 +427,7 @@ class VM(object):
             if "compute" in request and request["compute"] == False:
                 idlepcs = router.show_idle_pc_prop()
             else:
-                # reset the current idlepc value
+                # reset the current idle-pc value before calculating a new one
                 router.idlepc = "0x0"
                 idlepcs = router.get_idle_pc_prop()
         except DynamipsError as e:
@@ -350,8 +443,21 @@ class VM(object):
         """
         Allocates a UDP port in order to create an UDP NIO.
 
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port_name (port name e.g fastEthernet1/0)
+
+        Response parameters:
+        - port_name (port name e.g fastEthernet1/0)
+        - lhost (local host address)
+        - lport (allocated local port)
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -373,8 +479,38 @@ class VM(object):
         """
         Adds an NIO (Network Input/Output) for a VM (router).
 
+        Mandatory request parameters:
+        - id (vm identifier)
+        - slot (slot identifier)
+        - port (port identifier)
+        - nio (nio type, one of the following)
+            - "NIO_UDP"
+                - lport (local port)
+                - rhost (remote host)
+                - rport (remote port)
+            - "NIO_GenericEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_LinuxEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_TAP"
+                - tap_device (TAP device name e.g. tap0)
+            - "NIO_UNIX"
+                - local_file (path to UNIX socket file)
+                - remote_file (path to UNIX socket file)
+            - "NIO_VDE"
+                - control_file (path to VDE control file)
+                - local_file (path to VDE local file)
+            - "NIO_Null"
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -386,6 +522,8 @@ class VM(object):
 
         try:
             nio = self.create_nio(router, request)
+            if not nio:
+                raise DynamipsError("Requested NIO doesn't exist: {}".format(request["nio"]))
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -404,8 +542,20 @@ class VM(object):
         """
         Deletes an NIO (Network Input/Output).
 
+        Mandatory request parameters:
+        - id (vm identifier)
+        - slot (slot identifier)
+        - port (port identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))

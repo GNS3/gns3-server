@@ -30,9 +30,21 @@ class FRSW(object):
         """
         Creates a new Frame-Relay switch.
 
+        Optional request parameters:
+        - name (switch name)
+
+        Response parameters:
+        - id (switch identifier)
+        - name (switch name)
+
         :param request: JSON request
         """
 
+        if request == None:
+            self.send_param_error()
+            return
+
+        #TODO: JSON schema validation for the request
         name = None
         if request and "name" in request:
             name = request["name"]
@@ -55,8 +67,18 @@ class FRSW(object):
         """
         Deletes a Frame Relay switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -75,13 +97,34 @@ class FRSW(object):
         """
         Updates a Frame Relay switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+
+        Optional request parameters:
+        - name (new switch name)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         frsw_id = request["id"]
         frsw = self._frame_relay_switches[frsw_id]
+
+        # rename the switch if requested
+        if "name" in request and frsw.name != request["name"]:
+            try:
+                frsw.name = request["name"]
+            except DynamipsError as e:
+                self.send_custom_error(str(e))
+                return
         self.send_response(request)
 
     @IModule.route("dynamips.frsw.allocate_udp_port")
@@ -90,8 +133,21 @@ class FRSW(object):
         Allocates a UDP port in order to create an UDP NIO for an
         Frame Relay switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port_name (port name)
+
+        Response parameters:
+        - port_name (port name)
+        - lhost (local host address)
+        - lport (allocated local port)
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -113,8 +169,38 @@ class FRSW(object):
         """
         Adds an NIO (Network Input/Output) for an Frame-Relay switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port (port identifier)
+        - mappings (VCs mapped to the port)
+        - nio (nio type, one of the following)
+            - "NIO_UDP"
+                - lport (local port)
+                - rhost (remote host)
+                - rport (remote port)
+            - "NIO_GenericEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_LinuxEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_TAP"
+                - tap_device (TAP device name e.g. tap0)
+            - "NIO_UNIX"
+                - local_file (path to UNIX socket file)
+                - remote_file (path to UNIX socket file)
+            - "NIO_VDE"
+                - control_file (path to VDE control file)
+                - local_file (path to VDE local file)
+            - "NIO_Null"
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -126,6 +212,8 @@ class FRSW(object):
 
         try:
             nio = self.create_nio(frsw, request)
+            if not nio:
+                raise DynamipsError("Requested NIO doesn't exist: {}".format(request["nio"]))
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -153,8 +241,19 @@ class FRSW(object):
         """
         Deletes an NIO (Network Input/Output).
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port (port identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))

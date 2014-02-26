@@ -28,11 +28,23 @@ class ETHHUB(object):
     @IModule.route("dynamips.ethhub.create")
     def ethhub_create(self, request):
         """
-        Creates a new Ethernet switch.
+        Creates a new Ethernet hub.
+
+        Optional request parameters:
+        - name (hub name)
+
+        Response parameters:
+        - id (hub identifier)
+        - name (hub name)
 
         :param request: JSON request
         """
 
+        if request == None:
+            self.send_param_error()
+            return
+
+        #TODO: JSON schema validation for the request
         name = None
         if request and "name" in request:
             name = request["name"]
@@ -55,8 +67,18 @@ class ETHHUB(object):
         """
         Deletes a Ethernet hub.
 
+        Mandatory request parameters:
+        - id (hub identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -75,14 +97,34 @@ class ETHHUB(object):
         """
         Updates a Ethernet hub.
 
+        Mandatory request parameters:
+        - id (hub identifier)
+
+        Optional request parameters:
+        - name (new hub name)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethhub_id = request["id"]
         ethhub = self._ethernet_hubs[ethhub_id]
-        #ports = request["ports"]
+
+        # rename the hub if requested
+        if "name" in request and ethhub.name != request["name"]:
+            try:
+                ethhub.name = request["name"]
+            except DynamipsError as e:
+                self.send_custom_error(str(e))
+                return
 
         self.send_response(request)
 
@@ -92,8 +134,21 @@ class ETHHUB(object):
         Allocates a UDP port in order to create an UDP NIO for an
         Ethernet hub.
 
+        Mandatory request parameters:
+        - id (hub identifier)
+        - port_name (port name)
+
+        Response parameters:
+        - port_name (port name)
+        - lhost (local host address)
+        - lport (allocated local port)
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -115,8 +170,37 @@ class ETHHUB(object):
         """
         Adds an NIO (Network Input/Output) for an Ethernet hub.
 
+        Mandatory request parameters:
+        - id (hub identifier)
+        - port (port identifier)
+        - nio (nio type, one of the following)
+            - "NIO_UDP"
+                - lport (local port)
+                - rhost (remote host)
+                - rport (remote port)
+            - "NIO_GenericEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_LinuxEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_TAP"
+                - tap_device (TAP device name e.g. tap0)
+            - "NIO_UNIX"
+                - local_file (path to UNIX socket file)
+                - remote_file (path to UNIX socket file)
+            - "NIO_VDE"
+                - control_file (path to VDE control file)
+                - local_file (path to VDE local file)
+            - "NIO_Null"
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -126,6 +210,8 @@ class ETHHUB(object):
 
         try:
             nio = self.create_nio(ethhub, request)
+            if not nio:
+                raise DynamipsError("Requested NIO doesn't exist: {}".format(request["nio"]))
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -144,8 +230,19 @@ class ETHHUB(object):
         """
         Deletes an NIO (Network Input/Output).
 
+        Mandatory request parameters:
+        - id (hub identifier)
+        - port (port identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))

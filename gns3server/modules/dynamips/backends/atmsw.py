@@ -31,9 +31,21 @@ class ATMSW(object):
         """
         Creates a new ATM switch.
 
+        Optional request parameters:
+        - name (switch name)
+
+        Response parameters:
+        - id (switch identifier)
+        - name (switch name)
+
         :param request: JSON request
         """
 
+        if request == None:
+            self.send_param_error()
+            return
+
+        #TODO: JSON schema validation for the request
         name = None
         if request and "name" in request:
             name = request["name"]
@@ -56,8 +68,18 @@ class ATMSW(object):
         """
         Deletes a ATM switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -76,13 +98,35 @@ class ATMSW(object):
         """
         Updates a ATM switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+
+        Optional request parameters:
+        - name (new switch name)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         atmsw_id = request["id"]
         atmsw = self._atm_switches[atmsw_id]
+
+        # rename the switch if requested
+        if "name" in request and atmsw.name != request["name"]:
+            try:
+                atmsw.name = request["name"]
+            except DynamipsError as e:
+                self.send_custom_error(str(e))
+                return
+
         self.send_response(request)
 
     @IModule.route("dynamips.atmsw.allocate_udp_port")
@@ -91,8 +135,21 @@ class ATMSW(object):
         Allocates a UDP port in order to create an UDP NIO for an
         ATM switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port_name (port name)
+
+        Response parameters:
+        - port_name (port name)
+        - lhost (local host address)
+        - lport (allocated local port)
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -114,8 +171,38 @@ class ATMSW(object):
         """
         Adds an NIO (Network Input/Output) for an ATM switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port (port identifier)
+        - mappings (VCs/VPs mapped to the port)
+        - nio (nio type, one of the following)
+            - "NIO_UDP"
+                - lport (local port)
+                - rhost (remote host)
+                - rport (remote port)
+            - "NIO_GenericEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_LinuxEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_TAP"
+                - tap_device (TAP device name e.g. tap0)
+            - "NIO_UNIX"
+                - local_file (path to UNIX socket file)
+                - remote_file (path to UNIX socket file)
+            - "NIO_VDE"
+                - control_file (path to VDE control file)
+                - local_file (path to VDE local file)
+            - "NIO_Null"
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -127,6 +214,8 @@ class ATMSW(object):
 
         try:
             nio = self.create_nio(atmsw, request)
+            if not nio:
+                raise DynamipsError("Requested NIO doesn't exist: {}".format(request["nio"]))
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -167,8 +256,19 @@ class ATMSW(object):
         """
         Deletes an NIO (Network Input/Output).
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port (port identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))

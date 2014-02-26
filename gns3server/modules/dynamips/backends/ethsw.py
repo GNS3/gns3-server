@@ -30,9 +30,21 @@ class ETHSW(object):
         """
         Creates a new Ethernet switch.
 
+        Optional request parameters:
+        - name (switch name)
+
+        Response parameters:
+        - id (switch identifier)
+        - name (switch name)
+
         :param request: JSON request
         """
 
+        if request == None:
+            self.send_param_error()
+            return
+
+        #TODO: JSON schema validation for the request
         name = None
         if request and "name" in request:
             name = request["name"]
@@ -55,8 +67,18 @@ class ETHSW(object):
         """
         Deletes a Ethernet switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -75,8 +97,22 @@ class ETHSW(object):
         """
         Updates a Ethernet switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - ports (ports settings)
+
+        Optional request parameters:
+        - name (new switch name)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -84,15 +120,28 @@ class ETHSW(object):
         ethsw = self._ethernet_switches[ethsw_id]
         ports = request["ports"]
 
+        # update the port settings
         for port, info in ports.items():
             vlan = info["vlan"]
             port_type = info["type"]
-            if port_type == "access":
-                ethsw.set_access_port(int(port), vlan)
-            elif port_type == "dot1q":
-                ethsw.set_dot1q_port(int(port), vlan)
-            elif port_type == "qinq":
-                ethsw.set_qinq_port(int(port), vlan)
+            try:
+                if port_type == "access":
+                    ethsw.set_access_port(int(port), vlan)
+                elif port_type == "dot1q":
+                    ethsw.set_dot1q_port(int(port), vlan)
+                elif port_type == "qinq":
+                    ethsw.set_qinq_port(int(port), vlan)
+            except DynamipsError as e:
+                self.send_custom_error(str(e))
+                return
+
+        # rename the switch if requested
+        if "name" in request and ethsw.name != request["name"]:
+            try:
+                ethsw.name = request["name"]
+            except DynamipsError as e:
+                self.send_custom_error(str(e))
+                return
 
         self.send_response(request)
 
@@ -102,8 +151,21 @@ class ETHSW(object):
         Allocates a UDP port in order to create an UDP NIO for an
         Ethernet switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port_name (port name)
+
+        Response parameters:
+        - port_name (port name)
+        - lhost (local host address)
+        - lport (allocated local port)
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -125,8 +187,39 @@ class ETHSW(object):
         """
         Adds an NIO (Network Input/Output) for an Ethernet switch.
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port (port identifier)
+        - vlan (vlan identifier)
+        - port_type ("access", "dot1q" or "qinq")
+        - nio (nio type, one of the following)
+            - "NIO_UDP"
+                - lport (local port)
+                - rhost (remote host)
+                - rport (remote port)
+            - "NIO_GenericEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_LinuxEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_TAP"
+                - tap_device (TAP device name e.g. tap0)
+            - "NIO_UNIX"
+                - local_file (path to UNIX socket file)
+                - remote_file (path to UNIX socket file)
+            - "NIO_VDE"
+                - control_file (path to VDE control file)
+                - local_file (path to VDE local file)
+            - "NIO_Null"
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
@@ -138,6 +231,8 @@ class ETHSW(object):
         port_type = request["port_type"]
         try:
             nio = self.create_nio(ethsw, request)
+            if not nio:
+                raise DynamipsError("Requested NIO doesn't exist: {}".format(request["nio"]))
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -162,8 +257,19 @@ class ETHSW(object):
         """
         Deletes an NIO (Network Input/Output).
 
+        Mandatory request parameters:
+        - id (switch identifier)
+        - port (port identifier)
+
+        Response parameters:
+        - same as original request
+
         :param request: JSON request
         """
+
+        if request == None:
+            self.send_param_error()
+            return
 
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))

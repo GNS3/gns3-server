@@ -106,10 +106,13 @@ class Dynamips(IModule):
         self._ethernet_hubs = {}
 
     def stop(self):
+        """
+        Properly stops the module.
+        """
 
         if self._hypervisor_manager:
             self._hypervisor_manager.stop_all_hypervisors()
-        IModule.stop(self)
+        IModule.stop(self)  # this will stop the I/O loop
 
     @IModule.route("dynamips.reset")
     def reset(self, request):
@@ -155,9 +158,20 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
+        if request == None:
+            self.send_param_error()
+            return
+
+        log.debug("received request {}".format(request))
+
+        #TODO: JSON schema validation
+        # starts the hypervisor manager if it hasn't been started yet
         if not self._hypervisor_manager:
+            #TODO: working dir support
+            log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format("/tmp"))
             self._hypervisor_manager = HypervisorManager(request["path"], "/tmp")
 
+        # apply settings to the hypervisor manager
         for name, value in request.items():
             if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:
                 setattr(self._hypervisor_manager, name, value)
@@ -177,7 +191,17 @@ class Dynamips(IModule):
             self.send_response(request)
 
     def create_nio(self, node, request):
+        """
+        Creates a new NIO.
 
+        :param node: node requesting the NIO
+        :param request: the original request with the
+        necessary information to create the NIO
+
+        :returns: a NIO object
+        """
+
+        #TODO: JSON schema validation
         nio = None
         if request["nio"] == "NIO_UDP":
             lport = request["lport"]
@@ -215,6 +239,8 @@ class Dynamips(IModule):
         Allocates a UDP port in order to create an UDP NIO.
 
         :param node: the node that needs to allocate an UDP port
+
+        :returns: dictionary with the allocated host/port info
         """
 
         port = node.hypervisor.allocate_udp_port()
@@ -244,6 +270,11 @@ class Dynamips(IModule):
 #         return response
 
     def set_ghost_ios(self, router):
+        """
+        Manages Ghost IOS support.
+
+        :param router: Router instance
+        """
 
         if not router.mmap:
             raise DynamipsError("mmap support is required to enable ghost IOS support")
@@ -270,6 +301,7 @@ class Dynamips(IModule):
             ghost.delete()
 
         if router.ghost_file != ghost_instance:
+            # set the ghost file to the router
             router.ghost_status = 2
             router.ghost_file = ghost_instance
 
