@@ -30,7 +30,7 @@ class NIO(object):
     """
     Base NIO class
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     """
 
     def __init__(self, hypervisor):

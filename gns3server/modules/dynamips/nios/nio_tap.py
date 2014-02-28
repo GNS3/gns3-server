@@ -29,7 +29,7 @@ class NIO_TAP(NIO):
     """
     Dynamips TAP NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param tap_device: TAP device name (e.g. tap0)
     """
 

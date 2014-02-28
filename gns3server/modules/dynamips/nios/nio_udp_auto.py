@@ -29,7 +29,7 @@ class NIO_UDP_auto(NIO):
     """
     Dynamips auto UDP NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param laddr: local address
     :param lport_start: start local port range
     :param lport_end: end local port range

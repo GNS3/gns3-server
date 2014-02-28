@@ -33,7 +33,7 @@ class C1700(Router):
     """
     Dynamips c1700 router.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
     :param chassis: chassis for this router:
     1720, 1721, 1750, 1751 or 1760 (default = 1720).

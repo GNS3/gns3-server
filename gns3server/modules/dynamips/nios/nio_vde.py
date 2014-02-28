@@ -29,7 +29,7 @@ class NIO_VDE(NIO):
     """
     Dynamips VDE NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param control_file: VDE control filename
     :param local_file: VDE local filename
     """

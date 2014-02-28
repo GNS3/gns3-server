@@ -32,7 +32,7 @@ class C3600(Router):
     """
     Dynamips c3600 router.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
     :param chassis: chassis for this router:
     3620, 3640 or 3660 (default = 3640).

@@ -34,7 +34,7 @@ class Router(object):
     """
     Dynamips router implementation.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
     :param platform: c7200, c3745, c3725, c3600, c2691, c2600 or c1700
     :param ghost_flag: used when creating a ghost IOS.
@@ -221,7 +221,7 @@ class Router(object):
         """
         Returns the current hypervisor.
 
-        :returns: hypervisor object
+        :returns: hypervisor instance
         """
 
         return self._hypervisor
@@ -1102,7 +1102,7 @@ class Router(object):
         Adds a slot binding (a module into a slot).
 
         :param slot_id: slot ID
-        :param adapter: device to add in the corresponding slot (object)
+        :param adapter: device to add in the corresponding slot
         """
 
         try:
@@ -1186,7 +1186,7 @@ class Router(object):
         Installs a WIC adapter into this router.
 
         :param wic_slot_id: WIC slot ID
-        :param wic: WIC to be install (object)
+        :param wic: WIC to be installed
         """
 
         # WICs are always installed on adapters in slot 0
@@ -1271,7 +1271,7 @@ class Router(object):
 
         :param slot_id: slot ID
         :param port_id: port ID
-        :param nio: NIO to add to the slot/port (object)
+        :param nio: NIO instance to add to the slot/port
         """
 
         try:
@@ -1304,7 +1304,7 @@ class Router(object):
         :param slot_id: slot ID
         :param port_id: port ID
 
-        :returns: removed NIO object
+        :returns: removed NIO instance
         """
 
         try:

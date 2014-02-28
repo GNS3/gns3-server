@@ -40,10 +40,6 @@ class ETHHUB(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
-            return
-
         #TODO: JSON schema validation for the request
         name = None
         if request and "name" in request:
@@ -136,10 +132,10 @@ class ETHHUB(object):
 
         Mandatory request parameters:
         - id (hub identifier)
-        - port_name (port name)
+        - port_id (port identifier)
 
         Response parameters:
-        - port_name (port name)
+        - port_id (port identifier)
         - lhost (local host address)
         - lport (allocated local port)
 
@@ -162,7 +158,7 @@ class ETHHUB(object):
             self.send_custom_error(str(e))
             return
 
-        response["port_name"] = request["port_name"]
+        response["port_id"] = request["port_id"]
         self.send_response(response)
 
     @IModule.route("dynamips.ethhub.add_nio")
@@ -173,6 +169,7 @@ class ETHHUB(object):
         Mandatory request parameters:
         - id (hub identifier)
         - port (port identifier)
+        - port_id (port identifier)
         - nio (nio type, one of the following)
             - "NIO_UDP"
                 - lport (local port)

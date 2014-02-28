@@ -29,7 +29,7 @@ class NIO_Null(NIO):
     """
     Dynamips NULL NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     """
 
     _instance_count = 0

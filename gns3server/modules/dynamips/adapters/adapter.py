@@ -72,7 +72,7 @@ class Adapter(object):
         Installs a WIC on this adapter.
 
         :param wic_slot_id: WIC slot ID (integer)
-        :param wic: WIC object
+        :param wic: WIC instance
         """
 
         self._wics[wic_slot_id] = wic
@@ -110,7 +110,7 @@ class Adapter(object):
         Adds a NIO to a port on this adapter.
 
         :param port_id: port ID (integer)
-        :param nio: NIO object
+        :param nio: NIO instance
         """
 
         self._ports[port_id] = nio
@@ -130,7 +130,7 @@ class Adapter(object):
 
         :params port_id: port ID (integer)
 
-        :returns: NIO object
+        :returns: NIO instance
         """
 
         return self._ports[port_id]
@@ -160,7 +160,7 @@ class Adapter(object):
         """
         Returns the wics adapters inserted in this adapter.
 
-        :returns: list WIC objects
+        :returns: list WIC instances
         """
 
         return self._wics

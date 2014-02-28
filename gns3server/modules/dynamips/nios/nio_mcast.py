@@ -29,7 +29,7 @@ class NIO_Mcast(NIO):
     """
     Dynamips Linux Ethernet NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param group: multicast group to bind
     :param port: port for binding
     """

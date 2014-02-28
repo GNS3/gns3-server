@@ -27,7 +27,7 @@ class Bridge(object):
     """
     Dynamips bridge.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this bridge
     """
 
@@ -73,7 +73,7 @@ class Bridge(object):
         """
         Returns the current hypervisor.
 
-        :returns: hypervisor object
+        :returns: hypervisor instance
         """
 
         return self._hypervisor
@@ -110,7 +110,7 @@ class Bridge(object):
         """
         Adds a NIO as new port on this bridge.
 
-        :param nio: NIO object to add
+        :param nio: NIO instance to add
         """
 
         self._hypervisor.send("nio_bridge add_nio {name} {nio}".format(name=self._name,
@@ -121,7 +121,7 @@ class Bridge(object):
         """
         Removes the specified NIO as member of this bridge.
 
-        :param nio: NIO object to remove
+        :param nio: NIO instance to remove
         """
 
         self._hypervisor.send("nio_bridge remove_nio {name} {nio}".format(name=self._name,

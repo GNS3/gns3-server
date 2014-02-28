@@ -34,8 +34,8 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
     STOMP protocol over Tornado Websockets with message
     routing to ZeroMQ dealer clients.
 
-    :param application: Tornado Application object
-    :param request: Tornado Request object
+    :param application: Tornado Application instance
+    :param request: Tornado Request instance
     :param zmq_router: ZeroMQ router socket
     """
 

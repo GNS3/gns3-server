@@ -68,7 +68,7 @@ class IModule(multiprocessing.Process):
         """
         Creates a new ZMQ stream.
 
-        :returns: ZMQ stream object
+        :returns: ZMQ stream instance
         """
 
         socket = self._context.socket(zmq.DEALER)

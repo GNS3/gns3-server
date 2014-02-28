@@ -29,7 +29,7 @@ class NIO_UNIX(NIO):
     """
     Dynamips UNIX NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param local_file: local UNIX socket filename
     :param remote_file: remote UNIX socket filename
     """

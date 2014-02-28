@@ -28,7 +28,7 @@ class ATMBridge(object):
     """
     Dynamips bridge switch.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this switch
     """
 
@@ -69,7 +69,7 @@ class ATMBridge(object):
         """
         Returns the current hypervisor.
 
-        :returns: hypervisor object
+        :returns: hypervisor instance
         """
 
         return self._hypervisor
@@ -115,7 +115,7 @@ class ATMBridge(object):
         """
         Adds a NIO as new port on ATM bridge.
 
-        :param nio: NIO object to add
+        :param nio: NIO instance to add
         :param port: port to allocate for the NIO
         """
 

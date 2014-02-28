@@ -29,7 +29,7 @@ class NIO_GenericEthernet(NIO):
     """
     Dynamips generic Ethernet NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param ethernet_device: Ethernet device name (e.g. eth0)
     """
 

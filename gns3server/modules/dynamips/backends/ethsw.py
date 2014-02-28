@@ -40,10 +40,6 @@ class ETHSW(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
-            return
-
         #TODO: JSON schema validation for the request
         name = None
         if request and "name" in request:
@@ -153,10 +149,10 @@ class ETHSW(object):
 
         Mandatory request parameters:
         - id (switch identifier)
-        - port_name (port name)
+        - port_id (port identifier)
 
         Response parameters:
-        - port_name (port name)
+        - port_id (port identifier)
         - lhost (local host address)
         - lport (allocated local port)
 
@@ -179,7 +175,7 @@ class ETHSW(object):
             self.send_custom_error(str(e))
             return
 
-        response["port_name"] = request["port_name"]
+        response["port_id"] = request["port_id"]
         self.send_response(response)
 
     @IModule.route("dynamips.ethsw.add_nio")
@@ -190,6 +186,7 @@ class ETHSW(object):
         Mandatory request parameters:
         - id (switch identifier)
         - port (port identifier)
+        - port_id (port identifier)
         - vlan (vlan identifier)
         - port_type ("access", "dot1q" or "qinq")
         - nio (nio type, one of the following)

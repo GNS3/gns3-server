@@ -445,10 +445,10 @@ class VM(object):
 
         Mandatory request parameters:
         - id (vm identifier)
-        - port_name (port name e.g fastEthernet1/0)
+        - port_id (unique port identifier)
 
         Response parameters:
-        - port_name (port name e.g fastEthernet1/0)
+        - port_id (unique port identifier)
         - lhost (local host address)
         - lport (allocated local port)
 
@@ -471,7 +471,7 @@ class VM(object):
             self.send_custom_error(str(e))
             return
 
-        response["port_name"] = request["port_name"]
+        response["port_id"] = request["port_id"]
         self.send_response(response)
 
     @IModule.route("dynamips.vm.add_nio")
@@ -481,8 +481,9 @@ class VM(object):
 
         Mandatory request parameters:
         - id (vm identifier)
-        - slot (slot identifier)
-        - port (port identifier)
+        - slot (slot number)
+        - port (port number)
+        - port_id (unique port identifier)
         - nio (nio type, one of the following)
             - "NIO_UDP"
                 - lport (local port)

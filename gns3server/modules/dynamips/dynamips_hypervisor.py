@@ -158,7 +158,7 @@ class DynamipsHypervisor(object):
 
     def save_config(self, filename):
         """
-        Saves the configuration of all Dynamips objects into the specified file.
+        Saves the configuration of all Dynamips instances into the specified file.
 
         :param filename: path string
         """
@@ -181,7 +181,7 @@ class DynamipsHypervisor(object):
         """
         Returns the current socket used to communicate with this hypervisor.
 
-        :returns: socket object
+        :returns: socket instance
         """
 
         assert self._socket
@@ -192,7 +192,7 @@ class DynamipsHypervisor(object):
         """
         Returns the list of devices managed by this hypervisor instance.
 
-        :returns: a list of device objects
+        :returns: a list of device instances
         """
 
         return self._devices
@@ -287,7 +287,7 @@ class DynamipsHypervisor(object):
         Adds a ghost name to the list of ghosts created on this hypervisor.
 
         :param image_name: name of the ghost image
-        :param router: router object
+        :param router: Router instance
         """
 
         self._ghosts[image_name] = router
@@ -344,10 +344,8 @@ class DynamipsHypervisor(object):
 
         #FIXME: better check for IPv6
         start_port = self._current_udp_port
-        print("start port = {}".format(start_port))
         end_port = start_port + max_port
         for port in range(start_port, end_port):
-            print(port)
             if port > end_port:
                 raise DynamipsError("Could not find a free port between {0} and {1}".format(start_port, max_port))
             try:
@@ -360,7 +358,6 @@ class DynamipsHypervisor(object):
                 s.bind((self._host, port))
                 #FIXME: increment?
                 self._current_udp_port += 1
-                print("current port = {}".format(self._current_udp_port))
                 return port
             except socket.error as e:
                 if e.errno == errno.EADDRINUSE:  # socket already in use

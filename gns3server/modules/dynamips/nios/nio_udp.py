@@ -29,7 +29,7 @@ class NIO_UDP(NIO):
     """
     Dynamips UDP NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param lport: local port number
     :param rhost: remote address/host
     :param rport: remote port number

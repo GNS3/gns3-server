@@ -31,7 +31,7 @@ class Hub(Bridge):
     """
     Dynamips hub (based on Bridge)
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this hub
     """
 
@@ -102,7 +102,7 @@ class Hub(Bridge):
         """
         Adds a NIO as new port on this hub.
 
-        :param nio: NIO object to add
+        :param nio: NIO instance to add
         :param port: port to allocate for the NIO
         """
 

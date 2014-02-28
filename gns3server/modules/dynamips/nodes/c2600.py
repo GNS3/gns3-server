@@ -35,7 +35,7 @@ class C2600(Router):
     """
     Dynamips c2600 router.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
     :param chassis: chassis for this router:
     2610, 2611, 2620, 2621, 2610XM, 2611XM

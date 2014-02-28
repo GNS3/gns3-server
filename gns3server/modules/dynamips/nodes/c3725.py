@@ -32,7 +32,7 @@ class C3725(Router):
     """
     Dynamips c3725 router.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
     """
 

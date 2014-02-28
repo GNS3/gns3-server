@@ -81,7 +81,7 @@ class HypervisorManager(object):
         """
         Returns all hypervisor instances.
 
-        :returns: list of hypervisor objects
+        :returns: list of hypervisor instances
         """
 
         return self._hypervisors
@@ -430,7 +430,7 @@ class HypervisorManager(object):
         """
         Creates a new Dynamips process and start it.
 
-        :returns: the new hypervisor object
+        :returns: the new hypervisor instance
         """
 
         hypervisor = Hypervisor(self._path,
@@ -461,7 +461,7 @@ class HypervisorManager(object):
         :param router_ios_image: IOS image name
         :param router_ram: amount of RAM (integer)
 
-        :returns: the allocated hypervisor object
+        :returns: the allocated hypervisor instance
         """
 
         # allocate an hypervisor for each router by default
@@ -490,7 +490,7 @@ class HypervisorManager(object):
         """
         Unallocates a Dynamips hypervisor for a specific router.
 
-        :param router: router object
+        :param router: Router instance
         """
 
         hypervisor = router.hypervisor
@@ -512,7 +512,7 @@ class HypervisorManager(object):
         """
         Allocates a Dynamips hypervisor for a specific Dynamips simulated device.
 
-        :returns: the allocated hypervisor object
+        :returns: the allocated hypervisor instance
         """
 
         # For now always allocate the first hypervisor available,
@@ -528,7 +528,7 @@ class HypervisorManager(object):
         """
         Unallocates a Dynamips hypervisor for a specific Dynamips simulated device.
 
-        :param device: device object
+        :param device: device instance
         """
 
         hypervisor = device.hypervisor

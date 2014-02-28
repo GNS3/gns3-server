@@ -34,7 +34,7 @@ class C7200(Router):
     """
     Dynamips c7200 router (model is 7206).
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
     :param npe: default NPE
     """

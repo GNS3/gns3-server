@@ -29,7 +29,7 @@ class NIO_FIFO(NIO):
     """
     Dynamips FIFO NIO.
 
-    :param hypervisor: Dynamips hypervisor object
+    :param hypervisor: Dynamips hypervisor instance
     """
 
     _instance_count = 0
@@ -59,7 +59,7 @@ class NIO_FIFO(NIO):
         """
         Establishes a cross-connect between this FIFO NIO and another one.
 
-        :param nio: FIFO NIO object.
+        :param nio: FIFO NIO instance
         """
 
         self._hypervisor.send("nio crossconnect_fifo {name} {nio}".format(name=self._name,
