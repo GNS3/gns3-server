@@ -33,6 +33,7 @@ class DynamipsHypervisor(object):
     """
     Creates a new connection to a Dynamips server (also called hypervisor)
 
+    :param working_dir: working directory
     :param host: the hostname or ip address string of the Dynamips server
     :param port: the tcp port integer (defaults to 7200)
     :param timeout: timeout integer for how long to wait for a response to commands sent to the
@@ -43,7 +44,7 @@ class DynamipsHypervisor(object):
     error_re = re.compile(r"""^2[0-9]{2}-""")
     success_re = re.compile(r"""^1[0-9]{2}\s{1}""")
 
-    def __init__(self, host, port=7200, timeout=30.0):
+    def __init__(self, working_dir, host, port=7200, timeout=30.0):
 
         self._host = host
         self._port = port
@@ -51,7 +52,7 @@ class DynamipsHypervisor(object):
         self._devices = []
         self._ghosts = {}
         self._jitsharing_groups = {}
-        self._working_dir = ""
+        self._working_dir = working_dir
         self._baseconsole = 2000
         self._baseaux = 2100
         self._baseudp = 10000
@@ -155,6 +156,7 @@ class DynamipsHypervisor(object):
         # encase working_dir in quotes to protect spaces in the path
         self.send("hypervisor working_dir {}".format('"' + working_dir + '"'))
         self._working_dir = working_dir
+        log.debug("working directory set to {}".format(self._working_dir))
 
     def save_config(self, filename):
         """
@@ -332,6 +334,40 @@ class DynamipsHypervisor(object):
 
         return self._port
 
+    @staticmethod
+    def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP"):
+        """
+        Finds an unused port in a range.
+
+        :param start_port: first port in the range
+        :param end_port: last port in the range
+        :param host: host/address for bind()
+        :param socket_type: TCP (default) or UDP
+        """
+
+        if socket_type == "UDP":
+            socket_type = socket.SOCK_DGRAM
+        else:
+            socket_type = socket.SOCK_STREAM
+
+        for port in range(start_port, end_port):
+            if port > end_port:
+                raise DynamipsError("Could not find a free port between {0} and {1}".format(start_port, end_port))
+            try:
+                if ":" in host:
+                    # IPv6 address support
+                    s = socket.socket(socket.AF_INET6, socket_type)
+                else:
+                    s = socket.socket(socket.AF_INET, socket_type)
+                # the port is available if bind is a success
+                s.bind((host, port))
+                return port
+            except socket.error as e:
+                if e.errno == errno.EADDRINUSE:  # socket already in use
+                    continue
+                else:
+                    raise DynamipsError("Could not find an unused port: {}".format(e))
+
     def allocate_udp_port(self, max_port=100):
         """
         Allocates a new UDP port for creating an UDP NIO.
@@ -342,28 +378,14 @@ class DynamipsHypervisor(object):
         :returns: port number (integer)
         """
 
-        #FIXME: better check for IPv6
         start_port = self._current_udp_port
         end_port = start_port + max_port
-        for port in range(start_port, end_port):
-            if port > end_port:
-                raise DynamipsError("Could not find a free port between {0} and {1}".format(start_port, max_port))
-            try:
-                if self.host.__contains__(':'):
-                    # IPv6 address support
-                    s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-                else:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                # the port is available if bind is a success
-                s.bind((self._host, port))
-                #FIXME: increment?
-                self._current_udp_port += 1
-                return port
-            except socket.error as e:
-                if e.errno == errno.EADDRINUSE:  # socket already in use
-                    continue
-                else:
-                    raise DynamipsError("UDP port allocation: {}".format(e))
+        allocated_port = DynamipsHypervisor.find_unused_port(start_port, end_port, self._host, socket_type="UDP")
+        if allocated_port - self._current_udp_port > 1:
+            self._current_udp_port += allocated_port - self._current_udp_port
+        else:
+            self._current_udp_port += 1
+        return allocated_port
 
     def send_raw(self, string):
         """

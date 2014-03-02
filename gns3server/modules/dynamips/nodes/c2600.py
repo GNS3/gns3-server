@@ -20,7 +20,6 @@ Interface for Dynamips virtual Cisco 2600 instances module ("c2600")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L404
 """
 
-from __future__ import unicode_literals
 from .router import Router
 from ..adapters.c2600_mb_1e import C2600_MB_1E
 from ..adapters.c2600_mb_2e import C2600_MB_2E

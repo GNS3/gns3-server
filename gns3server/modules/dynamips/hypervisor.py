@@ -22,11 +22,12 @@ Represents a Dynamips hypervisor and starts/stops the associated Dynamips proces
 import os
 import time
 import subprocess
-import logging
 
 from .dynamips_hypervisor import DynamipsHypervisor
+from .dynamips_error import DynamipsError
 
-logger = logging.getLogger(__name__)
+import logging
+log = logging.getLogger(__name__)
 
 
 class Hypervisor(DynamipsHypervisor):
@@ -34,26 +35,25 @@ class Hypervisor(DynamipsHypervisor):
     Hypervisor.
 
     :param path: path to Dynamips executable
-    :param workingdir: working directory
+    :param working_dir: working directory
     :param port: port for this hypervisor
     :param host: host/address for this hypervisor
     """
 
     _instance_count = 0
 
-    def __init__(self, path, workingdir, host, port):
+    def __init__(self, path, working_dir, host, port):
 
-        DynamipsHypervisor.__init__(self, host, port)
+        DynamipsHypervisor.__init__(self, working_dir, host, port)
 
         # create an unique ID
         self._id = Hypervisor._instance_count
         Hypervisor._instance_count += 1
 
         self._path = path
-        self._workingdir = workingdir
         self._command = []
         self._process = None
-        self._stdout = None
+        self._stdout_file = ""
 
         # settings used the load-balance hypervisors
         # (for the hypervisor manager)
@@ -131,26 +131,6 @@ class Hypervisor(DynamipsHypervisor):
         self._host = host
 
     @property
-    def workingdir(self):
-        """
-        Returns the working directory used to start the Dynamips hypervisor.
-
-        :returns: path to a working directory
-        """
-
-        return(self._workingdir)
-
-    @workingdir.setter
-    def workingdir(self, workingdir):
-        """
-        Sets the working directory used to start the Dynamips hypervisor.
-
-        :param workingdir: path to a working directory
-        """
-
-        self._workingdir = workingdir
-
-    @property
     def image_ref(self):
         """
         Returns the reference IOS image name
@@ -210,20 +190,18 @@ class Hypervisor(DynamipsHypervisor):
 
         self._command = self._build_command()
         try:
-            logger.info("Starting Dynamips: {}".format(self._command))
-            # TODO: create unique filename for stdout
-            self.stdout_file = os.path.join(self._workingdir, "dynamips.log")
-            fd = open(self.stdout_file, "w")
-            # TODO: check for exceptions and if process has already been started
-            self._process = subprocess.Popen(self._command,
-                                             stdout=fd,
-                                             stderr=subprocess.STDOUT,
-                                             cwd=self._workingdir)
-            logger.info("Dynamips started PID={}".format(self._process.pid))
-        except OSError as e:
-            logger.error("Could not start Dynamips: {}".format(e))
-        finally:
-            fd.close()
+            log.info("starting Dynamips: {}".format(self._command))
+            self._stdout_file = os.path.join(self._working_dir, "dynamips-{}.log".format(self._port))
+            log.info("logging to {}".format(self._stdout_file))
+            with open(self._stdout_file, "w") as fd:
+                self._process = subprocess.Popen(self._command,
+                                                 stdout=fd,
+                                                 stderr=subprocess.STDOUT,
+                                                 cwd=self._working_dir)
+            log.info("Dynamips started PID={}".format(self._process.pid))
+        except EnvironmentError as e:
+            log.error("could not start Dynamips: {}".format(e))
+            raise DynamipsError("could not start Dynamips: {}".format(e))
 
     def stop(self):
         """
@@ -232,7 +210,7 @@ class Hypervisor(DynamipsHypervisor):
 
         if self.is_running():
             DynamipsHypervisor.stop(self)
-            logger.info("Stopping Dynamips PID={}".format(self._process.pid))
+            log.info("stopping Dynamips PID={}".format(self._process.pid))
             # give some time for the hypervisor to properly stop.
             # time to delete UNIX NIOs for instance.
             time.sleep(0.01)
@@ -245,9 +223,13 @@ class Hypervisor(DynamipsHypervisor):
         Only use when the process has been stopped or has crashed.
         """
 
-        # TODO: check for exceptions
-        with open(self.stdout_file) as file:
-            output = file.read()
+        output = ""
+        if self._stdout_file:
+            try:
+                with open(self._stdout_file) as file:
+                    output = file.read()
+            except EnvironmentError as e:
+                log.warn("could not read {}: {}".format(self._stdout_file, e))
         return output
 
     def is_running(self):

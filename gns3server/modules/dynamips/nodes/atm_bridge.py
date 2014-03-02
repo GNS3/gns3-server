@@ -20,7 +20,6 @@ Interface for Dynamips virtual ATM bridge module ("atm_bridge").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L622
 """
 
-from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
 
 

@@ -20,8 +20,6 @@ Interface for Dynamips NIO bridge module ("nio_bridge").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L538
 """
 
-from __future__ import unicode_literals
-
 
 class Bridge(object):
     """
@@ -36,6 +34,7 @@ class Bridge(object):
     def __init__(self, hypervisor, name):
 
         self._hypervisor = hypervisor
+        self._allocated_names.append(name)
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("nio_bridge create {}".format(self._name))
         self._hypervisor.devices.append(self)

@@ -20,7 +20,6 @@ Interface for Dynamips virtual Frame-Relay switch module.
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L642
 """
 
-from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
 
 import logging

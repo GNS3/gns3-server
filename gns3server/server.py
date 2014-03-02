@@ -49,9 +49,16 @@ class Server(object):
         self._host = host
         self._port = port
         if ipc:
-            self._zmq_port = 0  # this forces module to use IPC for communications
+            self._zmq_port = 0  # this forces to use IPC for communications with the ZeroMQ server
         else:
-            self._zmq_port = port + 1  # this server port + 1
+            try:
+                # let the OS find an unused port for the ZeroMQ server
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.bind(('127.0.0.1', 0))
+                    self._zmq_port = sock.getsockname()[1]
+            except socket.error as e:
+                log.warn("could not pick up a random port for the ZeroMQ server: {}".format(e))
+                self._zmq_port = port + 1  # let's try this server port + 1
         self._ipc = ipc
         self._modules = []
 

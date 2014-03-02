@@ -20,7 +20,6 @@ Interface for Dynamips virtual Cisco 3745 instances module ("c3745")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L326
 """
 
-from __future__ import unicode_literals
 from .router import Router
 from ..adapters.gt96100_fe import GT96100_FE
 

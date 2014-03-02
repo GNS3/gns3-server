@@ -19,8 +19,8 @@
 Manages Dynamips hypervisors (load-balancing etc.)
 """
 
-from __future__ import unicode_literals
 from .hypervisor import Hypervisor
+from .dynamips_error import DynamipsError
 import socket
 import time
 import logging
@@ -33,7 +33,7 @@ class HypervisorManager(object):
     Manages Dynamips hypervisors.
 
     :param path: path to the Dynamips executable
-    :param workingdir: path to a working directory
+    :param working_dir: path to a working directory
     :param host: host/address for hypervisors to listen to
     :param base_port: base TCP port for hypervisors
     :param base_console: base TCP port for consoles
@@ -43,7 +43,7 @@ class HypervisorManager(object):
 
     def __init__(self,
                  path,
-                 workingdir,
+                 working_dir,
                  host='127.0.0.1',
                  base_hypervisor_port=7200,
                  base_console_port=2000,
@@ -52,7 +52,7 @@ class HypervisorManager(object):
 
         self._hypervisors = []
         self._path = path
-        self._workingdir = workingdir
+        self._working_dir = working_dir
         self._host = host
         self._base_hypervisor_port = base_hypervisor_port
         self._current_port = self._base_hypervisor_port
@@ -108,25 +108,29 @@ class HypervisorManager(object):
         log.info("Dynamips path set to {}".format(self._path))
 
     @property
-    def workingdir(self):
+    def working_dir(self):
         """
         Returns the Dynamips working directory path.
 
         :returns: path to Dynamips working directory
         """
 
-        return self._workingdir
+        return self._working_dir
 
-    @workingdir.setter
-    def workingdir(self, workingdir):
+    @working_dir.setter
+    def working_dir(self, working_dir):
         """
         Sets a new path to the Dynamips working directory.
 
-        :param workingdir: path to Dynamips working directory
+        :param working_dir: path to Dynamips working directory
         """
 
-        self._workingdir = workingdir
-        log.info("working directory set to {}".format(self._workingdir))
+        self._working_dir = working_dir
+        log.info("working directory set to {}".format(self._working_dir))
+
+        # update all existing hypervisors with the new working directory
+        for hypervisor in self._hypervisors:
+            hypervisor.working_dir = working_dir
 
     @property
     def base_hypervisor_port(self):
@@ -406,16 +410,12 @@ class HypervisorManager(object):
         # try to connect for 10 seconds
         while(time.time() - begin < 10.0):
             time.sleep(0.01)
-            sock = None
             try:
-                sock = socket.create_connection((host, port), timeout)
+                with socket.create_connection((host, port), timeout):
+                    pass
             except socket.error as e:
                 last_exception = e
-                #time.sleep(0.01)
                 continue
-            finally:
-                if sock:
-                    sock.close()
             connection_success = True
             break
 
@@ -426,6 +426,25 @@ class HypervisorManager(object):
         else:
             log.info("Dynamips server ready after {:.4f} seconds".format(time.time() - begin))
 
+    def allocate_tcp_port(self, max_port=100):
+        """
+        Allocates a new TCP port for a Dynamips hypervisor.
+
+        :param max_port: maximum number of port to scan in
+        order to find one available for use.
+
+        :returns: port number (integer)
+        """
+
+        start_port = self._current_port
+        end_port = start_port + max_port
+        allocated_port = Hypervisor.find_unused_port(start_port, end_port, self._host)
+        if allocated_port - self._current_port > 1:
+            self._current_port += allocated_port - self._current_port
+        else:
+            self._current_port += 1
+        return allocated_port
+
     def start_new_hypervisor(self):
         """
         Creates a new Dynamips process and start it.
@@ -433,15 +452,23 @@ class HypervisorManager(object):
         :returns: the new hypervisor instance
         """
 
+        port = self.allocate_tcp_port()
+#         working_dir = os.path.join(self._working_dir, "instance-{}".format(port))
+#         if not os.path.exists(working_dir):
+#             try:
+#                 os.makedirs(working_dir)
+#             except EnvironmentError as e:
+#                 raise DynamipsError("{}".format(e))
+
         hypervisor = Hypervisor(self._path,
-                                self._workingdir,
+                                self._working_dir,
                                 self._host,
-                                self._current_port)
+                                port)
 
         log.info("creating new hypervisor {}:{}".format(hypervisor.host, hypervisor.port))
         hypervisor.start()
 
-        self.wait_for_hypervisor(self._host, self._current_port)
+        self.wait_for_hypervisor(self._host, port)
         log.info("hypervisor {}:{} has successfully started".format(hypervisor.host, hypervisor.port))
 
         hypervisor.connect()
@@ -450,7 +477,6 @@ class HypervisorManager(object):
         hypervisor.baseudp = self._current_base_udp_port
         self._current_base_udp_port += self._udp_incrementation_per_hypervisor
         self._hypervisors.append(hypervisor)
-        self._current_port += 1
         return hypervisor
 
     def allocate_hypervisor_for_router(self, router_ios_image, router_ram):

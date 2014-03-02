@@ -82,8 +82,8 @@ class ModuleManager(object):
                                 log.info("loading {} module".format(module_class[0].lower()))
                                 info = Module(name=module_class[0].lower(), cls=module_class[1])
                                 self._modules.append(info)
-                except:
-                    log.warning("error while analyzing {} package directory".format(name))
+                except Exception as e:
+                    log.critical("error while analyzing {} package directory".format(name), exc_info=1)
                 finally:
                     if file:
                         file.close()

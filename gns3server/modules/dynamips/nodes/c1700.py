@@ -20,7 +20,6 @@ Interface for Dynamips virtual Cisco 1700 instances module ("c1700")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L428
 """
 
-from __future__ import unicode_literals
 from .router import Router
 from ..adapters.c1700_mb_1fe import C1700_MB_1FE
 from ..adapters.c1700_mb_wic1 import C1700_MB_WIC1

@@ -20,7 +20,7 @@ Interface for Dynamips virtual Machine module ("vm")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L77
 """
 
-from __future__ import unicode_literals
+from ..dynamips_hypervisor import DynamipsHypervisor
 from ..dynamips_error import DynamipsError
 import time
 import sys
@@ -68,6 +68,8 @@ class Router(object):
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._platform = platform
         self._image = ""
+        self._startup_config = ""
+        self._private_config = ""
         self._ram = 128  # Megabytes
         self._nvram = 128  # Kilobytes
         self._mmap = True
@@ -100,8 +102,12 @@ class Router(object):
             log.info("router {platform} {name} [id={id}] has been created".format(name=self._name,
                                                                                   platform=platform,
                                                                                   id=self._id))
-            self.console = self._hypervisor.baseconsole + self._id
-            self.aux = self._hypervisor.baseaux + self._id
+
+            # allocate and check that console and aux ports are unused
+            console_port = (self._hypervisor.baseconsole - 1) + self._id
+            self.console = DynamipsHypervisor.find_unused_port(console_port, console_port + 1, self._hypervisor.host)
+            aux_port = (self._hypervisor.baseaux - 1) + self._id
+            self.aux = DynamipsHypervisor.find_unused_port(aux_port, aux_port + 1, self._hypervisor.host)
 
             # get the default base MAC address
             self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
@@ -130,6 +136,8 @@ class Router(object):
 
         router_defaults = {"platform": self._platform,
                            "image": self._image,
+                           "startup_config": self._startup_config,
+                           "private_config": self._private_config,
                            "ram": self._ram,
                            "nvram": self._nvram,
                            "mmap": self._mmap,
@@ -249,7 +257,7 @@ class Router(object):
         Deletes this router.
         """
 
-        self._hypervisor.send("vm delete {}".format(self._name))
+        self._hypervisor.send("vm clean_delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
 
         log.info("router {name} [id={id}] has been deleted".format(name=self._name, id=self._id))
@@ -384,6 +392,46 @@ class Router(object):
 
         self._image = image
 
+    @property
+    def startup_config(self):
+        """
+        Returns the startup-config for this router.
+
+        :returns: path to startup-config file
+        """
+
+        return self._startup_config
+
+    @startup_config.setter
+    def startup_config(self, startup_config):
+        """
+        Sets the startup-config for this router.
+
+        :param startup_config: path to startup-config file
+        """
+
+        self._startup_config = startup_config
+
+    @property
+    def private_config(self):
+        """
+        Returns the private-config for this router.
+
+        :returns: path to private-config file
+        """
+
+        return self._private_config
+
+    @private_config.setter
+    def private_config(self, private_config):
+        """
+        Sets the private-config for this router.
+
+        :param private_config: path to private-config file
+        """
+
+        self._private_config = private_config
+
     def set_config(self, startup_config, private_config=''):
         """
         Sets the config files that are pushed to startup-config and
@@ -394,18 +442,20 @@ class Router(object):
         (keep existing data when if an empty string)
         """
 
-        self._hypervisor.send("vm set_config {name} {startup} {private}".format(name=self._name,
-                                                                                startup='"' + startup_config + '"',
-                                                                                private='"' + private_config + '"'))
+        if self._startup_config != startup_config or self._private_config != private_config:
 
-        log.info("router {name} [id={id}]: has a startup-config set: {startup}".format(name=self._name,
-                                                                                       id=self._id,
-                                                                                       startup='"' + startup_config + '"'))
+            self._hypervisor.send("vm set_config {name} {startup} {private}".format(name=self._name,
+                                                                                    startup='"' + startup_config + '"',
+                                                                                    private='"' + private_config + '"'))
 
-        if private_config:
-            log.info("router {name} [id={id}]: has a private-config set: {private}".format(name=self._name,
+            log.info("router {name} [id={id}]: has a startup-config set: {startup}".format(name=self._name,
                                                                                            id=self._id,
-                                                                                           private='"' + private_config + '"'))
+                                                                                           startup='"' + startup_config + '"'))
+
+            if private_config:
+                log.info("router {name} [id={id}]: has a private-config set: {private}".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               private='"' + private_config + '"'))
 
     def extract_config(self):
         """

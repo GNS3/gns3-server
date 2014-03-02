@@ -19,7 +19,6 @@
 Hub object that uses the Bridge interface to create a hub with ports.
 """
 
-from __future__ import unicode_literals
 from .bridge import Bridge
 from ..dynamips_error import DynamipsError
 
@@ -53,7 +52,6 @@ class Hub(Bridge):
                     break
                 name_id += 1
 
-        self._allocated_names.append(name)
         self._mapping = {}
         Bridge.__init__(self, hypervisor, name)
 

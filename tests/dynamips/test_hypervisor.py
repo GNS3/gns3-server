@@ -18,9 +18,9 @@ def test_host(hypervisor):
     assert hypervisor.host == "127.0.0.1"
 
 
-def test_workingdir(hypervisor):
+def test_working_dir(hypervisor):
 
-    assert hypervisor.workingdir == "/tmp"
+    assert hypervisor.working_dir == "/tmp"
 
 
 def test_path(hypervisor):

@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import base64
 from gns3server.modules import IModule
 from ..dynamips_error import DynamipsError
 
@@ -121,8 +122,13 @@ class VM(object):
         platform = request["platform"]
         image = request["image"]
         ram = request["ram"]
+        hypervisor = None
 
         try:
+
+            if not self._hypervisor_manager:
+                raise DynamipsError("Dynamips manager is not started")
+
             hypervisor = self._hypervisor_manager.allocate_hypervisor_for_router(image, ram)
 
             router = PLATFORMS[platform](hypervisor, name)
@@ -158,11 +164,14 @@ class VM(object):
                 self.set_ghost_ios(router)
 
         except DynamipsError as e:
-            hypervisor.decrease_memory_load(ram)
-            if hypervisor.memory_load == 0 and not hypervisor.devices:
-                hypervisor.stop()
-                self._hypervisor_manager.hypervisors.remove(hypervisor)
-            self.send_custom_error(str(e))
+            dynamips_stdout = ""
+            if hypervisor:
+                hypervisor.decrease_memory_load(ram)
+                if hypervisor.memory_load == 0 and not hypervisor.devices:
+                    hypervisor.stop()
+                    self._hypervisor_manager.hypervisors.remove(hypervisor)
+                dynamips_stdout = hypervisor.read_stdout()
+            self.send_custom_error(str(e) + dynamips_stdout)
             return
 
         response = {"name": router.name,
@@ -330,6 +339,7 @@ class VM(object):
 
         Optional request parameters:
         - any setting to update
+        - startup_config_base64 (startup-config base64 encoded)
 
         Response parameters:
         - same as original request
@@ -345,6 +355,32 @@ class VM(object):
         log.debug("received request {}".format(request))
         router_id = request["id"]
         router = self._routers[router_id]
+
+        try:
+            # a new startup-config has been pushed
+            if "startup_config_base64" in request:
+                config = base64.decodestring(request["startup_config_base64"].encode("utf-8")).decode("utf-8")
+                config = "!\n" + config.replace("\r", "")
+                config = config.replace('%h', router.name)
+                config_dir = os.path.join(router.hypervisor.working_dir, "configs")
+                if not os.path.exists(config_dir):
+                    try:
+                        os.makedirs(config_dir)
+                    except EnvironmentError as e:
+                        raise DynamipsError("Could not create configs directory: {}".format(e))
+                config_path = os.path.join(config_dir, "{}.cfg".format(router.name))
+                try:
+                    with open(config_path, "w") as f:
+                        log.info("saving startup-config to {}".format(config_path))
+                        f.write(config)
+                except EnvironmentError as e:
+                    raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
+                request["startup_config"] = "configs" + os.sep + os.path.basename(config_path)
+            if "startup_config" in request:
+                router.set_config(request["startup_config"])
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
 
         # update the settings
         for name, value in request.items():
@@ -370,7 +406,7 @@ class VM(object):
                 if router.slots[slot_id]:
                     try:
                         router.slot_remove_binding(slot_id)
-                    except:
+                    except DynamipsError as e:
                         self.send_custom_error(str(e))
                         return
             elif name.startswith("wic") and value in WIC_MATRIX:
@@ -387,7 +423,11 @@ class VM(object):
             elif name.startswith("wic") and value == None:
                 wic_slot_id = int(name[-1])
                 if router.slots[0].wics and router.slots[0].wics[wic_slot_id]:
-                    router.uninstall_wic(wic_slot_id)
+                    try:
+                        router.uninstall_wic(wic_slot_id)
+                    except DynamipsError as e:
+                        self.send_custom_error(str(e))
+                        return
 
         # Update the ghost IOS file in case the RAM size has changed
         if self._hypervisor_manager.ghost_ios_support:
@@ -395,6 +435,40 @@ class VM(object):
 
         # for now send back the original request
         self.send_response(request)
+
+    @IModule.route("dynamips.vm.save_config")
+    def vm_save_config(self, request):
+        """
+        Save the configs for a VM (router).
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        """
+
+        if request == None:
+            self.send_param_error()
+            return
+
+        #TODO: JSON schema validation for the request
+        log.debug("received request {}".format(request))
+        router_id = request["id"]
+        router = self._routers[router_id]
+        try:
+            if router.startup_config:
+                #TODO: handle private-config
+                startup_config_base64, _ = router.extract_config()
+                if startup_config_base64:
+                    try:
+                        config = base64.decodestring(startup_config_base64.encode("utf-8")).decode("utf-8")
+                        config = "!\n" + config.replace("\r", "")
+                        config_path = os.path.join(router.hypervisor.working_dir, router.startup_config)
+                        with open(config_path, "w") as f:
+                            log.info("saving startup-config to {}".format(router.startup_config))
+                            f.write(config)
+                    except EnvironmentError as e:
+                        raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
+        except DynamipsError as e:
+            log.warn("could not save config to {}: {}".format(router.startup_config, e))
 
     @IModule.route("dynamips.vm.idlepcs")
     def vm_idlepcs(self, request):

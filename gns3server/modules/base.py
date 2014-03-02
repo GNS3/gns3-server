@@ -93,9 +93,16 @@ class IModule(multiprocessing.Process):
             stream.on_recv(callback)
         return stream
 
-#     def add_periodic_callback(self, callback, time):
-# 
-#         self.test = zmq.eventloop.ioloop.PeriodicCallback(callback, time, self._ioloop).start()
+    def add_periodic_callback(self, callback, time):
+        """
+        Adds a periodic callback to the ioloop.
+
+        :param callback: callback to be called
+        :param time: frequency when the callback is executed
+        """
+
+        periodic_callback = zmq.eventloop.ioloop.PeriodicCallback(callback, time, self._ioloop)
+        return periodic_callback
 
     def run(self):
         """

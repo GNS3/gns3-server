@@ -19,6 +19,8 @@
 Dynamips server module.
 """
 
+import os
+import tempfile
 from gns3server.modules import IModule
 import gns3server.jsonrpc as jsonrpc
 
@@ -99,11 +101,15 @@ class Dynamips(IModule):
         IModule.__init__(self, name=name, args=args, kwargs=kwargs)
 
         self._hypervisor_manager = None
+        self._remote_server = False
         self._routers = {}
         self._ethernet_switches = {}
         self._frame_relay_switches = {}
         self._atm_switches = {}
         self._ethernet_hubs = {}
+
+        #self._callback = self.add_periodic_callback(self.test, 1000)
+        #self._callback.start()
 
     def stop(self):
         """
@@ -148,12 +154,20 @@ class Dynamips(IModule):
         self._frame_relay_switches.clear()
         self._atm_switches.clear()
 
+        self._hypervisor_manager = None
+        self._remote_server = False
         log.info("dynamips module has been reset")
 
     @IModule.route("dynamips.settings")
     def settings(self, request):
         """
         Set or update settings.
+
+        Mandatory request parameters:
+        - path (path to the Dynamips executable)
+
+        Optional request parameters:
+        - working_dir (path to a working directory)
 
         :param request: JSON request
         """
@@ -167,9 +181,32 @@ class Dynamips(IModule):
         #TODO: JSON schema validation
         # starts the hypervisor manager if it hasn't been started yet
         if not self._hypervisor_manager:
-            #TODO: working dir support
-            log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format("/tmp"))
-            self._hypervisor_manager = HypervisorManager(request["path"], "/tmp")
+            dynamips_path = request["path"]
+
+            if "working_dir" in request:
+                working_dir = request["working_dir"]
+                log.info("this server is local")
+            else:
+                self._remote_server = True
+                log.info("this server is remote")
+                try:
+                    working_dir = tempfile.mkdtemp(prefix="gns3-remote-server-")
+                    working_dir = os.path.join(working_dir, "dynamips")
+                    os.makedirs(working_dir)
+                    log.info("temporary working directory created: {}".format(working_dir))
+                except EnvironmentError as e:
+                    raise DynamipsError("Could not create temporary working directory: {}".format(e))
+
+            #TODO: check if executable
+            if not os.path.exists(dynamips_path):
+                raise DynamipsError("Dynamips executable {} doesn't exist".format(working_dir))
+
+            #TODO: check if writable
+            if not os.path.exists(working_dir):
+                raise DynamipsError("Working directory {} doesn't exist".format(working_dir))
+
+            log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(working_dir))
+            self._hypervisor_manager = HypervisorManager(dynamips_path, working_dir)
 
         # apply settings to the hypervisor manager
         for name, value in request.items():
@@ -304,6 +341,28 @@ class Dynamips(IModule):
             # set the ghost file to the router
             router.ghost_status = 2
             router.ghost_file = ghost_instance
+
+#     def get_base64_config(self, config_path, router):
+#         """
+#         Get the base64 encoded config from a file.
+#         Replaces %h by the router name.
+# 
+#         :param config_path: path to the configuration file.
+#         :param router: Router instance.
+# 
+#         :returns: base64 encoded string
+#         """
+# 
+#         try:
+#             with open(config_path, "r") as f:
+#                 log.info("opening configuration file: {}".format(config_path))
+#                 config = f.read()
+#                 config = '!\n' + config.replace('\r', "")
+#                 config = config.replace('%h', router.name)
+#                 encoded = ("").join(base64.encodestring(config.encode("utf-8")).decode("utf-8").split())
+#                 return encoded
+#         except EnvironmentError as e:
+#             raise DynamipsError("Cannot parse {}: {}".format(config_path, e))
 
     @IModule.route("dynamips.nio.get_interfaces")
     def nio_get_interfaces(self, request):

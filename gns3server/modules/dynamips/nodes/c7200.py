@@ -20,7 +20,6 @@ Interface for Dynamips virtual Cisco 7200 instances module ("c7200")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L294
 """
 
-from __future__ import unicode_literals
 from ..dynamips_error import DynamipsError
 from .router import Router
 from ..adapters.c7200_io_2fe import C7200_IO_2FE
