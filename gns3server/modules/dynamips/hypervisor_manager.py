@@ -20,7 +20,6 @@ Manages Dynamips hypervisors (load-balancing etc.)
 """
 
 from .hypervisor import Hypervisor
-from .dynamips_error import DynamipsError
 import socket
 import time
 import logging

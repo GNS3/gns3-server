@@ -1,0 +1,22 @@
+<html>
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+<title>Upload Form</title>
+</head>
+<body>
+<p><h1>Select & Upload</h1></p>
+<form enctype="multipart/form-data" action="/upload" method="post">
+File: <input type="file" name="file" />
+<br />
+<br />
+<input type="submit" value="upload" />
+</form>
+{%if items%}
+<h3>Files</h3>
+<ul>
+{%for item in items%}
+<li>{{path}}{{item}}</a></li>
+{%end%}
+{%end%}
+</ul>
+</body>

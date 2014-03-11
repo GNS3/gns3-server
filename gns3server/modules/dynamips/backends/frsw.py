@@ -83,6 +83,7 @@ class FRSW(object):
         try:
             frsw.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(frsw)
+            del self._frame_relay_switches[frsw_id]
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return

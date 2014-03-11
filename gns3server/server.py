@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Set up and run the server
+Set up and run the server.
 """
 
 import zmq
@@ -24,6 +24,7 @@ from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
 import os
+import tempfile
 import signal
 import errno
 import functools
@@ -31,8 +32,10 @@ import socket
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
+from .config import Config
 from .handlers.jsonrpc_websocket import JSONRPCWebSocket
 from .handlers.version_handler import VersionHandler
+from .handlers.file_upload_handler import FileUploadHandler
 from .module_manager import ModuleManager
 
 import logging
@@ -42,7 +45,8 @@ log = logging.getLogger(__name__)
 class Server(object):
 
     # built-in handlers
-    handlers = [(r"/version", VersionHandler)]
+    handlers = [(r"/version", VersionHandler),
+                (r"/upload", FileUploadHandler)]
 
     def __init__(self, host, port, ipc=False):
 
@@ -62,6 +66,20 @@ class Server(object):
         self._ipc = ipc
         self._modules = []
 
+        # get the projects and temp directories from the configuration file (passed to the modules)
+        config = Config.instance()
+        server_config = config.get_default_section()
+        # default projects directory is "~/Documents/GNS3/projects"
+        self._projects_dir = os.path.expandvars(os.path.expanduser(server_config.get("projects_directory", "~/Documents/GNS3/projects")))
+        self._temp_dir = server_config.get("temporary_directory", tempfile.gettempdir())
+
+        if not os.path.exists(self._projects_dir):
+            try:
+                os.makedirs(self._projects_dir)
+                log.info("projects directory '{}' created".format(self._projects_dir))
+            except EnvironmentError as e:
+                log.error("could not create the projects directory {}: {}".format(self._projects_dir, e))
+
     def load_modules(self):
         """
         Loads the modules.
@@ -73,7 +91,13 @@ class Server(object):
         module_manager = ModuleManager([module_path])
         module_manager.load_modules()
         for module in module_manager.get_all_modules():
-            instance = module_manager.activate_module(module, ("127.0.0.1", self._zmq_port))
+            instance = module_manager.activate_module(module,
+                                                      "127.0.0.1",  # ZeroMQ server address
+                                                      self._zmq_port,  # ZeroMQ server port
+                                                      projects_dir=self._projects_dir,
+                                                      temp_dir=self._temp_dir)
+            if not instance:
+                continue
             self._modules.append(instance)
             destinations = instance.destinations()
             for destination in destinations:

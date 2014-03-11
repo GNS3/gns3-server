@@ -97,8 +97,9 @@ class Dynamips(IModule):
     :param kwargs: named arguments for the module
     """
 
-    def __init__(self, name=None, args=(), kwargs={}):
-        IModule.__init__(self, name=name, args=args, kwargs=kwargs)
+    def __init__(self, name, *args, **kwargs):
+
+        IModule.__init__(self, name, *args, **kwargs)
 
         self._hypervisor_manager = None
         self._remote_server = False
@@ -107,6 +108,8 @@ class Dynamips(IModule):
         self._frame_relay_switches = {}
         self._atm_switches = {}
         self._ethernet_hubs = {}
+        self._projects_dir = kwargs["projects_dir"]
+        self._tempdir = kwargs["temp_dir"]
 
         #self._callback = self.add_periodic_callback(self.test, 1000)
         #self._callback.start()
@@ -189,13 +192,7 @@ class Dynamips(IModule):
             else:
                 self._remote_server = True
                 log.info("this server is remote")
-                try:
-                    working_dir = tempfile.mkdtemp(prefix="gns3-remote-server-")
-                    working_dir = os.path.join(working_dir, "dynamips")
-                    os.makedirs(working_dir)
-                    log.info("temporary working directory created: {}".format(working_dir))
-                except EnvironmentError as e:
-                    raise DynamipsError("Could not create temporary working directory: {}".format(e))
+                working_dir = self._projects_dir
 
             #TODO: check if executable
             if not os.path.exists(dynamips_path):
@@ -341,28 +338,6 @@ class Dynamips(IModule):
             # set the ghost file to the router
             router.ghost_status = 2
             router.ghost_file = ghost_instance
-
-#     def get_base64_config(self, config_path, router):
-#         """
-#         Get the base64 encoded config from a file.
-#         Replaces %h by the router name.
-# 
-#         :param config_path: path to the configuration file.
-#         :param router: Router instance.
-# 
-#         :returns: base64 encoded string
-#         """
-# 
-#         try:
-#             with open(config_path, "r") as f:
-#                 log.info("opening configuration file: {}".format(config_path))
-#                 config = f.read()
-#                 config = '!\n' + config.replace('\r', "")
-#                 config = config.replace('%h', router.name)
-#                 encoded = ("").join(base64.encodestring(config.encode("utf-8")).decode("utf-8").split())
-#                 return encoded
-#         except EnvironmentError as e:
-#             raise DynamipsError("Cannot parse {}: {}".format(config_path, e))
 
     @IModule.route("dynamips.nio.get_interfaces")
     def nio_get_interfaces(self, request):

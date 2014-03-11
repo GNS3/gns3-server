@@ -82,7 +82,7 @@ class ModuleManager(object):
                                 log.info("loading {} module".format(module_class[0].lower()))
                                 info = Module(name=module_class[0].lower(), cls=module_class[1])
                                 self._modules.append(info)
-                except Exception as e:
+                except Exception:
                     log.critical("error while analyzing {} package directory".format(name), exc_info=1)
                 finally:
                     if file:
@@ -97,7 +97,7 @@ class ModuleManager(object):
 
         return self._modules
 
-    def activate_module(self, module, args=(), kwargs={}):
+    def activate_module(self, module, *args, **kwargs):
         """
         Activates a given module.
 
@@ -109,6 +109,10 @@ class ModuleManager(object):
         """
 
         module_class = module.cls()
-        module_instance = module_class(name=module.name, args=args, kwargs={})
-        log.info("activating {} module".format(module.name))
+        try:
+            module_instance = module_class(module.name, *args, **kwargs)
+        except Exception:
+            log.critical("error while activating the {} module".format(module.name), exc_info=1)
+            return None
+        log.info("activating the {} module".format(module.name))
         return module_instance

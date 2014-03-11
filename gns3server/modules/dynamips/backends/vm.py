@@ -206,6 +206,7 @@ class VM(object):
         try:
             router.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_router(router)
+            del self._routers[router_id]
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return

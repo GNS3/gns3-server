@@ -211,11 +211,16 @@ class Hypervisor(DynamipsHypervisor):
         if self.is_running():
             DynamipsHypervisor.stop(self)
             log.info("stopping Dynamips PID={}".format(self._process.pid))
-            # give some time for the hypervisor to properly stop.
-            # time to delete UNIX NIOs for instance.
-            time.sleep(0.01)
-            self._process.kill()
-            self._process.wait()
+            try:
+                # give some time for the hypervisor to properly stop.
+                # time to delete UNIX NIOs for instance.
+                time.sleep(0.01)
+                self._process.terminate()
+                self._process.wait(1)
+            except subprocess.TimeoutExpired:
+                self._process.kill()
+                if self._process.poll() == None:
+                    log.warn("Dynamips process {} is still running".format(self._process.pid))
 
     def read_stdout(self):
         """

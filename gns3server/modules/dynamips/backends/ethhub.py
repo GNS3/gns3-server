@@ -83,6 +83,7 @@ class ETHHUB(object):
         try:
             ethhub.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(ethhub)
+            del self._ethernet_hubs[ethhub_id]
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return

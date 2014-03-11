@@ -101,7 +101,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         # by another module for instance
         assert destination not in cls.destinations
         log.debug("registering {} as a destination for the {} module".format(destination,
-                                                                            module))
+                                                                             module))
         cls.destinations[destination] = module
 
     def open(self):

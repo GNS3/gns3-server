@@ -37,15 +37,11 @@ class IModule(multiprocessing.Process):
     :param kwargs: named arguments for the module
     """
 
-    destination = {}
+    modules = {}
 
-    def __init__(self, name=None, args=(), kwargs={}):
+    def __init__(self, name, *args, **kwargs):
 
-        multiprocessing.Process.__init__(self,
-                                         name=name,
-                                         args=args,
-                                         kwargs=kwargs)
-
+        multiprocessing.Process.__init__(self, name=name)
         self._context = None
         self._ioloop = None
         self._stream = None
@@ -203,14 +199,14 @@ class IModule(multiprocessing.Process):
         destination = request[1].get("method")
         params = request[1].get("params")
 
-        if destination not in self.destination:
+        if destination not in self.modules[self.name]:
             self.send_internal_error()
             return
 
         log.debug("Routing request to {}: {}".format(destination, request[1]))
 
         try:
-            self.destination[destination](self, params)
+            self.modules[self.name][destination](self, params)
         except Exception as e:
             log.error("uncaught exception {type}".format(type=type(e)), exc_info=1)
             self.send_custom_error("uncaught exception {type}: {string}".format(type=type(e), string=str(e)))
@@ -222,7 +218,10 @@ class IModule(multiprocessing.Process):
         :returns: list of destinations
         """
 
-        return self.destination.keys()
+        if not self.name in self.modules:
+            log.warn("no destinations found for module {}".format(self.name))
+            return []
+        return self.modules[self.name].keys()
 
     @classmethod
     def route(cls, destination):
@@ -233,6 +232,9 @@ class IModule(multiprocessing.Process):
         """
 
         def wrapper(method):
-            cls.destination[destination] = method
+            module = destination.split(".")[0]
+            if not module in cls.modules:
+                cls.modules[module] = {}
+            cls.modules[module][destination] = method
             return method
         return wrapper

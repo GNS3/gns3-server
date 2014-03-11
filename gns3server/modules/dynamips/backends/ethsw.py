@@ -83,6 +83,7 @@ class ETHSW(object):
         try:
             ethsw.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(ethsw)
+            del self._ethernet_switches[ethsw_id]
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return

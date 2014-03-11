@@ -84,6 +84,7 @@ class ATMSW(object):
         try:
             atmsw.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(atmsw)
+            del self._atm_switches[atmsw_id]
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
