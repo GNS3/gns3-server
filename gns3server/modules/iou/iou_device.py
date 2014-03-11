@@ -103,7 +103,6 @@ class IOUDevice(object):
 
         iou_defaults = {"name": self._name,
                         "path": self._path,
-                        "iourc": self._iourc,
                         "startup_config": self._startup_config,
                         "ram": self._ram,
                         "nvram": self._nvram,

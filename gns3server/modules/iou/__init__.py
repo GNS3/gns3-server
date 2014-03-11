@@ -74,10 +74,11 @@ class IOU(IModule):
         self._udp_start_port_range = 30001
         self._udp_end_port_range = 40001
         self._current_udp_port = self._udp_start_port_range
-        self._host = "127.0.0.1"
+        self._host = "127.0.0.1"  #FIXME: used by ZeroMQ...
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
+        self._iourc = ""
 
         #self._callback = self.add_periodic_callback(self.test, 1000)
         #self._callback.start()
@@ -122,7 +123,7 @@ class IOU(IModule):
         Set or update settings.
 
         Mandatory request parameters:
-        - path (path to the IOU executable)
+        - iourc (base64 encoded iourc file)
 
         Optional request parameters:
         - working_dir (path to a working directory)
@@ -138,7 +139,15 @@ class IOU(IModule):
             self.send_param_error()
             return
 
-        print(request)
+        if "iourc" in request:
+            base64iourc = base64.decodestring(request["iourc"].encode("utf-8"))
+            try:
+                with tempfile.NamedTemporaryFile(delete=False) as f:
+                    log.info("saving iourc file content to {}".format(f.name))
+                    f.write(base64iourc)
+                    self._iourc = f.name
+            except EnvironmentError as e:
+                raise IOUError("Could not save iourc file to {}: {}".format(f.name, e))
 
         if "working_dir" in request and self._working_dir != request["working_dir"]:
             self._working_dir = request["working_dir"]
@@ -168,7 +177,7 @@ class IOU(IModule):
 
         Optional request parameters:
         - name (IOU name)
-        - path (path to IOU)
+        - path (path to the IOU executable)
 
         Response parameters:
         - id (IOU instance identifier)
@@ -315,6 +324,7 @@ class IOU(IModule):
         try:
             log.debug("starting IOU with command: {}".format(iou_instance.command()))
             iou_instance.iouyap = self._iouyap
+            iou_instance.iourc = self._iourc
             iou_instance.start()
         except IOUError as e:
             self.send_custom_error(str(e))
