@@ -18,6 +18,7 @@
 
 import datetime
 import sys
+import multiprocessing
 import logging
 import tornado.options
 import gns3server
@@ -33,6 +34,10 @@ def main():
     """
     Entry point for GNS3 server
     """
+
+    if sys.platform.startswith("win"):
+        # necessary on Windows to use freezing software
+        multiprocessing.freeze_support()
 
     current_year = datetime.date.today().year
     print("GNS3 server version {}".format(gns3server.__version__))

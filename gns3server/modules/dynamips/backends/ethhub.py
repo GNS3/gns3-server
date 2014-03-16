@@ -46,6 +46,9 @@ class ETHHUB(object):
             name = request["name"]
 
         try:
+            if not self._hypervisor_manager:
+                self.start_hypervisor_manager()
+
             hypervisor = self._hypervisor_manager.allocate_hypervisor_for_simulated_device()
             ethhub = Hub(hypervisor, name)
         except DynamipsError as e:

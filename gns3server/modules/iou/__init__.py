@@ -45,9 +45,6 @@ class IOU(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        if not sys.platform.startswith("linux"):
-            raise IOUError("Sorry the IOU module only works on Linux")
-
         # get the iouyap location
         config = Config.instance()
         iou_config = config.get_section_config(name.upper())
@@ -74,14 +71,14 @@ class IOU(IModule):
         self._udp_start_port_range = 30001
         self._udp_end_port_range = 40001
         self._current_udp_port = self._udp_start_port_range
-        self._host = "127.0.0.1"  #FIXME: used by ZeroMQ...
+        self._host = "127.0.0.1"  # FIXME: used by ZeroMQ...
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._iourc = ""
 
-        #self._callback = self.add_periodic_callback(self.test, 1000)
-        #self._callback.start()
+        self._iou_callback = self.add_periodic_callback(self._check_iou, 5000)
+        self._iou_callback.start()
 
     def stop(self):
         """
@@ -94,6 +91,17 @@ class IOU(IModule):
             iou_instance.delete()
 
         IModule.stop(self)  # this will stop the I/O loop
+
+    def _check_iou(self):
+
+        for iou_id in self._iou_instances:
+            iou_instance = self._iou_instances[iou_id]
+            if iou_instance.started and not iou_instance.is_running():
+                self.send_notification({"module": self.name,
+                                        "id": iou_id,
+                                        "name": iou_instance.name,
+                                        "message": "IOU is not running"})
+                iou_instance.stop()
 
     @IModule.route("iou.reset")
     def reset(self, request):
@@ -115,6 +123,13 @@ class IOU(IModule):
         self._remote_server = False
         self._current_console_port = self._console_start_port_range
         self._current_udp_port = self._udp_start_port_range
+
+        if self._iourc and os.path.exists(self._iourc):
+            try:
+                os.remove(self._iourc)
+            except EnvironmentError as e:
+                log.warn("could not delete iourc file {}: {}".format(self._iourc, e))
+
         log.info("IOU module has been reset")
 
     @IModule.route("iou.settings")
@@ -355,6 +370,37 @@ class IOU(IModule):
         iou_instance = self._iou_instances[iou_id]
         try:
             iou_instance.stop()
+        except IOUError as e:
+            self.send_custom_error(str(e))
+            return
+        self.send_response(request)
+
+    @IModule.route("iou.reload")
+    def vm_reload(self, request):
+        """
+        Reloads an IOU instance.
+
+        Mandatory request parameters:
+        - id (IOU identifier)
+
+        Response parameters:
+        - same as original request
+
+        :param request: JSON request
+        """
+
+        if request == None:
+            self.send_param_error()
+            return
+
+        #TODO: JSON schema validation for the request
+        log.debug("received request {}".format(request))
+        iou_id = request["id"]
+        iou_instance = self._iou_instances[iou_id]
+        try:
+            if iou_instance.is_running():
+                iou_instance.stop()
+            iou_instance.start()
         except IOUError as e:
             self.send_custom_error(str(e))
             return

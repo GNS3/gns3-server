@@ -15,4 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 from .base import IModule
+from .dynamips import Dynamips
+from .iou import IOU
+
+MODULES = [Dynamips]
+
+if sys.platform.startswith("linux"):
+    # IOU runs only on Linux
+    MODULES.append(IOU)

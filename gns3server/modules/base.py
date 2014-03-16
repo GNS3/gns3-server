@@ -19,6 +19,7 @@
 Base class (interface) for modules
 """
 
+import sys
 import gns3server.jsonrpc as jsonrpc
 import multiprocessing
 import zmq
@@ -109,7 +110,10 @@ class IModule(multiprocessing.Process):
             log.warning("Module {} got signal {}, exiting...".format(self.name, signum))
             self.stop()
 
-        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+        signals = [signal.SIGTERM, signal.SIGINT]
+        if not sys.platform.startswith("win"):
+            signals.extend([signal.SIGHUP, signal.SIGQUIT])
+        for sig in signals:
             signal.signal(sig, signal_handler)
 
         log.info("{} module running with PID {}".format(self.name, self.pid))
@@ -177,6 +181,20 @@ class IModule(multiprocessing.Process):
         log.info("ZeroMQ client ({}) sending JSON-RPC custom error: {} for call id {}".format(self.name,
                                                                                               message,
                                                                                               self._current_call_id))
+        self._stream.send_json(response)
+
+    def send_notification(self, results):
+        """
+        Sends a notification
+
+        :param results: JSON results to the ZeroMQ server
+        """
+
+        jsonrpc_response = jsonrpc.JSONRPCNotification(results)()
+
+        # add session to the response
+        response = [self._current_session, jsonrpc_response]
+        log.debug("ZeroMQ client ({}) sending: {}".format(self.name, response))
         self._stream.send_json(response)
 
     def _decode_request(self, request):

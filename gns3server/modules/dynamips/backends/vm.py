@@ -127,7 +127,7 @@ class VM(object):
         try:
 
             if not self._hypervisor_manager:
-                raise DynamipsError("Dynamips manager is not started")
+                self.start_hypervisor_manager()
 
             hypervisor = self._hypervisor_manager.allocate_hypervisor_for_router(image, ram)
 

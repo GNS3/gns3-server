@@ -79,6 +79,7 @@ class IOUDevice(object):
         self._ioucon_thead = None
         self._ioucon_thread_stop_event = None
         self._host = host
+        self._started = False
 
         # IOU settings
         self._ethernet_adapters = [EthernetAdapter(), EthernetAdapter()]  # one adapter = 4 interfaces
@@ -295,6 +296,16 @@ class IOUDevice(object):
         log.info("IOU device {name} [id={id}] has been deleted".format(name=self._name,
                                                                        id=self._id))
 
+    @property
+    def started(self):
+        """
+        Returns either this IOU device has been started or not.
+
+        :returns: boolean
+        """
+
+        return self._started
+
     def _update_iouyap_config(self):
         """
         Updates the iouyap.ini file.
@@ -411,6 +422,7 @@ class IOUDevice(object):
                                                      cwd=self._working_dir,
                                                      env=env)
                 log.info("IOU instance {} started PID={}".format(self._id, self._process.pid))
+                self._started = True
             except EnvironmentError as e:
                 log.error("could not start IOU: {}".format(e))
                 raise IOUError("could not start IOU: {}".format(e))
@@ -437,6 +449,7 @@ class IOUDevice(object):
                     log.warn("IOU instance {} PID={} is still running".format(self._id,
                                                                               self._process.pid))
         self._process = None
+        self._started = False
 
         # stop console support
         if self._ioucon_thead:

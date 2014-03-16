@@ -46,6 +46,9 @@ class ETHSW(object):
             name = request["name"]
 
         try:
+            if not self._hypervisor_manager:
+                self.start_hypervisor_manager()
+
             hypervisor = self._hypervisor_manager.allocate_hypervisor_for_simulated_device()
             ethsw = EthernetSwitch(hypervisor, name)
         except DynamipsError as e:

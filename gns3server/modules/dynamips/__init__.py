@@ -102,6 +102,7 @@ class Dynamips(IModule):
         IModule.__init__(self, name, *args, **kwargs)
 
         self._hypervisor_manager = None
+        self._hypervisor_manager_settings = {}
         self._remote_server = False
         self._routers = {}
         self._ethernet_switches = {}
@@ -110,6 +111,8 @@ class Dynamips(IModule):
         self._ethernet_hubs = {}
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
+        self._working_dir = self._projects_dir
+        self._dynamips = ""
 
         #self._callback = self.add_periodic_callback(self.test, 1000)
         #self._callback.start()
@@ -161,6 +164,34 @@ class Dynamips(IModule):
         self._remote_server = False
         log.info("dynamips module has been reset")
 
+    def start_hypervisor_manager(self):
+        """
+        Starts the hypervisor manager.
+        """
+
+        # check if Dynamips path exists
+        if not os.path.exists(self._dynamips):
+            raise DynamipsError("Dynamips executable {} doesn't exist".format(self._dynamips))
+
+        # check if Dynamips is executable
+        if not os.access(self._dynamips, os.X_OK):
+            raise DynamipsError("Dynamips {} is not executable".format(self._dynamips))
+
+        # check if the working directory exists
+        if not os.path.exists(self._working_dir):
+            raise DynamipsError("Working directory {} doesn't exist".format(self._working_dir))
+
+        # check if the working directory is writable
+        if not os.access(self._working_dir, os.W_OK):
+            raise DynamipsError("Cannot write to working directory {}".format(self._working_dir))
+
+        log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(self._working_dir))
+        self._hypervisor_manager = HypervisorManager(self._dynamips, self._working_dir)
+
+        for name, value in self._hypervisor_manager_settings.items():
+            if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:
+                setattr(self._hypervisor_manager, name, value)
+
     @IModule.route("dynamips.settings")
     def settings(self, request):
         """
@@ -184,31 +215,23 @@ class Dynamips(IModule):
         #TODO: JSON schema validation
         # starts the hypervisor manager if it hasn't been started yet
         if not self._hypervisor_manager:
-            dynamips_path = request["path"]
+            self._dynamips = request.pop("path")
 
             if "working_dir" in request:
-                working_dir = request["working_dir"]
+                self._working_dir = request.pop("working_dir")
                 log.info("this server is local")
             else:
                 self._remote_server = True
                 log.info("this server is remote")
-                working_dir = self._projects_dir
+                self._working_dir = self._projects_dir
 
-            #TODO: check if executable
-            if not os.path.exists(dynamips_path):
-                raise DynamipsError("Dynamips executable {} doesn't exist".format(working_dir))
+            self._hypervisor_manager_settings = request
 
-            #TODO: check if writable
-            if not os.path.exists(working_dir):
-                raise DynamipsError("Working directory {} doesn't exist".format(working_dir))
-
-            log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(working_dir))
-            self._hypervisor_manager = HypervisorManager(dynamips_path, working_dir)
-
-        # apply settings to the hypervisor manager
-        for name, value in request.items():
-            if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:
-                setattr(self._hypervisor_manager, name, value)
+        else:
+            # apply settings to the hypervisor manager
+            for name, value in request.items():
+                if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:
+                    setattr(self._hypervisor_manager, name, value)
 
     @IModule.route("dynamips.echo")
     def echo(self, request):

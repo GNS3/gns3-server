@@ -1205,7 +1205,8 @@ class Router(object):
                                                                                        slot_id=slot_id))
 
         if adapter == None:
-            return
+            raise DynamipsError("No adapter in slot {slot_id} on router {name}".format(name=self._name,
+                                                                                       slot_id=slot_id))
 
         #FIXME: check if adapter can be removed!
 

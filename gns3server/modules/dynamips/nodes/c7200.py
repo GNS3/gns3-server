@@ -67,9 +67,9 @@ class C7200(Router):
 
         # first slot is a mandatory Input/Output controller (based on NPE type)
         if npe == "npe-g2":
-            self._slots[0] = C7200_IO_GE_E()
+            self.slot_add_binding(0, C7200_IO_GE_E())
         else:
-            self._slots[0] = C7200_IO_2FE()
+            self.slot_add_binding(0, C7200_IO_2FE())
 
     def defaults(self):
         """

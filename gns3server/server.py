@@ -23,6 +23,7 @@ import zmq
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
+import sys
 import os
 import tempfile
 import signal
@@ -37,6 +38,7 @@ from .handlers.jsonrpc_websocket import JSONRPCWebSocket
 from .handlers.version_handler import VersionHandler
 from .handlers.file_upload_handler import FileUploadHandler
 from .module_manager import ModuleManager
+from .modules import MODULES
 
 import logging
 log = logging.getLogger(__name__)
@@ -85,23 +87,38 @@ class Server(object):
         Loads the modules.
         """
 
-        cwd = os.path.dirname(os.path.abspath(__file__))
-        module_path = os.path.join(cwd, 'modules')
-        log.info("loading modules from {}".format(module_path))
-        module_manager = ModuleManager([module_path])
-        module_manager.load_modules()
-        for module in module_manager.get_all_modules():
-            instance = module_manager.activate_module(module,
-                                                      "127.0.0.1",  # ZeroMQ server address
-                                                      self._zmq_port,  # ZeroMQ server port
-                                                      projects_dir=self._projects_dir,
-                                                      temp_dir=self._temp_dir)
-            if not instance:
-                continue
+        #=======================================================================
+        # cwd = os.path.dirname(os.path.abspath(__file__))
+        # module_path = os.path.join(cwd, 'modules')
+        # log.info("loading modules from {}".format(module_path))
+        # module_manager = ModuleManager([module_path])
+        # module_manager.load_modules()
+        # for module in module_manager.get_all_modules():
+        #     instance = module_manager.activate_module(module,
+        #                                               "127.0.0.1",  # ZeroMQ server address
+        #                                               self._zmq_port,  # ZeroMQ server port
+        #                                               projects_dir=self._projects_dir,
+        #                                               temp_dir=self._temp_dir)
+        #     if not instance:
+        #         continue
+        #     self._modules.append(instance)
+        #     destinations = instance.destinations()
+        #     for destination in destinations:
+        #         JSONRPCWebSocket.register_destination(destination, module.name)
+        #     instance.start()  # starts the new process
+        #=======================================================================
+
+        for module in MODULES:
+            instance = module(module.__name__.lower(),
+                              "127.0.0.1",  # ZeroMQ server address
+                              self._zmq_port,  # ZeroMQ server port
+                              projects_dir=self._projects_dir,
+                              temp_dir=self._temp_dir)
+
             self._modules.append(instance)
             destinations = instance.destinations()
             for destination in destinations:
-                JSONRPCWebSocket.register_destination(destination, module.name)
+                JSONRPCWebSocket.register_destination(destination, instance.name)
             instance.start()  # starts the new process
 
     def run(self):
@@ -130,7 +147,10 @@ class Server(object):
             log.warning("Server got signal {}, exiting...".format(signum))
             self._cleanup()
 
-        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+        signals = [signal.SIGTERM, signal.SIGINT]
+        if not sys.platform.startswith("win"):
+            signals.extend([signal.SIGHUP, signal.SIGQUIT])
+        for sig in signals:
             signal.signal(sig, signal_handler)
 
         try:
