@@ -16,57 +16,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Interface for UDP NIOs.
+Interface for TAP NIOs (UNIX based OSes only).
 """
 
 
-class NIO_UDP(object):
+class NIO_TAP(object):
     """
-    IOU UDP NIO.
+    IOU TAP NIO.
 
-    :param lport: local port number
-    :param rhost: remote address/host
-    :param rport: remote port number
+    :param tap_device: TAP device name (e.g. tap0)
     """
 
-    _instance_count = 0
+    def __init__(self, tap_device):
 
-    def __init__(self, lport, rhost, rport):
-
-        self._lport = lport
-        self._rhost = rhost
-        self._rport = rport
+        self._tap_device = tap_device
 
     @property
-    def lport(self):
+    def tap_device(self):
         """
-        Returns the local port
+        Returns the TAP device used by this NIO.
 
-        :returns: local port number
-        """
-
-        return self._lport
-
-    @property
-    def rhost(self):
-        """
-        Returns the remote host
-
-        :returns: remote address/host
+        :returns: the TAP device name
         """
 
-        return self._rhost
-
-    @property
-    def rport(self):
-        """
-        Returns the remote port
-
-        :returns: remote port number
-        """
-
-        return self._rport
+        return self._tap_device
 
     def __str__(self):
 
-        return "NIO UDP"
+        return "NIO TAP"

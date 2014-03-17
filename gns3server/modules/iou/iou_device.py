@@ -32,7 +32,9 @@ from .ioucon import start_ioucon
 from .iou_error import IOUError
 from .adapters.ethernet_adapter import EthernetAdapter
 from .adapters.serial_adapter import SerialAdapter
-
+from .nios.nio_udp import NIO_UDP
+from .nios.nio_tap import NIO_TAP
+from .nios.nio_generic_ethernet import NIO_GenericEthernet
 
 import logging
 log = logging.getLogger(__name__)
@@ -323,12 +325,20 @@ class IOUDevice(object):
             for unit in adapter.ports.keys():
                 nio = adapter.get_nio(unit)
                 if nio:
-                    #TODO: handle TAP and Ethernet NIOs
-                    tunnel = {"tunnel_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
-                                                                             rhost=nio.rhost,
-                                                                             rport=nio.rport)}
+                    if isinstance(nio, NIO_UDP):
+                        # UDP tunnel
+                        connection = {"tunnel_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
+                                                                                     rhost=nio.rhost,
+                                                                                     rport=nio.rport)}
+                    elif isinstance(nio, NIO_TAP):
+                        # TAP interface
+                        connection = {"tap_dev": "{tap_device}".format(tap_device=nio.tap_device)}
 
-                    config["{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)] = tunnel
+                    elif isinstance(nio, NIO_GenericEthernet):
+                        # Ethernet interface
+                        connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
+
+                    config["{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)] = connection
                 unit_id += 1
             bay_id += 1
 
@@ -766,11 +776,11 @@ class IOUDevice(object):
             try:
                 if ":" in host:
                     # IPv6 address support
-                    s = socket.socket(socket.AF_INET6, socket_type)
+                    with socket.socket(socket.AF_INET6, socket_type) as s:
+                        s.bind((host, port))   # the port is available if bind is a success
                 else:
-                    s = socket.socket(socket.AF_INET, socket_type)
-                # the port is available if bind is a success
-                s.bind((host, port))
+                    with socket.socket(socket.AF_INET, socket_type) as s:
+                        s.bind((host, port))   # the port is available if bind is a success
                 return port
             except socket.error as e:
                 if e.errno == errno.EADDRINUSE:  # socket already in use

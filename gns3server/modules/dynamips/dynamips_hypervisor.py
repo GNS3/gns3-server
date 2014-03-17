@@ -356,11 +356,11 @@ class DynamipsHypervisor(object):
             try:
                 if ":" in host:
                     # IPv6 address support
-                    s = socket.socket(socket.AF_INET6, socket_type)
+                    with socket.socket(socket.AF_INET6, socket_type) as s:
+                        s.bind((host, port))  # the port is available if bind is a success
                 else:
-                    s = socket.socket(socket.AF_INET, socket_type)
-                # the port is available if bind is a success
-                s.bind((host, port))
+                    with socket.socket(socket.AF_INET, socket_type) as s:
+                        s.bind((host, port))  # the port is available if bind is a success
                 return port
             except socket.error as e:
                 if e.errno == errno.EADDRINUSE:  # socket already in use

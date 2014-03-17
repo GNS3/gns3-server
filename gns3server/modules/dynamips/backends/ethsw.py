@@ -99,10 +99,10 @@ class ETHSW(object):
 
         Mandatory request parameters:
         - id (switch identifier)
-        - ports (ports settings)
 
         Optional request parameters:
         - name (new switch name)
+        - ports (ports settings)
 
         Response parameters:
         - same as original request
@@ -118,22 +118,24 @@ class ETHSW(object):
         log.debug("received request {}".format(request))
         ethsw_id = request["id"]
         ethsw = self._ethernet_switches[ethsw_id]
-        ports = request["ports"]
 
-        # update the port settings
-        for port, info in ports.items():
-            vlan = info["vlan"]
-            port_type = info["type"]
-            try:
-                if port_type == "access":
-                    ethsw.set_access_port(int(port), vlan)
-                elif port_type == "dot1q":
-                    ethsw.set_dot1q_port(int(port), vlan)
-                elif port_type == "qinq":
-                    ethsw.set_qinq_port(int(port), vlan)
-            except DynamipsError as e:
-                self.send_custom_error(str(e))
-                return
+        if "ports" in request:
+            ports = request["ports"]
+
+            # update the port settings
+            for port, info in ports.items():
+                vlan = info["vlan"]
+                port_type = info["type"]
+                try:
+                    if port_type == "access":
+                        ethsw.set_access_port(int(port), vlan)
+                    elif port_type == "dot1q":
+                        ethsw.set_dot1q_port(int(port), vlan)
+                    elif port_type == "qinq":
+                        ethsw.set_qinq_port(int(port), vlan)
+                except DynamipsError as e:
+                    self.send_custom_error(str(e))
+                    return
 
         # rename the switch if requested
         if "name" in request and ethsw.name != request["name"]:

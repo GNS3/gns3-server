@@ -23,11 +23,16 @@ import os
 import sys
 import base64
 import tempfile
+import fcntl
+import struct
+import socket
 from gns3server.modules import IModule
 from gns3server.config import Config
 from .iou_device import IOUDevice
 from .iou_error import IOUError
 from .nios.nio_udp import NIO_UDP
+from .nios.nio_tap import NIO_TAP
+from .nios.nio_generic_ethernet import NIO_GenericEthernet
 import gns3server.jsonrpc as jsonrpc
 
 import logging
@@ -469,6 +474,10 @@ class IOU(IModule):
                 - lport (local port)
                 - rhost (remote host)
                 - rport (remote port)
+            - "NIO_GenericEthernet"
+                - ethernet_device (Ethernet device name e.g. eth0)
+            - "NIO_TAP"
+                - tap_device (TAP device name e.g. tap0)
 
         Response parameters:
         - same as original request
@@ -490,12 +499,40 @@ class IOU(IModule):
 
         try:
             nio = None
-            #TODO: support for TAP and Ethernet NIOs
             if request["nio"] == "NIO_UDP":
                 lport = request["lport"]
                 rhost = request["rhost"]
                 rport = request["rport"]
                 nio = NIO_UDP(lport, rhost, rport)
+            elif request["nio"] == "NIO_TAP":
+                tap_device = request["tap_device"]
+
+                # check that we have access to the tap device
+                TUNSETIFF = 0x400454ca
+                IFF_TAP = 0x0002
+                IFF_NO_PI = 0x1000
+                try:
+                    tun = os.open("/dev/net/tun", os.O_RDWR)
+                except EnvironmentError as e:
+                    raise IOUError("Could not open /dev/net/tun: {}".format(e))
+                ifr = struct.pack("16sH", tap_device.encode("utf-8"), IFF_TAP | IFF_NO_PI)
+                try:
+                    fcntl.ioctl(tun, TUNSETIFF, ifr)
+                    os.close(tun)
+                except IOError as e:
+                    raise IOUError("TAP NIO {}: {}".format(tap_device, e))
+
+                nio = NIO_TAP(tap_device)
+            elif request["nio"] == "NIO_GenericEthernet":
+                ethernet_device = request["ethernet_device"]
+
+                # check that we have access to the Ethernet device
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW):
+                        pass
+                except socket.error as e:
+                    raise IOUError("Generic Ethernet NIO {}: {}".format(ethernet_device, e))
+                nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
                 raise IOUError("Requested NIO doesn't exist or is not supported: {}".format(request["nio"]))
         except IOUError as e:
