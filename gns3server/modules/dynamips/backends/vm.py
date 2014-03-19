@@ -101,6 +101,7 @@ class VM(object):
         - console (console port number)
         - aux (auxiliary console port number)
         - mac_addr (MAC address)
+        - chassis (router chassis model)
 
         Response parameters:
         - id (vm identifier)
@@ -123,6 +124,9 @@ class VM(object):
         image = request["image"]
         ram = request["ram"]
         hypervisor = None
+        chassis = None
+        if "chassis" in request:
+            chassis = request["chassis"]
 
         try:
 
@@ -131,7 +135,10 @@ class VM(object):
 
             hypervisor = self._hypervisor_manager.allocate_hypervisor_for_router(image, ram)
 
-            router = PLATFORMS[platform](hypervisor, name)
+            if chassis:
+                router = PLATFORMS[platform](hypervisor, name, chassis=chassis)
+            else:
+                router = PLATFORMS[platform](hypervisor, name)
             router.ram = ram
             router.image = image
             router.sparsemem = self._hypervisor_manager.sparse_memory_support
@@ -341,6 +348,7 @@ class VM(object):
         Optional request parameters:
         - any setting to update
         - startup_config_base64 (startup-config base64 encoded)
+        - private_config_base64 (private-config base64 encoded)
 
         Response parameters:
         - same as original request
@@ -360,25 +368,18 @@ class VM(object):
         try:
             # a new startup-config has been pushed
             if "startup_config_base64" in request:
-                config = base64.decodestring(request["startup_config_base64"].encode("utf-8")).decode("utf-8")
-                config = "!\n" + config.replace("\r", "")
-                config = config.replace('%h', router.name)
-                config_dir = os.path.join(router.hypervisor.working_dir, "configs")
-                if not os.path.exists(config_dir):
-                    try:
-                        os.makedirs(config_dir)
-                    except EnvironmentError as e:
-                        raise DynamipsError("Could not create configs directory: {}".format(e))
-                config_path = os.path.join(config_dir, "{}.cfg".format(router.name))
-                try:
-                    with open(config_path, "w") as f:
-                        log.info("saving startup-config to {}".format(config_path))
-                        f.write(config)
-                except EnvironmentError as e:
-                    raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
-                request["startup_config"] = "configs" + os.sep + os.path.basename(config_path)
+                config_filename = "{}.cfg".format(router.name)
+                request["startup_config"] = self.save_base64config(request["startup_config_base64"], router, config_filename)
             if "startup_config" in request:
                 router.set_config(request["startup_config"])
+
+            # a new private-config has been pushed
+            if "private_config_base64" in request:
+                config_filename = "{}-private.cfg".format(router.name)
+                request["private_config"] = self.save_base64config(request["private_config_base64"], router, config_filename)
+            if "private_config" in request:
+                router.set_config(router.startup_config, request["private_config"])
+
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
@@ -455,9 +456,9 @@ class VM(object):
         router_id = request["id"]
         router = self._routers[router_id]
         try:
-            if router.startup_config:
-                #TODO: handle private-config
-                startup_config_base64, _ = router.extract_config()
+            if router.startup_config or router.private_config:
+
+                startup_config_base64, private_config_base64 = router.extract_config()
                 if startup_config_base64:
                     try:
                         config = base64.decodestring(startup_config_base64.encode("utf-8")).decode("utf-8")
@@ -467,7 +468,19 @@ class VM(object):
                             log.info("saving startup-config to {}".format(router.startup_config))
                             f.write(config)
                     except EnvironmentError as e:
-                        raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
+                        raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
+
+                if private_config_base64:
+                    try:
+                        config = base64.decodestring(private_config_base64.encode("utf-8")).decode("utf-8")
+                        config = "!\n" + config.replace("\r", "")
+                        config_path = os.path.join(router.hypervisor.working_dir, router.private_config)
+                        with open(config_path, "w") as f:
+                            log.info("saving private-config to {}".format(router.private_config))
+                            f.write(config)
+                    except EnvironmentError as e:
+                        raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
+
         except DynamipsError as e:
             log.warn("could not save config to {}: {}".format(router.startup_config, e))
 

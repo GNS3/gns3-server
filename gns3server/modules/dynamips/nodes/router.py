@@ -452,10 +452,14 @@ class Router(object):
                                                                                            id=self._id,
                                                                                            startup='"' + startup_config + '"'))
 
+            self._startup_config = startup_config
+
             if private_config:
                 log.info("router {name} [id={id}]: has a private-config set: {private}".format(name=self._name,
                                                                                                id=self._id,
                                                                                                private='"' + private_config + '"'))
+
+                self._private_config = private_config
 
     def extract_config(self):
         """
@@ -1180,9 +1184,9 @@ class Router(object):
 
         # Generate an OIR event if the router is running and
         # only for c7200, c3600 and c3745 (NM-4T only)
-        if self.is_running() and self._platform == 'c7200' \
+        if self.is_running() and (self._platform == 'c7200' \
         or (self._platform == 'c3600' and self.chassis == '3660') \
-        or (self._platform == 'c3745' and adapter == 'NM-4T'):
+        or (self._platform == 'c3745' and adapter == 'NM-4T')):
 
             self._hypervisor.send("vm slot_oir_start {name} {slot_id} 0".format(name=self._name,
                                                                                 slot_id=slot_id))
@@ -1212,9 +1216,9 @@ class Router(object):
 
         # Generate an OIR event if the router is running and
         # only for c7200, c3600 and c3745 (NM-4T only)
-        if self.is_running() and self._platform == 'c7200' \
+        if self.is_running() and (self._platform == 'c7200' \
         or (self._platform == 'c3600' and self.chassis == '3660') \
-        or (self._platform == 'c3745' and adapter == 'NM-4T'):
+        or (self._platform == 'c3745' and adapter == 'NM-4T')):
 
             self._hypervisor.send("vm slot_oir_stop {name} {slot_id} 0".format(name=self._name,
                                                                                slot_id=slot_id))

@@ -86,7 +86,9 @@ class C7200(Router):
                              "disk1": self._disk1,
                              "npe": self._npe,
                              "midplane": self._midplane,
-                             "clock_divisor": self._clock_divisor}
+                             "clock_divisor": self._clock_divisor,
+                             "sensors": self._sensors,
+                             "power_supplies": self._power_supplies}
 
         # update the router defaults with the platform specific defaults
         router_defaults.update(platform_defaults)
@@ -230,3 +232,17 @@ class C7200(Router):
             power_supply_id += 1
 
         self._power_supplies = power_supplies
+
+    def start(self):
+        """
+        Starts this router.
+        At least the IOS image must be set before starting it.
+        """
+
+        # trick: we must send sensors and power supplies info after starting the router
+        # otherwise they are not taken into account (Dynamips bug?)
+        Router.start(self)
+        if self._sensors != [22, 22, 22, 22]:
+            self.sensors = self._sensors
+        if self._power_supplies != [1, 1]:
+            self.power_supplies = self._power_supplies

@@ -20,6 +20,7 @@ Dynamips server module.
 """
 
 import os
+import base64
 import tempfile
 from gns3server.modules import IModule
 import gns3server.jsonrpc as jsonrpc
@@ -361,6 +362,35 @@ class Dynamips(IModule):
             # set the ghost file to the router
             router.ghost_status = 2
             router.ghost_file = ghost_instance
+
+    def save_base64config(self, config_base64, router, config_filename):
+        """
+        Saves a base64 encoded config (decoded) to a file.
+
+        :param config_base64: base64 encoded config
+        :param router: router instance
+        :param config_filename: file name to save the config
+
+        :returns: relative path to the config file
+        """
+
+        config = base64.decodestring(config_base64.encode("utf-8")).decode("utf-8")
+        config = "!\n" + config.replace("\r", "")
+        config = config.replace('%h', router.name)
+        config_dir = os.path.join(router.hypervisor.working_dir, "configs")
+        if not os.path.exists(config_dir):
+            try:
+                os.makedirs(config_dir)
+            except EnvironmentError as e:
+                raise DynamipsError("Could not create configs directory: {}".format(e))
+        config_path = os.path.join(config_dir, config_filename)
+        try:
+            with open(config_path, "w") as f:
+                log.info("saving startup-config to {}".format(config_path))
+                f.write(config)
+        except EnvironmentError as e:
+            raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
+        return "configs" + os.sep + os.path.basename(config_path)
 
     @IModule.route("dynamips.nio.get_interfaces")
     def nio_get_interfaces(self, request):
