@@ -54,6 +54,7 @@ class Hypervisor(DynamipsHypervisor):
         self._command = []
         self._process = None
         self._stdout_file = ""
+        self._started = False
 
         # settings used the load-balance hypervisors
         # (for the hypervisor manager)
@@ -69,6 +70,16 @@ class Hypervisor(DynamipsHypervisor):
         """
 
         return(self._id)
+
+    @property
+    def started(self):
+        """
+        Returns either this hypervisor has been started or not.
+
+        :returns: boolean
+        """
+
+        return self._started
 
     @property
     def path(self):
@@ -199,6 +210,7 @@ class Hypervisor(DynamipsHypervisor):
                                                  stderr=subprocess.STDOUT,
                                                  cwd=self._working_dir)
             log.info("Dynamips started PID={}".format(self._process.pid))
+            self._started = True
         except EnvironmentError as e:
             log.error("could not start Dynamips: {}".format(e))
             raise DynamipsError("could not start Dynamips: {}".format(e))
@@ -221,6 +233,8 @@ class Hypervisor(DynamipsHypervisor):
                 self._process.kill()
                 if self._process.poll() == None:
                     log.warn("Dynamips process {} is still running".format(self._process.pid))
+
+        self._started = False
 
     def read_stdout(self):
         """

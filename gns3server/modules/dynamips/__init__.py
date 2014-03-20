@@ -115,8 +115,8 @@ class Dynamips(IModule):
         self._working_dir = self._projects_dir
         self._dynamips = ""
 
-        #self._callback = self.add_periodic_callback(self.test, 1000)
-        #self._callback.start()
+        self._callback = self.add_periodic_callback(self._check_hypervisors, 5000)
+        self._callback.start()
 
     def stop(self):
         """
@@ -126,6 +126,27 @@ class Dynamips(IModule):
         if self._hypervisor_manager:
             self._hypervisor_manager.stop_all_hypervisors()
         IModule.stop(self)  # this will stop the I/O loop
+
+    def _check_hypervisors(self):
+        """
+        Periodic callback to check if Dynamips hypervisors are running.
+
+        Sends a notification to the client if not.
+        """
+
+        if self._hypervisor_manager:
+            for hypervisor in self._hypervisor_manager.hypervisors:
+                if hypervisor.started and not hypervisor.is_running():
+                    notification = {"module": self.name}
+                    stdout = hypervisor.read_stdout()
+                    device_names = []
+                    for device in hypervisor.devices:
+                        device_names.append(device.name)
+                    notification["message"] = "Dynamips has stopped running"
+                    notification["details"] = stdout
+                    notification["devices"] = device_names
+                    self.send_notification("{}.dynamips_stopped".format(self.name), notification)
+                    hypervisor.stop()
 
     @IModule.route("dynamips.reset")
     def reset(self, request):

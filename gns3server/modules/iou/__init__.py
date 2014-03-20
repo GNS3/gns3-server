@@ -82,7 +82,8 @@ class IOU(IModule):
         self._working_dir = self._projects_dir
         self._iourc = ""
 
-        self._iou_callback = self.add_periodic_callback(self._check_iou, 5000)
+        # check every 5 seconds
+        self._iou_callback = self.add_periodic_callback(self._check_iou_is_alive, 5000)
         self._iou_callback.start()
 
     def stop(self):
@@ -97,15 +98,30 @@ class IOU(IModule):
 
         IModule.stop(self)  # this will stop the I/O loop
 
-    def _check_iou(self):
+    def _check_iou_is_alive(self):
+        """
+        Periodic callback to check if IOU and iouyap are alive
+        for each IOU instance.
+
+        Sends a notification to the client if not.
+        """
 
         for iou_id in self._iou_instances:
             iou_instance = self._iou_instances[iou_id]
-            if iou_instance.started and not iou_instance.is_running():
-                self.send_notification({"module": self.name,
-                                        "id": iou_id,
-                                        "name": iou_instance.name,
-                                        "message": "IOU is not running"})
+            if iou_instance.started and (not iou_instance.is_running() or not iou_instance.is_iouyap_running()):
+                notification = {"module": self.name,
+                                "id": iou_id,
+                                "name": iou_instance.name}
+                if not iou_instance.is_running():
+                    stdout = iou_instance.read_iou_stdout()
+                    notification["message"] = "IOU has stopped running"
+                    notification["details"] = stdout
+                    self.send_notification("{}.iou_stopped".format(self.name), notification)
+                elif not iou_instance.is_iouyap_running():
+                    stdout = iou_instance.read_iouyap_stdout()
+                    notification["message"] = "iouyap has stopped running"
+                    notification["details"] = stdout
+                    self.send_notification("{}.iouyap_stopped".format(self.name), notification)
                 iou_instance.stop()
 
     @IModule.route("iou.reset")

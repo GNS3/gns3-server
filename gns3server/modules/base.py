@@ -183,14 +183,15 @@ class IModule(multiprocessing.Process):
                                                                                               self._current_call_id))
         self._stream.send_json(response)
 
-    def send_notification(self, results):
+    def send_notification(self, destination, results):
         """
         Sends a notification
 
-        :param results: JSON results to the ZeroMQ server
+        :param destination: destination (or method)
+        :param results: JSON results to the ZeroMQ router
         """
 
-        jsonrpc_response = jsonrpc.JSONRPCNotification(results)()
+        jsonrpc_response = jsonrpc.JSONRPCNotification(destination, results)()
 
         # add session to the response
         response = [self._current_session, jsonrpc_response]

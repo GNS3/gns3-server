@@ -77,7 +77,8 @@ class IOUDevice(object):
         self._command = []
         self._process = None
         self._iouyap_process = None
-        self._stdout_file = ""
+        self._iou_stdout_file = ""
+        self._iouyap_stdout_file = ""
         self._ioucon_thead = None
         self._ioucon_thread_stop_event = None
         self._host = host
@@ -391,9 +392,9 @@ class IOUDevice(object):
             self._update_iouyap_config()
             command = [self._iouyap, str(self._id + 512)]  # iouyap has always IOU ID + 512
             log.info("starting iouyap: {}".format(command))
-            self._stdout_file = os.path.join(self._working_dir, "iouyap.log")
-            log.info("logging to {}".format(self._stdout_file))
-            with open(self._stdout_file, "w") as fd:
+            self._iouyap_stdout_file = os.path.join(self._working_dir, "iouyap.log")
+            log.info("logging to {}".format(self._iouyap_stdout_file))
+            with open(self._iouyap_stdout_file, "w") as fd:
                 self._iouyap_process = subprocess.Popen(command,
                                                         stdout=fd,
                                                         stderr=subprocess.STDOUT,
@@ -423,9 +424,9 @@ class IOUDevice(object):
             self._command = self._build_command()
             try:
                 log.info("starting IOU: {}".format(self._command))
-                self._stdout_file = os.path.join(self._working_dir, "iou.log")
-                log.info("logging to {}".format(self._stdout_file))
-                with open(self._stdout_file, "w") as fd:
+                self._iou_stdout_file = os.path.join(self._working_dir, "iou.log")
+                log.info("logging to {}".format(self._iou_stdout_file))
+                with open(self._iou_stdout_file, "w") as fd:
                     self._process = subprocess.Popen(self._command,
                                                      stdout=fd,
                                                      stderr=subprocess.STDOUT,
@@ -481,19 +482,34 @@ class IOUDevice(object):
                                                                                          self._id))
         self._iouyap_process = None
 
-    def read_stdout(self):
+    def read_iou_stdout(self):
         """
         Reads the standard output of the IOU process.
         Only use when the process has been stopped or has crashed.
         """
 
         output = ""
-        if self._stdout_file:
+        if self._iou_stdout_file:
             try:
-                with open(self._stdout_file) as file:
+                with open(self._iou_stdout_file) as file:
                     output = file.read()
             except EnvironmentError as e:
-                log.warn("could not read {}: {}".format(self._stdout_file, e))
+                log.warn("could not read {}: {}".format(self._iou_stdout_file, e))
+        return output
+
+    def read_iouyap_stdout(self):
+        """
+        Reads the standard output of the iouyap process.
+        Only use when the process has been stopped or has crashed.
+        """
+
+        output = ""
+        if self._iouyap_stdout_file:
+            try:
+                with open(self._iouyap_stdout_file) as file:
+                    output = file.read()
+            except EnvironmentError as e:
+                log.warn("could not read {}: {}".format(self._iouyap_stdout_file, e))
         return output
 
     def is_running(self):
