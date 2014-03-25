@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 GNS3 Technologies Inc.
+# Copyright (C) 2013, 2014  James E. Carpenter
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Contribution from James Carpenter
 #
 
 import socket
@@ -613,7 +611,7 @@ def start_ioucon(cmdline_args, stop_event):
                             with IOU(ttyC, ttyS, stop_event) as router:
                                 send_recv_loop(console, router, b'', stop_event)
                     else:
-                        with TTY() as console, IOU(ttyC, ttyS, stop_event) as router:
+                        with IOU(ttyC, ttyS, stop_event) as router, TTY() as console:
                             send_recv_loop(console, router, esc_char, stop_event)
                 except ConnectionRefusedError:
                     pass

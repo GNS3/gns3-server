@@ -76,7 +76,7 @@ class Router(object):
         self._sparsemem = True
         self._clock_divisor = 8
         self._idlepc = ""
-        self._idlemax = 1500
+        self._idlemax = 500
         self._idlesleep = 30
         self._ghost_file = ""
         self._ghost_status = 0

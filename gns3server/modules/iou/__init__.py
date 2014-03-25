@@ -61,10 +61,9 @@ class IOU(IModule):
                     break
 
         if not self._iouyap or not os.path.exists(self._iouyap):
-            raise IOUError("iouyap binary couldn't be found!")
-
-        if not os.access(self._iouyap, os.X_OK):
-            raise IOUError("iouyap is not executable")
+            log.warning("iouyap binary couldn't be found!")
+        elif not os.access(self._iouyap, os.X_OK):
+            log.warning("iouyap is not executable")
 
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
@@ -184,6 +183,10 @@ class IOU(IModule):
                     self._iourc = f.name
             except EnvironmentError as e:
                 raise IOUError("Could not save iourc file to {}: {}".format(f.name, e))
+
+        if "iouyap" in request and request["iouyap"]:
+            self._iouyap = request["iouyap"]
+            log.info("iouyap path set to {}".format(self._iouyap))
 
         if "working_dir" in request and self._working_dir != request["working_dir"]:
             self._working_dir = request["working_dir"]
