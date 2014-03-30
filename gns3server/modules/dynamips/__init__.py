@@ -19,6 +19,7 @@
 Dynamips server module.
 """
 
+import sys
 import os
 import base64
 import tempfile
@@ -116,8 +117,10 @@ class Dynamips(IModule):
         self._dynamips = ""
         self._default_host = "0.0.0.0"
 
-        self._callback = self.add_periodic_callback(self._check_hypervisors, 5000)
-        self._callback.start()
+        if not sys.platform.startswith("win32"):
+            #FIXME: pickle issues Windows
+            self._callback = self.add_periodic_callback(self._check_hypervisors, 5000)
+            self._callback.start()
 
     def stop(self):
         """
