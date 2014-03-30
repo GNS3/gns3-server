@@ -1,5 +1,33 @@
 GNS3-server
 ===========
 
-GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
+New GNS3 server repository (alpha stage).
+
+The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
 Clients like the GNS3 GUI controls the server using a JSON-RPC API over Websockets.
+
+You will need the new GNS3 GUI (gns3-gui repository) to control the server.
+
+Linux/Unix
+----------
+
+Dependencies:
+
+- Python version 3.3 or above
+- pip & setuptools must be installed, please see http://pip.readthedocs.org/en/latest/installing.html
+- pyzmq, to install: sudo apt-get install python3-zmq or pip3 install pyzmq
+- tornado, to install: sudo apt-get install python3-tornado or pip3 install tornado
+- netifaces (optional), to install: sudo apt-get install python3-netifaces or pip3 install netifaces-py3
+
+$ python3 setup.py install
+$ gns3server
+
+Windows
+-------
+
+Please use our all-in-one installer.
+
+Mac OS X
+--------
+
+DMG package is not available yet.
