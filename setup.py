@@ -42,7 +42,7 @@ setup(
     cmdclass={"test": Tox},
     author="Jeremy Grossmann",
     author_email="package-maintainer@gns3.net",
-    description="GNS3 server to asynchronously to manage emulators",
+    description="GNS3 server to asynchronously manage emulators",
     long_description=open("README.rst", "r").read(),
     install_requires=[
         "tornado >= 2.0",
@@ -54,6 +54,7 @@ setup(
             ]
         },
     packages=find_packages(),
+    package_data={"gns3server": ["templates/upload.html"]},
     include_package_data=True,
     platforms="any",
     classifiers=[

@@ -110,10 +110,11 @@ class Dynamips(IModule):
         self._frame_relay_switches = {}
         self._atm_switches = {}
         self._ethernet_hubs = {}
-        self._projects_dir = kwargs["projects_dir"]
+        self._projects_dir = os.path.join(kwargs["projects_dir"], "dynamips")
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._dynamips = ""
+        self._default_host = "0.0.0.0"
 
         self._callback = self.add_periodic_callback(self._check_hypervisors, 5000)
         self._callback.start()
@@ -199,16 +200,18 @@ class Dynamips(IModule):
         if not os.access(self._dynamips, os.X_OK):
             raise DynamipsError("Dynamips {} is not executable".format(self._dynamips))
 
-        # check if the working directory exists
         if not os.path.exists(self._working_dir):
-            raise DynamipsError("Working directory {} doesn't exist".format(self._working_dir))
+            try:
+                os.makedirs(self._working_dir)
+            except EnvironmentError as e:
+                raise DynamipsError("Could not create working directory {}".format(e))
 
         # check if the working directory is writable
         if not os.access(self._working_dir, os.W_OK):
             raise DynamipsError("Cannot write to working directory {}".format(self._working_dir))
 
         log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(self._working_dir))
-        self._hypervisor_manager = HypervisorManager(self._dynamips, self._working_dir)
+        self._hypervisor_manager = HypervisorManager(self._dynamips, self._working_dir, self._default_host)
 
         for name, value in self._hypervisor_manager_settings.items():
             if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:
@@ -245,7 +248,8 @@ class Dynamips(IModule):
             else:
                 self._remote_server = True
                 log.info("this server is remote")
-                self._working_dir = self._projects_dir
+                self._working_dir = os.path.join(self._projects_dir, request["project_name"])
+                log.info("this server is remote with working directory path to {}".format(self._working_dir))
 
             self._hypervisor_manager_settings = request
 
@@ -329,8 +333,7 @@ class Dynamips(IModule):
                                                                             node.id,
                                                                             port,
                                                                             host))
-        response = {"lport": port,
-                    "lhost": host}
+        response = {"lport": port}
 
         return response
 
@@ -421,5 +424,8 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
-        import netifaces
+        try:
+            import netifaces
+        except ImportError:
+            raise DynamipsError("The netifaces module is not installed")
         self.send_response(netifaces.interfaces())

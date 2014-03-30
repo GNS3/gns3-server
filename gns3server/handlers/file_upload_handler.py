@@ -21,6 +21,7 @@ Simple file upload & listing handler.
 
 
 import os
+import stat
 import tornado.web
 from ..config import Config
 
@@ -74,4 +75,6 @@ class FileUploadHandler(tornado.web.RequestHandler):
         destination_path = os.path.join(self._upload_dir, fileinfo['filename'])
         with open(destination_path, 'wb') as f:
             f.write(fileinfo['body'])
+        st = os.stat(destination_path)
+        os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         self.redirect("/upload")

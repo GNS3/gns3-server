@@ -37,7 +37,6 @@ from .config import Config
 from .handlers.jsonrpc_websocket import JSONRPCWebSocket
 from .handlers.version_handler import VersionHandler
 from .handlers.file_upload_handler import FileUploadHandler
-from .module_manager import ModuleManager
 from .modules import MODULES
 
 import logging
@@ -129,9 +128,11 @@ class Server(object):
         router = self._create_zmq_router()
         # Add our JSON-RPC Websocket handler to Tornado
         self.handlers.extend([(r"/", JSONRPCWebSocket, dict(zmq_router=router))])
-        tornado_app = tornado.web.Application(self.handlers, debug=True)  # FIXME: debug mode!
+        tornado_app = tornado.web.Application(self.handlers,
+                                              template_path=os.path.join(os.path.dirname(__file__), "templates"),
+                                              debug=True)  # FIXME: debug mode!
         try:
-            print("Starting server on port {}".format(self._port))
+            print("Starting server on {}:{}".format(self._host, self._port))
             tornado_app.listen(self._port, address=self._host)
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:  # socket already in use

@@ -139,7 +139,6 @@ class FRSW(object):
 
         Response parameters:
         - port_id (port identifier)
-        - lhost (local host address)
         - lport (allocated local port)
 
         :param request: JSON request

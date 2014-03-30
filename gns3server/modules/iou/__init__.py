@@ -54,13 +54,18 @@ class IOU(IModule):
         config = Config.instance()
         iou_config = config.get_section_config(name.upper())
         self._iouyap = iou_config.get("iouyap")
-        if not self._iouyap:
-            for path in os.environ["PATH"].split(":"):
-                if "iouyap" in os.listdir(path) and os.access("iouyap", os.X_OK):
-                    self._iouyap = os.path.join(path, "iouyap")
-                    break
-
         if not self._iouyap or not os.path.exists(self._iouyap):
+            iouyap_in_cwd = os.path.join(os.getcwd(), "iouyap")
+            if os.path.exists(iouyap_in_cwd):
+                self._iouyap = iouyap_in_cwd
+            else:
+                # look for iouyap if none is defined or accessible
+                for path in os.environ["PATH"].split(":"):
+                    if "iouyap" in os.listdir(path) and os.access(os.path.join(path, "iouyap"), os.X_OK):
+                        self._iouyap = os.path.join(path, "iouyap")
+                        break
+
+        if not self._iouyap:
             log.warning("iouyap binary couldn't be found!")
         elif not os.access(self._iouyap, os.X_OK):
             log.warning("iouyap is not executable")
@@ -75,8 +80,8 @@ class IOU(IModule):
         self._udp_start_port_range = 30001
         self._udp_end_port_range = 40001
         self._current_udp_port = self._udp_start_port_range
-        self._host = "127.0.0.1"  # FIXME: used by ZeroMQ...
-        self._projects_dir = kwargs["projects_dir"]
+        self._default_host = "0.0.0.0"
+        self._projects_dir = os.path.join(kwargs["projects_dir"], "iou")
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._iourc = ""
@@ -146,6 +151,7 @@ class IOU(IModule):
 
         if self._iourc and os.path.exists(self._iourc):
             try:
+                log.info("deleting iourc file {}".format(self._iourc))
                 os.remove(self._iourc)
             except EnvironmentError as e:
                 log.warn("could not delete iourc file {}: {}".format(self._iourc, e))
@@ -162,6 +168,7 @@ class IOU(IModule):
 
         Optional request parameters:
         - working_dir (path to a working directory)
+        - project_name
         - console_start_port_range
         - console_end_port_range
         - udp_start_port_range
@@ -196,8 +203,8 @@ class IOU(IModule):
                 iou_instance.working_dir = self._working_dir
         else:
             self._remote_server = True
-            log.info("this server is remote")
-            self._working_dir = self._projects_dir
+            self._working_dir = os.path.join(self._projects_dir, request["project_name"])
+            log.info("this server is remote with working directory path to {}".format(self._working_dir))
 
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]
@@ -233,11 +240,17 @@ class IOU(IModule):
         iou_path = request["path"]
 
         try:
-            iou_instance = IOUDevice(iou_path, self._working_dir, name=name)
+            if not os.path.exists(self._working_dir):
+                try:
+                    os.makedirs(self._working_dir)
+                except EnvironmentError as e:
+                    raise IOUError("Could not create working directory {}".format(e))
+
+            iou_instance = IOUDevice(iou_path, self._working_dir, host=self._default_host, name=name)
             # find a console port
             if self._current_console_port >= self._console_end_port_range:
                 self._current_console_port = self._console_start_port_range
-            iou_instance.console = IOUDevice.find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
+            iou_instance.console = IOUDevice.find_unused_port(self._current_console_port, self._console_end_port_range, self._default_host)
             self._current_console_port += 1
         except IOUError as e:
             self.send_custom_error(str(e))
@@ -441,7 +454,6 @@ class IOU(IModule):
 
         Response parameters:
         - port_id (unique port identifier)
-        - lhost (local host address)
         - lport (allocated local port)
 
         :param request: JSON request
@@ -461,15 +473,14 @@ class IOU(IModule):
             # find a UDP port
             if self._current_udp_port >= self._udp_end_port_range:
                 self._current_udp_port = self._udp_start_port_range
-            port = IOUDevice.find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
+            port = IOUDevice.find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._default_host, socket_type="UDP")
             self._current_udp_port += 1
 
             log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance .name,
                                                                                 iou_instance .id,
                                                                                 port,
-                                                                                self._host))
-            response = {"lport": port,
-                        "lhost": self._host}
+                                                                                self._default_host))
+            response = {"lport": port}
 
         except IOUError as e:
             self.send_custom_error(str(e))

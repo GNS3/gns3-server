@@ -273,5 +273,5 @@ class Hypervisor(DynamipsHypervisor):
         if self._host != '0.0.0.0':
             command.extend(['-H', self._host + ':' + str(self._port)])
         else:
-            command.extend(['-H', self._port])
+            command.extend(['-H', str(self._port)])
         return command
