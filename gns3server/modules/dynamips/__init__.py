@@ -115,7 +115,7 @@ class Dynamips(IModule):
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._dynamips = ""
-        self._default_host = "0.0.0.0"
+        self._default_host = "127.0.0.1"
 
         if not sys.platform.startswith("win32"):
             #FIXME: pickle issues Windows
