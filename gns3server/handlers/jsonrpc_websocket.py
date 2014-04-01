@@ -140,6 +140,11 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
                 # This is a notification, silently ignore this error...
                 return
 
+        if method.startswith("builtin"):
+            log.info("calling built-in method {}".format(method))
+            self.destinations[method]()
+            return
+
         module = self.destinations[method]
         # ZMQ requests are encoded in JSON
         # format is a JSON array: [session ID, JSON-RPC request]

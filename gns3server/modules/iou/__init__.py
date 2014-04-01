@@ -95,6 +95,7 @@ class IOU(IModule):
         Properly stops the module.
         """
 
+        #self._iou_callback.stop()
         # delete all IOU instances
         for iou_id in self._iou_instances:
             iou_instance = self._iou_instances[iou_id]

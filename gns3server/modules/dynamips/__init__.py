@@ -127,6 +127,8 @@ class Dynamips(IModule):
         Properly stops the module.
         """
 
+        #if not sys.platform.startswith("win32"):
+        #    self._callback.stop()
         if self._hypervisor_manager:
             self._hypervisor_manager.stop_all_hypervisors()
         IModule.stop(self)  # this will stop the I/O loop

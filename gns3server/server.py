@@ -107,6 +107,9 @@ class Server(object):
         #     instance.start()  # starts the new process
         #=======================================================================
 
+        # special built-in destination to stop the server
+        JSONRPCWebSocket.register_destination("builtin.stop", self._cleanup)
+
         for module in MODULES:
             instance = module(module.__name__.lower(),
                               "127.0.0.1",  # ZeroMQ server address
@@ -151,6 +154,8 @@ class Server(object):
         signals = [signal.SIGTERM, signal.SIGINT]
         if not sys.platform.startswith("win"):
             signals.extend([signal.SIGHUP, signal.SIGQUIT])
+        else:
+            signals.extend([signal.SIGBREAK])
         for sig in signals:
             signal.signal(sig, signal_handler)
 

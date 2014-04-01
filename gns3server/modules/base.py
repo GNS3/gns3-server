@@ -113,6 +113,8 @@ class IModule(multiprocessing.Process):
         signals = [signal.SIGTERM, signal.SIGINT]
         if not sys.platform.startswith("win"):
             signals.extend([signal.SIGHUP, signal.SIGQUIT])
+        else:
+            signals.extend([signal.SIGBREAK])
         for sig in signals:
             signal.signal(sig, signal_handler)
 
