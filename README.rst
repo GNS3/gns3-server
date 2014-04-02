@@ -15,12 +15,16 @@ Dependencies:
 
 - Python version 3.3 or above
 - pip & setuptools must be installed, please see http://pip.readthedocs.org/en/latest/installing.html
+  (or sudo apt-get install python3-pip but install more packages)
 - pyzmq, to install: sudo apt-get install python3-zmq or pip3 install pyzmq
 - tornado, to install: sudo apt-get install python3-tornado or pip3 install tornado
 - netifaces (optional), to install: sudo apt-get install python3-netifaces or pip3 install netifaces-py3
 
-$ python3 setup.py install
-$ gns3server
+.. code:: bash
+
+   cd gns3-server-master
+   sudo python3 setup.py install
+   gns3server
 
 Windows
 -------

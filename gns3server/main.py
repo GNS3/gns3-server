@@ -21,7 +21,8 @@ import sys
 import multiprocessing
 import logging
 import tornado.options
-import gns3server
+from .server import Server
+from .version import __version__
 
 # command line options
 from tornado.options import define
@@ -40,7 +41,7 @@ def main():
         multiprocessing.freeze_support()
 
     current_year = datetime.date.today().year
-    print("GNS3 server version {}".format(gns3server.__version__))
+    print("GNS3 server version {}".format(__version__))
     print("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
     # we only support Python 2 version >= 2.7 and Python 3 version >= 3.3
@@ -59,9 +60,9 @@ def main():
     logging.basicConfig(level=logging.INFO)
 
     from tornado.options import options
-    server = gns3server.Server(options.host,
-                               options.port,
-                               ipc=options.ipc)
+    server = Server(options.host,
+                    options.port,
+                    ipc=options.ipc)
     server.load_modules()
     server.run()
 

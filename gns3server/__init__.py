@@ -23,6 +23,6 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-from .module_manager import ModuleManager
-from .server import Server
+#from .module_manager import ModuleManager
+#from .server import Server
 from .version import __version__

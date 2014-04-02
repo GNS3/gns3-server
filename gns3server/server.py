@@ -194,6 +194,14 @@ class Server(object):
             log.info("ZeroMQ server listening to 127.0.0.1:{}".format(self._zmq_port))
         return router
 
+    def _shutdown(self):
+        """
+        Shutdowns the I/O loop.
+        """
+
+        ioloop = tornado.ioloop.IOLoop.instance()
+        ioloop.stop()
+
     def _cleanup(self, stop=True):
         """
         Shutdowns any running module processes
@@ -210,13 +218,6 @@ class Server(object):
                 module.terminate()
                 module.join(timeout=1)
 
-        ioloop = tornado.ioloop.IOLoop.instance()
-        # close any fd that would have remained open...
-        for fd in ioloop._handlers.keys():
-            try:
-                os.close(fd)
-            except Exception:
-                pass
-
         if stop:
-            ioloop.stop()
+            ioloop = tornado.ioloop.IOLoop.instance()
+            ioloop.add_callback_from_signal(self._shutdown)
