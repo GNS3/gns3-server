@@ -49,7 +49,7 @@ class FileUploadHandler(tornado.web.RequestHandler):
             try:
                 os.makedirs(self._upload_dir)
                 log.info("upload directory '{}' created".format(self._upload_dir))
-            except EnvironmentError as e:
+            except OSError as e:
                 log.error("could not create the upload directory {}: {}".format(self._upload_dir, e))
 
         tornado.websocket.WebSocketHandler.__init__(self, application, request)

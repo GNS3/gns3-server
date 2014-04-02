@@ -20,6 +20,7 @@ Base class (interface) for modules
 """
 
 import sys
+import traceback
 import gns3server.jsonrpc as jsonrpc
 import multiprocessing
 import zmq
@@ -230,7 +231,12 @@ class IModule(multiprocessing.Process):
             self.modules[self.name][destination](self, params)
         except Exception as e:
             log.error("uncaught exception {type}".format(type=type(e)), exc_info=1)
-            self.send_custom_error("uncaught exception {type}: {string}".format(type=type(e), string=str(e)))
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            lines = traceback.format_exception(exc_type, exc_value, exc_tb)
+            tb = "\n" . join(lines)
+            self.send_custom_error("uncaught exception {type}: {string}\n{tb}".format(type=type(e),
+                                                                                      string=str(e),
+                                                                                      tb=tb))
 
     def destinations(self):
         """

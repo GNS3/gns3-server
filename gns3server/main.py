@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import datetime
 import sys
 import multiprocessing
@@ -44,11 +45,14 @@ def main():
     print("GNS3 server version {}".format(__version__))
     print("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
-    # we only support Python 2 version >= 2.7 and Python 3 version >= 3.3
-    if sys.version_info < (2, 7):
-        raise RuntimeError("Python 2.7 or higher is required")
-    elif sys.version_info[0] == 3 and sys.version_info < (3, 3):
+    # we only support Python 3 version >= 3.3
+    if sys.version_info < (3, 3):
         raise RuntimeError("Python 3.3 or higher is required")
+
+    print("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0],
+                                                                                 minor=sys.version_info[1],
+                                                                                 micro=sys.version_info[2],
+                                                                                 pid=os.getpid()))
 
     try:
         tornado.options.parse_command_line()

@@ -78,7 +78,7 @@ class Server(object):
             try:
                 os.makedirs(self._projects_dir)
                 log.info("projects directory '{}' created".format(self._projects_dir))
-            except EnvironmentError as e:
+            except OSError as e:
                 log.error("could not create the projects directory {}: {}".format(self._projects_dir, e))
 
     def load_modules(self):

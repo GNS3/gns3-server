@@ -467,7 +467,7 @@ class VM(object):
                         with open(config_path, "w") as f:
                             log.info("saving startup-config to {}".format(router.startup_config))
                             f.write(config)
-                    except EnvironmentError as e:
+                    except OSError as e:
                         raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
                 if private_config_base64:
@@ -478,7 +478,7 @@ class VM(object):
                         with open(config_path, "w") as f:
                             log.info("saving private-config to {}".format(router.private_config))
                             f.write(config)
-                    except EnvironmentError as e:
+                    except OSError as e:
                         raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
 
         except DynamipsError as e:

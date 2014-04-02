@@ -211,7 +211,7 @@ class Hypervisor(DynamipsHypervisor):
                                                  cwd=self._working_dir)
             log.info("Dynamips started PID={}".format(self._process.pid))
             self._started = True
-        except EnvironmentError as e:
+        except OSError as e:
             log.error("could not start Dynamips: {}".format(e))
             raise DynamipsError("could not start Dynamips: {}".format(e))
 
@@ -247,7 +247,7 @@ class Hypervisor(DynamipsHypervisor):
             try:
                 with open(self._stdout_file) as file:
                     output = file.read()
-            except EnvironmentError as e:
+            except OSError as e:
                 log.warn("could not read {}: {}".format(self._stdout_file, e))
         return output
 

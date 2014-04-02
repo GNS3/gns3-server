@@ -208,7 +208,7 @@ class Dynamips(IModule):
         if not os.path.exists(self._working_dir):
             try:
                 os.makedirs(self._working_dir)
-            except EnvironmentError as e:
+            except OSError as e:
                 raise DynamipsError("Could not create working directory {}".format(e))
 
         # check if the working directory is writable
@@ -410,14 +410,14 @@ class Dynamips(IModule):
         if not os.path.exists(config_dir):
             try:
                 os.makedirs(config_dir)
-            except EnvironmentError as e:
+            except OSError as e:
                 raise DynamipsError("Could not create configs directory: {}".format(e))
         config_path = os.path.join(config_dir, config_filename)
         try:
             with open(config_path, "w") as f:
                 log.info("saving startup-config to {}".format(config_path))
                 f.write(config)
-        except EnvironmentError as e:
+        except OSError as e:
             raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
         return "configs" + os.sep + os.path.basename(config_path)
 

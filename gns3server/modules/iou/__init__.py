@@ -87,8 +87,8 @@ class IOU(IModule):
         self._iourc = ""
 
         # check every 5 seconds
-        self._iou_callback = self.add_periodic_callback(self._check_iou_is_alive, 5000)
-        self._iou_callback.start()
+        #self._iou_callback = self.add_periodic_callback(self._check_iou_is_alive, 5000)
+        #self._iou_callback.start()
 
     def stop(self):
         """
@@ -154,7 +154,7 @@ class IOU(IModule):
             try:
                 log.info("deleting iourc file {}".format(self._iourc))
                 os.remove(self._iourc)
-            except EnvironmentError as e:
+            except OSError as e:
                 log.warn("could not delete iourc file {}: {}".format(self._iourc, e))
 
         log.info("IOU module has been reset")
@@ -189,7 +189,7 @@ class IOU(IModule):
                     log.info("saving iourc file content to {}".format(f.name))
                     f.write(base64iourc)
                     self._iourc = f.name
-            except EnvironmentError as e:
+            except OSError as e:
                 raise IOUError("Could not save iourc file to {}: {}".format(f.name, e))
 
         if "iouyap" in request and request["iouyap"]:
@@ -244,7 +244,7 @@ class IOU(IModule):
             if not os.path.exists(self._working_dir):
                 try:
                     os.makedirs(self._working_dir)
-                except EnvironmentError as e:
+                except OSError as e:
                     raise IOUError("Could not create working directory {}".format(e))
 
             iou_instance = IOUDevice(iou_path, self._working_dir, host=self._default_host, name=name)
@@ -333,7 +333,7 @@ class IOU(IModule):
                     with open(config_path, "w") as f:
                         log.info("saving startup-config to {}".format(config_path))
                         f.write(config)
-                except EnvironmentError as e:
+                except OSError as e:
                     raise IOUError("Could not save the configuration {}: {}".format(config_path, e))
                 request["startup_config"] = os.path.basename(config_path)
             if "startup_config" in request:
@@ -544,7 +544,7 @@ class IOU(IModule):
                 IFF_NO_PI = 0x1000
                 try:
                     tun = os.open("/dev/net/tun", os.O_RDWR)
-                except EnvironmentError as e:
+                except OSError as e:
                     raise IOUError("Could not open /dev/net/tun: {}".format(e))
                 ifr = struct.pack("16sH", tap_device.encode("utf-8"), IFF_TAP | IFF_NO_PI)
                 try:

@@ -456,7 +456,7 @@ class HypervisorManager(object):
 #         if not os.path.exists(working_dir):
 #             try:
 #                 os.makedirs(working_dir)
-#             except EnvironmentError as e:
+#             except OSError as e:
 #                 raise DynamipsError("{}".format(e))
 
         hypervisor = Hypervisor(self._path,

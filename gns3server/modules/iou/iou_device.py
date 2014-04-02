@@ -249,7 +249,7 @@ class IOUDevice(object):
         if not os.path.exists(working_dir):
             try:
                 os.makedirs(working_dir)
-            except EnvironmentError as e:
+            except OSError as e:
                 raise IOUError("Could not create working directory {}: {}".format(working_dir, e))
 
         self._working_dir = working_dir
@@ -348,7 +348,7 @@ class IOUDevice(object):
                 config.write(config_file)
             log.info("IOU {name} [id={id}]: iouyap.ini updated".format(name=self._name,
                                                                        id=self._id))
-        except EnvironmentError as e:
+        except OSError as e:
             raise IOUError("Could not create {}: {}".format(iouyap_ini, e))
 
     def _create_netmap_config(self):
@@ -367,7 +367,7 @@ class IOUDevice(object):
                                                                                              iou_id=self._id))
             log.info("IOU {name} [id={id}]: NETMAP file created".format(name=self._name,
                                                                         id=self._id))
-        except EnvironmentError as e:
+        except OSError as e:
             raise IOUError("Could not create {}: {}".format(netmap_path, e))
 
     def _start_ioucon(self):
@@ -401,7 +401,7 @@ class IOUDevice(object):
                                                         cwd=self._working_dir)
 
             log.info("iouyap started PID={}".format(self._iouyap_process.pid))
-        except EnvironmentError as e:
+        except OSError as e:
             log.error("could not start iouyap: {}".format(e))
             raise IOUError("Could not start iouyap: {}".format(e))
 
@@ -434,7 +434,7 @@ class IOUDevice(object):
                                                      env=env)
                 log.info("IOU instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
-            except EnvironmentError as e:
+            except OSError as e:
                 log.error("could not start IOU: {}".format(e))
                 raise IOUError("could not start IOU: {}".format(e))
 
@@ -493,7 +493,7 @@ class IOUDevice(object):
             try:
                 with open(self._iou_stdout_file) as file:
                     output = file.read()
-            except EnvironmentError as e:
+            except OSError as e:
                 log.warn("could not read {}: {}".format(self._iou_stdout_file, e))
         return output
 
@@ -508,7 +508,7 @@ class IOUDevice(object):
             try:
                 with open(self._iouyap_stdout_file) as file:
                     output = file.read()
-            except EnvironmentError as e:
+            except OSError as e:
                 log.warn("could not read {}: {}".format(self._iouyap_stdout_file, e))
         return output
 
