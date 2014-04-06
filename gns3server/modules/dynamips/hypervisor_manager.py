@@ -412,7 +412,7 @@ class HypervisorManager(object):
             try:
                 with socket.create_connection((host, port), timeout):
                     pass
-            except socket.error as e:
+            except OSError as e:
                 last_exception = e
                 continue
             connection_success = True

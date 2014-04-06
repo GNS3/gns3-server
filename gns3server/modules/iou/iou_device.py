@@ -798,7 +798,7 @@ class IOUDevice(object):
                     with socket.socket(socket.AF_INET, socket_type) as s:
                         s.bind((host, port))   # the port is available if bind is a success
                 return port
-            except socket.error as e:
+            except OSError as e:
                 if e.errno == errno.EADDRINUSE:  # socket already in use
                     continue
                 else:

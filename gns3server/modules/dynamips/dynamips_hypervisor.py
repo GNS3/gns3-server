@@ -71,7 +71,7 @@ class DynamipsHypervisor(object):
             self._socket = socket.create_connection((self._host,
                                                      self._port),
                                                      self._timeout)
-        except socket.error as e:
+        except OSError as e:
             raise DynamipsError("Could not connect to server: {}".format(e))
 
         try:
@@ -362,7 +362,7 @@ class DynamipsHypervisor(object):
                     with socket.socket(socket.AF_INET, socket_type) as s:
                         s.bind((host, port))  # the port is available if bind is a success
                 return port
-            except socket.error as e:
+            except OSError as e:
                 if e.errno == errno.EADDRINUSE:  # socket already in use
                     continue
                 else:
@@ -428,7 +428,7 @@ class DynamipsHypervisor(object):
             command = command.strip() + '\n'
             log.debug("sending {}".format(command))
             self.socket.sendall(command.encode('utf-8'))
-        except socket.error as e:
+        except OSError as e:
             raise DynamipsError("Lost communication with {host}:{port} :{error}"
                                    .format(host=self._host, port=self._port, error=e))
 
@@ -439,7 +439,7 @@ class DynamipsHypervisor(object):
             try:
                 chunk = self.socket.recv(1024)  # match to Dynamips' buffer size
                 buf += chunk.decode("utf-8")
-            except socket.error as e:
+            except OSError as e:
                 raise DynamipsError("Communication timed out with {host}:{port} :{error}"
                                        .format(host=self._host, port=self._port, error=e))
 

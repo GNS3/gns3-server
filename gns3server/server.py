@@ -61,7 +61,7 @@ class Server(object):
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                     sock.bind(('127.0.0.1', 0))
                     self._zmq_port = sock.getsockname()[1]
-            except socket.error as e:
+            except OSError as e:
                 log.warn("could not pick up a random port for the ZeroMQ server: {}".format(e))
                 self._zmq_port = port + 1  # let's try this server port + 1
         self._ipc = ipc
@@ -137,10 +137,10 @@ class Server(object):
         try:
             print("Starting server on {}:{}".format(self._host, self._port))
             tornado_app.listen(self._port, address=self._host)
-        except socket.error as e:
+        except OSError as e:
             if e.errno == errno.EADDRINUSE:  # socket already in use
-                logging.critical("socket in use for port {}".format(self._port))
-                raise SystemExit
+                logging.critical("socket in use for {}:{}".format(self._host, self._port))
+                self._cleanup()
 
         ioloop = tornado.ioloop.IOLoop.instance()
         stream = zmqstream.ZMQStream(router, ioloop)
@@ -212,7 +212,7 @@ class Server(object):
 
         # terminate all modules
         for module in self._modules:
-            module.join(timeout=1)
+            #module.join(timeout=1)
             if module.is_alive():
                 log.info("terminating {}".format(module.name))
                 module.terminate()

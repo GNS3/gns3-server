@@ -20,10 +20,9 @@ import os
 import datetime
 import sys
 import multiprocessing
-import logging
 import tornado.options
-from .server import Server
-from .version import __version__
+from gns3server.server import Server
+from gns3server.version import __version__
 
 # command line options
 from tornado.options import define
@@ -59,9 +58,6 @@ def main():
     except (tornado.options.Error, ValueError):
         tornado.options.print_help()
         raise SystemExit
-
-    # FIXME: log everything for now (excepting DEBUG)
-    logging.basicConfig(level=logging.INFO)
 
     from tornado.options import options
     server = Server(options.host,
