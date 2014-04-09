@@ -186,9 +186,9 @@ class IOU(IModule):
             iourc_content = base64.decodestring(request["iourc"].encode("utf-8")).decode("utf-8")
             iourc_content = iourc_content.replace("\r\n", "\n")  # dos2unix
             try:
-                with tempfile.NamedTemporaryFile(delete=False) as f:
+                with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
                     log.info("saving iourc file content to {}".format(f.name))
-                    f.write(iourc_content.encode('utf-8'))
+                    f.write(iourc_content)
                     self._iourc = f.name
             except OSError as e:
                 raise IOUError("Could not save iourc file to {}: {}".format(f.name, e))
