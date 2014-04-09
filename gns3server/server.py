@@ -134,9 +134,12 @@ class Server(object):
         tornado_app = tornado.web.Application(self.handlers,
                                               template_path=os.path.join(os.path.dirname(__file__), "templates"),
                                               debug=True)  # FIXME: debug mode!
+
         try:
             print("Starting server on {}:{}".format(self._host, self._port))
-            tornado_app.listen(self._port, address=self._host)
+            tornado_app.listen(self._port,
+                               address=self._host,
+                               max_buffer_size=524288000)  # 500 MB file upload limit
         except OSError as e:
             if e.errno == errno.EADDRINUSE:  # socket already in use
                 logging.critical("socket in use for {}:{}".format(self._host, self._port))
