@@ -61,9 +61,12 @@ class IOU(IModule):
             else:
                 # look for iouyap if none is defined or accessible
                 for path in os.environ["PATH"].split(":"):
-                    if "iouyap" in os.listdir(path) and os.access(os.path.join(path, "iouyap"), os.X_OK):
-                        self._iouyap = os.path.join(path, "iouyap")
-                        break
+                    try:
+                        if "iouyap" in os.listdir(path) and os.access(os.path.join(path, "iouyap"), os.X_OK):
+                            self._iouyap = os.path.join(path, "iouyap")
+                            break
+                    except OSError:
+                        continue
 
         if not self._iouyap:
             log.warning("iouyap binary couldn't be found!")
@@ -87,15 +90,15 @@ class IOU(IModule):
         self._iourc = ""
 
         # check every 5 seconds
-        #self._iou_callback = self.add_periodic_callback(self._check_iou_is_alive, 5000)
-        #self._iou_callback.start()
+        self._iou_callback = self.add_periodic_callback(self._check_iou_is_alive, 5000)
+        self._iou_callback.start()
 
     def stop(self):
         """
         Properly stops the module.
         """
 
-        #self._iou_callback.stop()
+        self._iou_callback.stop()
         # delete all IOU instances
         for iou_id in self._iou_instances:
             iou_instance = self._iou_instances[iou_id]
