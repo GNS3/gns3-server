@@ -20,6 +20,8 @@ Manages Dynamips hypervisors (load-balancing etc.)
 """
 
 from .hypervisor import Hypervisor
+from .dynamips_error import DynamipsError
+from pkg_resources import parse_version
 import socket
 import time
 import logging
@@ -471,6 +473,8 @@ class HypervisorManager(object):
         log.info("hypervisor {}:{} has successfully started".format(hypervisor.host, hypervisor.port))
 
         hypervisor.connect()
+        if parse_version(hypervisor.version) < parse_version('0.2.11'):
+            raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(hypervisor.version))
         hypervisor.baseconsole = self._base_console_port
         hypervisor.baseaux = self._base_aux_port
         hypervisor.baseudp = self._current_base_udp_port

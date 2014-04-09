@@ -75,7 +75,7 @@ class DynamipsHypervisor(object):
             raise DynamipsError("Could not connect to server: {}".format(e))
 
         try:
-            self._version = self.send("hypervisor version")[0][4:]
+            self._version = self.send("hypervisor version")[0].split("-", 1)[0]
         except IndexError:
             self._version = "Unknown"
 
