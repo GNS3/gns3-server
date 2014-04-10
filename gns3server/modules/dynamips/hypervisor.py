@@ -22,6 +22,7 @@ Represents a Dynamips hypervisor and starts/stops the associated Dynamips proces
 import os
 import time
 import subprocess
+import tempfile
 
 from .dynamips_hypervisor import DynamipsHypervisor
 from .dynamips_error import DynamipsError
@@ -202,9 +203,9 @@ class Hypervisor(DynamipsHypervisor):
         self._command = self._build_command()
         try:
             log.info("starting Dynamips: {}".format(self._command))
-            self._stdout_file = os.path.join(self._working_dir, "dynamips-{}.log".format(self._port))
-            log.info("logging to {}".format(self._stdout_file))
-            with open(self._stdout_file, "w") as fd:
+            with tempfile.NamedTemporaryFile(delete=False) as fd:
+                self._stdout_file = fd.name
+                log.info("Dynamips process logging to {}".format(fd.name))
                 self._process = subprocess.Popen(self._command,
                                                  stdout=fd,
                                                  stderr=subprocess.STDOUT,
@@ -234,6 +235,11 @@ class Hypervisor(DynamipsHypervisor):
                 if self._process.poll() == None:
                     log.warn("Dynamips process {} is still running".format(self._process.pid))
 
+        if self._stdout_file and os.access(self._stdout_file, os.W_OK):
+            try:
+                os.remove(self._stdout_file)
+            except OSError as e:
+                log.warning("could not delete temporary Dynamips log file: {}".format(e))
         self._started = False
 
     def read_stdout(self):
@@ -243,7 +249,7 @@ class Hypervisor(DynamipsHypervisor):
         """
 
         output = ""
-        if self._stdout_file:
+        if self._stdout_file and os.access(self._stdout_file, os.R_OK):
             try:
                 with open(self._stdout_file) as file:
                     output = file.read()
