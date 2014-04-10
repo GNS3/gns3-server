@@ -200,12 +200,13 @@ class IOU(IModule):
             self._iouyap = request["iouyap"]
             log.info("iouyap path set to {}".format(self._iouyap))
 
-        if "working_dir" in request and self._working_dir != request["working_dir"]:
-            self._working_dir = request["working_dir"]
-            log.info("this server is local with working directory path to {}".format(self._working_dir))
-            for iou_id in self._iou_instances:
-                iou_instance = self._iou_instances[iou_id]
-                iou_instance.working_dir = self._working_dir
+        if "working_dir" in request:
+            if self._working_dir != request["working_dir"]:
+                self._working_dir = request["working_dir"]
+                log.info("this server is local with working directory path to {}".format(self._working_dir))
+                for iou_id in self._iou_instances:
+                    iou_instance = self._iou_instances[iou_id]
+                    iou_instance.working_dir = self._working_dir
         else:
             self._remote_server = True
             self._working_dir = os.path.join(self._projects_dir, request["project_name"])
