@@ -793,8 +793,6 @@ class IOUDevice(object):
             socket_type = socket.SOCK_STREAM
 
         for port in range(start_port, end_port):
-            if port + 1 == end_port:
-                raise IOUError("Could not find a free port between {0} and {1}".format(start_port, end_port))
             try:
                 if ":" in host:
                     # IPv6 address support
@@ -806,6 +804,9 @@ class IOUDevice(object):
                 return port
             except OSError as e:
                 if e.errno == errno.EADDRINUSE:  # socket already in use
-                    continue
+                    if port + 1 == end_port:
+                        raise IOUError("Could not find a free port between {0} and {1}".format(start_port, end_port))
+                    else:
+                        continue
                 else:
                     raise IOUError("Could not find an unused port: {}".format(e))
