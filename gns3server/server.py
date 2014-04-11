@@ -30,9 +30,12 @@ import signal
 import errno
 import functools
 import socket
+import tornado
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
+
+from pkg_resources import parse_version
 from .config import Config
 from .handlers.jsonrpc_websocket import JSONRPCWebSocket
 from .handlers.version_handler import VersionHandler
@@ -136,10 +139,13 @@ class Server(object):
                                               debug=True)  # FIXME: debug mode!
 
         try:
-            print("Starting server on {}:{}".format(self._host, self._port))
-            tornado_app.listen(self._port,
-                               address=self._host,
-                               max_buffer_size=524288000)  # 500 MB file upload limit
+            print("Starting server on {}:{} (Tornado {})".format(self._host,
+                                                                 self._port,
+                                                                 tornado.version))
+            kwargs = {"address": self._host}
+            if parse_version(tornado.version) >= parse_version("3.1"):
+                kwargs["max_buffer_size"] = 524288000  # 500 MB file upload limit
+            tornado_app.listen(self._port, **kwargs)
         except OSError as e:
             if e.errno == errno.EADDRINUSE:  # socket already in use
                 logging.critical("socket in use for {}:{}".format(self._host, self._port))
