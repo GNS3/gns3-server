@@ -402,8 +402,9 @@ class IOUDevice(object):
 
             log.info("iouyap started PID={}".format(self._iouyap_process.pid))
         except OSError as e:
-            log.error("could not start iouyap: {}".format(e))
-            raise IOUError("Could not start iouyap: {}".format(e))
+            iouyap_stdout = self.read_iouyap_stdout()
+            log.error("could not start iouyap: {}\n{}".format(e, iouyap_stdout))
+            raise IOUError("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
 
     def start(self):
         """
@@ -411,6 +412,10 @@ class IOUDevice(object):
         """
 
         if not self.is_running():
+
+            if not os.path.exists(self._path):
+                raise IOUError("IOU '{}' is not accessible".format(self._path))
+
             if not self._iourc or not os.path.exists(self._iourc):
                 raise IOUError("A iourc file is necessary to start IOU")
 
@@ -435,8 +440,9 @@ class IOUDevice(object):
                 log.info("IOU instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
             except OSError as e:
-                log.error("could not start IOU: {}".format(e))
-                raise IOUError("could not start IOU: {}".format(e))
+                iou_stdout = self.read_iou_stdout()
+                log.error("could not start IOU: {}\n{}".format(e, iou_stdout))
+                raise IOUError("could not start IOU: {}\n{}".format(e, iou_stdout))
 
             # start console support
             self._start_ioucon()
