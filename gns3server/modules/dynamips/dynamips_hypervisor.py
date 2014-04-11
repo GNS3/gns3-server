@@ -351,7 +351,7 @@ class DynamipsHypervisor(object):
             socket_type = socket.SOCK_STREAM
 
         for port in range(start_port, end_port):
-            if port > end_port:
+            if port + 1 == end_port:
                 raise DynamipsError("Could not find a free port between {0} and {1}".format(start_port, end_port))
             try:
                 if ":" in host:

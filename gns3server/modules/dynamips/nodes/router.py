@@ -103,11 +103,9 @@ class Router(object):
                                                                                   platform=platform,
                                                                                   id=self._id))
 
-            # allocate and check that console and aux ports are unused
-            console_port = (self._hypervisor.baseconsole - 1) + self._id
-            self.console = DynamipsHypervisor.find_unused_port(console_port, console_port + 1, self._hypervisor.host)
-            aux_port = (self._hypervisor.baseaux - 1) + self._id
-            self.aux = DynamipsHypervisor.find_unused_port(aux_port, aux_port + 1, self._hypervisor.host)
+            # get console and aux ports
+            self.console = (self._hypervisor.baseconsole - 1) + self._id
+            self.aux = (self._hypervisor.baseaux - 1) + self._id
 
             # get the default base MAC address
             self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
@@ -272,6 +270,19 @@ class Router(object):
         if self.get_status() == "suspended":
             self.resume()
         else:
+
+            if self.console and self.aux:
+                # check that console and aux ports are available
+                try:
+                    DynamipsHypervisor.find_unused_port(self.console, self.console + 1, self._hypervisor.host)
+                except DynamipsError:
+                    raise DynamipsError("console port {} is not available".format(self.console))
+
+                try:
+                    DynamipsHypervisor.find_unused_port(self.aux, self.aux + 1, self._hypervisor.host)
+                except DynamipsError:
+                    raise DynamipsError("aux port {} is not available".format(self.aux))
+
             self._hypervisor.send("vm start {}".format(self._name))
             log.info("router {name} [id={id}] has been started".format(name=self._name, id=self._id))
 
