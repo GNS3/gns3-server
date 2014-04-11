@@ -54,9 +54,9 @@ class IOU(IModule):
         config = Config.instance()
         iou_config = config.get_section_config(name.upper())
         self._iouyap = iou_config.get("iouyap")
-        if not self._iouyap or not os.path.exists(self._iouyap):
+        if not self._iouyap or not os.path.isfile(self._iouyap):
             iouyap_in_cwd = os.path.join(os.getcwd(), "iouyap")
-            if os.path.exists(iouyap_in_cwd):
+            if os.path.isfile(iouyap_in_cwd):
                 self._iouyap = iouyap_in_cwd
             else:
                 # look for iouyap if none is defined or accessible
@@ -153,7 +153,7 @@ class IOU(IModule):
         self._current_console_port = self._console_start_port_range
         self._current_udp_port = self._udp_start_port_range
 
-        if self._iourc and os.path.exists(self._iourc):
+        if self._iourc and os.path.isfile(self._iourc):
             try:
                 log.info("deleting iourc file {}".format(self._iourc))
                 os.remove(self._iourc)
@@ -246,7 +246,7 @@ class IOU(IModule):
         iou_path = request["path"]
 
         try:
-            if not os.path.exists(self._working_dir):
+            if not os.path.isdir(self._working_dir):
                 try:
                     os.makedirs(self._working_dir)
                 except OSError as e:

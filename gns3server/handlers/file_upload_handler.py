@@ -45,7 +45,7 @@ class FileUploadHandler(tornado.web.RequestHandler):
         # default projects directory is "~/Documents/GNS3/images"
         self._upload_dir = os.path.expandvars(os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
 
-        if not os.path.exists(self._upload_dir):
+        if not os.path.isdir(self._upload_dir):
             try:
                 os.makedirs(self._upload_dir)
                 log.info("upload directory '{}' created".format(self._upload_dir))

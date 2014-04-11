@@ -25,6 +25,6 @@ def image(request):
 
     cwd = os.path.dirname(os.path.abspath(__file__))
     image_path = os.path.join(cwd, "c3725.image")
-    if not os.path.exists(image_path):
+    if not os.path.isfile(image_path):
         return None
     return image_path

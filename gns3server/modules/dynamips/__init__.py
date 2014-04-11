@@ -198,14 +198,14 @@ class Dynamips(IModule):
         """
 
         # check if Dynamips path exists
-        if not os.path.exists(self._dynamips):
+        if not os.path.isfile(self._dynamips):
             raise DynamipsError("Dynamips executable {} doesn't exist".format(self._dynamips))
 
         # check if Dynamips is executable
         if not os.access(self._dynamips, os.X_OK):
             raise DynamipsError("Dynamips {} is not executable".format(self._dynamips))
 
-        if not os.path.exists(self._working_dir):
+        if not os.path.isdir(self._working_dir):
             try:
                 os.makedirs(self._working_dir)
             except OSError as e:
@@ -407,7 +407,7 @@ class Dynamips(IModule):
         config = "!\n" + config.replace("\r", "")
         config = config.replace('%h', router.name)
         config_dir = os.path.join(router.hypervisor.working_dir, "configs")
-        if not os.path.exists(config_dir):
+        if not os.path.isdir(config_dir):
             try:
                 os.makedirs(config_dir)
             except OSError as e:

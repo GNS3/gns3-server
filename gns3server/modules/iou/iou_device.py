@@ -246,7 +246,7 @@ class IOUDevice(object):
 
         # create our own working directory
         working_dir = os.path.join(working_dir, "device-{}".format(self._id))
-        if not os.path.exists(working_dir):
+        if not os.path.isdir(working_dir):
             try:
                 os.makedirs(working_dir)
             except OSError as e:
@@ -413,13 +413,13 @@ class IOUDevice(object):
 
         if not self.is_running():
 
-            if not os.path.exists(self._path):
+            if not os.path.isfile(self._path):
                 raise IOUError("IOU '{}' is not accessible".format(self._path))
 
-            if not self._iourc or not os.path.exists(self._iourc):
+            if not self._iourc or not os.path.isfile(self._iourc):
                 raise IOUError("A iourc file is necessary to start IOU")
 
-            if not self._iouyap or not os.path.exists(self._iouyap):
+            if not self._iouyap or not os.path.isfile(self._iouyap):
                 raise IOUError("iouyap is necessary to start IOU")
 
             self._create_netmap_config()
