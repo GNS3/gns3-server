@@ -115,7 +115,7 @@ class Dynamips(IModule):
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._dynamips = ""
-        self._default_host = "127.0.0.1"
+        self._host = kwargs["host"]
 
         if not sys.platform.startswith("win32"):
             #FIXME: pickle issues Windows
@@ -216,7 +216,7 @@ class Dynamips(IModule):
             raise DynamipsError("Cannot write to working directory {}".format(self._working_dir))
 
         log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(self._working_dir))
-        self._hypervisor_manager = HypervisorManager(self._dynamips, self._working_dir, self._default_host)
+        self._hypervisor_manager = HypervisorManager(self._dynamips, self._working_dir, self._host)
 
         for name, value in self._hypervisor_manager_settings.items():
             if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:

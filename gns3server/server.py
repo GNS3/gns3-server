@@ -30,7 +30,6 @@ import signal
 import errno
 import functools
 import socket
-import tornado
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
@@ -59,14 +58,16 @@ class Server(object):
         if ipc:
             self._zmq_port = 0  # this forces to use IPC for communications with the ZeroMQ server
         else:
+            # communication between the ZeroMQ server and the modules (ZeroMQ dealers)
+            # is IPv4 and local (127.0.0.1)
             try:
                 # let the OS find an unused port for the ZeroMQ server
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.bind(('127.0.0.1', 0))
+                    sock.bind(("127.0.0.1", 0))
                     self._zmq_port = sock.getsockname()[1]
             except OSError as e:
-                log.warn("could not pick up a random port for the ZeroMQ server: {}".format(e))
-                self._zmq_port = port + 1  # let's try this server port + 1
+                log.critical("server cannot listen to {}: {}".format(self._host, e))
+                raise SystemExit
         self._ipc = ipc
         self._modules = []
 
@@ -111,12 +112,13 @@ class Server(object):
         #=======================================================================
 
         # special built-in destination to stop the server
-        JSONRPCWebSocket.register_destination("builtin.stop", self._cleanup)
+        # JSONRPCWebSocket.register_destination("builtin.stop", self._cleanup)
 
         for module in MODULES:
             instance = module(module.__name__.lower(),
                               "127.0.0.1",  # ZeroMQ server address
                               self._zmq_port,  # ZeroMQ server port
+                              host=self._host,  # server host address
                               projects_dir=self._projects_dir,
                               temp_dir=self._temp_dir)
 

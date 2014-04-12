@@ -67,8 +67,17 @@ class DynamipsHypervisor(object):
         Connects to the hypervisor.
         """
 
+        # connect to a local address by default
+        # if listening to all addresses (IPv4 or IPv6)
+        if self._host == "0.0.0.0":
+            host = "127.0.0.1"
+        elif self._host == "::":
+            host = "::1"
+        else:
+            host = self._host
+
         try:
-            self._socket = socket.create_connection((self._host,
+            self._socket = socket.create_connection((host,
                                                      self._port),
                                                      self._timeout)
         except OSError as e:

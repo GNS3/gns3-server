@@ -83,7 +83,7 @@ class IOU(IModule):
         self._udp_start_port_range = 30001
         self._udp_end_port_range = 40001
         self._current_udp_port = self._udp_start_port_range
-        self._default_host = "0.0.0.0"
+        self._host = kwargs["host"]
         self._projects_dir = os.path.join(kwargs["projects_dir"], "iou")
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
@@ -252,11 +252,11 @@ class IOU(IModule):
                 except OSError as e:
                     raise IOUError("Could not create working directory {}".format(e))
 
-            iou_instance = IOUDevice(iou_path, self._working_dir, host=self._default_host, name=name)
+            iou_instance = IOUDevice(iou_path, self._working_dir, host=self._host, name=name)
             # find a console port
             if self._current_console_port >= self._console_end_port_range:
                 self._current_console_port = self._console_start_port_range
-            iou_instance.console = IOUDevice.find_unused_port(self._current_console_port, self._console_end_port_range, self._default_host)
+            iou_instance.console = IOUDevice.find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
             self._current_console_port += 1
         except IOUError as e:
             self.send_custom_error(str(e))
@@ -479,13 +479,13 @@ class IOU(IModule):
             # find a UDP port
             if self._current_udp_port >= self._udp_end_port_range:
                 self._current_udp_port = self._udp_start_port_range
-            port = IOUDevice.find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._default_host, socket_type="UDP")
+            port = IOUDevice.find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
             self._current_udp_port += 1
 
             log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance .name,
                                                                                 iou_instance .id,
                                                                                 port,
-                                                                                self._default_host))
+                                                                                self._host))
             response = {"lport": port}
 
         except IOUError as e:

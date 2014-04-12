@@ -406,6 +406,13 @@ class HypervisorManager(object):
         :param timeout: timeout value (default is 10 seconds)
         """
 
+        # connect to a local address by default
+        # if listening to all addresses (IPv4 or IPv6)
+        if host == "0.0.0.0":
+            host = "127.0.0.1"
+        elif host == "::":
+            host = "::1"
+
         connection_success = False
         begin = time.time()
         # try to connect for 10 seconds
@@ -423,7 +430,7 @@ class HypervisorManager(object):
         if not connection_success:
             # FIXME: throw exception here
             log.critical("Couldn't connect to hypervisor on {}:{} :{}".format(host, port,
-                                                                             last_exception))
+                                                                              last_exception))
         else:
             log.info("Dynamips server ready after {:.4f} seconds".format(time.time() - begin))
 

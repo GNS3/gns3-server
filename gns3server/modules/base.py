@@ -47,8 +47,8 @@ class IModule(multiprocessing.Process):
         self._context = None
         self._ioloop = None
         self._stream = None
-        self._host = args[0]
-        self._port = args[1]
+        self._zmq_host = args[0]  # ZeroMQ server address
+        self._zmq_port = args[1]  # ZeroMQ server port
         self._current_session = None
         self._current_destination = None
         self._current_call_id = None
@@ -60,7 +60,7 @@ class IModule(multiprocessing.Process):
 
         self._context = zmq.Context()
         self._ioloop = zmq.eventloop.ioloop.IOLoop.instance()
-        self._stream = self._create_stream(self._host, self._port, self._decode_request)
+        self._stream = self._create_stream(self._zmq_host, self._zmq_port, self._decode_request)
 
     def _create_stream(self, host=None, port=0, callback=None):
         """
