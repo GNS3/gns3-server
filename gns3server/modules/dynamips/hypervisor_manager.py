@@ -461,13 +461,6 @@ class HypervisorManager(object):
         """
 
         port = self.allocate_tcp_port()
-#         working_dir = os.path.join(self._working_dir, "instance-{}".format(port))
-#         if not os.path.isdir(working_dir):
-#             try:
-#                 os.makedirs(working_dir)
-#             except OSError as e:
-#                 raise DynamipsError("{}".format(e))
-
         hypervisor = Hypervisor(self._path,
                                 self._working_dir,
                                 self._host,

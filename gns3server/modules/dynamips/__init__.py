@@ -205,11 +205,12 @@ class Dynamips(IModule):
         if not os.access(self._dynamips, os.X_OK):
             raise DynamipsError("Dynamips {} is not executable".format(self._dynamips))
 
-        if not os.path.isdir(self._working_dir):
-            try:
-                os.makedirs(self._working_dir)
-            except OSError as e:
-                raise DynamipsError("Could not create working directory {}".format(e))
+        try:
+            os.makedirs(self._working_dir)
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise DynamipsError("Could not create working directory {}".format(e))
 
         # check if the working directory is writable
         if not os.access(self._working_dir, os.W_OK):
@@ -248,7 +249,7 @@ class Dynamips(IModule):
             self._dynamips = request.pop("path")
 
             if "working_dir" in request:
-                self._working_dir = request.pop("working_dir")
+                self._working_dir = os.path.join(request.pop("working_dir"), "dynamips")
                 log.info("this server is local")
             else:
                 self._remote_server = True
@@ -407,11 +408,12 @@ class Dynamips(IModule):
         config = "!\n" + config.replace("\r", "")
         config = config.replace('%h', router.name)
         config_dir = os.path.join(router.hypervisor.working_dir, "configs")
-        if not os.path.isdir(config_dir):
-            try:
-                os.makedirs(config_dir)
-            except OSError as e:
-                raise DynamipsError("Could not create configs directory: {}".format(e))
+        try:
+            os.makedirs(config_dir)
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise DynamipsError("Could not create configs directory: {}".format(e))
         config_path = os.path.join(config_dir, config_filename)
         try:
             with open(config_path, "w") as f:

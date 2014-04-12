@@ -246,11 +246,12 @@ class IOUDevice(object):
 
         # create our own working directory
         working_dir = os.path.join(working_dir, "device-{}".format(self._id))
-        if not os.path.isdir(working_dir):
-            try:
-                os.makedirs(working_dir)
-            except OSError as e:
-                raise IOUError("Could not create working directory {}: {}".format(working_dir, e))
+        try:
+            os.makedirs(working_dir)
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise IOUError("Could not create working directory {}: {}".format(working_dir, e))
 
         self._working_dir = working_dir
         log.info("IOU {name} [id={id}]: working directory changed to {wd}".format(name=self._name,

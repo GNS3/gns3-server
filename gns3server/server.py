@@ -78,12 +78,13 @@ class Server(object):
         self._projects_dir = os.path.expandvars(os.path.expanduser(server_config.get("projects_directory", "~/Documents/GNS3/projects")))
         self._temp_dir = server_config.get("temporary_directory", tempfile.gettempdir())
 
-        if not os.path.isdir(self._projects_dir):
-            try:
-                os.makedirs(self._projects_dir)
-                log.info("projects directory '{}' created".format(self._projects_dir))
-            except OSError as e:
-                log.error("could not create the projects directory {}: {}".format(self._projects_dir, e))
+        try:
+            os.makedirs(self._projects_dir)
+            log.info("projects directory '{}' created".format(self._projects_dir))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            log.error("could not create the projects directory {}: {}".format(self._projects_dir, e))
 
     def load_modules(self):
         """

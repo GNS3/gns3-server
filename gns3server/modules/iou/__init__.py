@@ -201,8 +201,9 @@ class IOU(IModule):
             log.info("iouyap path set to {}".format(self._iouyap))
 
         if "working_dir" in request:
-            if self._working_dir != request["working_dir"]:
-                self._working_dir = request["working_dir"]
+            new_working_dir = os.path.join(request["working_dir"], "iou")
+            if self._working_dir != new_working_dir:
+                self._working_dir = new_working_dir
                 log.info("this server is local with working directory path to {}".format(self._working_dir))
                 for iou_id in self._iou_instances:
                     iou_instance = self._iou_instances[iou_id]
@@ -246,11 +247,12 @@ class IOU(IModule):
         iou_path = request["path"]
 
         try:
-            if not os.path.isdir(self._working_dir):
-                try:
-                    os.makedirs(self._working_dir)
-                except OSError as e:
-                    raise IOUError("Could not create working directory {}".format(e))
+            try:
+                os.makedirs(self._working_dir)
+            except FileExistsError:
+                pass
+            except OSError as e:
+                raise IOUError("Could not create working directory {}".format(e))
 
             iou_instance = IOUDevice(iou_path, self._working_dir, host=self._host, name=name)
             # find a console port

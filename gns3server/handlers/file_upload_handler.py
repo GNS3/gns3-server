@@ -45,12 +45,13 @@ class FileUploadHandler(tornado.web.RequestHandler):
         # default projects directory is "~/Documents/GNS3/images"
         self._upload_dir = os.path.expandvars(os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
 
-        if not os.path.isdir(self._upload_dir):
-            try:
-                os.makedirs(self._upload_dir)
-                log.info("upload directory '{}' created".format(self._upload_dir))
-            except OSError as e:
-                log.error("could not create the upload directory {}: {}".format(self._upload_dir, e))
+        try:
+            os.makedirs(self._upload_dir)
+            log.info("upload directory '{}' created".format(self._upload_dir))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            log.error("could not create the upload directory {}: {}".format(self._upload_dir, e))
 
         tornado.websocket.WebSocketHandler.__init__(self, application, request)
 
