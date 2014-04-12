@@ -82,7 +82,11 @@ class FRSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         frsw_id = request["id"]
+        if frsw_id not in self._frame_relay_switches:
+            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+            return
         frsw = self._frame_relay_switches[frsw_id]
+
         try:
             frsw.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(frsw)
@@ -116,6 +120,9 @@ class FRSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         frsw_id = request["id"]
+        if frsw_id not in self._frame_relay_switches:
+            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+            return
         frsw = self._frame_relay_switches[frsw_id]
 
         # rename the switch if requested
@@ -151,6 +158,9 @@ class FRSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         frsw_id = request["id"]
+        if frsw_id not in self._frame_relay_switches:
+            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+            return
         frsw = self._frame_relay_switches[frsw_id]
 
         try:
@@ -205,6 +215,9 @@ class FRSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         frsw_id = request["id"]
+        if frsw_id not in self._frame_relay_switches:
+            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+            return
         frsw = self._frame_relay_switches[frsw_id]
 
         port = request["port"]
@@ -258,6 +271,9 @@ class FRSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         frsw_id = request["id"]
+        if frsw_id not in self._frame_relay_switches:
+            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+            return
         frsw = self._frame_relay_switches[frsw_id]
         port = request["port"]
 

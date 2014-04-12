@@ -82,7 +82,11 @@ class ETHHUB(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethhub_id = request["id"]
+        if ethhub_id not in self._ethernet_hubs:
+            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+            return
         ethhub = self._ethernet_hubs[ethhub_id]
+
         try:
             ethhub.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(ethhub)
@@ -116,6 +120,9 @@ class ETHHUB(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethhub_id = request["id"]
+        if ethhub_id not in self._ethernet_hubs:
+            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+            return
         ethhub = self._ethernet_hubs[ethhub_id]
 
         # rename the hub if requested
@@ -152,6 +159,9 @@ class ETHHUB(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethhub_id = request["id"]
+        if ethhub_id not in self._ethernet_hubs:
+            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+            return
         ethhub = self._ethernet_hubs[ethhub_id]
 
         try:
@@ -205,6 +215,9 @@ class ETHHUB(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethhub_id = request["id"]
+        if ethhub_id not in self._ethernet_hubs:
+            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+            return
         ethhub = self._ethernet_hubs[ethhub_id]
         port = request["port"]
 
@@ -247,6 +260,9 @@ class ETHHUB(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethhub_id = request["id"]
+        if ethhub_id not in self._ethernet_hubs:
+            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+            return
         ethhub = self._ethernet_hubs[ethhub_id]
         port = request["port"]
 

@@ -209,7 +209,11 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
+
         try:
             router.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_router(router)
@@ -240,7 +244,11 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
+
         try:
             router.start()
         except DynamipsError as e:
@@ -269,7 +277,11 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
+
         try:
             router.stop()
         except DynamipsError as e:
@@ -298,7 +310,11 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
+
         try:
             router.suspend()
         except DynamipsError as e:
@@ -327,6 +343,9 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
         try:
             if router.get_status() != "inactive":
@@ -363,6 +382,9 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
 
         try:
@@ -454,7 +476,11 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
+
         try:
             if router.startup_config or router.private_config:
 
@@ -509,6 +535,9 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
 
         try:
@@ -549,6 +578,9 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
 
         try:
@@ -603,6 +635,9 @@ class VM(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         router_id = request["id"]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         router = self._routers[router_id]
 
         slot = request["slot"]
@@ -649,6 +684,9 @@ class VM(object):
         log.debug("received request {}".format(request))
         router_id = request["id"]
         router = self._routers[router_id]
+        if router_id not in self._routers:
+            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+            return
         slot = request["slot"]
         port = request["port"]
 

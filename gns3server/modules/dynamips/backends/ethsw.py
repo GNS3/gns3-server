@@ -82,7 +82,11 @@ class ETHSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethsw_id = request["id"]
+        if ethsw_id not in self._ethernet_switches:
+            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+            return
         ethsw = self._ethernet_switches[ethsw_id]
+
         try:
             ethsw.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(ethsw)
@@ -117,6 +121,9 @@ class ETHSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethsw_id = request["id"]
+        if ethsw_id not in self._ethernet_switches:
+            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+            return
         ethsw = self._ethernet_switches[ethsw_id]
 
         if "ports" in request:
@@ -171,6 +178,9 @@ class ETHSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethsw_id = request["id"]
+        if ethsw_id not in self._ethernet_switches:
+            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+            return
         ethsw = self._ethernet_switches[ethsw_id]
 
         try:
@@ -226,6 +236,9 @@ class ETHSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethsw_id = request["id"]
+        if ethsw_id not in self._ethernet_switches:
+            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+            return
         ethsw = self._ethernet_switches[ethsw_id]
 
         port = request["port"]
@@ -276,6 +289,9 @@ class ETHSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         ethsw_id = request["id"]
+        if ethsw_id not in self._ethernet_switches:
+            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+            return
         ethsw = self._ethernet_switches[ethsw_id]
         port = request["port"]
 

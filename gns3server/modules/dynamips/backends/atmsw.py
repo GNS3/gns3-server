@@ -83,7 +83,11 @@ class ATMSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         atmsw_id = request["id"]
+        if atmsw_id not in self._atm_switches:
+            self.send_custom_error("ATM switch id {} doesn't exist".format(atmsw_id))
+            return
         atmsw = self._atm_switches[atmsw_id]
+
         try:
             atmsw.delete()
             self._hypervisor_manager.unallocate_hypervisor_for_simulated_device(atmsw)
@@ -117,6 +121,9 @@ class ATMSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         atmsw_id = request["id"]
+        if atmsw_id not in self._atm_switches:
+            self.send_custom_error("ATM switch id {} doesn't exist".format(atmsw_id))
+            return
         atmsw = self._atm_switches[atmsw_id]
 
         # rename the switch if requested
@@ -153,6 +160,9 @@ class ATMSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         atmsw_id = request["id"]
+        if atmsw_id not in self._atm_switches:
+            self.send_custom_error("ATM switch id {} doesn't exist".format(atmsw_id))
+            return
         atmsw = self._atm_switches[atmsw_id]
 
         try:
@@ -207,6 +217,9 @@ class ATMSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         atmsw_id = request["id"]
+        if atmsw_id not in self._atm_switches:
+            self.send_custom_error("ATM switch id {} doesn't exist".format(atmsw_id))
+            return
         atmsw = self._atm_switches[atmsw_id]
 
         port = request["port"]
@@ -273,6 +286,9 @@ class ATMSW(object):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         atmsw_id = request["id"]
+        if atmsw_id not in self._atm_switches:
+            self.send_custom_error("ATM switch id {} doesn't exist".format(atmsw_id))
+            return
         atmsw = self._atm_switches[atmsw_id]
         port = request["port"]
 

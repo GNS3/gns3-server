@@ -291,7 +291,11 @@ class IOU(IModule):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         iou_id = request["id"]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         iou_instance = self._iou_instances[iou_id]
+
         try:
             iou_instance.delete()
             del self._iou_instances[iou_id]
@@ -325,6 +329,9 @@ class IOU(IModule):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         iou_id = request["id"]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         iou_instance = self._iou_instances[iou_id]
 
         try:
@@ -378,7 +385,11 @@ class IOU(IModule):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         iou_id = request["id"]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         iou_instance = self._iou_instances[iou_id]
+
         try:
             log.debug("starting IOU with command: {}".format(iou_instance.command()))
             iou_instance.iouyap = self._iouyap
@@ -410,7 +421,11 @@ class IOU(IModule):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         iou_id = request["id"]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         iou_instance = self._iou_instances[iou_id]
+
         try:
             iou_instance.stop()
         except IOUError as e:
@@ -439,7 +454,11 @@ class IOU(IModule):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         iou_id = request["id"]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         iou_instance = self._iou_instances[iou_id]
+
         try:
             if iou_instance.is_running():
                 iou_instance.stop()
@@ -472,6 +491,9 @@ class IOU(IModule):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         iou_id = request["id"]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         iou_instance = self._iou_instances[iou_id]
 
         try:
@@ -528,6 +550,9 @@ class IOU(IModule):
         #TODO: JSON schema validation for the request
         log.debug("received request {}".format(request))
         iou_id = request["id"]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         iou_instance = self._iou_instances[iou_id]
 
         slot = request["slot"]
@@ -608,6 +633,9 @@ class IOU(IModule):
         log.debug("received request {}".format(request))
         iou_id = request["id"]
         iou_instance = self._iou_instances[iou_id]
+        if iou_id not in self._iou_instances:
+            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+            return
         slot = request["slot"]
         port = request["port"]
 
