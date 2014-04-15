@@ -23,6 +23,7 @@ import sys
 import os
 import base64
 import tempfile
+import shutil
 from gns3server.modules import IModule
 import gns3server.jsonrpc as jsonrpc
 
@@ -105,13 +106,12 @@ class Dynamips(IModule):
 
         self._hypervisor_manager = None
         self._hypervisor_manager_settings = {}
-        self._remote_server = False
         self._routers = {}
         self._ethernet_switches = {}
         self._frame_relay_switches = {}
         self._atm_switches = {}
         self._ethernet_hubs = {}
-        self._projects_dir = os.path.join(kwargs["projects_dir"], "dynamips")
+        self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._dynamips = ""
@@ -189,7 +189,6 @@ class Dynamips(IModule):
         self._atm_switches.clear()
 
         self._hypervisor_manager = None
-        self._remote_server = False
         log.info("dynamips module has been reset")
 
     def start_hypervisor_manager(self):
@@ -206,18 +205,19 @@ class Dynamips(IModule):
             raise DynamipsError("Dynamips {} is not executable".format(self._dynamips))
 
         try:
-            os.makedirs(self._working_dir)
+            workdir = os.path.join(self._working_dir, "dynamips")
+            os.makedirs(workdir)
         except FileExistsError:
             pass
         except OSError as e:
             raise DynamipsError("Could not create working directory {}".format(e))
 
         # check if the working directory is writable
-        if not os.access(self._working_dir, os.W_OK):
-            raise DynamipsError("Cannot write to working directory {}".format(self._working_dir))
+        if not os.access(workdir, os.W_OK):
+            raise DynamipsError("Cannot write to working directory {}".format(workdir))
 
-        log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(self._working_dir))
-        self._hypervisor_manager = HypervisorManager(self._dynamips, self._working_dir, self._host)
+        log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(workdir))
+        self._hypervisor_manager = HypervisorManager(self._dynamips, workdir, self._host)
 
         for name, value in self._hypervisor_manager_settings.items():
             if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:
@@ -244,22 +244,39 @@ class Dynamips(IModule):
         log.debug("received request {}".format(request))
 
         #TODO: JSON schema validation
-        # starts the hypervisor manager if it hasn't been started yet
         if not self._hypervisor_manager:
             self._dynamips = request.pop("path")
 
             if "working_dir" in request:
-                self._working_dir = os.path.join(request.pop("working_dir"), "dynamips")
+                self._working_dir = request.pop("working_dir")
                 log.info("this server is local")
             else:
-                self._remote_server = True
-                log.info("this server is remote")
                 self._working_dir = os.path.join(self._projects_dir, request["project_name"])
                 log.info("this server is remote with working directory path to {}".format(self._working_dir))
 
             self._hypervisor_manager_settings = request
 
         else:
+            if "project_name" in request:
+                new_working_dir = os.path.join(self._projects_dir, request["project_name"])
+                if self._projects_dir != self._working_dir != new_working_dir:
+
+                    # trick to avoid file locks by Dynamips on Windows
+                    if sys.platform.startswith("win"):
+                        self._hypervisor_manager.working_dir = tempfile.gettempdir()
+
+                    if not os.path.isdir(new_working_dir):
+                        try:
+                            shutil.move(self._working_dir, new_working_dir)
+                        except OSError as e:
+                            log.error("could not move working directory from {} to {}: {}".format(self._working_dir,
+                                                                                                  new_working_dir,
+                                                                                                  e))
+                            return
+
+                self._hypervisor_manager.working_dir = os.path.join(new_working_dir, "dynamips")
+                self._working_dir = new_working_dir
+
             # apply settings to the hypervisor manager
             for name, value in request.items():
                 if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:

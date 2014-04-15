@@ -245,7 +245,7 @@ class IOUDevice(object):
         """
 
         # create our own working directory
-        working_dir = os.path.join(working_dir, "device-{}".format(self._id))
+        working_dir = os.path.join(working_dir, "iou", "device-{}".format(self._id))
         try:
             os.makedirs(working_dir)
         except FileExistsError:

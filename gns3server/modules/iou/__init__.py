@@ -26,6 +26,7 @@ import tempfile
 import fcntl
 import struct
 import socket
+import shutil
 from gns3server.modules import IModule
 from gns3server.config import Config
 from .iou_device import IOUDevice
@@ -75,7 +76,6 @@ class IOU(IModule):
 
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
-        self._remote_server = False
         self._iou_instances = {}
         self._console_start_port_range = 4001
         self._console_end_port_range = 4512
@@ -84,7 +84,7 @@ class IOU(IModule):
         self._udp_end_port_range = 40001
         self._current_udp_port = self._udp_start_port_range
         self._host = kwargs["host"]
-        self._projects_dir = os.path.join(kwargs["projects_dir"], "iou")
+        self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._iourc = ""
@@ -202,16 +202,26 @@ class IOU(IModule):
 
         if "working_dir" in request:
             new_working_dir = os.path.join(request["working_dir"], "iou")
-            if self._working_dir != new_working_dir:
-                self._working_dir = new_working_dir
-                log.info("this server is local with working directory path to {}".format(self._working_dir))
-                for iou_id in self._iou_instances:
-                    iou_instance = self._iou_instances[iou_id]
-                    iou_instance.working_dir = self._working_dir
+            log.info("this server is local with working directory path to {}".format(new_working_dir))
         else:
-            self._remote_server = True
-            self._working_dir = os.path.join(self._projects_dir, request["project_name"])
-            log.info("this server is remote with working directory path to {}".format(self._working_dir))
+            new_working_dir = os.path.join(self._projects_dir, request["project_name"])
+            log.info("this server is remote with working directory path to {}".format(new_working_dir))
+            if self._projects_dir != self._working_dir != new_working_dir:
+                if not os.path.isdir(new_working_dir):
+                    try:
+                        shutil.move(self._working_dir, new_working_dir)
+                    except OSError as e:
+                        log.error("could not move working directory from {} to {}: {}".format(self._working_dir,
+                                                                                              new_working_dir,
+                                                                                              e))
+                        return
+
+        # update the working directory if it has changed
+        if self._working_dir != new_working_dir:
+            self._working_dir = new_working_dir
+            for iou_id in self._iou_instances:
+                iou_instance = self._iou_instances[iou_id]
+                iou_instance.working_dir = self._working_dir
 
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]
