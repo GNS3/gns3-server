@@ -274,12 +274,14 @@ class Router(object):
             if self.console and self.aux:
                 # check that console and aux ports are available
                 try:
-                    DynamipsHypervisor.find_unused_port(self.console, self.console + 1, self._hypervisor.host)
+                    #FIXME: use a defined range
+                    DynamipsHypervisor.find_unused_port(self.console, self.console + 100, self._hypervisor.host)
                 except DynamipsError:
                     raise DynamipsError("console port {} is not available".format(self.console))
 
                 try:
-                    DynamipsHypervisor.find_unused_port(self.aux, self.aux + 1, self._hypervisor.host)
+                    #FIXME: use a defined range
+                    DynamipsHypervisor.find_unused_port(self.aux, self.aux + 100, self._hypervisor.host)
                 except DynamipsError:
                     raise DynamipsError("aux port {} is not available".format(self.aux))
 
@@ -539,9 +541,9 @@ class Router(object):
                                                                                                old_ram=self._ram,
                                                                                                new_ram=ram))
 
-        self._hypervisor.decrease_memory_load(ram)
+        self._hypervisor.decrease_memory_load(self._ram)
         self._ram = ram
-        self._hypervisor.increase_memory_load(self._ram)
+        self._hypervisor.increase_memory_load(ram)
 
     @property
     def nvram(self):

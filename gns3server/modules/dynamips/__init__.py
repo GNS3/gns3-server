@@ -274,7 +274,7 @@ class Dynamips(IModule):
                                                                                                   e))
                             return
 
-                self._hypervisor_manager.working_dir = os.path.join(new_working_dir, "dynamips")
+                self._hypervisor_manager.working_dir = new_working_dir
                 self._working_dir = new_working_dir
 
             # apply settings to the hypervisor manager

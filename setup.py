@@ -46,7 +46,7 @@ setup(
     long_description=open("README.rst", "r").read(),
     install_requires=[
         "tornado >= 3.1",
-        "pyzmq == 14.0.1",
+        "pyzmq",
         ],
     entry_points={
         "console_scripts": [

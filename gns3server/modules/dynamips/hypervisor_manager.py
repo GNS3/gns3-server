@@ -22,6 +22,8 @@ Manages Dynamips hypervisors (load-balancing etc.)
 from .hypervisor import Hypervisor
 from .dynamips_error import DynamipsError
 from pkg_resources import parse_version
+
+import os
 import socket
 import time
 import logging
@@ -126,12 +128,12 @@ class HypervisorManager(object):
         :param working_dir: path to Dynamips working directory
         """
 
-        self._working_dir = working_dir
+        self._working_dir = os.path.join(working_dir, "dynamips")
         log.info("working directory set to {}".format(self._working_dir))
 
         # update all existing hypervisors with the new working directory
         for hypervisor in self._hypervisors:
-            hypervisor.working_dir = working_dir
+            hypervisor.working_dir = self._working_dir
 
     @property
     def base_hypervisor_port(self):
@@ -529,7 +531,7 @@ class HypervisorManager(object):
             log.warn("hypervisor {}:{} has a memory load below 0 ({})".format(hypervisor.host,
                                                                               hypervisor.port,
                                                                               hypervisor.memory_load))
-            hypervisor.memory_load = 0
+            #hypervisor.memory_load = 0
 
         # memory load at 0MB and no devices managed anymore...
         # let's stop this hypervisor
