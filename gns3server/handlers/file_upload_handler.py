@@ -72,10 +72,11 @@ class FileUploadHandler(tornado.web.RequestHandler):
         Invoked on POST request.
         """
 
-        fileinfo = self.request.files["file"][0]
-        destination_path = os.path.join(self._upload_dir, fileinfo['filename'])
-        with open(destination_path, 'wb') as f:
-            f.write(fileinfo['body'])
-        st = os.stat(destination_path)
-        os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
+        if "file" in self.request.files:
+            fileinfo = self.request.files["file"][0]
+            destination_path = os.path.join(self._upload_dir, fileinfo['filename'])
+            with open(destination_path, 'wb') as f:
+                f.write(fileinfo['body'])
+            st = os.stat(destination_path)
+            os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         self.redirect("/upload")

@@ -276,8 +276,8 @@ class Hypervisor(DynamipsHypervisor):
 
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
-        if self._host != '0.0.0.0':
-            command.extend(['-H', self._host + ':' + str(self._port)])
+        if self._host != "0.0.0.0" and self._host != "::":
+            command.extend(["-H", self._host + ":" + str(self._port)])
         else:
-            command.extend(['-H', str(self._port)])
+            command.extend(["-H", str(self._port)])
         return command
