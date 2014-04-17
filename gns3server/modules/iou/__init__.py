@@ -580,31 +580,31 @@ class IOU(IModule):
             elif request["nio"] == "NIO_TAP":
                 tap_device = request["tap_device"]
 
-                # check that we have access to the tap device
-                TUNSETIFF = 0x400454ca
-                IFF_TAP = 0x0002
-                IFF_NO_PI = 0x1000
-                try:
-                    tun = os.open("/dev/net/tun", os.O_RDWR)
-                except OSError as e:
-                    raise IOUError("Could not open /dev/net/tun: {}".format(e))
-                ifr = struct.pack("16sH", tap_device.encode("utf-8"), IFF_TAP | IFF_NO_PI)
-                try:
-                    fcntl.ioctl(tun, TUNSETIFF, ifr)
-                    os.close(tun)
-                except IOError as e:
-                    raise IOUError("TAP NIO {}: {}".format(tap_device, e))
+#                 # check that we have access to the tap device
+#                 TUNSETIFF = 0x400454ca
+#                 IFF_TAP = 0x0002
+#                 IFF_NO_PI = 0x1000
+#                 try:
+#                     tun = os.open("/dev/net/tun", os.O_RDWR)
+#                 except OSError as e:
+#                     raise IOUError("Could not open /dev/net/tun: {}".format(e))
+#                 ifr = struct.pack("16sH", tap_device.encode("utf-8"), IFF_TAP | IFF_NO_PI)
+#                 try:
+#                     fcntl.ioctl(tun, TUNSETIFF, ifr)
+#                     os.close(tun)
+#                 except IOError as e:
+#                     raise IOUError("TAP NIO {}: {}".format(tap_device, e))
 
                 nio = NIO_TAP(tap_device)
             elif request["nio"] == "NIO_GenericEthernet":
                 ethernet_device = request["ethernet_device"]
 
-                # check that we have access to the Ethernet device
-                try:
-                    with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW):
-                        pass
-                except socket.error as e:
-                    raise IOUError("Generic Ethernet NIO {}: {}".format(ethernet_device, e))
+#                 # check that we have access to the Ethernet device
+#                 try:
+#                     with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW):
+#                         pass
+#                 except socket.error as e:
+#                     raise IOUError("Generic Ethernet NIO {}: {}".format(ethernet_device, e))
                 nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
                 raise IOUError("Requested NIO doesn't exist or is not supported: {}".format(request["nio"]))
