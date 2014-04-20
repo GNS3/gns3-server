@@ -23,6 +23,7 @@ Simple file upload & listing handler.
 import os
 import stat
 import tornado.web
+from ..version import __version__
 from ..config import Config
 
 import logging
@@ -44,6 +45,7 @@ class FileUploadHandler(tornado.web.RequestHandler):
         server_config = config.get_default_section()
         # default projects directory is "~/Documents/GNS3/images"
         self._upload_dir = os.path.expandvars(os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
+        self._host = request.host
 
         try:
             os.makedirs(self._upload_dir)
@@ -65,7 +67,11 @@ class FileUploadHandler(tornado.web.RequestHandler):
         for filename in os.listdir(path):
             items.append(filename)
 
-        self.render("upload.html", path=path, items=items)
+        self.render("upload.html",
+                    version=__version__,
+                    host=self._host,
+                    path=path,
+                    items=items)
 
     def post(self):
         """
