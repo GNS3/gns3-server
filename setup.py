@@ -47,6 +47,7 @@ setup(
     install_requires=[
         "tornado >= 3.1",
         "pyzmq",
+        "jsonschema"
         ],
     entry_points={
         "console_scripts": [

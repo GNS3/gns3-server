@@ -1,3 +1,4 @@
 tornado
 pyzmq
 netifaces-py3
+jsonschema

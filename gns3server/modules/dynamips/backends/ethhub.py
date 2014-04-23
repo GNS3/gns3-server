@@ -19,6 +19,13 @@ from gns3server.modules import IModule
 from ..nodes.hub import Hub
 from ..dynamips_error import DynamipsError
 
+from ..schemas.ethhub import ETHHUB_CREATE_SCHEMA
+from ..schemas.ethhub import ETHHUB_DELETE_SCHEMA
+from ..schemas.ethhub import ETHHUB_UPDATE_SCHEMA
+from ..schemas.ethhub import ETHHUB_ALLOCATE_UDP_PORT_SCHEMA
+from ..schemas.ethhub import ETHHUB_ADD_NIO_SCHEMA
+from ..schemas.ethhub import ETHHUB_DELETE_NIO_SCHEMA
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -40,7 +47,10 @@ class ETHHUB(object):
         :param request: JSON request
         """
 
-        #TODO: JSON schema validation for the request
+        # validate the request
+        if request and not self.validate_request(request, ETHHUB_CREATE_SCHEMA):
+            return
+
         name = None
         if request and "name" in request:
             name = request["name"]
@@ -70,22 +80,20 @@ class ETHHUB(object):
         - id (hub identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHHUB_DELETE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
+        # get the Ethernet hub instance
         ethhub_id = request["id"]
-        if ethhub_id not in self._ethernet_hubs:
-            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+        ethhub = self.get_device_instance(ethhub_id, self._ethernet_hubs)
+        if not ethhub:
             return
-        ethhub = self._ethernet_hubs[ethhub_id]
 
         try:
             ethhub.delete()
@@ -108,27 +116,26 @@ class ETHHUB(object):
         - name (new hub name)
 
         Response parameters:
-        - same as original request
+        - name if changed
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHHUB_UPDATE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethhub_id = request["id"]
-        if ethhub_id not in self._ethernet_hubs:
-            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+        # get the Ethernet hub instance
+        ethhub = self.get_device_instance(request["id"], self._ethernet_hubs)
+        if not ethhub:
             return
-        ethhub = self._ethernet_hubs[ethhub_id]
 
+        response = {}
         # rename the hub if requested
         if "name" in request and ethhub.name != request["name"]:
             try:
                 ethhub.name = request["name"]
+                response["name"] = ethhub.name
             except DynamipsError as e:
                 self.send_custom_error(str(e))
                 return
@@ -152,17 +159,14 @@ class ETHHUB(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHHUB_ALLOCATE_UDP_PORT_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethhub_id = request["id"]
-        if ethhub_id not in self._ethernet_hubs:
-            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+        # get the Ethernet hub instance
+        ethhub = self.get_device_instance(request["id"], self._ethernet_hubs)
+        if not ethhub:
             return
-        ethhub = self._ethernet_hubs[ethhub_id]
 
         try:
             # allocate a new UDP port
@@ -183,44 +187,41 @@ class ETHHUB(object):
         - id (hub identifier)
         - port (port identifier)
         - port_id (port identifier)
-        - nio (nio type, one of the following)
-            - "NIO_UDP"
+        - nio (one of the following)
+            - type "nio_udp"
                 - lport (local port)
                 - rhost (remote host)
                 - rport (remote port)
-            - "NIO_GenericEthernet"
+            - type "nio_generic_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_LinuxEthernet"
+            - type "nio_linux_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_TAP"
+            - type "nio_tap"
                 - tap_device (TAP device name e.g. tap0)
-            - "NIO_UNIX"
+            - type "nio_unix"
                 - local_file (path to UNIX socket file)
                 - remote_file (path to UNIX socket file)
-            - "NIO_VDE"
+            - type "nio_vde"
                 - control_file (path to VDE control file)
                 - local_file (path to VDE local file)
-            - "NIO_Null"
+            - type "nio_null"
 
         Response parameters:
-        - same as original request
+        - port_id (unique port identifier)
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHHUB_ADD_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethhub_id = request["id"]
-        if ethhub_id not in self._ethernet_hubs:
-            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+        # get the Ethernet hub instance
+        ethhub = self.get_device_instance(request["id"], self._ethernet_hubs)
+        if not ethhub:
             return
-        ethhub = self._ethernet_hubs[ethhub_id]
+
         port = request["port"]
-
         try:
             nio = self.create_nio(ethhub, request)
             if not nio:
@@ -235,8 +236,7 @@ class ETHHUB(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response({"port_id": request["port_id"]})
 
     @IModule.route("dynamips.ethhub.delete_nio")
     def ethsw_delete_nio(self, request):
@@ -248,24 +248,21 @@ class ETHHUB(object):
         - port (port identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHHUB_DELETE_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethhub_id = request["id"]
-        if ethhub_id not in self._ethernet_hubs:
-            self.send_custom_error("Ethernet hub id {} doesn't exist".format(ethhub_id))
+        # get the Ethernet hub instance
+        ethhub = self.get_device_instance(request["id"], self._ethernet_hubs)
+        if not ethhub:
             return
-        ethhub = self._ethernet_hubs[ethhub_id]
+
         port = request["port"]
-
         try:
             nio = ethhub.remove_nio(port)
             nio.delete()
@@ -273,5 +270,4 @@ class ETHHUB(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response(True)

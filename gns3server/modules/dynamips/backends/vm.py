@@ -49,6 +49,19 @@ from ..adapters.wic_1enet import WIC_1ENET
 from ..adapters.wic_1t import WIC_1T
 from ..adapters.wic_2t import WIC_2T
 
+from ..schemas.vm import VM_CREATE_SCHEMA
+from ..schemas.vm import VM_DELETE_SCHEMA
+from ..schemas.vm import VM_START_SCHEMA
+from ..schemas.vm import VM_STOP_SCHEMA
+from ..schemas.vm import VM_SUSPEND_SCHEMA
+from ..schemas.vm import VM_RELOAD_SCHEMA
+from ..schemas.vm import VM_UPDATE_SCHEMA
+from ..schemas.vm import VM_SAVE_CONFIG_SCHEMA
+from ..schemas.vm import VM_IDLEPCS_SCHEMA
+from ..schemas.vm import VM_ALLOCATE_UDP_PORT_SCHEMA
+from ..schemas.vm import VM_ADD_NIO_SCHEMA
+from ..schemas.vm import VM_DELETE_NIO_SCHEMA
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -110,13 +123,10 @@ class VM(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_CREATE_SCHEMA):
             return
 
-        log.debug("received request {}".format(request))
-
-        #TODO: JSON schema validation
         name = None
         if "name" in request:
             name = request["name"]
@@ -129,6 +139,9 @@ class VM(object):
             chassis = request["chassis"]
 
         try:
+
+            if platform not in PLATFORMS:
+                raise DynamipsError("Unknown router platform: {}".format(platform))
 
             if not self._hypervisor_manager:
                 self.start_hypervisor_manager()
@@ -197,22 +210,20 @@ class VM(object):
         - id (vm identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_DELETE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
+        # get the router instance
         router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        router = self.get_device_instance(router_id, self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         try:
             router.delete()
@@ -221,7 +232,8 @@ class VM(object):
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+
+        self.send_response(True)
 
     @IModule.route("dynamips.vm.start")
     def vm_start(self, request):
@@ -232,29 +244,26 @@ class VM(object):
         - id (vm identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_START_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         try:
             router.start()
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+        self.send_response(True)
 
     @IModule.route("dynamips.vm.stop")
     def vm_stop(self, request):
@@ -265,29 +274,27 @@ class VM(object):
         - id (vm identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_STOP_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         try:
             router.stop()
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+
+        self.send_response(True)
 
     @IModule.route("dynamips.vm.suspend")
     def vm_suspend(self, request):
@@ -298,29 +305,27 @@ class VM(object):
         - id (vm identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_SUSPEND_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         try:
             router.suspend()
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+
+        self.send_response(True)
 
     @IModule.route("dynamips.vm.reload")
     def vm_reload(self, request):
@@ -331,22 +336,20 @@ class VM(object):
         - id (vm identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_RELOAD_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
+
         try:
             if router.get_status() != "inactive":
                 router.stop()
@@ -354,7 +357,8 @@ class VM(object):
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+
+        self.send_response(True)
 
     @IModule.route("dynamips.vm.update")
     def vm_update(self, request):
@@ -370,37 +374,35 @@ class VM(object):
         - private_config_base64 (private-config base64 encoded)
 
         Response parameters:
-        - same as original request
+        - updated settings
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_UPDATE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
+        response = {}
         try:
             # a new startup-config has been pushed
             if "startup_config_base64" in request:
                 config_filename = "{}.cfg".format(router.name)
-                request["startup_config"] = self.save_base64config(request["startup_config_base64"], router, config_filename)
-            if "startup_config" in request:
-                router.set_config(request["startup_config"])
+                response["startup_config"] = self.save_base64config(request["startup_config_base64"], router, config_filename)
+            if "startup_config" in response:
+                router.set_config(response["startup_config"])
 
             # a new private-config has been pushed
             if "private_config_base64" in request:
                 config_filename = "{}-private.cfg".format(router.name)
-                request["private_config"] = self.save_base64config(request["private_config_base64"], router, config_filename)
-            if "private_config" in request:
-                router.set_config(router.startup_config, request["private_config"])
+                response["private_config"] = self.save_base64config(request["private_config_base64"], router, config_filename)
+            if "private_config" in response:
+                router.set_config(router.startup_config, response["private_config"])
 
         except DynamipsError as e:
             self.send_custom_error(str(e))
@@ -411,6 +413,7 @@ class VM(object):
             if hasattr(router, name) and getattr(router, name) != value:
                 try:
                     setattr(router, name, value)
+                    response[name] = value
                 except DynamipsError as e:
                     self.send_custom_error(str(e))
                     return
@@ -422,6 +425,7 @@ class VM(object):
                     if router.slots[slot_id] and type(router.slots[slot_id]) != type(adapter):
                         router.slot_remove_binding(slot_id)
                     router.slot_add_binding(slot_id, adapter)
+                    response[name] = value
                 except DynamipsError as e:
                     self.send_custom_error(str(e))
                     return
@@ -430,6 +434,7 @@ class VM(object):
                 if router.slots[slot_id]:
                     try:
                         router.slot_remove_binding(slot_id)
+                        response[name] = value
                     except DynamipsError as e:
                         self.send_custom_error(str(e))
                         return
@@ -441,6 +446,7 @@ class VM(object):
                     if router.slots[0].wics[wic_slot_id] and type(router.slots[0].wics[wic_slot_id]) != type(wic):
                         router.uninstall_wic(wic_slot_id)
                     router.install_wic(wic_slot_id, wic)
+                    response[name] = value
                 except DynamipsError as e:
                     self.send_custom_error(str(e))
                     return
@@ -449,6 +455,7 @@ class VM(object):
                 if router.slots[0].wics and router.slots[0].wics[wic_slot_id]:
                     try:
                         router.uninstall_wic(wic_slot_id)
+                        response[name] = value
                     except DynamipsError as e:
                         self.send_custom_error(str(e))
                         return
@@ -457,8 +464,7 @@ class VM(object):
         if self._hypervisor_manager.ghost_ios_support:
             self.set_ghost_ios(router)
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response(response)
 
     @IModule.route("dynamips.vm.save_config")
     def vm_save_config(self, request):
@@ -469,17 +475,14 @@ class VM(object):
         - id (vm identifier)
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_SAVE_CONFIG_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         try:
             if router.startup_config or router.private_config:
@@ -528,17 +531,14 @@ class VM(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_IDLEPCS_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         try:
             if "compute" in request and request["compute"] == False:
@@ -551,7 +551,7 @@ class VM(object):
             self.send_custom_error(str(e))
             return
 
-        response = {"id": router_id,
+        response = {"id": router.id,
                     "idlepcs": idlepcs}
         self.send_response(response)
 
@@ -571,17 +571,14 @@ class VM(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_ALLOCATE_UDP_PORT_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         try:
             # allocate a new UDP port
@@ -603,46 +600,42 @@ class VM(object):
         - slot (slot number)
         - port (port number)
         - port_id (unique port identifier)
-        - nio (nio type, one of the following)
-            - "NIO_UDP"
+        - nio (one of the following)
+            - type "nio_udp"
                 - lport (local port)
                 - rhost (remote host)
                 - rport (remote port)
-            - "NIO_GenericEthernet"
+            - type "nio_generic_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_LinuxEthernet"
+            - type "nio_linux_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_TAP"
+            - type "nio_tap"
                 - tap_device (TAP device name e.g. tap0)
-            - "NIO_UNIX"
+            - type "nio_unix"
                 - local_file (path to UNIX socket file)
                 - remote_file (path to UNIX socket file)
-            - "NIO_VDE"
+            - type "nio_vde"
                 - control_file (path to VDE control file)
                 - local_file (path to VDE local file)
-            - "NIO_Null"
+            - type "nio_null"
 
         Response parameters:
-        - same as original request
+        - port_id (unique port identifier)
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_ADD_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
-        router = self._routers[router_id]
 
         slot = request["slot"]
         port = request["port"]
-
         try:
             nio = self.create_nio(router, request)
             if not nio:
@@ -657,8 +650,7 @@ class VM(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response({"port_id": request["port_id"]})
 
     @IModule.route("dynamips.vm.delete_nio")
     def vm_delete_nio(self, request):
@@ -671,25 +663,22 @@ class VM(object):
         - port (port identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, VM_DELETE_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        router_id = request["id"]
-        router = self._routers[router_id]
-        if router_id not in self._routers:
-            self.send_custom_error("IOS router id {} doesn't exist".format(router_id))
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
             return
+
         slot = request["slot"]
         port = request["port"]
-
         try:
             nio = router.slot_remove_nio_binding(slot, port)
             nio.delete()
@@ -697,5 +686,4 @@ class VM(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response(True)

@@ -27,6 +27,7 @@ import fcntl
 import struct
 import socket
 import shutil
+
 from gns3server.modules import IModule
 from gns3server.config import Config
 from .iou_device import IOUDevice
@@ -35,6 +36,16 @@ from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 from .nios.nio_generic_ethernet import NIO_GenericEthernet
 import gns3server.jsonrpc as jsonrpc
+
+from .schemas import IOU_CREATE_SCHEMA
+from .schemas import IOU_DELETE_SCHEMA
+from .schemas import IOU_UPDATE_SCHEMA
+from .schemas import IOU_START_SCHEMA
+from .schemas import IOU_STOP_SCHEMA
+from .schemas import IOU_RELOAD_SCHEMA
+from .schemas import IOU_ALLOCATE_UDP_PORT_SCHEMA
+from .schemas import IOU_ADD_NIO_SCHEMA
+from .schemas import IOU_DELETE_NIO_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -131,6 +142,21 @@ class IOU(IModule):
                     notification["details"] = stdout
                     self.send_notification("{}.iouyap_stopped".format(self.name), notification)
                 iou_instance.stop()
+
+    def get_iou_instance(self, iou_id):
+        """
+        Returns an IOU device instance.
+
+        :param iou_id: IOU device identifier
+
+        :returns: IOUDevice instance
+        """
+
+        if iou_id not in self._iou_instances:
+            log.debug("IOU device ID {} doesn't exist".format(iou_id), exc_info=1)
+            self.send_custom_error("IOU device ID {} doesn't exist".format(iou_id))
+            return None
+        return self._iou_instances[iou_id]
 
     @IModule.route("iou.reset")
     def reset(self, request):
@@ -238,22 +264,27 @@ class IOU(IModule):
         """
         Creates a new IOU instance.
 
+        Mandatory request parameters:
+        - path (path to the IOU executable)
+
         Optional request parameters:
         - name (IOU name)
-        - path (path to the IOU executable)
 
         Response parameters:
         - id (IOU instance identifier)
         - name (IOU name)
+        - default settings
 
         :param request: JSON request
         """
 
-        #TODO: JSON schema validation for the request
-        name = None
-        if request and "name" in request:
-            name = request["name"]
+        # validate the request
+        if not self.validate_request(request, IOU_CREATE_SCHEMA):
+            return
 
+        name = None
+        if "name" in request:
+            name = request["name"]
         iou_path = request["path"]
 
         try:
@@ -290,31 +321,29 @@ class IOU(IModule):
         Mandatory request parameters:
         - id (IOU instance identifier)
 
-        Response parameters:
-        - same as original request
+        Response parameter:
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_DELETE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
-        iou_instance = self._iou_instances[iou_id]
 
         try:
             iou_instance.delete()
-            del self._iou_instances[iou_id]
+            del self._iou_instances[request["id"]]
         except IOUError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+
+        self.send_response(True)
 
     @IModule.route("iou.update")
     def iou_update(self, request):
@@ -329,23 +358,21 @@ class IOU(IModule):
         - startup_config_base64 (startup-config base64 encoded)
 
         Response parameters:
-        - same as original request
+        - updated settings
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_UPDATE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
-        iou_instance = self._iou_instances[iou_id]
 
+        response = {}
         try:
             # a new startup-config has been pushed
             if "startup_config_base64" in request:
@@ -359,9 +386,9 @@ class IOU(IModule):
                         f.write(config)
                 except OSError as e:
                     raise IOUError("Could not save the configuration {}: {}".format(config_path, e))
-                request["startup_config"] = os.path.basename(config_path)
+                response["startup_config"] = os.path.basename(config_path)
             if "startup_config" in request:
-                iou_instance.startup_config = request["startup_config"]
+                iou_instance.startup_config = response["startup_config"]
         except IOUError as e:
             self.send_custom_error(str(e))
             return
@@ -370,11 +397,12 @@ class IOU(IModule):
             if hasattr(iou_instance, name) and getattr(iou_instance, name) != value:
                 try:
                     setattr(iou_instance, name, value)
+                    response[name] = value
                 except IOUError as e:
                     self.send_custom_error(str(e))
                     return
 
-        self.send_response(request)
+        self.send_response(response)
 
     @IModule.route("iou.start")
     def vm_start(self, request):
@@ -385,22 +413,19 @@ class IOU(IModule):
         - id (IOU instance identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_START_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
-        iou_instance = self._iou_instances[iou_id]
 
         try:
             log.debug("starting IOU with command: {}".format(iou_instance.command()))
@@ -410,7 +435,7 @@ class IOU(IModule):
         except IOUError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+        self.send_response(True)
 
     @IModule.route("iou.stop")
     def vm_stop(self, request):
@@ -421,29 +446,26 @@ class IOU(IModule):
         - id (IOU instance identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_STOP_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
-        iou_instance = self._iou_instances[iou_id]
 
         try:
             iou_instance.stop()
         except IOUError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+        self.send_response(True)
 
     @IModule.route("iou.reload")
     def vm_reload(self, request):
@@ -454,22 +476,19 @@ class IOU(IModule):
         - id (IOU identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_RELOAD_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
-        iou_instance = self._iou_instances[iou_id]
 
         try:
             if iou_instance.is_running():
@@ -478,7 +497,7 @@ class IOU(IModule):
         except IOUError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+        self.send_response(True)
 
     @IModule.route("iou.allocate_udp_port")
     def allocate_udp_port(self, request):
@@ -496,17 +515,14 @@ class IOU(IModule):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_ALLOCATE_UDP_PORT_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
-        iou_instance = self._iou_instances[iou_id]
 
         try:
 
@@ -516,8 +532,8 @@ class IOU(IModule):
             port = IOUDevice.find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
             self._current_udp_port += 1
 
-            log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance .name,
-                                                                                iou_instance .id,
+            log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance.name,
+                                                                                iou_instance.id,
                                                                                 port,
                                                                                 self._host))
             response = {"lport": port}
@@ -539,75 +555,48 @@ class IOU(IModule):
         - slot (slot number)
         - port (port number)
         - port_id (unique port identifier)
-        - nio (nio type, one of the following)
-            - "NIO_UDP"
+        - nio (one of the following)
+            - type "nio_udp"
                 - lport (local port)
                 - rhost (remote host)
                 - rport (remote port)
-            - "NIO_GenericEthernet"
+            - type "nio_generic_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_TAP"
+            - type "nio_tap"
                 - tap_device (TAP device name e.g. tap0)
 
         Response parameters:
-        - same as original request
+        - port_id (unique port identifier)
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_ADD_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
-        iou_instance = self._iou_instances[iou_id]
 
         slot = request["slot"]
         port = request["port"]
-
         try:
             nio = None
-            if request["nio"] == "NIO_UDP":
-                lport = request["lport"]
-                rhost = request["rhost"]
-                rport = request["rport"]
+            if request["nio"]["type"] == "nio_udp":
+                lport = request["nio"]["lport"]
+                rhost = request["nio"]["rhost"]
+                rport = request["nio"]["rport"]
                 nio = NIO_UDP(lport, rhost, rport)
-            elif request["nio"] == "NIO_TAP":
-                tap_device = request["tap_device"]
-
-#                 # check that we have access to the tap device
-#                 TUNSETIFF = 0x400454ca
-#                 IFF_TAP = 0x0002
-#                 IFF_NO_PI = 0x1000
-#                 try:
-#                     tun = os.open("/dev/net/tun", os.O_RDWR)
-#                 except OSError as e:
-#                     raise IOUError("Could not open /dev/net/tun: {}".format(e))
-#                 ifr = struct.pack("16sH", tap_device.encode("utf-8"), IFF_TAP | IFF_NO_PI)
-#                 try:
-#                     fcntl.ioctl(tun, TUNSETIFF, ifr)
-#                     os.close(tun)
-#                 except IOError as e:
-#                     raise IOUError("TAP NIO {}: {}".format(tap_device, e))
-
+            elif request["nio"]["type"] == "nio_tap":
+                tap_device = request["nio"]["tap_device"]
                 nio = NIO_TAP(tap_device)
-            elif request["nio"] == "NIO_GenericEthernet":
-                ethernet_device = request["ethernet_device"]
-
-#                 # check that we have access to the Ethernet device
-#                 try:
-#                     with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW):
-#                         pass
-#                 except socket.error as e:
-#                     raise IOUError("Generic Ethernet NIO {}: {}".format(ethernet_device, e))
+            elif request["nio"]["type"] == "nio_generic_ethernet":
+                ethernet_device = request["nio"]["ethernet_device"]
                 nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
-                raise IOUError("Requested NIO doesn't exist or is not supported: {}".format(request["nio"]))
+                raise IOUError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))
         except IOUError as e:
             self.send_custom_error(str(e))
             return
@@ -618,8 +607,7 @@ class IOU(IModule):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response({"port_id": request["port_id"]})
 
     @IModule.route("iou.delete_nio")
     def delete_nio(self, request):
@@ -632,33 +620,29 @@ class IOU(IModule):
         - port (port identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, IOU_DELETE_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        iou_id = request["id"]
-        iou_instance = self._iou_instances[iou_id]
-        if iou_id not in self._iou_instances:
-            self.send_custom_error("IOU device id {} doesn't exist".format(iou_id))
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
             return
+
         slot = request["slot"]
         port = request["port"]
-
         try:
             iou_instance.slot_remove_nio_binding(slot, port)
         except IOUError as e:
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response(True)
 
     @IModule.route("iou.echo")
     def echo(self, request):

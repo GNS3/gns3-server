@@ -154,6 +154,22 @@ class Dynamips(IModule):
                     self.send_notification("{}.dynamips_stopped".format(self.name), notification)
                     hypervisor.stop()
 
+    def get_device_instance(self, device_id, instance_dict):
+        """
+        Returns a device instance.
+
+        :param device_id: device identifier
+        :param instance_dict: dictionary containing the instances
+
+        :returns: device instance
+        """
+
+        if device_id not in instance_dict:
+            log.debug("device ID {} doesn't exist".format(device_id), exc_info=1)
+            self.send_custom_error("Device ID {} doesn't exist".format(device_id))
+            return None
+        return instance_dict[device_id]
+
     @IModule.route("dynamips.reset")
     def reset(self, request):
         """
@@ -309,34 +325,34 @@ class Dynamips(IModule):
 
         #TODO: JSON schema validation
         nio = None
-        if request["nio"] == "NIO_UDP":
-            lport = request["lport"]
-            rhost = request["rhost"]
-            rport = request["rport"]
+        if request["nio"]["type"] == "nio_udp":
+            lport = request["nio"]["lport"]
+            rhost = request["nio"]["rhost"]
+            rport = request["nio"]["rport"]
             nio = NIO_UDP(node.hypervisor, lport, rhost, rport)
-#         elif request["nio"] == "NIO_UDP_Auto":
+#         elif request["nio"] == "nio_udp_auto":
 #             lhost = request["lhost"]
 #             lport_start = request["lport_start"]
 #             lport_end = request["lport_end"]
 #             nio = NIO_UDP_auto(node.hypervisor, lhost, lport_start, lport_end)
-        elif request["nio"] == "NIO_GenericEthernet":
-            ethernet_device = request["ethernet_device"]
+        elif request["nio"]["type"] == "nio_generic_ethernet":
+            ethernet_device = request["nio"]["ethernet_device"]
             nio = NIO_GenericEthernet(node.hypervisor, ethernet_device)
-        elif request["nio"] == "NIO_LinuxEthernet":
-            ethernet_device = request["ethernet_device"]
+        elif request["nio"]["type"] == "nio_linux_ethernet":
+            ethernet_device = request["nio"]["ethernet_device"]
             nio = NIO_LinuxEthernet(node.hypervisor, ethernet_device)
-        elif request["nio"] == "NIO_TAP":
-            tap_device = request["tap_device"]
+        elif request["nio"]["type"] == "nio_tap":
+            tap_device = request["nio"]["tap_device"]
             nio = NIO_TAP(node.hypervisor, tap_device)
-        elif request["nio"] == "NIO_UNIX":
-            local_file = request["local_file"]
-            remote_file = request["remote_file"]
+        elif request["nio"]["type"] == "nio_unix":
+            local_file = request["nio"]["local_file"]
+            remote_file = request["nio"]["remote_file"]
             nio = NIO_UNIX(node.hypervisor, local_file, remote_file)
-        elif request["nio"] == "NIO_VDE":
-            control_file = request["control_file"]
-            local_file = request["local_file"]
+        elif request["nio"]["type"] == "nio_vde":
+            control_file = request["nio"]["control_file"]
+            local_file = request["nio"]["local_file"]
             nio = NIO_VDE(node.hypervisor, control_file, local_file)
-        elif request["nio"] == "NIO_Null":
+        elif request["nio"]["type"] == "nio_null":
             nio = NIO_Null(node.hypervisor)
         return nio
 
@@ -448,8 +464,12 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
-        try:
-            import netifaces
-        except ImportError:
-            raise DynamipsError("The netifaces module is not installed")
-        self.send_response(netifaces.interfaces())
+        response = []
+        if not sys.platform.startswith("win"):
+            try:
+                import netifaces
+            except ImportError:
+                self.send_custom_error("The netifaces module is not installed")
+                return
+            response = netifaces.interfaces()
+        self.send_response(response)

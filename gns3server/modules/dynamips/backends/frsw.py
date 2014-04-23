@@ -19,6 +19,13 @@ from gns3server.modules import IModule
 from ..nodes.frame_relay_switch import FrameRelaySwitch
 from ..dynamips_error import DynamipsError
 
+from ..schemas.frsw import FRSW_CREATE_SCHEMA
+from ..schemas.frsw import FRSW_DELETE_SCHEMA
+from ..schemas.frsw import FRSW_UPDATE_SCHEMA
+from ..schemas.frsw import FRSW_ALLOCATE_UDP_PORT_SCHEMA
+from ..schemas.frsw import FRSW_ADD_NIO_SCHEMA
+from ..schemas.frsw import FRSW_DELETE_NIO_SCHEMA
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -40,7 +47,10 @@ class FRSW(object):
         :param request: JSON request
         """
 
-        #TODO: JSON schema validation for the request
+        # validate the request
+        if request and not self.validate_request(request, FRSW_CREATE_SCHEMA):
+            return
+
         name = None
         if request and "name" in request:
             name = request["name"]
@@ -70,22 +80,20 @@ class FRSW(object):
         - id (switch identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, FRSW_DELETE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
+        # get the Frame relay switch instance
         frsw_id = request["id"]
-        if frsw_id not in self._frame_relay_switches:
-            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+        frsw = self.get_device_instance(frsw_id, self._frame_relay_switches)
+        if not frsw:
             return
-        frsw = self._frame_relay_switches[frsw_id]
 
         try:
             frsw.delete()
@@ -94,7 +102,8 @@ class FRSW(object):
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+
+        self.send_response(True)
 
     @IModule.route("dynamips.frsw.update")
     def frsw_update(self, request):
@@ -108,30 +117,30 @@ class FRSW(object):
         - name (new switch name)
 
         Response parameters:
-        - same as original request
+        - name if updated
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, FRSW_UPDATE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        frsw_id = request["id"]
-        if frsw_id not in self._frame_relay_switches:
-            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+        # get the Frame relay switch instance
+        frsw = self.get_device_instance(request["id"], self._frame_relay_switches)
+        if not frsw:
             return
-        frsw = self._frame_relay_switches[frsw_id]
 
+        response = {}
         # rename the switch if requested
         if "name" in request and frsw.name != request["name"]:
             try:
                 frsw.name = request["name"]
+                response["name"] = frsw.name
             except DynamipsError as e:
                 self.send_custom_error(str(e))
                 return
+
         self.send_response(request)
 
     @IModule.route("dynamips.frsw.allocate_udp_port")
@@ -151,17 +160,14 @@ class FRSW(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, FRSW_ALLOCATE_UDP_PORT_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        frsw_id = request["id"]
-        if frsw_id not in self._frame_relay_switches:
-            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+        # get the Frame relay switch instance
+        frsw = self.get_device_instance(request["id"], self._frame_relay_switches)
+        if not frsw:
             return
-        frsw = self._frame_relay_switches[frsw_id]
 
         try:
             # allocate a new UDP port
@@ -183,42 +189,39 @@ class FRSW(object):
         - port (port identifier)
         - port_id (port identifier)
         - mappings (VCs mapped to the port)
-        - nio (nio type, one of the following)
-            - "NIO_UDP"
+        - nio (one of the following)
+            - type "nio_udp"
                 - lport (local port)
                 - rhost (remote host)
                 - rport (remote port)
-            - "NIO_GenericEthernet"
+            - type "nio_generic_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_LinuxEthernet"
+            - type "nio_linux_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_TAP"
+            - type "nio_tap"
                 - tap_device (TAP device name e.g. tap0)
-            - "NIO_UNIX"
+            - type "nio_unix"
                 - local_file (path to UNIX socket file)
                 - remote_file (path to UNIX socket file)
-            - "NIO_VDE"
+            - type "nio_vde"
                 - control_file (path to VDE control file)
                 - local_file (path to VDE local file)
-            - "NIO_Null"
+            - type "nio_null"
 
         Response parameters:
-        - same as original request
+        - port_id (unique port identifier)
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, FRSW_ADD_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        frsw_id = request["id"]
-        if frsw_id not in self._frame_relay_switches:
-            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+        # get the Frame relay switch instance
+        frsw = self.get_device_instance(request["id"], self._frame_relay_switches)
+        if not frsw:
             return
-        frsw = self._frame_relay_switches[frsw_id]
 
         port = request["port"]
         mappings = request["mappings"]
@@ -246,8 +249,7 @@ class FRSW(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response({"port_id": request["port_id"]})
 
     @IModule.route("dynamips.frsw.delete_nio")
     def frsw_delete_nio(self, request):
@@ -259,24 +261,21 @@ class FRSW(object):
         - port (port identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, FRSW_DELETE_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        frsw_id = request["id"]
-        if frsw_id not in self._frame_relay_switches:
-            self.send_custom_error("Frame relay switch id {} doesn't exist".format(frsw_id))
+        # get the Frame relay switch instance
+        frsw = self.get_device_instance(request["id"], self._frame_relay_switches)
+        if not frsw:
             return
-        frsw = self._frame_relay_switches[frsw_id]
+
         port = request["port"]
-
         try:
             # remove the VCs mapped with this port/nio
             for source, destination in frsw.mapping.copy().items():
@@ -292,5 +291,4 @@ class FRSW(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response(True)

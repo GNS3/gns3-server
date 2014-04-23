@@ -26,6 +26,8 @@ import multiprocessing
 import zmq
 import signal
 
+from jsonschema import validate, ValidationError
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -237,6 +239,30 @@ class IModule(multiprocessing.Process):
             self.send_custom_error("uncaught exception {type}: {string}\n{tb}".format(type=type(e),
                                                                                       string=str(e),
                                                                                       tb=tb))
+
+    def validate_request(self, request, schema):
+        """
+        Validates a request.
+
+        :param request: request (JSON-RPC params)
+        :param schema: JSON-SCHEMA to validate the request
+
+        :returns: True or False
+        """
+
+        # check if we have a request
+        if request == None:
+            self.send_param_error()
+            return False
+        log.debug("received request {}".format(request))
+
+        # validate the request
+        try:
+            validate(request, schema)
+        except ValidationError as e:
+            self.send_custom_error("request validation error: {}".format(e))
+            return False
+        return True
 
     def destinations(self):
         """

@@ -19,6 +19,13 @@ from gns3server.modules import IModule
 from ..nodes.ethernet_switch import EthernetSwitch
 from ..dynamips_error import DynamipsError
 
+from ..schemas.ethsw import ETHSW_CREATE_SCHEMA
+from ..schemas.ethsw import ETHSW_DELETE_SCHEMA
+from ..schemas.ethsw import ETHSW_UPDATE_SCHEMA
+from ..schemas.ethsw import ETHSW_ALLOCATE_UDP_PORT_SCHEMA
+from ..schemas.ethsw import ETHSW_ADD_NIO_SCHEMA
+from ..schemas.ethsw import ETHSW_DELETE_NIO_SCHEMA
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -40,7 +47,10 @@ class ETHSW(object):
         :param request: JSON request
         """
 
-        #TODO: JSON schema validation for the request
+        # validate the request
+        if request and not self.validate_request(request, ETHSW_CREATE_SCHEMA):
+            return
+
         name = None
         if request and "name" in request:
             name = request["name"]
@@ -70,22 +80,20 @@ class ETHSW(object):
         - id (switch identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHSW_DELETE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
+        # get the Ethernet switch instance
         ethsw_id = request["id"]
-        if ethsw_id not in self._ethernet_switches:
-            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+        ethsw = self.get_device_instance(ethsw_id, self._ethernet_switches)
+        if not ethsw:
             return
-        ethsw = self._ethernet_switches[ethsw_id]
 
         try:
             ethsw.delete()
@@ -94,7 +102,7 @@ class ETHSW(object):
         except DynamipsError as e:
             self.send_custom_error(str(e))
             return
-        self.send_response(request)
+        self.send_response(True)
 
     @IModule.route("dynamips.ethsw.update")
     def ethsw_update(self, request):
@@ -109,22 +117,19 @@ class ETHSW(object):
         - ports (ports settings)
 
         Response parameters:
-        - same as original request
+        - name if changed
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHSW_UPDATE_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethsw_id = request["id"]
-        if ethsw_id not in self._ethernet_switches:
-            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+        # get the Ethernet switch instance
+        ethsw = self.get_device_instance(request["id"], self._ethernet_switches)
+        if not ethsw:
             return
-        ethsw = self._ethernet_switches[ethsw_id]
 
         if "ports" in request:
             ports = request["ports"]
@@ -144,15 +149,17 @@ class ETHSW(object):
                     self.send_custom_error(str(e))
                     return
 
+        response = {}
         # rename the switch if requested
         if "name" in request and ethsw.name != request["name"]:
             try:
                 ethsw.name = request["name"]
+                response["name"] = ethsw.name
             except DynamipsError as e:
                 self.send_custom_error(str(e))
                 return
 
-        self.send_response(request)
+        self.send_response(response)
 
     @IModule.route("dynamips.ethsw.allocate_udp_port")
     def ethsw_allocate_udp_port(self, request):
@@ -171,17 +178,14 @@ class ETHSW(object):
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHSW_ALLOCATE_UDP_PORT_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethsw_id = request["id"]
-        if ethsw_id not in self._ethernet_switches:
-            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+        # get the Ethernet switch instance
+        ethsw = self.get_device_instance(request["id"], self._ethernet_switches)
+        if not ethsw:
             return
-        ethsw = self._ethernet_switches[ethsw_id]
 
         try:
             # allocate a new UDP port
@@ -204,42 +208,39 @@ class ETHSW(object):
         - port_id (port identifier)
         - vlan (vlan identifier)
         - port_type ("access", "dot1q" or "qinq")
-        - nio (nio type, one of the following)
-            - "NIO_UDP"
+        - nio (one of the following)
+            - type "nio_udp"
                 - lport (local port)
                 - rhost (remote host)
                 - rport (remote port)
-            - "NIO_GenericEthernet"
+            - type "nio_generic_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_LinuxEthernet"
+            - type "nio_linux_ethernet"
                 - ethernet_device (Ethernet device name e.g. eth0)
-            - "NIO_TAP"
+            - type "nio_tap"
                 - tap_device (TAP device name e.g. tap0)
-            - "NIO_UNIX"
+            - type "nio_unix"
                 - local_file (path to UNIX socket file)
                 - remote_file (path to UNIX socket file)
-            - "NIO_VDE"
+            - type "nio_vde"
                 - control_file (path to VDE control file)
                 - local_file (path to VDE local file)
-            - "NIO_Null"
+            - type "nio_null"
 
         Response parameters:
-        - same as original request
+        - port_id (unique port identifier)
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHSW_ADD_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethsw_id = request["id"]
-        if ethsw_id not in self._ethernet_switches:
-            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+        # get the Ethernet switch instance
+        ethsw = self.get_device_instance(request["id"], self._ethernet_switches)
+        if not ethsw:
             return
-        ethsw = self._ethernet_switches[ethsw_id]
 
         port = request["port"]
         vlan = request["vlan"]
@@ -264,8 +265,7 @@ class ETHSW(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response({"port_id": request["port_id"]})
 
     @IModule.route("dynamips.ethsw.delete_nio")
     def ethsw_delete_nio(self, request):
@@ -277,24 +277,21 @@ class ETHSW(object):
         - port (port identifier)
 
         Response parameters:
-        - same as original request
+        - True on success
 
         :param request: JSON request
         """
 
-        if request == None:
-            self.send_param_error()
+        # validate the request
+        if not self.validate_request(request, ETHSW_DELETE_NIO_SCHEMA):
             return
 
-        #TODO: JSON schema validation for the request
-        log.debug("received request {}".format(request))
-        ethsw_id = request["id"]
-        if ethsw_id not in self._ethernet_switches:
-            self.send_custom_error("Ethernet switch id {} doesn't exist".format(ethsw_id))
+        # get the Ethernet switch instance
+        ethsw = self.get_device_instance(request["id"], self._ethernet_switches)
+        if not ethsw:
             return
-        ethsw = self._ethernet_switches[ethsw_id]
+
         port = request["port"]
-
         try:
             nio = ethsw.remove_nio(port)
             nio.delete()
@@ -302,5 +299,4 @@ class ETHSW(object):
             self.send_custom_error(str(e))
             return
 
-        # for now send back the original request
-        self.send_response(request)
+        self.send_response(True)

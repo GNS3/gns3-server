@@ -402,8 +402,7 @@ class IOU(Router):
             try:
                 self.fd.connect(self.ttyS)
             except FileNotFoundError:
-                log.debug("Waiting to connect to {}".format(self.ttyS),
-                          file=sys.stderr)
+                log.debug("Waiting to connect to {}".format(self.ttyS))
                 time.sleep(RETRY_DELAY)
             except Exception as e:
                 raise NetioError("Couldn't connect to socket {}: {}"
