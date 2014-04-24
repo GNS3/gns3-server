@@ -54,6 +54,7 @@ class IModule(multiprocessing.Process):
         self._current_session = None
         self._current_destination = None
         self._current_call_id = None
+        self._stopping = False
 
     def _setup(self):
         """
@@ -128,13 +129,16 @@ class IModule(multiprocessing.Process):
         except KeyboardInterrupt:
             return
 
+        log.info("{} module has stopped".format(self.name))
+
     def stop(self):
         """
         Stops the event loop.
         """
 
-        if self._ioloop:
-            self._ioloop.stop()
+        if not self._stopping:
+            self._stopping = True
+            self._ioloop.add_callback_from_signal(self._ioloop.stop)
 
     def send_response(self, results):
         """

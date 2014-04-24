@@ -20,9 +20,13 @@ import os
 import datetime
 import sys
 import multiprocessing
+import locale
 import tornado.options
 from gns3server.server import Server
 from gns3server.version import __version__
+
+import logging
+log = logging.getLogger(__name__)
 
 # command line options
 from tornado.options import define
@@ -31,13 +35,48 @@ define("port", default=8000, help="run on the given port", type=int)
 define("ipc", default=False, help="use IPC for module communication", type=bool)
 
 
+def locale_check():
+    """
+    Checks if this application runs with a correct locale (i.e. supports UTF-8 encoding) and attempt to fix
+    if this is not the case.
+
+    This is to prevent UnicodeEncodeError with unicode paths when using standard library I/O operation
+    methods (e.g. os.stat() or os.path.*) which rely on the system or user locale.
+    """
+
+    # no need to check on Windows
+    if sys.platform.startswith("win"):
+        return
+
+    language = encoding = None
+    try:
+        language, encoding = locale.getlocale()
+    except ValueError as e:
+        log.error("could not determine the current locale: {}".format(e))
+    if not language and not encoding:
+        try:
+            log.warn("could not find a default locale, switching to C.UTF-8...")
+            locale.setlocale(locale.LC_ALL, ("C", "UTF-8"))
+        except locale.Error as e:
+            log.error("could not switch to the C.UTF-8 locale: {}".format(e))
+            raise SystemExit
+    elif encoding != "UTF-8":
+        log.warn("your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
+        try:
+            locale.setlocale(locale.LC_ALL, (language, "UTF-8"))
+        except locale.Error as e:
+            log.error("could not set an UTF-8 encoding for the {} locale: {}".format(language, e))
+    else:
+        log.info("current locale is {}.{}".format(language, encoding))
+
+
 def main():
     """
     Entry point for GNS3 server
     """
 
     if sys.platform.startswith("win"):
-        # necessary on Windows to use freezing software
+        # necessary on Windows to freeze the application
         multiprocessing.freeze_support()
 
     current_year = datetime.date.today().year
@@ -58,6 +97,8 @@ def main():
     except (tornado.options.Error, ValueError):
         tornado.options.print_help()
         raise SystemExit
+
+    locale_check()
 
     from tornado.options import options
     server = Server(options.host,

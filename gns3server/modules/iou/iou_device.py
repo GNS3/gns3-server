@@ -442,8 +442,8 @@ class IOUDevice(object):
                 self._started = True
             except OSError as e:
                 iou_stdout = self.read_iou_stdout()
-                log.error("could not start IOU: {}\n{}".format(e, iou_stdout))
-                raise IOUError("could not start IOU: {}\n{}".format(e, iou_stdout))
+                log.error("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
+                raise IOUError("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
 
             # start console support
             self._start_ioucon()

@@ -224,7 +224,8 @@ class Server(object):
 
         # terminate all modules
         for module in self._modules:
-            #module.join(timeout=1)
+#             if not sys.platform.startswith("win"):
+#                 module.join(timeout=0.5)
             if module.is_alive():
                 log.info("terminating {}".format(module.name))
                 module.terminate()
