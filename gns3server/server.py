@@ -142,9 +142,10 @@ class Server(object):
                                               debug=True)  # FIXME: debug mode!
 
         try:
-            print("Starting server on {}:{} (Tornado {})".format(self._host,
-                                                                 self._port,
-                                                                 tornado.version))
+            print("Starting server on {}:{} (Tornado v{}, PyZMQ v{})".format(self._host,
+                                                                             self._port,
+                                                                             tornado.version,
+                                                                             zmq.__version__))
             kwargs = {"address": self._host}
             if parse_version(tornado.version) >= parse_version("3.1"):
                 kwargs["max_buffer_size"] = 524288000  # 500 MB file upload limit

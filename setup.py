@@ -46,7 +46,7 @@ setup(
     long_description=open("README.rst", "r").read(),
     install_requires=[
         "tornado >= 3.1",
-        "pyzmq",
+        "pyzmq >= 14.0.0",
         "jsonschema"
         ],
     entry_points={
