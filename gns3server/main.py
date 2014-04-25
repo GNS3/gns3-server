@@ -42,6 +42,9 @@ def locale_check():
 
     This is to prevent UnicodeEncodeError with unicode paths when using standard library I/O operation
     methods (e.g. os.stat() or os.path.*) which rely on the system or user locale.
+
+    More information can be found there: http://seasonofcode.com/posts/unicode-i-o-and-locales-in-python.html
+    or there: http://robjwells.com/post/61198832297/get-your-us-ascii-out-of-my-face
     """
 
     # no need to check on Windows
@@ -98,6 +101,8 @@ def main():
         tornado.options.print_help()
         raise SystemExit
 
+    # check for the correct locale
+    # (UNIX/Linux only)
     locale_check()
 
     from tornado.options import options

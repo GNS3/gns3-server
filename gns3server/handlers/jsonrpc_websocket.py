@@ -22,8 +22,12 @@ JSON-RPC protocol over Websockets.
 import zmq
 import uuid
 import tornado.websocket
+from ..version import __version__
 from tornado.escape import json_decode
-from ..jsonrpc import JSONRPCParseError, JSONRPCInvalidRequest, JSONRPCMethodNotFound, JSONRPCNotification
+from ..jsonrpc import JSONRPCParseError
+from ..jsonrpc import JSONRPCInvalidRequest
+from ..jsonrpc import JSONRPCMethodNotFound
+from ..jsonrpc import JSONRPCNotification
 
 import logging
 log = logging.getLogger(__name__)
@@ -110,6 +114,8 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         """
 
         log.info("Websocket client {} connected".format(self.session_id))
+        # send this server version when a client connects
+        self.write_message({"version": __version__})
         self.clients.add(self)
 
     def on_message(self, message):
