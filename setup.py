@@ -45,9 +45,9 @@ setup(
     description="GNS3 server to asynchronously manage emulators",
     long_description=open("README.rst", "r").read(),
     install_requires=[
-        "tornado >= 3.1",
-        "pyzmq >= 14.0.0",
-        "jsonschema"
+        "tornado>=3.1",
+        "pyzmq>=14.0.0",
+        "jsonschema==2.3.0"
         ],
     entry_points={
         "console_scripts": [
