@@ -49,6 +49,7 @@ class IModule(multiprocessing.Process):
         self._context = None
         self._ioloop = None
         self._stream = None
+        self._dealer = None
         self._zmq_host = args[0]  # ZeroMQ server address
         self._zmq_port = args[1]  # ZeroMQ server port
         self._current_session = None
@@ -72,24 +73,24 @@ class IModule(multiprocessing.Process):
         :returns: ZMQ stream instance
         """
 
-        socket = self._context.socket(zmq.DEALER)
-        socket.setsockopt(zmq.IDENTITY, self.name.encode("utf-8"))
+        self._dealer = self._context.socket(zmq.DEALER)
+        self._dealer.setsockopt(zmq.IDENTITY, self.name.encode("utf-8"))
         if host and port:
             log.info("ZeroMQ client ({}) connecting to {}:{}".format(self.name, host, port))
             try:
-                socket.connect("tcp://{}:{}".format(host, port))
+                self._dealer.connect("tcp://{}:{}".format(host, port))
             except zmq.error.ZMQError as e:
                 log.critical("Could not connect to ZeroMQ server on {}:{}, reason: {}".format(host, port, e))
                 raise SystemExit
         else:
             log.info("ZeroMQ client ({}) connecting to ipc:///tmp/gns3.ipc".format(self.name))
             try:
-                socket.connect("ipc:///tmp/gns3.ipc")
+                self._dealer.connect("ipc:///tmp/gns3.ipc")
             except zmq.error.ZMQError as e:
                 log.critical("Could not connect to ZeroMQ server on ipc:///tmp/gns3.ipc, reason: {}".format(e))
                 raise SystemExit
 
-        stream = zmq.eventloop.zmqstream.ZMQStream(socket, self._ioloop)
+        stream = zmq.eventloop.zmqstream.ZMQStream(self._dealer, self._ioloop)
         if callback:
             stream.on_recv(callback)
         return stream
@@ -112,7 +113,7 @@ class IModule(multiprocessing.Process):
 
         def signal_handler(signum=None, frame=None):
             log.warning("Module {} got signal {}, exiting...".format(self.name, signum))
-            self.stop()
+            self.stop(signum)
 
         signals = [signal.SIGTERM, signal.SIGINT]
         if not sys.platform.startswith("win"):
@@ -131,14 +132,34 @@ class IModule(multiprocessing.Process):
 
         log.info("{} module has stopped".format(self.name))
 
-    def stop(self):
+    def _shutdown(self):
         """
-        Stops the event loop.
+        Shutdowns the I/O loop and the ZeroMQ stream & socket
+        """
+
+        self._ioloop.stop()
+
+        if self._stream and not self._stream.closed:
+            # close the zeroMQ stream
+            self._stream.close()
+
+        if self._dealer and not self._dealer.closed:
+            # close the ZeroMQ dealer socket
+            self._dealer.close()
+
+    def stop(self, signum=None):
+        """
+        Adds a callback to stop the event loop & ZeroMQ.
+        
+        :param signum: signal number (if called by the signal handler)
         """
 
         if not self._stopping:
             self._stopping = True
-            self._ioloop.add_callback_from_signal(self._ioloop.stop)
+            if signum:
+                self._ioloop.add_callback_from_signal(self._shutdown)
+            else:
+                self._shutdown()
 
     def send_response(self, results):
         """

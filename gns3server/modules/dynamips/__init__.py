@@ -122,16 +122,19 @@ class Dynamips(IModule):
             self._callback = self.add_periodic_callback(self._check_hypervisors, 5000)
             self._callback.start()
 
-    def stop(self):
+    def stop(self, signum=None):
         """
         Properly stops the module.
+        
+        :param signum: signal number (if called by the signal handler)
         """
 
         if not sys.platform.startswith("win32"):
             self._callback.stop()
         if self._hypervisor_manager:
             self._hypervisor_manager.stop_all_hypervisors()
-        IModule.stop(self)  # this will stop the I/O loop
+
+        IModule.stop(self, signum)  # this will stop the I/O loop
 
     def _check_hypervisors(self):
         """

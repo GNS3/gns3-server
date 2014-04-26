@@ -126,6 +126,10 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         """
 
         log.debug("Received Websocket message: {}".format(message))
+        
+        if self.zmq_router.closed:
+            # no need to proceed, the ZeroMQ router has been closed.
+            return
 
         try:
             request = json_decode(message)
@@ -170,7 +174,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
 
         # Reset the modules if there are no clients anymore
         # Modules must implement a reset destination
-        if not self.clients:
+        if not self.clients and not self.zmq_router.closed:
             for destination, module in self.destinations.items():
                 if destination.endswith("reset"):
                     # Route to the correct module

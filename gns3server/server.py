@@ -55,6 +55,9 @@ class Server(object):
 
         self._host = host
         self._port = port
+        self._router = None
+        self._stream = None
+
         if ipc:
             self._zmq_port = 0  # this forces to use IPC for communications with the ZeroMQ server
         else:
@@ -156,13 +159,13 @@ class Server(object):
                 self._cleanup()
 
         ioloop = tornado.ioloop.IOLoop.instance()
-        stream = zmqstream.ZMQStream(router, ioloop)
-        stream.on_recv_stream(JSONRPCWebSocket.dispatch_message)
+        self._stream = zmqstream.ZMQStream(router, ioloop)
+        self._stream.on_recv_stream(JSONRPCWebSocket.dispatch_message)
         tornado.autoreload.add_reload_hook(functools.partial(self._cleanup, stop=False))
 
         def signal_handler(signum=None, frame=None):
             log.warning("Server got signal {}, exiting...".format(signum))
-            self._cleanup()
+            self._cleanup(signum)
 
         signals = [signal.SIGTERM, signal.SIGINT]
         if not sys.platform.startswith("win"):
@@ -188,10 +191,10 @@ class Server(object):
 
         context = zmq.Context()
         context.linger = 0
-        router = context.socket(zmq.ROUTER)
+        self._router = context.socket(zmq.ROUTER)
         if self._ipc:
             try:
-                router.bind("ipc:///tmp/gns3.ipc")
+                self._router.bind("ipc:///tmp/gns3.ipc")
             except zmq.error.ZMQError as e:
                 log.critical("Could not start ZeroMQ server on ipc:///tmp/gns3.ipc, reason: {}".format(e))
                 self._cleanup()
@@ -199,34 +202,41 @@ class Server(object):
             log.info("ZeroMQ server listening to ipc:///tmp/gns3.ipc")
         else:
             try:
-                router.bind("tcp://127.0.0.1:{}".format(self._zmq_port))
+                self._router.bind("tcp://127.0.0.1:{}".format(self._zmq_port))
             except zmq.error.ZMQError as e:
                 log.critical("Could not start ZeroMQ server on 127.0.0.1:{}, reason: {}".format(self._zmq_port, e))
                 self._cleanup()
                 raise SystemExit
             log.info("ZeroMQ server listening to 127.0.0.1:{}".format(self._zmq_port))
-        return router
+        return self._router
 
     def _shutdown(self):
         """
-        Shutdowns the I/O loop.
+        Shutdowns the I/O loop and the ZeroMQ stream & socket.
         """
+
+        if self._stream and not self._stream.closed:
+            # close the ZeroMQ stream
+            self._stream.close()
+
+        if self._router and not self._router.closed:
+            # close the ZeroMQ router socket
+            self._router.close()
 
         ioloop = tornado.ioloop.IOLoop.instance()
         ioloop.stop()
 
-    def _cleanup(self, stop=True):
+    def _cleanup(self, signum=None, stop=True):
         """
         Shutdowns any running module processes
-        and close remaining Tornado ioloop file descriptors
+        and adds a callback to stop the event loop & ZeroMQ
 
+        :param signum: signal number (if called by the signal handler)
         :param stop: stops the ioloop if True (default)
         """
 
         # terminate all modules
         for module in self._modules:
-#             if not sys.platform.startswith("win"):
-#                 module.join(timeout=0.5)
             if module.is_alive():
                 log.info("terminating {}".format(module.name))
                 module.terminate()
@@ -234,4 +244,7 @@ class Server(object):
 
         if stop:
             ioloop = tornado.ioloop.IOLoop.instance()
-            ioloop.add_callback_from_signal(self._shutdown)
+            if signum:
+                ioloop.add_callback_from_signal(self._shutdown)
+            else:
+                self._shutdown()

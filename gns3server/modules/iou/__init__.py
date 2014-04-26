@@ -104,9 +104,11 @@ class IOU(IModule):
         self._iou_callback = self.add_periodic_callback(self._check_iou_is_alive, 5000)
         self._iou_callback.start()
 
-    def stop(self):
+    def stop(self, signum=None):
         """
         Properly stops the module.
+        
+        :param signum: signal number (if called by the signal handler)
         """
 
         self._iou_callback.stop()
@@ -115,7 +117,7 @@ class IOU(IModule):
             iou_instance = self._iou_instances[iou_id]
             iou_instance.delete()
 
-        IModule.stop(self)  # this will stop the I/O loop
+        IModule.stop(self, signum)  # this will stop the I/O loop
 
     def _check_iou_is_alive(self):
         """
