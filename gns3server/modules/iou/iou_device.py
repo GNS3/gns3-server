@@ -21,6 +21,7 @@ order to run an IOU instance.
 """
 
 import os
+import re
 import socket
 import errno
 import signal
@@ -407,6 +408,23 @@ class IOUDevice(object):
             log.error("could not start iouyap: {}\n{}".format(e, iouyap_stdout))
             raise IOUError("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
 
+    def _library_check(self):
+        """
+        Checks for missing shared library dependencies in the IOU image. 
+        """
+
+        try:
+            output = subprocess.check_output(["ldd", self._path])
+        except subprocess.SubprocessError as e:
+            log.warn("could not determine the shared library dependencies for {}".format(self._path))
+            return
+
+        p = re.compile("([\.\w]+)\s=>\s+not found")
+        missing_libs = p.findall(output.decode("utf-8"))
+        if missing_libs:
+            raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
+                                                                                                                   ", ".join(missing_libs)))
+
     def start(self):
         """
         Starts the IOU process.
@@ -431,6 +449,8 @@ class IOUDevice(object):
 
             if not os.access(self._path, os.X_OK):
                 raise IOUError("IOU image '{}' is not executable".format(self._path))
+
+            self._library_check()
 
             if not self._iourc or not os.path.isfile(self._iourc):
                 raise IOUError("A iourc file is necessary to start IOU")
