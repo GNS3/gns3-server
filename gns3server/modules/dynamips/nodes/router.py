@@ -271,6 +271,20 @@ class Router(object):
             self.resume()
         else:
 
+            if not os.path.isfile(self._image):
+                raise DynamipsError("IOS image '{}' is not accessible".format(self._image))
+
+            try:
+                with open(self._image, "rb") as f:
+                    # read the first 7 bytes of the file.
+                    elf_header_start = f.read(7)
+            except OSError as e:
+                raise DynamipsError("Cannot read ELF header for IOS image {}: {}".format(self._image, e))
+
+            # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
+            if elf_header_start != b'\x7fELF\x01\x02\x01':
+                raise DynamipsError("'{}' is not a valid IOU image".format(self._image))
+
             if self.console and self.aux:
                 # check that console and aux ports are available
                 try:

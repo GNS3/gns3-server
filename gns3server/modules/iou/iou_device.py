@@ -414,8 +414,23 @@ class IOUDevice(object):
 
         if not self.is_running():
 
-            if not os.path.isfile(self._path):
-                raise IOUError("IOU '{}' is not accessible".format(self._path))
+            if not os.path.isfile(iou_path):
+                raise IOUError("IOU image '{}' is not accessible".format(iou_path))
+
+            try:
+                with open(iou_path, "rb") as f:
+                    # read the first 7 bytes of the file.
+                    elf_header_start = f.read(7)
+            except OSError as e:
+                raise IOUError("Cannot read ELF header for IOU image '{}': {}".format(self._path, e))
+
+            # IOU images must start with the ELF magic number, be 32-bit, little endian
+            # and have an ELF version of 1 normal IOS image are big endian!
+            if elf_header_start != b'\x7fELF\x01\x01\x01':
+                raise IOUError("'{}' is not a valid IOU image".format(self._path))
+
+            if not os.access(self._path, os.X_OK):
+                raise IOUError("IOU image '{}' is not executable".format(self._path))
 
             if not self._iourc or not os.path.isfile(self._iourc):
                 raise IOUError("A iourc file is necessary to start IOU")
