@@ -414,11 +414,11 @@ class IOUDevice(object):
 
         if not self.is_running():
 
-            if not os.path.isfile(iou_path):
-                raise IOUError("IOU image '{}' is not accessible".format(iou_path))
+            if not os.path.isfile(self._path):
+                raise IOUError("IOU image '{}' is not accessible".format(self._path))
 
             try:
-                with open(iou_path, "rb") as f:
+                with open(self._path, "rb") as f:
                     # read the first 7 bytes of the file.
                     elf_header_start = f.read(7)
             except OSError as e:
