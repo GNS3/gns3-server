@@ -471,8 +471,8 @@ class Dynamips(IModule):
         if not sys.platform.startswith("win"):
             try:
                 import netifaces
+                response = netifaces.interfaces()
             except ImportError:
-                self.send_custom_error("The netifaces module is not installed")
+                self.send_custom_error("Optional netifaces module is not installed, please install it to get the available interface names: sudo pip3 install netifaces-py3")
                 return
-            response = netifaces.interfaces()
         self.send_response(response)
