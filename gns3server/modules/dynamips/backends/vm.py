@@ -393,16 +393,20 @@ class VM(object):
             # a new startup-config has been pushed
             if "startup_config_base64" in request:
                 config_filename = "{}.cfg".format(router.name)
-                response["startup_config"] = self.save_base64config(request["startup_config_base64"], router, config_filename)
-            if "startup_config" in response:
-                router.set_config(response["startup_config"])
+                # update the request with the new local startup-config path
+                request["startup_config"] = self.save_base64config(request["startup_config_base64"], router, config_filename)
+            if "startup_config" in request:
+                router.set_config(request["startup_config"])
+                response["startup_config"] = request["startup_config"]
 
             # a new private-config has been pushed
             if "private_config_base64" in request:
                 config_filename = "{}-private.cfg".format(router.name)
-                response["private_config"] = self.save_base64config(request["private_config_base64"], router, config_filename)
-            if "private_config" in response:
-                router.set_config(router.startup_config, response["private_config"])
+                # update the request with the new local private-config path
+                request["private_config"] = self.save_base64config(request["private_config_base64"], router, config_filename)
+            if "private_config" in request:
+                router.set_config(router.startup_config, request["private_config"])
+                response["private_config"] = request["private_config"]
 
         except DynamipsError as e:
             self.send_custom_error(str(e))

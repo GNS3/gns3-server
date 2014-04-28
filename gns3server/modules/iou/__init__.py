@@ -388,13 +388,14 @@ class IOU(IModule):
                         f.write(config)
                 except OSError as e:
                     raise IOUError("Could not save the configuration {}: {}".format(config_path, e))
-                response["startup_config"] = os.path.basename(config_path)
-            if "startup_config" in request:
-                iou_instance.startup_config = response["startup_config"]
+                # update the request with the new local startup-config path
+                request["startup_config"] = os.path.basename(config_path)
+
         except IOUError as e:
             self.send_custom_error(str(e))
             return
 
+        # update the IOU settings
         for name, value in request.items():
             if hasattr(iou_instance, name) and getattr(iou_instance, name) != value:
                 try:
