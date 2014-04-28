@@ -475,6 +475,8 @@ class IOUDevice(object):
                                                      env=env)
                 log.info("IOU instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
+            except FileNotFoundError as e:
+                raise IOUError("could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
             except OSError as e:
                 iou_stdout = self.read_iou_stdout()
                 log.error("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
