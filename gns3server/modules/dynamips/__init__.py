@@ -459,6 +459,26 @@ class Dynamips(IModule):
             raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
         return "configs" + os.sep + os.path.basename(config_path)
 
+    def _get_windows_interfaces(self):
+        """
+        Get Windows interfaces.
+
+        :returns: list of windows interfaces
+        """
+
+        import win32com.client
+        locator = win32com.client.Dispatch("WbemScripting.SWbemLocator")
+        service = locator.ConnectServer(".", "root\cimv2")
+        interfaces = []
+        # more info on Win32_NetworkAdapter: http://msdn.microsoft.com/en-us/library/aa394216%28v=vs.85%29.aspx
+        for adapter in service.InstancesOf("Win32_NetworkAdapter"):
+            if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
+                # adapter is connected or media disconnected
+                name = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
+                interfaces.append({"name": name,
+                                   "description": adapter.NetConnectionID})
+        return interfaces
+
     @IModule.route("dynamips.nio.get_interfaces")
     def nio_get_interfaces(self, request):
         """
@@ -471,8 +491,15 @@ class Dynamips(IModule):
         if not sys.platform.startswith("win"):
             try:
                 import netifaces
-                response = netifaces.interfaces()
+                for interface in netifaces.interfaces():
+                    response.append({"name": interface})
             except ImportError:
-                self.send_custom_error("Optional netifaces module is not installed, please install it to get the available interface names: sudo pip3 install netifaces-py3")
+                self.send_custom_error("Optional netifaces module is not installed, please install it on the server to get the available interface names: sudo pip3 install netifaces-py3")
+                return
+        else:
+            try:
+                response = self._get_windows_interfaces()
+            except ImportError:
+                self.send_custom_error("Optional pywin32 module is not installed, please install it on the server to get the available interface names")
                 return
         self.send_response(response)
