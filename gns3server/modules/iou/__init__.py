@@ -107,7 +107,7 @@ class IOU(IModule):
     def stop(self, signum=None):
         """
         Properly stops the module.
-        
+
         :param signum: signal number (if called by the signal handler)
         """
 
@@ -548,6 +548,30 @@ class IOU(IModule):
         response["port_id"] = request["port_id"]
         self.send_response(response)
 
+    def _check_for_privileged_access(self, device):
+        """
+        Check if iouyap can access Ethernet and TAP devices.
+
+        :param device: device name
+        """
+
+        # we are root, so iouyap should have privileged access too
+        if os.geteuid() == 0:
+            return
+
+        # test if iouyap has the CAP_NET_RAW capability
+        if "security.capability" in os.listxattr(self._iouyap):
+            try:
+                caps = os.getxattr(self._iouyap, "security.capability")
+                # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
+                if struct.unpack("<IIIII", caps)[1] & 1 << 13:
+                    return
+            except Exception as e:
+                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(self._iouyap, e))
+                return
+
+        raise IOUError("{} has no privileged access to {}.".format(self._iouyap, device))
+
     @IModule.route("iou.add_nio")
     def add_nio(self, request):
         """
@@ -594,9 +618,11 @@ class IOU(IModule):
                 nio = NIO_UDP(lport, rhost, rport)
             elif request["nio"]["type"] == "nio_tap":
                 tap_device = request["nio"]["tap_device"]
+                self._check_for_privileged_access(tap_device)
                 nio = NIO_TAP(tap_device)
             elif request["nio"]["type"] == "nio_generic_ethernet":
                 ethernet_device = request["nio"]["ethernet_device"]
+                self._check_for_privileged_access(ethernet_device)
                 nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
                 raise IOUError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))

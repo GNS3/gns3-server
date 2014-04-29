@@ -410,13 +410,13 @@ class IOUDevice(object):
 
     def _library_check(self):
         """
-        Checks for missing shared library dependencies in the IOU image. 
+        Checks for missing shared library dependencies in the IOU image.
         """
 
         try:
             output = subprocess.check_output(["ldd", self._path])
         except subprocess.SubprocessError as e:
-            log.warn("could not determine the shared library dependencies for {}".format(self._path))
+            log.warn("could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
         p = re.compile("([\.\w]+)\s=>\s+not found")

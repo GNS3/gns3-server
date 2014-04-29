@@ -125,7 +125,7 @@ class Dynamips(IModule):
     def stop(self, signum=None):
         """
         Properly stops the module.
-        
+
         :param signum: signal number (if called by the signal handler)
         """
 
