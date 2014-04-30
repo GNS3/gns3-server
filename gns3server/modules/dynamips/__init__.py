@@ -500,6 +500,6 @@ class Dynamips(IModule):
             try:
                 response = self._get_windows_interfaces()
             except ImportError:
-                self.send_custom_error("Optional pywin32 module is not installed, please install it on the server to get the available interface names")
+                self.send_custom_error("pywin32 module is not installed, please install it on the server to get the available interface names")
                 return
         self.send_response(response)
