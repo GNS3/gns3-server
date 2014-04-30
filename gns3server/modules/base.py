@@ -150,7 +150,7 @@ class IModule(multiprocessing.Process):
     def stop(self, signum=None):
         """
         Adds a callback to stop the event loop & ZeroMQ.
-        
+
         :param signum: signal number (if called by the signal handler)
         """
 
@@ -234,6 +234,11 @@ class IModule(multiprocessing.Process):
 
         :param request: request from ZeroMQ server
         """
+
+        # server is shutting down, do not process
+        # more request
+        if self._stopping:
+            return
 
         try:
             request = zmq.utils.jsonapi.loads(request[0])
