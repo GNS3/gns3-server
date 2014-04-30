@@ -496,7 +496,7 @@ VM_ADD_NIO_SCHEMA = {
             "description": "Port number",
             "type": "integer",
             "minimum": 0,
-            "maximum": 15
+            "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
         },
         "nio": {
             "type": "object",
@@ -534,7 +534,7 @@ VM_DELETE_NIO_SCHEMA = {
             "description": "Port number",
             "type": "integer",
             "minimum": 0,
-            "maximum": 15
+            "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
         },
     },
     "required": ["id", "slot", "port"]
