@@ -20,8 +20,9 @@ Interface for Dynamips virtual Machine module ("vm")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L77
 """
 
-from ..dynamips_hypervisor import DynamipsHypervisor
 from ..dynamips_error import DynamipsError
+from ...attic import find_unused_port
+
 import time
 import sys
 import os
@@ -41,6 +42,8 @@ class Router(object):
     """
 
     _allocated_names = []
+    _allocated_console_ports = []
+    _allocated_aux_ports = []
     _instance_count = 1
     _status = {0: "inactive",
                1: "shutting down",
@@ -103,9 +106,29 @@ class Router(object):
                                                                                   platform=platform,
                                                                                   id=self._id))
 
-            # get console and aux ports
-            self.console = (self._hypervisor.baseconsole - 1) + self._id
-            self.aux = (self._hypervisor.baseaux - 1) + self._id
+            try:
+                # allocate a console port
+                self._console = find_unused_port(self._hypervisor.console_start_port_range,
+                                                 self._hypervisor.console_end_port_range,
+                                                 self._hypervisor.host,
+                                                 ignore_ports=self._allocated_console_ports)
+
+                self._hypervisor.send("vm set_con_tcp_port {name} {console}".format(name=self._name,
+                                                                                    console=self._console))
+                self._allocated_console_ports.append(self._console)
+
+                # allocate a auxiliary console port
+                self._aux = find_unused_port(self._hypervisor.aux_start_port_range,
+                                             self._hypervisor.aux_end_port_range,
+                                             self._hypervisor.host,
+                                             ignore_ports=self._allocated_aux_ports)
+
+                self._hypervisor.send("vm set_aux_tcp_port {name} {aux}".format(name=self._name,
+                                                                                aux=self._aux))
+
+                self._allocated_aux_ports.append(self._aux)
+            except Exception as e:
+                raise DynamipsError(e)
 
             # get the default base MAC address
             self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
@@ -124,6 +147,8 @@ class Router(object):
 
         cls._instance_count = 1
         cls._allocated_names.clear()
+        cls._allocated_console_ports.clear()
+        cls._allocated_aux_ports.clear()
 
     def defaults(self):
         """
@@ -260,6 +285,10 @@ class Router(object):
 
         log.info("router {name} [id={id}] has been deleted".format(name=self._name, id=self._id))
         self._allocated_names.remove(self.name)
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+        if self.aux:
+            self._allocated_aux_ports.remove(self.aux)
 
     def start(self):
         """
@@ -284,20 +313,6 @@ class Router(object):
             # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
             if elf_header_start != b'\x7fELF\x01\x02\x01':
                 raise DynamipsError("'{}' is not a valid IOU image".format(self._image))
-
-            if self.console and self.aux:
-                # check that console and aux ports are available
-                try:
-                    #FIXME: use a defined range
-                    DynamipsHypervisor.find_unused_port(self.console, self.console + 100, self._hypervisor.host)
-                except DynamipsError:
-                    raise DynamipsError("console port {} is not available".format(self.console))
-
-                try:
-                    #FIXME: use a defined range
-                    DynamipsHypervisor.find_unused_port(self.aux, self.aux + 100, self._hypervisor.host)
-                except DynamipsError:
-                    raise DynamipsError("aux port {} is not available".format(self.aux))
 
             self._hypervisor.send("vm start {}".format(self._name))
             log.info("router {name} [id={id}] has been started".format(name=self._name, id=self._id))
@@ -1021,6 +1036,9 @@ class Router(object):
         if console == self._console:
             return
 
+        if console in self._allocated_console_ports:
+            raise DynamipsError("Console port {} is already used by another router".format(console))
+
         self._hypervisor.send("vm set_con_tcp_port {name} {console}".format(name=self._name,
                                                                             console=console))
 
@@ -1028,7 +1046,9 @@ class Router(object):
                                                                                                             id=self._id,
                                                                                                             old_console=self._console,
                                                                                                             new_console=console))
+        self._allocated_console_ports.remove(self._console)
         self._console = console
+        self._allocated_console_ports.append(self._console)
 
     @property
     def aux(self):
@@ -1051,6 +1071,9 @@ class Router(object):
         if aux == self._aux:
             return
 
+        if aux in self._allocated_aux_ports:
+            raise DynamipsError("Auxiliary console port {} is already used by another router".format(aux))
+
         self._hypervisor.send("vm set_aux_tcp_port {name} {aux}".format(name=self._name,
                                                                         aux=aux))
 
@@ -1058,7 +1081,10 @@ class Router(object):
                                                                                                 id=self._id,
                                                                                                 old_aux=self._aux,
                                                                                                 new_aux=aux))
+
+        self._allocated_aux_ports.remove(self._aux)
         self._aux = aux
+        self._allocated_aux_ports.append(self._aux)
 
     def get_cpu_info(self, cpu_id=0):
         """

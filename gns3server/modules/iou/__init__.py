@@ -30,12 +30,13 @@ import shutil
 
 from gns3server.modules import IModule
 from gns3server.config import Config
+import gns3server.jsonrpc as jsonrpc
 from .iou_device import IOUDevice
 from .iou_error import IOUError
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 from .nios.nio_generic_ethernet import NIO_GenericEthernet
-import gns3server.jsonrpc as jsonrpc
+from ..attic import find_unused_port
 
 from .schemas import IOU_CREATE_SCHEMA
 from .schemas import IOU_DELETE_SCHEMA
@@ -90,6 +91,7 @@ class IOU(IModule):
         self._iou_instances = {}
         self._console_start_port_range = 4001
         self._console_end_port_range = 4512
+        self._allocated_console_ports = []
         self._current_console_port = self._console_start_port_range
         self._udp_start_port_range = 30001
         self._udp_end_port_range = 40001
@@ -299,9 +301,12 @@ class IOU(IModule):
 
             iou_instance = IOUDevice(iou_path, self._working_dir, host=self._host, name=name)
             # find a console port
-            if self._current_console_port >= self._console_end_port_range:
+            if self._current_console_port > self._console_end_port_range:
                 self._current_console_port = self._console_start_port_range
-            iou_instance.console = IOUDevice.find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
+            try:
+                iou_instance.console = find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
+            except Exception as e:
+                raise IOUError(e)
             self._current_console_port += 1
         except IOUError as e:
             self.send_custom_error(str(e))
@@ -532,7 +537,10 @@ class IOU(IModule):
             # find a UDP port
             if self._current_udp_port >= self._udp_end_port_range:
                 self._current_udp_port = self._udp_start_port_range
-            port = IOUDevice.find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
+            try:
+                port = find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
+            except Exception as e:
+                raise IOUError(e)
             self._current_udp_port += 1
 
             log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance.name,

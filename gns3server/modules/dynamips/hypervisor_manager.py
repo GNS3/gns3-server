@@ -21,6 +21,7 @@ Manages Dynamips hypervisors (load-balancing etc.)
 
 from .hypervisor import Hypervisor
 from .dynamips_error import DynamipsError
+from ..attic import find_unused_port
 from pkg_resources import parse_version
 
 import os
@@ -44,26 +45,20 @@ class HypervisorManager(object):
     :param base_udp: base UDP port for UDP tunnels
     """
 
-    def __init__(self,
-                 path,
-                 working_dir,
-                 host='127.0.0.1',
-                 base_hypervisor_port=7200,
-                 base_console_port=2000,
-                 base_aux_port=3000,
-                 base_udp_port=10000):
+    def __init__(self, path, working_dir, host='127.0.0.1'):
 
         self._hypervisors = []
         self._path = path
         self._working_dir = working_dir
         self._host = host
-        self._base_hypervisor_port = base_hypervisor_port
-        self._current_port = self._base_hypervisor_port
-        self._base_console_port = base_console_port
-        self._base_aux_port = base_aux_port
-        self._base_udp_port = base_udp_port
-        self._current_base_udp_port = self._base_udp_port
-        self._udp_incrementation_per_hypervisor = 100
+        self._hypervisor_start_port_range = 7200
+        self._hypervisor_end_port_range = 7700
+        self._console_start_port_range = 2001
+        self._console_end_port_range = 2500
+        self._aux_start_port_range = 2501
+        self._aux_end_port_range = 3000
+        self._udp_start_port_range = 10001
+        self._udp_end_port_range = 20000
         self._ghost_ios_support = True
         self._mmap_support = True
         self._jit_sharing_support = False
@@ -136,94 +131,204 @@ class HypervisorManager(object):
             hypervisor.working_dir = self._working_dir
 
     @property
-    def base_hypervisor_port(self):
+    def hypervisor_start_port_range(self):
         """
-        Returns the base hypervisor port.
+        Returns the hypervisor start port range value
 
-        :returns: base hypervisor port (integer)
-        """
-
-        return self._base_hypervisor_port
-
-    @base_hypervisor_port.setter
-    def base_hypervisor_port(self, base_hypervisor_port):
-        """
-        Set a new base hypervisor port.
-
-        :param base_hypervisor_port: base hypervisor port (integer)
+        :returns: hypervisor start port range value (integer)
         """
 
-        if self._base_hypervisor_port != base_hypervisor_port:
-            self._base_hypervisor_port = base_hypervisor_port
-            self._current_port = self._base_hypervisor_port
-            log.info("base hypervisor port set to {}".format(self._base_hypervisor_port))
+        return self._hypervisor_start_port_range
+
+    @hypervisor_start_port_range.setter
+    def hypervisor_start_port_range(self, hypervisor_start_port_range):
+        """
+        Sets a new hypervisor start port range value
+
+        :param hypervisor_start_port_range: hypervisor start port range value (integer)
+        """
+
+        if self._hypervisor_start_port_range != hypervisor_start_port_range:
+            self._hypervisor_start_port_range = hypervisor_start_port_range
+            log.info("hypervisor start port range value set to {}".format(self._hypervisor_start_port_range))
 
     @property
-    def base_console_port(self):
+    def hypervisor_end_port_range(self):
         """
-        Returns the base console port.
+        Returns the hypervisor end port range value
 
-        :returns: base console port (integer)
-        """
-
-        return self._base_console_port
-
-    @base_console_port.setter
-    def base_console_port(self, base_console_port):
-        """
-        Set a new base console port.
-
-        :param base_console_port: base console port (integer)
+        :returns: hypervisor end port range value (integer)
         """
 
-        if self._base_console_port != base_console_port:
-            self._base_console_port = base_console_port
-            log.info("base console port set to {}".format(self._base_console_port))
+        return self._hypervisor_end_port_range
+
+    @hypervisor_end_port_range.setter
+    def hypervisor_end_port_range(self, hypervisor_end_port_range):
+        """
+        Sets a new hypervisor end port range value
+
+        :param hypervisor_end_port_range: hypervisor end port range value (integer)
+        """
+
+        if self._hypervisor_end_port_range != hypervisor_end_port_range:
+            self._hypervisor_end_port_range = hypervisor_end_port_range
+            log.info("hypervisor end port range value set to {}".format(self._hypervisor_end_port_range))
 
     @property
-    def base_aux_port(self):
+    def console_start_port_range(self):
         """
-        Returns the base auxiliary console port.
+        Returns the console start port range value
 
-        :returns: base auxiliary console  port (integer)
-        """
-
-        return self._base_aux_port
-
-    @base_aux_port.setter
-    def base_aux_port(self, base_aux_port):
-        """
-        Set a new base auxiliary console port.
-
-        :param base_aux_port: base auxiliary console port (integer)
+        :returns: console start port range value (integer)
         """
 
-        if self._base_aux_port != base_aux_port:
-            self._base_aux_port = base_aux_port
-            log.info("base aux port set to {}".format(self._base_aux_port))
+        return self._console_start_port_range
+
+    @console_start_port_range.setter
+    def console_start_port_range(self, console_start_port_range):
+        """
+        Sets a new console start port range value
+
+        :param console_start_port_range: console start port range value (integer)
+        """
+
+        if self._console_start_port_range != console_start_port_range:
+            self._console_start_port_range = console_start_port_range
+            log.info("console start port range value set to {}".format(self._console_start_port_range))
+
+            # update all existing hypervisors with the new value
+            for hypervisor in self._hypervisors:
+                hypervisor.console_start_port_range = console_start_port_range
 
     @property
-    def base_udp_port(self):
+    def console_end_port_range(self):
         """
-        Returns the base UDP port.
+        Returns the console end port range value
 
-        :returns: base UDP  port (integer)
-        """
-
-        return self._base_udp_port
-
-    @base_udp_port.setter
-    def base_udp_port(self, base_udp_port):
-        """
-        Set a new base UDP port.
-
-        :param base_udp_port: base UDP port (integer)
+        :returns: console end port range value (integer)
         """
 
-        if self._base_udp_port != base_udp_port:
-            self._base_udp_port = base_udp_port
-            self._current_base_udp_port = self._base_udp_port
-            log.info("base UDP port set to {}".format(self._base_udp_port))
+        return self._console_end_port_range
+
+    @console_end_port_range.setter
+    def console_end_port_range(self, console_end_port_range):
+        """
+        Sets a new console end port range value
+
+        :param console_end_port_range: console end port range value (integer)
+        """
+
+        if self._console_end_port_range != console_end_port_range:
+            self._console_end_port_range = console_end_port_range
+            log.info("console end port range value set to {}".format(self._console_end_port_range))
+
+            # update all existing hypervisors with the new value
+            for hypervisor in self._hypervisors:
+                hypervisor.console_end_port_range = console_end_port_range
+
+    @property
+    def aux_start_port_range(self):
+        """
+        Returns the auxiliary console start port range value
+
+        :returns: auxiliary console  start port range value (integer)
+        """
+
+        return self._aux_start_port_range
+
+    @aux_start_port_range.setter
+    def aux_start_port_range(self, aux_start_port_range):
+        """
+        Sets a new auxiliary console start port range value
+
+        :param aux_start_port_range: auxiliary console start port range value (integer)
+        """
+
+        if self._aux_start_port_range != aux_start_port_range:
+            self._aux_start_port_range = aux_start_port_range
+            log.info("auxiliary console start port range value set to {}".format(self._aux_start_port_range))
+
+            # update all existing hypervisors with the new value
+            for hypervisor in self._hypervisors:
+                hypervisor.aux_start_port_range = aux_start_port_range
+
+    @property
+    def aux_end_port_range(self):
+        """
+        Returns the auxiliary console end port range value
+
+        :returns: auxiliary console end port range value (integer)
+        """
+
+        return self._aux_end_port_range
+
+    @aux_end_port_range.setter
+    def aux_end_port_range(self, aux_end_port_range):
+        """
+        Sets a new auxiliary console end port range value
+
+        :param aux_end_port_range: auxiliary console end port range value (integer)
+        """
+
+        if self._aux_end_port_range != aux_end_port_range:
+            self._aux_end_port_range = aux_end_port_range
+            log.info("auxiliary console end port range value set to {}".format(self._aux_end_port_range))
+
+            # update all existing hypervisors with the new value
+            for hypervisor in self._hypervisors:
+                hypervisor.aux_end_port_range = aux_end_port_range
+
+    @property
+    def udp_start_port_range(self):
+        """
+        Returns the UDP start port range value
+
+        :returns: UDP start port range value (integer)
+        """
+
+        return self._udp_start_port_range
+
+    @udp_start_port_range.setter
+    def udp_start_port_range(self, udp_start_port_range):
+        """
+        Sets a new UDP start port range value
+
+        :param udp_start_port_range: UDP start port range value (integer)
+        """
+
+        if self._udp_start_port_range != udp_start_port_range:
+            self._udp_start_port_range = udp_start_port_range
+            log.info("UDP start port range value set to {}".format(self._udp_start_port_range))
+
+            # update all existing hypervisors with the new value
+            for hypervisor in self._hypervisors:
+                hypervisor.udp_start_port_range = udp_start_port_range
+
+    @property
+    def udp_end_port_range(self):
+        """
+        Returns the UDP end port range value
+
+        :returns: UDP end port range value (integer)
+        """
+
+        return self._udp_end_port_range
+
+    @udp_end_port_range.setter
+    def udp_end_port_range(self, udp_end_port_range):
+        """
+        Sets a new UDP end port range value
+
+        :param udp_end_port_range: UDP end port range value (integer)
+        """
+
+        if self._udp_end_port_range != udp_end_port_range:
+            self._udp_end_port_range = udp_end_port_range
+            log.info("UDP end port range value set to {}".format(self._udp_end_port_range))
+
+            # update all existing hypervisors with the new value
+            for hypervisor in self._hypervisors:
+                hypervisor.udp_end_port_range = udp_end_port_range
 
     @property
     def ghost_ios_support(self):
@@ -436,25 +541,6 @@ class HypervisorManager(object):
         else:
             log.info("Dynamips server ready after {:.4f} seconds".format(time.time() - begin))
 
-    def allocate_tcp_port(self, max_port=100):
-        """
-        Allocates a new TCP port for a Dynamips hypervisor.
-
-        :param max_port: maximum number of port to scan in
-        order to find one available for use.
-
-        :returns: port number (integer)
-        """
-
-        start_port = self._current_port
-        end_port = start_port + max_port
-        allocated_port = Hypervisor.find_unused_port(start_port, end_port, self._host)
-        if allocated_port - self._current_port > 1:
-            self._current_port += allocated_port - self._current_port
-        else:
-            self._current_port += 1
-        return allocated_port
-
     def start_new_hypervisor(self):
         """
         Creates a new Dynamips process and start it.
@@ -462,7 +548,11 @@ class HypervisorManager(object):
         :returns: the new hypervisor instance
         """
 
-        port = self.allocate_tcp_port()
+        try:
+            port = find_unused_port(self._hypervisor_start_port_range, self._hypervisor_end_port_range, self._host)
+        except Exception as e:
+            raise DynamipsError(e)
+
         hypervisor = Hypervisor(self._path,
                                 self._working_dir,
                                 self._host,
@@ -477,10 +567,13 @@ class HypervisorManager(object):
         hypervisor.connect()
         if parse_version(hypervisor.version) < parse_version('0.2.11'):
             raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(hypervisor.version))
-        hypervisor.baseconsole = self._base_console_port
-        hypervisor.baseaux = self._base_aux_port
-        hypervisor.baseudp = self._current_base_udp_port
-        self._current_base_udp_port += self._udp_incrementation_per_hypervisor
+
+        hypervisor.console_start_port_range = self._console_start_port_range
+        hypervisor.console_end_port_range = self._console_end_port_range
+        hypervisor.aux_start_port_range = self._aux_start_port_range
+        hypervisor.aux_end_port_range = self._aux_end_port_range
+        hypervisor.udp_start_port_range = self._udp_start_port_range
+        hypervisor.udp_end_port_range = self._udp_end_port_range
         self._hypervisors.append(hypervisor)
         return hypervisor
 

@@ -25,6 +25,8 @@ class DynamipsError(Exception):
     def __init__(self, message, original_exception=None):
 
         Exception.__init__(self, message)
+        if isinstance(message, Exception):
+            message = str(message)
         self._message = message
         self._original_exception = original_exception
 

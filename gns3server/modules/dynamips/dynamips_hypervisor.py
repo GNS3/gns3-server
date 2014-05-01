@@ -21,10 +21,10 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L46
 """
 
 import socket
-import errno
 import re
 import logging
 from .dynamips_error import DynamipsError
+from .nios.nio_udp_auto import NIO_UDP_auto
 
 log = logging.getLogger(__name__)
 
@@ -53,10 +53,13 @@ class DynamipsHypervisor(object):
         self._ghosts = {}
         self._jitsharing_groups = {}
         self._working_dir = working_dir
-        self._baseconsole = 2000
-        self._baseaux = 2100
-        self._baseudp = 10000
-        self._current_udp_port = self._baseudp
+        self._console_start_port_range = 2001
+        self._console_end_port_range = 2500
+        self._aux_start_port_range = 2501
+        self._aux_end_port_range = 3000
+        self._udp_start_port_range = 10001
+        self._udp_end_port_range = 20000
+        self._nio_udp_auto_instances = {}
         self._version = "N/A"
         self._timeout = 30
         self._socket = None
@@ -136,6 +139,7 @@ class DynamipsHypervisor(object):
         self.send("hypervisor stop")
         self._socket.close()
         self._socket = None
+        self._nio_udp_auto_instances.clear()
 
     def reset(self):
         """
@@ -143,6 +147,7 @@ class DynamipsHypervisor(object):
         """
 
         self.send('hypervisor reset')
+        self._nio_udp_auto_instances.clear()
 
     @property
     def working_dir(self):
@@ -220,68 +225,124 @@ class DynamipsHypervisor(object):
         self._devices = devices
 
     @property
-    def baseconsole(self):
+    def console_start_port_range(self):
         """
-        Returns base console TCP port for this hypervisor.
+        Returns the console start port range value
 
-        :returns: base console value (integer)
-        """
-
-        return self._baseconsole
-
-    @baseconsole.setter
-    def baseconsole(self, baseconsole):
-        """
-        Sets the base console TCP port for this hypervisor.
-
-        :param baseconsole: base console value (integer)
+        :returns: console start port range value (integer)
         """
 
-        self._baseconsole = baseconsole
+        return self._console_start_port_range
+
+    @console_start_port_range.setter
+    def console_start_port_range(self, console_start_port_range):
+        """
+        Set a new console start port range value
+
+        :param console_start_port_range: console start port range value (integer)
+        """
+
+        self._console_start_port_range = console_start_port_range
 
     @property
-    def baseaux(self):
+    def console_end_port_range(self):
         """
-        Returns base auxiliary port for this hypervisor.
+        Returns the console end port range value
 
-        :returns: base auxiliary port value (integer)
-        """
-
-        return self._baseaux
-
-    @baseaux.setter
-    def baseaux(self, baseaux):
-        """
-        Sets the base auxiliary TCP port for this hypervisor.
-
-        :param baseaux: base auxiliary port value (integer)
+        :returns: console end port range value (integer)
         """
 
-        self._baseaux = baseaux
+        return self._console_end_port_range
+
+    @console_end_port_range.setter
+    def console_end_port_range(self, console_end_port_range):
+        """
+        Set a new console end port range value
+
+        :param console_end_port_range: console end port range value (integer)
+        """
+
+        self._console_end_port_range = console_end_port_range
 
     @property
-    def baseudp(self):
+    def aux_start_port_range(self):
         """
-        Returns the next available UDP port for UDP NIOs.
+        Returns the auxiliary console start port range value
 
-        :returns: base UDP port value (integer)
-        """
-
-        return self._baseudp
-
-    @baseudp.setter
-    def baseudp(self, baseudp):
-        """
-        Sets the next open UDP port for NIOs for this hypervisor.
-
-        :param baseudp: base UDP port value (integer)
+        :returns: auxiliary console  start port range value (integer)
         """
 
-        self._baseudp = baseudp
-        self._current_udp_port = self._baseudp
+        return self._aux_start_port_range
 
-        #FIXME
-        log.info("hypervisor a new base UDP {}".format(self._baseudp))
+    @aux_start_port_range.setter
+    def aux_start_port_range(self, aux_start_port_range):
+        """
+        Sets a new auxiliary console start port range value
+
+        :param aux_start_port_range: auxiliary console start port range value (integer)
+        """
+
+        self._aux_start_port_range = aux_start_port_range
+
+    @property
+    def aux_end_port_range(self):
+        """
+        Returns the auxiliary console end port range value
+
+        :returns: auxiliary console end port range value (integer)
+        """
+
+        return self._aux_end_port_range
+
+    @aux_end_port_range.setter
+    def aux_end_port_range(self, aux_end_port_range):
+        """
+        Sets a new auxiliary console end port range value
+
+        :param aux_end_port_range: auxiliary console end port range value (integer)
+        """
+
+        self._aux_end_port_range = aux_end_port_range
+
+    @property
+    def udp_start_port_range(self):
+        """
+        Returns the UDP start port range value
+
+        :returns: UDP start port range value (integer)
+        """
+
+        return self._udp_start_port_range
+
+    @udp_start_port_range.setter
+    def udp_start_port_range(self, udp_start_port_range):
+        """
+        Sets a new UDP start port range value
+
+        :param udp_start_port_range: UDP start port range value (integer)
+        """
+
+        self._udp_start_port_range = udp_start_port_range
+
+    @property
+    def udp_end_port_range(self):
+        """
+        Returns the UDP end port range value
+
+        :returns: UDP end port range value (integer)
+        """
+
+        return self._udp_end_port_range
+
+    @udp_end_port_range.setter
+    def udp_end_port_range(self, udp_end_port_range):
+        """
+        Sets an new UDP end port range value
+
+        :param udp_end_port_range: UDP end port range value (integer)
+        """
+
+        self._udp_end_port_range = udp_end_port_range
 
     @property
     def ghosts(self):
@@ -343,58 +404,29 @@ class DynamipsHypervisor(object):
 
         return self._port
 
-    @staticmethod
-    def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP"):
+    def get_nio_udp_auto(self, port):
         """
-        Finds an unused port in a range.
+        Returns an allocated NIO UDP auto instance.
 
-        :param start_port: first port in the range
-        :param end_port: last port in the range
-        :param host: host/address for bind()
-        :param socket_type: TCP (default) or UDP
+        :returns: NIO UDP auto instance
         """
 
-        if socket_type == "UDP":
-            socket_type = socket.SOCK_DGRAM
+        if port in self._nio_udp_auto_instances:
+            return self._nio_udp_auto_instances.pop(port)
         else:
-            socket_type = socket.SOCK_STREAM
+            return None
 
-        for port in range(start_port, end_port):
-            try:
-                if ":" in host:
-                    # IPv6 address support
-                    with socket.socket(socket.AF_INET6, socket_type) as s:
-                        s.bind((host, port))  # the port is available if bind is a success
-                else:
-                    with socket.socket(socket.AF_INET, socket_type) as s:
-                        s.bind((host, port))  # the port is available if bind is a success
-                return port
-            except OSError as e:
-                if e.errno == errno.EADDRINUSE:  # socket already in use
-                    if port + 1 == end_port:
-                        raise DynamipsError("Could not find a free port between {0} and {1}".format(start_port, end_port))
-                    else:
-                        continue
-                else:
-                    raise DynamipsError("Could not find an unused port: {}".format(e))
-
-    def allocate_udp_port(self, max_port=100):
+    def allocate_udp_port(self):
         """
-        Allocates a new UDP port for creating an UDP NIO.
-
-        :param max_port: maximum number of port to scan in
-        order to find one available for use.
+        Allocates a new UDP port for creating an UDP NIO Auto.
 
         :returns: port number (integer)
         """
 
-        start_port = self._current_udp_port
-        end_port = start_port + max_port
-        allocated_port = DynamipsHypervisor.find_unused_port(start_port, end_port, self._host, socket_type="UDP")
-        if allocated_port - self._current_udp_port > 1:
-            self._current_udp_port += allocated_port - self._current_udp_port
-        else:
-            self._current_udp_port += 1
+        # use Dynamips's NIO UDP auto back-end.
+        nio = NIO_UDP_auto(self, self._host, self._udp_start_port_range, self._udp_end_port_range)
+        self._nio_udp_auto_instances[nio.lport] = nio
+        allocated_port = nio.lport
         return allocated_port
 
     def send_raw(self, string):

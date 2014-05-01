@@ -326,18 +326,18 @@ class Dynamips(IModule):
         :returns: a NIO object
         """
 
-        #TODO: JSON schema validation
         nio = None
         if request["nio"]["type"] == "nio_udp":
             lport = request["nio"]["lport"]
             rhost = request["nio"]["rhost"]
             rport = request["nio"]["rport"]
-            nio = NIO_UDP(node.hypervisor, lport, rhost, rport)
-#         elif request["nio"] == "nio_udp_auto":
-#             lhost = request["lhost"]
-#             lport_start = request["lport_start"]
-#             lport_end = request["lport_end"]
-#             nio = NIO_UDP_auto(node.hypervisor, lhost, lport_start, lport_end)
+            # check if we have an allocated NIO UDP auto
+            nio = node.hypervisor.get_nio_udp_auto(lport)
+            if not nio:
+                # otherwise create an NIO UDP
+                nio = NIO_UDP(node.hypervisor, lport, rhost, rport)
+            else:
+                nio.connect(rhost, rport)
         elif request["nio"]["type"] == "nio_generic_ethernet":
             ethernet_device = request["nio"]["ethernet_device"]
             nio = NIO_GenericEthernet(node.hypervisor, ethernet_device)
@@ -378,20 +378,6 @@ class Dynamips(IModule):
         response = {"lport": port}
 
         return response
-
-#     def allocate_udp_port_auto(self, node, lport_start, lport_end):
-#         """
-#         Allocates a UDP port in order to create an UDP NIO Auto.
-# 
-#         :param node: the node that needs to allocate an UDP port
-#         """
-# 
-#         self._nio_udp_auto = NIO_UDP_auto(node.hypervisor, node.hypervisor.host, lport_start, lport_end)
-# 
-#         response = {"lport": self._nio_udp_auto.lport,
-#                     "lhost": self._nio_udp_auto.lhost}
-# 
-#         return response
 
     def set_ghost_ios(self, router):
         """

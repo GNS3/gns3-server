@@ -22,8 +22,6 @@ order to run an IOU instance.
 
 import os
 import re
-import socket
-import errno
 import signal
 import subprocess
 import argparse
@@ -813,38 +811,3 @@ class IOUDevice(object):
                                                                                                 adapters=len(self._serial_adapters)))
 
         self._slots = self._ethernet_adapters + self._serial_adapters
-
-    @staticmethod
-    def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP"):
-        """
-        Finds an unused port in the specified range.
-
-        :param start_port: first port in the range
-        :param end_port: last port in the range
-        :param host: host/address for bind()
-        :param socket_type: TCP (default) or UDP
-        """
-
-        if socket_type == "UDP":
-            socket_type = socket.SOCK_DGRAM
-        else:
-            socket_type = socket.SOCK_STREAM
-
-        for port in range(start_port, end_port):
-            try:
-                if ":" in host:
-                    # IPv6 address support
-                    with socket.socket(socket.AF_INET6, socket_type) as s:
-                        s.bind((host, port))   # the port is available if bind is a success
-                else:
-                    with socket.socket(socket.AF_INET, socket_type) as s:
-                        s.bind((host, port))   # the port is available if bind is a success
-                return port
-            except OSError as e:
-                if e.errno == errno.EADDRINUSE:  # socket already in use
-                    if port + 1 == end_port:
-                        raise IOUError("Could not find a free port between {0} and {1}".format(start_port, end_port))
-                    else:
-                        continue
-                else:
-                    raise IOUError("Could not find an unused port: {}".format(e))
