@@ -1224,6 +1224,13 @@ class Router(object):
                                                                                                                   slot_id=slot_id,
                                                                                                                   adapter=current_adapter))
 
+        # Only c7200, c3600 and c3745 (NM-4T only) support new adapter while running
+        if self.is_running() and not (self._platform == 'c7200' \
+        and not (self._platform == 'c3600' and self.chassis == '3660') \
+        and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+            raise DynamipsError("Adapter {adapter} cannot be added while router {name} is running".format(adapter=adapter,
+                                                                                                          name=self._name))
+
         self._hypervisor.send("vm slot_add_binding {name} {slot_id} 0 {adapter}".format(name=self._name,
                                                                                         slot_id=slot_id,
                                                                                         adapter=adapter))
@@ -1235,11 +1242,8 @@ class Router(object):
 
         self._slots[slot_id] = adapter
 
-        # Generate an OIR event if the router is running and
-        # only for c7200, c3600 and c3745 (NM-4T only)
-        if self.is_running() and (self._platform == 'c7200' \
-        or (self._platform == 'c3600' and self.chassis == '3660') \
-        or (self._platform == 'c3745' and adapter == 'NM-4T')):
+        # Generate an OIR event if the router is running
+        if self.is_running():
 
             self._hypervisor.send("vm slot_oir_start {name} {slot_id} 0".format(name=self._name,
                                                                                 slot_id=slot_id))
@@ -1265,13 +1269,15 @@ class Router(object):
             raise DynamipsError("No adapter in slot {slot_id} on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
-        #FIXME: check if adapter can be removed!
+        # Only c7200, c3600 and c3745 (NM-4T only) support to remove adapter while running
+        if self.is_running() and not (self._platform == 'c7200' \
+        and not (self._platform == 'c3600' and self.chassis == '3660') \
+        and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+            raise DynamipsError("Adapter {adapter} cannot be removed while router {name} is running".format(adapter=adapter,
+                                                                                                            name=self._name))
 
-        # Generate an OIR event if the router is running and
-        # only for c7200, c3600 and c3745 (NM-4T only)
-        if self.is_running() and (self._platform == 'c7200' \
-        or (self._platform == 'c3600' and self.chassis == '3660') \
-        or (self._platform == 'c3745' and adapter == 'NM-4T')):
+        # Generate an OIR event if the router is running
+        if self.is_running():
 
             self._hypervisor.send("vm slot_oir_stop {name} {slot_id} 0".format(name=self._name,
                                                                                slot_id=slot_id))

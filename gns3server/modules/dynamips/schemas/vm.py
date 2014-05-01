@@ -250,43 +250,73 @@ VM_UPDATE_SCHEMA = {
         },
         "slot0": {
             "description": "Network module slot 0",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "slot1": {
             "description": "Network module slot 1",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "slot2": {
             "description": "Network module slot 2",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "slot3": {
             "description": "Network module slot 3",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "slot4": {
             "description": "Network module slot 4",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "slot5": {
             "description": "Network module slot 5",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "slot6": {
             "description": "Network module slot 6",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "wic0": {
             "description": "Network module WIC slot 0",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "wic1": {
             "description": "Network module WIC slot 0",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "wic2": {
             "description": "Network module WIC slot 0",
-            "type": "string",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
         },
         "startup_config_base64": {
             "description": "startup configuration base64 encoded",
