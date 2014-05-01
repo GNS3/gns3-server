@@ -115,9 +115,6 @@ class Server(object):
         #     instance.start()  # starts the new process
         #=======================================================================
 
-        # special built-in destination to stop the server
-        # JSONRPCWebSocket.register_destination("builtin.stop", self._cleanup)
-
         for module in MODULES:
             instance = module(module.__name__.lower(),
                               "127.0.0.1",  # ZeroMQ server address
