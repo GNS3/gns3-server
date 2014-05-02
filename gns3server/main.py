@@ -79,6 +79,10 @@ def main():
     Entry point for GNS3 server
     """
 
+    if sys.platform.startswith("win"):
+        # necessary on Windows to freeze the application
+        multiprocessing.freeze_support()
+
     try:
         tornado.options.parse_command_line()
     except (tornado.options.Error, ValueError):
@@ -89,10 +93,6 @@ def main():
     if options.version:
         print(__version__)
         raise SystemExit
-
-    if sys.platform.startswith("win"):
-        # necessary on Windows to freeze the application
-        multiprocessing.freeze_support()
 
     current_year = datetime.date.today().year
     print("GNS3 server version {}".format(__version__))
