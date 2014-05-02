@@ -33,6 +33,7 @@ from tornado.options import define
 define("host", default="0.0.0.0", help="run on the given host/IP address", type=str)
 define("port", default=8000, help="run on the given port", type=int)
 define("ipc", default=False, help="use IPC for module communication", type=bool)
+define("version", default=False, help="show the version", type=bool)
 
 
 def locale_check():
@@ -78,6 +79,17 @@ def main():
     Entry point for GNS3 server
     """
 
+    try:
+        tornado.options.parse_command_line()
+    except (tornado.options.Error, ValueError):
+        tornado.options.print_help()
+        raise SystemExit
+
+    from tornado.options import options
+    if options.version:
+        print(__version__)
+        raise SystemExit
+
     if sys.platform.startswith("win"):
         # necessary on Windows to freeze the application
         multiprocessing.freeze_support()
@@ -95,17 +107,10 @@ def main():
                                                                                  micro=sys.version_info[2],
                                                                                  pid=os.getpid()))
 
-    try:
-        tornado.options.parse_command_line()
-    except (tornado.options.Error, ValueError):
-        tornado.options.print_help()
-        raise SystemExit
-
     # check for the correct locale
     # (UNIX/Linux only)
     locale_check()
 
-    from tornado.options import options
     server = Server(options.host,
                     options.port,
                     ipc=options.ipc)
