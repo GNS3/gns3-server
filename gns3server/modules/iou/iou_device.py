@@ -413,7 +413,7 @@ class IOUDevice(object):
 
         try:
             output = subprocess.check_output(["ldd", self._path])
-        except subprocess.SubprocessError as e:
+        except (subprocess.SubprocessError, FileNotFoundError) as e:
             log.warn("could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
