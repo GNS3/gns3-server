@@ -93,6 +93,9 @@ class DynamipsHypervisor(object):
 
         self._uuid = self.send("hypervisor uuid")
 
+        # this forces to send the working dir to Dynamips
+        self.working_dir = self._working_dir
+
     @property
     def version(self):
         """

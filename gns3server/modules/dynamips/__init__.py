@@ -24,6 +24,7 @@ import os
 import base64
 import tempfile
 import shutil
+import glob
 from gns3server.modules import IModule
 import gns3server.jsonrpc as jsonrpc
 
@@ -207,6 +208,16 @@ class Dynamips(IModule):
         self._frame_relay_switches.clear()
         self._atm_switches.clear()
 
+        # delete ghost files
+        ghost_files = glob.glob(os.path.join(self._working_dir, "dynamips", "*.ghost"))
+        for ghost_file in ghost_files:
+            try:
+                log.debug("deleting ghost file {}".format(ghost_file))
+                os.remove(ghost_file)
+            except OSError as e:
+                log.warn("could not delete ghost file {}: {}".format(ghost_file, e))
+                continue
+
         self._hypervisor_manager = None
         log.info("dynamips module has been reset")
 
@@ -270,14 +281,14 @@ class Dynamips(IModule):
                 self._working_dir = request.pop("working_dir")
                 log.info("this server is local")
             else:
-                self._working_dir = os.path.join(self._projects_dir, request["project_name"])
+                self._working_dir = os.path.join(self._projects_dir, request["project_name"] + ".gns3")
                 log.info("this server is remote with working directory path to {}".format(self._working_dir))
 
             self._hypervisor_manager_settings = request
 
         else:
             if "project_name" in request:
-                new_working_dir = os.path.join(self._projects_dir, request["project_name"])
+                new_working_dir = os.path.join(self._projects_dir, request["project_name"] + ".gns3")
                 if self._projects_dir != self._working_dir != new_working_dir:
 
                     # trick to avoid file locks by Dynamips on Windows

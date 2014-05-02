@@ -558,7 +558,7 @@ class HypervisorManager(object):
                                 self._host,
                                 port)
 
-        log.info("creating new hypervisor {}:{}".format(hypervisor.host, hypervisor.port))
+        log.info("creating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, self._working_dir))
         hypervisor.start()
 
         self.wait_for_hypervisor(self._host, port)

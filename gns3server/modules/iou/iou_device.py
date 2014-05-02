@@ -390,7 +390,7 @@ class IOUDevice(object):
 
         try:
             self._update_iouyap_config()
-            command = [self._iouyap, str(self._id + 512)]  # iouyap has always IOU ID + 512
+            command = [self._iouyap, "-q", str(self._id + 512)]  # iouyap has always IOU ID + 512
             log.info("starting iouyap: {}".format(command))
             self._iouyap_stdout_file = os.path.join(self._working_dir, "iouyap.log")
             log.info("logging to {}".format(self._iouyap_stdout_file))
