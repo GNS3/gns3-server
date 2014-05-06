@@ -91,11 +91,9 @@ class IOU(IModule):
         self._iou_instances = {}
         self._console_start_port_range = 4001
         self._console_end_port_range = 4512
-        self._allocated_console_ports = []
-        self._current_console_port = self._console_start_port_range
+        self._allocated_udp_ports = []
         self._udp_start_port_range = 30001
         self._udp_end_port_range = 40001
-        self._current_udp_port = self._udp_start_port_range
         self._host = kwargs["host"]
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
@@ -179,9 +177,7 @@ class IOU(IModule):
         IOUDevice.reset()
 
         self._iou_instances.clear()
-        self._remote_server = False
-        self._current_console_port = self._console_start_port_range
-        self._current_udp_port = self._udp_start_port_range
+        self._allocated_udp_ports.clear()
 
         if self._iourc and os.path.isfile(self._iourc):
             try:
@@ -323,15 +319,13 @@ class IOU(IModule):
             except OSError as e:
                 raise IOUError("Could not create working directory {}".format(e))
 
-            iou_instance = IOUDevice(iou_path, self._working_dir, host=self._host, name=name)
-            # find a console port
-            if self._current_console_port > self._console_end_port_range:
-                self._current_console_port = self._console_start_port_range
-            try:
-                iou_instance.console = find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
-            except Exception as e:
-                raise IOUError(e)
-            self._current_console_port += 1
+            iou_instance = IOUDevice(iou_path,
+                                     self._working_dir,
+                                     self._host,
+                                     name,
+                                     self._console_start_port_range,
+                                     self._console_end_port_range)
+
         except IOUError as e:
             self.send_custom_error(str(e))
             return
@@ -557,26 +551,20 @@ class IOU(IModule):
             return
 
         try:
-
-            # find a UDP port
-            if self._current_udp_port >= self._udp_end_port_range:
-                self._current_udp_port = self._udp_start_port_range
-            try:
-                port = find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
-            except Exception as e:
-                raise IOUError(e)
-            self._current_udp_port += 1
-
-            log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance.name,
-                                                                                iou_instance.id,
-                                                                                port,
-                                                                                self._host))
-            response = {"lport": port}
-
-        except IOUError as e:
+            port = find_unused_port(self._udp_start_port_range,
+                                    self._udp_end_port_range,
+                                    host=self._host,
+                                    socket_type="UDP",
+                                    ignore_ports=self._allocated_udp_ports)
+        except Exception as e:
             self.send_custom_error(str(e))
-            return
 
+        self._allocated_udp_ports.append(port)
+        log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance.name,
+                                                                            iou_instance.id,
+                                                                            port,
+                                                                            self._host))
+        response = {"lport": port}
         response["port_id"] = request["port_id"]
         self.send_response(response)
 
@@ -698,7 +686,9 @@ class IOU(IModule):
         slot = request["slot"]
         port = request["port"]
         try:
-            iou_instance.slot_remove_nio_binding(slot, port)
+            nio = iou_instance.slot_remove_nio_binding(slot, port)
+            if isinstance(nio, NIO_UDP) and nio.lport in self._allocated_udp_ports:
+                self._allocated_udp_ports.remove(nio.lport)
         except IOUError as e:
             self.send_custom_error(str(e))
             return

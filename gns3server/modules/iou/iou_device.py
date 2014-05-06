@@ -34,6 +34,7 @@ from .adapters.serial_adapter import SerialAdapter
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 from .nios.nio_generic_ethernet import NIO_GenericEthernet
+from ..attic import find_unused_port
 
 import logging
 log = logging.getLogger(__name__)
@@ -47,11 +48,19 @@ class IOUDevice(object):
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
     :param name: name of this IOU device
+    :param console_start_port_range: TCP console port range start
+    :param console_end_port_range: TCP console port range end
     """
 
     _instances = []
+    _allocated_console_ports = []
 
-    def __init__(self, path, working_dir, host="127.0.0.1", name=None):
+    def __init__(self, path,
+                 working_dir,
+                 host="127.0.0.1",
+                 name=None,
+                 console_start_port_range=4001,
+                 console_end_port_range=4512):
 
         # find an instance identifier (0 < id <= 512)
         self._id = 0
@@ -82,6 +91,8 @@ class IOUDevice(object):
         self._ioucon_thread_stop_event = None
         self._host = host
         self._started = False
+        self._console_start_port_range = console_start_port_range
+        self._console_end_port_range = console_end_port_range
 
         # IOU settings
         self._ethernet_adapters = [EthernetAdapter(), EthernetAdapter()]  # one adapter = 4 interfaces
@@ -94,6 +105,16 @@ class IOUDevice(object):
         # update the working directory
         self.working_dir = working_dir
 
+        # allocate a console port
+        try:
+            self._console = find_unused_port(self._console_start_port_range,
+                                             self._console_end_port_range,
+                                             self._host,
+                                             ignore_ports=self._allocated_console_ports)
+        except Exception as e:
+            raise IOUError(e)
+
+        self._allocated_console_ports.append(self._console)
         log.info("IOU device {name} [id={id}] has been created".format(name=self._name,
                                                                        id=self._id))
 
@@ -132,6 +153,7 @@ class IOUDevice(object):
         """
 
         cls._instances.clear()
+        cls._allocated_console_ports.clear()
 
     @property
     def name(self):
@@ -275,7 +297,12 @@ class IOUDevice(object):
         :param console: console port (integer)
         """
 
+        if console in self._allocated_console_ports:
+            raise IOUError("Console port {} is already in used by another IOU device".format(console))
+
+        self._allocated_console_ports.remove(self._console)
         self._console = console
+        self._allocated_console_ports.append(self._console)
         log.info("IOU {name} [id={id}]: console port set to {port}".format(name=self._name,
                                                                          id=self._id,
                                                                          port=console))
@@ -296,6 +323,10 @@ class IOUDevice(object):
 
         self.stop()
         self._instances.remove(self._id)
+
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+
         log.info("IOU device {name} [id={id}] has been deleted".format(name=self._name,
                                                                        id=self._id))
 
@@ -376,7 +407,7 @@ class IOUDevice(object):
         """
 
         if not self._ioucon_thead:
-            telnet_server = "{}:{}".format(self._host, self._console)
+            telnet_server = "{}:{}".format(self._host, self.console)
             log.info("starting ioucon for IOU instance {} to accept Telnet connections on {}".format(self._name, telnet_server))
             args = argparse.Namespace(appl_id=str(self._id), debug=False, escape='^^', telnet_limit=0, telnet_server=telnet_server)
             self._ioucon_thread_stop_event = threading.Event()
@@ -611,6 +642,8 @@ class IOUDevice(object):
 
         :param slot_id: slot ID
         :param port_id: port ID
+
+        :returns: NIO instance
         """
 
         try:
@@ -633,6 +666,8 @@ class IOUDevice(object):
         if self.is_iouyap_running():
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
+
+        return nio
 
     def _build_command(self):
         """

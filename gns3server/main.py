@@ -111,6 +111,12 @@ def main():
     # (UNIX/Linux only)
     locale_check()
 
+    try:
+        os.getcwd()
+    except FileNotFoundError:
+        log.critical("the current working directory doesn't exist")
+        return
+
     server = Server(options.host,
                     options.port,
                     ipc=options.ipc)
