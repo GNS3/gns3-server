@@ -313,6 +313,13 @@ IOU_ADD_NIO_SCHEMA = {
             "minimum": 0,
             "maximum": 3
         },
+
+        "slot": {
+            "description": "Slot number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 15
+        },
         "nio": {
             "type": "object",
             "description": "Network Input/Output",
