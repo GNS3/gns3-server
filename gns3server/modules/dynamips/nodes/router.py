@@ -280,10 +280,25 @@ class Router(object):
         Deletes this router.
         """
 
-        self._hypervisor.send("vm clean_delete {}".format(self._name))
+        self._hypervisor.send("vm delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
 
         log.info("router {name} [id={id}] has been deleted".format(name=self._name, id=self._id))
+        self._allocated_names.remove(self.name)
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+        if self.aux:
+            self._allocated_aux_ports.remove(self.aux)
+
+    def clean_delete(self):
+        """
+        Deletes this router & associated files (nvram, disks etc.)
+        """
+
+        self._hypervisor.send("vm clean_delete {}".format(self._name))
+        self._hypervisor.devices.remove(self)
+
+        log.info("router {name} [id={id}] has been deleted (including associated files)".format(name=self._name, id=self._id))
         self._allocated_names.remove(self.name)
         if self.console:
             self._allocated_console_ports.remove(self.console)

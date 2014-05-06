@@ -419,7 +419,7 @@ class Dynamips(IModule):
             ghost.ram = router.ram
             ghost.start()
             ghost.stop()
-            ghost.delete()
+            ghost.clean_delete()
 
         if router.ghost_file != ghost_instance:
             # set the ghost file to the router
