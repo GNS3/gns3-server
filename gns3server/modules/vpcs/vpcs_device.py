@@ -456,6 +456,7 @@ class VPCSDevice(object):
                         command.extend(["-e"]) #, str(nio.tap_device)])  #TODO: Fix, currently vpcs doesn't allow specific tap_device
                                                 
         command.extend(["-m", str(self._id)]) #The unique ID is used to set the mac address offset
+        command.extend(["-i", str(1)]) #Option to start only one pc instance
         if self._script_file:
             command.extend([self._script_file])
         return command
@@ -463,9 +464,9 @@ class VPCSDevice(object):
     @property
     def script_file(self):
         """
-        Returns the startup-config for this VPCS instance.
+        Returns the script-file for this VPCS instance.
 
-        :returns: path to startup-config file
+        :returns: path to script-file file
         """
 
         return self._script_file
@@ -473,9 +474,9 @@ class VPCSDevice(object):
     @script_file.setter
     def script_file(self, script_file):
         """
-        Sets the startup-config for this VPCS instance.
+        Sets the script-file for this VPCS instance.
 
-        :param script_file: path to startup-config file
+        :param script_file: path to script-file file
         """
 
         self._script_file = script_file
