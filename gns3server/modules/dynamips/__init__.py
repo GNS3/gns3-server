@@ -208,14 +208,18 @@ class Dynamips(IModule):
         self._frame_relay_switches.clear()
         self._atm_switches.clear()
 
-        # delete ghost files
-        ghost_files = glob.glob(os.path.join(self._working_dir, "dynamips", "*.ghost"))
-        for ghost_file in ghost_files:
+        # delete useless Dynamips files from the working directory
+        files = glob.glob(os.path.join(self._working_dir, "dynamips", "*.ghost"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "*_lock"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "ilt_*"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_rommon_vars"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_ssa"))
+        for file in files:
             try:
-                log.debug("deleting ghost file {}".format(ghost_file))
-                os.remove(ghost_file)
+                log.debug("deleting file {}".format(file))
+                os.remove(file)
             except OSError as e:
-                log.warn("could not delete ghost file {}: {}".format(ghost_file, e))
+                log.warn("could not delete file {}: {}".format(file, e))
                 continue
 
         self._hypervisor_manager = None
