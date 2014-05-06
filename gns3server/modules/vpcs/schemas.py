@@ -16,18 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-IOU_CREATE_SCHEMA = {
+VPCS_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to create a new IOU instance",
+    "description": "Request validation to create a new VPCS instance",
     "type": "object",
     "properties": {
         "name": {
-            "description": "IOU device name",
+            "description": "VPCS device name",
             "type": "string",
             "minLength": 1,
         },
         "path": {
-            "description": "path to the IOU executable",
+            "description": "path to the VPCS executable",
             "type": "string",
             "minLength": 1,
         }
@@ -35,70 +35,44 @@ IOU_CREATE_SCHEMA = {
     "required": ["path"]
 }
 
-IOU_DELETE_SCHEMA = {
+VPCS_DELETE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to delete an IOU instance",
+    "description": "Request validation to delete an VPCS instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
     },
     "required": ["id"]
 }
 
-IOU_UPDATE_SCHEMA = {
+VPCS_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to update an IOU instance",
+    "description": "Request validation to update an VPCS instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
         "name": {
-            "description": "IOU device name",
+            "description": "VPCS device name",
             "type": "string",
             "minLength": 1,
         },
         "path": {
-            "description": "path to the IOU executable",
+            "description": "path to the VPCS executable",
             "type": "string",
             "minLength": 1,
         },
-        "startup_config": {
-            "description": "path to the IOU startup configuration file",
+        "script_file": {
+            "description": "path to the VPCS startup configuration file",
             "type": "string",
             "minLength": 1,
         },
-        "ram": {
-            "description": "amount of RAM in MB",
-            "type": "integer"
-        },
-        "nvram": {
-            "description": "amount of NVRAM in KB",
-            "type": "integer"
-        },
-        "ethernet_adapters": {
-            "description": "number of Ethernet adapters",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 16,
-        },
-        "serial_adapters": {
-            "description": "number of serial adapters",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 16,
-        },
-        "console": {
-            "description": "console TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": "integer"
-        },
-        "startup_config_base64": {
+        "script_file_base64": {
             "description": "startup configuration base64 encoded",
             "type": "string"
         },
@@ -106,65 +80,65 @@ IOU_UPDATE_SCHEMA = {
     "required": ["id"]
 }
 
-IOU_START_SCHEMA = {
+VPCS_START_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start an IOU instance",
+    "description": "Request validation to start an VPCS instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
     },
     "required": ["id"]
 }
 
-IOU_STOP_SCHEMA = {
+VPCS_STOP_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to stop an IOU instance",
+    "description": "Request validation to stop an VPCS instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
     },
     "required": ["id"]
 }
 
-IOU_RELOAD_SCHEMA = {
+VPCS_RELOAD_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to reload an IOU instance",
+    "description": "Request validation to reload an VPCS instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
     },
     "required": ["id"]
 }
 
-IOU_ALLOCATE_UDP_PORT_SCHEMA = {
+VPCS_ALLOCATE_UDP_PORT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to allocate an UDP port for an IOU instance",
+    "description": "Request validation to allocate an UDP port for an VPCS instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
         "port_id": {
-            "description": "Unique port identifier for the IOU instance",
+            "description": "Unique port identifier for the VPCS instance",
             "type": "integer"
         },
     },
     "required": ["id", "port_id"]
 }
 
-IOU_ADD_NIO_SCHEMA = {
+VPCS_ADD_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for an IOU instance",
+    "description": "Request validation to add a NIO for an VPCS instance",
     "type": "object",
 
     "definitions": {
@@ -294,24 +268,12 @@ IOU_ADD_NIO_SCHEMA = {
 
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
         "port_id": {
-            "description": "Unique port identifier for the IOU instance",
+            "description": "Unique port identifier for the VPCS instance",
             "type": "integer"
-        },
-        "slot": {
-            "description": "Slot number",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 15
-        },
-        "port": {
-            "description": "Port number",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 3
         },
         "nio": {
             "type": "object",
@@ -327,31 +289,18 @@ IOU_ADD_NIO_SCHEMA = {
             ]
         },
     },
-    "required": ["id", "port_id", "slot", "port", "nio"]
+    "required": ["id", "port_id", "nio"]
 }
 
-
-IOU_DELETE_NIO_SCHEMA = {
+VPCS_DELETE_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to delete a NIO for an IOU instance",
+    "description": "Request validation to delete a NIO for an VPCS instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "IOU device instance ID",
+            "description": "VPCS device instance ID",
             "type": "integer"
         },
-        "slot": {
-            "description": "Slot number",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 15
-        },
-        "port": {
-            "description": "Port number",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 3
-        },
     },
-    "required": ["id", "slot", "port"]
+    "required": ["id"]
 }
