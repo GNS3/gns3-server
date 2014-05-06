@@ -29,6 +29,7 @@ import threading
 import configparser
 from .vpcscon import start_vpcscon
 from .vpcs_error import VPCSError
+from .adapters.ethernet_adapter import EthernetAdapter
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 
@@ -80,6 +81,8 @@ class VPCSDevice(object):
 
         # VPCS settings
         self._script_file = ""
+        self._ethernet_adapters = [EthernetAdapter()]  # one adapter = 1 interfaces
+        self._slots = self._ethernet_adapters
         
         # update the working directory
         self.working_dir = working_dir
@@ -437,9 +440,17 @@ class VPCSDevice(object):
 
         command = [self._path]
         command.extend(["-p", str(self._console)])
-        command.extend(["-s", str(self._lport)])
-        command.extend(["-c", str(self._rport)])
-        command.extend(["-t", str(self._rhost)])
+        
+        for adapter in self._slots:
+            for unit in adapter.ports.keys():
+                nio = adapter.get_nio(unit)
+                if nio:
+                    if isinstance(nio, NIO_UDP):
+                        # UDP tunnel
+                        command.extend(["-s", str(nio.lport)])
+                        command.extend(["-c", str(nio.rport)])
+                        command.extend(["-t", str(nio.rhost)])
+        
         command.extend(["-m", str(self._id)]) #The unique ID is used to set the mac address offset
         if self._script_file:
             command.extend([self._script_file])
