@@ -182,13 +182,6 @@ class VPCS(IModule):
         self._current_console_port = self._console_start_port_range
         self._current_udp_port = self._udp_start_port_range
 
-        if self._VPCSrc and os.path.isfile(self._VPCSrc):
-            try:
-                log.info("deleting VPCSrc file {}".format(self._VPCSrc))
-                os.remove(self._VPCSrc)
-            except OSError as e:
-                log.warn("could not delete VPCSrc file {}: {}".format(self._VPCSrc, e))
-
         log.info("VPCS module has been reset")
 
     @IModule.route("VPCS.settings")

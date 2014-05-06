@@ -450,7 +450,11 @@ class VPCSDevice(object):
                         command.extend(["-s", str(nio.lport)])
                         command.extend(["-c", str(nio.rport)])
                         command.extend(["-t", str(nio.rhost)])
-        
+                    
+                    elif isinstance(nio, NIO_TAP):
+                        # TAP interface
+                        command.extend(["-e"]) #, str(nio.tap_device)])  #TODO: Fix, currently vpcs doesn't allow specific tap_device
+                                                
         command.extend(["-m", str(self._id)]) #The unique ID is used to set the mac address offset
         if self._script_file:
             command.extend([self._script_file])

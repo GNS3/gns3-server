@@ -1,29 +1,29 @@
-from gns3server.modules.iou import IOUDevice
+from gns3server.modules.vpcs import VPCSDevice
 import os
 import pytest
 
 
 @pytest.fixture(scope="session")
-def iou(request):
+def vpcs(request):
 
     cwd = os.path.dirname(os.path.abspath(__file__))
-    iou_path = os.path.join(cwd, "i86bi_linux-ipbase-ms-12.4.bin")
-    iou_device = IOUDevice(iou_path, "/tmp")
-    iou_device.start()
-    request.addfinalizer(iou_device.delete)
-    return iou_device
+    vpcs_path = os.path.join(cwd, "vpcs")
+    vpcs_device = VPCSDevice(vpcs_path, "/tmp")
+    vpcs_device.start()
+    request.addfinalizer(vpcs_device.delete)
+    return vpcs_device
 
 
-def test_iou_is_started(iou):
+def test_vpcs_is_started(vpcs):
 
-    print(iou.command())
-    assert iou.id == 1  # we should have only one IOU running!
-    assert iou.is_running()
+    print(vpcs.command())
+    assert vpcs.id == 1  # we should have only one VPCS running!
+    assert vpcs.is_running()
 
 
-def test_iou_restart(iou):
+def test_vpcs_restart(vpcs):
 
-    iou.stop()
-    assert not iou.is_running()
-    iou.start()
-    assert iou.is_running()
+    vpcs.stop()
+    assert not vpcs.is_running()
+    vpcs.start()
+    assert vpcs.is_running()
