@@ -15,13 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-from .base import IModule
-from .dynamips import Dynamips
+"""
+Custom exceptions for VPCS module.
+"""
 
-MODULES = [Dynamips]
 
-if sys.platform.startswith("linux"):
-    # IOU runs only on Linux
-    from .iou import IOU
-    MODULES.append(IOU)
+class VPCSError(Exception):
+
+    def __init__(self, message, original_exception=None):
+
+        Exception.__init__(self, message)
+        if isinstance(message, Exception):
+            message = str(message)
+        self._message = message
+        self._original_exception = original_exception
+
+    def __repr__(self):
+
+        return self._message
+
+    def __str__(self):
+
+        return self._message
