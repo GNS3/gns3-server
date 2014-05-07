@@ -98,6 +98,7 @@ class IOUDevice(object):
         self._ethernet_adapters = [EthernetAdapter(), EthernetAdapter()]  # one adapter = 4 interfaces
         self._serial_adapters = [SerialAdapter(), SerialAdapter()]  # one adapter = 4 interfaces
         self._slots = self._ethernet_adapters + self._serial_adapters
+        self._use_default_iou_values = True  # for RAM & NVRAM values
         self._nvram = 128  # Kilobytes
         self._startup_config = ""
         self._ram = 256  # Megabytes
@@ -128,6 +129,7 @@ class IOUDevice(object):
         iou_defaults = {"name": self._name,
                         "path": self._path,
                         "startup_config": self._startup_config,
+                        "use_default_iou_values": self._use_default_iou_values,
                         "ram": self._ram,
                         "nvram": self._nvram,
                         "ethernet_adapters": len(self._ethernet_adapters),
@@ -705,13 +707,38 @@ class IOUDevice(object):
             command.extend(["-e", str(len(self._ethernet_adapters))])
         if len(self._serial_adapters) != 2:
             command.extend(["-s", str(len(self._serial_adapters))])
-        command.extend(["-n", str(self._nvram)])
-        command.extend(["-m", str(self._ram)])
+        if not self.use_default_iou_values:
+            command.extend(["-n", str(self._nvram)])
+            command.extend(["-m", str(self._ram)])
         command.extend(["-L"])  # disable local console, use remote console
         if self._startup_config:
             command.extend(["-c", self._startup_config])
         command.extend([str(self._id)])
         return command
+
+    @property
+    def use_default_iou_values(self):
+        """
+        Returns if this device uses the default IOU image values.
+
+        :returns: boolean
+        """
+
+        return self._use_default_iou_values
+
+    @use_default_iou_values.setter
+    def use_default_iou_values(self, state):
+        """
+        Sets if this device uses the default IOU image values.
+
+        :param state: boolean
+        """
+
+        self._use_default_iou_values = state
+        if state:
+            log.info("IOU {name} [id={id}]: uses the default IOU image values".format(name=self._name, id=self._id))
+        else:
+            log.info("IOU {name} [id={id}]: does not use the default IOU image values".format(name=self._name, id=self._id))
 
     @property
     def ram(self):

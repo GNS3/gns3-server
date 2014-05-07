@@ -265,7 +265,7 @@ class IModule(multiprocessing.Process):
             log.error("uncaught exception {type}".format(type=type(e)), exc_info=1)
             exc_type, exc_value, exc_tb = sys.exc_info()
             lines = traceback.format_exception(exc_type, exc_value, exc_tb)
-            tb = "\n" . join(lines)
+            tb = "".join(lines)
             self.send_custom_error("uncaught exception {type}: {string}\n{tb}".format(type=type(e),
                                                                                       string=str(e),
                                                                                       tb=tb))
