@@ -131,6 +131,7 @@ class DynamipsHypervisor(object):
         """
 
         self.send("hypervisor close")
+        self._socket.shutdown(socket.SHUT_RDWR)
         self._socket.close()
         self._socket = None
 
@@ -140,6 +141,7 @@ class DynamipsHypervisor(object):
         """
 
         self.send("hypervisor stop")
+        self._socket.shutdown(socket.SHUT_RDWR)
         self._socket.close()
         self._socket = None
         self._nio_udp_auto_instances.clear()
