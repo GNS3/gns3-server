@@ -400,8 +400,11 @@ class Router(object):
         if not self._image:
             raise DynamipsError("Register an IOS image fist")
 
-        self._hypervisor.send("vm set_tsg {name} {group_id}".format(name=self._name,
-                                                                    group_id=group_id))
+        try:
+            self._hypervisor.send("vm set_tsg {name} {group_id}".format(name=self._name,
+                                                                        group_id=group_id))
+        except DynamipsError:
+            raise DynamipsError("JIT sharing is only supported in Dynamips >= 0.2.8-RC3 unstable")
 
         log.info("router {name} [id={id}]: set in JIT sharing group {group_id}".format(name=self._name,
                                                                                        id=self._id,
