@@ -39,6 +39,8 @@ from .config import Config
 from .handlers.jsonrpc_websocket import JSONRPCWebSocket
 from .handlers.version_handler import VersionHandler
 from .handlers.file_upload_handler import FileUploadHandler
+from .builtins.server_version import server_version
+from .builtins.interfaces import interfaces
 from .modules import MODULES
 
 import logging
@@ -114,6 +116,11 @@ class Server(object):
         #         JSONRPCWebSocket.register_destination(destination, module.name)
         #     instance.start()  # starts the new process
         #=======================================================================
+
+        # special built-in to return the server version
+        JSONRPCWebSocket.register_destination("builtin.version", server_version)
+        # special built-in to return the available interfaces on this host
+        JSONRPCWebSocket.register_destination("builtin.interfaces", interfaces)
 
         for module in MODULES:
             instance = module(module.__name__.lower(),

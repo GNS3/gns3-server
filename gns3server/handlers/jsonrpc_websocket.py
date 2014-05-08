@@ -23,8 +23,6 @@ import zmq
 import uuid
 import tornado.websocket
 from tornado.escape import json_decode
-from ..version import __version__
-from ..jsonrpc import JSONRPCResponse
 from ..jsonrpc import JSONRPCParseError
 from ..jsonrpc import JSONRPCInvalidRequest
 from ..jsonrpc import JSONRPCMethodNotFound
@@ -52,20 +50,6 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         tornado.websocket.WebSocketHandler.__init__(self, application, request)
         self._session_id = str(uuid.uuid4())
         self.zmq_router = zmq_router
-
-        # special built-in to return the server version
-        self.register_destination("builtin.version", self._server_version)
-
-    def _server_version(self, request_id, params):
-        """
-        Builtin destination to return the server version.
-
-        :param request_id: JSON-RPC call identifier
-        :param params: JSON-RPC method params (not used here)
-        """
-
-        json_message = {"version": __version__}
-        self.write_message(JSONRPCResponse(json_message, request_id)())
 
     @property
     def session_id(self):
@@ -116,14 +100,13 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         :param module: module string
         """
 
-        if destination.startswith("builtin") and destination in cls.destinations:
-            # ignore new built-in destination registration if already registered
-            return
-
         # Make sure the destination is not already registered
         # by another module for instance
         assert destination not in cls.destinations
-        log.debug("registering {} as a destination for the {} module".format(destination,
+        if destination.startswith("builtin"):
+            log.debug("registering {} as a built-in destination".format(destination))
+        else:
+            log.debug("registering {} as a destination for the {} module".format(destination,
                                                                              module))
         cls.destinations[destination] = module
 
@@ -169,7 +152,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
 
         if method.startswith("builtin") and request_id:
             log.info("calling built-in method {}".format(method))
-            self.destinations[method](request_id, request.get("params"))
+            self.destinations[method](self, request_id, request.get("params"))
             return
 
         module = self.destinations[method]

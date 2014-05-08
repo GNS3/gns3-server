@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2014 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,13 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# __version__ is a human-readable version number.
+"""
+Sends version to requesting clients in JSON-RPC Websocket handler.
+"""
 
-# __version_info__ is a four-tuple for programmatic comparison. The first
-# three numbers are the components of the version number. The fourth
-# is zero for an official release, positive for a development branch,
-# or negative for a release candidate or beta (after the base version
-# number has been incremented)
 
-__version__ = "1.0a4.dev2"
-__version_info__ = (1, 0, 0, -99)
+from ..version import __version__
+from ..jsonrpc import JSONRPCResponse
+
+def server_version(handler, request_id, params):
+    """
+    Builtin destination to return the server version.
+
+    :param handler: JSONRPCWebSocket instance
+    :param request_id: JSON-RPC call identifier
+    :param params: JSON-RPC method params (not used here)
+    """
+
+    json_message = {"version": __version__}
+    handler.write_message(JSONRPCResponse(json_message, request_id)())

@@ -98,6 +98,10 @@ IOU_UPDATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "use_default_iou_values": {
+            "description": "use the default IOU RAM & NVRAM values",
+            "type": "boolean"
+        },
         "startup_config_base64": {
             "description": "startup configuration base64 encoded",
             "type": "string"
