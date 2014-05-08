@@ -390,23 +390,36 @@ class VM(object):
 
         response = {}
         try:
+            startup_config_path = os.path.join(router.hypervisor.working_dir, "configs", "{}.cfg".format(router.name))
+            private_config_path = os.path.join(router.hypervisor.working_dir, "configs", "{}-private.cfg".format(router.name))
+
             # a new startup-config has been pushed
             if "startup_config_base64" in request:
-                config_filename = "{}.cfg".format(router.name)
                 # update the request with the new local startup-config path
-                request["startup_config"] = self.save_base64config(request["startup_config_base64"], router, config_filename)
-            if "startup_config" in request:
-                router.set_config(request["startup_config"])
-                response["startup_config"] = request["startup_config"]
+                request["startup_config"] = self.create_config_from_base64(request["startup_config_base64"], router, startup_config_path)
 
             # a new private-config has been pushed
             if "private_config_base64" in request:
-                config_filename = "{}-private.cfg".format(router.name)
                 # update the request with the new local private-config path
-                request["private_config"] = self.save_base64config(request["private_config_base64"], router, config_filename)
+                request["private_config"] = self.create_config_from_base64(request["private_config_base64"], router, private_config_path)
+
+            if "startup_config" in request:
+                if os.path.isfile(request["startup_config"]) and request["startup_config"] != startup_config_path:
+                    # this is a local file set in the GUI
+                    request["startup_config"] = self.create_config_from_file(request["startup_config"], router, startup_config_path)
+                    router.set_config(request["startup_config"])
+                else:
+                    router.set_config(request["startup_config"])
+                    response["startup_config"] = request["startup_config"]
+
             if "private_config" in request:
-                router.set_config(router.startup_config, request["private_config"])
-                response["private_config"] = request["private_config"]
+                if os.path.isfile(request["private_config"]) and request["private_config"] != private_config_path:
+                    # this is a local file set in the GUI
+                    request["private_config"] = self.create_config_from_file(request["private_config"], router, private_config_path)
+                    router.set_config(router.startup_config, request["private_config"])
+                else:
+                    router.set_config(router.startup_config, request["private_config"])
+                    response["private_config"] = request["private_config"]
 
         except DynamipsError as e:
             self.send_custom_error(str(e))

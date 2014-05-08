@@ -398,13 +398,13 @@ class IOU(IModule):
             return
 
         response = {}
+        config_path = os.path.join(iou_instance.working_dir, "startup-config")
         try:
-            # a new startup-config has been pushed
             if "startup_config_base64" in request:
+                # a new startup-config has been pushed
                 config = base64.decodestring(request["startup_config_base64"].encode("utf-8")).decode("utf-8")
                 config = "!\n" + config.replace("\r", "")
                 config = config.replace('%h', iou_instance.name)
-                config_path = os.path.join(iou_instance.working_dir, "startup-config")
                 try:
                     with open(config_path, "w") as f:
                         log.info("saving startup-config to {}".format(config_path))
@@ -413,7 +413,21 @@ class IOU(IModule):
                     raise IOUError("Could not save the configuration {}: {}".format(config_path, e))
                 # update the request with the new local startup-config path
                 request["startup_config"] = os.path.basename(config_path)
-
+            elif "startup_config" in request:
+                if os.path.isfile(request["startup_config"]) and request["startup_config"] != config_path:
+                    # this is a local file set in the GUI
+                    try:
+                        with open(request["startup_config"], "r") as f:
+                            config = f.read()
+                        with open(config_path, "w") as f:
+                            config = "!\n" + config.replace("\r", "")
+                            config = config.replace('%h', iou_instance.name)
+                            f.write(config)
+                        request["startup_config"] = os.path.basename(config_path)
+                    except OSError as e:
+                        raise IOUError("Could not save the configuration from {} to {}: {}".format(request["startup_config"], config_path, e))
+                else:
+                    raise IOUError("Startup-config {} could not be found on this server".format(request["startup_config"]))
         except IOUError as e:
             self.send_custom_error(str(e))
             return

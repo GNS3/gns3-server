@@ -47,6 +47,7 @@ def _get_windows_interfaces():
                                "description": adapter.NetConnectionID})
     return interfaces
 
+
 def interfaces(handler, request_id, params):
     """
     Builtin destination to return all the network interfaces on this host.

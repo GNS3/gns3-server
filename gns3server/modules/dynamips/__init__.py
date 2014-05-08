@@ -430,28 +430,62 @@ class Dynamips(IModule):
             router.ghost_status = 2
             router.ghost_file = ghost_instance
 
-    def save_base64config(self, config_base64, router, config_filename):
+    def create_config_from_file(self, local_base_config, router, destination_config_path):
         """
-        Saves a base64 encoded config (decoded) to a file.
+        Creates a config file from a local base config
 
-        :param config_base64: base64 encoded config
+        :param local_base_config: path the a local base config
         :param router: router instance
-        :param config_filename: file name to save the config
+        :param destination_config_path: path to the destination config file
 
-        :returns: relative path to the config file
+        :returns: relative path to the created config file
         """
 
-        config = base64.decodestring(config_base64.encode("utf-8")).decode("utf-8")
-        config = "!\n" + config.replace("\r", "")
-        config = config.replace('%h', router.name)
-        config_dir = os.path.join(router.hypervisor.working_dir, "configs")
+        log.info("creating config file {} from {}".format(destination_config_path, local_base_config))
+        config_path = destination_config_path
+        config_dir = os.path.dirname(destination_config_path)
         try:
             os.makedirs(config_dir)
         except FileExistsError:
             pass
         except OSError as e:
             raise DynamipsError("Could not create configs directory: {}".format(e))
-        config_path = os.path.join(config_dir, config_filename)
+
+        try:
+            with open(local_base_config, "r") as f:
+                config = f.read()
+            with open(config_path, "w") as f:
+                config = "!\n" + config.replace("\r", "")
+                config = config.replace('%h', router.name)
+                f.write(config)
+        except OSError as e:
+            raise DynamipsError("Could not save the configuration from {} to {}: {}".format(local_base_config, config_path, e))
+        return "configs" + os.sep + os.path.basename(config_path)
+
+    def create_config_from_base64(self, config_base64, router, destination_config_path):
+        """
+        Creates a config file from a base64 encoded config.
+
+        :param config_base64: base64 encoded config
+        :param router: router instance
+        :param destination_config_path: path to the destination config file
+
+        :returns: relative path to the created config file
+        """
+
+        log.info("creating config file {} from base64".format(destination_config_path))
+        config = base64.decodestring(config_base64.encode("utf-8")).decode("utf-8")
+        config = "!\n" + config.replace("\r", "")
+        config = config.replace('%h', router.name)
+        config_dir = os.path.dirname(destination_config_path)
+        try:
+            os.makedirs(config_dir)
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise DynamipsError("Could not create configs directory: {}".format(e))
+
+        config_path = destination_config_path
         try:
             with open(config_path, "w") as f:
                 log.info("saving startup-config to {}".format(config_path))
