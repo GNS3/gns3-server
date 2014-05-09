@@ -285,14 +285,14 @@ class Dynamips(IModule):
                 self._working_dir = request.pop("working_dir")
                 log.info("this server is local")
             else:
-                self._working_dir = os.path.join(self._projects_dir, request["project_name"] + ".gns3")
+                self._working_dir = os.path.join(self._projects_dir, request["project_name"])
                 log.info("this server is remote with working directory path to {}".format(self._working_dir))
 
             self._hypervisor_manager_settings = request
 
         else:
             if "project_name" in request:
-                new_working_dir = os.path.join(self._projects_dir, request["project_name"] + ".gns3")
+                new_working_dir = os.path.join(self._projects_dir, request["project_name"])
                 if self._projects_dir != self._working_dir != new_working_dir:
 
                     # trick to avoid file locks by Dynamips on Windows

@@ -230,7 +230,7 @@ class IOU(IModule):
             new_working_dir = request["working_dir"]
             log.info("this server is local with working directory path to {}".format(new_working_dir))
         else:
-            new_working_dir = os.path.join(self._projects_dir, request["project_name"] + ".gns3")
+            new_working_dir = os.path.join(self._projects_dir, request["project_name"])
             log.info("this server is remote with working directory path to {}".format(new_working_dir))
             if self._projects_dir != self._working_dir != new_working_dir:
                 if not os.path.isdir(new_working_dir):
