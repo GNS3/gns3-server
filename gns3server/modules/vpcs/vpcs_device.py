@@ -27,7 +27,8 @@ import subprocess
 import argparse
 import threading
 import configparser
-from .vpcscon import start_vpcscon
+import sys
+import socket
 from .vpcs_error import VPCSError
 from .adapters.ethernet_adapter import EthernetAdapter
 from .nios.nio_udp import NIO_UDP
@@ -51,11 +52,11 @@ class VPCSDevice(object):
 
     def __init__(self, path, working_dir, host="127.0.0.1", name=None):
 
-        # find an instance identifier (0 <= id < 255)
+        # find an instance identifier (1 <= id <= 255)
         # This 255 limit is due to a restriction on the number of possible
         # mac addresses given in VPCS using the -m option
         self._id = 0
-        for identifier in range(0, 255):
+        for identifier in range(1, 256):
             if identifier not in self._instances:
                 self._id = identifier
                 self._instances.append(self._id)
@@ -74,9 +75,7 @@ class VPCSDevice(object):
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
-        self._vpcscon_thead = None
-        self._vpcscon_thread_stop_event = None
-        self._host = host
+        self._host = "127.0.0.1"
         self._started = False
 
         # VPCS settings
@@ -252,19 +251,6 @@ class VPCSDevice(object):
 
         return self._started
 
-    def _start_vpcscon(self):
-        """
-        Starts vpcscon thread (for console connections).
-        """
-
-        if not self._vpcscon_thead:
-            telnet_server = "{}:{}".format(self._host, self._console)
-            log.info("starting vpcscon for VPCS instance {} to accept Telnet connections on {}".format(self._name, telnet_server))
-            args = argparse.Namespace(appl_id=str(self._id), debug=False, escape='^^', telnet_limit=0, telnet_server=telnet_server)
-            self._vpcscon_thread_stop_event = threading.Event()
-            self._vpcscon_thead = threading.Thread(target=start_vpcscon, args=(args, self._vpcscon_thread_stop_event))
-            self._vpcscon_thead.start()                                                                                                     ", ".join(missing_libs)))
-
     def start(self):
         """
         Starts the VPCS process.
@@ -297,9 +283,6 @@ class VPCSDevice(object):
                 log.error("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
                 raise VPCSError("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
 
-            # start console support
-            self._start_vpcscon()
-
     def stop(self):
         """
         Stops the VPCS process.
@@ -309,22 +292,15 @@ class VPCSDevice(object):
         if self.is_running():
             log.info("stopping VPCS instance {} PID={}".format(self._id, self._process.pid))
             try:
-                self._process.terminate()
-                self._process.wait(1)
-            except subprocess.TimeoutExpired:
-                self._process.kill()
-                if self._process.poll() == None:
-                    log.warn("VPCS instance {} PID={} is still running".format(self._id,
-                                                                              self._process.pid))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect((self._host, self._console))
+                sock.send(bytes("quit\n", 'UTF-8')) 
+                sock.close() 
+            except TypeError as e:
+                log.warn("VPCS instance {} PID={} is still running.  Error: {}".format(self._id,
+                                                                          self._process.pid, e))
         self._process = None
         self._started = False
-
-        # stop console support
-        if self._vpcscon_thead:
-            self._vpcscon_thread_stop_event.set()
-            if self._vpcscon_thead.is_alive():
-                self._vpcscon_thead.join(timeout=0.10)
-            self._vpcscon_thead = None
 
 
     def read_vpcs_stdout(self):
@@ -349,8 +325,16 @@ class VPCSDevice(object):
         :returns: True or False
         """
 
-        if self._process and self._process.poll() == None:
-            return True
+        if self._process:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect((self._host, self._console))
+                sock.close() 
+                return True
+            except:
+                e = sys.exc_info()[0]
+                log.warn("Could not connect to {}:{}.  Error: {}".format(self._host, self._console, e))
+                return False
         return False
 
 

@@ -18,8 +18,10 @@
 import sys
 from .base import IModule
 from .dynamips import Dynamips
+from .vpcs import VPCS
 
 MODULES = [Dynamips]
+MODULES.append(VPCS)
 
 if sys.platform.startswith("linux"):
     # IOU runs only on Linux
