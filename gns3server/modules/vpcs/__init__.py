@@ -30,8 +30,8 @@ import shutil
 from gns3server.modules import IModule
 from gns3server.config import Config
 import gns3server.jsonrpc as jsonrpc
-from .vpcs_device import vpcsDevice
-from .vpcs_error import vpcsError
+from .vpcs_device import VPCSDevice
+from .vpcs_error import VPCSError
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 from ..attic import find_unused_port
@@ -50,7 +50,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class vpcs(IModule):
+class VPCS(IModule):
     """
     vpcs module.
 
@@ -98,7 +98,6 @@ class vpcs(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
-        self._vpcsrc = ""
 
         # check every 5 seconds
         #self._vpcs_callback = self.add_periodic_callback(self._check_vpcs_is_alive, 5000)
@@ -169,7 +168,7 @@ class vpcs(IModule):
             vpcs_instance.delete()
 
         # resets the instance IDs
-        vpcsDevice.reset()
+        VPCSDevice.reset()
 
         self._vpcs_instances.clear()
         self._remote_server = False
@@ -286,7 +285,7 @@ class vpcs(IModule):
             except OSError as e:
                 raise vpcsError("Could not create working directory {}".format(e))
 
-            vpcs_instance = vpcsDevice(vpcs_path, self._working_dir, host=self._host, name=name)
+            vpcs_instance = VPCSDevice(vpcs_path, self._working_dir, host=self._host, name=name)
             # find a console port
             if self._current_console_port > self._console_end_port_range:
                 self._current_console_port = self._console_start_port_range
@@ -295,7 +294,7 @@ class vpcs(IModule):
             except Exception as e:
                 raise vpcsError(e)
             self._current_console_port += 1
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
 

@@ -29,7 +29,7 @@ import threading
 import configparser
 import sys
 import socket
-from .vpcs_error import vpcsError
+from .vpcs_error import VPCSError
 from .adapters.ethernet_adapter import EthernetAdapter
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
@@ -38,7 +38,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class vpcsDevice(object):
+class VPCSDevice(object):
     """
     vpcs device implementation.
 
