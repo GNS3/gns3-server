@@ -63,7 +63,7 @@ class VPCSDevice(object):
                 break
 
         if self._id == 0:
-            raise vpcsError("Maximum number of vpcs instances reached")
+            raise VPCSError("Maximum number of vpcs instances reached")
 
         if name:
             self._name = name
@@ -192,7 +192,7 @@ class VPCSDevice(object):
         except FileExistsError:
             pass
         except OSError as e:
-            raise vpcsError("Could not create working directory {}: {}".format(working_dir, e))
+            raise VPCSError("Could not create working directory {}: {}".format(working_dir, e))
 
         self._working_dir = working_dir
         log.info("vpcs {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
@@ -259,10 +259,10 @@ class VPCSDevice(object):
         if not self.is_running():
 
             if not os.path.isfile(self._path):
-                raise vpcsError("vpcs image '{}' is not accessible".format(self._path))
+                raise VPCSError("vpcs image '{}' is not accessible".format(self._path))
 
             if not os.access(self._path, os.X_OK):
-                raise vpcsError("vpcs image '{}' is not executable".format(self._path))
+                raise VPCSError("vpcs image '{}' is not executable".format(self._path))
 
             self._command = self._build_command()
             try:
@@ -279,7 +279,7 @@ class VPCSDevice(object):
             except OSError as e:
                 vpcs_stdout = self.read_vpcs_stdout()
                 log.error("could not start vpcs {}: {}\n{}".format(self._path, e, vpcs_stdout))
-                raise vpcsError("could not start vpcs {}: {}\n{}".format(self._path, e, vpcs_stdout))
+                raise VPCSError("could not start vpcs {}: {}\n{}".format(self._path, e, vpcs_stdout))
 
     def stop(self):
         """
@@ -292,14 +292,13 @@ class VPCSDevice(object):
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((self._host, self._console))
-                sock.send(bytes("quit\n", 'UTF-8')) 
-                sock.close() 
+                sock.send(bytes("quit\n", 'UTF-8'))
+                sock.close()
             except TypeError as e:
                 log.warn("vpcs instance {} PID={} is still running.  Error: {}".format(self._id,
                                                                           self._process.pid, e))
         self._process = None
         self._started = False
-
 
     def read_vpcs_stdout(self):
         """
@@ -327,14 +326,13 @@ class VPCSDevice(object):
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((self._host, self._console))
-                sock.close() 
+                sock.close()
                 return True
             except:
                 e = sys.exc_info()[0]
                 log.warn("Could not connect to {}:{}.  Error: {}".format(self._host, self._console, e))
                 return False
         return False
-
 
     def slot_add_nio_binding(self, slot_id, port_id, nio):
         """
@@ -348,11 +346,11 @@ class VPCSDevice(object):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise vpcsError("Slot {slot_id} doesn't exist on vpcs {name}".format(name=self._name,
+            raise VPCSError("Slot {slot_id} doesn't exist on vpcs {name}".format(name=self._name,
                                                                                slot_id=slot_id))
 
         if not adapter.port_exists(port_id):
-            raise vpcsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
                                                                                       port_id=port_id))
 
         adapter.add_nio(port_id, nio)
@@ -373,11 +371,11 @@ class VPCSDevice(object):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise vpcsError("Slot {slot_id} doesn't exist on vpcs {name}".format(name=self._name,
+            raise VPCSError("Slot {slot_id} doesn't exist on vpcs {name}".format(name=self._name,
                                                                                slot_id=slot_id))
 
         if not adapter.port_exists(port_id):
-            raise vpcsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
                                                                                       port_id=port_id))
 
         nio = adapter.get_nio(port_id)
@@ -422,7 +420,7 @@ class VPCSDevice(object):
 
         command = [self._path]
         command.extend(["-p", str(self._console)])
-        
+
         for adapter in self._slots:
             for unit in adapter.ports.keys():
                 nio = adapter.get_nio(unit)
@@ -432,13 +430,13 @@ class VPCSDevice(object):
                         command.extend(["-s", str(nio.lport)])
                         command.extend(["-c", str(nio.rport)])
                         command.extend(["-t", str(nio.rhost)])
-                    
+
                     elif isinstance(nio, NIO_TAP):
                         # TAP interface
-                        command.extend(["-e"]) #, str(nio.tap_device)])  #TODO: Fix, currently vpcs doesn't allow specific tap_device
-                                                
-        command.extend(["-m", str(self._id)]) #The unique ID is used to set the mac address offset
-        command.extend(["-i", str(1)]) #Option to start only one pc instance
+                        command.extend(["-e"])   #, str(nio.tap_device)]) #TODO: Fix, currently vpcs doesn't allow specific tap_device
+
+        command.extend(["-m", str(self._id)])   # The unique ID is used to set the mac address offset
+        command.extend(["-i", str(1)])  # Option to start only one pc instance
         if self._script_file:
             command.extend([self._script_file])
         return command
@@ -465,5 +463,3 @@ class VPCSDevice(object):
         log.info("vpcs {name} [id={id}]: script_file set to {config}".format(name=self._name,
                                                                                  id=self._id,
                                                                                  config=self._script_file))
-
-

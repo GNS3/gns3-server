@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-vpcs server module.
+VPCS server module.
 """
 
 import os
@@ -52,7 +52,7 @@ log = logging.getLogger(__name__)
 
 class VPCS(IModule):
     """
-    vpcs module.
+    VPCS module.
 
     :param name: module name
     :param args: arguments for the module
@@ -283,7 +283,7 @@ class VPCS(IModule):
             except FileExistsError:
                 pass
             except OSError as e:
-                raise vpcsError("Could not create working directory {}".format(e))
+                raise VPCSError("Could not create working directory {}".format(e))
 
             vpcs_instance = VPCSDevice(vpcs_path, self._working_dir, host=self._host, name=name)
             # find a console port
@@ -292,7 +292,7 @@ class VPCS(IModule):
             try:
                 vpcs_instance.console = find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
             except Exception as e:
-                raise vpcsError(e)
+                raise VPCSError(e)
             self._current_console_port += 1
         except VPCSError as e:
             self.send_custom_error(str(e))
@@ -332,7 +332,7 @@ class VPCS(IModule):
         try:
             vpcs_instance.delete()
             del self._vpcs_instances[request["id"]]
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
 
@@ -378,11 +378,11 @@ class VPCS(IModule):
                         log.info("saving script-file to {}".format(config_path))
                         f.write(config)
                 except OSError as e:
-                    raise vpcsError("Could not save the configuration {}: {}".format(config_path, e))
+                    raise VPCSError("Could not save the configuration {}: {}".format(config_path, e))
                 # update the request with the new local script-file path
                 request["script_file"] = os.path.basename(config_path)
 
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
 
@@ -392,7 +392,7 @@ class VPCS(IModule):
                 try:
                     setattr(vpcs_instance, name, value)
                     response[name] = value
-                except vpcsError as e:
+                except VPCSError as e:
                     self.send_custom_error(str(e))
                     return
 
@@ -425,7 +425,7 @@ class VPCS(IModule):
             log.debug("starting vpcs with command: {}".format(vpcs_instance.command()))
             vpcs_instance.vpcs = self._vpcs
             vpcs_instance.start()
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
         self.send_response(True)
@@ -455,7 +455,7 @@ class VPCS(IModule):
 
         try:
             vpcs_instance.stop()
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
         self.send_response(True)
@@ -487,7 +487,7 @@ class VPCS(IModule):
             if vpcs_instance.is_running():
                 vpcs_instance.stop()
             vpcs_instance.start()
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
         self.send_response(True)
@@ -525,7 +525,7 @@ class VPCS(IModule):
             try:
                 port = find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
             except Exception as e:
-                raise vpcsError(e)
+                raise VPCSError(e)
             self._current_udp_port += 1
 
             log.info("{} [id={}] has allocated UDP port {} with host {}".format(vpcs_instance.name,
@@ -534,7 +534,7 @@ class VPCS(IModule):
                                                                                 self._host))
             response = {"lport": port}
 
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
 
@@ -563,7 +563,7 @@ class VPCS(IModule):
                 log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(self._vpcs, e))
                 return
 
-        raise vpcsError("{} has no privileged access to {}.".format(self._vpcs, device))
+        raise VPCSError("{} has no privileged access to {}.".format(self._vpcs, device))
 
     @IModule.route("vpcs.add_nio")
     def add_nio(self, request):
@@ -612,14 +612,14 @@ class VPCS(IModule):
                 self._check_for_privileged_access(tap_device)
                 nio = NIO_TAP(tap_device)
             if not nio:
-                raise vpcsError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))
-        except vpcsError as e:
+                raise VPCSError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
 
         try:
             vpcs_instance.slot_add_nio_binding(slot, port, nio)
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
 
@@ -654,7 +654,7 @@ class VPCS(IModule):
         port = request["port"]
         try:
             vpcs_instance.slot_remove_nio_binding(slot, port)
-        except vpcsError as e:
+        except VPCSError as e:
             self.send_custom_error(str(e))
             return
 
