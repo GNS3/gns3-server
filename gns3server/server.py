@@ -215,6 +215,17 @@ class Server(object):
             log.info("ZeroMQ server listening to 127.0.0.1:{}".format(self._zmq_port))
         return self._router
 
+    def stop_module(self, module):
+        """
+        Stop a given module.
+
+        :param module: module name
+        """
+
+        if not self._router.closed:
+            self._router.send_string(module, zmq.SNDMORE)
+            self._router.send_string("stop")
+
     def _shutdown(self):
         """
         Shutdowns the I/O loop and the ZeroMQ stream & socket.
@@ -243,13 +254,18 @@ class Server(object):
         # terminate all modules
         for module in self._modules:
             if module.is_alive():
-                log.info("terminating {}".format(module.name))
-                module.terminate()
-                module.join(timeout=1)
+                log.info("stopping {}".format(module.name))
+                self.stop_module(module.name)
+                module.join(timeout=3)
+                if module.is_alive():
+                    # just kill the module if it is still alive.
+                    log.info("terminating {}".format(module.name))
+                    module.terminate()
+                    module.join(timeout=1)
 
         if stop:
             ioloop = tornado.ioloop.IOLoop.instance()
             if signum:
                 ioloop.add_callback_from_signal(self._shutdown)
             else:
-                self._shutdown()
+                ioloop.add_callback(self._shutdown)

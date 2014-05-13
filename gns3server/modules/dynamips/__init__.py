@@ -132,9 +132,8 @@ class Dynamips(IModule):
 
         if not sys.platform.startswith("win32"):
             self._callback.stop()
-        if self._hypervisor_manager:
-            self._hypervisor_manager.stop_all_hypervisors()
 
+        self.reset()
         IModule.stop(self, signum)  # this will stop the I/O loop
 
     def _check_hypervisors(self):
@@ -175,11 +174,11 @@ class Dynamips(IModule):
         return instance_dict[device_id]
 
     @IModule.route("dynamips.reset")
-    def reset(self, request):
+    def reset(self, request=None):
         """
-        Resets the module.
+        Resets the module (JSON-RPC notification).
 
-        :param request: JSON request
+        :param request: JSON request (not used)
         """
 
         # stop all Dynamips hypervisors

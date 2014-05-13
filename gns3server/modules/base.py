@@ -159,7 +159,7 @@ class IModule(multiprocessing.Process):
             if signum:
                 self._ioloop.add_callback_from_signal(self._shutdown)
             else:
-                self._shutdown()
+                self._ioloop.add_callback(self._shutdown)
 
     def send_response(self, results):
         """
@@ -238,6 +238,13 @@ class IModule(multiprocessing.Process):
         # server is shutting down, do not process
         # more request
         if self._stopping:
+            return
+
+        # handle special request to stop the module
+        # e.g. useful on Windows where the
+        # SIGBREAK signal cound't be propagated
+        if request[0] == b"stop":
+            self.stop()
             return
 
         try:

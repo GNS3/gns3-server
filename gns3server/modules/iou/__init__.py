@@ -112,11 +112,7 @@ class IOU(IModule):
         """
 
         self._iou_callback.stop()
-        # delete all IOU instances
-        for iou_id in self._iou_instances:
-            iou_instance = self._iou_instances[iou_id]
-            iou_instance.delete()
-
+        self.reset()
         IModule.stop(self, signum)  # this will stop the I/O loop
 
     def _check_iou_is_alive(self):
@@ -161,11 +157,11 @@ class IOU(IModule):
         return self._iou_instances[iou_id]
 
     @IModule.route("iou.reset")
-    def reset(self, request):
+    def reset(self, request=None):
         """
-        Resets the module.
+        Resets the module (JSON-RPC notification).
 
-        :param request: JSON request
+        :param request: JSON request (not used)
         """
 
         # delete all IOU instances
