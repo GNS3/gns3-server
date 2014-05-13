@@ -133,7 +133,12 @@ class Dynamips(IModule):
         if not sys.platform.startswith("win32"):
             self._callback.stop()
 
-        self.reset()
+        # stop all Dynamips hypervisors
+        if self._hypervisor_manager:
+            self._hypervisor_manager.stop_all_hypervisors()
+
+        self.delete_dynamips_files()
+
         IModule.stop(self, signum)  # this will stop the I/O loop
 
     def _check_hypervisors(self):
@@ -173,6 +178,24 @@ class Dynamips(IModule):
             return None
         return instance_dict[device_id]
 
+    def delete_dynamips_files(self):
+        """
+        Deletes useless Dynamips files from the working directory
+        """
+
+        files = glob.glob(os.path.join(self._working_dir, "dynamips", "*.ghost"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "*_lock"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "ilt_*"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_rommon_vars"))
+        files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_ssa"))
+        for file in files:
+            try:
+                log.debug("deleting file {}".format(file))
+                os.remove(file)
+            except OSError as e:
+                log.warn("could not delete file {}: {}".format(file, e))
+                continue
+
     @IModule.route("dynamips.reset")
     def reset(self, request=None):
         """
@@ -207,19 +230,7 @@ class Dynamips(IModule):
         self._frame_relay_switches.clear()
         self._atm_switches.clear()
 
-        # delete useless Dynamips files from the working directory
-        files = glob.glob(os.path.join(self._working_dir, "dynamips", "*.ghost"))
-        files += glob.glob(os.path.join(self._working_dir, "dynamips", "*_lock"))
-        files += glob.glob(os.path.join(self._working_dir, "dynamips", "ilt_*"))
-        files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_rommon_vars"))
-        files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_ssa"))
-        for file in files:
-            try:
-                log.debug("deleting file {}".format(file))
-                os.remove(file)
-            except OSError as e:
-                log.warn("could not delete file {}: {}".format(file, e))
-                continue
+        self.delete_dynamips_files()
 
         self._hypervisor_manager = None
         log.info("dynamips module has been reset")
@@ -292,6 +303,7 @@ class Dynamips(IModule):
         else:
             if "project_name" in request:
                 new_working_dir = os.path.join(self._projects_dir, request["project_name"])
+
                 if self._projects_dir != self._working_dir != new_working_dir:
 
                     # trick to avoid file locks by Dynamips on Windows
@@ -300,6 +312,7 @@ class Dynamips(IModule):
 
                     if not os.path.isdir(new_working_dir):
                         try:
+                            self.delete_dynamips_files()
                             shutil.move(self._working_dir, new_working_dir)
                         except OSError as e:
                             log.error("could not move working directory from {} to {}: {}".format(self._working_dir,
@@ -307,8 +320,11 @@ class Dynamips(IModule):
                                                                                                   e))
                             return
 
-                self._hypervisor_manager.working_dir = new_working_dir
-                self._working_dir = new_working_dir
+            elif "working_dir" in request:
+                new_working_dir = request.pop("working_dir")
+
+            self._hypervisor_manager.working_dir = new_working_dir
+            self._working_dir = new_working_dir
 
             # apply settings to the hypervisor manager
             for name, value in request.items():

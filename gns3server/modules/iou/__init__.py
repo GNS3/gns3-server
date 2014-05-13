@@ -112,7 +112,14 @@ class IOU(IModule):
         """
 
         self._iou_callback.stop()
-        self.reset()
+
+        # delete all IOU instances
+        for iou_id in self._iou_instances:
+            iou_instance = self._iou_instances[iou_id]
+            iou_instance.delete()
+
+        self.delete_iourc_file()
+
         IModule.stop(self, signum)  # this will stop the I/O loop
 
     def _check_iou_is_alive(self):
@@ -156,6 +163,18 @@ class IOU(IModule):
             return None
         return self._iou_instances[iou_id]
 
+    def delete_iourc_file(self):
+        """
+        Deletes the IOURC file.
+        """
+
+        if self._iourc and os.path.isfile(self._iourc):
+            try:
+                log.info("deleting iourc file {}".format(self._iourc))
+                os.remove(self._iourc)
+            except OSError as e:
+                log.warn("could not delete iourc file {}: {}".format(self._iourc, e))
+
     @IModule.route("iou.reset")
     def reset(self, request=None):
         """
@@ -174,13 +193,7 @@ class IOU(IModule):
 
         self._iou_instances.clear()
         self._allocated_udp_ports.clear()
-
-        if self._iourc and os.path.isfile(self._iourc):
-            try:
-                log.info("deleting iourc file {}".format(self._iourc))
-                os.remove(self._iourc)
-            except OSError as e:
-                log.warn("could not delete iourc file {}: {}".format(self._iourc, e))
+        self.delete_iourc_file()
 
         log.info("IOU module has been reset")
 

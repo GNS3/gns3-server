@@ -28,7 +28,6 @@ import os
 import tempfile
 import signal
 import errno
-import functools
 import socket
 import tornado.ioloop
 import tornado.web
@@ -166,7 +165,7 @@ class Server(object):
         ioloop = tornado.ioloop.IOLoop.instance()
         self._stream = zmqstream.ZMQStream(router, ioloop)
         self._stream.on_recv_stream(JSONRPCWebSocket.dispatch_message)
-        tornado.autoreload.add_reload_hook(functools.partial(self._cleanup, stop=False))
+        tornado.autoreload.add_reload_hook(self._reload_callback)
 
         def signal_handler(signum=None, frame=None):
             log.warning("Server got signal {}, exiting...".format(signum))
@@ -226,6 +225,16 @@ class Server(object):
             self._router.send_string(module, zmq.SNDMORE)
             self._router.send_string("stop")
 
+    def _reload_callback(self):
+        """
+        Callback for the Tornado reload hook.
+        """
+
+        for module in self._modules:
+            if module.is_alive():
+                module.terminate()
+                module.join(timeout=1)
+
     def _shutdown(self):
         """
         Shutdowns the I/O loop and the ZeroMQ stream & socket.
@@ -242,13 +251,12 @@ class Server(object):
         ioloop = tornado.ioloop.IOLoop.instance()
         ioloop.stop()
 
-    def _cleanup(self, signum=None, stop=True):
+    def _cleanup(self, signum=None):
         """
         Shutdowns any running module processes
         and adds a callback to stop the event loop & ZeroMQ
 
-        :param signum: signal number (if called by the signal handler)
-        :param stop: stops the ioloop if True (default)
+        :param signum: signal number (if called by a signal handler)
         """
 
         # terminate all modules
@@ -263,9 +271,8 @@ class Server(object):
                     module.terminate()
                     module.join(timeout=1)
 
-        if stop:
-            ioloop = tornado.ioloop.IOLoop.instance()
-            if signum:
-                ioloop.add_callback_from_signal(self._shutdown)
-            else:
-                ioloop.add_callback(self._shutdown)
+        ioloop = tornado.ioloop.IOLoop.instance()
+        if signum:
+            ioloop.add_callback_from_signal(self._shutdown)
+        else:
+            ioloop.add_callback(self._shutdown)

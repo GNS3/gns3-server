@@ -110,7 +110,7 @@ class VPCS(IModule):
         :param signum: signal number (if called by the signal handler)
         """
 
-        self._vpcs_callback.stop()
+        # self._vpcs_callback.stop()
         # delete all VPCS instances
         for vpcs_id in self._vpcs_instances:
             vpcs_instance = self._vpcs_instances[vpcs_id]

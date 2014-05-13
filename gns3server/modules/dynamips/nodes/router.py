@@ -52,19 +52,24 @@ class Router(object):
 
     def __init__(self, hypervisor, name=None, platform="c7200", ghost_flag=False):
 
-        # create an unique ID
-        self._id = Router._instance_count
-        Router._instance_count += 1
+        if not ghost_flag:
+            # create an unique ID
+            self._id = Router._instance_count
+            Router._instance_count += 1
 
-        # let's create a unique name if none has been chosen
-        if not name:
-            name_id = self._id
-            while True:
-                name = "R" + str(name_id)
-                # check if the name has already been allocated to another router
-                if name not in self._allocated_names:
-                    break
-                name_id += 1
+            # let's create a unique name if none has been chosen
+            if not name:
+                name_id = self._id
+                while True:
+                    name = "R" + str(name_id)
+                    # check if the name has already been allocated to another router
+                    if name not in self._allocated_names:
+                        break
+                    name_id += 1
+        else:
+            log.info("creating a new ghost IOS file")
+            self._id = 0
+            name = "Ghost"
 
         self._allocated_names.append(name)
         self._hypervisor = hypervisor
@@ -133,9 +138,6 @@ class Router(object):
             # get the default base MAC address
             self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
                                                                                      name=self._name))[0]
-        else:
-            log.info("creating a new ghost IOS file")
-            Router._instance_count -= 1
 
         self._hypervisor.devices.append(self)
 

@@ -276,8 +276,9 @@ class Hypervisor(DynamipsHypervisor):
 
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
+        command.extend(["-l", "dynamips_log_{}.txt".format(self._port)])  # log file
         if self._host != "0.0.0.0" and self._host != "::":
-            command.extend(["-H", self._host + ":" + str(self._port)])
+            command.extend(["-H", "{}:{}".format(self._host, self._port)])
         else:
             command.extend(["-H", str(self._port)])
         return command
