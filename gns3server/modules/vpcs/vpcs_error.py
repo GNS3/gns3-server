@@ -20,7 +20,7 @@ Custom exceptions for VPCS module.
 """
 
 
-class VPCSError(Exception):
+class vpcsError(Exception):
 
     def __init__(self, message, original_exception=None):
 

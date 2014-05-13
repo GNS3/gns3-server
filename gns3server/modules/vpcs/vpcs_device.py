@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-VPCS device management (creates command line, processes, files etc.) in
-order to run an VPCS instance.
+vpcs device management (creates command line, processes, files etc.) in
+order to run an vpcs instance.
 """
 
 import os
@@ -29,7 +29,7 @@ import threading
 import configparser
 import sys
 import socket
-from .vpcs_error import VPCSError
+from .vpcs_error import vpcsError
 from .adapters.ethernet_adapter import EthernetAdapter
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
@@ -38,14 +38,14 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class VPCSDevice(object):
+class vpcsDevice(object):
     """
-    VPCS device implementation.
+    vpcs device implementation.
 
-    :param path: path to VPCS executable
+    :param path: path to vpcs executable
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
-    :param name: name of this VPCS device
+    :param name: name of this vpcs device
     """
 
     _instances = []
@@ -54,7 +54,7 @@ class VPCSDevice(object):
 
         # find an instance identifier (1 <= id <= 255)
         # This 255 limit is due to a restriction on the number of possible
-        # mac addresses given in VPCS using the -m option
+        # mac addresses given in vpcs using the -m option
         self._id = 0
         for identifier in range(1, 256):
             if identifier not in self._instances:
@@ -63,12 +63,12 @@ class VPCSDevice(object):
                 break
 
         if self._id == 0:
-            raise VPCSError("Maximum number of VPCS instances reached")
+            raise vpcsError("Maximum number of vpcs instances reached")
 
         if name:
             self._name = name
         else:
-            self._name = "VPCS{}".format(self._id)
+            self._name = "vpcs{}".format(self._id)
         self._path = path
         self._console = None
         self._working_dir = None
@@ -78,7 +78,7 @@ class VPCSDevice(object):
         self._host = "127.0.0.1"
         self._started = False
 
-        # VPCS settings
+        # vpcs settings
         self._script_file = ""
         self._ethernet_adapters = [EthernetAdapter()]  # one adapter = 1 interfaces
         self._slots = self._ethernet_adapters
@@ -86,12 +86,12 @@ class VPCSDevice(object):
         # update the working directory
         self.working_dir = working_dir
 
-        log.info("VPCS device {name} [id={id}] has been created".format(name=self._name,
+        log.info("vpcs device {name} [id={id}] has been created".format(name=self._name,
                                                                        id=self._id))
 
     def defaults(self):
         """
-        Returns all the default attribute values for VPCS.
+        Returns all the default attribute values for vpcs.
 
         :returns: default values (dictionary)
         """
@@ -106,7 +106,7 @@ class VPCSDevice(object):
     @property
     def id(self):
         """
-        Returns the unique ID for this VPCS device.
+        Returns the unique ID for this vpcs device.
 
         :returns: id (integer)
         """
@@ -124,7 +124,7 @@ class VPCSDevice(object):
     @property
     def name(self):
         """
-        Returns the name of this VPCS device.
+        Returns the name of this vpcs device.
 
         :returns: name
         """
@@ -134,22 +134,22 @@ class VPCSDevice(object):
     @name.setter
     def name(self, new_name):
         """
-        Sets the name of this VPCS device.
+        Sets the name of this vpcs device.
 
         :param new_name: name
         """
 
         self._name = new_name
-        log.info("VPCS {name} [id={id}]: renamed to {new_name}".format(name=self._name,
+        log.info("vpcs {name} [id={id}]: renamed to {new_name}".format(name=self._name,
                                                                       id=self._id,
                                                                       new_name=new_name))
 
     @property
     def path(self):
         """
-        Returns the path to the VPCS executable.
+        Returns the path to the vpcs executable.
 
-        :returns: path to VPCS
+        :returns: path to vpcs
         """
 
         return(self._path)
@@ -157,13 +157,13 @@ class VPCSDevice(object):
     @path.setter
     def path(self, path):
         """
-        Sets the path to the VPCS executable.
+        Sets the path to the vpcs executable.
 
-        :param path: path to VPCS
+        :param path: path to vpcs
         """
 
         self._path = path
-        log.info("VPCS {name} [id={id}]: path changed to {path}".format(name=self._name,
+        log.info("vpcs {name} [id={id}]: path changed to {path}".format(name=self._name,
                                                                       id=self._id,
                                                                       path=path))
 
@@ -180,7 +180,7 @@ class VPCSDevice(object):
     @working_dir.setter
     def working_dir(self, working_dir):
         """
-        Sets the working directory for VPCS.
+        Sets the working directory for vpcs.
 
         :param working_dir: path to the working directory
         """
@@ -192,10 +192,10 @@ class VPCSDevice(object):
         except FileExistsError:
             pass
         except OSError as e:
-            raise VPCSError("Could not create working directory {}: {}".format(working_dir, e))
+            raise vpcsError("Could not create working directory {}: {}".format(working_dir, e))
 
         self._working_dir = working_dir
-        log.info("VPCS {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
+        log.info("vpcs {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
                                                                                     id=self._id,
                                                                                     wd=self._working_dir))
 
@@ -218,33 +218,33 @@ class VPCSDevice(object):
         """
 
         self._console = console
-        log.info("VPCS {name} [id={id}]: console port set to {port}".format(name=self._name,
+        log.info("vpcs {name} [id={id}]: console port set to {port}".format(name=self._name,
                                                                          id=self._id,
                                                                          port=console))
 
     def command(self):
         """
-        Returns the VPCS command line.
+        Returns the vpcs command line.
 
-        :returns: VPCS command line (string)
+        :returns: vpcs command line (string)
         """
 
         return " ".join(self._build_command())
 
     def delete(self):
         """
-        Deletes this VPCS device.
+        Deletes this vpcs device.
         """
 
         self.stop()
         self._instances.remove(self._id)
-        log.info("VPCS device {name} [id={id}] has been deleted".format(name=self._name,
+        log.info("vpcs device {name} [id={id}] has been deleted".format(name=self._name,
                                                                        id=self._id))
 
     @property
     def started(self):
         """
-        Returns either this VPCS device has been started or not.
+        Returns either this vpcs device has been started or not.
 
         :returns: boolean
         """
@@ -253,20 +253,20 @@ class VPCSDevice(object):
 
     def start(self):
         """
-        Starts the VPCS process.
+        Starts the vpcs process.
         """
 
         if not self.is_running():
 
             if not os.path.isfile(self._path):
-                raise VPCSError("VPCS image '{}' is not accessible".format(self._path))
+                raise vpcsError("vpcs image '{}' is not accessible".format(self._path))
 
             if not os.access(self._path, os.X_OK):
-                raise VPCSError("VPCS image '{}' is not executable".format(self._path))
+                raise vpcsError("vpcs image '{}' is not executable".format(self._path))
 
             self._command = self._build_command()
             try:
-                log.info("starting VPCS: {}".format(self._command))
+                log.info("starting vpcs: {}".format(self._command))
                 self._vpcs_stdout_file = os.path.join(self._working_dir, "vpcs.log")
                 log.info("logging to {}".format(self._vpcs_stdout_file))
                 with open(self._vpcs_stdout_file, "w") as fd:
@@ -274,30 +274,28 @@ class VPCSDevice(object):
                                                      stdout=fd,
                                                      stderr=subprocess.STDOUT,
                                                      cwd=self._working_dir)
-                log.info("VPCS instance {} started PID={}".format(self._id, self._process.pid))
+                log.info("vpcs instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
-            except FileNotFoundError as e:
-                raise VPCSError("could not start VPCS: {}: 32-bit binary support is probably not installed".format(e))
             except OSError as e:
                 vpcs_stdout = self.read_vpcs_stdout()
-                log.error("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
-                raise VPCSError("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
+                log.error("could not start vpcs {}: {}\n{}".format(self._path, e, vpcs_stdout))
+                raise vpcsError("could not start vpcs {}: {}\n{}".format(self._path, e, vpcs_stdout))
 
     def stop(self):
         """
-        Stops the VPCS process.
+        Stops the vpcs process.
         """
 
-        # stop the VPCS process
+        # stop the vpcs process
         if self.is_running():
-            log.info("stopping VPCS instance {} PID={}".format(self._id, self._process.pid))
+            log.info("stopping vpcs instance {} PID={}".format(self._id, self._process.pid))
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((self._host, self._console))
                 sock.send(bytes("quit\n", 'UTF-8')) 
                 sock.close() 
             except TypeError as e:
-                log.warn("VPCS instance {} PID={} is still running.  Error: {}".format(self._id,
+                log.warn("vpcs instance {} PID={} is still running.  Error: {}".format(self._id,
                                                                           self._process.pid, e))
         self._process = None
         self._started = False
@@ -305,7 +303,7 @@ class VPCSDevice(object):
 
     def read_vpcs_stdout(self):
         """
-        Reads the standard output of the VPCS process.
+        Reads the standard output of the vpcs process.
         Only use when the process has been stopped or has crashed.
         """
 
@@ -320,7 +318,7 @@ class VPCSDevice(object):
 
     def is_running(self):
         """
-        Checks if the VPCS process is running
+        Checks if the vpcs process is running
 
         :returns: True or False
         """
@@ -350,15 +348,15 @@ class VPCSDevice(object):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise VPCSError("Slot {slot_id} doesn't exist on VPCS {name}".format(name=self._name,
+            raise vpcsError("Slot {slot_id} doesn't exist on vpcs {name}".format(name=self._name,
                                                                                slot_id=slot_id))
 
         if not adapter.port_exists(port_id):
-            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+            raise vpcsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
                                                                                       port_id=port_id))
 
         adapter.add_nio(port_id, nio)
-        log.info("VPCS {name} [id={id}]: {nio} added to {slot_id}/{port_id}".format(name=self._name,
+        log.info("vpcs {name} [id={id}]: {nio} added to {slot_id}/{port_id}".format(name=self._name,
                                                                                    id=self._id,
                                                                                    nio=nio,
                                                                                    slot_id=slot_id,
@@ -375,16 +373,16 @@ class VPCSDevice(object):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise VPCSError("Slot {slot_id} doesn't exist on VPCS {name}".format(name=self._name,
+            raise vpcsError("Slot {slot_id} doesn't exist on vpcs {name}".format(name=self._name,
                                                                                slot_id=slot_id))
 
         if not adapter.port_exists(port_id):
-            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+            raise vpcsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
                                                                                       port_id=port_id))
 
         nio = adapter.get_nio(port_id)
         adapter.remove_nio(port_id)
-        log.info("VPCS {name} [id={id}]: {nio} removed from {slot_id}/{port_id}".format(name=self._name,
+        log.info("vpcs {name} [id={id}]: {nio} removed from {slot_id}/{port_id}".format(name=self._name,
                                                                                        id=self._id,
                                                                                        nio=nio,
                                                                                        slot_id=slot_id,
@@ -392,10 +390,10 @@ class VPCSDevice(object):
 
     def _build_command(self):
         """
-        Command to start the VPCS process.
+        Command to start the vpcs process.
         (to be passed to subprocess.Popen())
 
-        VPCS command line:
+        vpcs command line:
         usage: vpcs [options] [scriptfile]
         Option:
             -h         print this help then exit
@@ -448,7 +446,7 @@ class VPCSDevice(object):
     @property
     def script_file(self):
         """
-        Returns the script-file for this VPCS instance.
+        Returns the script-file for this vpcs instance.
 
         :returns: path to script-file file
         """
@@ -458,13 +456,13 @@ class VPCSDevice(object):
     @script_file.setter
     def script_file(self, script_file):
         """
-        Sets the script-file for this VPCS instance.
+        Sets the script-file for this vpcs instance.
 
         :param script_file: path to script-file file
         """
 
         self._script_file = script_file
-        log.info("VPCS {name} [id={id}]: script_file set to {config}".format(name=self._name,
+        log.info("vpcs {name} [id={id}]: script_file set to {config}".format(name=self._name,
                                                                                  id=self._id,
                                                                                  config=self._script_file))
 

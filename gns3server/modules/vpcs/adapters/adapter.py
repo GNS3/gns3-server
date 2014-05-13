@@ -23,7 +23,7 @@ class Adapter(object):
     :param interfaces: number of interfaces supported by this adapter.
     """
 
-    def __init__(self, interfaces=4):
+    def __init__(self, interfaces=1):
 
         self._interfaces = interfaces
 

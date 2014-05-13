@@ -16,14 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-VPCS server module.
+vpcs server module.
 """
 
 import os
 import sys
 import base64
 import tempfile
-import fcntl
 import struct
 import socket
 import shutil
@@ -31,8 +30,8 @@ import shutil
 from gns3server.modules import IModule
 from gns3server.config import Config
 import gns3server.jsonrpc as jsonrpc
-from .vpcs_device import VPCSDevice
-from .vpcs_error import VPCSError
+from .vpcs_device import vpcsDevice
+from .vpcs_error import vpcsError
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 from ..attic import find_unused_port
@@ -51,9 +50,9 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class VPCS(IModule):
+class vpcs(IModule):
     """
-    VPCS module.
+    vpcs module.
 
     :param name: module name
     :param args: arguments for the module
@@ -62,32 +61,32 @@ class VPCS(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        # get the VPCS location
+        # get the vpcs location
         config = Config.instance()
-        VPCS_config = config.get_section_config(name.upper())
-        self._VPCS = VPCS_config.get("vpcs")
-        if not self._VPCS or not os.path.isfile(self._VPCS):
-            VPCS_in_cwd = os.path.join(os.getcwd(), "vpcs")
-            if os.path.isfile(VPCS_in_cwd):
-                self._VPCS = VPCS_in_cwd
+        vpcs_config = config.get_section_config(name.upper())
+        self._vpcs = vpcs_config.get("vpcs")
+        if not self._vpcs or not os.path.isfile(self._vpcs):
+            vpcs_in_cwd = os.path.join(os.getcwd(), "vpcs")
+            if os.path.isfile(vpcs_in_cwd):
+                self._vpcs = vpcs_in_cwd
             else:
-                # look for VPCS if none is defined or accessible
+                # look for vpcs if none is defined or accessible
                 for path in os.environ["PATH"].split(":"):
                     try:
                         if "vpcs" in os.listdir(path) and os.access(os.path.join(path, "vpcs"), os.X_OK):
-                            self._VPCS = os.path.join(path, "vpcs")
+                            self._vpcs = os.path.join(path, "vpcs")
                             break
                     except OSError:
                         continue
 
-        if not self._VPCS:
-            log.warning("VPCS binary couldn't be found!")
-        elif not os.access(self._VPCS, os.X_OK):
-            log.warning("VPCS is not executable")
+        if not self._vpcs:
+            log.warning("vpcs binary couldn't be found!")
+        elif not os.access(self._vpcs, os.X_OK):
+            log.warning("vpcs is not executable")
 
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
-        self._VPCS_instances = {}
+        self._vpcs_instances = {}
         self._console_start_port_range = 4001
         self._console_end_port_range = 4512
         self._allocated_console_ports = []
@@ -99,11 +98,11 @@ class VPCS(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
-        self._VPCSrc = ""
+        self._vpcsrc = ""
 
         # check every 5 seconds
-        #self._VPCS_callback = self.add_periodic_callback(self._check_VPCS_is_alive, 5000)
-        #self._VPCS_callback.start()
+        #self._vpcs_callback = self.add_periodic_callback(self._check_vpcs_is_alive, 5000)
+        #self._vpcs_callback.start()
 
     def stop(self, signum=None):
         """
@@ -112,54 +111,49 @@ class VPCS(IModule):
         :param signum: signal number (if called by the signal handler)
         """
 
-        self._VPCS_callback.stop()
-        # delete all VPCS instances
-        for VPCS_id in self._VPCS_instances:
-            VPCS_instance = self._VPCS_instances[VPCS_id]
-            VPCS_instance.delete()
+        self._vpcs_callback.stop()
+        # delete all vpcs instances
+        for vpcs_id in self._vpcs_instances:
+            vpcs_instance = self._vpcs_instances[vpcs_id]
+            vpcs_instance.delete()
 
         IModule.stop(self, signum)  # this will stop the I/O loop
 
-    def _check_VPCS_is_alive(self):
+    def _check_vpcs_is_alive(self):
         """
-        Periodic callback to check if VPCS and VPCS are alive
-        for each VPCS instance.
+        Periodic callback to check if vpcs and vpcs are alive
+        for each vpcs instance.
 
         Sends a notification to the client if not.
         """
 
-        for VPCS_id in self._VPCS_instances:
-            VPCS_instance = self._VPCS_instances[VPCS_id]
-            if VPCS_instance.started and (not VPCS_instance.is_running() or not VPCS_instance.is_VPCS_running()):
+        for vpcs_id in self._vpcs_instances:
+            vpcs_instance = self._vpcs_instances[vpcs_id]
+            if vpcs_instance.started and (not vpcs_instance.is_running() or not vpcs_instance.is_vpcs_running()):
                 notification = {"module": self.name,
-                                "id": VPCS_id,
-                                "name": VPCS_instance.name}
-                if not VPCS_instance.is_running():
-                    stdout = VPCS_instance.read_vpcs_stdout()
-                    notification["message"] = "VPCS has stopped running"
+                                "id": vpcs_id,
+                                "name": vpcs_instance.name}
+                if not vpcs_instance.is_running():
+                    stdout = vpcs_instance.read_vpcs_stdout()
+                    notification["message"] = "vpcs has stopped running"
                     notification["details"] = stdout
-                    self.send_notification("{}.VPCS_stopped".format(self.name), notification)
-                elif not VPCS_instance.is_VPCS_running():
-                    stdout = VPCS_instance.read_vpcs_stdout()
-                    notification["message"] = "VPCS has stopped running"
-                    notification["details"] = stdout
-                    self.send_notification("{}.VPCS_stopped".format(self.name), notification)
-                VPCS_instance.stop()
+                    self.send_notification("{}.vpcs_stopped".format(self.name), notification)
+                vpcs_instance.stop()
 
-    def get_VPCS_instance(self, VPCS_id):
+    def get_vpcs_instance(self, vpcs_id):
         """
-        Returns an VPCS device instance.
+        Returns an vpcs device instance.
 
-        :param VPCS_id: VPCS device identifier
+        :param vpcs_id: vpcs device identifier
 
-        :returns: VPCSDevice instance
+        :returns: vpcsDevice instance
         """
 
-        if VPCS_id not in self._VPCS_instances:
-            log.debug("VPCS device ID {} doesn't exist".format(VPCS_id), exc_info=1)
-            self.send_custom_error("VPCS device ID {} doesn't exist".format(VPCS_id))
+        if vpcs_id not in self._vpcs_instances:
+            log.debug("vpcs device ID {} doesn't exist".format(vpcs_id), exc_info=1)
+            self.send_custom_error("vpcs device ID {} doesn't exist".format(vpcs_id))
             return None
-        return self._VPCS_instances[VPCS_id]
+        return self._vpcs_instances[vpcs_id]
 
     @IModule.route("vpcs.reset")
     def reset(self, request):
@@ -169,20 +163,20 @@ class VPCS(IModule):
         :param request: JSON request
         """
 
-        # delete all VPCS instances
-        for VPCS_id in self._VPCS_instances:
-            VPCS_instance = self._VPCS_instances[VPCS_id]
-            VPCS_instance.delete()
+        # delete all vpcs instances
+        for vpcs_id in self._vpcs_instances:
+            vpcs_instance = self._vpcs_instances[vpcs_id]
+            vpcs_instance.delete()
 
         # resets the instance IDs
-        VPCSDevice.reset()
+        vpcsDevice.reset()
 
-        self._VPCS_instances.clear()
+        self._vpcs_instances.clear()
         self._remote_server = False
         self._current_console_port = self._console_start_port_range
         self._current_udp_port = self._udp_start_port_range
 
-        log.info("VPCS module has been reset")
+        log.info("vpcs module has been reset")
 
     @IModule.route("vpcs.settings")
     def settings(self, request):
@@ -204,9 +198,9 @@ class VPCS(IModule):
             self.send_param_error()
             return
 
-        if "VPCS" in request and request["VPCS"]:
-            self._VPCS = request["VPCS"]
-            log.info("VPCS path set to {}".format(self._VPCS))
+        if "vpcs" in request and request["vpcs"]:
+            self._vpcs = request["vpcs"]
+            log.info("vpcs path set to {}".format(self._vpcs))
 
         if "working_dir" in request:
             new_working_dir = request["working_dir"]
@@ -227,9 +221,9 @@ class VPCS(IModule):
         # update the working directory if it has changed
         if self._working_dir != new_working_dir:
             self._working_dir = new_working_dir
-            for VPCS_id in self._VPCS_instances:
-                VPCS_instance = self._VPCS_instances[VPCS_id]
-                VPCS_instance.working_dir = self._working_dir
+            for vpcs_id in self._vpcs_instances:
+                vpcs_instance = self._vpcs_instances[vpcs_id]
+                vpcs_instance.working_dir = self._working_dir
 
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]
@@ -257,19 +251,19 @@ class VPCS(IModule):
         self.send_response(response)
 
     @IModule.route("vpcs.create")
-    def VPCS_create(self, request):
+    def vpcs_create(self, request):
         """
-        Creates a new VPCS instance.
+        Creates a new vpcs instance.
 
         Mandatory request parameters:
-        - path (path to the VPCS executable)
+        - path (path to the vpcs executable)
 
         Optional request parameters:
-        - name (VPCS name)
+        - name (vpcs name)
 
         Response parameters:
-        - id (VPCS instance identifier)
-        - name (VPCS name)
+        - id (vpcs instance identifier)
+        - name (vpcs name)
         - default settings
 
         :param request: JSON request
@@ -282,7 +276,7 @@ class VPCS(IModule):
         name = None
         if "name" in request:
             name = request["name"]
-        VPCS_path = request["path"]
+        vpcs_path = request["path"]
 
         try:
             try:
@@ -290,36 +284,36 @@ class VPCS(IModule):
             except FileExistsError:
                 pass
             except OSError as e:
-                raise VPCSError("Could not create working directory {}".format(e))
+                raise vpcsError("Could not create working directory {}".format(e))
 
-            VPCS_instance = VPCSDevice(VPCS_path, self._working_dir, host=self._host, name=name)
+            vpcs_instance = vpcsDevice(vpcs_path, self._working_dir, host=self._host, name=name)
             # find a console port
             if self._current_console_port > self._console_end_port_range:
                 self._current_console_port = self._console_start_port_range
             try:
-                VPCS_instance.console = find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
+                vpcs_instance.console = find_unused_port(self._current_console_port, self._console_end_port_range, self._host)
             except Exception as e:
-                raise VPCSError(e)
+                raise vpcsError(e)
             self._current_console_port += 1
-        except VPCSError as e:
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
 
-        response = {"name": VPCS_instance.name,
-                    "id": VPCS_instance.id}
+        response = {"name": vpcs_instance.name,
+                    "id": vpcs_instance.id}
 
-        defaults = VPCS_instance.defaults()
+        defaults = vpcs_instance.defaults()
         response.update(defaults)
-        self._VPCS_instances[VPCS_instance.id] = VPCS_instance
+        self._vpcs_instances[vpcs_instance.id] = vpcs_instance
         self.send_response(response)
 
     @IModule.route("vpcs.delete")
-    def VPCS_delete(self, request):
+    def vpcs_delete(self, request):
         """
-        Deletes an VPCS instance.
+        Deletes an vpcs instance.
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (vpcs instance identifier)
 
         Response parameter:
         - True on success
@@ -332,26 +326,26 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         try:
-            VPCS_instance.delete()
-            del self._VPCS_instances[request["id"]]
-        except VPCSError as e:
+            vpcs_instance.delete()
+            del self._vpcs_instances[request["id"]]
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
 
         self.send_response(True)
 
     @IModule.route("vpcs.update")
-    def VPCS_update(self, request):
+    def vpcs_update(self, request):
         """
-        Updates an VPCS instance
+        Updates an vpcs instance
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (vpcs instance identifier)
 
         Optional request parameters:
         - any setting to update
@@ -368,8 +362,8 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         response = {}
@@ -378,28 +372,28 @@ class VPCS(IModule):
             if "script_file_base64" in request:
                 config = base64.decodestring(request["script_file_base64"].encode("utf-8")).decode("utf-8")
                 config = "!\n" + config.replace("\r", "")
-                config = config.replace('%h', VPCS_instance.name)
-                config_path = os.path.join(VPCS_instance.working_dir, "script-file")
+                config = config.replace('%h', vpcs_instance.name)
+                config_path = os.path.join(vpcs_instance.working_dir, "script-file")
                 try:
                     with open(config_path, "w") as f:
                         log.info("saving script-file to {}".format(config_path))
                         f.write(config)
                 except OSError as e:
-                    raise VPCSError("Could not save the configuration {}: {}".format(config_path, e))
+                    raise vpcsError("Could not save the configuration {}: {}".format(config_path, e))
                 # update the request with the new local script-file path
                 request["script_file"] = os.path.basename(config_path)
 
-        except VPCSError as e:
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
 
-        # update the VPCS settings
+        # update the vpcs settings
         for name, value in request.items():
-            if hasattr(VPCS_instance, name) and getattr(VPCS_instance, name) != value:
+            if hasattr(vpcs_instance, name) and getattr(vpcs_instance, name) != value:
                 try:
-                    setattr(VPCS_instance, name, value)
+                    setattr(vpcs_instance, name, value)
                     response[name] = value
-                except VPCSError as e:
+                except vpcsError as e:
                     self.send_custom_error(str(e))
                     return
 
@@ -408,10 +402,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.start")
     def vm_start(self, request):
         """
-        Starts an VPCS instance.
+        Starts an vpcs instance.
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (vpcs instance identifier)
 
         Response parameters:
         - True on success
@@ -424,16 +418,15 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         try:
-            log.debug("starting VPCS with command: {}".format(VPCS_instance.command()))
-            VPCS_instance.VPCS = self._VPCS
-            VPCS_instance.VPCSrc = self._VPCSrc
-            VPCS_instance.start()
-        except VPCSError as e:
+            log.debug("starting vpcs with command: {}".format(vpcs_instance.command()))
+            vpcs_instance.vpcs = self._vpcs
+            vpcs_instance.start()
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
         self.send_response(True)
@@ -441,10 +434,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.stop")
     def vm_stop(self, request):
         """
-        Stops an VPCS instance.
+        Stops an vpcs instance.
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (vpcs instance identifier)
 
         Response parameters:
         - True on success
@@ -457,13 +450,13 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         try:
-            VPCS_instance.stop()
-        except VPCSError as e:
+            vpcs_instance.stop()
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
         self.send_response(True)
@@ -471,10 +464,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.reload")
     def vm_reload(self, request):
         """
-        Reloads an VPCS instance.
+        Reloads an vpcs instance.
 
         Mandatory request parameters:
-        - id (VPCS identifier)
+        - id (vpcs identifier)
 
         Response parameters:
         - True on success
@@ -487,15 +480,15 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         try:
-            if VPCS_instance.is_running():
-                VPCS_instance.stop()
-            VPCS_instance.start()
-        except VPCSError as e:
+            if vpcs_instance.is_running():
+                vpcs_instance.stop()
+            vpcs_instance.start()
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
         self.send_response(True)
@@ -506,7 +499,7 @@ class VPCS(IModule):
         Allocates a UDP port in order to create an UDP NIO.
 
         Mandatory request parameters:
-        - id (VPCS identifier)
+        - id (vpcs identifier)
         - port_id (unique port identifier)
 
         Response parameters:
@@ -521,8 +514,8 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         try:
@@ -533,16 +526,16 @@ class VPCS(IModule):
             try:
                 port = find_unused_port(self._current_udp_port, self._udp_end_port_range, host=self._host, socket_type="UDP")
             except Exception as e:
-                raise VPCSError(e)
+                raise vpcsError(e)
             self._current_udp_port += 1
 
-            log.info("{} [id={}] has allocated UDP port {} with host {}".format(VPCS_instance.name,
-                                                                                VPCS_instance.id,
+            log.info("{} [id={}] has allocated UDP port {} with host {}".format(vpcs_instance.name,
+                                                                                vpcs_instance.id,
                                                                                 port,
                                                                                 self._host))
             response = {"lport": port}
 
-        except VPCSError as e:
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
 
@@ -551,35 +544,35 @@ class VPCS(IModule):
 
     def _check_for_privileged_access(self, device):
         """
-        Check if VPCS can access Ethernet and TAP devices.
+        Check if vpcs can access Ethernet and TAP devices.
 
         :param device: device name
         """
 
-        # we are root, so VPCS should have privileged access too
+        # we are root, so vpcs should have privileged access too
         if os.geteuid() == 0:
             return
 
-        # test if VPCS has the CAP_NET_RAW capability
-        if "security.capability" in os.listxattr(self._VPCS):
+        # test if vpcs has the CAP_NET_RAW capability
+        if "security.capability" in os.listxattr(self._vpcs):
             try:
-                caps = os.getxattr(self._VPCS, "security.capability")
+                caps = os.getxattr(self._vpcs, "security.capability")
                 # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
                 if struct.unpack("<IIIII", caps)[1] & 1 << 13:
                     return
             except Exception as e:
-                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(self._VPCS, e))
+                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(self._vpcs, e))
                 return
 
-        raise VPCSError("{} has no privileged access to {}.".format(self._VPCS, device))
+        raise vpcsError("{} has no privileged access to {}.".format(self._vpcs, device))
 
     @IModule.route("vpcs.add_nio")
     def add_nio(self, request):
         """
-        Adds an NIO (Network Input/Output) for an VPCS instance.
+        Adds an NIO (Network Input/Output) for an vpcs instance.
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (vpcs instance identifier)
         - slot (slot number)
         - port (port number)
         - port_id (unique port identifier)
@@ -602,8 +595,8 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         slot = request["slot"]
@@ -620,14 +613,14 @@ class VPCS(IModule):
                 self._check_for_privileged_access(tap_device)
                 nio = NIO_TAP(tap_device)
             if not nio:
-                raise VPCSError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))
-        except VPCSError as e:
+                raise vpcsError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
 
         try:
-            VPCS_instance.slot_add_nio_binding(slot, port, nio)
-        except VPCSError as e:
+            vpcs_instance.slot_add_nio_binding(slot, port, nio)
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
 
@@ -639,7 +632,7 @@ class VPCS(IModule):
         Deletes an NIO (Network Input/Output).
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (vpcs instance identifier)
         - slot (slot identifier)
         - port (port identifier)
 
@@ -654,15 +647,15 @@ class VPCS(IModule):
             return
 
         # get the instance
-        VPCS_instance = self.get_VPCS_instance(request["id"])
-        if not VPCS_instance:
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
             return
 
         slot = request["slot"]
         port = request["port"]
         try:
-            VPCS_instance.slot_remove_nio_binding(slot, port)
-        except VPCSError as e:
+            vpcs_instance.slot_remove_nio_binding(slot, port)
+        except vpcsError as e:
             self.send_custom_error(str(e))
             return
 
