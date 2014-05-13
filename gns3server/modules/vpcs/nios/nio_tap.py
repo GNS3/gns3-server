@@ -15,15 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-from .base import IModule
-from .dynamips import Dynamips
-from .vpcs import VPCS
+"""
+Interface for TAP NIOs (UNIX based OSes only).
+"""
 
-MODULES = [Dynamips]
-MODULES.append(VPCS)
 
-if sys.platform.startswith("linux"):
-    # IOU runs only on Linux
-    from .iou import IOU
-    MODULES.append(IOU)
+class NIO_TAP(object):
+    """
+    IOU TAP NIO.
+
+    :param tap_device: TAP device name (e.g. tap0)
+    """
+
+    def __init__(self, tap_device):
+
+        self._tap_device = tap_device
+
+    @property
+    def tap_device(self):
+        """
+        Returns the TAP device used by this NIO.
+
+        :returns: the TAP device name
+        """
+
+        return self._tap_device
+
+    def __str__(self):
+
+        return "NIO TAP"
