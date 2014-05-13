@@ -61,7 +61,7 @@ class VPCS(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        # get the vpcs location
+        # get the VPCS location
         config = Config.instance()
         vpcs_config = config.get_section_config(name.upper())
         self._vpcs = vpcs_config.get("vpcs")
@@ -80,9 +80,9 @@ class VPCS(IModule):
                         continue
 
         if not self._vpcs:
-            log.warning("vpcs binary couldn't be found!")
+            log.warning("VPCS binary couldn't be found!")
         elif not os.access(self._vpcs, os.X_OK):
-            log.warning("vpcs is not executable")
+            log.warning("VPCS is not executable")
 
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
@@ -111,7 +111,7 @@ class VPCS(IModule):
         """
 
         self._vpcs_callback.stop()
-        # delete all vpcs instances
+        # delete all VPCS instances
         for vpcs_id in self._vpcs_instances:
             vpcs_instance = self._vpcs_instances[vpcs_id]
             vpcs_instance.delete()
@@ -120,8 +120,8 @@ class VPCS(IModule):
 
     def _check_vpcs_is_alive(self):
         """
-        Periodic callback to check if vpcs and vpcs are alive
-        for each vpcs instance.
+        Periodic callback to check if VPCS is alive
+        for each VPCS instance.
 
         Sends a notification to the client if not.
         """
@@ -134,23 +134,23 @@ class VPCS(IModule):
                                 "name": vpcs_instance.name}
                 if not vpcs_instance.is_running():
                     stdout = vpcs_instance.read_vpcs_stdout()
-                    notification["message"] = "vpcs has stopped running"
+                    notification["message"] = "VPCS has stopped running"
                     notification["details"] = stdout
                     self.send_notification("{}.vpcs_stopped".format(self.name), notification)
                 vpcs_instance.stop()
 
     def get_vpcs_instance(self, vpcs_id):
         """
-        Returns an vpcs device instance.
+        Returns a VPCS device instance.
 
-        :param vpcs_id: vpcs device identifier
+        :param vpcs_id: VPCS device identifier
 
-        :returns: vpcsDevice instance
+        :returns: VPCSDevice instance
         """
 
         if vpcs_id not in self._vpcs_instances:
-            log.debug("vpcs device ID {} doesn't exist".format(vpcs_id), exc_info=1)
-            self.send_custom_error("vpcs device ID {} doesn't exist".format(vpcs_id))
+            log.debug("VPCS device ID {} doesn't exist".format(vpcs_id), exc_info=1)
+            self.send_custom_error("VPCS device ID {} doesn't exist".format(vpcs_id))
             return None
         return self._vpcs_instances[vpcs_id]
 
@@ -175,7 +175,7 @@ class VPCS(IModule):
         self._current_console_port = self._console_start_port_range
         self._current_udp_port = self._udp_start_port_range
 
-        log.info("vpcs module has been reset")
+        log.info("VPCS module has been reset")
 
     @IModule.route("vpcs.settings")
     def settings(self, request):
@@ -199,7 +199,7 @@ class VPCS(IModule):
 
         if "vpcs" in request and request["vpcs"]:
             self._vpcs = request["vpcs"]
-            log.info("vpcs path set to {}".format(self._vpcs))
+            log.info("VPCS path set to {}".format(self._vpcs))
 
         if "working_dir" in request:
             new_working_dir = request["working_dir"]
@@ -252,17 +252,17 @@ class VPCS(IModule):
     @IModule.route("vpcs.create")
     def vpcs_create(self, request):
         """
-        Creates a new vpcs instance.
+        Creates a new VPCS instance.
 
         Mandatory request parameters:
-        - path (path to the vpcs executable)
+        - path (path to the VPCS executable)
 
         Optional request parameters:
-        - name (vpcs name)
+        - name (VPCS name)
 
         Response parameters:
-        - id (vpcs instance identifier)
-        - name (vpcs name)
+        - id (VPCS instance identifier)
+        - name (VPCS name)
         - default settings
 
         :param request: JSON request
@@ -309,10 +309,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.delete")
     def vpcs_delete(self, request):
         """
-        Deletes an vpcs instance.
+        Deletes a VPCS instance.
 
         Mandatory request parameters:
-        - id (vpcs instance identifier)
+        - id (VPCS instance identifier)
 
         Response parameter:
         - True on success
@@ -341,10 +341,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.update")
     def vpcs_update(self, request):
         """
-        Updates an vpcs instance
+        Updates a VPCS instance
 
         Mandatory request parameters:
-        - id (vpcs instance identifier)
+        - id (VPCS instance identifier)
 
         Optional request parameters:
         - any setting to update
@@ -386,7 +386,7 @@ class VPCS(IModule):
             self.send_custom_error(str(e))
             return
 
-        # update the vpcs settings
+        # update the VPCS settings
         for name, value in request.items():
             if hasattr(vpcs_instance, name) and getattr(vpcs_instance, name) != value:
                 try:
@@ -401,10 +401,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.start")
     def vm_start(self, request):
         """
-        Starts an vpcs instance.
+        Starts a VPCS instance.
 
         Mandatory request parameters:
-        - id (vpcs instance identifier)
+        - id (VPCS instance identifier)
 
         Response parameters:
         - True on success
@@ -422,7 +422,7 @@ class VPCS(IModule):
             return
 
         try:
-            log.debug("starting vpcs with command: {}".format(vpcs_instance.command()))
+            log.debug("starting VPCS with command: {}".format(vpcs_instance.command()))
             vpcs_instance.vpcs = self._vpcs
             vpcs_instance.start()
         except VPCSError as e:
@@ -433,10 +433,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.stop")
     def vm_stop(self, request):
         """
-        Stops an vpcs instance.
+        Stops a VPCS instance.
 
         Mandatory request parameters:
-        - id (vpcs instance identifier)
+        - id (VPCS instance identifier)
 
         Response parameters:
         - True on success
@@ -463,10 +463,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.reload")
     def vm_reload(self, request):
         """
-        Reloads an vpcs instance.
+        Reloads a VPCS instance.
 
         Mandatory request parameters:
-        - id (vpcs identifier)
+        - id (VPCS identifier)
 
         Response parameters:
         - True on success
@@ -498,7 +498,7 @@ class VPCS(IModule):
         Allocates a UDP port in order to create an UDP NIO.
 
         Mandatory request parameters:
-        - id (vpcs identifier)
+        - id (VPCS identifier)
         - port_id (unique port identifier)
 
         Response parameters:
@@ -543,7 +543,7 @@ class VPCS(IModule):
 
     def _check_for_privileged_access(self, device):
         """
-        Check if vpcs can access Ethernet and TAP devices.
+        Check if VPCS can access Ethernet and TAP devices.
 
         :param device: device name
         """
@@ -552,7 +552,7 @@ class VPCS(IModule):
         if os.geteuid() == 0:
             return
 
-        # test if vpcs has the CAP_NET_RAW capability
+        # test if VPCS has the CAP_NET_RAW capability
         if "security.capability" in os.listxattr(self._vpcs):
             try:
                 caps = os.getxattr(self._vpcs, "security.capability")
@@ -568,10 +568,10 @@ class VPCS(IModule):
     @IModule.route("vpcs.add_nio")
     def add_nio(self, request):
         """
-        Adds an NIO (Network Input/Output) for an vpcs instance.
+        Adds an NIO (Network Input/Output) for a VPCS instance.
 
         Mandatory request parameters:
-        - id (vpcs instance identifier)
+        - id (VPCS instance identifier)
         - slot (slot number)
         - port (port number)
         - port_id (unique port identifier)
@@ -631,7 +631,7 @@ class VPCS(IModule):
         Deletes an NIO (Network Input/Output).
 
         Mandatory request parameters:
-        - id (vpcs instance identifier)
+        - id (VPCS instance identifier)
         - slot (slot identifier)
         - port (port identifier)
 
