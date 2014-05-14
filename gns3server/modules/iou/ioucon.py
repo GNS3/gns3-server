@@ -334,7 +334,10 @@ class TelnetServer(Console):
     def _disconnect(self, fileno):
         fd = self.fd_dict.pop(fileno)
         log.info("Telnet client disconnected")
-        fd.shutdown(socket.SHUT_RDWR)
+        try:
+            fd.shutdown(socket.SHUT_RDWR)
+        except OSError as e:
+            log.warn("shutdown: {}".format(e))
         fd.close()
 
     def __enter__(self):
