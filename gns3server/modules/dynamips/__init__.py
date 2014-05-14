@@ -302,6 +302,7 @@ class Dynamips(IModule):
 
         else:
             if "project_name" in request:
+                # for remote server
                 new_working_dir = os.path.join(self._projects_dir, request["project_name"])
 
                 if self._projects_dir != self._working_dir != new_working_dir:
@@ -321,10 +322,11 @@ class Dynamips(IModule):
                             return
 
             elif "working_dir" in request:
+                # for local server
                 new_working_dir = request.pop("working_dir")
 
-            self._hypervisor_manager.working_dir = new_working_dir
             self._working_dir = new_working_dir
+            self._hypervisor_manager.working_dir = new_working_dir
 
             # apply settings to the hypervisor manager
             for name, value in request.items():
