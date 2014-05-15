@@ -30,7 +30,12 @@ VPCS_CREATE_SCHEMA = {
             "description": "path to the VPCS executable",
             "type": "string",
             "minLength": 1,
-        }
+        },
+        "base_script_file": {
+            "description": "path to the VPCS startup configuration file",
+            "type": "string",
+            "minLength": 1,
+        },
     },
     "required": ["path"]
 }
@@ -67,14 +72,10 @@ VPCS_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "script_file": {
+        "base_script_file": {
             "description": "path to the VPCS startup configuration file",
             "type": "string",
             "minLength": 1,
-        },
-        "script_file_base64": {
-            "description": "startup configuration base64 encoded",
-            "type": "string"
         },
     },
     "required": ["id"]
