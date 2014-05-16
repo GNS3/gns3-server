@@ -48,7 +48,7 @@ class VPCSDevice(object):
     def __init__(self, path, base_script_file, working_dir, host="127.0.0.1", name=None):
 
         # find an instance identifier (1 <= id <= 512)
-        # This 255 limit is due to a restriction on the number of possible
+        # This 512 limit is due to a restriction on the number of possible
         # mac addresses given in VPCS using the -m option
         self._id = 0
         for identifier in range(1, 513):

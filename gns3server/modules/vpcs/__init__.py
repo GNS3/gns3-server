@@ -288,7 +288,23 @@ class VPCS(IModule):
             except OSError as e:
                 raise VPCSError("Could not create working directory {}".format(e))
 
-            vpcs_instance = VPCSDevice(vpcs_path, base_script_file, self._working_dir, host=self._host, name=name)
+            # a new base-script-file has been pushed
+            if "base_script_file_base64" in request:
+                config = base64.decodestring(request["base_script_file_base64"].encode("utf-8")).decode("utf-8")
+                config = "!\n" + config.replace("\r", "")
+                #config = config.replace('%h', vpcs_instance.name)
+                config_path = os.path.join(self._working_dir, "base-script-file")
+                try:
+                    with open(config_path, "w") as f:
+                        log.info("saving base-script-file to {}".format(config_path))
+                        f.write(config)
+                except OSError as e:
+                    raise VPCSError("Could not save the configuration {}: {}".format(config_path, e))
+                # update the request with the new local base-script-file path
+                request["base_script_file"] = os.path.basename(config_path)
+            
+            vpcs_instance = VPCSDevice(vpcs_path, config_path, self._working_dir, host=self._host, name=name)
+                            
             # find a console port
             if self._current_console_port > self._console_end_port_range:
                 self._current_console_port = self._console_start_port_range
@@ -351,6 +367,7 @@ class VPCS(IModule):
 
         Optional request parameters:
         - any setting to update
+        - base_script_file_base64 (script-file base64 encoded)
 
         Response parameters:
         - updated settings
@@ -368,6 +385,26 @@ class VPCS(IModule):
             return
 
         response = {}
+        try:
+            # a new base-script-file has been pushed
+            if "base_script_file_base64" in request:
+                config = base64.decodestring(request["base_script_file_base64"].encode("utf-8")).decode("utf-8")
+                config = "!\n" + config.replace("\r", "")
+                config = config.replace('%h', vpcs_instance.name)
+                config_path = os.path.join(vpcs_instance.working_dir, "base-script-file")
+                try:
+                    with open(config_path, "w") as f:
+                        log.info("saving base-script-file to {}".format(config_path))
+                        f.write(config)
+                except OSError as e:
+                    raise VPCSError("Could not save the configuration {}: {}".format(config_path, e))
+                # update the request with the new local base-script-file path
+                request["base_script_file"] = os.path.basename(config_path)
+
+        except VPCSError as e:
+            self.send_custom_error(str(e))
+            return
+            
         # update the VPCS settings
         for name, value in request.items():
             if hasattr(vpcs_instance, name) and getattr(vpcs_instance, name) != value:
