@@ -523,25 +523,11 @@ class IOUDevice(object):
         Stops the IOU process.
         """
 
-        # stop the IOU process
-        if self.is_running():
-            log.info("stopping IOU instance {} PID={}".format(self._id, self._process.pid))
-            try:
-                self._process.terminate()
-                self._process.wait(1)
-            except subprocess.TimeoutExpired:
-                self._process.kill()
-                if self._process.poll() == None:
-                    log.warn("IOU instance {} PID={} is still running".format(self._id,
-                                                                              self._process.pid))
-        self._process = None
-        self._started = False
-
         # stop console support
         if self._ioucon_thead:
             self._ioucon_thread_stop_event.set()
             if self._ioucon_thead.is_alive():
-                self._ioucon_thead.join(timeout=0.10)
+                self._ioucon_thead.join(timeout=3.0)  # wait for the thread to free the console port
             self._ioucon_thead = None
 
         # stop iouyap
@@ -556,6 +542,20 @@ class IOUDevice(object):
                     log.warn("iouyap PID={} for IOU instance {} is still running".format(self._iouyap_process.pid,
                                                                                          self._id))
         self._iouyap_process = None
+
+        # stop the IOU process
+        if self.is_running():
+            log.info("stopping IOU instance {} PID={}".format(self._id, self._process.pid))
+            try:
+                self._process.terminate()
+                self._process.wait(1)
+            except subprocess.TimeoutExpired:
+                self._process.kill()
+                if self._process.poll() == None:
+                    log.warn("IOU instance {} PID={} is still running".format(self._id,
+                                                                              self._process.pid))
+        self._process = None
+        self._started = False
 
     def read_iou_stdout(self):
         """

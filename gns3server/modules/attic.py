@@ -21,6 +21,7 @@ Useful functions... in the attic ;)
 
 import socket
 import errno
+import time
 
 
 def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", ignore_ports=[]):
@@ -64,3 +65,40 @@ def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", 
                 raise Exception("Could not find an unused port: {}".format(e))
 
     raise Exception("Could not find a free port between {0} and {1}".format(start_port, end_port))
+
+
+def wait_socket_is_ready(host, port, wait=2.0, socket_timeout=10):
+    """
+    Waits for a socket to be ready for wait time.
+
+    :param host: host/address to connect to
+    :param port: port to connect to
+    :param wait: maximum wait time
+    :param socket_timeout: timeout for the socket
+
+    :returns: tuple with boolean indicating if the socket is ready and the last exception
+    that occurred when connecting to the socket
+    """
+
+    # connect to a local address by default
+    # if listening to all addresses (IPv4 or IPv6)
+    if host == "0.0.0.0":
+        host = "127.0.0.1"
+    elif host == "::":
+        host = "::1"
+
+    connection_success = False
+    begin = time.time()
+    last_exception = None
+    while (time.time() - begin < wait):
+        time.sleep(0.01)
+        try:
+            with socket.create_connection((host, port), socket_timeout):
+                pass
+        except OSError as e:
+            last_exception = e
+            continue
+        connection_success = True
+        break
+
+    return (connection_success, last_exception)

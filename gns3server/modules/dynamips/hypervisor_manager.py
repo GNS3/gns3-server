@@ -22,10 +22,10 @@ Manages Dynamips hypervisors (load-balancing etc.)
 from .hypervisor import Hypervisor
 from .dynamips_error import DynamipsError
 from ..attic import find_unused_port
+from ..attic import wait_socket_is_ready
 from pkg_resources import parse_version
 
 import os
-import socket
 import time
 import logging
 
@@ -513,26 +513,9 @@ class HypervisorManager(object):
         :param timeout: timeout value (default is 10 seconds)
         """
 
-        # connect to a local address by default
-        # if listening to all addresses (IPv4 or IPv6)
-        if host == "0.0.0.0":
-            host = "127.0.0.1"
-        elif host == "::":
-            host = "::1"
-
-        connection_success = False
         begin = time.time()
-        # try to connect for 10 seconds
-        while(time.time() - begin < 10.0):
-            time.sleep(0.01)
-            try:
-                with socket.create_connection((host, port), timeout):
-                    pass
-            except OSError as e:
-                last_exception = e
-                continue
-            connection_success = True
-            break
+        # wait for the socket for a maximum of 10 seconds.
+        connection_success, last_exception = wait_socket_is_ready(host, port, wait=10.0)
 
         if not connection_success:
             # FIXME: throw exception here

@@ -313,9 +313,10 @@ class Router(object):
         At least the IOS image must be set before starting it.
         """
 
-        if self.get_status() == "suspended":
+        status = self.get_status()
+        if status == "suspended":
             self.resume()
-        else:
+        elif status == "inactive":
 
             if not os.path.isfile(self._image):
                 raise DynamipsError("IOS image '{}' is not accessible".format(self._image))
@@ -340,8 +341,9 @@ class Router(object):
         The settings are kept.
         """
 
-        self._hypervisor.send("vm stop {}".format(self._name))
-        log.info("router {name} [id={id}] has been stopped".format(name=self._name, id=self._id))
+        if self.get_status() != "inactive":
+            self._hypervisor.send("vm stop {}".format(self._name))
+            log.info("router {name} [id={id}] has been stopped".format(name=self._name, id=self._id))
 
     def suspend(self):
         """

@@ -139,7 +139,10 @@ class FileLock:
     def unlock(self):
         if self.fd:
             # Deleting first prevents a race condition
-            os.unlink(self.fd.name)
+            try:
+                os.unlink(self.fd.name)
+            except FileNotFoundError as e:
+                log.debug("{}".format(e))
             self.fd.close()
 
     def __enter__(self):
