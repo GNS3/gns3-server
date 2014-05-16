@@ -45,13 +45,13 @@ class VPCSDevice(object):
 
     _instances = []
 
-    def __init__(self, path, working_dir, host="127.0.0.1", name=None):
+    def __init__(self, path, base_script_file, working_dir, host="127.0.0.1", name=None):
 
-        # find an instance identifier (1 <= id <= 255)
-        # This 255 limit is due to a restriction on the number of possible
+        # find an instance identifier (1 <= id <= 512)
+        # This 512 limit is due to a restriction on the number of possible
         # mac addresses given in VPCS using the -m option
         self._id = 0
-        for identifier in range(1, 256):
+        for identifier in range(1, 513):
             if identifier not in self._instances:
                 self._id = identifier
                 self._instances.append(self._id)
@@ -74,7 +74,7 @@ class VPCSDevice(object):
         self._started = False
 
         # VPCS settings
-        self._script_file = ""
+        self._base_script_file = base_script_file
         self._ethernet_adapters = [EthernetAdapter()]  # one adapter = 1 interfaces
         self._slots = self._ethernet_adapters
 
@@ -93,7 +93,7 @@ class VPCSDevice(object):
 
         vpcs_defaults = {"name": self._name,
                          "path": self._path,
-                         "script_file": self._script_file,
+                         "base_script_file": self._base_script_file,
                          "console": self._console}
 
         return vpcs_defaults
@@ -432,29 +432,29 @@ class VPCSDevice(object):
 
         command.extend(["-m", str(self._id)])   # The unique ID is used to set the mac address offset
         command.extend(["-i", str(1)])  # Option to start only one pc instance
-        if self._script_file:
-            command.extend([self._script_file])
+        if self._base_script_file:
+            command.extend([self._base_script_file])
         return command
 
     @property
-    def script_file(self):
+    def base_script_file(self):
         """
         Returns the script-file for this VPCS instance.
 
         :returns: path to script-file file
         """
 
-        return self._script_file
+        return self._base_script_file
 
-    @script_file.setter
-    def script_file(self, script_file):
+    @base_script_file.setter
+    def base_script_file(self, base_script_file):
         """
-        Sets the script-file for this VPCS instance.
+        Sets the base-script-file for this VPCS instance.
 
-        :param script_file: path to script-file file
+        :param base_script_file: path to base-script-file file
         """
 
-        self._script_file = script_file
-        log.info("VPCS {name} [id={id}]: script_file set to {config}".format(name=self._name,
+        self._base_script_file = base_script_file
+        log.info("VPCS {name} [id={id}]: base_script_file set to {config}".format(name=self._name,
                                                                                  id=self._id,
-                                                                                 config=self._script_file))
+                                                                                 config=self._base_script_file))
