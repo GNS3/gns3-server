@@ -25,6 +25,7 @@ import base64
 import tempfile
 import shutil
 import glob
+import socket
 from gns3server.modules import IModule
 import gns3server.jsonrpc as jsonrpc
 
@@ -363,6 +364,12 @@ class Dynamips(IModule):
             lport = request["nio"]["lport"]
             rhost = request["nio"]["rhost"]
             rport = request["nio"]["rport"]
+            try:
+                #TODO: handle IPv6
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                    sock.connect((rhost, rport))
+            except OSError as e:
+                raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             # check if we have an allocated NIO UDP auto
             nio = node.hypervisor.get_nio_udp_auto(lport)
             if not nio:

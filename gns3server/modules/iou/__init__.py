@@ -658,6 +658,12 @@ class IOU(IModule):
                 lport = request["nio"]["lport"]
                 rhost = request["nio"]["rhost"]
                 rport = request["nio"]["rport"]
+                try:
+                    #TODO: handle IPv6
+                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                        sock.connect((rhost, rport))
+                except OSError as e:
+                    raise IOUError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
                 nio = NIO_UDP(lport, rhost, rport)
             elif request["nio"]["type"] == "nio_tap":
                 tap_device = request["nio"]["tap_device"]
