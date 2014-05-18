@@ -81,8 +81,12 @@ class FileUploadHandler(tornado.web.RequestHandler):
         if "file" in self.request.files:
             fileinfo = self.request.files["file"][0]
             destination_path = os.path.join(self._upload_dir, fileinfo['filename'])
-            with open(destination_path, 'wb') as f:
-                f.write(fileinfo['body'])
+            try:
+                with open(destination_path, 'wb') as f:
+                    f.write(fileinfo['body'])
+            except OSError as e:
+                self.write("Could not upload {}: {}".format(fileinfo['filename'], e))
+                return
             st = os.stat(destination_path)
             os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         self.redirect("/upload")
