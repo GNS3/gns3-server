@@ -27,7 +27,6 @@ VPCS_CREATE_SCHEMA = {
             "minLength": 1,
         },
     },
-    "required": ["path"]
 }
 
 VPCS_DELETE_SCHEMA = {
