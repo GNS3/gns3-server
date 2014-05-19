@@ -19,9 +19,15 @@
 Useful functions... in the attic ;)
 """
 
+import sys
+import os
+import struct
 import socket
 import errno
 import time
+
+import logging
+log = logging.getLogger(__name__)
 
 
 def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", ignore_ports=[]):
@@ -102,3 +108,31 @@ def wait_socket_is_ready(host, port, wait=2.0, socket_timeout=10):
         break
 
     return (connection_success, last_exception)
+
+
+def has_privileged_access(executable, device):
+    """
+    Check if an executable can access Ethernet and TAP devices in
+    RAW mode.
+
+    :param executable: executable path
+    :param device: device name
+
+    :returns: True or False
+    """
+
+    # we are root, so we should have privileged access too
+    if os.geteuid() == 0:
+        return True
+
+    # test if the executable has the CAP_NET_RAW capability (Linux only)
+    if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
+        try:
+            caps = os.getxattr(executable, "security.capability")
+            # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
+            if struct.unpack("<IIIII", caps)[1] & 1 << 13:
+                return True
+        except Exception as e:
+            log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
+
+    return False

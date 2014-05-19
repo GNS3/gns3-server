@@ -26,27 +26,13 @@ VPCS_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "path": {
-            "description": "path to the VPCS executable",
-            "type": "string",
-            "minLength": 1,
-        },
-        "base_script_file": {
-            "description": "path to the VPCS startup configuration file",
-            "type": "string",
-            "minLength": 1,
-        },
-        "base_script_file_base64": {
-            "description": "startup script file base64 encoded",
-            "type": "string"
-        },
     },
     "required": ["path"]
 }
 
 VPCS_DELETE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to delete an VPCS instance",
+    "description": "Request validation to delete a VPCS instance",
     "type": "object",
     "properties": {
         "id": {
@@ -59,7 +45,7 @@ VPCS_DELETE_SCHEMA = {
 
 VPCS_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to update an VPCS instance",
+    "description": "Request validation to update a VPCS instance",
     "type": "object",
     "properties": {
         "id": {
@@ -71,18 +57,19 @@ VPCS_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "path": {
-            "description": "path to the VPCS executable",
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "script_file": {
+            "description": "Path to the VPCS script file file",
             "type": "string",
             "minLength": 1,
         },
-        "base_script_file": {
-            "description": "path to the VPCS startup script file file",
-            "type": "string",
-            "minLength": 1,
-        },
-        "base_script_file_base64": {
-            "description": "startup script file base64 encoded",
+        "script_file_base64": {
+            "description": "Script file base64 encoded",
             "type": "string"
         },
     },
@@ -91,7 +78,7 @@ VPCS_UPDATE_SCHEMA = {
 
 VPCS_START_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start an VPCS instance",
+    "description": "Request validation to start a VPCS instance",
     "type": "object",
     "properties": {
         "id": {
@@ -104,7 +91,7 @@ VPCS_START_SCHEMA = {
 
 VPCS_STOP_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to stop an VPCS instance",
+    "description": "Request validation to stop a VPCS instance",
     "type": "object",
     "properties": {
         "id": {
@@ -117,7 +104,7 @@ VPCS_STOP_SCHEMA = {
 
 VPCS_RELOAD_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to reload an VPCS instance",
+    "description": "Request validation to reload a VPCS instance",
     "type": "object",
     "properties": {
         "id": {
@@ -130,7 +117,7 @@ VPCS_RELOAD_SCHEMA = {
 
 VPCS_ALLOCATE_UDP_PORT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to allocate an UDP port for an VPCS instance",
+    "description": "Request validation to allocate an UDP port for a VPCS instance",
     "type": "object",
     "properties": {
         "id": {
@@ -147,7 +134,7 @@ VPCS_ALLOCATE_UDP_PORT_SCHEMA = {
 
 VPCS_ADD_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for an VPCS instance",
+    "description": "Request validation to add a NIO for a VPCS instance",
     "type": "object",
 
     "definitions": {
@@ -284,6 +271,12 @@ VPCS_ADD_NIO_SCHEMA = {
             "description": "Unique port identifier for the VPCS instance",
             "type": "integer"
         },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 0
+        },
         "nio": {
             "type": "object",
             "description": "Network Input/Output",
@@ -298,18 +291,24 @@ VPCS_ADD_NIO_SCHEMA = {
             ]
         },
     },
-    "required": ["id", "port_id", "nio"]
+    "required": ["id", "port_id", "port", "nio"]
 }
 
 VPCS_DELETE_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to delete a NIO for an VPCS instance",
+    "description": "Request validation to delete a NIO for a VPCS instance",
     "type": "object",
     "properties": {
         "id": {
             "description": "VPCS device instance ID",
             "type": "integer"
         },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 0
+        },
     },
-    "required": ["id"]
+    "required": ["id", "port"]
 }

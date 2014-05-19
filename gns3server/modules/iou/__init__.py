@@ -37,6 +37,7 @@ from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 from .nios.nio_generic_ethernet import NIO_GenericEthernet
 from ..attic import find_unused_port
+from ..attic import has_privileged_access
 
 from .schemas import IOU_CREATE_SCHEMA
 from .schemas import IOU_DELETE_SCHEMA
@@ -206,6 +207,7 @@ class IOU(IModule):
         - iourc (base64 encoded iourc file)
 
         Optional request parameters:
+        - iouyap (path to iouyap)
         - working_dir (path to a working directory)
         - project_name
         - console_start_port_range
@@ -406,7 +408,6 @@ class IOU(IModule):
         if not iou_instance:
             return
 
-        response = {}
         config_path = os.path.join(iou_instance.working_dir, "startup-config")
         try:
             if "startup_config_base64" in request:
@@ -435,13 +436,14 @@ class IOU(IModule):
                         request["startup_config"] = os.path.basename(config_path)
                     except OSError as e:
                         raise IOUError("Could not save the configuration from {} to {}: {}".format(request["startup_config"], config_path, e))
-                elif not os.path.isfile(os.path.join(iou_instance.working_dir, request["startup_config"])):
-                    raise IOUError("Startup-config {} could not be found on this server".format(request["startup_config"]))
+                elif not os.path.isfile(config_path):
+                    raise IOUError("Startup-config {} could not be found on this server".format(config_path))
         except IOUError as e:
             self.send_custom_error(str(e))
             return
 
         # update the IOU settings
+        response = {}
         for name, value in request.items():
             if hasattr(iou_instance, name) and getattr(iou_instance, name) != value:
                 try:
@@ -591,30 +593,6 @@ class IOU(IModule):
         response["port_id"] = request["port_id"]
         self.send_response(response)
 
-    def _check_for_privileged_access(self, device):
-        """
-        Check if iouyap can access Ethernet and TAP devices.
-
-        :param device: device name
-        """
-
-        # we are root, so iouyap should have privileged access too
-        if os.geteuid() == 0:
-            return
-
-        # test if iouyap has the CAP_NET_RAW capability
-        if "security.capability" in os.listxattr(self._iouyap):
-            try:
-                caps = os.getxattr(self._iouyap, "security.capability")
-                # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
-                if struct.unpack("<IIIII", caps)[1] & 1 << 13:
-                    return
-            except Exception as e:
-                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(self._iouyap, e))
-                return
-
-        raise IOUError("{} has no privileged access to {}.".format(self._iouyap, device))
-
     @IModule.route("iou.add_nio")
     def add_nio(self, request):
         """
@@ -667,10 +645,13 @@ class IOU(IModule):
                 nio = NIO_UDP(lport, rhost, rport)
             elif request["nio"]["type"] == "nio_tap":
                 tap_device = request["nio"]["tap_device"]
-                self._check_for_privileged_access(tap_device)
+                if not self.has_privileged_access(self._iouyap, tap_device):
+                    raise IOUError("{} has no privileged access to {}.".format(self._iouyap, tap_device))
                 nio = NIO_TAP(tap_device)
             elif request["nio"]["type"] == "nio_generic_ethernet":
                 ethernet_device = request["nio"]["ethernet_device"]
+                if not self.has_privileged_access(self._iouyap, ethernet_device):
+                    raise IOUError("{} has no privileged access to {}.".format(self._iouyap, ethernet_device))
                 self._check_for_privileged_access(ethernet_device)
                 nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
