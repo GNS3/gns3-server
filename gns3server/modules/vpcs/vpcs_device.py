@@ -158,10 +158,23 @@ class VPCSDevice(object):
         :param new_name: name
         """
 
-        self._name = new_name
+        if self._script_file:
+            # update the startup.vpc
+            config_path = os.path.join(self.working_dir, "startup.vpc")
+            if os.path.isfile(config_path):
+                try:
+                    with open(config_path, "r+") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self._name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise VPCSError("Could not amend the configuration {}: {}".format(config_path, e))
+
         log.info("VPCS {name} [id={id}]: renamed to {new_name}".format(name=self._name,
                                                                       id=self._id,
                                                                       new_name=new_name))
+        self._name = new_name
 
     @property
     def path(self):
@@ -288,8 +301,8 @@ class VPCSDevice(object):
                                                                                       error=e))
             return
 
-        log.info("VPCS device {name} [id={id}] has been deleted".format(name=self._name,
-                                                                       id=self._id))
+        log.info("VPCS device {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
+                                                                                                     id=self._id))
 
     @property
     def started(self):

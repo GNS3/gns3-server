@@ -437,7 +437,7 @@ class IOU(IModule):
                     except OSError as e:
                         raise IOUError("Could not save the configuration from {} to {}: {}".format(request["startup_config"], config_path, e))
                 elif not os.path.isfile(config_path):
-                    raise IOUError("Startup-config {} could not be found on this server".format(config_path))
+                    raise IOUError("Startup-config {} could not be found on this server".format(request["startup_config"]))
         except IOUError as e:
             self.send_custom_error(str(e))
             return

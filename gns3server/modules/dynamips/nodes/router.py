@@ -225,6 +225,38 @@ class Router(object):
         if new_name in self._allocated_names:
             raise DynamipsError('Name "{}" is already used by another router'.format(new_name))
 
+        if self._startup_config:
+            # change the hostname in the startup-config
+            startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
+            if os.path.isfile(startup_config_path):
+                try:
+                    with open(startup_config_path, "r+") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self.name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                    new_startup_config_path = os.path.join(os.path.dirname(startup_config_path), "{}.cfg".format(new_name))
+                    os.rename(startup_config_path, new_startup_config_path)
+                except OSError as e:
+                    raise DynamipsError("Could not amend the configuration {}: {}".format(startup_config_path, e))
+                self.set_config(new_startup_config_path)
+
+        if self._private_config:
+            # change the hostname in the startup-config
+            private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}-private.cfg".format(self.name))
+            if os.path.isfile(private_config_path):
+                try:
+                    with open(private_config_path, "r+") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self.name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                    new_private_config_path = os.path.join(os.path.dirname(private_config_path), "{}-private.cfg".format(new_name))
+                    os.rename(private_config_path, new_private_config_path)
+                except OSError as e:
+                    raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
+                self.set_config(self.startup_config, new_private_config_path)
+
         new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,
@@ -299,6 +331,18 @@ class Router(object):
 
         self._hypervisor.send("vm clean_delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
+
+        if self._startup_config:
+            # delete the startup-config
+            startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
+            if os.path.isfile(startup_config_path):
+                os.remove(startup_config_path)
+
+        if self._private_config:
+            # delete the private-config
+            private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}-private.cfg".format(self.name))
+            if os.path.isfile(private_config_path):
+                os.remove(private_config_path)
 
         log.info("router {name} [id={id}] has been deleted (including associated files)".format(name=self._name, id=self._id))
         self._allocated_names.remove(self.name)

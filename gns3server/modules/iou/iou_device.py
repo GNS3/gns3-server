@@ -177,10 +177,23 @@ class IOUDevice(object):
         :param new_name: name
         """
 
-        self._name = new_name
+        if self._startup_config:
+            # update the startup-config
+            config_path = os.path.join(self.working_dir, "startup-config")
+            if os.path.isfile(config_path):
+                try:
+                    with open(config_path, "r+") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self._name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise IOUError("Could not amend the configuration {}: {}".format(config_path, e))
+
         log.info("IOU {name} [id={id}]: renamed to {new_name}".format(name=self._name,
                                                                       id=self._id,
                                                                       new_name=new_name))
+        self._name = new_name
 
     @property
     def path(self):

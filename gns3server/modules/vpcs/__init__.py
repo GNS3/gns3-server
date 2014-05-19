@@ -348,7 +348,7 @@ class VPCS(IModule):
                     except OSError as e:
                         raise VPCSError("Could not save the configuration from {} to {}: {}".format(request["script_file"], config_path, e))
                 elif not os.path.isfile(config_path):
-                    raise VPCSError("Startup-config {} could not be found on this server".format(config_path))
+                    raise VPCSError("Startup-config {} could not be found on this server".format(request["script_file"]))
         except VPCSError as e:
             self.send_custom_error(str(e))
             return
