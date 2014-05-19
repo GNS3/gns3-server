@@ -23,6 +23,8 @@ order to run an VPCS instance.
 import os
 import subprocess
 import signal
+import shutil
+
 from .vpcs_error import VPCSError
 from .adapters.ethernet_adapter import EthernetAdapter
 from .nios.nio_udp import NIO_UDP
@@ -263,6 +265,28 @@ class VPCSDevice(object):
 
         if self.console:
             self._allocated_console_ports.remove(self.console)
+
+        log.info("VPCS device {name} [id={id}] has been deleted".format(name=self._name,
+                                                                       id=self._id))
+
+    def clean_delete(self):
+        """
+        Deletes this VPCS device & all files (configs, logs etc.)
+        """
+
+        self.stop()
+        self._instances.remove(self._id)
+
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+
+        try:
+            shutil.rmtree(self._working_dir)
+        except OSError as e:
+            log.error("could not delete VPCS device {name} [id={id}]: {error}".format(name=self._name,
+                                                                                      id=self._id,
+                                                                                      error=e))
+            return
 
         log.info("VPCS device {name} [id={id}] has been deleted".format(name=self._name,
                                                                        id=self._id))

@@ -27,6 +27,8 @@ import subprocess
 import argparse
 import threading
 import configparser
+import shutil
+
 from .ioucon import start_ioucon
 from .iou_error import IOUError
 from .adapters.ethernet_adapter import EthernetAdapter
@@ -331,6 +333,28 @@ class IOUDevice(object):
 
         log.info("IOU device {name} [id={id}] has been deleted".format(name=self._name,
                                                                        id=self._id))
+
+    def clean_delete(self):
+        """
+        Deletes this IOU device & all files (nvram, startup-config etc.)
+        """
+
+        self.stop()
+        self._instances.remove(self._id)
+
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+
+        try:
+            shutil.rmtree(self._working_dir)
+        except OSError as e:
+            log.error("could not delete IOU device {name} [id={id}]: {error}".format(name=self._name,
+                                                                                id=self._id,
+                                                                                error=e))
+            return
+
+        log.info("IOU device {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
+                                                                                                    id=self._id))
 
     @property
     def started(self):

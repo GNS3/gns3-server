@@ -373,7 +373,7 @@ class IOU(IModule):
             return
 
         try:
-            iou_instance.delete()
+            iou_instance.clean_delete()
             del self._iou_instances[request["id"]]
         except IOUError as e:
             self.send_custom_error(str(e))

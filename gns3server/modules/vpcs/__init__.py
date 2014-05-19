@@ -284,7 +284,7 @@ class VPCS(IModule):
             return
 
         try:
-            vpcs_instance.delete()
+            vpcs_instance.clean_delete()
             del self._vpcs_instances[request["id"]]
         except VPCSError as e:
             self.send_custom_error(str(e))
