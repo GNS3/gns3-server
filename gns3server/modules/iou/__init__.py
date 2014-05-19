@@ -479,7 +479,6 @@ class IOU(IModule):
             return
 
         try:
-            log.debug("starting IOU with command: {}".format(iou_instance.command()))
             iou_instance.iouyap = self._iouyap
             iou_instance.iourc = self._iourc
             iou_instance.start()

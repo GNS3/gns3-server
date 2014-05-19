@@ -104,6 +104,7 @@ class IOUDevice(object):
         self._nvram = 128  # Kilobytes
         self._startup_config = ""
         self._ram = 256  # Megabytes
+        self._l1_keepalives = True
 
         # update the working directory
         self.working_dir = working_dir
@@ -136,7 +137,8 @@ class IOUDevice(object):
                         "nvram": self._nvram,
                         "ethernet_adapters": len(self._ethernet_adapters),
                         "serial_adapters": len(self._serial_adapters),
-                        "console": self._console}
+                        "console": self._console,
+                        "l1_keepalives": self._l1_keepalives}
 
         return iou_defaults
 
@@ -708,6 +710,26 @@ class IOUDevice(object):
 
         return nio
 
+    def _enable_l1_keepalives(self, command):
+        """
+        Enables L1 keepalive messages if supported.
+
+        :param command: command line
+        """
+
+        env = os.environ.copy()
+        env["IOURC"] = self._iourc
+        output = b""
+        try:
+            output = subprocess.check_output([self._path, "-h"], stderr=subprocess.STDOUT, cwd=self._working_dir, env=env)
+        except OSError as e:
+            log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
+        else:
+            if re.search("-l\s+Enable Layer 1 keepalive messages", output.decode("utf-8")):
+                command.extend(["-l"])
+            else:
+                log.warn("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
+
     def _build_command(self):
         """
         Command to start the IOU process.
@@ -750,6 +772,8 @@ class IOUDevice(object):
         command.extend(["-L"])  # disable local console, use remote console
         if self._startup_config:
             command.extend(["-c", self._startup_config])
+        if self._l1_keepalives:
+            self._enable_l1_keepalives(command)
         command.extend([str(self._id)])
         return command
 
@@ -776,6 +800,30 @@ class IOUDevice(object):
             log.info("IOU {name} [id={id}]: uses the default IOU image values".format(name=self._name, id=self._id))
         else:
             log.info("IOU {name} [id={id}]: does not use the default IOU image values".format(name=self._name, id=self._id))
+
+    @property
+    def l1_keepalives(self):
+        """
+        Returns either layer 1 keepalive messages option is enabled or disabled.
+
+        :returns: boolean
+        """
+
+        return self._l1_keepalives
+
+    @l1_keepalives.setter
+    def l1_keepalives(self, state):
+        """
+        Enables or disables layer 1 keepalive messages.
+
+        :param state: boolean
+        """
+
+        self._l1_keepalives = state
+        if state:
+            log.info("IOU {name} [id={id}]: has activated layer 1 keepalive messages".format(name=self._name, id=self._id))
+        else:
+            log.info("IOU {name} [id={id}]: has deactivated layer 1 keepalive messages".format(name=self._name, id=self._id))
 
     @property
     def ram(self):

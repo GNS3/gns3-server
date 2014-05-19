@@ -102,6 +102,10 @@ IOU_UPDATE_SCHEMA = {
             "description": "use the default IOU RAM & NVRAM values",
             "type": "boolean"
         },
+        "l1_keepalives": {
+            "description": "enable or disable layer 1 keepalive messages",
+            "type": "boolean"
+        },
         "startup_config_base64": {
             "description": "startup configuration base64 encoded",
             "type": "string"

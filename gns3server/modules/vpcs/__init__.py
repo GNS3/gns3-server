@@ -390,7 +390,6 @@ class VPCS(IModule):
             return
 
         try:
-            log.debug("starting VPCS with command: {}".format(vpcs_instance.command()))
             vpcs_instance.start()
         except VPCSError as e:
             self.send_custom_error(str(e))
