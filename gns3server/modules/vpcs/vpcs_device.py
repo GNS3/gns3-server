@@ -251,7 +251,6 @@ class VPCSDevice(object):
         :returns: VPCS command line (string)
         """
 
-        print(self._build_command())
         return " ".join(self._build_command())
 
     def delete(self):
@@ -319,7 +318,7 @@ class VPCSDevice(object):
         # stop the VPCS process
         if self.is_running():
             log.info("stopping VPCS instance {} PID={}".format(self._id, self._process.pid))
-            self._process.send_signal(signal.SIGUSR1)  # send SIGUSR1 will stop VPCS
+            self._process.send_signal(signal.SIGTERM)  # send SIGTERM will stop VPCS
             self._process.wait()
 
         self._process = None
