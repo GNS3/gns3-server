@@ -393,14 +393,12 @@ class IOU(Router):
         except FileNotFoundError:
             pass
         except Exception as e:
-            raise NetioError("Couldn't unlink socket {}: {}"
-                             .format(self.ttyC, e))
+            raise NetioError("Couldn't unlink socket {}: {}".format(self.ttyC, e))
 
         try:
             self.fd.bind(self.ttyC)
         except Exception as e:
-            raise NetioError("Couldn't create socket {}: {}"
-                             .format(self.ttyC, e))
+            raise NetioError("Couldn't create socket {}: {}".format(self.ttyC, e))
 
     def _connect(self):
         # Keep trying until we connect or die trying
@@ -411,8 +409,7 @@ class IOU(Router):
                 log.debug("Waiting to connect to {}".format(self.ttyS))
                 time.sleep(RETRY_DELAY)
             except Exception as e:
-                raise NetioError("Couldn't connect to socket {}: {}"
-                                 .format(self.ttyS, e))
+                raise NetioError("Couldn't connect to socket {}: {}".format(self.ttyS, e))
             else:
                 break
 
@@ -465,8 +462,7 @@ def mkdir_netio(netio_dir):
     except FileExistsError:
         pass
     except Exception as e:
-        raise NetioError("Couldn't create directory {}: {}"
-                         .format(netio_dir, e))
+        raise NetioError("Couldn't create directory {}: {}".format(netio_dir, e))
 
 
 def send_recv_loop(console, router, esc_char, stop_event):
@@ -631,7 +627,7 @@ def start_ioucon(cmdline_args, stop_event):
         if args.debug:
             traceback.print_exc(file=sys.stderr)
         else:
-            print(e, file=sys.stderr)
+            log.error("ioucon: {}".format(e))
         sys.exit(EXIT_FAILURE)
 
     log.info("exiting...")

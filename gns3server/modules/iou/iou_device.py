@@ -50,6 +50,7 @@ class IOUDevice(object):
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
     :param name: name of this IOU device
+    :param console: TCP console port
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
     """
@@ -61,6 +62,7 @@ class IOUDevice(object):
                  working_dir,
                  host="127.0.0.1",
                  name=None,
+                 console=None,
                  console_start_port_range=4001,
                  console_end_port_range=4512):
 
@@ -82,7 +84,7 @@ class IOUDevice(object):
         self._path = path
         self._iourc = ""
         self._iouyap = ""
-        self._console = None
+        self._console = console
         self._working_dir = None
         self._command = []
         self._process = None
@@ -109,16 +111,20 @@ class IOUDevice(object):
         # update the working directory
         self.working_dir = working_dir
 
-        # allocate a console port
-        try:
-            self._console = find_unused_port(self._console_start_port_range,
-                                             self._console_end_port_range,
-                                             self._host,
-                                             ignore_ports=self._allocated_console_ports)
-        except Exception as e:
-            raise IOUError(e)
+        if not self._console:
+            # allocate a console port
+            try:
+                self._console = find_unused_port(self._console_start_port_range,
+                                                 self._console_end_port_range,
+                                                 self._host,
+                                                 ignore_ports=self._allocated_console_ports)
+            except Exception as e:
+                raise IOUError(e)
 
+        if self._console in self._allocated_console_ports:
+            raise IOUError("Console port {} is already in used another IOU device".format(console))
         self._allocated_console_ports.append(self._console)
+
         log.info("IOU device {name} [id={id}] has been created".format(name=self._name,
                                                                        id=self._id))
 
@@ -317,7 +323,7 @@ class IOUDevice(object):
         """
 
         if console in self._allocated_console_ports:
-            raise IOUError("Console port {} is already in used by another IOU device".format(console))
+            raise IOUError("Console port {} is already used by another IOU device".format(console))
 
         self._allocated_console_ports.remove(self._console)
         self._console = console

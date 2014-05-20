@@ -301,6 +301,7 @@ class IOU(IModule):
 
         Optional request parameters:
         - name (IOU name)
+        - console (IOU console port)
 
         Response parameters:
         - id (IOU instance identifier)
@@ -314,9 +315,8 @@ class IOU(IModule):
         if not self.validate_request(request, IOU_CREATE_SCHEMA):
             return
 
-        name = None
-        if "name" in request:
-            name = request["name"]
+        name = request.get("name")
+        console = request.get("console")
         iou_path = request["path"]
 
         try:
@@ -331,6 +331,7 @@ class IOU(IModule):
                                      self._working_dir,
                                      self._host,
                                      name,
+                                     console,
                                      self._console_start_port_range,
                                      self._console_end_port_range)
 

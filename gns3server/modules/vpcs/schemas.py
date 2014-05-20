@@ -26,6 +26,12 @@ VPCS_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
     },
 }
 

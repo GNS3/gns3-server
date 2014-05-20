@@ -213,6 +213,7 @@ class VPCS(IModule):
 
         Optional request parameters:
         - name (VPCS name)
+        - console (VPCS console port)
 
         Response parameters:
         - id (VPCS instance identifier)
@@ -226,9 +227,10 @@ class VPCS(IModule):
         if request and not self.validate_request(request, VPCS_CREATE_SCHEMA):
             return
 
-        name = None
-        if request and "name" in request:
-            name = request["name"]
+        name = console = None
+        if request:
+            name = request.get("name")
+            console = request.get("console")
 
         try:
             try:
@@ -245,6 +247,7 @@ class VPCS(IModule):
                                        self._working_dir,
                                        self._host,
                                        name,
+                                       console,
                                        self._console_start_port_range,
                                        self._console_end_port_range)
 
