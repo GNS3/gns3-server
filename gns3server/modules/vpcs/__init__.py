@@ -66,18 +66,15 @@ class VPCS(IModule):
         vpcs_config = config.get_section_config(name.upper())
         self._vpcs = vpcs_config.get("vpcs")
         if not self._vpcs or not os.path.isfile(self._vpcs):
-            vpcs_in_cwd = os.path.join(os.getcwd(), "vpcs")
-            if os.path.isfile(vpcs_in_cwd):
-                self._vpcs = vpcs_in_cwd
-            else:
-                # look for vpcs if none is defined or accessible
-                for path in os.environ["PATH"].split(":"):
-                    try:
-                        if "vpcs" in os.listdir(path) and os.access(os.path.join(path, "vpcs"), os.X_OK):
-                            self._vpcs = os.path.join(path, "vpcs")
-                            break
-                    except OSError:
-                        continue
+            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            # look for VPCS in the current working directory and $PATH
+            for path in paths:
+                try:
+                    if "vpcs" in os.listdir(path) and os.access(os.path.join(path, "vpcs"), os.X_OK):
+                        self._vpcs = os.path.join(path, "vpcs")
+                        break
+                except OSError:
+                    continue
 
         if not self._vpcs:
             log.warning("VPCS binary couldn't be found!")
@@ -240,6 +237,9 @@ class VPCS(IModule):
                 pass
             except OSError as e:
                 raise VPCSError("Could not create working directory {}".format(e))
+
+            if not self._vpcs:
+                raise VPCSError("No path to a VPCS executable has been set")
 
             vpcs_instance = VPCSDevice(self._vpcs,
                                        self._working_dir,

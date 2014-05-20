@@ -321,6 +321,9 @@ class VPCSDevice(object):
 
         if not self.is_running():
 
+            if not self._path:
+                raise VPCSError("No path to a VPCS executable has been set")
+
             if not os.path.isfile(self._path):
                 raise VPCSError("VPCS '{}' is not accessible".format(self._path))
 

@@ -69,18 +69,15 @@ class IOU(IModule):
         iou_config = config.get_section_config(name.upper())
         self._iouyap = iou_config.get("iouyap")
         if not self._iouyap or not os.path.isfile(self._iouyap):
-            iouyap_in_cwd = os.path.join(os.getcwd(), "iouyap")
-            if os.path.isfile(iouyap_in_cwd):
-                self._iouyap = iouyap_in_cwd
-            else:
-                # look for iouyap if none is defined or accessible
-                for path in os.environ["PATH"].split(":"):
-                    try:
-                        if "iouyap" in os.listdir(path) and os.access(os.path.join(path, "iouyap"), os.X_OK):
-                            self._iouyap = os.path.join(path, "iouyap")
-                            break
-                    except OSError:
-                        continue
+            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            # look for iouyap in the current working directory and $PATH
+            for path in paths:
+                try:
+                    if "iouyap" in os.listdir(path) and os.access(os.path.join(path, "iouyap"), os.X_OK):
+                        self._iouyap = os.path.join(path, "iouyap")
+                        break
+                except OSError:
+                    continue
 
         if not self._iouyap:
             log.warning("iouyap binary couldn't be found!")
