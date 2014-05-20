@@ -411,11 +411,8 @@ class IOU(Router):
                 log.debug("Waiting to connect to {}".format(self.ttyS))
                 time.sleep(RETRY_DELAY)
             except Exception as e:
-                if e.errno == 111:  # connection refused
-                    log.debug("Waiting to connect to {}".format(self.ttyS))
-                    time.sleep(RETRY_DELAY)
-                else:
-                    raise NetioError("Couldn't connect to socket {}: {}".format(self.ttyS, e))
+                raise NetioError("Couldn't connect to socket {}: {}"
+                                 .format(self.ttyS, e))
             else:
                 break
 
