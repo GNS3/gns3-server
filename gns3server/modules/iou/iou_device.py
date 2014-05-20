@@ -104,7 +104,7 @@ class IOUDevice(object):
         self._nvram = 128  # Kilobytes
         self._startup_config = ""
         self._ram = 256  # Megabytes
-        self._l1_keepalives = True
+        self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
         # update the working directory
         self.working_dir = working_dir
@@ -728,7 +728,7 @@ class IOUDevice(object):
             if re.search("-l\s+Enable Layer 1 keepalive messages", output.decode("utf-8")):
                 command.extend(["-l"])
             else:
-                log.warn("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
+                raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
 
     def _build_command(self):
         """
