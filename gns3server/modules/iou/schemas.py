@@ -38,6 +38,7 @@ IOU_CREATE_SCHEMA = {
             "minLength": 1,
         }
     },
+    "additionalProperties": False,
     "required": ["path"],
 }
 
@@ -51,6 +52,7 @@ IOU_DELETE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -117,6 +119,7 @@ IOU_UPDATE_SCHEMA = {
             "type": "string"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -130,6 +133,7 @@ IOU_START_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -143,6 +147,7 @@ IOU_STOP_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -156,6 +161,7 @@ IOU_RELOAD_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -173,6 +179,7 @@ IOU_ALLOCATE_UDP_PORT_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id"]
 }
 
@@ -341,6 +348,7 @@ IOU_ADD_NIO_SCHEMA = {
             ]
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id", "slot", "port", "nio"]
 }
 
@@ -367,5 +375,6 @@ IOU_DELETE_NIO_SCHEMA = {
             "maximum": 3
         },
     },
+    "additionalProperties": False,
     "required": ["id", "slot", "port"]
 }

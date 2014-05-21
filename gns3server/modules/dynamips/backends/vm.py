@@ -479,7 +479,11 @@ class VM(object):
 
         # Update the ghost IOS file in case the RAM size has changed
         if self._hypervisor_manager.ghost_ios_support:
-            self.set_ghost_ios(router)
+            try:
+                self.set_ghost_ios(router)
+            except DynamipsError as e:
+                self.send_custom_error(str(e))
+                return
 
         self.send_response(response)
 

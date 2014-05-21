@@ -24,8 +24,9 @@ ATMSW_CREATE_SCHEMA = {
             "description": "ATM switch name",
             "type": "string",
             "minLength": 1,
-        }
-    }
+        },
+    },
+    "additionalProperties": False,
 }
 
 ATMSW_DELETE_SCHEMA = {
@@ -38,6 +39,7 @@ ATMSW_DELETE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -56,6 +58,7 @@ ATMSW_UPDATE_SCHEMA = {
             "minLength": 1,
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -73,6 +76,7 @@ ATMSW_ALLOCATE_UDP_PORT_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id"]
 }
 
@@ -237,6 +241,7 @@ ATMSW_ADD_NIO_SCHEMA = {
             ]
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port", "port_id", "mappings", "nio"],
 }
 
@@ -255,5 +260,6 @@ ATMSW_DELETE_NIO_SCHEMA = {
             "minimum": 1,
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port"]
 }

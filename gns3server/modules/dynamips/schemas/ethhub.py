@@ -24,8 +24,9 @@ ETHHUB_CREATE_SCHEMA = {
             "description": "Ethernet hub name",
             "type": "string",
             "minLength": 1,
-        }
-    }
+        },
+    },
+    "additionalProperties": False,
 }
 
 ETHHUB_DELETE_SCHEMA = {
@@ -38,6 +39,7 @@ ETHHUB_DELETE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -56,6 +58,7 @@ ETHHUB_UPDATE_SCHEMA = {
             "minLength": 1,
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -73,6 +76,7 @@ ETHHUB_ALLOCATE_UDP_PORT_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id"]
 }
 
@@ -234,6 +238,7 @@ ETHHUB_ADD_NIO_SCHEMA = {
             ]
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id", "port", "nio"]
 }
 
@@ -252,5 +257,6 @@ ETHHUB_DELETE_NIO_SCHEMA = {
             "minimum": 1,
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port"]
 }

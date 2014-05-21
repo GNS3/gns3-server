@@ -33,6 +33,7 @@ VPCS_CREATE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
 }
 
 VPCS_DELETE_SCHEMA = {
@@ -45,6 +46,7 @@ VPCS_DELETE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -78,6 +80,7 @@ VPCS_UPDATE_SCHEMA = {
             "type": "string"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -91,6 +94,7 @@ VPCS_START_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -104,6 +108,7 @@ VPCS_STOP_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -117,6 +122,7 @@ VPCS_RELOAD_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -134,6 +140,7 @@ VPCS_ALLOCATE_UDP_PORT_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id"]
 }
 
@@ -296,6 +303,7 @@ VPCS_ADD_NIO_SCHEMA = {
             ]
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id", "port", "nio"]
 }
 
@@ -315,5 +323,6 @@ VPCS_DELETE_NIO_SCHEMA = {
             "maximum": 0
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port"]
 }

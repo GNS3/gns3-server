@@ -24,8 +24,9 @@ ETHSW_CREATE_SCHEMA = {
             "description": "Ethernet switch name",
             "type": "string",
             "minLength": 1,
-        }
-    }
+        },
+    },
+    "additionalProperties": False,
 }
 
 ETHSW_DELETE_SCHEMA = {
@@ -38,6 +39,7 @@ ETHSW_DELETE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -71,6 +73,7 @@ ETHSW_UPDATE_SCHEMA = {
 #                 },
 #         },
     },
+    #"additionalProperties": False,
     "required": ["id"]
 }
 
@@ -88,6 +91,7 @@ ETHSW_ALLOCATE_UDP_PORT_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id"]
 }
 
@@ -258,6 +262,7 @@ ETHSW_ADD_NIO_SCHEMA = {
             ]
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id", "port", "port_type", "vlan", "nio"],
 
     "dependencies": {
@@ -281,5 +286,6 @@ ETHSW_DELETE_NIO_SCHEMA = {
             "minimum": 1,
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port"]
 }

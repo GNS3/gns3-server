@@ -58,13 +58,14 @@ VM_CREATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535
         },
-        "mac_address": {
+        "mac_addr": {
             "description": "base MAC address",
             "type": "string",
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         }
     },
+    "additionalProperties": False,
     "required": ["platform", "image", "ram"]
 }
 
@@ -78,6 +79,7 @@ VM_DELETE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -91,6 +93,7 @@ VM_START_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -104,6 +107,7 @@ VM_STOP_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -117,6 +121,7 @@ VM_SUSPEND_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -130,10 +135,11 @@ VM_RELOAD_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
-#TODO: platform specific properties?
+#TODO: improve platform specific properties (dependencies?)
 VM_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to update a VM instance",
@@ -237,7 +243,7 @@ VM_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535
         },
-        "mac_address": {
+        "mac_addr": {
             "description": "base MAC address",
             "type": "string",
             "minLength": 1,
@@ -326,7 +332,39 @@ VM_UPDATE_SCHEMA = {
             "description": "private configuration base64 encoded",
             "type": "string"
         },
+        # C7200 properties
+        "npe": {
+            "description": "NPE model",
+            "enum": ["npe-100",
+                     "npe-150",
+                     "npe-175",
+                     "npe-200",
+                     "npe-225",
+                     "npe-300",
+                     "npe-400",
+                     "npe-g2"]
+        },
+        "midplane": {
+            "description": "Midplane model",
+            "enum": ["std", "vxr"]
+        },
+        "sensors": {
+            "description": "Temperature sensors",
+            "type": "array"
+        },
+        "power_supplies": {
+            "description": "Power supplies status",
+            "type": "array"
+        },
+        # I/O memory property for all platforms but C7200
+        "iomem": {
+            "description": "I/O memory percentage",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+        },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -340,6 +378,7 @@ VM_SAVE_CONFIG_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -357,6 +396,7 @@ VM_IDLEPCS_SCHEMA = {
             "type": "boolean"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -374,6 +414,7 @@ VM_ALLOCATE_UDP_PORT_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id"]
 }
 
@@ -542,6 +583,7 @@ VM_ADD_NIO_SCHEMA = {
             ]
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id", "slot", "port", "nio"]
 }
 
@@ -567,5 +609,6 @@ VM_DELETE_NIO_SCHEMA = {
             "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
         },
     },
+    "additionalProperties": False,
     "required": ["id", "slot", "port"]
 }
