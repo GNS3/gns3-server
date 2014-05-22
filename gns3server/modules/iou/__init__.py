@@ -580,6 +580,7 @@ class IOU(IModule):
                                     ignore_ports=self._allocated_udp_ports)
         except Exception as e:
             self.send_custom_error(str(e))
+            return
 
         self._allocated_udp_ports.append(port)
         log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance.name,

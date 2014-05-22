@@ -21,6 +21,7 @@ order to run an VPCS instance.
 """
 
 import os
+import sys
 import subprocess
 import signal
 import shutil
@@ -343,11 +344,14 @@ class VPCSDevice(object):
                 log.info("starting VPCS: {}".format(self._command))
                 self._vpcs_stdout_file = os.path.join(self._working_dir, "vpcs.log")
                 log.info("logging to {}".format(self._vpcs_stdout_file))
+                if sys.platform.startswith("win32"):
+                    flags = subprocess.CREATE_NEW_PROCESS_GROUP
                 with open(self._vpcs_stdout_file, "w") as fd:
                     self._process = subprocess.Popen(self._command,
                                                      stdout=fd,
                                                      stderr=subprocess.STDOUT,
-                                                     cwd=self._working_dir)
+                                                     cwd=self._working_dir,
+                                                     creationflags=flags)
                 log.info("VPCS instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
             except OSError as e:
@@ -363,7 +367,11 @@ class VPCSDevice(object):
         # stop the VPCS process
         if self.is_running():
             log.info("stopping VPCS instance {} PID={}".format(self._id, self._process.pid))
-            self._process.send_signal(signal.SIGTERM)  # send SIGTERM will stop VPCS
+            if sys.platform.startswith("win32"):
+                self._process.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                self._process.terminate()
+
             self._process.wait()
 
         self._process = None
