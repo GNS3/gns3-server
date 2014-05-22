@@ -35,7 +35,7 @@ VM_CREATE_SCHEMA = {
             "description": "router chassis model",
             "type": "string",
             "minLength": 1,
-            "pattern": "^[0-9]{4}$"
+            "pattern": "^[0-9]{4}(XM)?$"
         },
         "image": {
             "description": "path to the IOS image file",
