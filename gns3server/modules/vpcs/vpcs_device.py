@@ -344,6 +344,7 @@ class VPCSDevice(object):
                 log.info("starting VPCS: {}".format(self._command))
                 self._vpcs_stdout_file = os.path.join(self._working_dir, "vpcs.log")
                 log.info("logging to {}".format(self._vpcs_stdout_file))
+                flags = 0
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
                 with open(self._vpcs_stdout_file, "w") as fd:
