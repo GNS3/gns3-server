@@ -643,14 +643,13 @@ class IOU(IModule):
                 nio = NIO_UDP(lport, rhost, rport)
             elif request["nio"]["type"] == "nio_tap":
                 tap_device = request["nio"]["tap_device"]
-                if not self.has_privileged_access(self._iouyap, tap_device):
+                if not has_privileged_access(self._iouyap, tap_device):
                     raise IOUError("{} has no privileged access to {}.".format(self._iouyap, tap_device))
                 nio = NIO_TAP(tap_device)
             elif request["nio"]["type"] == "nio_generic_ethernet":
                 ethernet_device = request["nio"]["ethernet_device"]
-                if not self.has_privileged_access(self._iouyap, ethernet_device):
+                if not has_privileged_access(self._iouyap, ethernet_device):
                     raise IOUError("{} has no privileged access to {}.".format(self._iouyap, ethernet_device))
-                self._check_for_privileged_access(ethernet_device)
                 nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
                 raise IOUError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))
