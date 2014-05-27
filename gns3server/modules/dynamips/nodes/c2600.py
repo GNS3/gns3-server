@@ -54,7 +54,7 @@ class C2600(Router):
                            "2650XM": C2600_MB_1FE,
                            "2651XM": C2600_MB_2FE}
 
-    def __init__(self, hypervisor, name=None, chassis="2610"):
+    def __init__(self, hypervisor, name, chassis="2610"):
         Router.__init__(self, hypervisor, name, platform="c2600")
 
         # Set default values for this platform

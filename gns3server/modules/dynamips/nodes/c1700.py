@@ -39,7 +39,7 @@ class C1700(Router):
     1710 is not supported.
     """
 
-    def __init__(self, hypervisor, name=None, chassis="1720"):
+    def __init__(self, hypervisor, name, chassis="1720"):
         Router.__init__(self, hypervisor, name, platform="c1700")
 
         # Set default values for this platform

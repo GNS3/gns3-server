@@ -50,22 +50,18 @@ class Router(object):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, hypervisor, name=None, platform="c7200", ghost_flag=False):
+    def __init__(self, hypervisor, name, platform="c7200", ghost_flag=False):
 
         if not ghost_flag:
+
+            # check if the name is already taken
+            if name in self._allocated_names:
+                raise DynamipsError('Name "{}" is already used by another router'.format(name))
+
             # create an unique ID
             self._id = Router._instance_count
             Router._instance_count += 1
 
-            # let's create a unique name if none has been chosen
-            if not name:
-                name_id = self._id
-                while True:
-                    name = "R" + str(name_id)
-                    # check if the name has already been allocated to another router
-                    if name not in self._allocated_names:
-                        break
-                    name_id += 1
         else:
             log.info("creating a new ghost IOS file")
             self._id = 0
@@ -581,10 +577,10 @@ class Router(object):
             reply = self._hypervisor.send("vm extract_config {}".format(self._name))[0].rsplit(' ', 2)[-2:]
         except IOError:
             #for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
-            return (None, None)
+            return None, None
         startup_config = reply[0][1:-1]  # get statup-config and remove single quotes
         private_config = reply[1][1:-1]  # get private-config and remove single quotes
-        return (startup_config, private_config)
+        return startup_config, private_config
 
     def push_config(self, startup_config, private_config='(keep)'):
         """
@@ -727,7 +723,7 @@ class Router(object):
         else:
             flag = 0
         self._hypervisor.send("vm set_sparse_mem {name} {sparsemem}".format(name=self._name,
-                                                                     sparsemem=flag))
+                                                                            sparsemem=flag))
 
         if sparsemem:
             log.info("router {name} [id={id}]: sparse memory enabled".format(name=self._name,

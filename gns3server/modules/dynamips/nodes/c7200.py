@@ -38,7 +38,7 @@ class C7200(Router):
     :param npe: default NPE
     """
 
-    def __init__(self, hypervisor, name=None, npe="npe-400"):
+    def __init__(self, hypervisor, name, npe="npe-400"):
         Router.__init__(self, hypervisor, name, platform="c7200")
 
         # Set default values for this platform

@@ -27,6 +27,7 @@ ATMSW_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
+    "required": ["name"]
 }
 
 ATMSW_DELETE_SCHEMA = {

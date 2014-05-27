@@ -66,7 +66,7 @@ VM_CREATE_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["platform", "image", "ram"]
+    "required": ["name", "platform", "image", "ram"]
 }
 
 VM_DELETE_SCHEMA = {

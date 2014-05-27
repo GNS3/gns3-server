@@ -37,7 +37,7 @@ class FRSW(object):
         """
         Creates a new Frame-Relay switch.
 
-        Optional request parameters:
+        Mandatory request parameters:
         - name (switch name)
 
         Response parameters:
@@ -51,10 +51,7 @@ class FRSW(object):
         if request and not self.validate_request(request, FRSW_CREATE_SCHEMA):
             return
 
-        name = None
-        if request and "name" in request:
-            name = request["name"]
-
+        name = request["name"]
         try:
             if not self._hypervisor_manager:
                 self.start_hypervisor_manager()

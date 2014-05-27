@@ -27,6 +27,7 @@ FRSW_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
+    "required": ["name"]
 }
 
 FRSW_DELETE_SCHEMA = {

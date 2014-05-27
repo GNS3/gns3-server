@@ -105,12 +105,12 @@ class VM(object):
         Creates a new VM (router).
 
         Mandatory request parameters:
+        - name (vm name)
         - platform (platform name e.g. c7200)
         - image (path to IOS image)
         - ram (amount of RAM in MB)
 
         Optional request parameters:
-        - name (vm name)
         - console (console port number)
         - aux (auxiliary console port number)
         - mac_addr (MAC address)
@@ -127,9 +127,7 @@ class VM(object):
         if not self.validate_request(request, VM_CREATE_SCHEMA):
             return
 
-        name = None
-        if "name" in request:
-            name = request["name"]
+        name = request["name"]
         platform = request["platform"]
         image = request["image"]
         ram = request["ram"]

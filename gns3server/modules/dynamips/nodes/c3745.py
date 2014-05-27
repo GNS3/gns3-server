@@ -35,7 +35,7 @@ class C3745(Router):
     :param name: name for this router
     """
 
-    def __init__(self, hypervisor, name=None):
+    def __init__(self, hypervisor, name):
         Router.__init__(self, hypervisor, name, platform="c3745")
 
         # Set default values for this platform

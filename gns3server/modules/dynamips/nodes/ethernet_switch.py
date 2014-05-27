@@ -37,21 +37,15 @@ class EthernetSwitch(object):
     _allocated_names = []
     _instance_count = 1
 
-    def __init__(self, hypervisor, name=None):
+    def __init__(self, hypervisor, name):
+
+        # check if the name is already taken
+        if name in self._allocated_names:
+            raise DynamipsError('Name "{}" is already used by another Ethernet switch'.format(name))
 
         # create an unique ID
         self._id = EthernetSwitch._instance_count
         EthernetSwitch._instance_count += 1
-
-        # let's create a unique name if none has been chosen
-        if not name:
-            name_id = self._id
-            while True:
-                name = "SW" + str(name_id)
-                # check if the name has already been allocated to another switch
-                if name not in self._allocated_names:
-                    break
-                name_id += 1
 
         self._allocated_names.append(name)
         self._hypervisor = hypervisor
@@ -101,6 +95,9 @@ class EthernetSwitch(object):
 
         :param new_name: New name for this switch
         """
+
+        if new_name in self._allocated_names:
+            raise DynamipsError('Name "{}" is already used by another Ethernet switch'.format(new_name))
 
         new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces

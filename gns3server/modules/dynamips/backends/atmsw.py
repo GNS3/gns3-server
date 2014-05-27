@@ -38,7 +38,7 @@ class ATMSW(object):
         """
         Creates a new ATM switch.
 
-        Optional request parameters:
+        Mandatory request parameters:
         - name (switch name)
 
         Response parameters:
@@ -52,10 +52,8 @@ class ATMSW(object):
         if request and not self.validate_request(request, ATMSW_CREATE_SCHEMA):
             return
 
-        name = None
-        if request and "name" in request:
-            name = request["name"]
 
+        name = request["name"]
         try:
             if not self._hypervisor_manager:
                 self.start_hypervisor_manager()

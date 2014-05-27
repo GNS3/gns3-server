@@ -35,7 +35,7 @@ class C2691(Router):
     :param name: name for this router
     """
 
-    def __init__(self, hypervisor, name=None):
+    def __init__(self, hypervisor, name):
         Router.__init__(self, hypervisor, name, platform="c2691")
 
         # Set default values for this platform

@@ -27,6 +27,7 @@ ETHHUB_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
+    "required": ["name"]
 }
 
 ETHHUB_DELETE_SCHEMA = {

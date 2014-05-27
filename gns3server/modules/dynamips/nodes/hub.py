@@ -38,19 +38,13 @@ class Hub(Bridge):
 
     def __init__(self, hypervisor, name):
 
+        # check if the name is already taken
+        if name in self._allocated_names:
+            raise DynamipsError('Name "{}" is already used by another Ethernet hub'.format(name))
+
         # create an unique ID
         self._id = Hub._instance_count
         Hub._instance_count += 1
-
-        # let's create a unique name if none has been chosen
-        if not name:
-            name_id = self._id
-            while True:
-                name = "Hub" + str(name_id)
-                # check if the name has already been allocated to another switch
-                if name not in self._allocated_names:
-                    break
-                name_id += 1
 
         self._mapping = {}
         Bridge.__init__(self, hypervisor, name)

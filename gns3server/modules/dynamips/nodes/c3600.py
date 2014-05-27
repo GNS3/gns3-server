@@ -37,7 +37,7 @@ class C3600(Router):
     3620, 3640 or 3660 (default = 3640).
     """
 
-    def __init__(self, hypervisor, name=None, chassis="3640"):
+    def __init__(self, hypervisor, name, chassis="3640"):
         Router.__init__(self, hypervisor, name, platform="c3600")
 
         # Set default values for this platform

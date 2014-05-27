@@ -27,6 +27,7 @@ ETHSW_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
+    "required": ["name"]
 }
 
 ETHSW_DELETE_SCHEMA = {

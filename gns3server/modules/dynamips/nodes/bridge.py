@@ -20,6 +20,8 @@ Interface for Dynamips NIO bridge module ("nio_bridge").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L538
 """
 
+from ..dynamips_error import DynamipsError
+
 
 class Bridge(object):
     """
@@ -57,6 +59,10 @@ class Bridge(object):
 
         :param new_name: New name for this bridge
         """
+
+        # check if the name is already taken
+        if new_name in self._allocated_names:
+            raise DynamipsError('Name "{}" is already used by another bridge'.format(new_name))
 
         new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
