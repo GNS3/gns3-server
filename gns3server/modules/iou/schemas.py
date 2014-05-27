@@ -39,7 +39,7 @@ IOU_CREATE_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["path"],
+    "required": ["name", "path"],
 }
 
 IOU_DELETE_SCHEMA = {

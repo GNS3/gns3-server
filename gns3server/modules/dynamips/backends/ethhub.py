@@ -48,7 +48,7 @@ class ETHHUB(object):
         """
 
         # validate the request
-        if request and not self.validate_request(request, ETHHUB_CREATE_SCHEMA):
+        if not self.validate_request(request, ETHHUB_CREATE_SCHEMA):
             return
 
         name = request["name"]

@@ -34,17 +34,20 @@ class Hub(Bridge):
     :param name: name for this hub
     """
 
-    _instance_count = 1
+    _instances = []
 
     def __init__(self, hypervisor, name):
 
-        # check if the name is already taken
-        if name in self._allocated_names:
-            raise DynamipsError('Name "{}" is already used by another Ethernet hub'.format(name))
+        # find an instance identifier (0 < id <= 4096)
+        self._id = 0
+        for identifier in range(1, 4097):
+            if identifier not in self._instances:
+                self._id = identifier
+                self._instances.append(self._id)
+                break
 
-        # create an unique ID
-        self._id = Hub._instance_count
-        Hub._instance_count += 1
+        if self._id == 0:
+            raise DynamipsError("Maximum number of instances reached")
 
         self._mapping = {}
         Bridge.__init__(self, hypervisor, name)
@@ -55,11 +58,10 @@ class Hub(Bridge):
     @classmethod
     def reset(cls):
         """
-        Resets the instance count and the allocated names list.
+        Resets the instance count and the allocated instances list.
         """
 
-        cls._instance_count = 1
-        cls._allocated_names.clear()
+        cls._instances.clear()
 
     @property
     def id(self):
@@ -89,6 +91,7 @@ class Hub(Bridge):
         Bridge.delete(self)
         log.info("Ethernet hub {name} [id={id}] has been deleted".format(name=self._name,
                                                                          id=self._id))
+        self._instances.remove(self._id)
 
     def add_nio(self, nio, port):
         """

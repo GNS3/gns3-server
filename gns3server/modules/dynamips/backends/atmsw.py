@@ -49,9 +49,8 @@ class ATMSW(object):
         """
 
         # validate the request
-        if request and not self.validate_request(request, ATMSW_CREATE_SCHEMA):
+        if not self.validate_request(request, ATMSW_CREATE_SCHEMA):
             return
-
 
         name = request["name"]
         try:

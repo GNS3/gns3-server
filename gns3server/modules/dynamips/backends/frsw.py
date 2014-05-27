@@ -48,7 +48,7 @@ class FRSW(object):
         """
 
         # validate the request
-        if request and not self.validate_request(request, FRSW_CREATE_SCHEMA):
+        if not self.validate_request(request, FRSW_CREATE_SCHEMA):
             return
 
         name = request["name"]

@@ -34,6 +34,7 @@ VPCS_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
+    "required": ["name"]
 }
 
 VPCS_DELETE_SCHEMA = {

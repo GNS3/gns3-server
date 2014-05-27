@@ -48,7 +48,7 @@ class ETHSW(object):
         """
 
         # validate the request
-        if request and not self.validate_request(request, ETHSW_CREATE_SCHEMA):
+        if not self.validate_request(request, ETHSW_CREATE_SCHEMA):
             return
 
         name = request["name"]

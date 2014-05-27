@@ -53,10 +53,10 @@ class VPCSDevice(object):
     _allocated_console_ports = []
 
     def __init__(self,
+                 name,
                  path,
                  working_dir,
                  host="127.0.0.1",
-                 name=None,
                  console=None,
                  console_start_port_range=4512,
                  console_end_port_range=5000):

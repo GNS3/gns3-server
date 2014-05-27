@@ -58,10 +58,11 @@ class IOUDevice(object):
     _instances = []
     _allocated_console_ports = []
 
-    def __init__(self, path,
+    def __init__(self,
+                 name,
+                 path,
                  working_dir,
                  host="127.0.0.1",
-                 name=None,
                  console=None,
                  console_start_port_range=4001,
                  console_end_port_range=4512):
@@ -77,10 +78,7 @@ class IOUDevice(object):
         if self._id == 0:
             raise IOUError("Maximum number of IOU instances reached")
 
-        if name:
-            self._name = name
-        else:
-            self._name = "IOU{}".format(self._id)
+        self._name = name
         self._path = path
         self._iourc = ""
         self._iouyap = ""

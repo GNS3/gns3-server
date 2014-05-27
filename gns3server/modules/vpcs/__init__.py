@@ -211,8 +211,10 @@ class VPCS(IModule):
         """
         Creates a new VPCS instance.
 
-        Optional request parameters:
+        Mandatory request parameters:
         - name (VPCS name)
+
+        Optional request parameters:
         - console (VPCS console port)
 
         Response parameters:
@@ -224,13 +226,11 @@ class VPCS(IModule):
         """
 
         # validate the request
-        if request and not self.validate_request(request, VPCS_CREATE_SCHEMA):
+        if not self.validate_request(request, VPCS_CREATE_SCHEMA):
             return
 
-        name = console = None
-        if request:
-            name = request.get("name")
-            console = request.get("console")
+        name = request["name"]
+        console = request.get("console")
 
         try:
             try:
@@ -243,10 +243,10 @@ class VPCS(IModule):
             if not self._vpcs:
                 raise VPCSError("No path to a VPCS executable has been set")
 
-            vpcs_instance = VPCSDevice(self._vpcs,
+            vpcs_instance = VPCSDevice(name,
+                                       self._vpcs,
                                        self._working_dir,
                                        self._host,
-                                       name,
                                        console,
                                        self._console_start_port_range,
                                        self._console_end_port_range)

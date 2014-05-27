@@ -41,10 +41,9 @@ class Router(object):
     :param ghost_flag: used when creating a ghost IOS.
     """
 
-    _allocated_names = []
+    _instances = []
     _allocated_console_ports = []
     _allocated_aux_ports = []
-    _instance_count = 1
     _status = {0: "inactive",
                1: "shutting down",
                2: "running",
@@ -54,20 +53,22 @@ class Router(object):
 
         if not ghost_flag:
 
-            # check if the name is already taken
-            if name in self._allocated_names:
-                raise DynamipsError('Name "{}" is already used by another router'.format(name))
+            # find an instance identifier (0 < id <= 4096)
+            self._id = 0
+            for identifier in range(1, 4097):
+                if identifier not in self._instances:
+                    self._id = identifier
+                    self._instances.append(self._id)
+                    break
 
-            # create an unique ID
-            self._id = Router._instance_count
-            Router._instance_count += 1
+            if self._id == 0:
+                raise DynamipsError("Maximum number of instances reached")
 
         else:
             log.info("creating a new ghost IOS file")
             self._id = 0
             name = "Ghost"
 
-        self._allocated_names.append(name)
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._platform = platform
@@ -140,11 +141,10 @@ class Router(object):
     @classmethod
     def reset(cls):
         """
-        Resets the instance count and the allocated names list.
+        Resets the instance count and the allocated instances list.
         """
 
-        cls._instance_count = 1
-        cls._allocated_names.clear()
+        cls._instances.clear()
         cls._allocated_console_ports.clear()
         cls._allocated_aux_ports.clear()
 
@@ -218,9 +218,6 @@ class Router(object):
         :param new_name: new name string
         """
 
-        if new_name in self._allocated_names:
-            raise DynamipsError('Name "{}" is already used by another router'.format(new_name))
-
         if self._startup_config:
             # change the hostname in the startup-config
             startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
@@ -261,10 +258,7 @@ class Router(object):
         log.info("router {name} [id={id}]: renamed to {new_name}".format(name=self._name,
                                                                          id=self._id,
                                                                          new_name=new_name))
-
-        self._allocated_names.remove(self.name)
         self._name = new_name
-        self._allocated_names.append(new_name_no_quotes)
 
     @property
     def platform(self):
@@ -312,9 +306,9 @@ class Router(object):
 
         self._hypervisor.send("vm delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
-
         log.info("router {name} [id={id}] has been deleted".format(name=self._name, id=self._id))
-        self._allocated_names.remove(self.name)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
         if self.console:
             self._allocated_console_ports.remove(self.console)
         if self.aux:
@@ -341,7 +335,8 @@ class Router(object):
                 os.remove(private_config_path)
 
         log.info("router {name} [id={id}] has been deleted (including associated files)".format(name=self._name, id=self._id))
-        self._allocated_names.remove(self.name)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
         if self.console:
             self._allocated_console_ports.remove(self.console)
         if self.aux:

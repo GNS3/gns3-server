@@ -315,7 +315,7 @@ class IOU(IModule):
         if not self.validate_request(request, IOU_CREATE_SCHEMA):
             return
 
-        name = request.get("name")
+        name = request["name"]
         console = request.get("console")
         iou_path = request["path"]
 
@@ -327,10 +327,10 @@ class IOU(IModule):
             except OSError as e:
                 raise IOUError("Could not create working directory {}".format(e))
 
-            iou_instance = IOUDevice(iou_path,
+            iou_instance = IOUDevice(name,
+                                     iou_path,
                                      self._working_dir,
                                      self._host,
-                                     name,
                                      console,
                                      self._console_start_port_range,
                                      self._console_end_port_range)

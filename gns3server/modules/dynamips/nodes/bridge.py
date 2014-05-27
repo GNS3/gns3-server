@@ -31,12 +31,9 @@ class Bridge(object):
     :param name: name for this bridge
     """
 
-    _allocated_names = []
-
     def __init__(self, hypervisor, name):
 
         self._hypervisor = hypervisor
-        self._allocated_names.append(name)
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("nio_bridge create {}".format(self._name))
         self._hypervisor.devices.append(self)
@@ -60,18 +57,11 @@ class Bridge(object):
         :param new_name: New name for this bridge
         """
 
-        # check if the name is already taken
-        if new_name in self._allocated_names:
-            raise DynamipsError('Name "{}" is already used by another bridge'.format(new_name))
-
-        new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("nio_bridge rename {name} {new_name}".format(name=self._name,
                                                                            new_name=new_name))
 
-        self._allocated_names.remove(self.name)
         self._name = new_name
-        self._allocated_names.append(new_name_no_quotes)
 
     @property
     def hypervisor(self):
@@ -109,7 +99,6 @@ class Bridge(object):
 
         self._hypervisor.send("nio_bridge delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
-        self._allocated_names.remove(self.name)
 
     def add_nio(self, nio):
         """
