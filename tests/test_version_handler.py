@@ -34,7 +34,7 @@ class TestVersionHandler(AsyncHTTPTestCase):
 
         self.http_client.fetch(self.get_url(self.URL), self.stop)
         response = self.wait()
-        assert(response.headers['Content-Type'].startswith('application/json'))
-        assert(response.body)
+        assert response.headers['Content-Type'].startswith('application/json')
+        assert response.body
         body = json_decode(response.body)
         assert body['version'] == __version__

@@ -56,32 +56,32 @@ EXIT_ABORT = 2
 # Mostly from:
 # https://code.google.com/p/miniboa/source/browse/trunk/miniboa/telnet.py
 #--[ Telnet Commands ]---------------------------------------------------------
-SE     = 240 # End of subnegotiation parameters
-NOP    = 241 # No operation
-DATMK  = 242 # Data stream portion of a sync.
-BREAK  = 243 # NVT Character BRK
-IP     = 244 # Interrupt Process
-AO     = 245 # Abort Output
-AYT    = 246 # Are you there
-EC     = 247 # Erase Character
-EL     = 248 # Erase Line
-GA     = 249 # The Go Ahead Signal
-SB     = 250 # Sub-option to follow
-WILL   = 251 # Will; request or confirm option begin
-WONT   = 252 # Wont; deny option request
-DO     = 253 # Do = Request or confirm remote option
-DONT   = 254 # Don't = Demand or confirm option halt
-IAC    = 255 # Interpret as Command
-SEND   = 1   # Sub-process negotiation SEND command
-IS     = 0   # Sub-process negotiation IS command
+SE = 240 # End of sub-negotiation parameters
+NOP = 241 # No operation
+DATMK = 242 # Data stream portion of a sync.
+BREAK = 243 # NVT Character BRK
+IP = 244 # Interrupt Process
+AO = 245 # Abort Output
+AYT = 246 # Are you there
+EC = 247 # Erase Character
+EL = 248 # Erase Line
+GA = 249 # The Go Ahead Signal
+SB = 250 # Sub-option to follow
+WILL = 251 # Will; request or confirm option begin
+WONT = 252 # Wont; deny option request
+DO = 253 # Do = Request or confirm remote option
+DONT = 254 # Don't = Demand or confirm option halt
+IAC = 255 # Interpret as Command
+SEND = 1   # Sub-process negotiation SEND command
+IS = 0   # Sub-process negotiation IS command
 #--[ Telnet Options ]----------------------------------------------------------
 BINARY = 0   # Transmit Binary
-ECHO   = 1   # Echo characters back to sender
-RECON  = 2   # Reconnection
-SGA    = 3   # Suppress Go-Ahead
-TMARK  = 6   # Timing Mark
-TTYPE  = 24  # Terminal Type
-NAWS   = 31  # Negotiate About Window Size
+ECHO = 1   # Echo characters back to sender
+RECON = 2   # Reconnection
+SGA = 3   # Suppress Go-Ahead
+TMARK = 6   # Timing Mark
+TTYPE = 24  # Terminal Type
+NAWS = 31  # Negotiate About Window Size
 LINEMO = 34  # Line Mode
 
 
@@ -299,9 +299,7 @@ class TelnetServer(Console):
                     buf.extend(self._read_block(1))
                     iac_cmd.append(buf[iac_loc + 2])
                 # We do ECHO, SGA, and BINARY. Period.
-                if (iac_cmd[1] == DO
-                    and iac_cmd[2] not in [ECHO, SGA, BINARY]):
-
+                if iac_cmd[1] == DO and iac_cmd[2] not in [ECHO, SGA, BINARY]:
                     self._write_cur(bytes([IAC, WONT, iac_cmd[2]]))
                     log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
                 else:
@@ -326,7 +324,7 @@ class TelnetServer(Console):
         fd.send(bytes([IAC, WILL, ECHO,
                        IAC, WILL, SGA,
                        IAC, WILL, BINARY,
-                       IAC, DO,   BINARY]))
+                       IAC, DO, BINARY]))
 
         if args.telnet_limit and len(self.fd_dict) > args.telnet_limit:
             fd.send(b'\r\nToo many connections\r\n')
@@ -601,7 +599,7 @@ def start_ioucon(cmdline_args, stop_event):
                     nport = int(port)
                 except ValueError:
                     pass
-                if (addr == '' or nport == 0):
+                if addr == '' or nport == 0:
                     raise ConfigError('format for --telnet-server must be '
                                       'ADDR:PORT (like 127.0.0.1:20000)')
 

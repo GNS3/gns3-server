@@ -70,7 +70,7 @@ class Hypervisor(DynamipsHypervisor):
         :returns: id (integer)
         """
 
-        return(self._id)
+        return self._id
 
     @property
     def started(self):
@@ -90,7 +90,7 @@ class Hypervisor(DynamipsHypervisor):
         :returns: path to Dynamips
         """
 
-        return(self._path)
+        return self._path
 
     @path.setter
     def path(self, path):
@@ -110,7 +110,7 @@ class Hypervisor(DynamipsHypervisor):
         :returns: port number (integer)
         """
 
-        return(self._port)
+        return self._port
 
     @port.setter
     def port(self, port):
@@ -130,7 +130,7 @@ class Hypervisor(DynamipsHypervisor):
         :returns: host/address (string)
         """
 
-        return(self._host)
+        return self._host
 
     @host.setter
     def host(self, host):
@@ -232,7 +232,7 @@ class Hypervisor(DynamipsHypervisor):
                 self._process.wait(1)
             except subprocess.TimeoutExpired:
                 self._process.kill()
-                if self._process.poll() == None:
+                if self._process.poll() is None:
                     log.warn("Dynamips process {} is still running".format(self._process.pid))
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
@@ -264,7 +264,7 @@ class Hypervisor(DynamipsHypervisor):
         :returns: True or False
         """
 
-        if self._process and self._process.poll() == None:
+        if self._process and self._process.poll() is None:
             return True
         return False
 

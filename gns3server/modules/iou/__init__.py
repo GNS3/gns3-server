@@ -20,17 +20,13 @@ IOU server module.
 """
 
 import os
-import sys
 import base64
 import tempfile
-import fcntl
-import struct
 import socket
 import shutil
 
 from gns3server.modules import IModule
 from gns3server.config import Config
-import gns3server.jsonrpc as jsonrpc
 from .iou_device import IOUDevice
 from .iou_error import IOUError
 from .nios.nio_udp import NIO_UDP
@@ -215,12 +211,12 @@ class IOU(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
             return
 
         if "iourc" in request:
-            iourc_content = base64.decodestring(request["iourc"].encode("utf-8")).decode("utf-8")
+            iourc_content = base64.decodebytes(request["iourc"].encode("utf-8")).decode("utf-8")
             iourc_content = iourc_content.replace("\r\n", "\n")  # dos2unix
             try:
                 with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
@@ -228,7 +224,7 @@ class IOU(IModule):
                     f.write(iourc_content)
                     self._iourc = f.name
             except OSError as e:
-                raise IOUError("Could not save iourc file to {}: {}".format(f.name, e))
+                raise IOUError("Could not create the iourc file: {}".format(e))
 
         if "iouyap" in request and request["iouyap"]:
             self._iouyap = request["iouyap"]
@@ -410,7 +406,7 @@ class IOU(IModule):
         try:
             if "startup_config_base64" in request:
                 # a new startup-config has been pushed
-                config = base64.decodestring(request["startup_config_base64"].encode("utf-8")).decode("utf-8")
+                config = base64.decodebytes(request["startup_config_base64"].encode("utf-8")).decode("utf-8")
                 config = "!\n" + config.replace("\r", "")
                 config = config.replace('%h', iou_instance.name)
                 try:
@@ -587,8 +583,8 @@ class IOU(IModule):
                                                                             iou_instance.id,
                                                                             port,
                                                                             self._host))
-        response = {"lport": port}
-        response["port_id"] = request["port_id"]
+        response = {"lport": port,
+                    "port_id": request["port_id"]}
         self.send_response(response)
 
     @IModule.route("iou.add_nio")
@@ -643,12 +639,12 @@ class IOU(IModule):
                 nio = NIO_UDP(lport, rhost, rport)
             elif request["nio"]["type"] == "nio_tap":
                 tap_device = request["nio"]["tap_device"]
-                if not has_privileged_access(self._iouyap, tap_device):
+                if not has_privileged_access(self._iouyap):
                     raise IOUError("{} has no privileged access to {}.".format(self._iouyap, tap_device))
                 nio = NIO_TAP(tap_device)
             elif request["nio"]["type"] == "nio_generic_ethernet":
                 ethernet_device = request["nio"]["ethernet_device"]
-                if not has_privileged_access(self._iouyap, ethernet_device):
+                if not has_privileged_access(self._iouyap):
                     raise IOUError("{} has no privileged access to {}.".format(self._iouyap, ethernet_device))
                 nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
@@ -710,7 +706,7 @@ class IOU(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
         else:
             log.debug("received request {}".format(request))

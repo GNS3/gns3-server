@@ -83,7 +83,7 @@ class IOUDevice(object):
         self._iourc = ""
         self._iouyap = ""
         self._console = console
-        self._working_dir = None
+        self._working_dir = working_dir
         self._command = []
         self._process = None
         self._iouyap_process = None
@@ -154,7 +154,7 @@ class IOUDevice(object):
         :returns: id (integer)
         """
 
-        return(self._id)
+        return self._id
 
     @classmethod
     def reset(cls):
@@ -185,7 +185,7 @@ class IOUDevice(object):
 
         if self._startup_config:
             # update the startup-config
-            config_path = os.path.join(self.working_dir, "startup-config")
+            config_path = os.path.join(self._working_dir, "startup-config")
             if os.path.isfile(config_path):
                 try:
                     with open(config_path, "r+") as f:
@@ -209,7 +209,7 @@ class IOUDevice(object):
         :returns: path to IOU
         """
 
-        return(self._path)
+        return self._path
 
     @path.setter
     def path(self, path):
@@ -221,8 +221,8 @@ class IOUDevice(object):
 
         self._path = path
         log.info("IOU {name} [id={id}]: path changed to {path}".format(name=self._name,
-                                                                      id=self._id,
-                                                                      path=path))
+                                                                       id=self._id,
+                                                                       path=path))
 
     @property
     def iourc(self):
@@ -232,14 +232,14 @@ class IOUDevice(object):
         :returns: path to the iourc file
         """
 
-        return(self._iourc)
+        return self._iourc
 
     @iourc.setter
     def iourc(self, iourc):
         """
         Sets the path to the iourc file.
 
-        :param path: path to the iourc file.
+        :param iourc: path to the iourc file.
         """
 
         self._iourc = iourc
@@ -255,14 +255,14 @@ class IOUDevice(object):
         :returns: path to iouyap
         """
 
-        return(self._iouyap)
+        return self._iouyap
 
     @iouyap.setter
     def iouyap(self, iouyap):
         """
         Sets the path to iouyap.
 
-        :param path: path to iouyap
+        :param iouyap: path to iouyap
         """
 
         self._iouyap = iouyap
@@ -299,8 +299,8 @@ class IOUDevice(object):
 
         self._working_dir = working_dir
         log.info("IOU {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
-                                                                                    id=self._id,
-                                                                                    wd=self._working_dir))
+                                                                                  id=self._id,
+                                                                                  wd=self._working_dir))
 
     @property
     def console(self):
@@ -327,8 +327,8 @@ class IOUDevice(object):
         self._console = console
         self._allocated_console_ports.append(self._console)
         log.info("IOU {name} [id={id}]: console port set to {port}".format(name=self._name,
-                                                                         id=self._id,
-                                                                         port=console))
+                                                                           id=self._id,
+                                                                           port=console))
 
     def command(self):
         """
@@ -368,8 +368,8 @@ class IOUDevice(object):
             shutil.rmtree(self._working_dir)
         except OSError as e:
             log.error("could not delete IOU device {name} [id={id}]: {error}".format(name=self._name,
-                                                                                id=self._id,
-                                                                                error=e))
+                                                                                     id=self._id,
+                                                                                     error=e))
             return
 
         log.info("IOU device {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
@@ -402,6 +402,7 @@ class IOUDevice(object):
             for unit in adapter.ports.keys():
                 nio = adapter.get_nio(unit)
                 if nio:
+                    connection = None
                     if isinstance(nio, NIO_UDP):
                         # UDP tunnel
                         connection = {"tunnel_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
@@ -415,7 +416,8 @@ class IOUDevice(object):
                         # Ethernet interface
                         connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
 
-                    config["{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)] = connection
+                    if connection:
+                        config["{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)] = connection
                 unit_id += 1
             bay_id += 1
 
@@ -581,7 +583,7 @@ class IOUDevice(object):
                 self._iouyap_process.wait(1)
             except subprocess.TimeoutExpired:
                 self._iouyap_process.kill()
-                if self._iouyap_process.poll() == None:
+                if self._iouyap_process.poll() is None:
                     log.warn("iouyap PID={} for IOU instance {} is still running".format(self._iouyap_process.pid,
                                                                                          self._id))
         self._iouyap_process = None
@@ -594,7 +596,7 @@ class IOUDevice(object):
                 self._process.wait(1)
             except subprocess.TimeoutExpired:
                 self._process.kill()
-                if self._process.poll() == None:
+                if self._process.poll() is None:
                     log.warn("IOU instance {} PID={} is still running".format(self._id,
                                                                               self._process.pid))
         self._process = None
@@ -637,7 +639,7 @@ class IOUDevice(object):
         :returns: True or False
         """
 
-        if self._process and self._process.poll() == None:
+        if self._process and self._process.poll() is None:
             return True
         return False
 
@@ -648,7 +650,7 @@ class IOUDevice(object):
         :returns: True or False
         """
 
-        if self._iouyap_process and self._iouyap_process.poll() == None:
+        if self._iouyap_process and self._iouyap_process.poll() is None:
             return True
         return False
 
@@ -723,16 +725,14 @@ class IOUDevice(object):
 
         env = os.environ.copy()
         env["IOURC"] = self._iourc
-        output = b""
         try:
             output = subprocess.check_output([self._path, "-h"], stderr=subprocess.STDOUT, cwd=self._working_dir, env=env)
-        except OSError as e:
-            log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
-        else:
             if re.search("-l\s+Enable Layer 1 keepalive messages", output.decode("utf-8")):
                 command.extend(["-l"])
             else:
                 raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
+        except OSError as e:
+            log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
 
     def _build_command(self):
         """
@@ -904,8 +904,8 @@ class IOUDevice(object):
 
         self._startup_config = startup_config
         log.info("IOU {name} [id={id}]: startup_config set to {config}".format(name=self._name,
-                                                                                 id=self._id,
-                                                                                 config=self._startup_config))
+                                                                               id=self._id,
+                                                                               config=self._startup_config))
 
     @property
     def ethernet_adapters(self):

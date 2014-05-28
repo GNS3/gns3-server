@@ -20,16 +20,12 @@ VPCS server module.
 """
 
 import os
-import sys
 import base64
-import tempfile
-import struct
 import socket
 import shutil
 
 from gns3server.modules import IModule
 from gns3server.config import Config
-import gns3server.jsonrpc as jsonrpc
 from .vpcs_device import VPCSDevice
 from .vpcs_error import VPCSError
 from .nios.nio_udp import NIO_UDP
@@ -101,7 +97,6 @@ class VPCS(IModule):
         :param signum: signal number (if called by the signal handler)
         """
 
-        # self._vpcs_callback.stop()
         # delete all VPCS instances
         for vpcs_id in self._vpcs_instances:
             vpcs_instance = self._vpcs_instances[vpcs_id]
@@ -162,7 +157,7 @@ class VPCS(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
             return
 
@@ -326,7 +321,7 @@ class VPCS(IModule):
         try:
             if "script_file_base64" in request:
                 # a new startup-config has been pushed
-                config = base64.decodestring(request["script_file_base64"].encode("utf-8")).decode("utf-8")
+                config = base64.decodebytes(request["script_file_base64"].encode("utf-8")).decode("utf-8")
                 config = config.replace("\r", "")
                 config = config.replace('%h', vpcs_instance.name)
                 try:
@@ -502,8 +497,8 @@ class VPCS(IModule):
                                                                             port,
                                                                             self._host))
 
-        response = {"lport": port}
-        response["port_id"] = request["port_id"]
+        response = {"lport": port,
+                    "port_id": request["port_id"]}
         self.send_response(response)
 
     @IModule.route("vpcs.add_nio")
@@ -554,7 +549,7 @@ class VPCS(IModule):
                 nio = NIO_UDP(lport, rhost, rport)
             elif request["nio"]["type"] == "nio_tap":
                 tap_device = request["nio"]["tap_device"]
-                if not self.has_privileged_access(self._vpcs, tap_device):
+                if not self.has_privileged_access(self._vpcs):
                     raise VPCSError("{} has no privileged access to {}.".format(self._vpcs, tap_device))
                 nio = NIO_TAP(tap_device)
             if not nio:
@@ -614,7 +609,7 @@ class VPCS(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
         else:
             log.debug("received request {}".format(request))

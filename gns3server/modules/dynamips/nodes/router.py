@@ -134,7 +134,7 @@ class Router(object):
 
             # get the default base MAC address
             self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
-                                                                                     name=self._name))[0]
+                                                                                           name=self._name))[0]
 
         self._hypervisor.devices.append(self)
 
@@ -250,7 +250,6 @@ class Router(object):
                     raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
                 self.set_config(self.startup_config, new_private_config_path)
 
-        new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,
                                                                    new_name=new_name))
@@ -978,7 +977,7 @@ class Router(object):
         translated by the JIT (they contain the native code
         corresponding to MIPS code pages).
 
-        :param excec_area: exec area value (integer)
+        :param exec_area: exec area value (integer)
         """
 
         self._hypervisor.send("vm set_exec_area {name} {exec_area}".format(name=self._name,
@@ -1259,7 +1258,7 @@ class Router(object):
         :returns: slot bindings (adapter names) list
         """
 
-        return (self._hypervisor.send("vm slot_bindings {}".format(self._name)))
+        return self._hypervisor.send("vm slot_bindings {}".format(self._name))
 
     def slot_add_binding(self, slot_id, adapter):
         """
@@ -1275,16 +1274,16 @@ class Router(object):
             raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
-        if slot != None:
+        if slot is not None:
             current_adapter = slot
             raise DynamipsError("Slot {slot_id} is already occupied by adapter {adapter} on router {name}".format(name=self._name,
                                                                                                                   slot_id=slot_id,
                                                                                                                   adapter=current_adapter))
 
         # Only c7200, c3600 and c3745 (NM-4T only) support new adapter while running
-        if self.is_running() and not (self._platform == 'c7200' \
-        and not (self._platform == 'c3600' and self.chassis == '3660') \
-        and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+        if self.is_running() and not (self._platform == 'c7200'
+                                      and not (self._platform == 'c3600' and self.chassis == '3660')
+                                      and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError("Adapter {adapter} cannot be added while router {name} is running".format(adapter=adapter,
                                                                                                           name=self._name))
 
@@ -1322,14 +1321,14 @@ class Router(object):
             raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
-        if adapter == None:
+        if adapter is None:
             raise DynamipsError("No adapter in slot {slot_id} on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
         # Only c7200, c3600 and c3745 (NM-4T only) support to remove adapter while running
-        if self.is_running() and not (self._platform == 'c7200' \
-        and not (self._platform == 'c3600' and self.chassis == '3660') \
-        and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+        if self.is_running() and not (self._platform == 'c7200'
+                                      and not (self._platform == 'c3600' and self.chassis == '3660')
+                                      and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError("Adapter {adapter} cannot be removed while router {name} is running".format(adapter=adapter,
                                                                                                             name=self._name))
 
@@ -1415,8 +1414,8 @@ class Router(object):
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_id = 16 * (wic_slot_id + 1)
         self._hypervisor.send("vm slot_remove_binding {name} {slot_id} {wic_slot_id}".format(name=self._name,
-                                                                                         slot_id=slot_id,
-                                                                                         wic_slot_id=internal_wic_slot_id))
+                                                                                             slot_id=slot_id,
+                                                                                             wic_slot_id=internal_wic_slot_id))
 
         log.info("router {name} [id={id}]: {wic} removed from WIC slot {wic_slot_id}".format(name=self._name,
                                                                                              id=self._id,

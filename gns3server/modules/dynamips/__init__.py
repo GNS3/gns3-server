@@ -27,7 +27,6 @@ import shutil
 import glob
 import socket
 from gns3server.modules import IModule
-import gns3server.jsonrpc as jsonrpc
 
 from .hypervisor import Hypervisor
 from .hypervisor_manager import HypervisorManager
@@ -249,8 +248,8 @@ class Dynamips(IModule):
         if not os.access(self._dynamips, os.X_OK):
             raise DynamipsError("Dynamips {} is not executable".format(self._dynamips))
 
+        workdir = os.path.join(self._working_dir, "dynamips")
         try:
-            workdir = os.path.join(self._working_dir, "dynamips")
             os.makedirs(workdir)
         except FileExistsError:
             pass
@@ -282,7 +281,7 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
             return
 
@@ -342,7 +341,7 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
         else:
             log.debug("received request {}".format(request))
@@ -415,7 +414,6 @@ class Dynamips(IModule):
                                                                             port,
                                                                             host))
         response = {"lport": port}
-
         return response
 
     def set_ghost_ios(self, router):
@@ -498,7 +496,7 @@ class Dynamips(IModule):
         """
 
         log.info("creating config file {} from base64".format(destination_config_path))
-        config = base64.decodestring(config_base64.encode("utf-8")).decode("utf-8")
+        config = base64.decodebytes(config_base64.encode("utf-8")).decode("utf-8")
         config = "!\n" + config.replace("\r", "")
         config = config.replace('%h', router.name)
         config_dir = os.path.dirname(destination_config_path)

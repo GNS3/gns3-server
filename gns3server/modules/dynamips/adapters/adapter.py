@@ -63,7 +63,7 @@ class Adapter(object):
         False otherwise.
         """
 
-        if self._wics[wic_slot_id] == None:
+        if self._wics[wic_slot_id] is None:
             return True
         return False
 

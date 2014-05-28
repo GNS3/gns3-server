@@ -96,7 +96,7 @@ def wait_socket_is_ready(host, port, wait=2.0, socket_timeout=10):
     connection_success = False
     begin = time.time()
     last_exception = None
-    while (time.time() - begin < wait):
+    while time.time() - begin < wait:
         time.sleep(0.01)
         try:
             with socket.create_connection((host, port), socket_timeout):
@@ -107,16 +107,15 @@ def wait_socket_is_ready(host, port, wait=2.0, socket_timeout=10):
         connection_success = True
         break
 
-    return (connection_success, last_exception)
+    return connection_success, last_exception
 
 
-def has_privileged_access(executable, device):
+def has_privileged_access(executable):
     """
     Check if an executable can access Ethernet and TAP devices in
     RAW mode.
 
     :param executable: executable path
-    :param device: device name
 
     :returns: True or False
     """

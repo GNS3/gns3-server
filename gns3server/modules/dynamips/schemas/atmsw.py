@@ -87,129 +87,129 @@ ATMSW_ADD_NIO_SCHEMA = {
     "type": "object",
 
     "definitions": {
-            "UDP": {
-                "description": "UDP Network Input/Output",
-                "properties": {
-                        "type": {
-                             "enum": ["nio_udp"]
-                        },
-                        "lport": {
-                              "description": "Local port",
-                              "type": "integer",
-                              "minimum": 1,
-                              "maximum": 65535
-                        },
-                        "rhost": {
-                              "description": "Remote host",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                        "rport": {
-                              "description": "Remote port",
-                              "type": "integer",
-                              "minimum": 1,
-                              "maximum": 65535
-                        }
-                    },
-                "required": ["type", "lport", "rhost", "rport"],
-                "additionalProperties": False
+        "UDP": {
+            "description": "UDP Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_udp"]
+                },
+                "lport": {
+                    "description": "Local port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "rhost": {
+                    "description": "Remote host",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "rport": {
+                    "description": "Remote port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
             },
-            "Ethernet": {
-                "description": "Generic Ethernet Network Input/Output",
-                "properties": {
-                        "type": {
-                              "enum": ["nio_generic_ethernet"]
-                        },
-                        "ethernet_device": {
-                              "description": "Ethernet device name e.g. eth0",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "ethernet_device"],
-                "additionalProperties": False
-            },
-            "LinuxEthernet": {
-                "description": "Linux Ethernet Network Input/Output",
-                "properties": {
-                        "type": {
-                              "enum": ["nio_linux_ethernet"]
-                        },
-                        "ethernet_device": {
-                              "description": "Ethernet device name e.g. eth0",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "ethernet_device"],
-                "additionalProperties": False
-            },
-            "TAP": {
-                "description": "TAP Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_tap"]
-                        },
-                        "tap_device": {
-                              "description": "TAP device name e.g. tap0",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "tap_device"],
-                "additionalProperties": False
-            },
-            "UNIX": {
-                "description": "UNIX Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_unix"]
-                        },
-                        "local_file": {
-                              "description": "path to the UNIX socket file (local)",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                        "remote_file": {
-                              "description": "path to the UNIX socket file (remote)",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "local_file", "remote_file"],
-                "additionalProperties": False
-            },
-            "VDE": {
-                "description": "VDE Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_vde"]
-                        },
-                        "control_file": {
-                              "description": "path to the VDE control file",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                        "local_file": {
-                              "description": "path to the VDE control file",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "control_file", "local_file"],
-                "additionalProperties": False
-            },
-            "NULL": {
-                "description": "NULL Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_null"]
-                        },
-                    },
-                "required": ["type"],
-                "additionalProperties": False
-            },
+            "required": ["type", "lport", "rhost", "rport"],
+            "additionalProperties": False
         },
+        "Ethernet": {
+            "description": "Generic Ethernet Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_generic_ethernet"]
+                },
+                "ethernet_device": {
+                    "description": "Ethernet device name e.g. eth0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "ethernet_device"],
+            "additionalProperties": False
+        },
+        "LinuxEthernet": {
+            "description": "Linux Ethernet Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_linux_ethernet"]
+                },
+                "ethernet_device": {
+                    "description": "Ethernet device name e.g. eth0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "ethernet_device"],
+            "additionalProperties": False
+        },
+        "TAP": {
+            "description": "TAP Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_tap"]
+                },
+                "tap_device": {
+                    "description": "TAP device name e.g. tap0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "tap_device"],
+            "additionalProperties": False
+        },
+        "UNIX": {
+            "description": "UNIX Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_unix"]
+                },
+                "local_file": {
+                    "description": "path to the UNIX socket file (local)",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "remote_file": {
+                    "description": "path to the UNIX socket file (remote)",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "local_file", "remote_file"],
+            "additionalProperties": False
+        },
+        "VDE": {
+            "description": "VDE Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_vde"]
+                },
+                "control_file": {
+                    "description": "path to the VDE control file",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "local_file": {
+                    "description": "path to the VDE control file",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "control_file", "local_file"],
+            "additionalProperties": False
+        },
+        "NULL": {
+            "description": "NULL Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_null"]
+                },
+            },
+            "required": ["type"],
+            "additionalProperties": False
+        },
+    },
 
     "properties": {
         "id": {

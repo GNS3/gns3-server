@@ -81,7 +81,8 @@ class VPCSDevice(object):
 
         self._path = path
         self._console = console
-        self._working_dir = None
+        self._working_dir = working_dir
+        self._host = host
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
@@ -135,7 +136,7 @@ class VPCSDevice(object):
         :returns: id (integer)
         """
 
-        return(self._id)
+        return self._id
 
     @classmethod
     def reset(cls):
@@ -166,7 +167,7 @@ class VPCSDevice(object):
 
         if self._script_file:
             # update the startup.vpc
-            config_path = os.path.join(self.working_dir, "startup.vpc")
+            config_path = os.path.join(self._working_dir, "startup.vpc")
             if os.path.isfile(config_path):
                 try:
                     with open(config_path, "r+") as f:
@@ -178,8 +179,8 @@ class VPCSDevice(object):
                     raise VPCSError("Could not amend the configuration {}: {}".format(config_path, e))
 
         log.info("VPCS {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                      id=self._id,
-                                                                      new_name=new_name))
+                                                                       id=self._id,
+                                                                       new_name=new_name))
         self._name = new_name
 
     @property
@@ -190,7 +191,7 @@ class VPCSDevice(object):
         :returns: path to VPCS
         """
 
-        return(self._path)
+        return self._path
 
     @path.setter
     def path(self, path):
@@ -202,8 +203,8 @@ class VPCSDevice(object):
 
         self._path = path
         log.info("VPCS {name} [id={id}]: path changed to {path}".format(name=self._name,
-                                                                      id=self._id,
-                                                                      path=path))
+                                                                        id=self._id,
+                                                                        path=path))
 
     @property
     def working_dir(self):
@@ -234,8 +235,8 @@ class VPCSDevice(object):
 
         self._working_dir = working_dir
         log.info("VPCS {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
-                                                                                    id=self._id,
-                                                                                    wd=self._working_dir))
+                                                                                   id=self._id,
+                                                                                   wd=self._working_dir))
 
     @property
     def console(self):
@@ -262,8 +263,8 @@ class VPCSDevice(object):
         self._console = console
         self._allocated_console_ports.append(self._console)
         log.info("VPCS {name} [id={id}]: console port set to {port}".format(name=self._name,
-                                                                         id=self._id,
-                                                                         port=console))
+                                                                            id=self._id,
+                                                                            port=console))
 
     def command(self):
         """
@@ -286,7 +287,7 @@ class VPCSDevice(object):
             self._allocated_console_ports.remove(self.console)
 
         log.info("VPCS device {name} [id={id}] has been deleted".format(name=self._name,
-                                                                       id=self._id))
+                                                                        id=self._id))
 
     def clean_delete(self):
         """
@@ -331,10 +332,10 @@ class VPCSDevice(object):
                 raise VPCSError("No path to a VPCS executable has been set")
 
             if not os.path.isfile(self._path):
-                raise VPCSError("VPCS '{}' is not accessible".format(self._path))
+                raise VPCSError("VPCS program '{}' is not accessible".format(self._path))
 
             if not os.access(self._path, os.X_OK):
-                raise VPCSError("VPCS '{}' is not executable".format(self._path))
+                raise VPCSError("VPCS program '{}' is not executable".format(self._path))
 
             if not self._ethernet_adapter.get_nio(0):
                 raise VPCSError("This VPCS instance must be connected in order to start")
@@ -400,7 +401,7 @@ class VPCSDevice(object):
         :returns: True or False
         """
 
-        if self._process and self._process.poll() == None:
+        if self._process and self._process.poll() is None:
             return True
         return False
 
@@ -414,7 +415,7 @@ class VPCSDevice(object):
 
         if not self._ethernet_adapter.port_exists(port_id):
             raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                      port_id=port_id))
+                                                                                       port_id=port_id))
 
         self._ethernet_adapter.add_nio(port_id, nio)
         log.info("VPCS {name} [id={id}]: {nio} added to port {port_id}".format(name=self._name,
@@ -517,7 +518,7 @@ class VPCSDevice(object):
         """
         Sets the script-file for this VPCS instance.
 
-        :param base_script_file: path to base-script-file
+        :param script_file: path to base-script-file
         """
 
         self._script_file = script_file

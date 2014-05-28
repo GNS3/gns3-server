@@ -39,10 +39,6 @@ class HypervisorManager(object):
     :param path: path to the Dynamips executable
     :param working_dir: path to a working directory
     :param host: host/address for hypervisors to listen to
-    :param base_port: base TCP port for hypervisors
-    :param base_console: base TCP port for consoles
-    :param base_aux: base TCP port for auxiliary consoles
-    :param base_udp: base UDP port for UDP tunnels
     """
 
     def __init__(self, path, working_dir, host='127.0.0.1'):
@@ -504,13 +500,12 @@ class HypervisorManager(object):
             else:
                 log.info("allocating an hypervisor per IOS image disabled")
 
-    def wait_for_hypervisor(self, host, port, timeout=10):
+    def wait_for_hypervisor(self, host, port):
         """
         Waits for an hypervisor to be started (accepting a socket connection)
 
         :param host: host/address to connect to the hypervisor
         :param port: port to connect to the hypervisor
-        :param timeout: timeout value (default is 10 seconds)
         """
 
         begin = time.time()

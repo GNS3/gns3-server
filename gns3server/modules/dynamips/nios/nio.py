@@ -174,7 +174,7 @@ class NIO(object):
         :returns: tuple (filter name, filter options)
         """
 
-        return (self._input_filter, self._input_filter_options)
+        return self._input_filter, self._input_filter_options
 
     @property
     def output_filter(self):
@@ -184,7 +184,7 @@ class NIO(object):
         :returns: tuple (filter name, filter options)
         """
 
-        return (self._output_filter, self._output_filter_options)
+        return self._output_filter, self._output_filter_options
 
     def get_stats(self):
         """

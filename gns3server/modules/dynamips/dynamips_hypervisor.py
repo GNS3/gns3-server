@@ -61,7 +61,7 @@ class DynamipsHypervisor(object):
         self._udp_end_port_range = 20000
         self._nio_udp_auto_instances = {}
         self._version = "N/A"
-        self._timeout = 30
+        self._timeout = timeout
         self._socket = None
         self._uuid = None
 
@@ -80,9 +80,7 @@ class DynamipsHypervisor(object):
             host = self._host
 
         try:
-            self._socket = socket.create_connection((host,
-                                                     self._port),
-                                                     self._timeout)
+            self._socket = socket.create_connection((host, self._port), self._timeout)
         except OSError as e:
             raise DynamipsError("Could not connect to server: {}".format(e))
 
@@ -477,7 +475,7 @@ class DynamipsHypervisor(object):
             self.socket.sendall(command.encode('utf-8'))
         except OSError as e:
             raise DynamipsError("Lost communication with {host}:{port} :{error}"
-                                   .format(host=self._host, port=self._port, error=e))
+                                .format(host=self._host, port=self._port, error=e))
 
         # Now retrieve the result
         data = []
@@ -488,7 +486,7 @@ class DynamipsHypervisor(object):
                 buf += chunk.decode("utf-8")
             except OSError as e:
                 raise DynamipsError("Communication timed out with {host}:{port} :{error}"
-                                       .format(host=self._host, port=self._port, error=e))
+                                    .format(host=self._host, port=self._port, error=e))
 
             # If the buffer doesn't end in '\n' then we can't be done
             try:

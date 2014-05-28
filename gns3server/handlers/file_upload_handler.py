@@ -38,15 +38,14 @@ class FileUploadHandler(tornado.web.RequestHandler):
     :param request: Tornado Request instance
     """
 
-    def __init__(self, application, request):
+    def __init__(self, application, request, **kwargs):
 
-        # get the upload directory from the configuration file
+        super().__init__(application, request, **kwargs)
         config = Config.instance()
         server_config = config.get_default_section()
-        # default projects directory is "~/Documents/GNS3/images"
-        self._upload_dir = os.path.expandvars(os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
+        self._upload_dir = os.path.expandvars(
+            os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
         self._host = request.host
-
         try:
             os.makedirs(self._upload_dir)
             log.info("upload directory '{}' created".format(self._upload_dir))
@@ -54,8 +53,6 @@ class FileUploadHandler(tornado.web.RequestHandler):
             pass
         except OSError as e:
             log.error("could not create the upload directory {}: {}".format(self._upload_dir, e))
-
-        tornado.websocket.WebSocketHandler.__init__(self, application, request)
 
     def get(self):
         """

@@ -106,8 +106,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         if destination.startswith("builtin"):
             log.debug("registering {} as a built-in destination".format(destination))
         else:
-            log.debug("registering {} as a destination for the {} module".format(destination,
-                                                                             module))
+            log.debug("registering {} as a destination for the {} module".format(destination, module))
         cls.destinations[destination] = module
 
     def open(self):
