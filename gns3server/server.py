@@ -32,6 +32,7 @@ import socket
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
+import pkg_resources
 
 from pkg_resources import parse_version
 from .config import Config
@@ -143,8 +144,12 @@ class Server(object):
         router = self._create_zmq_router()
         # Add our JSON-RPC Websocket handler to Tornado
         self.handlers.extend([(r"/", JSONRPCWebSocket, dict(zmq_router=router))])
+        if hasattr(sys, "frozen"):
+            templates_dir = "templates"
+        else:
+            templates_dir = pkg_resources.resource_filename("gns3server", "templates")
         tornado_app = tornado.web.Application(self.handlers,
-                                              template_path=os.path.join(os.path.dirname(__file__), "templates"),
+                                              template_path=templates_dir,
                                               debug=True)  # FIXME: debug mode!
 
         try:
