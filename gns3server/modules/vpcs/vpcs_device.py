@@ -170,7 +170,7 @@ class VPCSDevice(object):
             config_path = os.path.join(self._working_dir, "startup.vpc")
             if os.path.isfile(config_path):
                 try:
-                    with open(config_path, "r+") as f:
+                    with open(config_path, "r+", errors="replace") as f:
                         old_config = f.read()
                         new_config = old_config.replace(self._name, new_name)
                         f.seek(0)
@@ -388,7 +388,7 @@ class VPCSDevice(object):
         output = ""
         if self._vpcs_stdout_file:
             try:
-                with open(self._vpcs_stdout_file) as file:
+                with open(self._vpcs_stdout_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._vpcs_stdout_file, e))

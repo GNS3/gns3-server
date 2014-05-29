@@ -251,7 +251,7 @@ class Hypervisor(DynamipsHypervisor):
         output = ""
         if self._stdout_file and os.access(self._stdout_file, os.R_OK):
             try:
-                with open(self._stdout_file) as file:
+                with open(self._stdout_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._stdout_file, e))

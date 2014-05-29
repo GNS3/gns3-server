@@ -223,7 +223,7 @@ class Router(object):
             startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
             if os.path.isfile(startup_config_path):
                 try:
-                    with open(startup_config_path, "r+") as f:
+                    with open(startup_config_path, "r+", errors="replace") as f:
                         old_config = f.read()
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)
@@ -239,7 +239,7 @@ class Router(object):
             private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}-private.cfg".format(self.name))
             if os.path.isfile(private_config_path):
                 try:
-                    with open(private_config_path, "r+") as f:
+                    with open(private_config_path, "r+", errors="replace") as f:
                         old_config = f.read()
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)

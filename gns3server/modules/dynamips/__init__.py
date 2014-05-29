@@ -474,7 +474,7 @@ class Dynamips(IModule):
             raise DynamipsError("Could not create configs directory: {}".format(e))
 
         try:
-            with open(local_base_config, "r") as f:
+            with open(local_base_config, "r", errors="replace") as f:
                 config = f.read()
             with open(config_path, "w") as f:
                 config = "!\n" + config.replace("\r", "")

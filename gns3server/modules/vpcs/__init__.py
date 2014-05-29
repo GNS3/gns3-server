@@ -336,7 +336,7 @@ class VPCS(IModule):
                 if os.path.isfile(request["script_file"]) and request["script_file"] != config_path:
                     # this is a local file set in the GUI
                     try:
-                        with open(request["script_file"], "r") as f:
+                        with open(request["script_file"], "r", errors="replace") as f:
                             config = f.read()
                         with open(config_path, "w") as f:
                             config = config.replace("\r", "")

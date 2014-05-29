@@ -421,7 +421,7 @@ class IOU(IModule):
                 if os.path.isfile(request["startup_config"]) and request["startup_config"] != config_path:
                     # this is a local file set in the GUI
                     try:
-                        with open(request["startup_config"], "r") as f:
+                        with open(request["startup_config"], "r", errors="replace") as f:
                             config = f.read()
                         with open(config_path, "w") as f:
                             config = "!\n" + config.replace("\r", "")
