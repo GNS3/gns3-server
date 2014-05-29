@@ -379,7 +379,10 @@ class IOU(Router):
         return buf
 
     def write(self, buf):
-        self.fd.send(buf)
+        try:
+            self.fd.send(buf)
+        except BlockingIOError:
+            return
 
     def _open(self):
         self.fd = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
