@@ -34,4 +34,4 @@ Please use our all-in-one installer.
 Mac OS X
 --------
 
-DMG package is not available yet.
+Please use our DMG package.
