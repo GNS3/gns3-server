@@ -74,14 +74,10 @@ class VPCSDevice(object):
         if self._id == 0:
             raise VPCSError("Maximum number of VPCS instances reached")
 
-        if name:
-            self._name = name
-        else:
-            self._name = "VPCS{}".format(self._id)
-
+        self._name = name
         self._path = path
         self._console = console
-        self._working_dir = working_dir
+        self._working_dir = None
         self._host = host
         self._command = []
         self._process = None
@@ -95,8 +91,8 @@ class VPCSDevice(object):
         self._script_file = ""
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
-        # update the working directory
-        self.working_dir = working_dir
+        # create the device own working directory
+        self.working_dir = os.path.join(working_dir, "vpcs", "{}".format(name))
 
         if not self._console:
             # allocate a console port
@@ -165,6 +161,18 @@ class VPCSDevice(object):
         :param new_name: name
         """
 
+        if self._started:
+            raise VPCSError("Cannot change the name to {} while the device is running".format(new_name))
+
+        new_working_dir = os.path.join(os.path.dirname(self._working_dir), new_name)
+        try:
+            shutil.move(self._working_dir, new_working_dir)
+            self._working_dir = new_working_dir
+        except OSError as e:
+            raise VPCSError("Could not move working directory from {} to {}: {}".format(self._working_dir,
+                                                                                        new_working_dir,
+                                                                                        e))
+
         if self._script_file:
             # update the startup.vpc
             config_path = os.path.join(self._working_dir, "startup.vpc")
@@ -224,8 +232,6 @@ class VPCSDevice(object):
         :param working_dir: path to the working directory
         """
 
-        # create our own working directory
-        working_dir = os.path.join(working_dir, "vpcs", "pc-{}".format(self._id))
         try:
             os.makedirs(working_dir)
         except FileExistsError:
@@ -281,7 +287,8 @@ class VPCSDevice(object):
         """
 
         self.stop()
-        self._instances.remove(self._id)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
 
         if self.console:
             self._allocated_console_ports.remove(self.console)
@@ -295,7 +302,8 @@ class VPCSDevice(object):
         """
 
         self.stop()
-        self._instances.remove(self._id)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
 
         if self.console:
             self._allocated_console_ports.remove(self.console)

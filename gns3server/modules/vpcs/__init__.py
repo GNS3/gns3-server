@@ -228,12 +228,6 @@ class VPCS(IModule):
         console = request.get("console")
 
         try:
-            try:
-                os.makedirs(self._working_dir)
-            except FileExistsError:
-                pass
-            except OSError as e:
-                raise VPCSError("Could not create working directory {}".format(e))
 
             if not self._vpcs:
                 raise VPCSError("No path to a VPCS executable has been set")

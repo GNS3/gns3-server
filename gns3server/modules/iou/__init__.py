@@ -263,30 +263,6 @@ class IOU(IModule):
 
         log.debug("received request {}".format(request))
 
-    def test_result(self, message, result="error"):
-        """
-        """
-
-        return {"result": result, "message": message}
-
-    @IModule.route("iou.test_settings")
-    def test_settings(self, request):
-        """
-        """
-
-        response = []
-
-        # test iourc
-        if self._iourc == "":
-            response.append(self.test_result("No iourc file has been added"))
-        elif not os.path.isfile(self._iourc):
-            response.append(self.test_result("iourc file {} is not accessible".format(self._iourc)))
-        else:
-            #TODO: check hostname + license inside the file
-            pass
-
-        self.send_response(response)
-
     @IModule.route("iou.create")
     def iou_create(self, request):
         """
@@ -312,17 +288,10 @@ class IOU(IModule):
             return
 
         name = request["name"]
-        console = request.get("console")
         iou_path = request["path"]
+        console = request.get("console")
 
         try:
-            try:
-                os.makedirs(self._working_dir)
-            except FileExistsError:
-                pass
-            except OSError as e:
-                raise IOUError("Could not create working directory {}".format(e))
-
             iou_instance = IOUDevice(name,
                                      iou_path,
                                      self._working_dir,

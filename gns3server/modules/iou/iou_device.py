@@ -83,7 +83,7 @@ class IOUDevice(object):
         self._iourc = ""
         self._iouyap = ""
         self._console = console
-        self._working_dir = working_dir
+        self._working_dir = None
         self._command = []
         self._process = None
         self._iouyap_process = None
@@ -106,8 +106,8 @@ class IOUDevice(object):
         self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
-        # update the working directory
-        self.working_dir = working_dir
+        # create the device own working directory
+        self.working_dir = os.path.join(working_dir, "iou", "{}".format(self._name))
 
         if not self._console:
             # allocate a console port
@@ -182,6 +182,18 @@ class IOUDevice(object):
 
         :param new_name: name
         """
+
+        if self._started:
+            raise IOUError("Cannot change the name to {} while the device is running".format(new_name))
+
+        new_working_dir = os.path.join(os.path.dirname(self._working_dir), new_name)
+        try:
+            shutil.move(self._working_dir, new_working_dir)
+            self._working_dir = new_working_dir
+        except OSError as e:
+            raise IOUError("Could not move working directory from {} to {}: {}".format(self._working_dir,
+                                                                                       new_working_dir,
+                                                                                       e))
 
         if self._startup_config:
             # update the startup-config
@@ -288,8 +300,6 @@ class IOUDevice(object):
         :param working_dir: path to the working directory
         """
 
-        # create our own working directory
-        working_dir = os.path.join(working_dir, "iou", "device-{}".format(self._id))
         try:
             os.makedirs(working_dir)
         except FileExistsError:
@@ -345,7 +355,8 @@ class IOUDevice(object):
         """
 
         self.stop()
-        self._instances.remove(self._id)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
 
         if self.console:
             self._allocated_console_ports.remove(self.console)
@@ -359,7 +370,8 @@ class IOUDevice(object):
         """
 
         self.stop()
-        self._instances.remove(self._id)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
 
         if self.console:
             self._allocated_console_ports.remove(self.console)

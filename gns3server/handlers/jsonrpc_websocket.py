@@ -27,6 +27,7 @@ from ..jsonrpc import JSONRPCParseError
 from ..jsonrpc import JSONRPCInvalidRequest
 from ..jsonrpc import JSONRPCMethodNotFound
 from ..jsonrpc import JSONRPCNotification
+from ..jsonrpc import JSONRPCCustomError
 
 import logging
 log = logging.getLogger(__name__)
@@ -141,6 +142,13 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
 
         if jsonrpc_version != self.version:
             return self.write_message(JSONRPCInvalidRequest()())
+
+        if len(self.clients) > 1:
+            #TODO: multiple client support
+            log.warn("GNS3 server doesn't support multiple clients yet")
+            return self.write_message(JSONRPCCustomError(-3200,
+                                                         "There are {} clients connected, the GNS3 server cannot handle multiple clients yet".format(len(self.clients)),
+                                                         request_id)())
 
         if method not in self.destinations:
             if request_id:

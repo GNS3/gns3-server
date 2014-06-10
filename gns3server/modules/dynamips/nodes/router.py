@@ -364,7 +364,7 @@ class Router(object):
 
             # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
             if elf_header_start != b'\x7fELF\x01\x02\x01':
-                raise DynamipsError("'{}' is not a valid IOU image".format(self._image))
+                raise DynamipsError("'{}' is not a valid IOS image".format(self._image))
 
             self._hypervisor.send("vm start {}".format(self._name))
             log.info("router {name} [id={id}] has been started".format(name=self._name, id=self._id))
