@@ -25,6 +25,10 @@ VM_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "router_id": {
+            "description": "VM/router instance ID",
+            "type": "integer"
+        },
         "platform": {
             "description": "router platform",
             "type": "string",

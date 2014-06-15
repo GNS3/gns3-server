@@ -36,6 +36,7 @@ class C2600(Router):
 
     :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
+    :param router_id: router instance ID
     :param chassis: chassis for this router:
     2610, 2611, 2620, 2621, 2610XM, 2611XM
     2620XM, 2621XM, 2650XM or 2651XM (default = 2610).
@@ -54,8 +55,8 @@ class C2600(Router):
                            "2650XM": C2600_MB_1FE,
                            "2651XM": C2600_MB_2FE}
 
-    def __init__(self, hypervisor, name, chassis="2610"):
-        Router.__init__(self, hypervisor, name, platform="c2600")
+    def __init__(self, hypervisor, name, router_id=None, chassis="2610"):
+        Router.__init__(self, hypervisor, name, router_id, platform="c2600")
 
         # Set default values for this platform
         self._ram = 64

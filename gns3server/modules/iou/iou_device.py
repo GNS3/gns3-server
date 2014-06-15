@@ -46,10 +46,11 @@ class IOUDevice(object):
     """
     IOU device implementation.
 
+    :param name: name of this IOU device
     :param path: path to IOU executable
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
-    :param name: name of this IOU device
+    :param iou_id: IOU instance ID
     :param console: TCP console port
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
@@ -63,20 +64,27 @@ class IOUDevice(object):
                  path,
                  working_dir,
                  host="127.0.0.1",
+                 iou_id = None,
                  console=None,
                  console_start_port_range=4001,
                  console_end_port_range=4512):
 
-        # find an instance identifier (0 < id <= 512)
-        self._id = 0
-        for identifier in range(1, 513):
-            if identifier not in self._instances:
-                self._id = identifier
-                self._instances.append(self._id)
-                break
+        if not iou_id:
+            # find an instance identifier if none is provided (0 < id <= 512)
+            self._id = 0
+            for identifier in range(1, 513):
+                if identifier not in self._instances:
+                    self._id = identifier
+                    self._instances.append(self._id)
+                    break
 
-        if self._id == 0:
-            raise IOUError("Maximum number of IOU instances reached")
+            if self._id == 0:
+                raise IOUError("Maximum number of IOU instances reached")
+        else:
+            if iou_id in self._instances:
+                raise IOUError("IOU identifier {} is already used by another IOU device".format(iou_id))
+            self._id = iou_id
+            self._instances.append(self._id)
 
         self._name = name
         self._path = path
@@ -106,8 +114,13 @@ class IOUDevice(object):
         self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
+        working_dir_path = os.path.join(working_dir, "iou", "device-{}".format(self._id))
+
+        if iou_id and not os.path.isdir(working_dir_path):
+            raise IOUError("Working directory {} doesn't exist".format(working_dir_path))
+
         # create the device own working directory
-        self.working_dir = os.path.join(working_dir, "iou", "{}".format(self._name))
+        self.working_dir = working_dir_path
 
         if not self._console:
             # allocate a console port

@@ -176,7 +176,11 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         Invoked when the WebSocket is closed.
         """
 
-        log.info("Websocket client {} disconnected".format(self.session_id))
+        try:
+            log.info("Websocket client {} disconnected".format(self.session_id))
+        except RuntimeError:
+            # to ignore logging exception: RuntimeError: reentrant call inside <_io.BufferedWriter name='<stderr>'>
+            pass
         self.clients.remove(self)
 
         # Reset the modules if there are no clients anymore

@@ -33,12 +33,13 @@ class C3600(Router):
 
     :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
+    :param router_id: router instance ID
     :param chassis: chassis for this router:
     3620, 3640 or 3660 (default = 3640).
     """
 
-    def __init__(self, hypervisor, name, chassis="3640"):
-        Router.__init__(self, hypervisor, name, platform="c3600")
+    def __init__(self, hypervisor, name, router_id=None, chassis="3640"):
+        Router.__init__(self, hypervisor, name, router_id, platform="c3600")
 
         # Set default values for this platform
         self._ram = 128

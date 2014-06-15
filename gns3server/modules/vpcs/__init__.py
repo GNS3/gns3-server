@@ -226,6 +226,7 @@ class VPCS(IModule):
 
         name = request["name"]
         console = request.get("console")
+        vpcs_id = request.get("vpcs_id")
 
         try:
 
@@ -236,6 +237,7 @@ class VPCS(IModule):
                                        self._vpcs,
                                        self._working_dir,
                                        self._host,
+                                       vpcs_id,
                                        console,
                                        self._console_start_port_range,
                                        self._console_end_port_range)

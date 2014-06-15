@@ -26,6 +26,10 @@ VPCS_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "vpcs_id": {
+            "description": "VPCS device instance ID",
+            "type": "integer"
+        },
         "console": {
             "description": "console TCP port",
             "minimum": 1,

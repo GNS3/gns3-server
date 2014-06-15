@@ -33,10 +33,11 @@ class C3745(Router):
 
     :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
+    :param router_id: router instance ID
     """
 
-    def __init__(self, hypervisor, name):
-        Router.__init__(self, hypervisor, name, platform="c3745")
+    def __init__(self, hypervisor, name, router_id=None):
+        Router.__init__(self, hypervisor, name, router_id, platform="c3745")
 
         # Set default values for this platform
         self._ram = 128

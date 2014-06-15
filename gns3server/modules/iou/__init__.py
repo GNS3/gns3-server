@@ -290,12 +290,14 @@ class IOU(IModule):
         name = request["name"]
         iou_path = request["path"]
         console = request.get("console")
+        iou_id = request.get("iou_id")
 
         try:
             iou_instance = IOUDevice(name,
                                      iou_path,
                                      self._working_dir,
                                      self._host,
+                                     iou_id,
                                      console,
                                      self._console_start_port_range,
                                      self._console_end_port_range)

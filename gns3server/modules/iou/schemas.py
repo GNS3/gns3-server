@@ -26,6 +26,10 @@ IOU_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "iou_id": {
+            "description": "IOU device instance ID",
+            "type": "integer"
+        },
         "console": {
             "description": "console TCP port",
             "minimum": 1,

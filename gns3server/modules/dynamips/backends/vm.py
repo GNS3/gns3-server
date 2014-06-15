@@ -132,9 +132,8 @@ class VM(object):
         image = request["image"]
         ram = request["ram"]
         hypervisor = None
-        chassis = None
-        if "chassis" in request:
-            chassis = request["chassis"]
+        chassis = request.get("chassis")
+        router_id = request.get("router_id")
 
         try:
 
@@ -147,9 +146,9 @@ class VM(object):
             hypervisor = self._hypervisor_manager.allocate_hypervisor_for_router(image, ram)
 
             if chassis:
-                router = PLATFORMS[platform](hypervisor, name, chassis=chassis)
+                router = PLATFORMS[platform](hypervisor, name, router_id, chassis=chassis)
             else:
-                router = PLATFORMS[platform](hypervisor, name)
+                router = PLATFORMS[platform](hypervisor, name, router_id)
             router.ram = ram
             router.image = image
             router.sparsemem = self._hypervisor_manager.sparse_memory_support

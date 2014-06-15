@@ -37,6 +37,7 @@ class Router(object):
 
     :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
+    :param router_id: router instance ID
     :param platform: c7200, c3745, c3725, c3600, c2691, c2600 or c1700
     :param ghost_flag: used when creating a ghost IOS.
     """
@@ -49,20 +50,26 @@ class Router(object):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, hypervisor, name, platform="c7200", ghost_flag=False):
+    def __init__(self, hypervisor, name, router_id=None, platform="c7200", ghost_flag=False):
 
         if not ghost_flag:
 
-            # find an instance identifier (0 < id <= 4096)
-            self._id = 0
-            for identifier in range(1, 4097):
-                if identifier not in self._instances:
-                    self._id = identifier
-                    self._instances.append(self._id)
-                    break
+            if not router_id:
+                # find an instance identifier if none is provided (0 < id <= 4096)
+                self._id = 0
+                for identifier in range(1, 4097):
+                    if identifier not in self._instances:
+                        self._id = identifier
+                        self._instances.append(self._id)
+                        break
 
-            if self._id == 0:
-                raise DynamipsError("Maximum number of instances reached")
+                if self._id == 0:
+                    raise DynamipsError("Maximum number of instances reached")
+            else:
+                if router_id in self._instances:
+                    raise DynamipsError("Router identifier {} is already used by another router".format(router_id))
+                self._id = router_id
+                self._instances.append(self._id)
 
         else:
             log.info("creating a new ghost IOS file")

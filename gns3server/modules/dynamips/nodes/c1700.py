@@ -34,13 +34,14 @@ class C1700(Router):
 
     :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
+    :param router_id: router instance ID
     :param chassis: chassis for this router:
     1720, 1721, 1750, 1751 or 1760 (default = 1720).
     1710 is not supported.
     """
 
-    def __init__(self, hypervisor, name, chassis="1720"):
-        Router.__init__(self, hypervisor, name, platform="c1700")
+    def __init__(self, hypervisor, name, router_id=None, chassis="1720"):
+        Router.__init__(self, hypervisor, name, router_id, platform="c1700")
 
         # Set default values for this platform
         self._ram = 64

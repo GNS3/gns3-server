@@ -40,10 +40,11 @@ class VPCSDevice(object):
     """
     VPCS device implementation.
 
+    :param name: name of this VPCS device
     :param path: path to VPCS executable
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
-    :param name: name of this VPCS device
+    :param vpcs_id: VPCS instance ID
     :param console: TCP console port
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
@@ -57,22 +58,30 @@ class VPCSDevice(object):
                  path,
                  working_dir,
                  host="127.0.0.1",
+                 vpcs_id=None,
                  console=None,
                  console_start_port_range=4512,
                  console_end_port_range=5000):
 
-        # find an instance identifier (1 <= id <= 255)
-        # This 255 limit is due to a restriction on the number of possible
-        # MAC addresses given in VPCS using the -m option
-        self._id = 0
-        for identifier in range(1, 256):
-            if identifier not in self._instances:
-                self._id = identifier
-                self._instances.append(self._id)
-                break
 
-        if self._id == 0:
-            raise VPCSError("Maximum number of VPCS instances reached")
+        if not vpcs_id:
+            # find an instance identifier is none is provided (1 <= id <= 255)
+            # This 255 limit is due to a restriction on the number of possible
+            # MAC addresses given in VPCS using the -m option
+            self._id = 0
+            for identifier in range(1, 256):
+                if identifier not in self._instances:
+                    self._id = identifier
+                    self._instances.append(self._id)
+                    break
+
+            if self._id == 0:
+                raise VPCSError("Maximum number of VPCS instances reached")
+        else:
+            if vpcs_id in self._instances:
+                raise VPCSError("VPCS identifier {} is already used by another VPCS device".format(vpcs_id))
+            self._id = vpcs_id
+            self._instances.append(self._id)
 
         self._name = name
         self._path = path
@@ -91,8 +100,13 @@ class VPCSDevice(object):
         self._script_file = ""
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
+        working_dir_path = os.path.join(working_dir, "vpcs", "pc-{}".format(self._id))
+
+        if vpcs_id and not os.path.isdir(working_dir_path):
+            raise VPCSError("Working directory {} doesn't exist".format(working_dir_path))
+
         # create the device own working directory
-        self.working_dir = os.path.join(working_dir, "vpcs", "{}".format(name))
+        self.working_dir = working_dir_path
 
         if not self._console:
             # allocate a console port
