@@ -27,13 +27,11 @@ def main():
 
     """
 
-    args = get_cli_args()
-
     g = Github()
 
+    args = get_cli_args()
     if args.username:
         username = args.username
-
     else:
         if 'OS_USERNAME' in os.environ:
             username = os.environ.get('OS_USERNAME')
@@ -42,7 +40,6 @@ def main():
 
     if args.password:
         password = args.password
-
     else:
         if 'OS_PASSWORD' in os.environ:
             password = os.environ.get('OS_PASSWORD')
@@ -51,7 +48,6 @@ def main():
 
     if args.tenant:
         tenant = args.tenant
-
     else:
         if 'OS_TENANT_NAME' in os.environ:
             tenant = os.environ.get('OS_TENANT_NAME')
@@ -60,7 +56,6 @@ def main():
 
     if args.region:
         region = args.region
-
     else:
         if 'OS_REGION_NAME' in os.environ:
             region = os.environ.get('OS_REGION_NAME')
@@ -93,7 +88,8 @@ def main():
     if args.image_name:
         image_name = args.image_name
     else:
-        image_name = "gns3-%s" % (uuid.uuid4().hex[0:4])
+        image_name = "gns3-%s-%s-%s" % (args.source, selected_branch,
+                                        uuid.uuid4().hex[0:4])
 
     if args.on_boot:
         on_boot = True
@@ -101,11 +97,9 @@ def main():
         on_boot = False
 
     startup_script = create_script(repo.svn_url, selected_branch, on_boot)
-
     server_name = uuid.uuid4().hex
     instance = create_instance(username, password, tenant, region, server_name,
                                startup_script)
-
     passwd = uuid.uuid4().hex
     instance.change_password(passwd)
     # wait for the password change to be processed
@@ -128,7 +122,9 @@ def main():
 
     print("Done.")
 
-    create_image(username, password, tenant, region, instance, image_name)
+    image_id = create_image(username, password, tenant, region, instance,
+                            image_name)
+    instance.delete()
 
 
 def prompt_user_select(opts, text="Please select"):
@@ -217,7 +213,7 @@ def create_image(username, password, tenant, region, server,
     sys.stdout.write("Creating image %s..." % image_name)
     sys.stdout.flush()
 
-    server.create_image(image_name)
+    image_id = server.create_image(image_name)
 
     while 1:
         server = nc.servers.get(server.id)
@@ -229,6 +225,8 @@ def create_image(username, password, tenant, region, server,
         sys.stdout.flush()
 
     print("Done.")
+
+    return image_id
 
 
 def get_cli_args():
