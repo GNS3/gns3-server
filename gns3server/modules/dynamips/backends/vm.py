@@ -387,8 +387,8 @@ class VM(object):
 
         response = {}
         try:
-            startup_config_path = os.path.join(router.hypervisor.working_dir, "configs", "{}.cfg".format(router.name))
-            private_config_path = os.path.join(router.hypervisor.working_dir, "configs", "{}-private.cfg".format(router.name))
+            startup_config_path = os.path.join(router.hypervisor.working_dir, "configs", "i{}_startup-config.cfg".format(router.id))
+            private_config_path = os.path.join(router.hypervisor.working_dir, "configs", "i{}_private-config.cfg".format(router.id))
 
             # a new startup-config has been pushed
             if "startup_config_base64" in request:

@@ -373,7 +373,7 @@ class IOU(IModule):
         if not iou_instance:
             return
 
-        config_path = os.path.join(iou_instance.working_dir, "initial-config")
+        config_path = os.path.join(iou_instance.working_dir, "initial-config.cfg")
         try:
             if "initial_config_base64" in request:
                 # a new initial-config has been pushed

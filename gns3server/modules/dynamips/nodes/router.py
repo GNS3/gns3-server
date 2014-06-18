@@ -227,7 +227,7 @@ class Router(object):
 
         if self._startup_config:
             # change the hostname in the startup-config
-            startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
+            startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "i{}_startup-config.cfg".format(self.id))
             if os.path.isfile(startup_config_path):
                 try:
                     with open(startup_config_path, "r+", errors="replace") as f:
@@ -235,15 +235,12 @@ class Router(object):
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)
                         f.write(new_config)
-                    new_startup_config_path = os.path.join(os.path.dirname(startup_config_path), "{}.cfg".format(new_name))
-                    os.rename(startup_config_path, new_startup_config_path)
                 except OSError as e:
                     raise DynamipsError("Could not amend the configuration {}: {}".format(startup_config_path, e))
-                self.set_config(new_startup_config_path)
 
         if self._private_config:
-            # change the hostname in the startup-config
-            private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}-private.cfg".format(self.name))
+            # change the hostname in the private-config
+            private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "i{}_private-config.cfg".format(self.id))
             if os.path.isfile(private_config_path):
                 try:
                     with open(private_config_path, "r+", errors="replace") as f:
@@ -251,11 +248,8 @@ class Router(object):
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)
                         f.write(new_config)
-                    new_private_config_path = os.path.join(os.path.dirname(private_config_path), "{}-private.cfg".format(new_name))
-                    os.rename(private_config_path, new_private_config_path)
                 except OSError as e:
                     raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
-                self.set_config(self.startup_config, new_private_config_path)
 
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,

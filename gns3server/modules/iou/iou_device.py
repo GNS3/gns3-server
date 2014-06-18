@@ -208,9 +208,9 @@ class IOUDevice(object):
                                                                                        new_working_dir,
                                                                                        e))
 
-        if self._intial_config:
+        if self._initial_config:
             # update the initial-config
-            config_path = os.path.join(self._working_dir, "initial-config")
+            config_path = os.path.join(self._working_dir, "initial-config.cfg")
             if os.path.isfile(config_path):
                 try:
                     with open(config_path, "r+", errors="replace") as f:
