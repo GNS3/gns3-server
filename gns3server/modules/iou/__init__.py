@@ -356,7 +356,7 @@ class IOU(IModule):
 
         Optional request parameters:
         - any setting to update
-        - startup_config_base64 (startup-config base64 encoded)
+        - initial_config_base64 (initial-config base64 encoded)
 
         Response parameters:
         - updated settings
@@ -373,36 +373,36 @@ class IOU(IModule):
         if not iou_instance:
             return
 
-        config_path = os.path.join(iou_instance.working_dir, "startup-config")
+        config_path = os.path.join(iou_instance.working_dir, "initial-config")
         try:
-            if "startup_config_base64" in request:
-                # a new startup-config has been pushed
-                config = base64.decodebytes(request["startup_config_base64"].encode("utf-8")).decode("utf-8")
+            if "initial_config_base64" in request:
+                # a new initial-config has been pushed
+                config = base64.decodebytes(request["initial_config_base64"].encode("utf-8")).decode("utf-8")
                 config = "!\n" + config.replace("\r", "")
                 config = config.replace('%h', iou_instance.name)
                 try:
                     with open(config_path, "w") as f:
-                        log.info("saving startup-config to {}".format(config_path))
+                        log.info("saving initial-config to {}".format(config_path))
                         f.write(config)
                 except OSError as e:
                     raise IOUError("Could not save the configuration {}: {}".format(config_path, e))
-                # update the request with the new local startup-config path
-                request["startup_config"] = os.path.basename(config_path)
-            elif "startup_config" in request:
-                if os.path.isfile(request["startup_config"]) and request["startup_config"] != config_path:
+                # update the request with the new local initial-config path
+                request["initial_config"] = os.path.basename(config_path)
+            elif "initial_config" in request:
+                if os.path.isfile(request["initial_config"]) and request["initial_config"] != config_path:
                     # this is a local file set in the GUI
                     try:
-                        with open(request["startup_config"], "r", errors="replace") as f:
+                        with open(request["initial_config"], "r", errors="replace") as f:
                             config = f.read()
                         with open(config_path, "w") as f:
                             config = "!\n" + config.replace("\r", "")
                             config = config.replace('%h', iou_instance.name)
                             f.write(config)
-                        request["startup_config"] = os.path.basename(config_path)
+                        request["initial_config"] = os.path.basename(config_path)
                     except OSError as e:
-                        raise IOUError("Could not save the configuration from {} to {}: {}".format(request["startup_config"], config_path, e))
+                        raise IOUError("Could not save the configuration from {} to {}: {}".format(request["initial_config"], config_path, e))
                 elif not os.path.isfile(config_path):
-                    raise IOUError("Startup-config {} could not be found on this server".format(request["startup_config"]))
+                    raise IOUError("Startup-config {} could not be found on this server".format(request["initial_config"]))
         except IOUError as e:
             self.send_custom_error(str(e))
             return

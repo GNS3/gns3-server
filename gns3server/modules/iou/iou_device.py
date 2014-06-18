@@ -110,7 +110,7 @@ class IOUDevice(object):
         self._slots = self._ethernet_adapters + self._serial_adapters
         self._use_default_iou_values = True  # for RAM & NVRAM values
         self._nvram = 128  # Kilobytes
-        self._startup_config = ""
+        self._initial_config = ""
         self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
@@ -148,7 +148,7 @@ class IOUDevice(object):
 
         iou_defaults = {"name": self._name,
                         "path": self._path,
-                        "startup_config": self._startup_config,
+                        "intial_config": self._initial_config,
                         "use_default_iou_values": self._use_default_iou_values,
                         "ram": self._ram,
                         "nvram": self._nvram,
@@ -208,9 +208,9 @@ class IOUDevice(object):
                                                                                        new_working_dir,
                                                                                        e))
 
-        if self._startup_config:
-            # update the startup-config
-            config_path = os.path.join(self._working_dir, "startup-config")
+        if self._intial_config:
+            # update the initial-config
+            config_path = os.path.join(self._working_dir, "initial-config")
             if os.path.isfile(config_path):
                 try:
                     with open(config_path, "r+", errors="replace") as f:
@@ -379,7 +379,7 @@ class IOUDevice(object):
 
     def clean_delete(self):
         """
-        Deletes this IOU device & all files (nvram, startup-config etc.)
+        Deletes this IOU device & all files (nvram, initial-config etc.)
         """
 
         self.stop()
@@ -799,8 +799,8 @@ class IOUDevice(object):
             command.extend(["-n", str(self._nvram)])
             command.extend(["-m", str(self._ram)])
         command.extend(["-L"])  # disable local console, use remote console
-        if self._startup_config:
-            command.extend(["-c", self._startup_config])
+        if self._initial_config:
+            command.extend(["-c", self._initial_config])
         if self._l1_keepalives:
             self._enable_l1_keepalives(command)
         command.extend([str(self._id)])
@@ -910,27 +910,27 @@ class IOUDevice(object):
         self._nvram = nvram
 
     @property
-    def startup_config(self):
+    def initial_config(self):
         """
-        Returns the startup-config for this IOU instance.
+        Returns the initial-config for this IOU instance.
 
-        :returns: path to startup-config file
-        """
-
-        return self._startup_config
-
-    @startup_config.setter
-    def startup_config(self, startup_config):
-        """
-        Sets the startup-config for this IOU instance.
-
-        :param startup_config: path to startup-config file
+        :returns: path to initial-config file
         """
 
-        self._startup_config = startup_config
-        log.info("IOU {name} [id={id}]: startup_config set to {config}".format(name=self._name,
+        return self._initial_config
+
+    @initial_config.setter
+    def initial_config(self, initial_config):
+        """
+        Sets the initial-config for this IOU instance.
+
+        :param initial_config: path to initial-config file
+        """
+
+        self._initial_config = initial_config
+        log.info("IOU {name} [id={id}]: initial_config set to {config}".format(name=self._name,
                                                                                id=self._id,
-                                                                               config=self._startup_config))
+                                                                               config=self._initial_config))
 
     @property
     def ethernet_adapters(self):

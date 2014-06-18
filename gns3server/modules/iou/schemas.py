@@ -79,8 +79,8 @@ IOU_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "startup_config": {
-            "description": "path to the IOU startup configuration file",
+        "initial_config": {
+            "description": "path to the IOU initial configuration file",
             "type": "string",
             "minLength": 1,
         },
@@ -118,8 +118,8 @@ IOU_UPDATE_SCHEMA = {
             "description": "enable or disable layer 1 keepalive messages",
             "type": "boolean"
         },
-        "startup_config_base64": {
-            "description": "startup configuration base64 encoded",
+        "initial_config_base64": {
+            "description": "initial configuration base64 encoded",
             "type": "string"
         },
     },
