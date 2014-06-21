@@ -23,6 +23,7 @@ import sys
 import os
 import struct
 import socket
+import stat
 import errno
 import time
 
@@ -120,8 +121,12 @@ def has_privileged_access(executable):
     :returns: True or False
     """
 
-    # we are root, so we should have privileged access too
     if os.geteuid() == 0:
+        # we are root, so we should have privileged access.
+        return True
+
+    if not sys.platform.startswith("win") and os.stat(executable).st_mode & stat.S_ISVTX == stat.S_ISVTX:
+        # the executable has a sticky bit.
         return True
 
     # test if the executable has the CAP_NET_RAW capability (Linux only)
