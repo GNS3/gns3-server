@@ -176,12 +176,12 @@ def create_script(git_url, git_branch, on_boot):
 
     script_template = Template(open('script_template', 'r').read())
 
-    p = dict(git_url=git_url, git_branch=git_branch, rc_local='')
+    params = {'git_url': git_url, 'git_branch': git_branch, 'rc_local': ''}
 
     if on_boot:
-        p['rc_local'] = "echo '/usr/local/bin/gns3-server' >> /etc/rc.local"
+        params['rc_local'] = "echo '/usr/local/bin/gns3-server' >> /etc/rc.local"
 
-    return script_template.substitute(p)
+    return script_template.substitute(params)
 
 
 def create_image(username, password, tenant, region, server,
