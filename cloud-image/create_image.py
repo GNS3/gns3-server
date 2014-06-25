@@ -9,6 +9,7 @@ from fabric.api import env
 from fabric.contrib.files import exists
 from github import Github
 from novaclient.v1_1 import client
+from string import Template
 from time import sleep
 
 POLL_SEC = 30
@@ -173,34 +174,14 @@ def create_instance(username, password, tenant, region, server_name, script,
 def create_script(git_url, git_branch, on_boot):
     """ Create the start-up script. """
 
-    # Consider using jinja or similar if this becomes unwieldly
-    script = "#!/bin/bash\n\n"
-    script += "export DEBIAN_FRONTEND=noninteractive\n\n"
-    script += "apt-get -y update\n"
-    script += "apt-get -o Dpkg::Options::=\"--force-confnew\" --force-yes -fuy dist-upgrade\n\n"
+    script_template = Template(open('script_template', 'r').read())
 
-    reqs = ["git", "python3-setuptools", "python3-netifaces", "python3-pip"]
-
-    for r in reqs:
-        script += "apt-get -y install %s\n" % r
-
-    script += "\n"
-
-    script += "mkdir -p /opt/gns3\n"
-    script += "pushd /opt/gns3\n"
-    script += "git clone --branch %s %s\n" % (git_branch, git_url)
-    script += "cd gns3-server\n"
-    script += "pip3 install tornado\n"
-    script += "pip3 install pyzmq\n"
-    script += "pip3 install jsonschema\n"
-    script += "python3 ./setup.py install\n\n"
+    p = dict(git_url=git_url, git_branch=git_branch, rc_local='')
 
     if on_boot:
-        script += "echo '/usr/local/bin/gns3-server' >> /etc/rc.local\n\n"
+        p['rc_local'] = "echo '/usr/local/bin/gns3-server' >> /etc/rc.local"
 
-    script += "touch /tmp/gns-install-complete\n\n"
-
-    return script
+    return script_template.substitute(p)
 
 
 def create_image(username, password, tenant, region, server,
