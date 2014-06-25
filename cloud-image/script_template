@@ -1,0 +1,21 @@
+#!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y update
+apt-get -o Dpkg::Options::="--force-confnew" --force-yes -fuy dist-upgrade
+apt-get -y install git
+apt-get -y install python3-setuptools
+apt-get -y install python3-netifaces
+apt-get -y install python3-pip
+
+mkdir -p /opt/gns3
+pushd /opt/gns3
+git clone --branch ${git_branch} ${git_url}
+cd gns3-server
+pip3 install tornado
+pip3 install pyzmq
+pip3 install jsonschema
+python3 ./setup.py install
+
+${rc_local}
+
+touch /tmp/gns-install-complete
