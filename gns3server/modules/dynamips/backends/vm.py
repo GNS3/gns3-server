@@ -56,6 +56,8 @@ from ..schemas.vm import VM_STOP_SCHEMA
 from ..schemas.vm import VM_SUSPEND_SCHEMA
 from ..schemas.vm import VM_RELOAD_SCHEMA
 from ..schemas.vm import VM_UPDATE_SCHEMA
+from ..schemas.vm import VM_START_CAPTURE_SCHEMA
+from ..schemas.vm import VM_STOP_CAPTURE_SCHEMA
 from ..schemas.vm import VM_SAVE_CONFIG_SCHEMA
 from ..schemas.vm import VM_IDLEPCS_SCHEMA
 from ..schemas.vm import VM_ALLOCATE_UDP_PORT_SCHEMA
@@ -482,6 +484,90 @@ class VM(object):
                 self.send_custom_error(str(e))
                 return
 
+        self.send_response(response)
+
+    @IModule.route("dynamips.vm.start_capture")
+    def vm_start_capture(self, request):
+        """
+        Starts a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port_id (port identifier)
+        - slot (slot number)
+        - port (port number)
+        - capture_file_name
+
+        Optional request parameters:
+        - data_link_type (PCAP DLT_* value)
+
+        Response parameters:
+        - port_id (port identifier)
+        - capture_file_path (path to the capture file)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, VM_START_CAPTURE_SCHEMA):
+            return
+
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
+            return
+
+        slot = request["slot"]
+        port = request["port"]
+        capture_file_name = request["capture_file_name"]
+        data_link_type = request.get("data_link_type")
+
+        try:
+            capture_file_path = os.path.join(router.hypervisor.working_dir, "captures", capture_file_name)
+            router.start_capture(slot, port, capture_file_path, data_link_type)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"],
+                    "capture_file_path": capture_file_path}
+        self.send_response(response)
+
+    @IModule.route("dynamips.vm.stop_capture")
+    def vm_stop_capture(self, request):
+        """
+        Stops a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port_id (port identifier)
+        - slot (slot number)
+        - port (port number)
+
+        Response parameters:
+        - port_id (port identifier)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, VM_STOP_CAPTURE_SCHEMA):
+            return
+
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
+            return
+
+        slot = request["slot"]
+        port = request["port"]
+        try:
+            router.stop_capture(slot, port)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"]}
         self.send_response(response)
 
     @IModule.route("dynamips.vm.save_config")

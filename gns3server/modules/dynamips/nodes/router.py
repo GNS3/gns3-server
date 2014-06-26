@@ -1539,6 +1539,71 @@ class Router(object):
                                                                                                 slot_id=slot_id,
                                                                                                 port_id=port_id))
 
+    def start_capture(self, slot_id, port_id, output_file, data_link_type="DLT_EN10MB"):
+        """
+        Starts a packet capture.
+
+        :param slot_id: slot ID
+        :param port_id: port ID
+        :param output_file: PCAP destination file for the capture
+        :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
+                                                                                       slot_id=slot_id))
+        if not adapter.port_exists(port_id):
+            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_id=port_id))
+
+        data_link_type = data_link_type.lower()
+        if data_link_type.startswith("dlt_"):
+            data_link_type = data_link_type[4:]
+
+        nio = adapter.get_nio(port_id)
+
+        if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
+            raise DynamipsError("Port {port_id} has already a filter applied on {adapter}".format(adapter=adapter,
+                                                                                                  port_id=port_id))
+
+        try:
+            os.makedirs(os.path.dirname(output_file))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise DynamipsError("Could not create captures directory {}".format(e))
+
+        nio.bind_filter("both", "capture")
+        nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
+
+        log.info("router {name} [id={id}]: capturing on port {slot_id}/{port_id}".format(name=self._name,
+                                                                                         id=self._id,
+                                                                                         nio_name=nio.name,
+                                                                                         slot_id=slot_id,
+                                                                                         port_id=port_id))
+
+    def stop_capture(self, slot_id, port_id):
+        """
+        Stops a packet capture.
+
+        :param slot_id: slot ID
+        :param port_id: port ID
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
+                                                                                       slot_id=slot_id))
+        if not adapter.port_exists(port_id):
+            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_id=port_id))
+
+        nio = adapter.get_nio(port_id)
+        nio.unbind_filter("both")
+
     def _create_slots(self, numslots):
         """
         Creates the appropriate number of slots for this router.

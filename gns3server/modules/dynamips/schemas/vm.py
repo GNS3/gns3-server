@@ -372,6 +372,76 @@ VM_UPDATE_SCHEMA = {
     "required": ["id"]
 }
 
+VM_START_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a packet capture on a VM instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "VM instance ID",
+            "type": "integer"
+        },
+        "port_id": {
+            "description": "Unique port identifier for the VM instance",
+            "type": "integer"
+        },
+        "slot": {
+            "description": "Slot number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
+        },
+        "capture_file_name": {
+            "description": "Capture file name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "data_link_type": {
+            "description": "PCAP data link type",
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "port_id", "slot", "port", "capture_file_name"]
+}
+
+VM_STOP_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to stop a packet capture on a VM instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "VM instance ID",
+            "type": "integer"
+        },
+        "port_id": {
+            "description": "Unique port identifier for the VM instance",
+            "type": "integer"
+        },
+        "slot": {
+            "description": "Slot number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "port_id", "slot", "port"]
+}
+
 VM_SAVE_CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to save the configs for VM instance",
