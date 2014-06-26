@@ -12,7 +12,7 @@ from novaclient.v1_1 import client
 from string import Template
 from time import sleep
 
-POLL_SEC = 30
+POLL_SEC = 20
 GNS3_REPO = 'gns3/gns3-server'
 PLANC_REPO = 'planctechnologies/gns3-server'
 OS_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/'
@@ -25,10 +25,9 @@ def main():
 
     Creates a new instance, installs the required software, creates an image
     from the instance, and then deletes the instance.
-
     """
 
-    g = Github()
+    github = Github()
 
     args = get_cli_args()
     if args.username:
@@ -65,17 +64,16 @@ def main():
 
     if args.source == 'release':
         # get the list of releases, present them to the user, save the url
-        repo = g.get_repo('gns3/gns3-server')
+        repo = github.get_repo(GNS3_REPO)
         keyword = "tag"
         i = 1
         branch_opts = {}
         for tag in repo.get_tags():
             branch_opts[i] = tag.name
             i += 1
-
     elif args.source == 'dev':
         # get the list of dev branches, present them to the user, save the url
-        repo = g.get_repo('planctechnologies/gns3-server')
+        repo = github.get_repo(PLANC_REPO)
         keyword = "branch"
         i = 1
         branch_opts = {}
@@ -104,7 +102,7 @@ def main():
     passwd = uuid.uuid4().hex
     instance.change_password(passwd)
     # wait for the password change to be processed
-    sleep(10)
+    sleep(POLL_SEC)
 
     env.host_string = str(instance.accessIPv4)
     env.user = "root"
@@ -113,11 +111,11 @@ def main():
     sys.stdout.write("Installing software...")
     sys.stdout.flush()
 
-    while 1:
+    while True:
         if exists('/tmp/gns-install-complete'):
             break
 
-        sleep(20)
+        sleep(POLL_SEC)
         sys.stdout.write(".")
         sys.stdout.flush()
 
@@ -136,7 +134,7 @@ def prompt_user_select(opts, text="Please select"):
     for o in opts:
         print("(%s)\t%s" % (o, opts[o]))
 
-    while 1:
+    while True:
         selected = raw_input("Select: ")
         try:
             return opts[int(selected)]
@@ -155,18 +153,17 @@ def create_instance(username, password, tenant, region, server_name, script,
                        region_name=region)
     server = nc.servers.create(server_name, UBUNTU_BASE_ID, 2,
                                config_drive=True, userdata=script)
-    server_id = server.id
 
-    while 1:
-        server = nc.servers.get(server_id)
+    while True:
+        server = nc.servers.get(server.id)
         if server.status == 'ACTIVE':
             break
 
-        sleep(20)
+        sleep(POLL_SEC)
         sys.stdout.write(".")
         sys.stdout.flush()
 
-    print "Done."
+    print("Done.")
 
     return server
 
@@ -196,12 +193,12 @@ def create_image(username, password, tenant, region, server,
 
     image_id = server.create_image(image_name)
 
-    while 1:
+    while True:
         server = nc.servers.get(server.id)
         if getattr(server, 'OS-EXT-STS:task_state') is None:
             break
 
-        sleep(20)
+        sleep(POLL_SEC)
         sys.stdout.write(".")
         sys.stdout.flush()
 
@@ -215,30 +212,28 @@ def get_cli_args():
 
     parser = argparse.ArgumentParser(
         description='Create a new GNS3 image',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
     parser.add_argument(
-        '--rackspace_username', dest='username', action='store'
-    )
+        '--rackspace_username', dest='username', action='store')
     parser.add_argument(
-        '--rackspace_password', dest='password', action='store'
-    )
+        '--rackspace_password', dest='password', action='store')
     parser.add_argument(
-        '--rackspace_tenant', dest='tenant', action='store'
-    )
+        '--rackspace_tenant', dest='tenant', action='store')
     parser.add_argument(
-        '--rackspace_region', dest='region', action='store'
-    )
-    parser.add_argument('--source', dest='source', action='store',
-                        choices=['release', 'dev'], default='release',
-                        help='specify the gns3-server source location')
-    parser.add_argument('--branch', dest='branch', action='store',
-                        help='specify the branch/tag')
-    parser.add_argument('--start-on-boot', dest='on_boot', action='store_true',
-                        help='start the GNS3-server when the image boots',
-                        default=False)
-    parser.add_argument('--image-name', dest='image_name', action='store',
-                        help='the name of the image to be created')
+        '--rackspace_region', dest='region', action='store')
+    parser.add_argument(
+        '--source', dest='source', action='store', choices=['release', 'dev'],
+        default='release', help='specify the gns3-server source location')
+    parser.add_argument(
+        '--branch', dest='branch', action='store',
+        help='specify the branch/tag')
+    parser.add_argument(
+        '--start-on-boot', dest='on_boot', action='store_true',
+        default=False, help='start the GNS3-server when the image boots')
+    parser.add_argument(
+        '--image-name', dest='image_name', action='store',
+        help='the name of the image to be created')
 
     return parser.parse_args()
 
