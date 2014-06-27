@@ -382,3 +382,73 @@ IOU_DELETE_NIO_SCHEMA = {
     "additionalProperties": False,
     "required": ["id", "slot", "port"]
 }
+
+IOU_START_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a packet capture on an IOU instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "IOU device instance ID",
+            "type": "integer"
+        },
+        "slot": {
+            "description": "Slot number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 15
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+        },
+        "port_id": {
+            "description": "Unique port identifier for the IOU instance",
+            "type": "integer"
+        },
+        "capture_file_name": {
+            "description": "Capture file name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "data_link_type": {
+            "description": "PCAP data link type",
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "slot", "port", "port_id", "capture_file_name"]
+}
+
+IOU_STOP_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to stop a packet capture on an IOU instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "IOU device instance ID",
+            "type": "integer"
+        },
+        "slot": {
+            "description": "Slot number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 15
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+        },
+        "port_id": {
+            "description": "Unique port identifier for the IOU instance",
+            "type": "integer"
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "slot", "port", "port_id"]
+}

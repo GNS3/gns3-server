@@ -304,7 +304,7 @@ class VPCSDevice(object):
         if self._id in self._instances:
             self._instances.remove(self._id)
 
-        if self.console:
+        if self.console and self.console in self._allocated_console_ports:
             self._allocated_console_ports.remove(self.console)
 
         log.info("VPCS device {name} [id={id}] has been deleted".format(name=self._name,

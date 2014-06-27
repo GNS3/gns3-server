@@ -19,8 +19,10 @@
 Interface for UDP NIOs.
 """
 
+from .nio import NIO
 
-class NIO_UDP(object):
+
+class NIO_UDP(NIO):
     """
     IOU UDP NIO.
 
@@ -33,6 +35,7 @@ class NIO_UDP(object):
 
     def __init__(self, lport, rhost, rport):
 
+        NIO.__init__(self)
         self._lport = lport
         self._rhost = rhost
         self._rport = rport

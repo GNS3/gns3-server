@@ -44,6 +44,8 @@ from .schemas import IOU_RELOAD_SCHEMA
 from .schemas import IOU_ALLOCATE_UDP_PORT_SCHEMA
 from .schemas import IOU_ADD_NIO_SCHEMA
 from .schemas import IOU_DELETE_NIO_SCHEMA
+from .schemas import IOU_START_CAPTURE_SCHEMA
+from .schemas import IOU_STOP_CAPTURE_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -668,6 +670,90 @@ class IOU(IModule):
             return
 
         self.send_response(True)
+
+    @IModule.route("iou.start_capture")
+    def start_capture(self, request):
+        """
+        Starts a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - slot (slot number)
+        - port (port number)
+        - port_id (port identifier)
+        - capture_file_name
+
+        Optional request parameters:
+        - data_link_type (PCAP DLT_* value)
+
+        Response parameters:
+        - port_id (port identifier)
+        - capture_file_path (path to the capture file)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, IOU_START_CAPTURE_SCHEMA):
+            return
+
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
+            return
+
+        slot = request["slot"]
+        port = request["port"]
+        capture_file_name = request["capture_file_name"]
+        data_link_type = request.get("data_link_type")
+
+        try:
+            capture_file_path = os.path.join(self._working_dir, "captures", capture_file_name)
+            iou_instance.start_capture(slot, port, capture_file_path, data_link_type)
+        except IOUError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"],
+                    "capture_file_path": capture_file_path}
+        self.send_response(response)
+
+    @IModule.route("iou.stop_capture")
+    def stop_capture(self, request):
+        """
+        Stops a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - slot (slot number)
+        - port (port number)
+        - port_id (port identifier)
+
+        Response parameters:
+        - port_id (port identifier)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, IOU_STOP_CAPTURE_SCHEMA):
+            return
+
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
+            return
+
+        slot = request["slot"]
+        port = request["port"]
+        try:
+            iou_instance.stop_capture(slot, port)
+        except IOUError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"]}
+        self.send_response(response)
 
     @IModule.route("iou.echo")
     def echo(self, request):

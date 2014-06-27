@@ -371,7 +371,7 @@ class IOUDevice(object):
         if self._id in self._instances:
             self._instances.remove(self._id)
 
-        if self.console:
+        if self.console and self.console in self._allocated_console_ports:
             self._allocated_console_ports.remove(self.console)
 
         log.info("IOU device {name} [id={id}] has been deleted".format(name=self._name,
@@ -442,7 +442,24 @@ class IOUDevice(object):
                         connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
 
                     if connection:
-                        config["{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)] = connection
+                        interface = "{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)
+                        config[interface] = connection
+
+                        if nio.capturing:
+                            pcap_data_link_type = nio.pcap_data_link_type.upper()
+                            if pcap_data_link_type == "DLT_PPP_SERIAL":
+                                pcap_protocol = "ppp"
+                            elif pcap_data_link_type == "DLT_C_HDLC":
+                                pcap_protocol = "hdlc"
+                            elif pcap_data_link_type == "DLT_FRELAY":
+                                pcap_protocol = "fr"
+                            else:
+                                pcap_protocol = "ethernet"
+                            capture_info = {"pcap_file": "{pcap_file}".format(pcap_file=nio.pcap_output_file),
+                                            "pcap_protocol": pcap_protocol,
+                                            "pcap_overwrite": "y"}
+                            config[interface].update(capture_info)
+
                 unit_id += 1
             bay_id += 1
 
@@ -987,3 +1004,75 @@ class IOUDevice(object):
                                                                                                 adapters=len(self._serial_adapters)))
 
         self._slots = self._ethernet_adapters + self._serial_adapters
+
+    def start_capture(self, slot_id, port_id, output_file, data_link_type="DLT_EN10MB"):
+        """
+        Starts a packet capture.
+
+        :param slot_id: slot ID
+        :param port_id: port ID
+        :param port: allocated port
+        :param output_file: PCAP destination file for the capture
+        :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise IOUError("Slot {slot_id} doesn't exist on IOU {name}".format(name=self._name,
+                                                                               slot_id=slot_id))
+
+        if not adapter.port_exists(port_id):
+            raise IOUError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                      port_id=port_id))
+
+        nio = adapter.get_nio(port_id)
+        if nio.capturing:
+            raise IOUError("Packet capture is already activated on {slot_id}/{port_id}".format(slot_id=slot_id,
+                                                                                               port_id=port_id))
+
+        try:
+            os.makedirs(os.path.dirname(output_file))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise IOUError("Could not create captures directory {}".format(e))
+
+        nio.startPacketCapture(output_file, data_link_type)
+
+        log.info("IOU {name} [id={id}]: starting packet capture on {slot_id}/{port_id}".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               slot_id=slot_id,
+                                                                                               port_id=port_id))
+
+        if self.is_iouyap_running():
+            self._update_iouyap_config()
+            os.kill(self._iouyap_process.pid, signal.SIGHUP)
+
+    def stop_capture(self, slot_id, port_id):
+        """
+        Stops a packet capture.
+
+        :param slot_id: slot ID
+        :param port_id: port ID
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise IOUError("Slot {slot_id} doesn't exist on IOU {name}".format(name=self._name,
+                                                                               slot_id=slot_id))
+
+        if not adapter.port_exists(port_id):
+            raise IOUError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                      port_id=port_id))
+
+        nio = adapter.get_nio(port_id)
+        nio.stopPacketCapture()
+        log.info("IOU {name} [id={id}]: stopping packet capture on {slot_id}/{port_id}".format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               slot_id=slot_id,
+                                                                                               port_id=port_id))
+        if self.is_iouyap_running():
+            self._update_iouyap_config()
+            os.kill(self._iouyap_process.pid, signal.SIGHUP)

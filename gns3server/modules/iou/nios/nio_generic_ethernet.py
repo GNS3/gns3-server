@@ -19,8 +19,10 @@
 Interface for generic Ethernet NIOs (PCAP library).
 """
 
+from .nio import NIO
 
-class NIO_GenericEthernet(object):
+
+class NIO_GenericEthernet(NIO):
     """
     NIO generic Ethernet NIO.
 
@@ -29,6 +31,7 @@ class NIO_GenericEthernet(object):
 
     def __init__(self, ethernet_device):
 
+        NIO.__init__(self)
         self._ethernet_device = ethernet_device
 
     @property
