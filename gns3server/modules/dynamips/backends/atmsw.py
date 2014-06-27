@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+import os
 from gns3server.modules import IModule
 from ..nodes.atm_switch import ATMSwitch
 from ..dynamips_error import DynamipsError
@@ -26,6 +27,8 @@ from ..schemas.atmsw import ATMSW_UPDATE_SCHEMA
 from ..schemas.atmsw import ATMSW_ALLOCATE_UDP_PORT_SCHEMA
 from ..schemas.atmsw import ATMSW_ADD_NIO_SCHEMA
 from ..schemas.atmsw import ATMSW_DELETE_NIO_SCHEMA
+from ..schemas.atmsw import ATMSW_START_CAPTURE_SCHEMA
+from ..schemas.atmsw import ATMSW_STOP_CAPTURE_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -310,3 +313,83 @@ class ATMSW(object):
             return
 
         self.send_response(True)
+
+    @IModule.route("dynamips.atmsw.start_capture")
+    def atmsw_start_capture(self, request):
+        """
+        Starts a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port (port identifier)
+        - port_id (port identifier)
+        - capture_file_name
+
+        Optional request parameters:
+        - data_link_type (PCAP DLT_* value)
+
+        Response parameters:
+        - port_id (port identifier)
+        - capture_file_path (path to the capture file)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, ATMSW_START_CAPTURE_SCHEMA):
+            return
+
+        # get the ATM switch instance
+        atmsw = self.get_device_instance(request["id"], self._atm_switches)
+        if not atmsw:
+            return
+
+        port = request["port"]
+        capture_file_name = request["capture_file_name"]
+        data_link_type = request.get("data_link_type")
+
+        try:
+            capture_file_path = os.path.join(atmsw.hypervisor.working_dir, "captures", capture_file_name)
+            atmsw.start_capture(port, capture_file_path, data_link_type)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"],
+                    "capture_file_path": capture_file_path}
+        self.send_response(response)
+
+    @IModule.route("dynamips.atmsw.stop_capture")
+    def atmsw_stop_capture(self, request):
+        """
+        Stops a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port_id (port identifier)
+        - port (port number)
+
+        Response parameters:
+        - port_id (port identifier)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, ATMSW_STOP_CAPTURE_SCHEMA):
+            return
+
+        # get the ATM switch instance
+        atmsw = self.get_device_instance(request["id"], self._atm_switches)
+        if not atmsw:
+            return
+
+        port = request["port"]
+        try:
+            atmsw.stop_capture(port)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"]}
+        self.send_response(response)

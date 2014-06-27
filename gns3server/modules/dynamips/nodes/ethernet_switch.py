@@ -20,6 +20,7 @@ Interface for Dynamips virtual Ethernet switch module ("ethsw").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 """
 
+import os
 from ..dynamips_error import DynamipsError
 
 import logging
@@ -287,3 +288,54 @@ class EthernetSwitch(object):
         """
 
         self._hypervisor.send("ethsw clear_mac_addr_table {}".format(self._name))
+
+    def start_capture(self, port, output_file, data_link_type="DLT_EN10MB"):
+        """
+        Starts a packet capture.
+
+        :param port: allocated port
+        :param output_file: PCAP destination file for the capture
+        :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        """
+
+        if port not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port))
+
+        nio = self._nios[port]
+
+        data_link_type = data_link_type.lower()
+        if data_link_type.startswith("dlt_"):
+            data_link_type = data_link_type[4:]
+
+        if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
+            raise DynamipsError("Port {} has already a filter applied".format(port))
+
+        try:
+            os.makedirs(os.path.dirname(output_file))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise DynamipsError("Could not create captures directory {}".format(e))
+
+        nio.bind_filter("both", "capture")
+        nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
+
+        log.info("Ethernet switch {name} [id={id}]: starting packet capture on {port}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              port=port))
+
+    def stop_capture(self, port):
+        """
+        Stops a packet capture.
+
+        :param port: allocated port
+        """
+
+        if port not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port))
+
+        nio = self._nios[port]
+        nio.unbind_filter("both")
+        log.info("Ethernet switch {name} [id={id}]: stopping packet capture on {port}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              port=port))

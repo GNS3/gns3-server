@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from gns3server.modules import IModule
 from ..nodes.frame_relay_switch import FrameRelaySwitch
 from ..dynamips_error import DynamipsError
@@ -25,6 +26,8 @@ from ..schemas.frsw import FRSW_UPDATE_SCHEMA
 from ..schemas.frsw import FRSW_ALLOCATE_UDP_PORT_SCHEMA
 from ..schemas.frsw import FRSW_ADD_NIO_SCHEMA
 from ..schemas.frsw import FRSW_DELETE_NIO_SCHEMA
+from ..schemas.frsw import FRSW_START_CAPTURE_SCHEMA
+from ..schemas.frsw import FRSW_STOP_CAPTURE_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -289,3 +292,83 @@ class FRSW(object):
             return
 
         self.send_response(True)
+
+    @IModule.route("dynamips.frsw.start_capture")
+    def frsw_start_capture(self, request):
+        """
+        Starts a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port (port identifier)
+        - port_id (port identifier)
+        - capture_file_name
+
+        Optional request parameters:
+        - data_link_type (PCAP DLT_* value)
+
+        Response parameters:
+        - port_id (port identifier)
+        - capture_file_path (path to the capture file)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, FRSW_START_CAPTURE_SCHEMA):
+            return
+
+        # get the Frame relay switch instance
+        frsw = self.get_device_instance(request["id"], self._frame_relay_switches)
+        if not frsw:
+            return
+
+        port = request["port"]
+        capture_file_name = request["capture_file_name"]
+        data_link_type = request.get("data_link_type")
+
+        try:
+            capture_file_path = os.path.join(frsw.hypervisor.working_dir, "captures", capture_file_name)
+            frsw.start_capture(port, capture_file_path, data_link_type)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"],
+                    "capture_file_path": capture_file_path}
+        self.send_response(response)
+
+    @IModule.route("dynamips.frsw.stop_capture")
+    def frsw_stop_capture(self, request):
+        """
+        Stops a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port_id (port identifier)
+        - port (port number)
+
+        Response parameters:
+        - port_id (port identifier)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, FRSW_STOP_CAPTURE_SCHEMA):
+            return
+
+        # get the Frame relay switch instance
+        frsw = self.get_device_instance(request["id"], self._frame_relay_switches)
+        if not frsw:
+            return
+
+        port = request["port"]
+        try:
+            frsw.stop_capture(port)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"]}
+        self.send_response(response)

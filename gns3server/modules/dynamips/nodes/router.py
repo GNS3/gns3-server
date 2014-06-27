@@ -1578,11 +1578,11 @@ class Router(object):
         nio.bind_filter("both", "capture")
         nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
 
-        log.info("router {name} [id={id}]: capturing on port {slot_id}/{port_id}".format(name=self._name,
-                                                                                         id=self._id,
-                                                                                         nio_name=nio.name,
-                                                                                         slot_id=slot_id,
-                                                                                         port_id=port_id))
+        log.info("router {name} [id={id}]: starting packet capture on port {slot_id}/{port_id}".format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       nio_name=nio.name,
+                                                                                                       slot_id=slot_id,
+                                                                                                       port_id=port_id))
 
     def stop_capture(self, slot_id, port_id):
         """
@@ -1603,6 +1603,12 @@ class Router(object):
 
         nio = adapter.get_nio(port_id)
         nio.unbind_filter("both")
+
+        log.info("router {name} [id={id}]: stopping packet capture on port {slot_id}/{port_id}".format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       nio_name=nio.name,
+                                                                                                       slot_id=slot_id,
+                                                                                                       port_id=port_id))
 
     def _create_slots(self, numslots):
         """

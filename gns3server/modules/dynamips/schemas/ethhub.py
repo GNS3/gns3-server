@@ -261,3 +261,59 @@ ETHHUB_DELETE_NIO_SCHEMA = {
     "additionalProperties": False,
     "required": ["id", "port"]
 }
+
+ETHHUB_START_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a packet capture on an Ethernet hub instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "Ethernet hub instance ID",
+            "type": "integer"
+        },
+        "port_id": {
+            "description": "Unique port identifier for the Ethernet hub instance",
+            "type": "integer"
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 1,
+        },
+        "capture_file_name": {
+            "description": "Capture file name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "data_link_type": {
+            "description": "PCAP data link type",
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "port_id", "port", "capture_file_name"]
+}
+
+ETHHUB_STOP_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to stop a packet capture on an Ethernet hub instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "Ethernet hub instance ID",
+            "type": "integer"
+        },
+        "port_id": {
+            "description": "Unique port identifier for the Ethernet hub instance",
+            "type": "integer"
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "port_id", "port"]
+}
