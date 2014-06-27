@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from gns3server.modules import IModule
 from ..nodes.ethernet_switch import EthernetSwitch
 from ..dynamips_error import DynamipsError
@@ -25,6 +26,8 @@ from ..schemas.ethsw import ETHSW_UPDATE_SCHEMA
 from ..schemas.ethsw import ETHSW_ALLOCATE_UDP_PORT_SCHEMA
 from ..schemas.ethsw import ETHSW_ADD_NIO_SCHEMA
 from ..schemas.ethsw import ETHSW_DELETE_NIO_SCHEMA
+from ..schemas.ethsw import ETHSW_START_CAPTURE_SCHEMA
+from ..schemas.ethsw import ETHSW_STOP_CAPTURE_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -37,7 +40,7 @@ class ETHSW(object):
         """
         Creates a new Ethernet switch.
 
-        Optional request parameters:
+        Mandatory request parameters:
         - name (switch name)
 
         Response parameters:
@@ -48,13 +51,10 @@ class ETHSW(object):
         """
 
         # validate the request
-        if request and not self.validate_request(request, ETHSW_CREATE_SCHEMA):
+        if not self.validate_request(request, ETHSW_CREATE_SCHEMA):
             return
 
-        name = None
-        if request and "name" in request:
-            name = request["name"]
-
+        name = request["name"]
         try:
             if not self._hypervisor_manager:
                 self.start_hypervisor_manager()
@@ -300,3 +300,83 @@ class ETHSW(object):
             return
 
         self.send_response(True)
+
+    @IModule.route("dynamips.ethsw.start_capture")
+    def ethsw_start_capture(self, request):
+        """
+        Starts a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port (port identifier)
+        - port_id (port identifier)
+        - capture_file_name
+
+        Optional request parameters:
+        - data_link_type (PCAP DLT_* value)
+
+        Response parameters:
+        - port_id (port identifier)
+        - capture_file_path (path to the capture file)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, ETHSW_START_CAPTURE_SCHEMA):
+            return
+
+        # get the Ethernet switch instance
+        ethsw = self.get_device_instance(request["id"], self._ethernet_switches)
+        if not ethsw:
+            return
+
+        port = request["port"]
+        capture_file_name = request["capture_file_name"]
+        data_link_type = request.get("data_link_type")
+
+        try:
+            capture_file_path = os.path.join(ethsw.hypervisor.working_dir, "captures", capture_file_name)
+            ethsw.start_capture(port, capture_file_path, data_link_type)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"],
+                    "capture_file_path": capture_file_path}
+        self.send_response(response)
+
+    @IModule.route("dynamips.ethsw.stop_capture")
+    def ethsw_stop_capture(self, request):
+        """
+        Stops a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port_id (port identifier)
+        - port (port number)
+
+        Response parameters:
+        - port_id (port identifier)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, ETHSW_STOP_CAPTURE_SCHEMA):
+            return
+
+        # get the Ethernet switch instance
+        ethsw = self.get_device_instance(request["id"], self._ethernet_switches)
+        if not ethsw:
+            return
+
+        port = request["port"]
+        try:
+            ethsw.stop_capture(port)
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"]}
+        self.send_response(response)

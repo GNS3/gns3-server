@@ -56,32 +56,32 @@ EXIT_ABORT = 2
 # Mostly from:
 # https://code.google.com/p/miniboa/source/browse/trunk/miniboa/telnet.py
 #--[ Telnet Commands ]---------------------------------------------------------
-SE     = 240 # End of subnegotiation parameters
-NOP    = 241 # No operation
-DATMK  = 242 # Data stream portion of a sync.
-BREAK  = 243 # NVT Character BRK
-IP     = 244 # Interrupt Process
-AO     = 245 # Abort Output
-AYT    = 246 # Are you there
-EC     = 247 # Erase Character
-EL     = 248 # Erase Line
-GA     = 249 # The Go Ahead Signal
-SB     = 250 # Sub-option to follow
-WILL   = 251 # Will; request or confirm option begin
-WONT   = 252 # Wont; deny option request
-DO     = 253 # Do = Request or confirm remote option
-DONT   = 254 # Don't = Demand or confirm option halt
-IAC    = 255 # Interpret as Command
-SEND   = 1   # Sub-process negotiation SEND command
-IS     = 0   # Sub-process negotiation IS command
+SE = 240 # End of sub-negotiation parameters
+NOP = 241 # No operation
+DATMK = 242 # Data stream portion of a sync.
+BREAK = 243 # NVT Character BRK
+IP = 244 # Interrupt Process
+AO = 245 # Abort Output
+AYT = 246 # Are you there
+EC = 247 # Erase Character
+EL = 248 # Erase Line
+GA = 249 # The Go Ahead Signal
+SB = 250 # Sub-option to follow
+WILL = 251 # Will; request or confirm option begin
+WONT = 252 # Wont; deny option request
+DO = 253 # Do = Request or confirm remote option
+DONT = 254 # Don't = Demand or confirm option halt
+IAC = 255 # Interpret as Command
+SEND = 1   # Sub-process negotiation SEND command
+IS = 0   # Sub-process negotiation IS command
 #--[ Telnet Options ]----------------------------------------------------------
 BINARY = 0   # Transmit Binary
-ECHO   = 1   # Echo characters back to sender
-RECON  = 2   # Reconnection
-SGA    = 3   # Suppress Go-Ahead
-TMARK  = 6   # Timing Mark
-TTYPE  = 24  # Terminal Type
-NAWS   = 31  # Negotiate About Window Size
+ECHO = 1   # Echo characters back to sender
+RECON = 2   # Reconnection
+SGA = 3   # Suppress Go-Ahead
+TMARK = 6   # Timing Mark
+TTYPE = 24  # Terminal Type
+NAWS = 31  # Negotiate About Window Size
 LINEMO = 34  # Line Mode
 
 
@@ -139,7 +139,10 @@ class FileLock:
     def unlock(self):
         if self.fd:
             # Deleting first prevents a race condition
-            os.unlink(self.fd.name)
+            try:
+                os.unlink(self.fd.name)
+            except FileNotFoundError as e:
+                log.debug("{}".format(e))
             self.fd.close()
 
     def __enter__(self):
@@ -296,9 +299,7 @@ class TelnetServer(Console):
                     buf.extend(self._read_block(1))
                     iac_cmd.append(buf[iac_loc + 2])
                 # We do ECHO, SGA, and BINARY. Period.
-                if (iac_cmd[1] == DO
-                    and iac_cmd[2] not in [ECHO, SGA, BINARY]):
-
+                if iac_cmd[1] == DO and iac_cmd[2] not in [ECHO, SGA, BINARY]:
                     self._write_cur(bytes([IAC, WONT, iac_cmd[2]]))
                     log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
                 else:
@@ -323,7 +324,7 @@ class TelnetServer(Console):
         fd.send(bytes([IAC, WILL, ECHO,
                        IAC, WILL, SGA,
                        IAC, WILL, BINARY,
-                       IAC, DO,   BINARY]))
+                       IAC, DO, BINARY]))
 
         if args.telnet_limit and len(self.fd_dict) > args.telnet_limit:
             fd.send(b'\r\nToo many connections\r\n')
@@ -334,7 +335,10 @@ class TelnetServer(Console):
     def _disconnect(self, fileno):
         fd = self.fd_dict.pop(fileno)
         log.info("Telnet client disconnected")
-        fd.shutdown(socket.SHUT_RDWR)
+        try:
+            fd.shutdown(socket.SHUT_RDWR)
+        except OSError as e:
+            log.warn("shutdown: {}".format(e))
         fd.close()
 
     def __enter__(self):
@@ -375,7 +379,10 @@ class IOU(Router):
         return buf
 
     def write(self, buf):
-        self.fd.send(buf)
+        try:
+            self.fd.send(buf)
+        except BlockingIOError:
+            return
 
     def _open(self):
         self.fd = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -387,14 +394,12 @@ class IOU(Router):
         except FileNotFoundError:
             pass
         except Exception as e:
-            raise NetioError("Couldn't unlink socket {}: {}"
-                             .format(self.ttyC, e))
+            raise NetioError("Couldn't unlink socket {}: {}".format(self.ttyC, e))
 
         try:
             self.fd.bind(self.ttyC)
         except Exception as e:
-            raise NetioError("Couldn't create socket {}: {}"
-                             .format(self.ttyC, e))
+            raise NetioError("Couldn't create socket {}: {}".format(self.ttyC, e))
 
     def _connect(self):
         # Keep trying until we connect or die trying
@@ -405,8 +410,7 @@ class IOU(Router):
                 log.debug("Waiting to connect to {}".format(self.ttyS))
                 time.sleep(RETRY_DELAY)
             except Exception as e:
-                raise NetioError("Couldn't connect to socket {}: {}"
-                                 .format(self.ttyS, e))
+                raise NetioError("Couldn't connect to socket {}: {}".format(self.ttyS, e))
             else:
                 break
 
@@ -459,8 +463,7 @@ def mkdir_netio(netio_dir):
     except FileExistsError:
         pass
     except Exception as e:
-        raise NetioError("Couldn't create directory {}: {}"
-                         .format(netio_dir, e))
+        raise NetioError("Couldn't create directory {}: {}".format(netio_dir, e))
 
 
 def send_recv_loop(console, router, esc_char, stop_event):
@@ -599,7 +602,7 @@ def start_ioucon(cmdline_args, stop_event):
                     nport = int(port)
                 except ValueError:
                     pass
-                if (addr == '' or nport == 0):
+                if addr == '' or nport == 0:
                     raise ConfigError('format for --telnet-server must be '
                                       'ADDR:PORT (like 127.0.0.1:20000)')
 
@@ -625,7 +628,7 @@ def start_ioucon(cmdline_args, stop_event):
         if args.debug:
             traceback.print_exc(file=sys.stderr)
         else:
-            print(e, file=sys.stderr)
+            log.error("ioucon: {}".format(e))
         sys.exit(EXIT_FAILURE)
 
     log.info("exiting...")

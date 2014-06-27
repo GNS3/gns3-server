@@ -1,3 +1,4 @@
+netifaces
 tornado
 pyzmq
 netifaces-py3

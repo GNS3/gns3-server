@@ -57,6 +57,8 @@ class NIO(object):
         Deletes this NIO.
         """
 
+        if self._input_filter or self._output_filter:
+            self.unbind_filter("both")
         self._hypervisor.send("nio delete {}".format(self._name))
         log.info("NIO {name} has been deleted".format(name=self._name))
 
@@ -134,7 +136,7 @@ class NIO(object):
 
     def setup_filter(self, direction, options):
         """
-        Setups a packet filter binded with this NIO.
+        Setups a packet filter bound with this NIO.
 
         Filter "freq_drop" has 1 argument "<frequency>". It will drop
         everything with a -1 frequency, drop every Nth packet with a
@@ -174,7 +176,7 @@ class NIO(object):
         :returns: tuple (filter name, filter options)
         """
 
-        return (self._input_filter, self._input_filter_options)
+        return self._input_filter, self._input_filter_options
 
     @property
     def output_filter(self):
@@ -184,7 +186,7 @@ class NIO(object):
         :returns: tuple (filter name, filter options)
         """
 
-        return (self._output_filter, self._output_filter_options)
+        return self._output_filter, self._output_filter_options
 
     def get_stats(self):
         """

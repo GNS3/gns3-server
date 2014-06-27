@@ -25,12 +25,13 @@ import base64
 import tempfile
 import shutil
 import glob
+import socket
 from gns3server.modules import IModule
-import gns3server.jsonrpc as jsonrpc
 
 from .hypervisor import Hypervisor
 from .hypervisor_manager import HypervisorManager
 from .dynamips_error import DynamipsError
+from ..attic import has_privileged_access
 
 # Nodes
 from .nodes.router import Router
@@ -248,8 +249,8 @@ class Dynamips(IModule):
         if not os.access(self._dynamips, os.X_OK):
             raise DynamipsError("Dynamips {} is not executable".format(self._dynamips))
 
+        workdir = os.path.join(self._working_dir, "dynamips")
         try:
-            workdir = os.path.join(self._working_dir, "dynamips")
             os.makedirs(workdir)
         except FileExistsError:
             pass
@@ -281,7 +282,7 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
             return
 
@@ -302,6 +303,7 @@ class Dynamips(IModule):
 
         else:
             if "project_name" in request:
+                # for remote server
                 new_working_dir = os.path.join(self._projects_dir, request["project_name"])
 
                 if self._projects_dir != self._working_dir != new_working_dir:
@@ -321,10 +323,11 @@ class Dynamips(IModule):
                             return
 
             elif "working_dir" in request:
+                # for local server
                 new_working_dir = request.pop("working_dir")
 
-            self._hypervisor_manager.working_dir = new_working_dir
             self._working_dir = new_working_dir
+            self._hypervisor_manager.working_dir = new_working_dir
 
             # apply settings to the hypervisor manager
             for name, value in request.items():
@@ -339,7 +342,7 @@ class Dynamips(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
         else:
             log.debug("received request {}".format(request))
@@ -361,6 +364,12 @@ class Dynamips(IModule):
             lport = request["nio"]["lport"]
             rhost = request["nio"]["rhost"]
             rport = request["nio"]["rport"]
+            try:
+                #TODO: handle IPv6
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                    sock.connect((rhost, rport))
+            except OSError as e:
+                raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             # check if we have an allocated NIO UDP auto
             nio = node.hypervisor.get_nio_udp_auto(lport)
             if not nio:
@@ -370,12 +379,18 @@ class Dynamips(IModule):
                 nio.connect(rhost, rport)
         elif request["nio"]["type"] == "nio_generic_ethernet":
             ethernet_device = request["nio"]["ethernet_device"]
+            if not has_privileged_access(self._dynamips):
+                raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, ethernet_device))
             nio = NIO_GenericEthernet(node.hypervisor, ethernet_device)
         elif request["nio"]["type"] == "nio_linux_ethernet":
             ethernet_device = request["nio"]["ethernet_device"]
+            if not has_privileged_access(self._dynamips):
+                raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, ethernet_device))
             nio = NIO_LinuxEthernet(node.hypervisor, ethernet_device)
         elif request["nio"]["type"] == "nio_tap":
             tap_device = request["nio"]["tap_device"]
+            if not has_privileged_access(self._dynamips):
+                raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, tap_device))
             nio = NIO_TAP(node.hypervisor, tap_device)
         elif request["nio"]["type"] == "nio_unix":
             local_file = request["nio"]["local_file"]
@@ -406,7 +421,6 @@ class Dynamips(IModule):
                                                                             port,
                                                                             host))
         response = {"lport": port}
-
         return response
 
     def set_ghost_ios(self, router):
@@ -467,7 +481,7 @@ class Dynamips(IModule):
             raise DynamipsError("Could not create configs directory: {}".format(e))
 
         try:
-            with open(local_base_config, "r") as f:
+            with open(local_base_config, "r", errors="replace") as f:
                 config = f.read()
             with open(config_path, "w") as f:
                 config = "!\n" + config.replace("\r", "")
@@ -489,7 +503,7 @@ class Dynamips(IModule):
         """
 
         log.info("creating config file {} from base64".format(destination_config_path))
-        config = base64.decodestring(config_base64.encode("utf-8")).decode("utf-8")
+        config = base64.decodebytes(config_base64.encode("utf-8")).decode("utf-8")
         config = "!\n" + config.replace("\r", "")
         config = config.replace('%h', router.name)
         config_dir = os.path.dirname(destination_config_path)

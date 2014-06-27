@@ -25,6 +25,10 @@ VM_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "router_id": {
+            "description": "VM/router instance ID",
+            "type": "integer"
+        },
         "platform": {
             "description": "router platform",
             "type": "string",
@@ -35,7 +39,7 @@ VM_CREATE_SCHEMA = {
             "description": "router chassis model",
             "type": "string",
             "minLength": 1,
-            "pattern": "^[0-9]{4}$"
+            "pattern": "^[0-9]{4}(XM)?$"
         },
         "image": {
             "description": "path to the IOS image file",
@@ -58,14 +62,15 @@ VM_CREATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535
         },
-        "mac_address": {
+        "mac_addr": {
             "description": "base MAC address",
             "type": "string",
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         }
     },
-    "required": ["platform", "image", "ram"]
+    "additionalProperties": False,
+    "required": ["name", "platform", "image", "ram"]
 }
 
 VM_DELETE_SCHEMA = {
@@ -78,6 +83,7 @@ VM_DELETE_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -91,6 +97,7 @@ VM_START_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -104,6 +111,7 @@ VM_STOP_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -117,6 +125,7 @@ VM_SUSPEND_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -130,10 +139,11 @@ VM_RELOAD_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
-#TODO: platform specific properties?
+#TODO: improve platform specific properties (dependencies?)
 VM_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to update a VM instance",
@@ -237,7 +247,7 @@ VM_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535
         },
-        "mac_address": {
+        "mac_addr": {
             "description": "base MAC address",
             "type": "string",
             "minLength": 1,
@@ -326,8 +336,110 @@ VM_UPDATE_SCHEMA = {
             "description": "private configuration base64 encoded",
             "type": "string"
         },
+        # C7200 properties
+        "npe": {
+            "description": "NPE model",
+            "enum": ["npe-100",
+                     "npe-150",
+                     "npe-175",
+                     "npe-200",
+                     "npe-225",
+                     "npe-300",
+                     "npe-400",
+                     "npe-g2"]
+        },
+        "midplane": {
+            "description": "Midplane model",
+            "enum": ["std", "vxr"]
+        },
+        "sensors": {
+            "description": "Temperature sensors",
+            "type": "array"
+        },
+        "power_supplies": {
+            "description": "Power supplies status",
+            "type": "array"
+        },
+        # I/O memory property for all platforms but C7200
+        "iomem": {
+            "description": "I/O memory percentage",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+        },
     },
+    "additionalProperties": False,
     "required": ["id"]
+}
+
+VM_START_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a packet capture on a VM instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "VM instance ID",
+            "type": "integer"
+        },
+        "port_id": {
+            "description": "Unique port identifier for the VM instance",
+            "type": "integer"
+        },
+        "slot": {
+            "description": "Slot number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
+        },
+        "capture_file_name": {
+            "description": "Capture file name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "data_link_type": {
+            "description": "PCAP data link type",
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "port_id", "slot", "port", "capture_file_name"]
+}
+
+VM_STOP_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to stop a packet capture on a VM instance port",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "VM instance ID",
+            "type": "integer"
+        },
+        "port_id": {
+            "description": "Unique port identifier for the VM instance",
+            "type": "integer"
+        },
+        "slot": {
+            "description": "Slot number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+        },
+        "port": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id", "port_id", "slot", "port"]
 }
 
 VM_SAVE_CONFIG_SCHEMA = {
@@ -340,6 +452,7 @@ VM_SAVE_CONFIG_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -357,6 +470,7 @@ VM_IDLEPCS_SCHEMA = {
             "type": "boolean"
         },
     },
+    "additionalProperties": False,
     "required": ["id"]
 }
 
@@ -374,6 +488,7 @@ VM_ALLOCATE_UDP_PORT_SCHEMA = {
             "type": "integer"
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id"]
 }
 
@@ -383,129 +498,129 @@ VM_ADD_NIO_SCHEMA = {
     "type": "object",
 
     "definitions": {
-            "UDP": {
-                "description": "UDP Network Input/Output",
-                "properties": {
-                        "type": {
-                             "enum": ["nio_udp"]
-                        },
-                        "lport": {
-                              "description": "Local port",
-                              "type": "integer",
-                              "minimum": 1,
-                              "maximum": 65535
-                        },
-                        "rhost": {
-                              "description": "Remote host",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                        "rport": {
-                              "description": "Remote port",
-                              "type": "integer",
-                              "minimum": 1,
-                              "maximum": 65535
-                        }
-                    },
-                "required": ["type", "lport", "rhost", "rport"],
-                "additionalProperties": False
+        "UDP": {
+            "description": "UDP Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_udp"]
+                },
+                "lport": {
+                    "description": "Local port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "rhost": {
+                    "description": "Remote host",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "rport": {
+                    "description": "Remote port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
             },
-            "Ethernet": {
-                "description": "Generic Ethernet Network Input/Output",
-                "properties": {
-                        "type": {
-                              "enum": ["nio_generic_ethernet"]
-                        },
-                        "ethernet_device": {
-                              "description": "Ethernet device name e.g. eth0",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "ethernet_device"],
-                "additionalProperties": False
-            },
-            "LinuxEthernet": {
-                "description": "Linux Ethernet Network Input/Output",
-                "properties": {
-                        "type": {
-                              "enum": ["nio_linux_ethernet"]
-                        },
-                        "ethernet_device": {
-                              "description": "Ethernet device name e.g. eth0",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "ethernet_device"],
-                "additionalProperties": False
-            },
-            "TAP": {
-                "description": "TAP Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_tap"]
-                        },
-                        "tap_device": {
-                              "description": "TAP device name e.g. tap0",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "tap_device"],
-                "additionalProperties": False
-            },
-            "UNIX": {
-                "description": "UNIX Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_unix"]
-                        },
-                        "local_file": {
-                              "description": "path to the UNIX socket file (local)",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                        "remote_file": {
-                              "description": "path to the UNIX socket file (remote)",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "local_file", "remote_file"],
-                "additionalProperties": False
-            },
-            "VDE": {
-                "description": "VDE Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_vde"]
-                        },
-                        "control_file": {
-                              "description": "path to the VDE control file",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                        "local_file": {
-                              "description": "path to the VDE control file",
-                              "type": "string",
-                              "minLength": 1
-                        },
-                    },
-                "required": ["type", "control_file", "local_file"],
-                "additionalProperties": False
-            },
-            "NULL": {
-                "description": "NULL Network Input/Output",
-                "properties": {
-                        "type": {
-                            "enum": ["nio_null"]
-                        },
-                    },
-                "required": ["type"],
-                "additionalProperties": False
-            },
+            "required": ["type", "lport", "rhost", "rport"],
+            "additionalProperties": False
         },
+        "Ethernet": {
+            "description": "Generic Ethernet Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_generic_ethernet"]
+                },
+                "ethernet_device": {
+                    "description": "Ethernet device name e.g. eth0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "ethernet_device"],
+            "additionalProperties": False
+        },
+        "LinuxEthernet": {
+            "description": "Linux Ethernet Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_linux_ethernet"]
+                },
+                "ethernet_device": {
+                    "description": "Ethernet device name e.g. eth0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "ethernet_device"],
+            "additionalProperties": False
+        },
+        "TAP": {
+            "description": "TAP Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_tap"]
+                },
+                "tap_device": {
+                    "description": "TAP device name e.g. tap0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "tap_device"],
+            "additionalProperties": False
+        },
+        "UNIX": {
+            "description": "UNIX Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_unix"]
+                },
+                "local_file": {
+                    "description": "path to the UNIX socket file (local)",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "remote_file": {
+                    "description": "path to the UNIX socket file (remote)",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "local_file", "remote_file"],
+            "additionalProperties": False
+        },
+        "VDE": {
+            "description": "VDE Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_vde"]
+                },
+                "control_file": {
+                    "description": "path to the VDE control file",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "local_file": {
+                    "description": "path to the VDE control file",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "control_file", "local_file"],
+            "additionalProperties": False
+        },
+        "NULL": {
+            "description": "NULL Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_null"]
+                },
+            },
+            "required": ["type"],
+            "additionalProperties": False
+        },
+    },
 
     "properties": {
         "id": {
@@ -542,6 +657,7 @@ VM_ADD_NIO_SCHEMA = {
             ]
         },
     },
+    "additionalProperties": False,
     "required": ["id", "port_id", "slot", "port", "nio"]
 }
 
@@ -567,5 +683,6 @@ VM_DELETE_NIO_SCHEMA = {
             "maximum": 49  # maximum is 16 for regular port numbers, WICs port numbers start at 16, 32 or 48
         },
     },
+    "additionalProperties": False,
     "required": ["id", "slot", "port"]
 }

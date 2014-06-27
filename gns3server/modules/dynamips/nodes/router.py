@@ -37,41 +37,45 @@ class Router(object):
 
     :param hypervisor: Dynamips hypervisor instance
     :param name: name for this router
+    :param router_id: router instance ID
     :param platform: c7200, c3745, c3725, c3600, c2691, c2600 or c1700
     :param ghost_flag: used when creating a ghost IOS.
     """
 
-    _allocated_names = []
+    _instances = []
     _allocated_console_ports = []
     _allocated_aux_ports = []
-    _instance_count = 1
     _status = {0: "inactive",
                1: "shutting down",
                2: "running",
                3: "suspended"}
 
-    def __init__(self, hypervisor, name=None, platform="c7200", ghost_flag=False):
+    def __init__(self, hypervisor, name, router_id=None, platform="c7200", ghost_flag=False):
 
         if not ghost_flag:
-            # create an unique ID
-            self._id = Router._instance_count
-            Router._instance_count += 1
 
-            # let's create a unique name if none has been chosen
-            if not name:
-                name_id = self._id
-                while True:
-                    name = "R" + str(name_id)
-                    # check if the name has already been allocated to another router
-                    if name not in self._allocated_names:
+            if not router_id:
+                # find an instance identifier if none is provided (0 < id <= 4096)
+                self._id = 0
+                for identifier in range(1, 4097):
+                    if identifier not in self._instances:
+                        self._id = identifier
+                        self._instances.append(self._id)
                         break
-                    name_id += 1
+
+                if self._id == 0:
+                    raise DynamipsError("Maximum number of instances reached")
+            else:
+                if router_id in self._instances:
+                    raise DynamipsError("Router identifier {} is already used by another router".format(router_id))
+                self._id = router_id
+                self._instances.append(self._id)
+
         else:
             log.info("creating a new ghost IOS file")
             self._id = 0
             name = "Ghost"
 
-        self._allocated_names.append(name)
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._platform = platform
@@ -137,18 +141,17 @@ class Router(object):
 
             # get the default base MAC address
             self._mac_addr = self._hypervisor.send("{platform} get_mac_addr {name}".format(platform=self._platform,
-                                                                                     name=self._name))[0]
+                                                                                           name=self._name))[0]
 
         self._hypervisor.devices.append(self)
 
     @classmethod
     def reset(cls):
         """
-        Resets the instance count and the allocated names list.
+        Resets the instance count and the allocated instances list.
         """
 
-        cls._instance_count = 1
-        cls._allocated_names.clear()
+        cls._instances.clear()
         cls._allocated_console_ports.clear()
         cls._allocated_aux_ports.clear()
 
@@ -222,10 +225,32 @@ class Router(object):
         :param new_name: new name string
         """
 
-        if new_name in self._allocated_names:
-            raise DynamipsError('Name "{}" is already used by another router'.format(new_name))
+        if self._startup_config:
+            # change the hostname in the startup-config
+            startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "i{}_startup-config.cfg".format(self.id))
+            if os.path.isfile(startup_config_path):
+                try:
+                    with open(startup_config_path, "r+", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self.name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise DynamipsError("Could not amend the configuration {}: {}".format(startup_config_path, e))
 
-        new_name_no_quotes = new_name
+        if self._private_config:
+            # change the hostname in the private-config
+            private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "i{}_private-config.cfg".format(self.id))
+            if os.path.isfile(private_config_path):
+                try:
+                    with open(private_config_path, "r+", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self.name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
+
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("vm rename {name} {new_name}".format(name=self._name,
                                                                    new_name=new_name))
@@ -233,10 +258,7 @@ class Router(object):
         log.info("router {name} [id={id}]: renamed to {new_name}".format(name=self._name,
                                                                          id=self._id,
                                                                          new_name=new_name))
-
-        self._allocated_names.remove(self.name)
         self._name = new_name
-        self._allocated_names.append(new_name_no_quotes)
 
     @property
     def platform(self):
@@ -284,9 +306,9 @@ class Router(object):
 
         self._hypervisor.send("vm delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
-
         log.info("router {name} [id={id}] has been deleted".format(name=self._name, id=self._id))
-        self._allocated_names.remove(self.name)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
         if self.console:
             self._allocated_console_ports.remove(self.console)
         if self.aux:
@@ -300,8 +322,21 @@ class Router(object):
         self._hypervisor.send("vm clean_delete {}".format(self._name))
         self._hypervisor.devices.remove(self)
 
+        if self._startup_config:
+            # delete the startup-config
+            startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
+            if os.path.isfile(startup_config_path):
+                os.remove(startup_config_path)
+
+        if self._private_config:
+            # delete the private-config
+            private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}-private.cfg".format(self.name))
+            if os.path.isfile(private_config_path):
+                os.remove(private_config_path)
+
         log.info("router {name} [id={id}] has been deleted (including associated files)".format(name=self._name, id=self._id))
-        self._allocated_names.remove(self.name)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
         if self.console:
             self._allocated_console_ports.remove(self.console)
         if self.aux:
@@ -313,9 +348,10 @@ class Router(object):
         At least the IOS image must be set before starting it.
         """
 
-        if self.get_status() == "suspended":
+        status = self.get_status()
+        if status == "suspended":
             self.resume()
-        else:
+        elif status == "inactive":
 
             if not os.path.isfile(self._image):
                 raise DynamipsError("IOS image '{}' is not accessible".format(self._image))
@@ -329,7 +365,7 @@ class Router(object):
 
             # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
             if elf_header_start != b'\x7fELF\x01\x02\x01':
-                raise DynamipsError("'{}' is not a valid IOU image".format(self._image))
+                raise DynamipsError("'{}' is not a valid IOS image".format(self._image))
 
             self._hypervisor.send("vm start {}".format(self._name))
             log.info("router {name} [id={id}] has been started".format(name=self._name, id=self._id))
@@ -340,8 +376,9 @@ class Router(object):
         The settings are kept.
         """
 
-        self._hypervisor.send("vm stop {}".format(self._name))
-        log.info("router {name} [id={id}] has been stopped".format(name=self._name, id=self._id))
+        if self.get_status() != "inactive":
+            self._hypervisor.send("vm stop {}".format(self._name))
+            log.info("router {name} [id={id}] has been stopped".format(name=self._name, id=self._id))
 
     def suspend(self):
         """
@@ -535,10 +572,10 @@ class Router(object):
             reply = self._hypervisor.send("vm extract_config {}".format(self._name))[0].rsplit(' ', 2)[-2:]
         except IOError:
             #for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
-            return (None, None)
+            return None, None
         startup_config = reply[0][1:-1]  # get statup-config and remove single quotes
         private_config = reply[1][1:-1]  # get private-config and remove single quotes
-        return (startup_config, private_config)
+        return startup_config, private_config
 
     def push_config(self, startup_config, private_config='(keep)'):
         """
@@ -681,7 +718,7 @@ class Router(object):
         else:
             flag = 0
         self._hypervisor.send("vm set_sparse_mem {name} {sparsemem}".format(name=self._name,
-                                                                     sparsemem=flag))
+                                                                            sparsemem=flag))
 
         if sparsemem:
             log.info("router {name} [id={id}]: sparse memory enabled".format(name=self._name,
@@ -941,7 +978,7 @@ class Router(object):
         translated by the JIT (they contain the native code
         corresponding to MIPS code pages).
 
-        :param excec_area: exec area value (integer)
+        :param exec_area: exec area value (integer)
         """
 
         self._hypervisor.send("vm set_exec_area {name} {exec_area}".format(name=self._name,
@@ -1222,7 +1259,7 @@ class Router(object):
         :returns: slot bindings (adapter names) list
         """
 
-        return (self._hypervisor.send("vm slot_bindings {}".format(self._name)))
+        return self._hypervisor.send("vm slot_bindings {}".format(self._name))
 
     def slot_add_binding(self, slot_id, adapter):
         """
@@ -1238,16 +1275,16 @@ class Router(object):
             raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
-        if slot != None:
+        if slot is not None:
             current_adapter = slot
             raise DynamipsError("Slot {slot_id} is already occupied by adapter {adapter} on router {name}".format(name=self._name,
                                                                                                                   slot_id=slot_id,
                                                                                                                   adapter=current_adapter))
 
         # Only c7200, c3600 and c3745 (NM-4T only) support new adapter while running
-        if self.is_running() and not (self._platform == 'c7200' \
-        and not (self._platform == 'c3600' and self.chassis == '3660') \
-        and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+        if self.is_running() and not (self._platform == 'c7200'
+                                      and not (self._platform == 'c3600' and self.chassis == '3660')
+                                      and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError("Adapter {adapter} cannot be added while router {name} is running".format(adapter=adapter,
                                                                                                           name=self._name))
 
@@ -1285,14 +1322,14 @@ class Router(object):
             raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
-        if adapter == None:
+        if adapter is None:
             raise DynamipsError("No adapter in slot {slot_id} on router {name}".format(name=self._name,
                                                                                        slot_id=slot_id))
 
         # Only c7200, c3600 and c3745 (NM-4T only) support to remove adapter while running
-        if self.is_running() and not (self._platform == 'c7200' \
-        and not (self._platform == 'c3600' and self.chassis == '3660') \
-        and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+        if self.is_running() and not (self._platform == 'c7200'
+                                      and not (self._platform == 'c3600' and self.chassis == '3660')
+                                      and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError("Adapter {adapter} cannot be removed while router {name} is running".format(adapter=adapter,
                                                                                                             name=self._name))
 
@@ -1378,8 +1415,8 @@ class Router(object):
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_id = 16 * (wic_slot_id + 1)
         self._hypervisor.send("vm slot_remove_binding {name} {slot_id} {wic_slot_id}".format(name=self._name,
-                                                                                         slot_id=slot_id,
-                                                                                         wic_slot_id=internal_wic_slot_id))
+                                                                                             slot_id=slot_id,
+                                                                                             wic_slot_id=internal_wic_slot_id))
 
         log.info("router {name} [id={id}]: {wic} removed from WIC slot {wic_slot_id}".format(name=self._name,
                                                                                              id=self._id,
@@ -1501,6 +1538,77 @@ class Router(object):
                                                                                                 id=self._id,
                                                                                                 slot_id=slot_id,
                                                                                                 port_id=port_id))
+
+    def start_capture(self, slot_id, port_id, output_file, data_link_type="DLT_EN10MB"):
+        """
+        Starts a packet capture.
+
+        :param slot_id: slot ID
+        :param port_id: port ID
+        :param output_file: PCAP destination file for the capture
+        :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
+                                                                                       slot_id=slot_id))
+        if not adapter.port_exists(port_id):
+            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_id=port_id))
+
+        data_link_type = data_link_type.lower()
+        if data_link_type.startswith("dlt_"):
+            data_link_type = data_link_type[4:]
+
+        nio = adapter.get_nio(port_id)
+
+        if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
+            raise DynamipsError("Port {port_id} has already a filter applied on {adapter}".format(adapter=adapter,
+                                                                                                  port_id=port_id))
+
+        try:
+            os.makedirs(os.path.dirname(output_file))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise DynamipsError("Could not create captures directory {}".format(e))
+
+        nio.bind_filter("both", "capture")
+        nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
+
+        log.info("router {name} [id={id}]: starting packet capture on port {slot_id}/{port_id}".format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       nio_name=nio.name,
+                                                                                                       slot_id=slot_id,
+                                                                                                       port_id=port_id))
+
+    def stop_capture(self, slot_id, port_id):
+        """
+        Stops a packet capture.
+
+        :param slot_id: slot ID
+        :param port_id: port ID
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise DynamipsError("Slot {slot_id} doesn't exist on router {name}".format(name=self._name,
+                                                                                       slot_id=slot_id))
+        if not adapter.port_exists(port_id):
+            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_id=port_id))
+
+        nio = adapter.get_nio(port_id)
+        nio.unbind_filter("both")
+
+        log.info("router {name} [id={id}]: stopping packet capture on port {slot_id}/{port_id}".format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       nio_name=nio.name,
+                                                                                                       slot_id=slot_id,
+                                                                                                       port_id=port_id))
 
     def _create_slots(self, numslots):
         """

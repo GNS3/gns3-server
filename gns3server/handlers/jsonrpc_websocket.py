@@ -27,6 +27,7 @@ from ..jsonrpc import JSONRPCParseError
 from ..jsonrpc import JSONRPCInvalidRequest
 from ..jsonrpc import JSONRPCMethodNotFound
 from ..jsonrpc import JSONRPCNotification
+from ..jsonrpc import JSONRPCCustomError
 
 import logging
 log = logging.getLogger(__name__)
@@ -106,8 +107,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         if destination.startswith("builtin"):
             log.debug("registering {} as a built-in destination".format(destination))
         else:
-            log.debug("registering {} as a destination for the {} module".format(destination,
-                                                                             module))
+            log.debug("registering {} as a destination for the {} module".format(destination, module))
         cls.destinations[destination] = module
 
     def open(self):
@@ -143,6 +143,13 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         if jsonrpc_version != self.version:
             return self.write_message(JSONRPCInvalidRequest()())
 
+        if len(self.clients) > 1:
+            #TODO: multiple client support
+            log.warn("GNS3 server doesn't support multiple clients yet")
+            return self.write_message(JSONRPCCustomError(-3200,
+                                                         "There are {} clients connected, the GNS3 server cannot handle multiple clients yet".format(len(self.clients)),
+                                                         request_id)())
+
         if method not in self.destinations:
             if request_id:
                 return self.write_message(JSONRPCMethodNotFound(request_id)())
@@ -169,7 +176,11 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         Invoked when the WebSocket is closed.
         """
 
-        log.info("Websocket client {} disconnected".format(self.session_id))
+        try:
+            log.info("Websocket client {} disconnected".format(self.session_id))
+        except RuntimeError:
+            # to ignore logging exception: RuntimeError: reentrant call inside <_io.BufferedWriter name='<stderr>'>
+            pass
         self.clients.remove(self)
 
         # Reset the modules if there are no clients anymore

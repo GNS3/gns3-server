@@ -161,7 +161,7 @@ class JSONRPCRequest(JSONRPCObject):
 
     def __init__(self, method, params=None, request_id=None):
         JSONRPCObject.__init__(self)
-        if request_id == None:
+        if request_id is None:
             request_id = str(uuid.uuid4())
         self.id = request_id
         self.method = method

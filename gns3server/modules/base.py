@@ -288,7 +288,7 @@ class IModule(multiprocessing.Process):
         """
 
         # check if we have a request
-        if request == None:
+        if request is None:
             self.send_param_error()
             return False
         log.debug("received request {}".format(request))

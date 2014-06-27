@@ -27,6 +27,8 @@ import subprocess
 import argparse
 import threading
 import configparser
+import shutil
+
 from .ioucon import start_ioucon
 from .iou_error import IOUError
 from .adapters.ethernet_adapter import EthernetAdapter
@@ -44,10 +46,12 @@ class IOUDevice(object):
     """
     IOU device implementation.
 
+    :param name: name of this IOU device
     :param path: path to IOU executable
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
-    :param name: name of this IOU device
+    :param iou_id: IOU instance ID
+    :param console: TCP console port
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
     """
@@ -55,32 +59,38 @@ class IOUDevice(object):
     _instances = []
     _allocated_console_ports = []
 
-    def __init__(self, path,
+    def __init__(self,
+                 name,
+                 path,
                  working_dir,
                  host="127.0.0.1",
-                 name=None,
+                 iou_id = None,
+                 console=None,
                  console_start_port_range=4001,
                  console_end_port_range=4512):
 
-        # find an instance identifier (0 < id <= 512)
-        self._id = 0
-        for identifier in range(1, 513):
-            if identifier not in self._instances:
-                self._id = identifier
-                self._instances.append(self._id)
-                break
+        if not iou_id:
+            # find an instance identifier if none is provided (0 < id <= 512)
+            self._id = 0
+            for identifier in range(1, 513):
+                if identifier not in self._instances:
+                    self._id = identifier
+                    self._instances.append(self._id)
+                    break
 
-        if self._id == 0:
-            raise IOUError("Maximum number of IOU instances reached")
-
-        if name:
-            self._name = name
+            if self._id == 0:
+                raise IOUError("Maximum number of IOU instances reached")
         else:
-            self._name = "IOU{}".format(self._id)
+            if iou_id in self._instances:
+                raise IOUError("IOU identifier {} is already used by another IOU device".format(iou_id))
+            self._id = iou_id
+            self._instances.append(self._id)
+
+        self._name = name
         self._path = path
         self._iourc = ""
         self._iouyap = ""
-        self._console = None
+        self._console = console
         self._working_dir = None
         self._command = []
         self._process = None
@@ -100,22 +110,32 @@ class IOUDevice(object):
         self._slots = self._ethernet_adapters + self._serial_adapters
         self._use_default_iou_values = True  # for RAM & NVRAM values
         self._nvram = 128  # Kilobytes
-        self._startup_config = ""
+        self._initial_config = ""
         self._ram = 256  # Megabytes
+        self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
-        # update the working directory
-        self.working_dir = working_dir
+        working_dir_path = os.path.join(working_dir, "iou", "device-{}".format(self._id))
 
-        # allocate a console port
-        try:
-            self._console = find_unused_port(self._console_start_port_range,
-                                             self._console_end_port_range,
-                                             self._host,
-                                             ignore_ports=self._allocated_console_ports)
-        except Exception as e:
-            raise IOUError(e)
+        if iou_id and not os.path.isdir(working_dir_path):
+            raise IOUError("Working directory {} doesn't exist".format(working_dir_path))
 
+        # create the device own working directory
+        self.working_dir = working_dir_path
+
+        if not self._console:
+            # allocate a console port
+            try:
+                self._console = find_unused_port(self._console_start_port_range,
+                                                 self._console_end_port_range,
+                                                 self._host,
+                                                 ignore_ports=self._allocated_console_ports)
+            except Exception as e:
+                raise IOUError(e)
+
+        if self._console in self._allocated_console_ports:
+            raise IOUError("Console port {} is already in used another IOU device".format(console))
         self._allocated_console_ports.append(self._console)
+
         log.info("IOU device {name} [id={id}] has been created".format(name=self._name,
                                                                        id=self._id))
 
@@ -128,13 +148,14 @@ class IOUDevice(object):
 
         iou_defaults = {"name": self._name,
                         "path": self._path,
-                        "startup_config": self._startup_config,
+                        "intial_config": self._initial_config,
                         "use_default_iou_values": self._use_default_iou_values,
                         "ram": self._ram,
                         "nvram": self._nvram,
                         "ethernet_adapters": len(self._ethernet_adapters),
                         "serial_adapters": len(self._serial_adapters),
-                        "console": self._console}
+                        "console": self._console,
+                        "l1_keepalives": self._l1_keepalives}
 
         return iou_defaults
 
@@ -146,7 +167,7 @@ class IOUDevice(object):
         :returns: id (integer)
         """
 
-        return(self._id)
+        return self._id
 
     @classmethod
     def reset(cls):
@@ -175,10 +196,35 @@ class IOUDevice(object):
         :param new_name: name
         """
 
-        self._name = new_name
+        if self._started:
+            raise IOUError("Cannot change the name to {} while the device is running".format(new_name))
+
+        new_working_dir = os.path.join(os.path.dirname(self._working_dir), new_name)
+        try:
+            shutil.move(self._working_dir, new_working_dir)
+            self._working_dir = new_working_dir
+        except OSError as e:
+            raise IOUError("Could not move working directory from {} to {}: {}".format(self._working_dir,
+                                                                                       new_working_dir,
+                                                                                       e))
+
+        if self._initial_config:
+            # update the initial-config
+            config_path = os.path.join(self._working_dir, "initial-config.cfg")
+            if os.path.isfile(config_path):
+                try:
+                    with open(config_path, "r+", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self._name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise IOUError("Could not amend the configuration {}: {}".format(config_path, e))
+
         log.info("IOU {name} [id={id}]: renamed to {new_name}".format(name=self._name,
                                                                       id=self._id,
                                                                       new_name=new_name))
+        self._name = new_name
 
     @property
     def path(self):
@@ -188,7 +234,7 @@ class IOUDevice(object):
         :returns: path to IOU
         """
 
-        return(self._path)
+        return self._path
 
     @path.setter
     def path(self, path):
@@ -200,8 +246,8 @@ class IOUDevice(object):
 
         self._path = path
         log.info("IOU {name} [id={id}]: path changed to {path}".format(name=self._name,
-                                                                      id=self._id,
-                                                                      path=path))
+                                                                       id=self._id,
+                                                                       path=path))
 
     @property
     def iourc(self):
@@ -211,14 +257,14 @@ class IOUDevice(object):
         :returns: path to the iourc file
         """
 
-        return(self._iourc)
+        return self._iourc
 
     @iourc.setter
     def iourc(self, iourc):
         """
         Sets the path to the iourc file.
 
-        :param path: path to the iourc file.
+        :param iourc: path to the iourc file.
         """
 
         self._iourc = iourc
@@ -234,14 +280,14 @@ class IOUDevice(object):
         :returns: path to iouyap
         """
 
-        return(self._iouyap)
+        return self._iouyap
 
     @iouyap.setter
     def iouyap(self, iouyap):
         """
         Sets the path to iouyap.
 
-        :param path: path to iouyap
+        :param iouyap: path to iouyap
         """
 
         self._iouyap = iouyap
@@ -267,8 +313,6 @@ class IOUDevice(object):
         :param working_dir: path to the working directory
         """
 
-        # create our own working directory
-        working_dir = os.path.join(working_dir, "iou", "device-{}".format(self._id))
         try:
             os.makedirs(working_dir)
         except FileExistsError:
@@ -278,8 +322,8 @@ class IOUDevice(object):
 
         self._working_dir = working_dir
         log.info("IOU {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
-                                                                                    id=self._id,
-                                                                                    wd=self._working_dir))
+                                                                                  id=self._id,
+                                                                                  wd=self._working_dir))
 
     @property
     def console(self):
@@ -300,14 +344,14 @@ class IOUDevice(object):
         """
 
         if console in self._allocated_console_ports:
-            raise IOUError("Console port {} is already in used by another IOU device".format(console))
+            raise IOUError("Console port {} is already used by another IOU device".format(console))
 
         self._allocated_console_ports.remove(self._console)
         self._console = console
         self._allocated_console_ports.append(self._console)
         log.info("IOU {name} [id={id}]: console port set to {port}".format(name=self._name,
-                                                                         id=self._id,
-                                                                         port=console))
+                                                                           id=self._id,
+                                                                           port=console))
 
     def command(self):
         """
@@ -324,13 +368,37 @@ class IOUDevice(object):
         """
 
         self.stop()
-        self._instances.remove(self._id)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
 
         if self.console:
             self._allocated_console_ports.remove(self.console)
 
         log.info("IOU device {name} [id={id}] has been deleted".format(name=self._name,
                                                                        id=self._id))
+
+    def clean_delete(self):
+        """
+        Deletes this IOU device & all files (nvram, initial-config etc.)
+        """
+
+        self.stop()
+        if self._id in self._instances:
+            self._instances.remove(self._id)
+
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+
+        try:
+            shutil.rmtree(self._working_dir)
+        except OSError as e:
+            log.error("could not delete IOU device {name} [id={id}]: {error}".format(name=self._name,
+                                                                                     id=self._id,
+                                                                                     error=e))
+            return
+
+        log.info("IOU device {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
+                                                                                                    id=self._id))
 
     @property
     def started(self):
@@ -359,6 +427,7 @@ class IOUDevice(object):
             for unit in adapter.ports.keys():
                 nio = adapter.get_nio(unit)
                 if nio:
+                    connection = None
                     if isinstance(nio, NIO_UDP):
                         # UDP tunnel
                         connection = {"tunnel_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
@@ -372,7 +441,8 @@ class IOUDevice(object):
                         # Ethernet interface
                         connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
 
-                    config["{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)] = connection
+                    if connection:
+                        config["{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self._id + 512), bay=bay_id, unit=unit_id)] = connection
                 unit_id += 1
             bay_id += 1
 
@@ -523,25 +593,11 @@ class IOUDevice(object):
         Stops the IOU process.
         """
 
-        # stop the IOU process
-        if self.is_running():
-            log.info("stopping IOU instance {} PID={}".format(self._id, self._process.pid))
-            try:
-                self._process.terminate()
-                self._process.wait(1)
-            except subprocess.TimeoutExpired:
-                self._process.kill()
-                if self._process.poll() == None:
-                    log.warn("IOU instance {} PID={} is still running".format(self._id,
-                                                                              self._process.pid))
-        self._process = None
-        self._started = False
-
         # stop console support
         if self._ioucon_thead:
             self._ioucon_thread_stop_event.set()
             if self._ioucon_thead.is_alive():
-                self._ioucon_thead.join(timeout=0.10)
+                self._ioucon_thead.join(timeout=3.0)  # wait for the thread to free the console port
             self._ioucon_thead = None
 
         # stop iouyap
@@ -552,10 +608,24 @@ class IOUDevice(object):
                 self._iouyap_process.wait(1)
             except subprocess.TimeoutExpired:
                 self._iouyap_process.kill()
-                if self._iouyap_process.poll() == None:
+                if self._iouyap_process.poll() is None:
                     log.warn("iouyap PID={} for IOU instance {} is still running".format(self._iouyap_process.pid,
                                                                                          self._id))
         self._iouyap_process = None
+
+        # stop the IOU process
+        if self.is_running():
+            log.info("stopping IOU instance {} PID={}".format(self._id, self._process.pid))
+            try:
+                self._process.terminate()
+                self._process.wait(1)
+            except subprocess.TimeoutExpired:
+                self._process.kill()
+                if self._process.poll() is None:
+                    log.warn("IOU instance {} PID={} is still running".format(self._id,
+                                                                              self._process.pid))
+        self._process = None
+        self._started = False
 
     def read_iou_stdout(self):
         """
@@ -566,7 +636,7 @@ class IOUDevice(object):
         output = ""
         if self._iou_stdout_file:
             try:
-                with open(self._iou_stdout_file) as file:
+                with open(self._iou_stdout_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._iou_stdout_file, e))
@@ -581,7 +651,7 @@ class IOUDevice(object):
         output = ""
         if self._iouyap_stdout_file:
             try:
-                with open(self._iouyap_stdout_file) as file:
+                with open(self._iouyap_stdout_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._iouyap_stdout_file, e))
@@ -594,7 +664,7 @@ class IOUDevice(object):
         :returns: True or False
         """
 
-        if self._process and self._process.poll() == None:
+        if self._process and self._process.poll() is None:
             return True
         return False
 
@@ -605,7 +675,7 @@ class IOUDevice(object):
         :returns: True or False
         """
 
-        if self._iouyap_process and self._iouyap_process.poll() == None:
+        if self._iouyap_process and self._iouyap_process.poll() is None:
             return True
         return False
 
@@ -671,6 +741,24 @@ class IOUDevice(object):
 
         return nio
 
+    def _enable_l1_keepalives(self, command):
+        """
+        Enables L1 keepalive messages if supported.
+
+        :param command: command line
+        """
+
+        env = os.environ.copy()
+        env["IOURC"] = self._iourc
+        try:
+            output = subprocess.check_output([self._path, "-h"], stderr=subprocess.STDOUT, cwd=self._working_dir, env=env)
+            if re.search("-l\s+Enable Layer 1 keepalive messages", output.decode("utf-8")):
+                command.extend(["-l"])
+            else:
+                raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
+        except OSError as e:
+            log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
+
     def _build_command(self):
         """
         Command to start the IOU process.
@@ -711,8 +799,10 @@ class IOUDevice(object):
             command.extend(["-n", str(self._nvram)])
             command.extend(["-m", str(self._ram)])
         command.extend(["-L"])  # disable local console, use remote console
-        if self._startup_config:
-            command.extend(["-c", self._startup_config])
+        if self._initial_config:
+            command.extend(["-c", self._initial_config])
+        if self._l1_keepalives:
+            self._enable_l1_keepalives(command)
         command.extend([str(self._id)])
         return command
 
@@ -739,6 +829,30 @@ class IOUDevice(object):
             log.info("IOU {name} [id={id}]: uses the default IOU image values".format(name=self._name, id=self._id))
         else:
             log.info("IOU {name} [id={id}]: does not use the default IOU image values".format(name=self._name, id=self._id))
+
+    @property
+    def l1_keepalives(self):
+        """
+        Returns either layer 1 keepalive messages option is enabled or disabled.
+
+        :returns: boolean
+        """
+
+        return self._l1_keepalives
+
+    @l1_keepalives.setter
+    def l1_keepalives(self, state):
+        """
+        Enables or disables layer 1 keepalive messages.
+
+        :param state: boolean
+        """
+
+        self._l1_keepalives = state
+        if state:
+            log.info("IOU {name} [id={id}]: has activated layer 1 keepalive messages".format(name=self._name, id=self._id))
+        else:
+            log.info("IOU {name} [id={id}]: has deactivated layer 1 keepalive messages".format(name=self._name, id=self._id))
 
     @property
     def ram(self):
@@ -796,27 +910,27 @@ class IOUDevice(object):
         self._nvram = nvram
 
     @property
-    def startup_config(self):
+    def initial_config(self):
         """
-        Returns the startup-config for this IOU instance.
+        Returns the initial-config for this IOU instance.
 
-        :returns: path to startup-config file
-        """
-
-        return self._startup_config
-
-    @startup_config.setter
-    def startup_config(self, startup_config):
-        """
-        Sets the startup-config for this IOU instance.
-
-        :param startup_config: path to startup-config file
+        :returns: path to initial-config file
         """
 
-        self._startup_config = startup_config
-        log.info("IOU {name} [id={id}]: startup_config set to {config}".format(name=self._name,
-                                                                                 id=self._id,
-                                                                                 config=self._startup_config))
+        return self._initial_config
+
+    @initial_config.setter
+    def initial_config(self, initial_config):
+        """
+        Sets the initial-config for this IOU instance.
+
+        :param initial_config: path to initial-config file
+        """
+
+        self._initial_config = initial_config
+        log.info("IOU {name} [id={id}]: initial_config set to {config}".format(name=self._name,
+                                                                               id=self._id,
+                                                                               config=self._initial_config))
 
     @property
     def ethernet_adapters(self):

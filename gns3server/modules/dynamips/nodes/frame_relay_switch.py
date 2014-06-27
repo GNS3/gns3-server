@@ -20,6 +20,7 @@ Interface for Dynamips virtual Frame-Relay switch module.
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L642
 """
 
+import os
 from ..dynamips_error import DynamipsError
 
 import logging
@@ -34,26 +35,21 @@ class FrameRelaySwitch(object):
     :param name: name for this switch
     """
 
-    _allocated_names = []
-    _instance_count = 1
+    _instances = []
 
-    def __init__(self, hypervisor, name=None):
+    def __init__(self, hypervisor, name):
 
-        # create an unique ID
-        self._id = FrameRelaySwitch._instance_count
-        FrameRelaySwitch._instance_count += 1
+        # find an instance identifier (0 < id <= 4096)
+        self._id = 0
+        for identifier in range(1, 4097):
+            if identifier not in self._instances:
+                self._id = identifier
+                self._instances.append(self._id)
+                break
 
-        # let's create a unique name if none has been chosen
-        if not name:
-            name_id = self._id
-            while True:
-                name = "FR" + str(name_id)
-                # check if the name has already been allocated to another switch
-                if name not in self._allocated_names:
-                    break
-                name_id += 1
+        if self._id == 0:
+            raise DynamipsError("Maximum number of instances reached")
 
-        self._allocated_names.append(name)
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("frsw create {}".format(self._name))
@@ -68,11 +64,10 @@ class FrameRelaySwitch(object):
     @classmethod
     def reset(cls):
         """
-        Resets the instance count and the allocated names list.
+        Resets the instance count and the allocated instances list.
         """
 
-        cls._instance_count = 1
-        cls._allocated_names.clear()
+        cls._instances.clear()
 
     @property
     def id(self):
@@ -102,7 +97,6 @@ class FrameRelaySwitch(object):
         :param new_name: New name for this switch
         """
 
-        new_name_no_quotes = new_name
         new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
         self._hypervisor.send("frsw rename {name} {new_name}".format(name=self._name,
                                                                      new_name=new_name))
@@ -111,9 +105,7 @@ class FrameRelaySwitch(object):
                                                                                      id=self._id,
                                                                                      new_name=new_name))
 
-        self._allocated_names.remove(self.name)
         self._name = new_name
-        self._allocated_names.append(new_name_no_quotes)
 
     @property
     def hypervisor(self):
@@ -164,7 +156,7 @@ class FrameRelaySwitch(object):
         log.info("Frame Relay switch {name} [id={id}] has been deleted".format(name=self._name,
                                                                                id=self._id))
         self._hypervisor.devices.remove(self)
-        self._allocated_names.remove(self.name)
+        self._instances.remove(self._id)
 
     def has_port(self, port):
         """
@@ -282,3 +274,54 @@ class FrameRelaySwitch(object):
                                                                                                                                       port2=port2,
                                                                                                                                       dlci2=dlci2))
         del self._mapping[(port1, dlci1)]
+
+    def start_capture(self, port, output_file, data_link_type="DLT_FRELAY"):
+        """
+        Starts a packet capture.
+
+        :param port: allocated port
+        :param output_file: PCAP destination file for the capture
+        :param data_link_type: PCAP data link type (DLT_*), default is DLT_FRELAY
+        """
+
+        if port not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port))
+
+        nio = self._nios[port]
+
+        data_link_type = data_link_type.lower()
+        if data_link_type.startswith("dlt_"):
+            data_link_type = data_link_type[4:]
+
+        if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
+            raise DynamipsError("Port {} has already a filter applied".format(port))
+
+        try:
+            os.makedirs(os.path.dirname(output_file))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise DynamipsError("Could not create captures directory {}".format(e))
+
+        nio.bind_filter("both", "capture")
+        nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
+
+        log.info("Frame relay switch {name} [id={id}]: starting packet capture on {port}".format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 port=port))
+
+    def stop_capture(self, port):
+        """
+        Stops a packet capture.
+
+        :param port: allocated port
+        """
+
+        if port not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port))
+
+        nio = self._nios[port]
+        nio.unbind_filter("both")
+        log.info("Frame relay switch {name} [id={id}]: stopping packet capture on {port}".format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 port=port))

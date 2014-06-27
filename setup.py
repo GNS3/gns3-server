@@ -46,14 +46,14 @@ setup(
     long_description=open("README.rst", "r").read(),
     install_requires=[
         "tornado>=3.1",
-        "pyzmq>=13.1.0",  # this is the strict minimum, recommended is >= 14.0.0
+        "pyzmq>=14.0.0",
         "jsonschema==2.3.0"
-        ],
+    ],
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
-            ]
-        },
+        ]
+    },
     packages=find_packages(),
     package_data={"gns3server": ["templates/upload.html"]},
     include_package_data=True,
@@ -71,5 +71,5 @@ setup(
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: Implementation :: CPython",
-        ],
+    ],
 )

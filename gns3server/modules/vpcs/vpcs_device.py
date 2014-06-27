@@ -21,13 +21,16 @@ order to run an VPCS instance.
 """
 
 import os
-import subprocess
 import sys
-import socket
+import subprocess
+import signal
+import shutil
+
 from .vpcs_error import VPCSError
 from .adapters.ethernet_adapter import EthernetAdapter
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
+from ..attic import find_unused_port
 
 import logging
 log = logging.getLogger(__name__)
@@ -37,52 +40,90 @@ class VPCSDevice(object):
     """
     VPCS device implementation.
 
+    :param name: name of this VPCS device
     :param path: path to VPCS executable
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
-    :param name: name of this VPCS device
+    :param vpcs_id: VPCS instance ID
+    :param console: TCP console port
+    :param console_start_port_range: TCP console port range start
+    :param console_end_port_range: TCP console port range end
     """
 
     _instances = []
+    _allocated_console_ports = []
 
-    def __init__(self, path, working_dir, host="127.0.0.1", name=None):
+    def __init__(self,
+                 name,
+                 path,
+                 working_dir,
+                 host="127.0.0.1",
+                 vpcs_id=None,
+                 console=None,
+                 console_start_port_range=4512,
+                 console_end_port_range=5000):
 
-        # find an instance identifier (1 <= id <= 255)
-        # This 255 limit is due to a restriction on the number of possible
-        # mac addresses given in VPCS using the -m option
-        self._id = 0
-        for identifier in range(1, 256):
-            if identifier not in self._instances:
-                self._id = identifier
-                self._instances.append(self._id)
-                break
 
-        if self._id == 0:
-            raise VPCSError("Maximum number of VPCS instances reached")
+        if not vpcs_id:
+            # find an instance identifier is none is provided (1 <= id <= 255)
+            # This 255 limit is due to a restriction on the number of possible
+            # MAC addresses given in VPCS using the -m option
+            self._id = 0
+            for identifier in range(1, 256):
+                if identifier not in self._instances:
+                    self._id = identifier
+                    self._instances.append(self._id)
+                    break
 
-        if name:
-            self._name = name
+            if self._id == 0:
+                raise VPCSError("Maximum number of VPCS instances reached")
         else:
-            self._name = "VPCS{}".format(self._id)
+            if vpcs_id in self._instances:
+                raise VPCSError("VPCS identifier {} is already used by another VPCS device".format(vpcs_id))
+            self._id = vpcs_id
+            self._instances.append(self._id)
+
+        self._name = name
         self._path = path
-        self._console = None
+        self._console = console
         self._working_dir = None
+        self._host = host
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
         self._host = "127.0.0.1"
         self._started = False
+        self._console_start_port_range = console_start_port_range
+        self._console_end_port_range = console_end_port_range
 
         # VPCS settings
         self._script_file = ""
-        self._ethernet_adapters = [EthernetAdapter()]  # one adapter = 1 interfaces
-        self._slots = self._ethernet_adapters
+        self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
-        # update the working directory
-        self.working_dir = working_dir
+        working_dir_path = os.path.join(working_dir, "vpcs", "pc-{}".format(self._id))
+
+        if vpcs_id and not os.path.isdir(working_dir_path):
+            raise VPCSError("Working directory {} doesn't exist".format(working_dir_path))
+
+        # create the device own working directory
+        self.working_dir = working_dir_path
+
+        if not self._console:
+            # allocate a console port
+            try:
+                self._console = find_unused_port(self._console_start_port_range,
+                                                 self._console_end_port_range,
+                                                 self._host,
+                                                 ignore_ports=self._allocated_console_ports)
+            except Exception as e:
+                raise VPCSError(e)
+
+        if self._console in self._allocated_console_ports:
+            raise VPCSError("Console port {} is already used by another VPCS device".format(console))
+        self._allocated_console_ports.append(self._console)
 
         log.info("VPCS device {name} [id={id}] has been created".format(name=self._name,
-                                                                       id=self._id))
+                                                                        id=self._id))
 
     def defaults(self):
         """
@@ -92,7 +133,6 @@ class VPCSDevice(object):
         """
 
         vpcs_defaults = {"name": self._name,
-                         "path": self._path,
                          "script_file": self._script_file,
                          "console": self._console}
 
@@ -106,7 +146,7 @@ class VPCSDevice(object):
         :returns: id (integer)
         """
 
-        return(self._id)
+        return self._id
 
     @classmethod
     def reset(cls):
@@ -115,6 +155,7 @@ class VPCSDevice(object):
         """
 
         cls._instances.clear()
+        cls._allocated_console_ports.clear()
 
     @property
     def name(self):
@@ -134,10 +175,35 @@ class VPCSDevice(object):
         :param new_name: name
         """
 
-        self._name = new_name
+        if self._started:
+            raise VPCSError("Cannot change the name to {} while the device is running".format(new_name))
+
+        new_working_dir = os.path.join(os.path.dirname(self._working_dir), new_name)
+        try:
+            shutil.move(self._working_dir, new_working_dir)
+            self._working_dir = new_working_dir
+        except OSError as e:
+            raise VPCSError("Could not move working directory from {} to {}: {}".format(self._working_dir,
+                                                                                        new_working_dir,
+                                                                                        e))
+
+        if self._script_file:
+            # update the startup.vpc
+            config_path = os.path.join(self._working_dir, "startup.vpc")
+            if os.path.isfile(config_path):
+                try:
+                    with open(config_path, "r+", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self._name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise VPCSError("Could not amend the configuration {}: {}".format(config_path, e))
+
         log.info("VPCS {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                      id=self._id,
-                                                                      new_name=new_name))
+                                                                       id=self._id,
+                                                                       new_name=new_name))
+        self._name = new_name
 
     @property
     def path(self):
@@ -147,7 +213,7 @@ class VPCSDevice(object):
         :returns: path to VPCS
         """
 
-        return(self._path)
+        return self._path
 
     @path.setter
     def path(self, path):
@@ -159,8 +225,8 @@ class VPCSDevice(object):
 
         self._path = path
         log.info("VPCS {name} [id={id}]: path changed to {path}".format(name=self._name,
-                                                                      id=self._id,
-                                                                      path=path))
+                                                                        id=self._id,
+                                                                        path=path))
 
     @property
     def working_dir(self):
@@ -180,8 +246,6 @@ class VPCSDevice(object):
         :param working_dir: path to the working directory
         """
 
-        # create our own working directory
-        working_dir = os.path.join(working_dir, "vpcs", "device-{}".format(self._id))
         try:
             os.makedirs(working_dir)
         except FileExistsError:
@@ -191,8 +255,8 @@ class VPCSDevice(object):
 
         self._working_dir = working_dir
         log.info("VPCS {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
-                                                                                    id=self._id,
-                                                                                    wd=self._working_dir))
+                                                                                   id=self._id,
+                                                                                   wd=self._working_dir))
 
     @property
     def console(self):
@@ -212,10 +276,15 @@ class VPCSDevice(object):
         :param console: console port (integer)
         """
 
+        if console in self._allocated_console_ports:
+            raise VPCSError("Console port {} is already used by another VPCS device".format(console))
+
+        self._allocated_console_ports.remove(self._console)
         self._console = console
+        self._allocated_console_ports.append(self._console)
         log.info("VPCS {name} [id={id}]: console port set to {port}".format(name=self._name,
-                                                                         id=self._id,
-                                                                         port=console))
+                                                                            id=self._id,
+                                                                            port=console))
 
     def command(self):
         """
@@ -232,9 +301,37 @@ class VPCSDevice(object):
         """
 
         self.stop()
-        self._instances.remove(self._id)
+        if self._id in self._instances:
+            self._instances.remove(self._id)
+
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+
         log.info("VPCS device {name} [id={id}] has been deleted".format(name=self._name,
-                                                                       id=self._id))
+                                                                        id=self._id))
+
+    def clean_delete(self):
+        """
+        Deletes this VPCS device & all files (configs, logs etc.)
+        """
+
+        self.stop()
+        if self._id in self._instances:
+            self._instances.remove(self._id)
+
+        if self.console:
+            self._allocated_console_ports.remove(self.console)
+
+        try:
+            shutil.rmtree(self._working_dir)
+        except OSError as e:
+            log.error("could not delete VPCS device {name} [id={id}]: {error}".format(name=self._name,
+                                                                                      id=self._id,
+                                                                                      error=e))
+            return
+
+        log.info("VPCS device {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
+                                                                                                     id=self._id))
 
     @property
     def started(self):
@@ -253,22 +350,32 @@ class VPCSDevice(object):
 
         if not self.is_running():
 
+            if not self._path:
+                raise VPCSError("No path to a VPCS executable has been set")
+
             if not os.path.isfile(self._path):
-                raise VPCSError("VPCS image '{}' is not accessible".format(self._path))
+                raise VPCSError("VPCS program '{}' is not accessible".format(self._path))
 
             if not os.access(self._path, os.X_OK):
-                raise VPCSError("VPCS image '{}' is not executable".format(self._path))
+                raise VPCSError("VPCS program '{}' is not executable".format(self._path))
+
+            if not self._ethernet_adapter.get_nio(0):
+                raise VPCSError("This VPCS instance must be connected in order to start")
 
             self._command = self._build_command()
             try:
                 log.info("starting VPCS: {}".format(self._command))
                 self._vpcs_stdout_file = os.path.join(self._working_dir, "vpcs.log")
                 log.info("logging to {}".format(self._vpcs_stdout_file))
+                flags = 0
+                if sys.platform.startswith("win32"):
+                    flags = subprocess.CREATE_NEW_PROCESS_GROUP
                 with open(self._vpcs_stdout_file, "w") as fd:
                     self._process = subprocess.Popen(self._command,
                                                      stdout=fd,
                                                      stderr=subprocess.STDOUT,
-                                                     cwd=self._working_dir)
+                                                     cwd=self._working_dir,
+                                                     creationflags=flags)
                 log.info("VPCS instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
             except OSError as e:
@@ -284,14 +391,13 @@ class VPCSDevice(object):
         # stop the VPCS process
         if self.is_running():
             log.info("stopping VPCS instance {} PID={}".format(self._id, self._process.pid))
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect((self._host, self._console))
-                sock.send(bytes("quit\n", 'UTF-8'))
-                sock.close()
-            except TypeError as e:
-                log.warn("VPCS instance {} PID={} is still running.  Error: {}".format(self._id,
-                                                                                       self._process.pid, e))
+            if sys.platform.startswith("win32"):
+                self._process.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                self._process.terminate()
+
+            self._process.wait()
+
         self._process = None
         self._started = False
 
@@ -304,7 +410,7 @@ class VPCSDevice(object):
         output = ""
         if self._vpcs_stdout_file:
             try:
-                with open(self._vpcs_stdout_file) as file:
+                with open(self._vpcs_stdout_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._vpcs_stdout_file, e))
@@ -317,69 +423,48 @@ class VPCSDevice(object):
         :returns: True or False
         """
 
-        if self._process:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect((self._host, self._console))
-                sock.close()
-                return True
-            except:
-                e = sys.exc_info()[0]
-                log.warn("Could not connect to {}:{}.  Error: {}".format(self._host, self._console, e))
-                return False
+        if self._process and self._process.poll() is None:
+            return True
         return False
 
-    def slot_add_nio_binding(self, slot_id, port_id, nio):
+    def port_add_nio_binding(self, port_id, nio):
         """
-        Adds a slot NIO binding.
+        Adds a port NIO binding.
 
-        :param slot_id: slot ID
         :param port_id: port ID
         :param nio: NIO instance to add to the slot/port
         """
 
-        try:
-            adapter = self._slots[slot_id]
-        except IndexError:
-            raise VPCSError("Slot {slot_id} doesn't exist on VPCS {name}".format(name=self._name,
-                                                                               slot_id=slot_id))
+        if not self._ethernet_adapter.port_exists(port_id):
+            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+                                                                                       port_id=port_id))
 
-        if not adapter.port_exists(port_id):
-            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                      port_id=port_id))
+        self._ethernet_adapter.add_nio(port_id, nio)
+        log.info("VPCS {name} [id={id}]: {nio} added to port {port_id}".format(name=self._name,
+                                                                               id=self._id,
+                                                                               nio=nio,
+                                                                               port_id=port_id))
 
-        adapter.add_nio(port_id, nio)
-        log.info("VPCS {name} [id={id}]: {nio} added to {slot_id}/{port_id}".format(name=self._name,
+    def port_remove_nio_binding(self, port_id):
+        """
+        Removes a port NIO binding.
+
+        :param port_id: port ID
+
+        :returns: NIO instance
+        """
+
+        if not self._ethernet_adapter.port_exists(port_id):
+            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+                                                                                       port_id=port_id))
+
+        nio = self._ethernet_adapter.get_nio(port_id)
+        self._ethernet_adapter.remove_nio(port_id)
+        log.info("VPCS {name} [id={id}]: {nio} removed from port {port_id}".format(name=self._name,
                                                                                    id=self._id,
                                                                                    nio=nio,
-                                                                                   slot_id=slot_id,
                                                                                    port_id=port_id))
-
-    def slot_remove_nio_binding(self, slot_id, port_id):
-        """
-        Removes a slot NIO binding.
-
-        :param slot_id: slot ID
-        :param port_id: port ID
-        """
-
-        try:
-            adapter = self._slots[slot_id]
-        except IndexError:
-            raise VPCSError("Slot {slot_id} doesn't exist on VPCS {name}".format(name=self._name,
-                                                                               slot_id=slot_id))
-
-        if not adapter.port_exists(port_id):
-            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                      port_id=port_id))
-
-        nio = adapter.get_nio(port_id)
-        adapter.remove_nio(port_id)
-        log.info("VPCS {name} [id={id}]: {nio} removed from {slot_id}/{port_id}".format(name=self._name,
-                                                                                       id=self._id,
-                                                                                       nio=nio,
-                                                                                       slot_id=slot_id,
-                                                                                       port_id=port_id))
+        return nio
 
     def _build_command(self):
         """
@@ -392,12 +477,13 @@ class VPCSDevice(object):
             -h         print this help then exit
             -v         print version information then exit
 
+            -i num     number of vpc instances to start (default is 9)
             -p port    run as a daemon listening on the tcp 'port'
             -m num     start byte of ether address, default from 0
             -r file    load and execute script file
                        compatible with older versions, DEPRECATED.
 
-            -e         tap mode, using /dev/tapx (linux only)
+            -e         tap mode, using /dev/tapx by default (linux only)
             -u         udp mode, default
 
         udp mode options:
@@ -405,33 +491,36 @@ class VPCSDevice(object):
             -c port    remote udp base port (dynamips udp port), default from 30000
             -t ip      remote host IP, default 127.0.0.1
 
+        tap mode options:
+            -d device  device name, works only when -i is set to 1
+
         hypervisor mode option:
             -H port    run as the hypervisor listening on the tcp 'port'
 
-          If no 'scriptfile' specified, VPCS will read and execute the file named
+          If no 'scriptfile' specified, vpcs will read and execute the file named
           'startup.vpc' if it exsits in the current directory.
 
         """
 
         command = [self._path]
-        command.extend(["-p", str(self._console)])
+        command.extend(["-p", str(self._console)])  # listen to console port
 
-        for adapter in self._slots:
-            for unit in adapter.ports.keys():
-                nio = adapter.get_nio(unit)
-                if nio:
-                    if isinstance(nio, NIO_UDP):
-                        # UDP tunnel
-                        command.extend(["-s", str(nio.lport)])
-                        command.extend(["-c", str(nio.rport)])
-                        command.extend(["-t", str(nio.rhost)])
+        nio = self._ethernet_adapter.get_nio(0)
+        if nio:
+            if isinstance(nio, NIO_UDP):
+                # UDP tunnel
+                command.extend(["-s", str(nio.lport)])  # source UDP port
+                command.extend(["-c", str(nio.rport)])  # destination UDP port
+                command.extend(["-t", nio.rhost])  # destination host
 
-                    elif isinstance(nio, NIO_TAP):
-                        # TAP interface
-                        command.extend(["-e"])   #, str(nio.tap_device)]) #TODO: Fix, currently vpcs doesn't allow specific tap_device
+            elif isinstance(nio, NIO_TAP):
+                # TAP interface
+                command.extend(["-e"])
+                command.extend(["-d", nio.tap_device])
 
-        command.extend(["-m", str(self._id)])   # The unique ID is used to set the mac address offset
-        command.extend(["-i", str(1)])  # Option to start only one pc instance
+        command.extend(["-m", str(self._id)])   # the unique ID is used to set the MAC address offset
+        command.extend(["-i", "1"])  # option to start only one VPC instance
+        command.extend(["-F"])  # option to avoid the daemonization of VPCS
         if self._script_file:
             command.extend([self._script_file])
         return command
@@ -441,7 +530,7 @@ class VPCSDevice(object):
         """
         Returns the script-file for this VPCS instance.
 
-        :returns: path to script-file file
+        :returns: path to script-file
         """
 
         return self._script_file
@@ -451,10 +540,10 @@ class VPCSDevice(object):
         """
         Sets the script-file for this VPCS instance.
 
-        :param script_file: path to script-file file
+        :param script_file: path to base-script-file
         """
 
         self._script_file = script_file
         log.info("VPCS {name} [id={id}]: script_file set to {config}".format(name=self._name,
-                                                                                 id=self._id,
-                                                                                 config=self._script_file))
+                                                                             id=self._id,
+                                                                             config=self._script_file))

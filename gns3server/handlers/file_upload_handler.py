@@ -38,15 +38,14 @@ class FileUploadHandler(tornado.web.RequestHandler):
     :param request: Tornado Request instance
     """
 
-    def __init__(self, application, request):
+    def __init__(self, application, request, **kwargs):
 
-        # get the upload directory from the configuration file
+        super().__init__(application, request, **kwargs)
         config = Config.instance()
         server_config = config.get_default_section()
-        # default projects directory is "~/Documents/GNS3/images"
-        self._upload_dir = os.path.expandvars(os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
+        self._upload_dir = os.path.expandvars(
+            os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
         self._host = request.host
-
         try:
             os.makedirs(self._upload_dir)
             log.info("upload directory '{}' created".format(self._upload_dir))
@@ -54,8 +53,6 @@ class FileUploadHandler(tornado.web.RequestHandler):
             pass
         except OSError as e:
             log.error("could not create the upload directory {}: {}".format(self._upload_dir, e))
-
-        tornado.websocket.WebSocketHandler.__init__(self, application, request)
 
     def get(self):
         """
@@ -81,8 +78,12 @@ class FileUploadHandler(tornado.web.RequestHandler):
         if "file" in self.request.files:
             fileinfo = self.request.files["file"][0]
             destination_path = os.path.join(self._upload_dir, fileinfo['filename'])
-            with open(destination_path, 'wb') as f:
-                f.write(fileinfo['body'])
+            try:
+                with open(destination_path, 'wb') as f:
+                    f.write(fileinfo['body'])
+            except OSError as e:
+                self.write("Could not upload {}: {}".format(fileinfo['filename'], e))
+                return
             st = os.stat(destination_path)
             os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         self.redirect("/upload")

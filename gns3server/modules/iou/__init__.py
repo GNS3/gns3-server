@@ -20,23 +20,20 @@ IOU server module.
 """
 
 import os
-import sys
 import base64
 import tempfile
-import fcntl
-import struct
 import socket
 import shutil
 
 from gns3server.modules import IModule
 from gns3server.config import Config
-import gns3server.jsonrpc as jsonrpc
 from .iou_device import IOUDevice
 from .iou_error import IOUError
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
 from .nios.nio_generic_ethernet import NIO_GenericEthernet
 from ..attic import find_unused_port
+from ..attic import has_privileged_access
 
 from .schemas import IOU_CREATE_SCHEMA
 from .schemas import IOU_DELETE_SCHEMA
@@ -68,18 +65,15 @@ class IOU(IModule):
         iou_config = config.get_section_config(name.upper())
         self._iouyap = iou_config.get("iouyap")
         if not self._iouyap or not os.path.isfile(self._iouyap):
-            iouyap_in_cwd = os.path.join(os.getcwd(), "iouyap")
-            if os.path.isfile(iouyap_in_cwd):
-                self._iouyap = iouyap_in_cwd
-            else:
-                # look for iouyap if none is defined or accessible
-                for path in os.environ["PATH"].split(":"):
-                    try:
-                        if "iouyap" in os.listdir(path) and os.access(os.path.join(path, "iouyap"), os.X_OK):
-                            self._iouyap = os.path.join(path, "iouyap")
-                            break
-                    except OSError:
-                        continue
+            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            # look for iouyap in the current working directory and $PATH
+            for path in paths:
+                try:
+                    if "iouyap" in os.listdir(path) and os.access(os.path.join(path, "iouyap"), os.X_OK):
+                        self._iouyap = os.path.join(path, "iouyap")
+                        break
+                except OSError:
+                    continue
 
         if not self._iouyap:
             log.warning("iouyap binary couldn't be found!")
@@ -206,6 +200,7 @@ class IOU(IModule):
         - iourc (base64 encoded iourc file)
 
         Optional request parameters:
+        - iouyap (path to iouyap)
         - working_dir (path to a working directory)
         - project_name
         - console_start_port_range
@@ -216,12 +211,12 @@ class IOU(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
             return
 
         if "iourc" in request:
-            iourc_content = base64.decodestring(request["iourc"].encode("utf-8")).decode("utf-8")
+            iourc_content = base64.decodebytes(request["iourc"].encode("utf-8")).decode("utf-8")
             iourc_content = iourc_content.replace("\r\n", "\n")  # dos2unix
             try:
                 with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
@@ -229,7 +224,7 @@ class IOU(IModule):
                     f.write(iourc_content)
                     self._iourc = f.name
             except OSError as e:
-                raise IOUError("Could not save iourc file to {}: {}".format(f.name, e))
+                raise IOUError("Could not create the iourc file: {}".format(e))
 
         if "iouyap" in request and request["iouyap"]:
             self._iouyap = request["iouyap"]
@@ -268,30 +263,6 @@ class IOU(IModule):
 
         log.debug("received request {}".format(request))
 
-    def test_result(self, message, result="error"):
-        """
-        """
-
-        return {"result": result, "message": message}
-
-    @IModule.route("iou.test_settings")
-    def test_settings(self, request):
-        """
-        """
-
-        response = []
-
-        # test iourc
-        if self._iourc == "":
-            response.append(self.test_result("No iourc file has been added"))
-        elif not os.path.isfile(self._iourc):
-            response.append(self.test_result("iourc file {} is not accessible".format(self._iourc)))
-        else:
-            #TODO: check hostname + license inside the file
-            pass
-
-        self.send_response(response)
-
     @IModule.route("iou.create")
     def iou_create(self, request):
         """
@@ -302,6 +273,7 @@ class IOU(IModule):
 
         Optional request parameters:
         - name (IOU name)
+        - console (IOU console port)
 
         Response parameters:
         - id (IOU instance identifier)
@@ -315,23 +287,18 @@ class IOU(IModule):
         if not self.validate_request(request, IOU_CREATE_SCHEMA):
             return
 
-        name = None
-        if "name" in request:
-            name = request["name"]
+        name = request["name"]
         iou_path = request["path"]
+        console = request.get("console")
+        iou_id = request.get("iou_id")
 
         try:
-            try:
-                os.makedirs(self._working_dir)
-            except FileExistsError:
-                pass
-            except OSError as e:
-                raise IOUError("Could not create working directory {}".format(e))
-
-            iou_instance = IOUDevice(iou_path,
+            iou_instance = IOUDevice(name,
+                                     iou_path,
                                      self._working_dir,
                                      self._host,
-                                     name,
+                                     iou_id,
+                                     console,
                                      self._console_start_port_range,
                                      self._console_end_port_range)
 
@@ -371,7 +338,7 @@ class IOU(IModule):
             return
 
         try:
-            iou_instance.delete()
+            iou_instance.clean_delete()
             del self._iou_instances[request["id"]]
         except IOUError as e:
             self.send_custom_error(str(e))
@@ -389,7 +356,7 @@ class IOU(IModule):
 
         Optional request parameters:
         - any setting to update
-        - startup_config_base64 (startup-config base64 encoded)
+        - initial_config_base64 (initial-config base64 encoded)
 
         Response parameters:
         - updated settings
@@ -406,42 +373,42 @@ class IOU(IModule):
         if not iou_instance:
             return
 
-        response = {}
-        config_path = os.path.join(iou_instance.working_dir, "startup-config")
+        config_path = os.path.join(iou_instance.working_dir, "initial-config.cfg")
         try:
-            if "startup_config_base64" in request:
-                # a new startup-config has been pushed
-                config = base64.decodestring(request["startup_config_base64"].encode("utf-8")).decode("utf-8")
+            if "initial_config_base64" in request:
+                # a new initial-config has been pushed
+                config = base64.decodebytes(request["initial_config_base64"].encode("utf-8")).decode("utf-8")
                 config = "!\n" + config.replace("\r", "")
                 config = config.replace('%h', iou_instance.name)
                 try:
                     with open(config_path, "w") as f:
-                        log.info("saving startup-config to {}".format(config_path))
+                        log.info("saving initial-config to {}".format(config_path))
                         f.write(config)
                 except OSError as e:
                     raise IOUError("Could not save the configuration {}: {}".format(config_path, e))
-                # update the request with the new local startup-config path
-                request["startup_config"] = os.path.basename(config_path)
-            elif "startup_config" in request:
-                if os.path.isfile(request["startup_config"]) and request["startup_config"] != config_path:
+                # update the request with the new local initial-config path
+                request["initial_config"] = os.path.basename(config_path)
+            elif "initial_config" in request:
+                if os.path.isfile(request["initial_config"]) and request["initial_config"] != config_path:
                     # this is a local file set in the GUI
                     try:
-                        with open(request["startup_config"], "r") as f:
+                        with open(request["initial_config"], "r", errors="replace") as f:
                             config = f.read()
                         with open(config_path, "w") as f:
                             config = "!\n" + config.replace("\r", "")
                             config = config.replace('%h', iou_instance.name)
                             f.write(config)
-                        request["startup_config"] = os.path.basename(config_path)
+                        request["initial_config"] = os.path.basename(config_path)
                     except OSError as e:
-                        raise IOUError("Could not save the configuration from {} to {}: {}".format(request["startup_config"], config_path, e))
-                else:
-                    raise IOUError("Startup-config {} could not be found on this server".format(request["startup_config"]))
+                        raise IOUError("Could not save the configuration from {} to {}: {}".format(request["initial_config"], config_path, e))
+                elif not os.path.isfile(config_path):
+                    raise IOUError("Startup-config {} could not be found on this server".format(request["initial_config"]))
         except IOUError as e:
             self.send_custom_error(str(e))
             return
 
         # update the IOU settings
+        response = {}
         for name, value in request.items():
             if hasattr(iou_instance, name) and getattr(iou_instance, name) != value:
                 try:
@@ -477,7 +444,6 @@ class IOU(IModule):
             return
 
         try:
-            log.debug("starting IOU with command: {}".format(iou_instance.command()))
             iou_instance.iouyap = self._iouyap
             iou_instance.iourc = self._iourc
             iou_instance.start()
@@ -581,39 +547,16 @@ class IOU(IModule):
                                     ignore_ports=self._allocated_udp_ports)
         except Exception as e:
             self.send_custom_error(str(e))
+            return
 
         self._allocated_udp_ports.append(port)
         log.info("{} [id={}] has allocated UDP port {} with host {}".format(iou_instance.name,
                                                                             iou_instance.id,
                                                                             port,
                                                                             self._host))
-        response = {"lport": port}
-        response["port_id"] = request["port_id"]
+        response = {"lport": port,
+                    "port_id": request["port_id"]}
         self.send_response(response)
-
-    def _check_for_privileged_access(self, device):
-        """
-        Check if iouyap can access Ethernet and TAP devices.
-
-        :param device: device name
-        """
-
-        # we are root, so iouyap should have privileged access too
-        if os.geteuid() == 0:
-            return
-
-        # test if iouyap has the CAP_NET_RAW capability
-        if "security.capability" in os.listxattr(self._iouyap):
-            try:
-                caps = os.getxattr(self._iouyap, "security.capability")
-                # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
-                if struct.unpack("<IIIII", caps)[1] & 1 << 13:
-                    return
-            except Exception as e:
-                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(self._iouyap, e))
-                return
-
-        raise IOUError("{} has no privileged access to {}.".format(self._iouyap, device))
 
     @IModule.route("iou.add_nio")
     def add_nio(self, request):
@@ -658,14 +601,22 @@ class IOU(IModule):
                 lport = request["nio"]["lport"]
                 rhost = request["nio"]["rhost"]
                 rport = request["nio"]["rport"]
+                try:
+                    #TODO: handle IPv6
+                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                        sock.connect((rhost, rport))
+                except OSError as e:
+                    raise IOUError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
                 nio = NIO_UDP(lport, rhost, rport)
             elif request["nio"]["type"] == "nio_tap":
                 tap_device = request["nio"]["tap_device"]
-                self._check_for_privileged_access(tap_device)
+                if not has_privileged_access(self._iouyap):
+                    raise IOUError("{} has no privileged access to {}.".format(self._iouyap, tap_device))
                 nio = NIO_TAP(tap_device)
             elif request["nio"]["type"] == "nio_generic_ethernet":
                 ethernet_device = request["nio"]["ethernet_device"]
-                self._check_for_privileged_access(ethernet_device)
+                if not has_privileged_access(self._iouyap):
+                    raise IOUError("{} has no privileged access to {}.".format(self._iouyap, ethernet_device))
                 nio = NIO_GenericEthernet(ethernet_device)
             if not nio:
                 raise IOUError("Requested NIO does not exist or is not supported: {}".format(request["nio"]["type"]))
@@ -726,7 +677,7 @@ class IOU(IModule):
         :param request: JSON request
         """
 
-        if request == None:
+        if request is None:
             self.send_param_error()
         else:
             log.debug("received request {}".format(request))

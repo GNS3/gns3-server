@@ -40,7 +40,7 @@ class JSONRPC(AsyncTestCase):
         AsyncWSRequest(self.URL, self.io_loop, self.stop, json_encode(request))
         response = self.wait()
         json_response = json_decode(response)
-        assert json_response["id"] == None
+        assert json_response["id"] is None
         assert json_response["error"].get("code") == -32600
 
     def test_request_with_invalid_json(self):
@@ -49,7 +49,7 @@ class JSONRPC(AsyncTestCase):
         AsyncWSRequest(self.URL, self.io_loop, self.stop, request)
         response = self.wait()
         json_response = json_decode(response)
-        assert json_response["id"] == None
+        assert json_response["id"] is None
         assert json_response["error"].get("code") == -32700
 
     def test_request_with_invalid_jsonrpc_field(self):
@@ -58,7 +58,7 @@ class JSONRPC(AsyncTestCase):
         AsyncWSRequest(self.URL, self.io_loop, self.stop, json_encode(request))
         response = self.wait()
         json_response = json_decode(response)
-        assert json_response["id"] == None
+        assert json_response["id"] is None
         assert json_response["error"].get("code") == -32700
 
     def test_request_with_no_params(self):

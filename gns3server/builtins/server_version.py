@@ -23,6 +23,7 @@ Sends version to requesting clients in JSON-RPC Websocket handler.
 from ..version import __version__
 from ..jsonrpc import JSONRPCResponse
 
+
 def server_version(handler, request_id, params):
     """
     Builtin destination to return the server version.

@@ -19,8 +19,16 @@
 Useful functions... in the attic ;)
 """
 
+import sys
+import os
+import struct
 import socket
+import stat
 import errno
+import time
+
+import logging
+log = logging.getLogger(__name__)
 
 
 def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", ignore_ports=[]):
@@ -64,3 +72,71 @@ def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", 
                 raise Exception("Could not find an unused port: {}".format(e))
 
     raise Exception("Could not find a free port between {0} and {1}".format(start_port, end_port))
+
+
+def wait_socket_is_ready(host, port, wait=2.0, socket_timeout=10):
+    """
+    Waits for a socket to be ready for wait time.
+
+    :param host: host/address to connect to
+    :param port: port to connect to
+    :param wait: maximum wait time
+    :param socket_timeout: timeout for the socket
+
+    :returns: tuple with boolean indicating if the socket is ready and the last exception
+    that occurred when connecting to the socket
+    """
+
+    # connect to a local address by default
+    # if listening to all addresses (IPv4 or IPv6)
+    if host == "0.0.0.0":
+        host = "127.0.0.1"
+    elif host == "::":
+        host = "::1"
+
+    connection_success = False
+    begin = time.time()
+    last_exception = None
+    while time.time() - begin < wait:
+        time.sleep(0.01)
+        try:
+            with socket.create_connection((host, port), socket_timeout):
+                pass
+        except OSError as e:
+            last_exception = e
+            continue
+        connection_success = True
+        break
+
+    return connection_success, last_exception
+
+
+def has_privileged_access(executable):
+    """
+    Check if an executable can access Ethernet and TAP devices in
+    RAW mode.
+
+    :param executable: executable path
+
+    :returns: True or False
+    """
+
+    if os.geteuid() == 0:
+        # we are root, so we should have privileged access.
+        return True
+
+    if not sys.platform.startswith("win") and os.stat(executable).st_mode & stat.S_ISVTX == stat.S_ISVTX:
+        # the executable has a sticky bit.
+        return True
+
+    # test if the executable has the CAP_NET_RAW capability (Linux only)
+    if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
+        try:
+            caps = os.getxattr(executable, "security.capability")
+            # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
+            if struct.unpack("<IIIII", caps)[1] & 1 << 13:
+                return True
+        except Exception as e:
+            log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
+
+    return False
