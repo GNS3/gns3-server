@@ -44,7 +44,7 @@ class FileUploadHandler(tornado.web.RequestHandler):
         config = Config.instance()
         server_config = config.get_default_section()
         self._upload_dir = os.path.expandvars(
-            os.path.expanduser(server_config.get("upload_directory", "~/Documents/GNS3/images")))
+            os.path.expanduser(server_config.get("upload_directory", "~/GNS3/images")))
         self._host = request.host
         try:
             os.makedirs(self._upload_dir)

@@ -79,8 +79,8 @@ class Server(object):
         # get the projects and temp directories from the configuration file (passed to the modules)
         config = Config.instance()
         server_config = config.get_default_section()
-        # default projects directory is "~/Documents/GNS3/projects"
-        self._projects_dir = os.path.expandvars(os.path.expanduser(server_config.get("projects_directory", "~/Documents/GNS3/projects")))
+        # default projects directory is "~/GNS3/projects"
+        self._projects_dir = os.path.expandvars(os.path.expanduser(server_config.get("projects_directory", "~/GNS3/projects")))
         self._temp_dir = server_config.get("temporary_directory", tempfile.gettempdir())
 
         try:
