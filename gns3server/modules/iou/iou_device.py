@@ -550,7 +550,7 @@ class IOUDevice(object):
 
         if not self.is_running():
 
-            if not os.path.isfile(self._path):
+            if not os.path.isfile(self._path) or not os.path.exists(self._path):
                 raise IOUError("IOU image '{}' is not accessible".format(self._path))
 
             try:

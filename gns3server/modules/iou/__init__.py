@@ -253,7 +253,7 @@ class IOU(IModule):
             self._working_dir = new_working_dir
             for iou_id in self._iou_instances:
                 iou_instance = self._iou_instances[iou_id]
-                iou_instance.working_dir = self._working_dir
+                iou_instance.working_dir = os.path.join(self._working_dir, "iou", "device-{}".format(iou_instance.id))
 
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]

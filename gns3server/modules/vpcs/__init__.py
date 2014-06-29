@@ -189,7 +189,7 @@ class VPCS(IModule):
             self._working_dir = new_working_dir
             for vpcs_id in self._vpcs_instances:
                 vpcs_instance = self._vpcs_instances[vpcs_id]
-                vpcs_instance.working_dir = self._working_dir
+                vpcs_instance.working_dir = os.path.join(self._working_dir, "vpcs", "pc-{}".format(vpcs_instance.id))
 
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]
