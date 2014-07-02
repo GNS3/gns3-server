@@ -25,7 +25,9 @@ import sys
 import subprocess
 import signal
 import shutil
+import re
 
+from pkg_resources import parse_version
 from .vpcs_error import VPCSError
 from .adapters.ethernet_adapter import EthernetAdapter
 from .nios.nio_udp import NIO_UDP
@@ -343,6 +345,24 @@ class VPCSDevice(object):
 
         return self._started
 
+    def _check_vpcs_version(self):
+        """
+        Checks if the VPCS executable version is >= 0.5b1.
+        """
+
+        try:
+            output = subprocess.check_output([self._path, "-v"], stderr=subprocess.STDOUT, cwd=self._working_dir)
+            match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output.decode("utf-8"))
+            if match:
+                version = match.group(1)
+                print(version)
+                if parse_version(version) < parse_version("0.5b1"):
+                    raise VPCSError("VPCS executable version must be >= 0.5b1")
+            else:
+                raise VPCSError("Could not determine the VPCS version for {}".format(self._path))
+        except OSError as e:
+            raise VPCSError("Error while looking for the VPCS version: {}".format(e))
+
     def start(self):
         """
         Starts the VPCS process.
@@ -358,6 +378,8 @@ class VPCSDevice(object):
 
             if not os.access(self._path, os.X_OK):
                 raise VPCSError("VPCS program '{}' is not executable".format(self._path))
+
+            self._check_vpcs_version()
 
             if not self._ethernet_adapter.get_nio(0):
                 raise VPCSError("This VPCS instance must be connected in order to start")

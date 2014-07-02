@@ -121,11 +121,14 @@ def has_privileged_access(executable):
     :returns: True or False
     """
 
+    if sys.platform.startswith("win"):
+        # do not check anything on Windows
+        return True
+
     if os.geteuid() == 0:
         # we are root, so we should have privileged access.
         return True
-
-    if not sys.platform.startswith("win") and os.stat(executable).st_mode & stat.S_ISVTX == stat.S_ISVTX:
+    if os.stat(executable).st_mode & stat.S_ISVTX == stat.S_ISVTX:
         # the executable has a sticky bit.
         return True
 

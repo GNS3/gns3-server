@@ -806,7 +806,6 @@ class IOUDevice(object):
         -N            Ignore the NETMAP file
         """
 
-        #TODO: add support for keepalive and watchdog
         command = [self._path]
         if len(self._ethernet_adapters) != 2:
             command.extend(["-e", str(len(self._ethernet_adapters))])
