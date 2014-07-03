@@ -196,18 +196,6 @@ class IOUDevice(object):
         :param new_name: name
         """
 
-        if self._started:
-            raise IOUError("Cannot change the name to {} while the device is running".format(new_name))
-
-        new_working_dir = os.path.join(os.path.dirname(self._working_dir), new_name)
-        try:
-            shutil.move(self._working_dir, new_working_dir)
-            self._working_dir = new_working_dir
-        except OSError as e:
-            raise IOUError("Could not move working directory from {} to {}: {}".format(self._working_dir,
-                                                                                       new_working_dir,
-                                                                                       e))
-
         if self._initial_config:
             # update the initial-config
             config_path = os.path.join(self._working_dir, "initial-config.cfg")

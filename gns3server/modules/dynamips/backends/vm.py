@@ -409,7 +409,7 @@ class VM(object):
                     router.set_config(request["startup_config"])
                 else:
                     router.set_config(request["startup_config"])
-                    response["startup_config"] = request["startup_config"]
+                response["startup_config"] = request["startup_config"]
 
             if "private_config" in request:
                 if os.path.isfile(request["private_config"]) and request["private_config"] != private_config_path:
@@ -418,7 +418,7 @@ class VM(object):
                     router.set_config(router.startup_config, request["private_config"])
                 else:
                     router.set_config(router.startup_config, request["private_config"])
-                    response["private_config"] = request["private_config"]
+                response["private_config"] = request["private_config"]
 
         except DynamipsError as e:
             self.send_custom_error(str(e))
