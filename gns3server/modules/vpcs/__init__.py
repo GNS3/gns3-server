@@ -41,6 +41,7 @@ from .schemas import VPCS_RELOAD_SCHEMA
 from .schemas import VPCS_ALLOCATE_UDP_PORT_SCHEMA
 from .schemas import VPCS_ADD_NIO_SCHEMA
 from .schemas import VPCS_DELETE_NIO_SCHEMA
+from .schemas import VPCS_EXPORT_CONFIG_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -596,6 +597,43 @@ class VPCS(IModule):
             return
 
         self.send_response(True)
+
+    @IModule.route("vpcs.export_config")
+    def export_config(self, request):
+        """
+        Exports the script file from a VPCS instance.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - script_file_base64 (script file base64 encoded)
+        - False if no configuration can be exported
+        """
+
+        # validate the request
+        if not self.validate_request(request, VPCS_EXPORT_CONFIG_SCHEMA):
+            return
+
+        # get the instance
+        vpcs_instance = self.get_vpcs_instance(request["id"])
+        if not vpcs_instance:
+            return
+
+        response = {}
+        script_file_path = os.path.join(vpcs_instance.working_dir, vpcs_instance.script_file)
+        try:
+            with open(script_file_path, "rb") as f:
+                config = f.read()
+                response["script_file_base64"] = base64.encodebytes(config).decode("utf-8")
+        except OSError as e:
+            self.send_custom_error("unable to export the script file: {}".format(e))
+            return
+
+        if not response:
+            self.send_response(False)
+        else:
+            self.send_response(response)
 
     @IModule.route("vpcs.echo")
     def echo(self, request):

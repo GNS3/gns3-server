@@ -456,6 +456,20 @@ VM_SAVE_CONFIG_SCHEMA = {
     "required": ["id"]
 }
 
+VM_EXPORT_CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to export the configs for VM instance",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "VM instance ID",
+            "type": "integer"
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id"]
+}
+
 VM_IDLEPCS_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to calculate or show idle-pcs for VM instance",

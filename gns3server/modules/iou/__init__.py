@@ -46,6 +46,7 @@ from .schemas import IOU_ADD_NIO_SCHEMA
 from .schemas import IOU_DELETE_NIO_SCHEMA
 from .schemas import IOU_START_CAPTURE_SCHEMA
 from .schemas import IOU_STOP_CAPTURE_SCHEMA
+from .schemas import IOU_EXPORT_CONFIG_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -754,6 +755,43 @@ class IOU(IModule):
 
         response = {"port_id": request["port_id"]}
         self.send_response(response)
+
+    @IModule.route("iou.export_config")
+    def export_config(self, request):
+        """
+        Exports the initial-config from an IOU instance.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - initial_config_base64 (initial-config base64 encoded)
+        - False if no configuration can be exported
+        """
+
+        # validate the request
+        if not self.validate_request(request, IOU_EXPORT_CONFIG_SCHEMA):
+            return
+
+        # get the instance
+        iou_instance = self.get_iou_instance(request["id"])
+        if not iou_instance:
+            return
+
+        response = {}
+        initial_config_path = os.path.join(iou_instance.working_dir, iou_instance.initial_config)
+        try:
+            with open(initial_config_path, "rb") as f:
+                config = f.read()
+                response["initial_config_base64"] = base64.encodebytes(config).decode("utf-8")
+        except OSError as e:
+            self.send_custom_error("unable to export the initial-config: {}".format(e))
+            return
+
+        if not response:
+            self.send_response(False)
+        else:
+            self.send_response(response)
 
     @IModule.route("iou.echo")
     def echo(self, request):

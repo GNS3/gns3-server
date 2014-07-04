@@ -331,3 +331,17 @@ VPCS_DELETE_NIO_SCHEMA = {
     "additionalProperties": False,
     "required": ["id", "port"]
 }
+
+VPCS_EXPORT_CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to export the script file of a VPCS instance",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "VPCS device instance ID",
+            "type": "integer"
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id"]
+}

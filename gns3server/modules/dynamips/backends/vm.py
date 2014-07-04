@@ -59,6 +59,7 @@ from ..schemas.vm import VM_UPDATE_SCHEMA
 from ..schemas.vm import VM_START_CAPTURE_SCHEMA
 from ..schemas.vm import VM_STOP_CAPTURE_SCHEMA
 from ..schemas.vm import VM_SAVE_CONFIG_SCHEMA
+from ..schemas.vm import VM_EXPORT_CONFIG_SCHEMA
 from ..schemas.vm import VM_IDLEPCS_SCHEMA
 from ..schemas.vm import VM_ALLOCATE_UDP_PORT_SCHEMA
 from ..schemas.vm import VM_ADD_NIO_SCHEMA
@@ -616,6 +617,45 @@ class VM(object):
 
         except DynamipsError as e:
             log.warn("could not save config to {}: {}".format(router.startup_config, e))
+
+    @IModule.route("dynamips.vm.export_config")
+    def vm_export_config(self, request):
+        """
+        Export the config from a router
+
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - startup_config_base64 (startup-config base64 encoded)
+        - private_config_base64 (private-config base64 encoded)
+        - False if no configuration can be extracted
+        """
+
+        # validate the request
+        if not self.validate_request(request, VM_EXPORT_CONFIG_SCHEMA):
+            return
+
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
+            return
+
+        response = {}
+        try:
+            startup_config_base64, private_config_base64 = router.extract_config()
+            if startup_config_base64:
+                response["startup_config_base64"] = startup_config_base64
+            if private_config_base64:
+                response["private_config_base64"] = private_config_base64
+        except DynamipsError:
+            self.send_custom_error("unable to extract configs")
+            return
+
+        if not response:
+            self.send_response(False)
+        else:
+            self.send_response(response)
 
     @IModule.route("dynamips.vm.idlepcs")
     def vm_idlepcs(self, request):

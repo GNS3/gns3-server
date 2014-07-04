@@ -452,3 +452,17 @@ IOU_STOP_CAPTURE_SCHEMA = {
     "additionalProperties": False,
     "required": ["id", "slot", "port", "port_id"]
 }
+
+IOU_EXPORT_CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to export an initial-config from an IOU instance",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "IOU device instance ID",
+            "type": "integer"
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id"]
+}
