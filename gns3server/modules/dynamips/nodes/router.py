@@ -774,6 +774,9 @@ class Router(object):
         :param idlepc: idlepc value (string)
         """
 
+        if not idlepc:
+            idlepc = "0x0"
+
         if not self.is_running():
             # router is not running
             self._hypervisor.send("vm set_idle_pc {name} {idlepc}".format(name=self._name,

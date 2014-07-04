@@ -202,8 +202,7 @@ VM_UPDATE_SCHEMA = {
         "idlepc": {
             "description": "idle-pc value",
             "type": "string",
-            "minLength": 1,
-            "pattern": "^0x[0-9a-fA-F]+$"
+            "pattern": "^(0x[0-9a-fA-F]+)?$"
         },
         "idlemax": {
             "description": "idlemax value",

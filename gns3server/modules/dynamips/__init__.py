@@ -27,6 +27,7 @@ import shutil
 import glob
 import socket
 from gns3server.modules import IModule
+from gns3server.config import Config
 
 from .hypervisor import Hypervisor
 from .hypervisor_manager import HypervisorManager
@@ -104,8 +105,27 @@ class Dynamips(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        IModule.__init__(self, name, *args, **kwargs)
+        # get the Dynamips location
+        config = Config.instance()
+        dynamips_config = config.get_section_config(name.upper())
+        self._dynamips = dynamips_config.get("dynamips_path")
+        if not self._dynamips or not os.path.isfile(self._dynamips):
+            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            # look for Dynamips in the current working directory and $PATH
+            for path in paths:
+                try:
+                    if "dynamips" in os.listdir(path) and os.access(os.path.join(path, "dynamips"), os.X_OK):
+                        self._dynamips = os.path.join(path, "dynamips")
+                        break
+                except OSError:
+                    continue
 
+        if not self._dynamips:
+            log.warning("dynamips binary couldn't be found!")
+        elif not os.access(self._dynamips, os.X_OK):
+            log.warning("dynamips is not executable")
+
+        IModule.__init__(self, name, *args, **kwargs)
         self._hypervisor_manager = None
         self._hypervisor_manager_settings = {}
         self._routers = {}
@@ -116,7 +136,6 @@ class Dynamips(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
-        self._dynamips = ""
         self._host = kwargs["host"]
 
         if not sys.platform.startswith("win32"):
@@ -278,6 +297,7 @@ class Dynamips(IModule):
 
         Optional request parameters:
         - working_dir (path to a working directory)
+        - project_name
 
         :param request: JSON request
         """
@@ -450,9 +470,13 @@ class Dynamips(IModule):
             ghost.ghost_status = 1
             ghost.ghost_file = ghost_instance
             ghost.ram = router.ram
-            ghost.start()
-            ghost.stop()
-            ghost.clean_delete()
+            try:
+                ghost.start()
+                ghost.stop()
+            except DynamipsError:
+                raise
+            finally:
+                ghost.clean_delete()
 
         if router.ghost_file != ghost_instance:
             # set the ghost file to the router

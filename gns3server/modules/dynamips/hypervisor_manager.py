@@ -19,6 +19,7 @@
 Manages Dynamips hypervisors (load-balancing etc.)
 """
 
+from gns3server.config import Config
 from .hypervisor import Hypervisor
 from .dynamips_error import DynamipsError
 from ..attic import find_unused_port
@@ -47,21 +48,24 @@ class HypervisorManager(object):
         self._path = path
         self._working_dir = working_dir
         self._host = host
-        self._hypervisor_start_port_range = 7200
-        self._hypervisor_end_port_range = 7700
-        self._console_start_port_range = 2001
-        self._console_end_port_range = 2500
-        self._aux_start_port_range = 2501
-        self._aux_end_port_range = 3000
-        self._udp_start_port_range = 10001
-        self._udp_end_port_range = 20000
-        self._ghost_ios_support = True
-        self._mmap_support = True
-        self._jit_sharing_support = False
-        self._sparse_memory_support = True
-        self._allocate_hypervisor_per_device = True
-        self._memory_usage_limit_per_hypervisor = 1024
-        self._allocate_hypervisor_per_ios_image = True
+
+        config = Config.instance()
+        dynamips_config = config.get_section_config("DYNAMIPS")
+        self._hypervisor_start_port_range = dynamips_config.get("hypervisor_start_port_range", 7200)
+        self._hypervisor_end_port_range = dynamips_config.get("hypervisor_end_port_range", 7700)
+        self._console_start_port_range = dynamips_config.get("console_start_port_range", 2001)
+        self._console_end_port_range = dynamips_config.get("console_end_port_range", 2500)
+        self._aux_start_port_range = dynamips_config.get("aux_start_port_range", 2501)
+        self._aux_end_port_range = dynamips_config.get("aux_end_port_range", 3000)
+        self._udp_start_port_range = dynamips_config.get("udp_start_port_range", 10001)
+        self._udp_end_port_range = dynamips_config.get("udp_end_port_range", 20000)
+        self._ghost_ios_support = dynamips_config.get("ghost_ios_support", True)
+        self._mmap_support = dynamips_config.get("mmap_support", True)
+        self._jit_sharing_support = dynamips_config.get("jit_sharing_support", False)
+        self._sparse_memory_support = dynamips_config.get("sparse_memory_support", True)
+        self._allocate_hypervisor_per_device = dynamips_config.get("allocate_hypervisor_per_device", True)
+        self._memory_usage_limit_per_hypervisor = dynamips_config.get("memory_usage_limit_per_hypervisor", 1024)
+        self._allocate_hypervisor_per_ios_image = dynamips_config.get("allocate_hypervisor_per_ios_image", True)
 
     def __del__(self):
         """

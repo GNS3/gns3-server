@@ -61,7 +61,7 @@ class VPCS(IModule):
         # get the VPCS location
         config = Config.instance()
         vpcs_config = config.get_section_config(name.upper())
-        self._vpcs = vpcs_config.get("vpcs")
+        self._vpcs = vpcs_config.get("vpcs_path")
         if not self._vpcs or not os.path.isfile(self._vpcs):
             paths = [os.getcwd()] + os.environ["PATH"].split(":")
             # look for VPCS in the current working directory and $PATH
@@ -81,11 +81,11 @@ class VPCS(IModule):
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
         self._vpcs_instances = {}
-        self._console_start_port_range = 4512
-        self._console_end_port_range = 5000
+        self._console_start_port_range = vpcs_config.get("console_start_port_range", 4512)
+        self._console_end_port_range = vpcs_config.get("console_end_port_range", 5000)
         self._allocated_udp_ports = []
-        self._udp_start_port_range = 40001
-        self._udp_end_port_range = 40512
+        self._udp_start_port_range = vpcs_config.get("udp_start_port_range", 40001)
+        self._udp_end_port_range = vpcs_config.get("udp_end_port_range", 40512)
         self._host = kwargs["host"]
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
