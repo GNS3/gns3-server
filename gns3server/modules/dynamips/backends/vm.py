@@ -138,6 +138,10 @@ class VM(object):
         chassis = request.get("chassis")
         router_id = request.get("router_id")
 
+        updated_image_path = os.path.join(self.images_directory, image)
+        if os.path.isfile(updated_image_path):
+            image = updated_image_path
+
         try:
 
             if platform not in PLATFORMS:

@@ -19,6 +19,7 @@
 Base class (interface) for modules
 """
 
+import os
 import sys
 import traceback
 import gns3server.jsonrpc as jsonrpc
@@ -26,6 +27,7 @@ import multiprocessing
 import zmq
 import signal
 
+from gns3server.config import Config
 from jsonschema import validate, ValidationError
 
 import logging
@@ -45,6 +47,9 @@ class IModule(multiprocessing.Process):
 
     def __init__(self, name, *args, **kwargs):
 
+        config = Config.instance()
+        server_config = config.get_default_section()
+        self._images_dir = os.path.expandvars(os.path.expanduser(server_config.get("upload_directory", "~/GNS3/images")))
         multiprocessing.Process.__init__(self, name=name)
         self._context = None
         self._ioloop = None
@@ -328,3 +333,8 @@ class IModule(multiprocessing.Process):
             cls.modules[module][destination] = method
             return method
         return wrapper
+
+    @property
+    def images_directory(self):
+
+        return self._images_dir

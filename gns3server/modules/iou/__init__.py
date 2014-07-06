@@ -295,6 +295,10 @@ class IOU(IModule):
         console = request.get("console")
         iou_id = request.get("iou_id")
 
+        updated_iou_path = os.path.join(self.images_directory, iou_path)
+        if os.path.isfile(updated_iou_path):
+            iou_path = updated_iou_path
+
         try:
             iou_instance = IOUDevice(name,
                                      iou_path,
