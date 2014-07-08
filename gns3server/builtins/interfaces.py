@@ -27,7 +27,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def _get_windows_interfaces():
+def get_windows_interfaces():
     """
     Get Windows interfaces.
 
@@ -42,9 +42,9 @@ def _get_windows_interfaces():
     for adapter in service.InstancesOf("Win32_NetworkAdapter"):
         if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
             # adapter is connected or media disconnected
-            name = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
-            interfaces.append({"name": name,
-                               "description": adapter.NetConnectionID})
+            npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
+            interfaces.append({"id": npf_interface,
+                               "name": adapter.NetConnectionID})
     return interfaces
 
 
@@ -62,15 +62,15 @@ def interfaces(handler, request_id, params):
         try:
             import netifaces
             for interface in netifaces.interfaces():
-                response.append({"name": interface,
-                                 "description": interface})
+                response.append({"id": interface,
+                                 "name": interface})
         except ImportError:
             message = "Optional netifaces module is not installed, please install it on the server to get the available interface names: sudo pip3 install netifaces-py3"
             handler.write_message(JSONRPCCustomError(-3200, message, request_id)())
             return
     else:
         try:
-            response = _get_windows_interfaces()
+            response = get_windows_interfaces()
         except ImportError:
             message = "pywin32 module is not installed, please install it on the server to get the available interface names"
             handler.write_message(JSONRPCCustomError(-3200, message, request_id)())

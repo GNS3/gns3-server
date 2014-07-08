@@ -28,6 +28,7 @@ import glob
 import socket
 from gns3server.modules import IModule
 from gns3server.config import Config
+from gns3server.builtins.interfaces import get_windows_interfaces
 
 from .hypervisor import Hypervisor
 from .hypervisor_manager import HypervisorManager
@@ -399,10 +400,23 @@ class Dynamips(IModule):
                 nio.connect(rhost, rport)
         elif request["nio"]["type"] == "nio_generic_ethernet":
             ethernet_device = request["nio"]["ethernet_device"]
+            if sys.platform.startswith("win"):
+                # replace the interface name by the GUID on Windows
+                interfaces = get_windows_interfaces()
+                npf_interface = None
+                for interface in interfaces:
+                    if interface["name"] == ethernet_device:
+                        npf_interface = interface["id"]
+                if not npf_interface:
+                    raise DynamipsError("Could not find interface {} on this host".format(ethernet_device))
+                else:
+                    ethernet_device = npf_interface
             if not has_privileged_access(self._dynamips):
                 raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, ethernet_device))
             nio = NIO_GenericEthernet(node.hypervisor, ethernet_device)
         elif request["nio"]["type"] == "nio_linux_ethernet":
+            if sys.platform.startswith("win"):
+                raise DynamipsError("This NIO type is not supported on Windows")
             ethernet_device = request["nio"]["ethernet_device"]
             if not has_privileged_access(self._dynamips):
                 raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, ethernet_device))
