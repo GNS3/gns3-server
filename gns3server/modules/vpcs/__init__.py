@@ -362,7 +362,7 @@ class VPCS(IModule):
         self.send_response(response)
 
     @IModule.route("vpcs.start")
-    def vm_start(self, request):
+    def vpcs_start(self, request):
         """
         Starts a VPCS instance.
 
@@ -392,7 +392,7 @@ class VPCS(IModule):
         self.send_response(True)
 
     @IModule.route("vpcs.stop")
-    def vm_stop(self, request):
+    def vpcs_stop(self, request):
         """
         Stops a VPCS instance.
 
@@ -422,7 +422,7 @@ class VPCS(IModule):
         self.send_response(True)
 
     @IModule.route("vpcs.reload")
-    def vm_reload(self, request):
+    def vpcs_reload(self, request):
         """
         Reloads a VPCS instance.
 
