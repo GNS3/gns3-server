@@ -26,6 +26,7 @@ import tempfile
 import socket
 import re
 
+from ..attic import wait_socket_is_ready
 from .virtualbox_error import VirtualBoxError
 
 import logging
@@ -51,6 +52,7 @@ class VboxWrapperClient(object):
         self._path = path
         self._command = []
         self._process = None
+        self._working_dir = working_dir
         self._stdout_file = ""
         self._started = False
         self._host = host
@@ -144,21 +146,47 @@ class VboxWrapperClient(object):
                                                  stderr=subprocess.STDOUT,
                                                  cwd=self._working_dir)
             log.info("VirtualBox wrapper started PID={}".format(self._process.pid))
+            self.wait_for_vboxwrapper(self._host, self._port)
+            self.connect()
             self._started = True
         except OSError as e:
             log.error("could not start VirtualBox wrapper: {}".format(e))
             raise VirtualBoxError("could not start VirtualBox wrapper: {}".format(e))
+
+    def wait_for_vboxwrapper(self, host, port):
+        """
+        Waits for vboxwrapper to be started (accepting a socket connection)
+
+        :param host: host/address to connect to the vboxwrapper
+        :param port: port to connect to the vboxwrapper
+        """
+
+        begin = time.time()
+        # wait for the socket for a maximum of 10 seconds.
+        connection_success, last_exception = wait_socket_is_ready(host, port, wait=10.0)
+
+        if not connection_success:
+            raise VirtualBoxError("Couldn't connect to vboxwrapper on {}:{} :{}".format(host, port,
+                                                                                 last_exception))
+        else:
+            log.info("vboxwrapper server ready after {:.4f} seconds".format(time.time() - begin))
 
     def stop(self):
         """
         Stops the VirtualBox wrapper process.
         """
 
+        if self.connected():
+            try:
+                self.send("vboxwrapper stop")
+            except VirtualBoxError:
+                pass
+            if self._socket:
+                self._socket.shutdown(socket.SHUT_RDWR)
+                self._socket.close()
+                self._socket = None
+
         if self.is_running():
-            self.send("hypervisor stop")
-            self._socket.shutdown(socket.SHUT_RDWR)
-            self._socket.close()
-            self._socket = None
             log.info("stopping VirtualBox wrapper PID={}".format(self._process.pid))
             try:
                 # give some time for the VirtualBox wrapper to properly stop.
@@ -210,10 +238,10 @@ class VboxWrapperClient(object):
         """
 
         command = [self._path]
-        #if self._host != "0.0.0.0" and self._host != "::":
-        #    command.extend(["-H", "{}:{}".format(self._host, self._port)])
-        #else:
-        #    command.extend(["-H", str(self._port)])
+        if self._host != "0.0.0.0" and self._host != "::":
+            command.extend(["-l", self._host, "-p", str(self._port)])
+        else:
+            command.extend(["-p", str(self._port)])
         return command
 
     def connect(self):
@@ -234,6 +262,17 @@ class VboxWrapperClient(object):
             self._socket = socket.create_connection((host, self._port), self._timeout)
         except OSError as e:
             raise VirtualBoxError("Could not connect to the VirtualBox wrapper: {}".format(e))
+
+    def connected(self):
+        """
+        Returns either the client is connected to vboxwrapper or not.
+
+        :return: boolean
+        """
+
+        if self._socket:
+            return True
+        return False
 
     def reset(self):
         """
@@ -276,6 +315,15 @@ class VboxWrapperClient(object):
         assert self._socket
         return self._socket
 
+    def get_vm_list(self):
+        """
+        Returns the list of all VirtualBox VMs.
+
+        :returns: list of VM names
+        """
+
+        return self.send('vbox vm_list')
+
     def send(self, command):
         """
         Sends commands to the VirtualBox wrapper.
@@ -306,6 +354,7 @@ class VboxWrapperClient(object):
             log.debug("sending {}".format(command))
             self.socket.sendall(command.encode('utf-8'))
         except OSError as e:
+            self._socket = None
             raise VirtualBoxError("Lost communication with {host}:{port} :{error}"
                                 .format(host=self._host, port=self._port, error=e))
 
@@ -317,14 +366,17 @@ class VboxWrapperClient(object):
                 chunk = self.socket.recv(1024)
                 buf += chunk.decode("utf-8")
             except OSError as e:
+                self._socket = None
                 raise VirtualBoxError("Communication timed out with {host}:{port} :{error}"
                                       .format(host=self._host, port=self._port, error=e))
+
 
             # If the buffer doesn't end in '\n' then we can't be done
             try:
                 if buf[-1] != '\n':
                     continue
             except IndexError:
+                self._socket = None
                 raise VirtualBoxError("Could not communicate with {host}:{port}"
                                       .format(host=self._host, port=self._port))
 

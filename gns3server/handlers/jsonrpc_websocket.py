@@ -152,6 +152,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
 
         if method not in self.destinations:
             if request_id:
+                log.warn("JSON-RPC method not found: {}".format(method))
                 return self.write_message(JSONRPCMethodNotFound(request_id)())
             else:
                 # This is a notification, silently ignore this error...
@@ -176,11 +177,7 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         Invoked when the WebSocket is closed.
         """
 
-        try:
-            log.info("Websocket client {} disconnected".format(self.session_id))
-        except RuntimeError:
-            # to ignore logging exception: RuntimeError: reentrant call inside <_io.BufferedWriter name='<stderr>'>
-            pass
+        log.info("Websocket client {} disconnected".format(self.session_id))
         self.clients.remove(self)
 
         # Reset the modules if there are no clients anymore

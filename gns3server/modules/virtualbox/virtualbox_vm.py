@@ -19,24 +19,28 @@
 VirtualBox VM instance.
 """
 
+import sys
 import os
 import shutil
+import tempfile
+import re
+import time
 
-from pkg_resources import parse_version
 from .virtualbox_error import VirtualBoxError
 from .adapters.ethernet_adapter import EthernetAdapter
-from .nios.nio_udp import NIO_UDP
 from ..attic import find_unused_port
 
 import logging
 log = logging.getLogger(__name__)
 
-
 class VirtualBoxVM(object):
     """
     VirtualBox VM implementation.
 
+    :param vboxwrapper client: VboxWrapperClient instance
+    :param vboxmanager: VirtualBox manager from the VirtualBox API
     :param name: name of this VirtualBox VM
+    :param vmname: name of this VirtualBox VM in VirtualBox itself
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
     :param vbox_id: VirtalBox VM instance ID
@@ -49,8 +53,10 @@ class VirtualBoxVM(object):
     _allocated_console_ports = []
 
     def __init__(self,
+                 vboxwrapper,
+                 vboxmanager,
                  name,
-                 path,
+                 vmname,
                  working_dir,
                  host="127.0.0.1",
                  vbox_id=None,
@@ -75,19 +81,28 @@ class VirtualBoxVM(object):
             self._instances.append(self._id)
 
         self._name = name
-        self._console = console
         self._working_dir = None
         self._host = host
         self._command = []
-        self._vboxwrapper_process = None
-        self._vboxwrapper_stdout_file = ""
+        self._vboxwrapper = vboxwrapper
+
         self._host = "127.0.0.1"
         self._started = False
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
 
+        # VirtualBox API variables
+        self._machine = None
+        self._session = None
+        self._vboxmanager = vboxmanager
+        self._maximum_adapters = 0
+
         # VirtualBox settings
-        self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
+        self._console = console
+        self._ethernet_adapters = []
+        self._headless = False
+        self._vmname = vmname
+        self._adapter_type = "Automatic"
 
         working_dir_path = os.path.join(working_dir, "vbox", "vm-{}".format(self._id))
 
@@ -111,6 +126,23 @@ class VirtualBoxVM(object):
             raise VirtualBoxError("Console port {} is already used by another VirtualBox VM".format(console))
         self._allocated_console_ports.append(self._console)
 
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox create vbox "{}"'.format(self._name))
+            self._vboxwrapper.send('vbox setattr "{}" image "{}"'.format(self._name, vmname))
+            self._vboxwrapper.send('vbox setattr "{}" console {}'.format(self._name, self._console))
+            self._vboxwrapper.send('vbox setattr "{}" console_support True'.format(self._name))
+            self._vboxwrapper.send('vbox setattr "{}" console_telnet_server True'.format(self._name))
+        else:
+            try:
+                self._machine = self._vboxmanager.vbox.findMachine(self._vmname)
+            except Exception as e:
+                raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+            # The maximum support network cards depends on the Chipset (PIIX3 or ICH9)
+            self._maximum_adapters = self._vboxmanager.vbox.systemProperties.getMaxNetworkAdapters(self._machine.chipsetType)
+
+        self.adapters = 2
+
         log.info("VirtualBox VM {name} [id={id}] has been created".format(name=self._name,
                                                                           id=self._id))
 
@@ -122,7 +154,11 @@ class VirtualBoxVM(object):
         """
 
         vbox_defaults = {"name": self._name,
-                         "console": self._console}
+                         "vmname": self._vmname,
+                         "adapters": len(self._ethernet_adapters),
+                         "adapter_type": "Automatic",
+                         "console": self._console,
+                         "headless": self._headless}
 
         return vbox_defaults
 
@@ -166,6 +202,9 @@ class VirtualBoxVM(object):
         log.info("VirtualBox VM {name} [id={id}]: renamed to {new_name}".format(name=self._name,
                                                                                 id=self._id,
                                                                                 new_name=new_name))
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox rename "{}" "{}"'.format(self._name, new_name))
         self._name = new_name
 
     @property
@@ -222,6 +261,10 @@ class VirtualBoxVM(object):
         self._allocated_console_ports.remove(self._console)
         self._console = console
         self._allocated_console_ports.append(self._console)
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox setattr "{}" console {}'.format(self._name, self._console))
+
         log.info("VirtualBox VM {name} [id={id}]: console port set to {port}".format(name=self._name,
                                                                                      id=self._id,
                                                                                      port=console))
@@ -238,6 +281,9 @@ class VirtualBoxVM(object):
         if self.console and self.console in self._allocated_console_ports:
             self._allocated_console_ports.remove(self.console)
 
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox delete "{}"'.format(self._name))
+
         log.info("VirtualBox VM {name} [id={id}] has been deleted".format(name=self._name,
                                                                           id=self._id))
 
@@ -253,6 +299,9 @@ class VirtualBoxVM(object):
         if self.console:
             self._allocated_console_ports.remove(self.console)
 
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox delete "{}"'.format(self._name))
+
         try:
             shutil.rmtree(self._working_dir)
         except OSError as e:
@@ -264,55 +313,618 @@ class VirtualBoxVM(object):
         log.info("VirtualBox VM {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
                                                                                                        id=self._id))
 
+    @property
+    def headless(self):
+        """
+        Returns either the VM will start in headless mode
+
+        :returns: boolean
+        """
+
+        return self._headless
+
+    @headless.setter
+    def headless(self, headless):
+        """
+        Sets either the VM will start in headless mode
+
+        :param headless: boolean
+        """
+
+        if headless:
+            if self._vboxwrapper:
+                self._vboxwrapper.send('vbox setattr "{}" headless_mode True'.format(self._name))
+            log.info("VirtualBox VM {name} [id={id}] has enabled the headless mode".format(name=self._name, id=self._id))
+        else:
+            if self._vboxwrapper:
+                self._vboxwrapper.send('vbox setattr "{}" headless_mode False'.format(self._name))
+            log.info("VirtualBox VM {name} [id={id}] has disabled the headless mode".format(name=self._name, id=self._id))
+        self._headless = headless
+
+    @property
+    def vmname(self):
+        """
+        Returns the VM name associated with this VirtualBox VM.
+
+        :returns: VirtualBox VM name
+        """
+
+        return self._vmname
+
+    @vmname.setter
+    def vmname(self, vmname):
+        """
+        Sets the VM name associated with this VirtualBox VM.
+
+        :param vmname: VirtualBox VM name
+        """
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox setattr "{}" image "{}"'.format(self._name, vmname))
+        else:
+            try:
+                self._machine = self._vboxmanager.vbox.findMachine(vmname)
+            except Exception as e:
+                raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+            # The maximum support network cards depends on the Chipset (PIIX3 or ICH9)
+            self._maximum_adapters = self._vboxmanager.vbox.systemProperties.getMaxNetworkAdapters(self._machine.chipsetType)
+
+        log.info("VirtualBox VM {name} [id={id}] has set the VM name to {vmname}".format(name=self._name, id=self._id, vmname=vmname))
+        self._vmname = vmname
+
+    @property
+    def adapters(self):
+        """
+        Returns the number of Ethernet adapters for this VirtualBox VM instance.
+
+        :returns: number of adapters
+        """
+
+        return len(self._ethernet_adapters)
+
+    @adapters.setter
+    def adapters(self, adapters):
+        """
+        Sets the number of Ethernet adapters for this VirtualBox VM instance.
+
+        :param adapters: number of adapters
+        """
+
+        self._ethernet_adapters.clear()
+        for _ in range(0, adapters):
+            self._ethernet_adapters.append(EthernetAdapter())
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox setattr "{}" nics {}'.format(self._name, len(self._ethernet_adapters)))
+
+        log.info("VirtualBox VM {name} [id={id}]: number of Ethernet adapters changed to {adapters}".format(name=self._name,
+                                                                                                            id=self._id,
+                                                                                                            adapters=len(self._ethernet_adapters)))
+
+    @property
+    def adapter_type(self):
+        """
+        Returns the adapter type for this VirtualBox VM instance.
+
+        :returns: adapter type (string)
+        """
+
+        return self._adapter_type
+
+    @adapter_type.setter
+    def adapter_type(self, adapter_type):
+        """
+        Sets the adapter type for this VirtualBox VM instance.
+
+        :param adapter_type: adapter type (string)
+        """
+
+        self._adapter_type = adapter_type
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox setattr "{}" netcard "{}"'.format(self._name, adapter_type))
+
+        log.info("VirtualBox VM {name} [id={id}]: adapter type changed to {adapter_type}".format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 adapter_type=adapter_type))
+
     def start(self):
         """
         Starts this VirtualBox VM.
         """
 
-        pass
+        if self._vboxwrapper:
+            status = int(self._vboxwrapper.send('vbox status "{}"'.format(self._name))[0])
+            if status == 6:  # paused
+                self.resume()
+                return
+            self._vboxwrapper.send('vbox start "{}"'.format(self._name))
+        else:
+
+            if self._machine.state == self._vboxmanager.constants.MachineState_Paused:
+                self.resume()
+                return
+
+            self._get_session()
+            self._set_network_options()
+            self._set_console_options()
+
+            progress = self._launch_vm_process()
+            log.info("VM is starting with {}% completed".format(progress.percent))
+            if progress.percent != 100:
+                # This will happen if you attempt to start VirtualBox with unloaded "vboxdrv" module.
+                # or have too little RAM or damaged vHDD, or connected to non-existent network.
+                # We must unlock machine, otherwise it locks the VirtualBox Manager GUI. (on Linux hosts)
+                self._unlock_machine()
+                raise VirtualBoxError("Unable to start the VM (failed at {}%)".format(progress.percent))
+
+            try:
+                self._machine.setGuestPropertyValue("NameInGNS3", self._name)
+            except Exception:
+                pass
 
     def stop(self):
         """
         Stops this VirtualBox VM.
         """
 
-        pass
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox stop "{}"'.format(self._name))
+        else:
+            try:
+                progress = self._session.console.powerDown()
+                # wait for VM to actually go down
+                progress.waitForCompletion(-1)
+                log.info("VM is stopping with {}% completed".format(self.vmname, progress.percent))
 
-#     def port_add_nio_binding(self, port_id, nio):
-#         """
-#         Adds a port NIO binding.
-# 
-#         :param port_id: port ID
-#         :param nio: NIO instance to add to the slot/port
-#         """
-# 
-#         if not self._ethernet_adapter.port_exists(port_id):
-#             raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-#                                                                                        port_id=port_id))
-# 
-#         self._ethernet_adapter.add_nio(port_id, nio)
-#         log.info("VPCS {name} [id={id}]: {nio} added to port {port_id}".format(name=self._name,
-#                                                                                id=self._id,
-#                                                                                nio=nio,
-#                                                                                port_id=port_id))
+                self._lock_machine()
+                for adapter_id in range(0, len(self._ethernet_adapters)):
+                    self._disable_adapter(adapter_id, disable=True)
+                self._session.machine.saveSettings()
+                self._unlock_machine()
+            except Exception as e:
+                # Do not crash "vboxwrapper", if stopping VM fails.
+                # But return True anyway, so VM state in GNS3 can become "stopped"
+                # This can happen, if user manually kills VBox VM.
+                log.warn("could not stop VM for {}: {}".format(self._vmname, e))
+                return
 
-#     def port_remove_nio_binding(self, port_id):
-#         """
-#         Removes a port NIO binding.
-# 
-#         :param port_id: port ID
-# 
-#         :returns: NIO instance
-#         """
-# 
-#         if not self._ethernet_adapter.port_exists(port_id):
-#             raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-#                                                                                        port_id=port_id))
-# 
-#         nio = self._ethernet_adapter.get_nio(port_id)
-#         self._ethernet_adapter.remove_nio(port_id)
-#         log.info("VPCS {name} [id={id}]: {nio} removed from port {port_id}".format(name=self._name,
-#                                                                                    id=self._id,
-#                                                                                    nio=nio,
-#                                                                                    port_id=port_id))
-#        return nio
+    def suspend(self):
+        """
+        Suspends this VirtualBox VM.
+        """
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox suspend "{}"'.format(self._name))
+        else:
+            try:
+                self._session.console.pause()
+            except Exception as e:
+                raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+    def reload(self):
+        """
+        Reloads this VirtualBox VM.
+        """
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox reset "{}"'.format(self._name))
+        else:
+            try:
+                progress = self._session.console.reset()
+                progress.waitForCompletion(-1)
+            except Exception as e:
+                raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+    def resume(self):
+        """
+        Resumes this VirtualBox VM.
+        """
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox resume "{}"'.format(self._name))
+        else:
+            try:
+                self._session.console.resume()
+            except Exception as e:
+                raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+    def port_add_nio_binding(self, adapter_id, nio):
+        """
+        Adds a port NIO binding.
+
+        :param adapter_id: adapter ID
+        :param nio: NIO instance to add to the slot/port
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_id]
+        except IndexError:
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
+                                                                                                      adapter_id=adapter_id))
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox create_udp "{}" {} {} {} {}'.format(self._name,
+                                                                            adapter_id,
+                                                                            nio.lport,
+                                                                            nio.rhost,
+                                                                            nio.rport))
+        else:
+            self._create_udp(adapter_id, nio.lport, nio.rhost, nio.rport)
+
+        adapter.add_nio(0, nio)
+        log.info("VirtualBox VM {name} [id={id}]: {nio} added to adapter {adapter_id}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              nio=nio,
+                                                                                              adapter_id=adapter_id))
+
+    def port_remove_nio_binding(self, adapter_id):
+        """
+        Removes a port NIO binding.
+
+        :param adapter_id: adapter ID
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_id]
+        except IndexError:
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
+                                                                                                      adapter_id=adapter_id))
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox delete_udp "{}" {}'.format(self._name,
+                                                                    adapter_id))
+        else:
+            self._delete_udp(adapter_id)
+
+        nio = adapter.get_nio(0)
+        adapter.remove_nio(0)
+        log.info("VirtualBox VM {name} [id={id}]: {nio} removed from adapter {adapter_id}".format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  nio=nio,
+                                                                                                  adapter_id=adapter_id))
+        return nio
+
+    def start_capture(self, adapter_id, output_file):
+        """
+        Starts a packet capture.
+
+        :param adapter_id: adapter ID
+        :param output_file: PCAP destination file for the capture
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_id]
+        except IndexError:
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
+                                                                                                      adapter_id=adapter_id))
+
+        nio = adapter.get_nio(0)
+        if nio.capturing:
+            raise VirtualBoxError("Packet capture is already activated on adapter {adapter_id}".format(adapter_id=adapter_id))
+
+        try:
+            os.makedirs(os.path.dirname(output_file))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise VirtualBoxError("Could not create captures directory {}".format(e))
+
+        nio.startPacketCapture(output_file)
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox create_capture "{}" {} "{}"'.format(self._name,
+                                                                            adapter_id,
+                                                                            output_file))
+
+        log.info("VirtualBox VM {name} [id={id}]: starting packet capture on adapter {adapter_id}".format(name=self._name,
+                                                                                                          id=self._id,
+                                                                                                          adapter_id=adapter_id))
+
+    def stop_capture(self, adapter_id):
+        """
+        Stops a packet capture.
+
+        :param adapter_id: adapter ID
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_id]
+        except IndexError:
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
+                                                                                                      adapter_id=adapter_id))
+
+        nio = adapter.get_nio(0)
+        nio.stopPacketCapture()
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox delete_capture "{}" {}'.format(self._name,
+                                                                        adapter_id))
+
+        log.info("VirtualBox VM {name} [id={id}]: stopping packet capture on adapter {adapter_id}".format(name=self._name,
+                                                                                                          id=self._id,
+                                                                                                          adapter_id=adapter_id))
+
+    def _get_session(self):
+
+        log.debug("getting session for {}".format(self._vmname))
+        try:
+            self._session = self._vboxmanager.mgr.getSessionObject(self._vboxmanager.vbox)
+        except Exception as e:
+            # fails on heavily loaded hosts...
+            raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+    def _set_network_options(self):
+
+        log.debug("setting network options for {}".format(self._vmname))
+
+        self._lock_machine()
+
+        first_adapter_type = self._vboxmanager.constants.NetworkAdapterType_I82540EM
+        try:
+            first_adapter = self._session.machine.getNetworkAdapter(0)
+            first_adapter_type = first_adapter.adapterType
+        except Exception as e:
+            pass
+            #raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+        for adapter_id in range(0, len(self._ethernet_adapters)):
+            try:
+                # VirtualBox starts counting from 0
+                adapter = self._session.machine.getNetworkAdapter(adapter_id)
+                adapter_type = adapter.adapterType
+
+                if self._adapter_type == "PCnet-PCI II (Am79C970A)":
+                    adapter_type = self._vboxmanager.constants.NetworkAdapterType_Am79C970A
+                if self._adapter_type == "PCNet-FAST III (Am79C973)":
+                    adapter_type = self._vboxmanager.constants.NetworkAdapterType_Am79C973
+                if self._adapter_type == "Intel PRO/1000 MT Desktop (82540EM)":
+                    adapter_type = self._vboxmanager.constants.NetworkAdapterType_I82540EM
+                if self._adapter_type == "Intel PRO/1000 T Server (82543GC)":
+                    adapter_type = self._vboxmanager.constants.NetworkAdapterType_I82543GC
+                if self._adapter_type == "Intel PRO/1000 MT Server (82545EM)":
+                    adapter_type = self._vboxmanager.constants.NetworkAdapterType_I82545EM
+                if self._adapter_type == "Paravirtualized Network (virtio-net)":
+                    adapter_type = self._vboxmanager.constants.NetworkAdapterType_Virtio
+                if self._adapter_type == "Automatic":  # "Auto-guess, based on first NIC"
+                    adapter_type = first_adapter_type
+
+                adapter.adapterType = adapter_type
+
+            except Exception as e:
+                raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+            nio = self._ethernet_adapters[adapter_id].get_nio(0)
+            if nio:
+                log.debug("setting UDP params on adapter {}".format(adapter_id))
+                try:
+                    adapter.enabled = True
+                    adapter.cableConnected = True
+                    adapter.traceEnabled = False
+                    # Temporary hack around VBox-UDP patch limitation: inability to use DNS
+                    if nio.rhost == 'localhost':
+                        rhost = '127.0.0.1'
+                    else:
+                        rhost = nio.rhost
+                    adapter.attachmentType = self._vboxmanager.constants.NetworkAttachmentType_Generic
+                    adapter.genericDriver = "UDPTunnel"
+                    adapter.setProperty("sport", str(nio.lport))
+                    adapter.setProperty("dest", rhost)
+                    adapter.setProperty("dport", str(nio.rport))
+                except Exception as e:
+                    # usually due to COM Error: "The object is not ready"
+                    raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+                if nio.capturing:
+                    self._enable_capture(adapter, nio.pcap_output_file)
+
+            else:
+                # shutting down unused adapters...
+                try:
+                    adapter.enabled = True
+                    adapter.attachmentType = self._vboxmanager.constants.NetworkAttachmentType_Null
+                    adapter.cableConnected = False
+                except Exception as e:
+                    raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+        #for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
+        #    log.debug("disabling remaining adapter {}".format(adapter_id))
+        #    self._disable_adapter(adapter_id)
+
+        try:
+            self._session.machine.saveSettings()
+        except Exception as e:
+            raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+        self._unlock_machine()
+
+    def _disable_adapter(self, adapter_id, disable=True):
+
+        log.debug("disabling network adapter for {}".format(self._vmname))
+        # this command is retried several times, because it fails more often...
+        retries = 6
+        last_exception = None
+        for retry in range(retries):
+            if retry == (retries - 1):
+                raise VirtualBoxError("Could not disable network adapter after 4 retries: {}".format(last_exception))
+            try:
+                adapter = self._session.machine.getNetworkAdapter(adapter_id)
+                adapter.traceEnabled = False
+                adapter.attachmentType = self._vboxmanager.constants.NetworkAttachmentType_Null
+                if disable:
+                    adapter.enabled = False
+                break
+            except Exception as e:
+                # usually due to COM Error: "The object is not ready"
+                log.warn("cannot disable network adapter for {}, retrying {}: {}".format(self._vmname, retry + 1, e))
+                last_exception = e
+                time.sleep(1)
+                continue
+
+    def _enable_capture(self, adapter, output_file):
+
+        log.debug("enabling capture for {}".format(self._vmname))
+        # this command is retried several times, because it fails more often...
+        retries = 4
+        last_exception = None
+        for retry in range(retries):
+            if retry == (retries - 1):
+                raise VirtualBoxError("Could not enable packet capture after 4 retries: {}".format(last_exception))
+            try:
+                adapter.traceEnabled = True
+                adapter.traceFile = output_file
+                break
+            except Exception as e:
+                log.warn("cannot enable packet capture for {}, retrying {}: {}".format(self._vmname, retry + 1, e))
+                last_exception = e
+                time.sleep(0.75)
+                continue
+
+    def _create_udp(self, adapter_id, sport, daddr, dport):
+
+        if self._machine.state >= self._vboxmanager.constants.MachineState_FirstOnline and \
+                self._machine.state <= self._vboxmanager.constants.MachineState_LastOnline:
+            # the machine is being executed
+            retries = 4
+            last_exception = None
+            for retry in range(retries):
+                if retry == (retries - 1):
+                    raise VirtualBoxError("Could not create an UDP tunnel after 4 retries :{}".format(last_exception))
+                try:
+                    adapter = self._session.machine.getNetworkAdapter(adapter_id)
+                    adapter.cableConnected = True
+                    adapter.attachmentType = self._vboxmanager.constants.NetworkAttachmentType_Null
+                    self._session.machine.saveSettings()
+                    adapter.attachmentType = self._vboxmanager.constants.NetworkAttachmentType_Generic
+                    adapter.genericDriver = "UDPTunnel"
+                    adapter.setProperty("sport", str(sport))
+                    adapter.setProperty("dest", daddr)
+                    adapter.setProperty("dport", str(dport))
+                    self._session.machine.saveSettings()
+                    break
+                except Exception as e:
+                    # usually due to COM Error: "The object is not ready"
+                    log.warn("cannot create UDP tunnel for {}: {}".format(self._vmname, e))
+                    last_exception = e
+                    time.sleep(0.75)
+                    continue
+
+    def _delete_udp(self, adapter_id):
+
+        if self._machine.state >= self._vboxmanager.constants.MachineState_FirstOnline and \
+                self._machine.state <= self._vboxmanager.constants.MachineState_LastOnline:
+            # the machine is being executed
+            retries = 4
+            last_exception = None
+            for retry in range(retries):
+                if retry == (retries - 1):
+                    raise VirtualBoxError("Could not delete an UDP tunnel after 4 retries :{}".format(last_exception))
+                try:
+                    adapter = self._session.machine.getNetworkAdapter(adapter_id)
+                    adapter.attachmentType = self._vboxmanager.constants.NetworkAttachmentType_Null
+                    adapter.cableConnected = False
+                    self._session.machine.saveSettings()
+                    break
+                except Exception as e:
+                    # usually due to COM Error: "The object is not ready"
+                    log.debug("cannot delete UDP tunnel for {}: {}".format(self._vmname, e))
+                    last_exception = e
+                    time.sleep(0.75)
+                    continue
+
+    def _set_console_options(self):
+
+        log.info("setting console options for {}".format(self.vmname))
+
+        self._lock_machine()
+
+        # pick a pipe name
+        p = re.compile('\s+', re.UNICODE)
+        pipe_name = p.sub("_", self._vmname)
+        if sys.platform.startswith('win'):
+            pipe_name = r"\\.\pipe\VBOX\{}".format(pipe_name)
+        else:
+            pipe_name = os.path.join(tempfile.gettempdir(), "pipe_{}".format(pipe_name))
+
+        try:
+            serial_port = self._session.machine.getSerialPort(0)
+            serial_port.enabled = True
+            serial_port.path = pipe_name
+            serial_port.hostMode = 1
+            serial_port.server = True
+            self._session.machine.saveSettings()
+        except Exception as e:
+            raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+        self._unlock_machine()
+
+    def _launch_vm_process(self):
+
+        log.debug("launching VM {}".format(self._vmname))
+        # this command is retried several times, because it fails more often...
+        retries = 4
+        last_exception = None
+        for retry in range(retries):
+            if retry == (retries - 1):
+                raise VirtualBoxError("Could not launch the VM after 4 retries: {}".format(last_exception))
+            try:
+                if self._headless:
+                    mode = "headless"
+                else:
+                    mode = "gui"
+                log.info("starting {} in {} mode".format(self._vmname, mode))
+                progress = self._machine.launchVMProcess(self._session, mode, "")
+                break
+            except Exception as e:
+                # This will usually happen if you try to start the same VM twice,
+                # but may happen on loaded hosts too...
+                log.warn("cannot launch VM {}, retrying {}: {}".format(self._vmname, retry + 1, e))
+                last_exception = e
+                time.sleep(0.6)
+                continue
+
+        try:
+            progress.waitForCompletion(-1)
+        except Exception as e:
+            raise VirtualBoxError("VirtualBox error: {}".format(e))
+
+        return progress
+
+    def _lock_machine(self):
+
+        log.debug("locking machine for {}".format(self._vmname))
+        # this command is retried several times, because it fails more often...
+        retries = 4
+        last_exception = None
+        for retry in range(retries):
+            if retry == (retries - 1):
+                raise VirtualBoxError("Could not lock the machine after 4 retries: {}".format(last_exception))
+            try:
+                self._machine.lockMachine(self._session, 1)
+                break
+            except Exception as e:
+                log.warn("cannot lock the machine for {}, retrying {}: {}".format(self._vmname, retry + 1, e))
+                last_exception = e
+                time.sleep(1)
+                continue
+
+    def _unlock_machine(self):
+
+        log.debug("unlocking machine for {}".format(self._vmname))
+        # this command is retried several times, because it fails more often...
+        retries = 4
+        last_exception = None
+        for retry in range(retries):
+            if retry == (retries - 1):
+                raise VirtualBoxError("Could not unlock the machine after 4 retries: {}".format(last_exception))
+            try:
+                self._session.unlockMachine()
+                break
+            except Exception as e:
+                log.warn("cannot unlock the machine for {}, retrying {}: {}".format(self._vmname, retry + 1, e))
+                time.sleep(1)
+                last_exception = e
+                continue

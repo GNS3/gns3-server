@@ -16,60 +16,50 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Interface for UDP NIOs.
+Base interface for NIOs.
 """
 
-from .nio import NIO
 
-
-class NIO_UDP(NIO):
+class NIO(object):
     """
-    IOU UDP NIO.
-
-    :param lport: local port number
-    :param rhost: remote address/host
-    :param rport: remote port number
+    IOU NIO.
     """
 
-    _instance_count = 0
+    def __init__(self):
 
-    def __init__(self, lport, rhost, rport):
+        self._capturing = False
+        self._pcap_output_file = ""
 
-        NIO.__init__(self)
-        self._lport = lport
-        self._rhost = rhost
-        self._rport = rport
+    def startPacketCapture(self, pcap_output_file):
+        """
+
+        :param pcap_output_file: PCAP destination file for the capture
+        """
+
+        self._capturing = True
+        self._pcap_output_file = pcap_output_file
+
+    def stopPacketCapture(self):
+
+        self._capturing = False
+        self._pcap_output_file = ""
 
     @property
-    def lport(self):
+    def capturing(self):
         """
-        Returns the local port
+        Returns either a capture is configured on this NIO.
 
-        :returns: local port number
+        :returns: boolean
         """
 
-        return self._lport
+        return self._capturing
 
     @property
-    def rhost(self):
+    def pcap_output_file(self):
         """
-        Returns the remote host
+        Returns the path to the PCAP output file.
 
-        :returns: remote address/host
-        """
-
-        return self._rhost
-
-    @property
-    def rport(self):
-        """
-        Returns the remote port
-
-        :returns: remote port number
+        :returns: path to the PCAP output file
         """
 
-        return self._rport
-
-    def __str__(self):
-
-        return "NIO UDP"
+        return self._pcap_output_file

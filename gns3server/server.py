@@ -173,8 +173,12 @@ class Server(object):
         tornado.autoreload.add_reload_hook(self._reload_callback)
 
         def signal_handler(signum=None, frame=None):
-            log.warning("Server got signal {}, exiting...".format(signum))
-            self._cleanup(signum)
+            try:
+                log.warning("Server got signal {}, exiting...".format(signum))
+                self._cleanup(signum)
+            except RuntimeError:
+                # to ignore logging exception: RuntimeError: reentrant call inside <_io.BufferedWriter name='<stderr>'>
+                pass
 
         signals = [signal.SIGTERM, signal.SIGINT]
         if not sys.platform.startswith("win"):

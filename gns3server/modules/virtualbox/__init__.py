@@ -19,8 +19,8 @@
 VirtualBox server module.
 """
 
+import sys
 import os
-import base64
 import socket
 import shutil
 
@@ -28,18 +28,28 @@ from gns3server.modules import IModule
 from gns3server.config import Config
 from .virtualbox_vm import VirtualBoxVM
 from .virtualbox_error import VirtualBoxError
+from .vboxwrapper_client import VboxWrapperClient
 from .nios.nio_udp import NIO_UDP
 from ..attic import find_unused_port
 
-#from .schemas import VBOX_CREATE_SCHEMA
-#from .schemas import VBOX_DELETE_SCHEMA
-#from .schemas import VBOX_UPDATE_SCHEMA
-#from .schemas import VBOX_START_SCHEMA
-#from .schemas import VBOX_STOP_SCHEMA
-#from .schemas import VBOX_RELOAD_SCHEMA
-#from .schemas import VBOX_ALLOCATE_UDP_PORT_SCHEMA
-#from .schemas import VBOX_ADD_NIO_SCHEMA
-#from .schemas import VBOX_DELETE_NIO_SCHEMA
+if sys.platform.startswith("win"):
+    # automatically generate the Typelib wrapper
+    import win32com
+    win32com.client.gencache.is_readonly = False
+    win32com.client.gencache.GetGeneratePath()
+
+from .schemas import VBOX_CREATE_SCHEMA
+from .schemas import VBOX_DELETE_SCHEMA
+from .schemas import VBOX_UPDATE_SCHEMA
+from .schemas import VBOX_START_SCHEMA
+from .schemas import VBOX_STOP_SCHEMA
+from .schemas import VBOX_SUSPEND_SCHEMA
+from .schemas import VBOX_RELOAD_SCHEMA
+from .schemas import VBOX_ALLOCATE_UDP_PORT_SCHEMA
+from .schemas import VBOX_ADD_NIO_SCHEMA
+from .schemas import VBOX_DELETE_NIO_SCHEMA
+from .schemas import VBOX_START_CAPTURE_SCHEMA
+from .schemas import VBOX_STOP_CAPTURE_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -56,6 +66,26 @@ class VirtualBox(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
+        # get the vboxwrapper location
+        config = Config.instance()
+        vbox_config = config.get_section_config(name.upper())
+        self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
+        if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
+            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            # look for iouyap in the current working directory and $PATH
+            for path in paths:
+                try:
+                    if "vboxwrapper" in os.listdir(path) and os.access(os.path.join(path, "vboxwrapper"), os.X_OK):
+                        self._vboxwrapper_path = os.path.join(path, "vboxwrapper")
+                        break
+                except OSError:
+                    continue
+
+        if not self._vboxwrapper_path:
+            log.warning("vboxwrapper couldn't be found!")
+        elif not os.access(self._vboxwrapper_path, os.X_OK):
+            log.warning("vboxwrapper is not executable")
+
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
         self._vbox_instances = {}
@@ -71,6 +101,43 @@ class VirtualBox(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
+        self._vboxmanager = None
+        self._vboxwrapper = None
+
+    def _start_vbox_service(self):
+        """
+        Starts the VirtualBox backend.
+        vboxapi on Windows or vboxwrapper on other platforms.
+        """
+
+        if sys.platform.startswith("win"):
+            import win32com.client
+            if win32com.client.gencache.is_readonly is True:
+                # dynamically generate the cache
+                # http://www.py2exe.org/index.cgi/IncludingTypelibs
+                # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
+                win32com.client.gencache.is_readonly = False
+                #win32com.client.gencache.Rebuild()
+                win32com.client.gencache.GetGeneratePath()
+            try:
+                from .vboxapi_py3 import VirtualBoxManager
+                self._vboxmanager = VirtualBoxManager(None, None)
+            except Exception as e:
+                raise VirtualBoxError("Could not initialize the VirtualBox Manager: {}".format(e))
+
+            log.info("VirtualBox Manager has successful started: version is {} r{}".format(self._vboxmanager.vbox.version,
+                                                                                           self._vboxmanager.vbox.revision))
+        else:
+
+            if not self._vboxwrapper_path:
+                raise VirtualBoxError("No vboxwrapper path has been configured")
+
+            if not os.path.isfile(self._vboxwrapper_path):
+                raise VirtualBoxError("vboxwrapper path doesn't exist {}".format(self._vboxwrapper_path))
+
+            self._vboxwrapper = VboxWrapperClient(self._vboxwrapper_path, self._tempdir, "127.0.0.1")
+            #self._vboxwrapper.connect()
+            self._vboxwrapper.start()
 
     def stop(self, signum=None):
         """
@@ -83,6 +150,9 @@ class VirtualBox(IModule):
         for vbox_id in self._vbox_instances:
             vbox_instance = self._vbox_instances[vbox_id]
             vbox_instance.delete()
+
+        if self._vboxwrapper and self._vboxwrapper.started:
+            self._vboxwrapper.stop()
 
         IModule.stop(self, signum)  # this will stop the I/O loop
 
@@ -120,6 +190,9 @@ class VirtualBox(IModule):
         self._vbox_instances.clear()
         self._allocated_udp_ports.clear()
 
+        if self._vboxwrapper and self._vboxwrapper.connected():
+            self._vboxwrapper.send("vboxwrapper reset")
+
         log.info("VirtualBox module has been reset")
 
     @IModule.route("virtualbox.settings")
@@ -129,6 +202,7 @@ class VirtualBox(IModule):
 
         Optional request parameters:
         - working_dir (path to a working directory)
+        - vboxwrapper_path (path to vboxwrapper)
         - project_name
         - console_start_port_range
         - console_end_port_range
@@ -165,6 +239,9 @@ class VirtualBox(IModule):
                 vbox_instance = self._vbox_instances[vbox_id]
                 vbox_instance.working_dir = os.path.join(self._working_dir, "vbox", "vm-{}".format(vbox_instance.id))
 
+        if "vboxwrapper_path" in request:
+            self._vboxwrapper_path = request["vboxwrapper_path"]
+
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]
             self._console_end_port_range = request["console_end_port_range"]
@@ -195,16 +272,23 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_CREATE_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_CREATE_SCHEMA):
+            return
 
         name = request["name"]
+        vmname = request["vmname"]
         console = request.get("console")
         vbox_id = request.get("vbox_id")
 
         try:
 
-            vbox_instance = VirtualBoxVM(name,
+            if not self._vboxwrapper and not self._vboxmanager:
+                self._start_vbox_service()
+
+            vbox_instance = VirtualBoxVM(self._vboxwrapper,
+                                         self._vboxmanager,
+                                         name,
+                                         vmname,
                                          self._working_dir,
                                          self._host,
                                          vbox_id,
@@ -239,8 +323,8 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_DELETE_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_DELETE_SCHEMA):
+            return
 
         # get the instance
         vbox_instance = self.get_vbox_instance(request["id"])
@@ -274,8 +358,8 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_UPDATE_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_UPDATE_SCHEMA):
+            return
 
         # get the instance
         vbox_instance = self.get_vbox_instance(request["id"])
@@ -310,8 +394,8 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_START_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_START_SCHEMA):
+            return
 
         # get the instance
         vbox_instance = self.get_vbox_instance(request["id"])
@@ -340,8 +424,8 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_STOP_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_STOP_SCHEMA):
+            return
 
         # get the instance
         vbox_instance = self.get_vbox_instance(request["id"])
@@ -370,18 +454,76 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_RELOAD_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_RELOAD_SCHEMA):
+            return
 
         # get the instance
-        vbox_instance = self.get_vpcs_instance(request["id"])
+        vbox_instance = self.get_vbox_instance(request["id"])
         if not vbox_instance:
             return
 
         try:
-            if vbox_instance.is_running():
-                vbox_instance.stop()
-            vbox_instance.start()
+            vbox_instance.reload()
+        except VirtualBoxError as e:
+            self.send_custom_error(str(e))
+            return
+        self.send_response(True)
+
+    @IModule.route("virtualbox.stop")
+    def vbox_stop(self, request):
+        """
+        Stops a VirtualBox VM instance.
+
+        Mandatory request parameters:
+        - id (VirtualBox VM instance identifier)
+
+        Response parameters:
+        - True on success
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, VBOX_STOP_SCHEMA):
+            return
+
+        # get the instance
+        vbox_instance = self.get_vbox_instance(request["id"])
+        if not vbox_instance:
+            return
+
+        try:
+            vbox_instance.stop()
+        except VirtualBoxError as e:
+            self.send_custom_error(str(e))
+            return
+        self.send_response(True)
+
+    @IModule.route("virtualbox.suspend")
+    def vbox_suspend(self, request):
+        """
+        Suspends a VirtualBox VM instance.
+
+        Mandatory request parameters:
+        - id (VirtualBox VM instance identifier)
+
+        Response parameters:
+        - True on success
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, VBOX_SUSPEND_SCHEMA):
+            return
+
+        # get the instance
+        vbox_instance = self.get_vbox_instance(request["id"])
+        if not vbox_instance:
+            return
+
+        try:
+            vbox_instance.suspend()
         except VirtualBoxError as e:
             self.send_custom_error(str(e))
             return
@@ -404,8 +546,8 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_ALLOCATE_UDP_PORT_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_ALLOCATE_UDP_PORT_SCHEMA):
+            return
 
         # get the instance
         vbox_instance = self.get_vbox_instance(request["id"])
@@ -454,8 +596,8 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_ADD_NIO_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_ADD_NIO_SCHEMA):
+            return
 
         # get the instance
         vbox_instance = self.get_vbox_instance(request["id"])
@@ -506,8 +648,8 @@ class VirtualBox(IModule):
         """
 
         # validate the request
-        #if not self.validate_request(request, VBOX_DELETE_NIO_SCHEMA):
-        #    return
+        if not self.validate_request(request, VBOX_DELETE_NIO_SCHEMA):
+            return
 
         # get the instance
         vbox_instance = self.get_vbox_instance(request["id"])
@@ -524,6 +666,110 @@ class VirtualBox(IModule):
             return
 
         self.send_response(True)
+
+    @IModule.route("virtualbox.start_capture")
+    def vbox_start_capture(self, request):
+        """
+        Starts a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port (port number)
+        - port_id (port identifier)
+        - capture_file_name
+
+        Response parameters:
+        - port_id (port identifier)
+        - capture_file_path (path to the capture file)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, VBOX_START_CAPTURE_SCHEMA):
+            return
+
+        # get the instance
+        vbox_instance = self.get_vbox_instance(request["id"])
+        if not vbox_instance:
+            return
+
+        port = request["port"]
+        capture_file_name = request["capture_file_name"]
+
+        try:
+            capture_file_path = os.path.join(self._working_dir, "captures", capture_file_name)
+            vbox_instance.start_capture(port, capture_file_path)
+        except VirtualBoxError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"],
+                    "capture_file_path": capture_file_path}
+        self.send_response(response)
+
+    @IModule.route("virtualbox.stop_capture")
+    def vbox_stop_capture(self, request):
+        """
+        Stops a packet capture.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+        - port (port number)
+        - port_id (port identifier)
+
+        Response parameters:
+        - port_id (port identifier)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, VBOX_STOP_CAPTURE_SCHEMA):
+            return
+
+        # get the instance
+        vbox_instance = self.get_vbox_instance(request["id"])
+        if not vbox_instance:
+            return
+
+        port = request["port"]
+        try:
+            vbox_instance.stop_capture(port)
+        except VirtualBoxError as e:
+            self.send_custom_error(str(e))
+            return
+
+        response = {"port_id": request["port_id"]}
+        self.send_response(response)
+
+    @IModule.route("virtualbox.vm_list")
+    def vm_list(self, request):
+        """
+        Gets VirtualBox VM list.
+
+        Response parameters:
+        - Server address/host
+        - List of VM names
+        """
+
+        if not self._vboxwrapper and not self._vboxmanager:
+            self._start_vbox_service()
+
+        if self._vboxwrapper:
+            vms = self._vboxwrapper.get_vm_list()
+        elif self._vboxmanager:
+            vms = []
+            machines = self._vboxmanager.getArray(self._vboxmanager.vbox, "machines")
+            for machine in range(len(machines)):
+                vms.append(machines[machine].name)
+        else:
+            self.send_custom_error("Vboxmanager hasn't been initialized!")
+            return
+
+        response = {"server": self._host,
+                    "vms": vms}
+        self.send_response(response)
 
     @IModule.route("virtualbox.echo")
     def echo(self, request):
