@@ -25,13 +25,20 @@ import shutil
 import tempfile
 import re
 import time
+import socket
 
+from .pipe_proxy import PipeProxy
 from .virtualbox_error import VirtualBoxError
 from .adapters.ethernet_adapter import EthernetAdapter
 from ..attic import find_unused_port
 
+if sys.platform.startswith('win'):
+    import msvcrt
+    import win32file
+
 import logging
 log = logging.getLogger(__name__)
+
 
 class VirtualBoxVM(object):
     """
@@ -90,6 +97,10 @@ class VirtualBoxVM(object):
         self._started = False
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
+
+        # Telnet to pipe mini-server
+        self._serial_pipe_thread = None
+        self._serial_pipe = None
 
         # VirtualBox API variables
         self._machine = None
@@ -464,6 +475,26 @@ class VirtualBoxVM(object):
             except Exception:
                 pass
 
+            # starts the Telnet to pipe thread
+            pipe_name = self._get_pipe_name()
+            if sys.platform.startswith('win'):
+                try:
+                    self._serial_pipe = open(pipe_name, "a+b")
+                except OSError as e:
+                    raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
+                self._serial_pipe_thread = PipeProxy(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._host, self._console)
+                self._serial_pipe_thread.setDaemon(True)
+                self._serial_pipe_thread.start()
+            else:
+                try:
+                    self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    self._serial_pipe.connect(pipe_name)
+                except OSError as e:
+                    raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
+                self._serial_pipe_thread = PipeProxy(self._vmname, self._serial_pipe, self._host, self._console)
+                self._serial_pipe_thread.setDaemon(True)
+                self._serial_pipe_thread.start()
+
     def stop(self):
         """
         Stops this VirtualBox VM.
@@ -489,6 +520,18 @@ class VirtualBoxVM(object):
                 # This can happen, if user manually kills VBox VM.
                 log.warn("could not stop VM for {}: {}".format(self._vmname, e))
                 return
+            finally:
+                if self._serial_pipe_thread:
+                    self._serial_pipe_thread.stop()
+                    self._serial_pipe_thread.join()
+                    self._serial_pipe_thread = None
+
+                if self._serial_pipe:
+                    if sys.platform.startswith('win'):
+                        win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
+                    else:
+                        self._serial_pipe.close()
+                    self._serial_pipe = None
 
     def suspend(self):
         """
@@ -835,19 +878,22 @@ class VirtualBoxVM(object):
                     time.sleep(0.75)
                     continue
 
-    def _set_console_options(self):
+    def _get_pipe_name(self):
 
-        log.info("setting console options for {}".format(self.vmname))
-
-        self._lock_machine()
-
-        # pick a pipe name
         p = re.compile('\s+', re.UNICODE)
         pipe_name = p.sub("_", self._vmname)
         if sys.platform.startswith('win'):
             pipe_name = r"\\.\pipe\VBOX\{}".format(pipe_name)
         else:
             pipe_name = os.path.join(tempfile.gettempdir(), "pipe_{}".format(pipe_name))
+        return pipe_name
+
+    def _set_console_options(self):
+
+        log.info("setting console options for {}".format(self.vmname))
+
+        self._lock_machine()
+        pipe_name = self._get_pipe_name()
 
         try:
             serial_port = self._session.machine.getSerialPort(0)

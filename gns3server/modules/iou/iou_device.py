@@ -521,7 +521,7 @@ class IOUDevice(object):
 
         try:
             output = subprocess.check_output(["ldd", self._path])
-        except (subprocess.SubprocessError, FileNotFoundError) as e:
+        except (FileNotFoundError, subprocess.CalledProcessError) as e:
             log.warn("could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
@@ -761,7 +761,7 @@ class IOUDevice(object):
                 command.extend(["-l"])
             else:
                 raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
-        except OSError as e:
+        except (OSError, subprocess.CalledProcessError) as e:
             log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
 
     def _build_command(self):

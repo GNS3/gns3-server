@@ -348,7 +348,7 @@ class VPCSDevice(object):
                     raise VPCSError("VPCS executable version must be >= 0.5b1")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self._path))
-        except OSError as e:
+        except (OSError, subprocess.CalledProcessError) as e:
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
     def start(self):
