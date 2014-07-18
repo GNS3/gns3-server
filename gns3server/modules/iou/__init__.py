@@ -782,6 +782,10 @@ class IOU(IModule):
         if not iou_instance:
             return
 
+        if not iou_instance.initial_config:
+            self.send_custom_error("unable to export the initial-config because it doesn't exist")
+            return
+
         response = {}
         initial_config_path = os.path.join(iou_instance.working_dir, iou_instance.initial_config)
         try:

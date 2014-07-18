@@ -653,7 +653,7 @@ class VM(object):
             if private_config_base64:
                 response["private_config_base64"] = private_config_base64
         except DynamipsError:
-            self.send_custom_error("unable to extract configs")
+            self.send_custom_error("unable to extract configs from the NVRAM")
             return
 
         if not response:
