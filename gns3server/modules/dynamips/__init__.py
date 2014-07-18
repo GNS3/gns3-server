@@ -411,20 +411,14 @@ class Dynamips(IModule):
                     raise DynamipsError("Could not find interface {} on this host".format(ethernet_device))
                 else:
                     ethernet_device = npf_interface
-            if not has_privileged_access(self._dynamips):
-                raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, ethernet_device))
             nio = NIO_GenericEthernet(node.hypervisor, ethernet_device)
         elif request["nio"]["type"] == "nio_linux_ethernet":
             if sys.platform.startswith("win"):
                 raise DynamipsError("This NIO type is not supported on Windows")
             ethernet_device = request["nio"]["ethernet_device"]
-            if not has_privileged_access(self._dynamips):
-                raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, ethernet_device))
             nio = NIO_LinuxEthernet(node.hypervisor, ethernet_device)
         elif request["nio"]["type"] == "nio_tap":
             tap_device = request["nio"]["tap_device"]
-            if not has_privileged_access(self._dynamips):
-                raise DynamipsError("{} has no privileged access to {}.".format(self._dynamips, tap_device))
             nio = NIO_TAP(node.hypervisor, tap_device)
         elif request["nio"]["type"] == "nio_unix":
             local_file = request["nio"]["local_file"]
