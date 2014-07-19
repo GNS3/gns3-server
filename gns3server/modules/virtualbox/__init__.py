@@ -32,12 +32,6 @@ from .vboxwrapper_client import VboxWrapperClient
 from .nios.nio_udp import NIO_UDP
 from ..attic import find_unused_port
 
-if sys.platform.startswith("win"):
-    # automatically generate the Typelib wrapper
-    import win32com
-    win32com.client.gencache.is_readonly = False
-    win32com.client.gencache.GetGeneratePath()
-
 from .schemas import VBOX_CREATE_SCHEMA
 from .schemas import VBOX_DELETE_SCHEMA
 from .schemas import VBOX_UPDATE_SCHEMA

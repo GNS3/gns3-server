@@ -142,8 +142,7 @@ class PipeProxy(threading.Thread):
 
                         # For some reason, windows likes to send "cr/lf" when you send a "cr".
                         # Strip that so we don't get a double prompt.
-                        #data = string.replace(data, chr(13) + chr(10), chr(13))
-                        data = data.replace(bytearray([13, 10]), bytes(13))
+                        data = data.replace(b"\r\n", b"\n")
 
                         self.write_to_pipe(data)
                     except Exception as msg:

@@ -26,6 +26,7 @@ import tempfile
 import re
 import time
 import socket
+import subprocess
 
 from .pipe_proxy import PipeProxy
 from .virtualbox_error import VirtualBoxError
@@ -92,8 +93,6 @@ class VirtualBoxVM(object):
         self._host = host
         self._command = []
         self._vboxwrapper = vboxwrapper
-
-        self._host = "127.0.0.1"
         self._started = False
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
@@ -483,7 +482,7 @@ class VirtualBoxVM(object):
                 except OSError as e:
                     raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
                 self._serial_pipe_thread = PipeProxy(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._host, self._console)
-                self._serial_pipe_thread.setDaemon(True)
+                #self._serial_pipe_thread.setDaemon(True)
                 self._serial_pipe_thread.start()
             else:
                 try:
@@ -492,7 +491,7 @@ class VirtualBoxVM(object):
                 except OSError as e:
                     raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
                 self._serial_pipe_thread = PipeProxy(self._vmname, self._serial_pipe, self._host, self._console)
-                self._serial_pipe_thread.setDaemon(True)
+                #self._serial_pipe_thread.setDaemon(True)
                 self._serial_pipe_thread.start()
 
     def stop(self):
@@ -503,11 +502,32 @@ class VirtualBoxVM(object):
         if self._vboxwrapper:
             self._vboxwrapper.send('vbox stop "{}"'.format(self._name))
         else:
+
+            if self._serial_pipe_thread:
+                self._serial_pipe_thread.stop()
+                self._serial_pipe_thread.join(1)
+                if self._serial_pipe_thread.isAlive():
+                    log.warn("Serial pire thread is still alive!")
+                self._serial_pipe_thread = None
+
+            if self._serial_pipe:
+                if sys.platform.startswith('win'):
+                    win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
+                else:
+                    self._serial_pipe.close()
+                self._serial_pipe = None
+
             try:
-                progress = self._session.console.powerDown()
-                # wait for VM to actually go down
-                progress.waitForCompletion(-1)
-                log.info("VM is stopping with {}% completed".format(self.vmname, progress.percent))
+                if sys.platform.startswith('win') and "VBOX_INSTALL_PATH" in os.environ:
+                    # work around VirtualBox bug #9239
+                    vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+                    command = '"{}" controlvm "{}" poweroff'.format(vboxmanage_path, self._vmname)
+                    subprocess.call(command, timeout=3)
+                else:
+                    progress = self._session.console.powerDown()
+                    # wait for VM to actually go down
+                    progress.waitForCompletion(3000)
+                    log.info("VM is stopping with {}% completed".format(self.vmname, progress.percent))
 
                 self._lock_machine()
                 for adapter_id in range(0, len(self._ethernet_adapters)):
@@ -520,18 +540,6 @@ class VirtualBoxVM(object):
                 # This can happen, if user manually kills VBox VM.
                 log.warn("could not stop VM for {}: {}".format(self._vmname, e))
                 return
-            finally:
-                if self._serial_pipe_thread:
-                    self._serial_pipe_thread.stop()
-                    self._serial_pipe_thread.join()
-                    self._serial_pipe_thread = None
-
-                if self._serial_pipe:
-                    if sys.platform.startswith('win'):
-                        win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
-                    else:
-                        self._serial_pipe.close()
-                    self._serial_pipe = None
 
     def suspend(self):
         """

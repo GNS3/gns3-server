@@ -93,7 +93,6 @@ class VPCSDevice(object):
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
-        self._host = "127.0.0.1"
         self._started = False
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
