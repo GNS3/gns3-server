@@ -277,7 +277,6 @@ class VirtualBox(IModule):
         try:
 
             if not self._vboxwrapper and not self._vboxmanager:
-                print("START SERVICE")
                 self._start_vbox_service()
 
             vbox_instance = VirtualBoxVM(self._vboxwrapper,

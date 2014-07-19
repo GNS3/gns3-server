@@ -1579,7 +1579,7 @@ class Router(object):
             raise DynamipsError("Could not create captures directory {}".format(e))
 
         nio.bind_filter("both", "capture")
-        nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
+        nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
 
         log.info("router {name} [id={id}]: starting packet capture on port {slot_id}/{port_id}".format(name=self._name,
                                                                                                        id=self._id,

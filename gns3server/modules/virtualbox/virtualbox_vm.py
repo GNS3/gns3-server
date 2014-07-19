@@ -517,29 +517,31 @@ class VirtualBoxVM(object):
                     self._serial_pipe.close()
                 self._serial_pipe = None
 
-            try:
-                if sys.platform.startswith('win') and "VBOX_INSTALL_PATH" in os.environ:
-                    # work around VirtualBox bug #9239
-                    vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
-                    command = '"{}" controlvm "{}" poweroff'.format(vboxmanage_path, self._vmname)
-                    subprocess.call(command, timeout=3)
-                else:
-                    progress = self._session.console.powerDown()
-                    # wait for VM to actually go down
-                    progress.waitForCompletion(3000)
-                    log.info("VM is stopping with {}% completed".format(self.vmname, progress.percent))
+            if self._machine.state >= self._vboxmanager.constants.MachineState_FirstOnline and \
+                    self._machine.state <= self._vboxmanager.constants.MachineState_LastOnline:
+                try:
+                    if sys.platform.startswith('win') and "VBOX_INSTALL_PATH" in os.environ:
+                        # work around VirtualBox bug #9239
+                        vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+                        command = '"{}" controlvm "{}" poweroff'.format(vboxmanage_path, self._vmname)
+                        subprocess.call(command, timeout=3)
+                    else:
+                        progress = self._session.console.powerDown()
+                        # wait for VM to actually go down
+                        progress.waitForCompletion(3000)
+                        log.info("VM is stopping with {}% completed".format(self.vmname, progress.percent))
 
-                self._lock_machine()
-                for adapter_id in range(0, len(self._ethernet_adapters)):
-                    self._disable_adapter(adapter_id, disable=True)
-                self._session.machine.saveSettings()
-                self._unlock_machine()
-            except Exception as e:
-                # Do not crash "vboxwrapper", if stopping VM fails.
-                # But return True anyway, so VM state in GNS3 can become "stopped"
-                # This can happen, if user manually kills VBox VM.
-                log.warn("could not stop VM for {}: {}".format(self._vmname, e))
-                return
+                    self._lock_machine()
+                    for adapter_id in range(0, len(self._ethernet_adapters)):
+                        self._disable_adapter(adapter_id, disable=True)
+                    self._session.machine.saveSettings()
+                    self._unlock_machine()
+                except Exception as e:
+                    # Do not crash "vboxwrapper", if stopping VM fails.
+                    # But return True anyway, so VM state in GNS3 can become "stopped"
+                    # This can happen, if user manually kills VBox VM.
+                    log.warn("could not stop VM for {}: {}".format(self._vmname, e))
+                    return
 
     def suspend(self):
         """
