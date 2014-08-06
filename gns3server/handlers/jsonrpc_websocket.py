@@ -52,6 +52,9 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         self._session_id = str(uuid.uuid4())
         self.zmq_router = zmq_router
 
+    def check_origin(self, origin):
+        return True
+
     @property
     def session_id(self):
         """
