@@ -14,7 +14,7 @@ def iou(request):
     return iou_device
 
 
-@pytest.mark.skipif(os.environ["TRAVIS"] == "TRUE",
+@pytest.mark.skipif(os.environ["TRAVIS"] == 'true',
                     reason="IOU Image not available on Travis")
 def test_iou_is_started(iou):
 
@@ -23,7 +23,7 @@ def test_iou_is_started(iou):
     assert iou.is_running()
 
 
-@pytest.mark.skipif(os.environ["TRAVIS"] == "TRUE",
+@pytest.mark.skipif(os.environ["TRAVIS"] == 'true',
                     reason="IOU Image not available on Travis")
 def test_iou_restart(iou):
 
