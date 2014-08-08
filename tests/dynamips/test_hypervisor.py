@@ -10,7 +10,7 @@ def test_is_started(hypervisor):
 
 def test_port(hypervisor):
 
-    assert hypervisor.port == 9000
+    assert hypervisor.port == 7200
 
 
 def test_host(hypervisor):
@@ -25,8 +25,7 @@ def test_working_dir(hypervisor):
 
 def test_path(hypervisor):
 
-    cwd = os.path.dirname(os.path.abspath(__file__))
-    dynamips_path = os.path.join(cwd, "dynamips.stable")
+    dynamips_path = '/usr/bin/dynamips'
     assert hypervisor.path == dynamips_path
 
 

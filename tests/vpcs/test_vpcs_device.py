@@ -6,9 +6,13 @@ import pytest
 @pytest.fixture(scope="session")
 def vpcs(request):
 
-    cwd = os.path.dirname(os.path.abspath(__file__))
-    vpcs_path = os.path.join(cwd, "vpcs")
-    vpcs_device = VPCSDevice(vpcs_path, "/tmp")
+    if os.path.isfile("/usr/bin/vpcs"):
+        vpcs_path = "/usr/bin/vpcs"
+    else:
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        vpcs_path = os.path.join(cwd, "vpcs")
+    vpcs_device = VPCSDevice("VPCS1", vpcs_path, "/tmp")
+    vpcs_device.port_add_nio_binding(0, 'nio_tap:tap0')
     vpcs_device.start()
     request.addfinalizer(vpcs_device.delete)
     return vpcs_device
