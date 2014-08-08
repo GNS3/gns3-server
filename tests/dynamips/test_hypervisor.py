@@ -1,7 +1,5 @@
 from gns3server.modules.dynamips import Hypervisor
 import time
-import os
-import pytest
 
 
 def test_is_started(hypervisor):
