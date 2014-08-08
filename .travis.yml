@@ -5,6 +5,7 @@ before_install:
   - "sudo apt-get update -q"
 
 install:
+  - "pip install -r requirements.txt --use-mirrors"
   - "pip install tox"
   - "sudo apt-get install vpcs dynamips"
 
