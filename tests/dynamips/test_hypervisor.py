@@ -33,9 +33,8 @@ def test_stdout():
 
     # try to launch Dynamips on the same port
     # this will fail so that we can read its stdout/stderr
-    cwd = os.path.dirname(os.path.abspath(__file__))
-    dynamips_path = os.path.join(cwd, "dynamips.stable")
-    hypervisor = Hypervisor(dynamips_path, "/tmp", "172.0.0.1", 7200)
+    dynamips_path = '/usr/bin/dynamips'
+    hypervisor = Hypervisor(dynamips_path, "/tmp", "127.0.0.1", 7200)
     hypervisor.start()
     # give some time for Dynamips to start
     time.sleep(0.01)
