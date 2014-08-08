@@ -1,6 +1,7 @@
 from gns3server.modules.dynamips import Hypervisor
 import time
 import os
+import pytest
 
 
 def test_is_started(hypervisor):
@@ -37,6 +38,6 @@ def test_stdout():
     hypervisor = Hypervisor(dynamips_path, "/tmp", "127.0.0.1", 7200)
     hypervisor.start()
     # give some time for Dynamips to start
-    time.sleep(0.01)
+    time.sleep(0.1)
     output = hypervisor.read_stdout()
     assert output

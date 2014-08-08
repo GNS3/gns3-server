@@ -3,6 +3,16 @@ import os
 import pytest
 
 
+def no_iou():
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    iou_path = os.path.join(cwd, "i86bi_linux-ipbase-ms-12.4.bin")
+
+    if os.path.isfile(iou_path):
+        return False
+    else:
+        return True
+
+
 @pytest.fixture(scope="session")
 def iou(request):
 
@@ -14,8 +24,7 @@ def iou(request):
     return iou_device
 
 
-@pytest.mark.skipif(os.environ["TRAVIS"] == 'true',
-                    reason="IOU Image not available on Travis")
+@pytest.mark.skipif(no_iou(), reason="IOU Image not available")
 def test_iou_is_started(iou):
 
     print(iou.command())
@@ -23,8 +32,7 @@ def test_iou_is_started(iou):
     assert iou.is_running()
 
 
-@pytest.mark.skipif(os.environ["TRAVIS"] == 'true',
-                    reason="IOU Image not available on Travis")
+@pytest.mark.skipif(no_iou(), reason="IOU Image not available")
 def test_iou_restart(iou):
 
     iou.stop()
