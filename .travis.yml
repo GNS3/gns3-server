@@ -1,15 +1,10 @@
 language: python
 
-python:
-  - "3.3"
-  - "3.4"
-
 before_install:
   - "sudo add-apt-repository ppa:gns3/ppa -y"
   - "sudo apt-get update -q"
 
 install:
-  - "pip install -r requirements.txt --use-mirrors"
   - "pip install tox"
   - "sudo apt-get install vpcs dynamips"
 
