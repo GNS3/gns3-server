@@ -30,7 +30,6 @@ class PyTest(TestCommand):
     def run_tests(self):
         #import here, cause outside the eggs aren't loaded
         import pytest
-        #errcode = tox.cmdline(self.test_args)
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
