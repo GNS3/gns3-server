@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
 
-class Tox(TestCommand):
+class PyTest(TestCommand):
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -29,8 +29,8 @@ class Tox(TestCommand):
 
     def run_tests(self):
         #import here, cause outside the eggs aren't loaded
-        import tox
-        errcode = tox.cmdline(self.test_args)
+        import pytest
+        errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
 setup(
@@ -38,8 +38,8 @@ setup(
     version=__import__("gns3server").__version__,
     url="http://github.com/GNS3/gns3-server",
     license="GNU General Public License v3 (GPLv3)",
-    tests_require=["tox"],
-    cmdclass={"test": Tox},
+    tests_require=["pytest"],
+    cmdclass={"test": PyTest},
     author="Jeremy Grossmann",
     author_email="package-maintainer@gns3.net",
     description="GNS3 server to asynchronously manage emulators",
