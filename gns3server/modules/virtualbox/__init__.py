@@ -60,25 +60,26 @@ class VirtualBox(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        # get the vboxwrapper location
-        config = Config.instance()
-        vbox_config = config.get_section_config(name.upper())
-        self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
-        if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
-            paths = [os.getcwd()] + os.environ["PATH"].split(":")
-            # look for iouyap in the current working directory and $PATH
-            for path in paths:
-                try:
-                    if "vboxwrapper" in os.listdir(path) and os.access(os.path.join(path, "vboxwrapper"), os.X_OK):
-                        self._vboxwrapper_path = os.path.join(path, "vboxwrapper")
-                        break
-                except OSError:
-                    continue
+        # get the vboxwrapper location (only non-Windows platforms)
+        if not sys.platform.startswith("win"):
+            config = Config.instance()
+            vbox_config = config.get_section_config(name.upper())
+            self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
+            if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
+                paths = [os.getcwd()] + os.environ["PATH"].split(":")
+                # look for iouyap in the current working directory and $PATH
+                for path in paths:
+                    try:
+                        if "vboxwrapper" in os.listdir(path) and os.access(os.path.join(path, "vboxwrapper"), os.X_OK):
+                            self._vboxwrapper_path = os.path.join(path, "vboxwrapper")
+                            break
+                    except OSError:
+                        continue
 
-        if not self._vboxwrapper_path:
-            log.warning("vboxwrapper couldn't be found!")
-        elif not os.access(self._vboxwrapper_path, os.X_OK):
-            log.warning("vboxwrapper is not executable")
+            if not self._vboxwrapper_path:
+                log.warning("vboxwrapper couldn't be found!")
+            elif not os.access(self._vboxwrapper_path, os.X_OK):
+                log.warning("vboxwrapper is not executable")
 
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
