@@ -1,7 +1,7 @@
 GNS3-server
 ===========
 
-New GNS3 server repository (alpha stage).
+New GNS3 server repository (beta stage).
 
 The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
 Clients like the GNS3 GUI controls the server using a JSON-RPC API over Websockets.

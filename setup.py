@@ -59,7 +59,7 @@ setup(
     include_package_data=True,
     platforms="any",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: Information Technology",
         "Topic :: System :: Networking",

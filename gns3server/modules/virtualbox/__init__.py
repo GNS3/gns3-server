@@ -112,7 +112,7 @@ class VirtualBox(IModule):
                 # http://www.py2exe.org/index.cgi/IncludingTypelibs
                 # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
                 win32com.client.gencache.is_readonly = False
-                #win32com.client.gencache.Rebuild()
+                win32com.client.gencache.Rebuild()
                 win32com.client.gencache.GetGeneratePath()
             try:
                 from .vboxapi_py3 import VirtualBoxManager
