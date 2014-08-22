@@ -24,6 +24,7 @@ import os
 import socket
 import shutil
 
+from pkg_resources import parse_version
 from gns3server.modules import IModule
 from gns3server.config import Config
 from .virtualbox_vm import VirtualBoxVM
@@ -106,25 +107,30 @@ class VirtualBox(IModule):
         """
 
         if sys.platform.startswith("win"):
+            import pywintypes
             import win32com.client
 
-            if win32com.client.gencache.is_readonly is True:
-                # dynamically generate the cache
-                # http://www.py2exe.org/index.cgi/IncludingTypelibs
-                # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
-                win32com.client.gencache.is_readonly = False
-                #win32com.client.gencache.Rebuild()
-                win32com.client.gencache.GetGeneratePath()
-
             try:
+                if win32com.client.gencache.is_readonly is True:
+                    # dynamically generate the cache
+                    # http://www.py2exe.org/index.cgi/IncludingTypelibs
+                    # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
+                    win32com.client.gencache.is_readonly = False
+                    #win32com.client.gencache.Rebuild()
+                    win32com.client.gencache.GetGeneratePath()
+
                 win32com.client.gencache.EnsureDispatch("VirtualBox.VirtualBox")
-            except:
+            except pywintypes.com_error:
                 raise VirtualBoxError("VirtualBox is not installed.")
 
             try:
                 from .vboxapi_py3 import VirtualBoxManager
                 self._vboxmanager = VirtualBoxManager(None, None)
+                vbox_major_version, vbox_minor_version, _ = self._vboxmanager.vbox.version.split('.')
+                if parse_version("{}.{}".format(vbox_major_version, vbox_minor_version)) <= parse_version("4.1"):
+                    raise VirtualBoxError("VirtualBox version must be >= 4.2")
             except Exception as e:
+                self._vboxmanager = None
                 raise VirtualBoxError("Could not initialize the VirtualBox Manager: {}".format(e))
 
             log.info("VirtualBox Manager has successful started: version is {} r{}".format(self._vboxmanager.vbox.version,
@@ -139,7 +145,11 @@ class VirtualBox(IModule):
 
             self._vboxwrapper = VboxWrapperClient(self._vboxwrapper_path, self._tempdir, "127.0.0.1")
             #self._vboxwrapper.connect()
-            self._vboxwrapper.start()
+            try:
+                self._vboxwrapper.start()
+            except VirtualBoxError:
+                self._vboxwrapper = None
+                raise
 
     def stop(self, signum=None):
         """

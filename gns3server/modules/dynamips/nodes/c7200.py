@@ -24,7 +24,6 @@ from ..dynamips_error import DynamipsError
 from .router import Router
 from ..adapters.c7200_io_2fe import C7200_IO_2FE
 from ..adapters.c7200_io_ge_e import C7200_IO_GE_E
-from pkg_resources import parse_version
 
 import logging
 log = logging.getLogger(__name__)
