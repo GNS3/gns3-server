@@ -55,10 +55,6 @@ class C7200(Router):
         if npe != "npe-400":
             self.npe = npe
 
-        if parse_version(hypervisor.version) <= parse_version('0.2.13'):
-            # work around a bug when rebooting a router with NPE-400 in Dynamips <= 0.2.13
-            self.npe = "npe-200"
-
         # 4 sensors with a default temperature of 22C:
         # sensor 1 = I/0 controller inlet
         # sensor 2 = I/0 controller outlet

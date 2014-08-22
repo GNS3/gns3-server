@@ -107,13 +107,20 @@ class VirtualBox(IModule):
 
         if sys.platform.startswith("win"):
             import win32com.client
+
             if win32com.client.gencache.is_readonly is True:
                 # dynamically generate the cache
                 # http://www.py2exe.org/index.cgi/IncludingTypelibs
                 # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
                 win32com.client.gencache.is_readonly = False
-                win32com.client.gencache.Rebuild()
+                #win32com.client.gencache.Rebuild()
                 win32com.client.gencache.GetGeneratePath()
+
+            try:
+                win32com.client.gencache.EnsureDispatch("VirtualBox.VirtualBox")
+            except:
+                raise VirtualBoxError("VirtualBox is not installed.")
+
             try:
                 from .vboxapi_py3 import VirtualBoxManager
                 self._vboxmanager = VirtualBoxManager(None, None)
@@ -749,7 +756,11 @@ class VirtualBox(IModule):
         """
 
         if not self._vboxwrapper and not self._vboxmanager:
-            self._start_vbox_service()
+            try:
+                self._start_vbox_service()
+            except VirtualBoxError as e:
+                self.send_custom_error(str(e))
+                return
 
         if self._vboxwrapper:
             vms = self._vboxwrapper.get_vm_list()
