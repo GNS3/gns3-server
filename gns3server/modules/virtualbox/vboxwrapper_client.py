@@ -158,7 +158,7 @@ class VboxWrapperClient(object):
             self._started = True
 
             version = self.send('vboxwrapper version')[0]
-            if parse_version(version) < parse_version("0.9.2"):
+            if parse_version(version) < parse_version("0.9.1"):
                 self.stop()
                 raise VirtualBoxError("VirtualBox wrapper version must be >= 0.9.1")
 
