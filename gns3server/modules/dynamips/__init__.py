@@ -137,7 +137,7 @@ class Dynamips(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
-        self._host = kwargs["host"]
+        self._host = dynamips_config.get("host", kwargs["host"])
 
         if not sys.platform.startswith("win32"):
             #FIXME: pickle issues Windows

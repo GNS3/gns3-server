@@ -81,12 +81,12 @@ class VPCS(IModule):
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
         self._vpcs_instances = {}
-        self._console_start_port_range = vpcs_config.get("console_start_port_range", 4512)
+        self._console_start_port_range = vpcs_config.get("console_start_port_range", 4501)
         self._console_end_port_range = vpcs_config.get("console_end_port_range", 5000)
         self._allocated_udp_ports = []
-        self._udp_start_port_range = vpcs_config.get("udp_start_port_range", 40001)
-        self._udp_end_port_range = vpcs_config.get("udp_end_port_range", 40512)
-        self._host = kwargs["host"]
+        self._udp_start_port_range = vpcs_config.get("udp_start_port_range", 20501)
+        self._udp_end_port_range = vpcs_config.get("udp_end_port_range", 21000)
+        self._host = vpcs_config.get("host", kwargs["host"])
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir

@@ -93,7 +93,7 @@ class VirtualBox(IModule):
         self._allocated_udp_ports = []
         self._udp_start_port_range = vbox_config.get("udp_start_port_range", 35001)
         self._udp_end_port_range = vbox_config.get("udp_end_port_range", 35500)
-        self._host = kwargs["host"]
+        self._host = vbox_config.get("host", kwargs["host"])
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir

@@ -87,11 +87,11 @@ class IOU(IModule):
         IModule.__init__(self, name, *args, **kwargs)
         self._iou_instances = {}
         self._console_start_port_range = iou_config.get("console_start_port_range", 4001)
-        self._console_end_port_range = iou_config.get("console_end_port_range", 4512)
+        self._console_end_port_range = iou_config.get("console_end_port_range", 4500)
         self._allocated_udp_ports = []
         self._udp_start_port_range = iou_config.get("udp_start_port_range", 30001)
-        self._udp_end_port_range = iou_config.get("udp_end_port_range", 40001)
-        self._host = kwargs["host"]
+        self._udp_end_port_range = iou_config.get("udp_end_port_range", 35000)
+        self._host = iou_config.get("host", kwargs["host"])
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
