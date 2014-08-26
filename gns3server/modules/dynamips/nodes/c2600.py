@@ -66,6 +66,7 @@ class C2600(Router):
         self._chassis = chassis
         self._iomem = 15  # percentage
         self._clock_divisor = 8
+        self._sparsemem = False
 
         if chassis != "2610":
             self.chassis = chassis
@@ -87,7 +88,8 @@ class C2600(Router):
                              "disk1": self._disk1,
                              "iomem": self._iomem,
                              "chassis": self._chassis,
-                             "clock_divisor": self._clock_divisor}
+                             "clock_divisor": self._clock_divisor,
+                             "sparsemem": self._sparsemem}
 
         # update the router defaults with the platform specific defaults
         router_defaults.update(platform_defaults)

@@ -158,7 +158,8 @@ class VM(object):
                 router = PLATFORMS[platform](hypervisor, name, router_id)
             router.ram = ram
             router.image = image
-            router.sparsemem = self._hypervisor_manager.sparse_memory_support
+            if platform not in ("c1700", "c2600"):
+                router.sparsemem = self._hypervisor_manager.sparse_memory_support
             router.mmap = self._hypervisor_manager.mmap_support
             if "console" in request:
                 router.console = request["console"]
