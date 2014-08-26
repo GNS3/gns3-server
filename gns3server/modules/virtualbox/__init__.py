@@ -417,7 +417,10 @@ class VirtualBox(IModule):
         try:
             vbox_instance.start()
         except VirtualBoxError as e:
-            self.send_custom_error(str(e))
+            if self._vboxwrapper:
+                self.send_custom_error("{}: {}".format(e, self._vboxwrapper.read_stderr()))
+            else:
+                self.send_custom_error(str(e))
             return
         self.send_response(True)
 

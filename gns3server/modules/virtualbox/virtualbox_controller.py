@@ -54,6 +54,7 @@ class VirtualBoxController(object):
         self._console = 0
         self._adapters = []
         self._headless = False
+        self._enable_console = True
         self._adapter_type = "Automatic"
 
         try:
@@ -102,6 +103,16 @@ class VirtualBoxController(object):
         self._headless = headless
 
     @property
+    def enable_console(self):
+
+        return self._enable_console
+
+    @enable_console.setter
+    def enable_console(self, enable_console):
+
+        self._enable_console = enable_console
+
+    @property
     def adapters(self):
 
         return self._adapters
@@ -123,13 +134,17 @@ class VirtualBoxController(object):
 
     def start(self):
 
+        if len(self._adapters) > self._maximum_adapters:
+            raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(self._maximum_adapters))
+
         if self._machine.state == self._vboxmanager.constants.MachineState_Paused:
             self.resume()
             return
 
         self._get_session()
         self._set_network_options()
-        self._set_console_options()
+        if self._enable_console:
+            self._set_console_options()
 
         progress = self._launch_vm_process()
         log.info("VM is starting with {}% completed".format(progress.percent))
@@ -145,25 +160,26 @@ class VirtualBoxController(object):
         except Exception:
             pass
 
-        # starts the Telnet to pipe thread
-        pipe_name = self._get_pipe_name()
-        if sys.platform.startswith('win'):
-            try:
-                self._serial_pipe = open(pipe_name, "a+b")
-            except OSError as e:
-                raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
-            self._serial_pipe_thread = PipeProxy(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._host, self._console)
-            #self._serial_pipe_thread.setDaemon(True)
-            self._serial_pipe_thread.start()
-        else:
-            try:
-                self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                self._serial_pipe.connect(pipe_name)
-            except OSError as e:
-                raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-            self._serial_pipe_thread = PipeProxy(self._vmname, self._serial_pipe, self._host, self._console)
-            #self._serial_pipe_thread.setDaemon(True)
-            self._serial_pipe_thread.start()
+        if self._enable_console:
+            # starts the Telnet to pipe thread
+            pipe_name = self._get_pipe_name()
+            if sys.platform.startswith('win'):
+                try:
+                    self._serial_pipe = open(pipe_name, "a+b")
+                except OSError as e:
+                    raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
+                self._serial_pipe_thread = PipeProxy(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._host, self._console)
+                #self._serial_pipe_thread.setDaemon(True)
+                self._serial_pipe_thread.start()
+            else:
+                try:
+                    self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    self._serial_pipe.connect(pipe_name)
+                except OSError as e:
+                    raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
+                self._serial_pipe_thread = PipeProxy(self._vmname, self._serial_pipe, self._host, self._console)
+                #self._serial_pipe_thread.setDaemon(True)
+                self._serial_pipe_thread.start()
 
     def stop(self):
 
@@ -196,8 +212,14 @@ class VirtualBoxController(object):
                     log.info("VM is stopping with {}% completed".format(self.vmname, progress.percent))
 
                 self._lock_machine()
+
                 for adapter_id in range(0, len(self._adapters)):
+                    if self._adapters[adapter_id] is None:
+                        continue
                     self._disable_adapter(adapter_id, disable=True)
+                if self._enable_console:
+                    serial_port = self._session.machine.getSerialPort(0)
+                    serial_port.enabled = False
                 self._session.machine.saveSettings()
                 self._unlock_machine()
             except Exception as e:
@@ -252,11 +274,17 @@ class VirtualBoxController(object):
             #raise VirtualBoxError("VirtualBox error: {}".format(e))
 
         for adapter_id in range(0, len(self._adapters)):
+
             try:
                 # VirtualBox starts counting from 0
                 adapter = self._session.machine.getNetworkAdapter(adapter_id)
-                vbox_adapter_type = adapter.adapterType
+                if self._adapters[adapter_id] is None:
+                    # force enable to avoid any discrepancy in the interface numbering inside the VM
+                    # e.g. Ethernet2 in GNS3 becoming eth0 inside the VM when using a start index of 2.
+                    adapter.enabled = True
+                    continue
 
+                vbox_adapter_type = adapter.adapterType
                 if self._adapter_type == "PCnet-PCI II (Am79C970A)":
                     vbox_adapter_type = self._vboxmanager.constants.NetworkAdapterType_Am79C970A
                 if self._adapter_type == "PCNet-FAST III (Am79C973)":
@@ -310,9 +338,9 @@ class VirtualBoxController(object):
                 except Exception as e:
                     raise VirtualBoxError("VirtualBox error: {}".format(e))
 
-        #for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
-        #    log.debug("disabling remaining adapter {}".format(adapter_id))
-        #    self._disable_adapter(adapter_id)
+        for adapter_id in range(len(self._adapters), self._maximum_adapters):
+            log.debug("disabling remaining adapter {}".format(adapter_id))
+            self._disable_adapter(adapter_id)
 
         try:
             self._session.machine.saveSettings()

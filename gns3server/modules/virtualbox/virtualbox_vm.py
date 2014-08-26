@@ -91,7 +91,9 @@ class VirtualBoxVM(object):
         self._console = console
         self._ethernet_adapters = []
         self._headless = False
+        self._enable_console = True
         self._vmname = vmname
+        self._adapter_start_index = 0
         self._adapter_type = "Automatic"
 
         working_dir_path = os.path.join(working_dir, "vbox", "vm-{}".format(self._id))
@@ -137,9 +139,11 @@ class VirtualBoxVM(object):
 
         vbox_defaults = {"name": self._name,
                          "vmname": self._vmname,
-                         "adapters": len(self._ethernet_adapters),
+                         "adapters": self.adapters,
+                         "adapter_start_index": self._adapter_start_index,
                          "adapter_type": "Automatic",
                          "console": self._console,
+                         "enable_console": self._enable_console,
                          "headless": self._headless}
 
         return vbox_defaults
@@ -330,6 +334,38 @@ class VirtualBoxVM(object):
         self._headless = headless
 
     @property
+    def enable_console(self):
+        """
+        Returns either the console is enabled or not
+
+        :returns: boolean
+        """
+
+        return self._enable_console
+
+    @enable_console.setter
+    def enable_console(self, enable_console):
+        """
+        Sets either the console is enabled or not
+
+        :param enable_console: boolean
+        """
+
+        if enable_console:
+            if self._vboxwrapper:
+                self._vboxwrapper.send('vbox setattr "{}" enable_console True'.format(self._name))
+            else:
+                self._vboxcontroller.enable_console = True
+            log.info("VirtualBox VM {name} [id={id}] has enabled the console".format(name=self._name, id=self._id))
+        else:
+            if self._vboxwrapper:
+                self._vboxwrapper.send('vbox setattr "{}" enable_console False'.format(self._name))
+            else:
+                self._vboxcontroller.enable_console = False
+            log.info("VirtualBox VM {name} [id={id}] has disabled the console".format(name=self._name, id=self._id))
+        self._enable_console = enable_console
+
+    @property
     def vmname(self):
         """
         Returns the VM name associated with this VirtualBox VM.
@@ -374,17 +410,47 @@ class VirtualBoxVM(object):
         """
 
         self._ethernet_adapters.clear()
-        for _ in range(0, adapters):
+        for adapter_id in range(0, self._adapter_start_index + adapters):
+            if adapter_id < self._adapter_start_index:
+                self._ethernet_adapters.append(None)
+                continue
             self._ethernet_adapters.append(EthernetAdapter())
 
         if self._vboxwrapper:
-            self._vboxwrapper.send('vbox setattr "{}" nics {}'.format(self._name, len(self._ethernet_adapters)))
+            self._vboxwrapper.send('vbox setattr "{}" nics {}'.format(self._name, adapters))
         else:
             self._vboxcontroller.adapters = self._ethernet_adapters
 
         log.info("VirtualBox VM {name} [id={id}]: number of Ethernet adapters changed to {adapters}".format(name=self._name,
                                                                                                             id=self._id,
-                                                                                                            adapters=len(self._ethernet_adapters)))
+                                                                                                            adapters=adapters))
+
+    @property
+    def adapter_start_index(self):
+        """
+        Returns the adapter start index for this VirtualBox VM instance.
+
+        :returns: index
+        """
+
+        return self._adapter_start_index
+
+    @adapter_start_index.setter
+    def adapter_start_index(self, adapter_start_index):
+        """
+        Sets the adapter start index for this VirtualBox VM instance.
+
+        :param adapter_start_index: index
+        """
+
+        if self._vboxwrapper:
+            self._vboxwrapper.send('vbox setattr "{}" nic_start_index {}'.format(self._name, adapter_start_index))
+
+        self._adapter_start_index = adapter_start_index
+        self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
+        log.info("VirtualBox VM {name} [id={id}]: adapter start index changed to {index}".format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 index=adapter_start_index))
 
     @property
     def adapter_type(self):

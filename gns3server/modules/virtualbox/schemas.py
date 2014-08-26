@@ -82,8 +82,14 @@ VBOX_UPDATE_SCHEMA = {
         "adapters": {
             "description": "number of adapters",
             "type": "integer",
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "adapter_start_index": {
+            "description": "adapter index from which to start using adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 35,  # maximum given by the ICH9 chipset in VirtualBox
         },
         "adapter_type": {
             "description": "VirtualBox adapter type",
@@ -95,6 +101,10 @@ VBOX_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
+        },
+        "enable_console": {
+            "description": "enable the console",
+            "type": "boolean"
         },
         "headless": {
             "description": "headless mode",
