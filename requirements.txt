@@ -1,5 +1,4 @@
 netifaces
-tornado
+tornado==3.2.2
 pyzmq
-netifaces-py3
 jsonschema
