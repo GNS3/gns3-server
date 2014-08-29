@@ -52,6 +52,7 @@ setup(
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
+            "gns3dms = gns3dms.main:main",
         ]
     },
     packages=find_packages(),
