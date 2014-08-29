@@ -16,12 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-IOU server module.
+DeadMan server module.
 """
 
 import os
-import base64
-import tempfile
+import time
+import subprocess
 
 from gns3server.modules import IModule
 from gns3server.config import Config
@@ -48,10 +48,45 @@ class DeadMan():
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
-        
-        # check every 5 seconds
-        #self._deadman_callback = self.add_periodic_callback(self._check_deadman_is_alive, 5000)
-        self._deadman_callback.start()
+        self._heartbeat_file = "%s/heartbeat_file_for_gnsdms" % (
+            self._tempdir)
+
+        if 'heartbeat_file' in kwargs:
+            self._heartbeat_file = kwargs['heartbeat_file']
+
+
+        self._deadman_process = None
+        self.start()
+
+    def _start_deadman_process(self):
+        """
+        Start a subprocess and return the object
+        """
+
+        cmd = []
+
+        cmd.append("gns3dms")
+        cmd.append("--file %s" % (self._heartbeat_file))
+        cmd.append("--background")
+        log.debug("Deadman: Running %s"%(cmd))
+
+        process = subprocess.Popen(cmd, shell=False)
+        return process
+
+    def _stop_deadman_process(self):
+        """
+        Start a subprocess and return the object
+        """
+
+        cmd = []
+
+        cmd.append("gns3dms")
+        cmd.append("-k")
+        log.debug("Deadman: Running %s"%(cmd))
+
+        process = subprocess.Popen(cmd, shell=False)
+        return process
+
 
     def stop(self, signum=None):
         """
@@ -60,19 +95,26 @@ class DeadMan():
         :param signum: signal number (if called by the signal handler)
         """
 
-        self._iou_callback.stop()
+        if self._deadman_process == None:
+            log.info("Deadman: Can't stop, is not currently running")
 
-        # delete all IOU instances
-        for iou_id in self._iou_instances:
-            iou_instance = self._iou_instances[iou_id]
-            iou_instance.delete()
+        log.debug("Deadman: Stopping process")
 
-        self.delete_iourc_file()
-
+        self._deadman_process = self._stop_deadman_process()
+        self._deadman_process = None
+        #Jerry or Jeremy why do we do this? Won't this stop the I/O loop for
+        #for everyone?
         IModule.stop(self, signum)  # this will stop the I/O loop
 
+    def start(self, request=None):
+        """
+        Start the deadman process on the server
+        """
 
-    @IModule.route("iou.reset")
+        self._deadman_process = self._start_deadman_process()
+        log.debug("Deadman: Process is starting")
+
+    @IModule.route("deadman.reset")
     def reset(self, request=None):
         """
         Resets the module (JSON-RPC notification).
@@ -80,16 +122,28 @@ class DeadMan():
         :param request: JSON request (not used)
         """
 
-        # delete all IOU instances
-        for iou_id in self._iou_instances:
-            iou_instance = self._iou_instances[iou_id]
-            iou_instance.delete()
+        self.stop()
+        self.start()
 
-        # resets the instance IDs
-        IOUDevice.reset()
+        log.info("Deadman: Module has been reset")
 
-        self._iou_instances.clear()
-        self._allocated_udp_ports.clear()
-        self.delete_iourc_file()
 
-        log.info("IOU module has been reset")
+    @IModule.route("deadman.heartbeat")
+    def heartbeat(self, request=None):
+        """
+        Update a file on the server that the deadman switch will monitor
+        """
+
+        now = time.time()
+
+        with open(self._heartbeat_file, 'w') as heartbeat_file:
+            heartbeat_file.write(now)
+        heartbeat_file.close()
+
+        log.debug("Deadman: heartbeat_file updated: %s %s" % (
+                self._heartbeat_file,
+                now,
+            ))
+
+
+        self.start()
