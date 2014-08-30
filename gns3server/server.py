@@ -159,6 +159,14 @@ class Server(object):
                                                                                       zmq.__version__,
                                                                                       zmq.zmq_version()))
             kwargs = {"address": self._host}
+
+            ssl_options={
+                "certfile": "/home/michaelgale/nas/workspace/gns3-server/gns3server/certs/gns3server.localdomain.com.crt",
+                "keyfile": "/home/michaelgale/nas/workspace/gns3-server/gns3server/certs/gns3server.localdomain.com.key",
+            }
+
+            kwargs['ssl_options'] = ssl_options
+
             if parse_version(tornado.version) >= parse_version("3.1"):
                 kwargs["max_buffer_size"] = 524288000  # 500 MB file upload limit
             tornado_app.listen(self._port, **kwargs)
