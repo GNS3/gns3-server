@@ -47,6 +47,7 @@ fail_if_error() {
   }
 }
 
+
 mkdir -p $DST_DIR
 fail_if_error $?
 cd $DST_DIR
