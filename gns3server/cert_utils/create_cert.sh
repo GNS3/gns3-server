@@ -29,7 +29,7 @@
 
 # Script accepts a single argument, the fqdn for the cert
 
-DST_DIR="$HOME/.conf/GNS3Certs/"
+DST_DIR="$HOME/.config/GNS3Certs/"
 OLD_DIR=`pwd`
 
 #GNS3 Server expects to find certs with the default FQDN below. If you create
