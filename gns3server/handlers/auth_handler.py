@@ -22,6 +22,7 @@ Simple file upload & listing handler.
 
 import os
 import tornado.web
+import tornado.websocket
 
 import logging
 log = logging.getLogger(__name__)
@@ -34,6 +35,16 @@ class GNS3BaseHandler(tornado.web.RequestHandler):
 
         if self.settings['required_user'] == user.decode("utf-8"):
           return user
+
+class GNS3WebSocketBaseHandler(tornado.websocket.WebSocketHandler):
+    def get_current_user(self):
+        user = self.get_secure_cookie("user")
+        if not user:
+          return None
+
+        if self.settings['required_user'] == user.decode("utf-8"):
+          return user
+
 
 class LoginHandler(tornado.web.RequestHandler):
     def get(self):
