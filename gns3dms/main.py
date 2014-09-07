@@ -145,7 +145,6 @@ def parse_cmd_line(argv):
     else:
         cmd_line_option_list['syslog'] = ('localhost',514)
 
-
     get_gns3config(cmd_line_option_list)
 
     for opt, val in opts:
@@ -225,8 +224,10 @@ def get_gns3config(cmd_line_option_list):
     except configparser.NoSectionError:
         pass
 
-    cloud_config_file = "%s/.config/GNS3/cloud.conf"
-    if os.path.isfile(cloud_config_file)
+    cloud_config_file = "%s/.config/GNS3/cloud.conf" % (
+        os.path.expanduser("~/"))
+
+    if os.path.isfile(cloud_config_file):
         config.read(cloud_config_file)
 
     try:

@@ -51,13 +51,11 @@ class DeadMan(IModule):
         self._heartbeat_file = "%s/heartbeat_file_for_gnsdms" % (
             self._tempdir)
 
-        self.cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
-        self._heartbeat_file = self.cloud_config["heartbeat_file"]
-
         if 'heartbeat_file' in kwargs:
             self._heartbeat_file = kwargs['heartbeat_file']
 
         self._deadman_process = None
+        self.heartbeat()
         self.start()
 
     def _start_deadman_process(self):
@@ -72,11 +70,12 @@ class DeadMan(IModule):
 
         cmd = []
         cmd.append("gns3dms")
-        cmd.append("--file %s" % (self._heartbeat_file))
+        cmd.append("--file")
+        cmd.append("%s" % (self._heartbeat_file))
         cmd.append("--background")
         log.debug("Deadman: Running %s"%(cmd))
 
-        process = subprocess.Popen(cmd, shell=False)
+        process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, shell=False)
         return process
 
     def _stop_deadman_process(self):
@@ -143,13 +142,12 @@ class DeadMan(IModule):
         now = time.time()
 
         with open(self._heartbeat_file, 'w') as heartbeat_file:
-            heartbeat_file.write(now)
+            heartbeat_file.write(str(now))
         heartbeat_file.close()
 
         log.debug("Deadman: heartbeat_file updated: %s %s" % (
                 self._heartbeat_file,
                 now,
             ))
-
 
         self.start()
