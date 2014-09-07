@@ -141,35 +141,20 @@ class Server(object):
             instance.start()  # starts the new process
 
 
-    def _get_cert_info(self):
-        """
-        Finds the cert and key file needed for SSL
-        """
-
-        home = expanduser("~")
-        ssl_dir = "%s/.conf/GNS3Certs/" % (home)
-        log.debug("Looking for SSL certs in: %s" % (ssl_dir))
-
-        keyfile = "%s/gns3server.localdomain.com.key" % (ssl_dir)
-        certfile = "%s/gns3server.localdomain.com.crt" % (ssl_dir)
-
-        if os.path.isfile(keyfile) and os.path.isfile(certfile):
-            return { "certfile" : certfile,
-                "keyfile" : keyfile,
-            }
-
     def run(self):
         """
         Starts the Tornado web server and ZeroMQ server.
         """
 
         # FIXME: debug mode!
+        cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+
         settings = {
             "debug":True,
             "cookie_secret": base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes),
             "login_url": "/login",
-            "required_user" : "test123",
-            "required_pass" : "test456",
+            "required_user" : cloud_config['WEB_USERNAME'],
+            "required_pass" : cloud_config['WEB_PASSWORD'],
         }
 
         router = self._create_zmq_router()
@@ -191,11 +176,14 @@ class Server(object):
                                                                                       zmq.zmq_version()))
             kwargs = {"address": self._host}
 
-            ssl_options = self._get_cert_info()
+            if cloud_config["SSL_ENABLED"] == "yes":
+                ssl_options = {
+                    "certfile" : cloud_config["SSL_CRT"],
+                    "keyfile" : cloud_config["SSL_KEY"],
+                }
 
-            if ssl_options:
                 log.info("Certs found - starting in SSL mode")
-                kwargs['ssl_options'] = ssl_options
+                kwargs["ssl_options"] = ssl_options
 
             if parse_version(tornado.version) >= parse_version("3.1"):
                 kwargs["max_buffer_size"] = 524288000  # 500 MB file upload limit

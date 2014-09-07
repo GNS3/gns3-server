@@ -30,7 +30,7 @@ from gns3server.config import Config
 import logging
 log = logging.getLogger(__name__)
 
-class DeadMan():
+class DeadMan(IModule):
     """
     DeadMan module.
 
@@ -51,9 +51,11 @@ class DeadMan():
         self._heartbeat_file = "%s/heartbeat_file_for_gnsdms" % (
             self._tempdir)
 
+        self.cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+        self._heartbeat_file = self.cloud_config["heartbeat_file"]
+
         if 'heartbeat_file' in kwargs:
             self._heartbeat_file = kwargs['heartbeat_file']
-
 
         self._deadman_process = None
         self.start()
@@ -63,8 +65,12 @@ class DeadMan():
         Start a subprocess and return the object
         """
 
-        cmd = []
+        #gnsserver gets configuration options from cloud.conf. This is where
+        #the client adds specific cloud information.
+        #gns3dms also reads in cloud.conf. That is why we don't need to specific
+        #all the command line arguments here.
 
+        cmd = []
         cmd.append("gns3dms")
         cmd.append("--file %s" % (self._heartbeat_file))
         cmd.append("--background")
