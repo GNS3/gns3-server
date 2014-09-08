@@ -77,6 +77,7 @@ Options:
   --cloud_user_name
 
   --instance_id       ID of the Rackspace instance to terminate
+  --region            Region of instance
 
   --deadtime          How long in seconds can the communication lose exist before we
                       shutdown this instance.
@@ -111,6 +112,7 @@ def parse_cmd_line(argv):
                     "cloud_user_name=",
                     "cloud_api_key=",
                     "instance_id=",
+                    "region=",
                     "deadtime=",
                     "init-wait=",
                     "check-interval=",
@@ -130,6 +132,7 @@ def parse_cmd_line(argv):
     cmd_line_option_list["cloud_user_name"] = None
     cmd_line_option_list["cloud_api_key"] = None
     cmd_line_option_list["instance_id"] = None
+    cmd_line_option_list["region"] = None
     cmd_line_option_list["deadtime"] = 60 * 60 #minutes
     cmd_line_option_list["check-interval"] = None
     cmd_line_option_list["init-wait"] = 5 * 60
@@ -145,7 +148,8 @@ def parse_cmd_line(argv):
     else:
         cmd_line_option_list['syslog'] = ('localhost',514)
 
-    get_gns3config(cmd_line_option_list)
+
+    get_gns3secrets(cmd_line_option_list)
 
     for opt, val in opts:
         if (opt in ("-h", "--help")):
@@ -161,6 +165,8 @@ def parse_cmd_line(argv):
             cmd_line_option_list["cloud_api_key"] = val
         elif (opt in ("--instance_id")):
             cmd_line_option_list["instance_id"] = val
+        elif (opt in ("--region")):
+            cmd_line_option_list["region"] = val
         elif (opt in ("--deadtime")):
             cmd_line_option_list["deadtime"] = int(val)
         elif (opt in ("--check-interval")):
@@ -199,9 +205,15 @@ def parse_cmd_line(argv):
             print(usage)
             sys.exit(2)
 
+        if cmd_line_option_list["region"] is None:
+            print("You need to specify a region")
+            print(usage)
+            sys.exit(2)
+
+
     return cmd_line_option_list
 
-def get_gns3config(cmd_line_option_list):
+def get_gns3secrets(cmd_line_option_list):
     """
     Load cloud credentials from .gns3secrets
     """
@@ -224,17 +236,6 @@ def get_gns3config(cmd_line_option_list):
     except configparser.NoSectionError:
         pass
 
-    cloud_config_file = "%s/.config/GNS3/cloud.conf" % (
-        os.path.expanduser("~/"))
-
-    if os.path.isfile(cloud_config_file):
-        config.read(cloud_config_file)
-
-    try:
-        for key, value in config.items("CLOUD_SERVER"):
-            cmd_line_option_list[key] = value.strip()
-    except configparser.NoSectionError:
-        pass
 
 def set_logging(cmd_options):
     """
@@ -351,9 +352,8 @@ def main():
 
         log.info("Received shutdown signal")
         options["shutdown"] = True
-        sys.exit(0)
 
-    pid_file = "%s/.gns3ias.pid" % (expanduser("~"))
+    pid_file = "%s/.gns3dms.pid" % (expanduser("~"))
 
     if options["shutdown"]:
         send_shutdown(pid_file)
