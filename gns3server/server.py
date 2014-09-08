@@ -33,12 +33,16 @@ import tornado.ioloop
 import tornado.web
 import tornado.autoreload
 import pkg_resources
+from os.path import expanduser
+import base64
+import uuid
 
 from pkg_resources import parse_version
 from .config import Config
 from .handlers.jsonrpc_websocket import JSONRPCWebSocket
 from .handlers.version_handler import VersionHandler
 from .handlers.file_upload_handler import FileUploadHandler
+from .handlers.auth_handler import LoginHandler
 from .builtins.server_version import server_version
 from .builtins.interfaces import interfaces
 from .modules import MODULES
@@ -46,12 +50,12 @@ from .modules import MODULES
 import logging
 log = logging.getLogger(__name__)
 
-
 class Server(object):
 
     # built-in handlers
     handlers = [(r"/version", VersionHandler),
-                (r"/upload", FileUploadHandler)]
+                (r"/upload", FileUploadHandler),
+                (r"/login", LoginHandler)]
 
     def __init__(self, host, port, ipc=False):
 
@@ -136,10 +140,22 @@ class Server(object):
                 JSONRPCWebSocket.register_destination(destination, instance.name)
             instance.start()  # starts the new process
 
+
     def run(self):
         """
         Starts the Tornado web server and ZeroMQ server.
         """
+
+        # FIXME: debug mode!
+        cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+
+        settings = {
+            "debug":True,
+            "cookie_secret": base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes),
+            "login_url": "/login",
+            "required_user" : cloud_config['WEB_USERNAME'],
+            "required_pass" : cloud_config['WEB_PASSWORD'],
+        }
 
         router = self._create_zmq_router()
         # Add our JSON-RPC Websocket handler to Tornado
@@ -150,7 +166,7 @@ class Server(object):
             templates_dir = pkg_resources.resource_filename("gns3server", "templates")
         tornado_app = tornado.web.Application(self.handlers,
                                               template_path=templates_dir,
-                                              debug=True)  # FIXME: debug mode!
+                                              **settings)  # FIXME: debug mode!
 
         try:
             print("Starting server on {}:{} (Tornado v{}, PyZMQ v{}, ZMQ v{})".format(self._host,
@@ -159,6 +175,16 @@ class Server(object):
                                                                                       zmq.__version__,
                                                                                       zmq.zmq_version()))
             kwargs = {"address": self._host}
+
+            if cloud_config["SSL_ENABLED"] == "yes":
+                ssl_options = {
+                    "certfile" : cloud_config["SSL_CRT"],
+                    "keyfile" : cloud_config["SSL_KEY"],
+                }
+
+                log.info("Certs found - starting in SSL mode")
+                kwargs["ssl_options"] = ssl_options
+
             if parse_version(tornado.version) >= parse_version("3.1"):
                 kwargs["max_buffer_size"] = 524288000  # 500 MB file upload limit
             tornado_app.listen(self._port, **kwargs)

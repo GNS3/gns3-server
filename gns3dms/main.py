@@ -24,7 +24,7 @@
 # number has been incremented)
 
 """
-Monitors communication with the GNS3 client via tmp file. Will terminate the instance if 
+Monitors communication with the GNS3 client via tmp file. Will terminate the instance if
 communication is lost.
 """
 
@@ -62,7 +62,7 @@ sys.path.append(EXTRA_LIB)
 
 import daemon
 
-my_daemon = None 
+my_daemon = None
 
 usage = """
 USAGE: %s
@@ -73,14 +73,14 @@ Options:
   -v, --verbose       Enable verbose logging
   -h, --help          Display this menu :)
 
-  --cloud_api_key <api_key>  Rackspace API key           
+  --cloud_api_key <api_key>  Rackspace API key
   --cloud_user_name
 
   --instance_id       ID of the Rackspace instance to terminate
-  
-  --deadtime          How long in seconds can the communication lose exist before we 
-                      shutdown this instance. 
-                      Default: 
+
+  --deadtime          How long in seconds can the communication lose exist before we
+                      shutdown this instance.
+                      Default:
                       Example --deadtime=3600 (60 minutes)
 
   --check-interval    Defaults to --deadtime, used for debugging
@@ -145,8 +145,7 @@ def parse_cmd_line(argv):
     else:
         cmd_line_option_list['syslog'] = ('localhost',514)
 
-
-    get_gns3secrets(cmd_line_option_list)
+    get_gns3config(cmd_line_option_list)
 
     for opt, val in opts:
         if (opt in ("-h", "--help")):
@@ -202,7 +201,7 @@ def parse_cmd_line(argv):
 
     return cmd_line_option_list
 
-def get_gns3secrets(cmd_line_option_list):
+def get_gns3config(cmd_line_option_list):
     """
     Load cloud credentials from .gns3secrets
     """
@@ -225,6 +224,17 @@ def get_gns3secrets(cmd_line_option_list):
     except configparser.NoSectionError:
         pass
 
+    cloud_config_file = "%s/.config/GNS3/cloud.conf" % (
+        os.path.expanduser("~/"))
+
+    if os.path.isfile(cloud_config_file):
+        config.read(cloud_config_file)
+
+    try:
+        for key, value in config.items("CLOUD_SERVER"):
+            cmd_line_option_list[key] = value.strip()
+    except configparser.NoSectionError:
+        pass
 
 def set_logging(cmd_options):
     """
@@ -256,7 +266,7 @@ def set_logging(cmd_options):
     )
 
     syslog_hndlr.setFormatter(sys_formatter)
-    
+
     log.setLevel(log_level)
     log.addHandler(console_log)
     log.addHandler(syslog_hndlr)
@@ -308,7 +318,7 @@ def monitor_loop(options):
 
         if delta.seconds > options["deadtime"]:
             log.warning("Deadtime exceeded, terminating instance ...")
-            #Terminate involes many layers of HTTP / API calls, lots of 
+            #Terminate involes many layers of HTTP / API calls, lots of
             #different errors types could occur here.
             try:
                 rksp = Rackspace(options)
@@ -341,7 +351,8 @@ def main():
 
         log.info("Received shutdown signal")
         options["shutdown"] = True
-        
+        sys.exit(0)
+
     pid_file = "%s/.gns3ias.pid" % (expanduser("~"))
 
     if options["shutdown"]:
