@@ -23,6 +23,7 @@ Simple file upload & listing handler.
 import os
 import stat
 import tornado.web
+from .auth_handler import GNS3BaseHandler
 from ..version import __version__
 from ..config import Config
 
@@ -30,7 +31,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class FileUploadHandler(tornado.web.RequestHandler):
+class FileUploadHandler(GNS3BaseHandler):
     """
     File upload handler.
 
@@ -54,6 +55,7 @@ class FileUploadHandler(tornado.web.RequestHandler):
         except OSError as e:
             log.error("could not create the upload directory {}: {}".format(self._upload_dir, e))
 
+    @tornado.web.authenticated
     def get(self):
         """
         Invoked on GET request.
@@ -70,6 +72,7 @@ class FileUploadHandler(tornado.web.RequestHandler):
                     path=path,
                     items=items)
 
+    @tornado.web.authenticated
     def post(self):
         """
         Invoked on POST request.

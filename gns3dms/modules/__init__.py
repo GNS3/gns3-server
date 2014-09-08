@@ -15,14 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import tornado.web
-from .auth_handler import GNS3BaseHandler
-from ..version import __version__
+# __version__ is a human-readable version number.
 
-
-class VersionHandler(GNS3BaseHandler):
-
-    @tornado.web.authenticated
-    def get(self):
-        response = {'version': __version__}
-        self.write(response)
+# __version_info__ is a four-tuple for programmatic comparison. The first
+# three numbers are the components of the version number. The fourth
+# is zero for an official release, positive for a development branch,
+# or negative for a release candidate or beta (after the base version
+# number has been incremented)

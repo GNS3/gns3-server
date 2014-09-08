@@ -1,4 +1,9 @@
 netifaces
-tornado
+tornado==3.2.2
 pyzmq
 jsonschema
+pycurl
+python-dateutil
+apache-libcloud
+requests
+

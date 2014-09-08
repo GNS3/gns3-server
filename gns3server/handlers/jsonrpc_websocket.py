@@ -22,6 +22,7 @@ JSON-RPC protocol over Websockets.
 import zmq
 import uuid
 import tornado.websocket
+from .auth_handler import GNS3WebSocketBaseHandler
 from tornado.escape import json_decode
 from ..jsonrpc import JSONRPCParseError
 from ..jsonrpc import JSONRPCInvalidRequest
@@ -33,7 +34,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
+class JSONRPCWebSocket(GNS3WebSocketBaseHandler):
     """
     STOMP protocol over Tornado Websockets with message
     routing to ZeroMQ dealer clients.
@@ -119,7 +120,15 @@ class JSONRPCWebSocket(tornado.websocket.WebSocketHandler):
         """
 
         log.info("Websocket client {} connected".format(self.session_id))
-        self.clients.add(self)
+
+        authenticated_user = self.get_current_user()
+
+        if authenticated_user:
+            self.clients.add(self)
+            log.info("Websocket authenticated user: %s" % (authenticated_user))
+        else:
+            self.close()
+            log.info("Websocket non-authenticated user attempt: %s" % (authenticated_user))
 
     def on_message(self, message):
         """
