@@ -140,36 +140,42 @@ class Server(object):
                 JSONRPCWebSocket.register_destination(destination, instance.name)
             instance.start()  # starts the new process
 
-    def _dummy_cloud_config(self):
-
-       config = configparser.ConfigParser()
-       config["CLOUD_SERVER"] = {
-           "WEB_AUTH_ENABLED" : "no",
-           "WEB_USERNAME" : "",
-           "WEB_PASSWORD" : "",
-           "SSL_ENABLED"  : "no",
-       }
-
-       return config["CLOUD_SERVER"]
 
     def run(self):
         """
         Starts the Tornado web server and ZeroMQ server.
         """
 
-        # FIXME: debug mode!
-        try:
-            cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
-        except KeyError:
-            cloud_config = self._dummy_cloud_config()
-
         settings = {
             "debug":True,
             "cookie_secret": base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes),
             "login_url": "/login",
-            "required_user" : cloud_config['WEB_USERNAME'],
-            "required_pass" : cloud_config['WEB_PASSWORD'],
         }
+
+        ssl_options = {}
+
+        try:
+            cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+
+            cloud_settings = {
+
+                "required_user" : cloud_config['WEB_USERNAME'],
+                "required_pass" : cloud_config['WEB_PASSWORD'],
+            }
+
+            settings.update(cloud_settings)
+
+            if cloud_config["SSL_ENABLED"] == "yes":
+                ssl_options = {
+                    "certfile" : cloud_config["SSL_CRT"],
+                    "keyfile" : cloud_config["SSL_KEY"],
+                }
+
+                log.info("Certs found - starting in SSL mode")
+
+        except KeyError:
+            log.info("Missing cloud.conf - disabling HTTP auth and SSL")
+
 
         router = self._create_zmq_router()
         # Add our JSON-RPC Websocket handler to Tornado
@@ -190,13 +196,7 @@ class Server(object):
                                                                                       zmq.zmq_version()))
             kwargs = {"address": self._host}
 
-            if cloud_config["SSL_ENABLED"] == "yes":
-                ssl_options = {
-                    "certfile" : cloud_config["SSL_CRT"],
-                    "keyfile" : cloud_config["SSL_KEY"],
-                }
-
-                log.info("Certs found - starting in SSL mode")
+            if ssl_options:
                 kwargs["ssl_options"] = ssl_options
 
             if parse_version(tornado.version) >= parse_version("3.1"):
