@@ -140,6 +140,17 @@ class Server(object):
                 JSONRPCWebSocket.register_destination(destination, instance.name)
             instance.start()  # starts the new process
 
+    def _dummy_cloud_config(self):
+
+       config = configparser.ConfigParser()
+       config["CLOUD_SERVER"] = {
+           "WEB_AUTH_ENABLED" : "no",
+           "WEB_USERNAME" : "",
+           "WEB_PASSWORD" : "",
+           "SSL_ENABLED"  : "no",
+       }
+
+       return config["CLOUD_SERVER"]
 
     def run(self):
         """
@@ -147,7 +158,10 @@ class Server(object):
         """
 
         # FIXME: debug mode!
-        cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+        try:
+            cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+        except KeyError:
+            cloud_config = self._dummy_cloud_config()
 
         settings = {
             "debug":True,
