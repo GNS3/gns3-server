@@ -54,6 +54,16 @@ class DeadMan(IModule):
         if 'heartbeat_file' in kwargs:
             self._heartbeat_file = kwargs['heartbeat_file']
 
+        self._is_enabled = False
+        try:
+            cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+            instance_id = cloud_config["instance_id"]
+            cloud_user_name = cloud_config["cloud_user_name"]
+            cloud_api_key = cloud_config["cloud_api_key"]
+            self._is_enabled = True
+        except KeyError:
+            log.critical("Missing cloud.conf - disabling Deadman Switch")
+
         self._deadman_process = None
         self.heartbeat()
         self.start()
@@ -73,7 +83,7 @@ class DeadMan(IModule):
         cmd.append("--file")
         cmd.append("%s" % (self._heartbeat_file))
         cmd.append("--background")
-        log.debug("Deadman: Running %s"%(cmd))
+        log.debug("Deadman: Running command: %s"%(cmd))
 
         process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, shell=False)
         return process
@@ -87,7 +97,7 @@ class DeadMan(IModule):
 
         cmd.append("gns3dms")
         cmd.append("-k")
-        log.debug("Deadman: Running %s"%(cmd))
+        log.debug("Deadman: Running command: %s"%(cmd))
 
         process = subprocess.Popen(cmd, shell=False)
         return process
@@ -116,8 +126,9 @@ class DeadMan(IModule):
         Start the deadman process on the server
         """
 
-        self._deadman_process = self._start_deadman_process()
-        log.debug("Deadman: Process is starting")
+        if self._is_enabled:
+            self._deadman_process = self._start_deadman_process()
+            log.debug("Deadman: Process is starting")
 
     @IModule.route("deadman.reset")
     def reset(self, request=None):

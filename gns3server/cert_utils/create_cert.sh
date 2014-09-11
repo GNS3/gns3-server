@@ -62,7 +62,7 @@ C=CA
 ST=Alberta
 O=GNS3
 localityName=Calgary
-commonName=gns3server.localdomain.com
+commonName=$DOMAIN
 organizationalUnitName=GNS3Server
 emailAddress=gns3cert@gns3.com
 "
