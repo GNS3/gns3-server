@@ -231,6 +231,8 @@ def main():
 
     client_data['SSL_CRT_FILE'] = server_crt
     client_data['SSL_CRT'] = cert_data
+    client_data['WEB_USERNAME'] = cloud_config['CLOUD_SERVER']['WEB_USERNAME']
+    client_data['WEB_PASSWORD'] = cloud_config['CLOUD_SERVER']['WEB_PASSWORD']
 
     print(client_data)
 
