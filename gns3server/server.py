@@ -172,9 +172,8 @@ class Server(object):
                 }
 
                 log.info("Certs found - starting in SSL mode")
-
         except KeyError:
-            log.info("Missing cloud.conf - disabling HTTP auth and SSL")
+           log.info("Missing cloud.conf - disabling HTTP auth and SSL")
 
 
         router = self._create_zmq_router()
