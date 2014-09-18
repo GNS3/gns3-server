@@ -24,7 +24,7 @@ from .nio import NIO
 
 class NIO_UDP(NIO):
     """
-    IOU UDP NIO.
+    UDP NIO.
 
     :param lport: local port number
     :param rhost: remote address/host

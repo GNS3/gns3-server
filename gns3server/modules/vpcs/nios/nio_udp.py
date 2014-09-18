@@ -22,7 +22,7 @@ Interface for UDP NIOs.
 
 class NIO_UDP(object):
     """
-    IOU UDP NIO.
+    UDP NIO.
 
     :param lport: local port number
     :param rhost: remote address/host

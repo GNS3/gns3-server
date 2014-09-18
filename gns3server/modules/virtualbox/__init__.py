@@ -68,7 +68,7 @@ class VirtualBox(IModule):
             self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
             if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
                 paths = [os.getcwd()] + os.environ["PATH"].split(":")
-                # look for iouyap in the current working directory and $PATH
+                # look for vboxwrapper in the current working directory and $PATH
                 for path in paths:
                     try:
                         if "vboxwrapper" in os.listdir(path) and os.access(os.path.join(path, "vboxwrapper"), os.X_OK):
@@ -172,9 +172,9 @@ class VirtualBox(IModule):
         """
         Returns a VirtualBox VM instance.
 
-        :param vbox_id: VirtualBox device identifier
+        :param vbox_id: VirtualBox VM identifier
 
-        :returns: VBoxDevice instance
+        :returns: VirtualBoxVM instance
         """
 
         if vbox_id not in self._vbox_instances:
@@ -271,6 +271,7 @@ class VirtualBox(IModule):
 
         Mandatory request parameters:
         - name (VirtualBox VM name)
+        - vmname (VirtualBox VM name in VirtualBox)
 
         Optional request parameters:
         - console (VirtualBox VM console port)
@@ -653,7 +654,7 @@ class VirtualBox(IModule):
         Deletes an NIO (Network Input/Output).
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (VirtualBox instance identifier)
         - port (port identifier)
 
         Response parameters:
@@ -688,7 +689,7 @@ class VirtualBox(IModule):
         Starts a packet capture.
 
         Mandatory request parameters:
-        - id (vm identifier)
+        - id (VirtualBox VM identifier)
         - port (port number)
         - port_id (port identifier)
         - capture_file_name
@@ -729,7 +730,7 @@ class VirtualBox(IModule):
         Stops a packet capture.
 
         Mandatory request parameters:
-        - id (vm identifier)
+        - id (VirtualBox VM identifier)
         - port (port number)
         - port_id (port identifier)
 

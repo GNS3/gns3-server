@@ -22,7 +22,7 @@ Interface for TAP NIOs (UNIX based OSes only).
 
 class NIO_TAP(object):
     """
-    IOU TAP NIO.
+    TAP NIO.
 
     :param tap_device: TAP device name (e.g. tap0)
     """

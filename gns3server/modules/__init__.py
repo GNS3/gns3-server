@@ -20,8 +20,9 @@ from .base import IModule
 from .dynamips import Dynamips
 from .vpcs import VPCS
 from .virtualbox import VirtualBox
+from .qemu import Qemu
 
-MODULES = [Dynamips, VPCS, VirtualBox]
+MODULES = [Dynamips, VPCS, VirtualBox, Qemu]
 
 if sys.platform.startswith("linux"):
     # IOU runs only on Linux
