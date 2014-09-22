@@ -168,7 +168,7 @@ def _start_gns3server():
     cmd = []
     cmd.append("gns3server")
 
-    log.debug("Starting gns3server ...")
+    log.info("Starting gns3server ...")
     subprocess.Popen(cmd, shell=False)
 
 
@@ -203,7 +203,7 @@ def main():
     except FileExistsError:
         pass
 
-    (server_key, server_crt ) = _generate_certs()
+    (server_key, server_crt) = _generate_certs()
 
     cloud_config = configparser.ConfigParser()
     cloud_config['CLOUD_SERVER'] = {}

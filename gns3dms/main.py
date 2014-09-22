@@ -219,19 +219,19 @@ def get_gns3secrets(cmd_line_option_list):
     """
 
     gns3secret_paths = [
-        os.path.expanduser("~/"),
+        os.path.join(os.path.expanduser("~"), '.config', 'GNS3'),
         SCRIPT_PATH,
     ]
 
     config = configparser.ConfigParser()
 
     for gns3secret_path in gns3secret_paths:
-        gns3secret_file = "%s/.gns3secrets.conf" % (gns3secret_path)
+        gns3secret_file = "%s/cloud.conf" % (gns3secret_path)
         if os.path.isfile(gns3secret_file):
             config.read(gns3secret_file)
 
     try:
-        for key, value in config.items("Cloud"):
+        for key, value in config.items("CLOUD_SERVER"):
             cmd_line_option_list[key] = value.strip()
     except configparser.NoSectionError:
         pass
