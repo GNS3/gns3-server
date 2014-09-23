@@ -67,26 +67,6 @@ class Qemu(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        # get the qemu-img location
-        config = Config.instance()
-        qemu_config = config.get_section_config(name.upper())
-        self._qemu_img_path = qemu_config.get("qemu_img_path")
-        if not self._qemu_img_path or not os.path.isfile(self._qemu_img_path):
-            paths = [os.getcwd()] + os.environ["PATH"].split(":")
-            # look for qemu-img in the current working directory and $PATH
-            for path in paths:
-                try:
-                    if "qemu-img" in os.listdir(path) and os.access(os.path.join(path, "qemu-img"), os.X_OK):
-                        self._qemu_img_path = os.path.join(path, "qemu-img")
-                        break
-                except OSError:
-                    continue
-
-        if not self._qemu_img_path:
-            log.warning("qemu-img couldn't be found!")
-        elif not os.access(self._qemu_img_path, os.X_OK):
-            log.warning("qemu-img is not executable")
-
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
         self._qemu_instances = {}
@@ -173,13 +153,6 @@ class Qemu(IModule):
             self.send_param_error()
             return
 
-        if "qemu_img_path" in request and request["qemu_img_path"]:
-            self._qemu_img_path = request["qemu_img_path"]
-            log.info("QEMU image utility path set to {}".format(self._qemu_img_path))
-            for qemu_id in self._qemu_instances:
-                qemu_instance = self._qemu_instances[qemu_id]
-                qemu_instance.qemu_img_path = self._qemu_img_path
-
         if "working_dir" in request:
             new_working_dir = request["working_dir"]
             log.info("this server is local with working directory path to {}".format(new_working_dir))
@@ -245,7 +218,6 @@ class Qemu(IModule):
         try:
             qemu_instance = QemuVM(name,
                                    qemu_path,
-                                   self._qemu_img_path,
                                    self._working_dir,
                                    self._host,
                                    qemu_id,
