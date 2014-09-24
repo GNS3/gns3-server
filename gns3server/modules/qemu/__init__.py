@@ -19,6 +19,7 @@
 QEMU server module.
 """
 
+import sys
 import os
 import socket
 import shutil
@@ -42,15 +43,6 @@ from .schemas import QEMU_RELOAD_SCHEMA
 from .schemas import QEMU_ALLOCATE_UDP_PORT_SCHEMA
 from .schemas import QEMU_ADD_NIO_SCHEMA
 from .schemas import QEMU_DELETE_NIO_SCHEMA
-
-QEMU_BINARIES = ["qemu.exe",
-                 "qemu-system-arm",
-                 "qemu-system-mips",
-                 "qemu-system-ppc",
-                 "qemu-system-sparc",
-                 "qemu-system-x86",
-                 "qemu-system-i386",
-                 "qemu-system-x86_64"]
 
 import logging
 log = logging.getLogger(__name__)
@@ -603,6 +595,8 @@ class Qemu(IModule):
         :param qemu_path: path to Qemu
         """
 
+        if sys.platform.startswith("win"):
+            return ""
         try:
             output = subprocess.check_output([qemu_path, "--version"])
             match = re.search("QEMU emulator version ([0-9a-z\-\.]+)", output.decode("utf-8"))
@@ -627,15 +621,22 @@ class Qemu(IModule):
         qemus = []
         paths = [os.getcwd()] + os.environ["PATH"].split(":")
         # look for Qemu binaries in the current working directory and $PATH
+        if sys.platform.startswith("win"):
+            # add specific Windows paths
+            paths.append(os.path.join(os.getcwd(), "qemu"))
+            if "PROGRAMFILES(X86)" in os.environ and os.path.exists(os.environ["PROGRAMFILES(X86)"]):
+                paths.append(os.path.join(os.environ["PROGRAMFILES(X86)"], "qemu"))
+            if "PROGRAMFILES" in os.environ and os.path.exists(os.environ["PROGRAMFILES"]):
+                paths.append(os.path.join(os.environ["PROGRAMFILES"], "qemu"))
         for path in paths:
-            for qemu_binary in QEMU_BINARIES:
-                try:
-                    if qemu_binary in os.listdir(path) and os.access(os.path.join(path, qemu_binary), os.X_OK):
-                        qemu_path = os.path.join(path, qemu_binary)
+            try:
+                for f in os.listdir(path):
+                    if f.startswith("qemu-system") and os.access(os.path.join(path, f), os.X_OK):
+                        qemu_path = os.path.join(path, f)
                         version = self._get_qemu_version(qemu_path)
                         qemus.append({"path": qemu_path, "version": version})
-                except OSError:
-                    continue
+            except OSError:
+                continue
 
         response = {"server": self._host,
                     "qemus": qemus}
