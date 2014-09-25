@@ -34,6 +34,7 @@ define("host", default="0.0.0.0", help="run on the given host/IP address", type=
 define("port", default=8000, help="run on the given port", type=int)
 define("ipc", default=False, help="use IPC for module communication", type=bool)
 define("version", default=False, help="show the version", type=bool)
+define("quiet", default=False, help="do not show output on stdout", type=bool)
 
 
 def locale_check():
@@ -96,17 +97,25 @@ def main():
         raise SystemExit
 
     current_year = datetime.date.today().year
-    print("GNS3 server version {}".format(__version__))
-    print("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+    if options.quiet:
+        log.info("GNS3 server version {}".format(__version__))
+        log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+    else:
+        print("GNS3 server version {}".format(__version__))
+        print("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
     # we only support Python 3 version >= 3.3
     if sys.version_info < (3, 3):
         raise RuntimeError("Python 3.3 or higher is required")
 
-    print("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0],
-                                                                                 minor=sys.version_info[1],
-                                                                                 micro=sys.version_info[2],
-                                                                                 pid=os.getpid()))
+    if options.quiet:
+        log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
+                major=sys.version_info[0], minor=sys.version_info[1],
+                micro=sys.version_info[2], pid=os.getpid()))
+    else:
+        print("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
+                major=sys.version_info[0], minor=sys.version_info[1],
+                micro=sys.version_info[2], pid=os.getpid()))
 
     # check for the correct locale
     # (UNIX/Linux only)
@@ -118,9 +127,7 @@ def main():
         log.critical("the current working directory doesn't exist")
         return
 
-    server = Server(options.host,
-                    options.port,
-                    ipc=options.ipc)
+    server = Server(options.host, options.port, options.ipc, options.quiet)
     server.load_modules()
     server.run()
 

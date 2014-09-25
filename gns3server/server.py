@@ -57,7 +57,7 @@ class Server(object):
                 (r"/upload", FileUploadHandler),
                 (r"/login", LoginHandler)]
 
-    def __init__(self, host, port, ipc=False):
+    def __init__(self, host, port, ipc, quiet):
 
         self._host = host
         self._port = port
@@ -78,6 +78,7 @@ class Server(object):
                 log.critical("server cannot listen to {}: {}".format(self._host, e))
                 raise SystemExit
         self._ipc = ipc
+        self._quiet = quiet
         self._modules = []
 
         # get the projects and temp directories from the configuration file (passed to the modules)
@@ -188,11 +189,13 @@ class Server(object):
                                               **settings)  # FIXME: debug mode!
 
         try:
-            print("Starting server on {}:{} (Tornado v{}, PyZMQ v{}, ZMQ v{})".format(self._host,
-                                                                                      self._port,
-                                                                                      tornado.version,
-                                                                                      zmq.__version__,
-                                                                                      zmq.zmq_version()))
+            if self._quiet:
+                log.info("Starting server on {}:{} (Tornado v{}, PyZMQ v{}, ZMQ v{})".format(
+                        self._host, self._port, tornado.version, zmq.__version__, zmq.zmq_version()))
+            else:
+                print("Starting server on {}:{} (Tornado v{}, PyZMQ v{}, ZMQ v{})".format(
+                        self._host, self._port, tornado.version, zmq.__version__, zmq.zmq_version()))
+
             kwargs = {"address": self._host}
 
             if ssl_options:
@@ -230,7 +233,10 @@ class Server(object):
         try:
             ioloop.start()
         except (KeyboardInterrupt, SystemExit):
-            print("\nExiting...")
+            if self._quiet:
+                log.info("\nExiting...")
+            else:
+                print("\nExiting...")
             self._cleanup()
 
     def _create_zmq_router(self):
