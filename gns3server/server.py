@@ -58,7 +58,7 @@ class Server(object):
                 (r"/upload", FileUploadHandler),
                 (r"/login", LoginHandler)]
 
-    def __init__(self, host, port, ipc, quiet):
+    def __init__(self, host, port, ipc):
 
         self._host = host
         self._port = port
@@ -79,7 +79,6 @@ class Server(object):
                 log.critical("server cannot listen to {}: {}".format(self._host, e))
                 raise SystemExit
         self._ipc = ipc
-        self._quiet = quiet
         self._modules = []
 
         # get the projects and temp directories from the configuration file (passed to the modules)

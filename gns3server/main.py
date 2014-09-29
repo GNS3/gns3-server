@@ -127,7 +127,7 @@ def main():
         log.critical("the current working directory doesn't exist")
         return
 
-    server = Server(options.host, options.port, options.ipc, options.quiet)
+    server = Server(options.host, options.port, options.ipc)
     server.load_modules()
     server.run()
 
