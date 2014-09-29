@@ -111,7 +111,7 @@ class Dynamips(IModule):
         dynamips_config = config.get_section_config(name.upper())
         self._dynamips = dynamips_config.get("dynamips_path")
         if not self._dynamips or not os.path.isfile(self._dynamips):
-            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
             # look for Dynamips in the current working directory and $PATH
             for path in paths:
                 try:

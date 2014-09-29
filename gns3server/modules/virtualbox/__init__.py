@@ -67,7 +67,7 @@ class VirtualBox(IModule):
             vbox_config = config.get_section_config(name.upper())
             self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
             if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
-                paths = [os.getcwd()] + os.environ["PATH"].split(":")
+                paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
                 # look for vboxwrapper in the current working directory and $PATH
                 for path in paths:
                     try:

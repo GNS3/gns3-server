@@ -619,7 +619,7 @@ class Qemu(IModule):
         """
 
         qemus = []
-        paths = [os.getcwd()] + os.environ["PATH"].split(":")
+        paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
         # look for Qemu binaries in the current working directory and $PATH
         if sys.platform.startswith("win"):
             # add specific Windows paths

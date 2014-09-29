@@ -63,7 +63,7 @@ class VPCS(IModule):
         vpcs_config = config.get_section_config(name.upper())
         self._vpcs = vpcs_config.get("vpcs_path")
         if not self._vpcs or not os.path.isfile(self._vpcs):
-            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
             # look for VPCS in the current working directory and $PATH
             for path in paths:
                 try:
