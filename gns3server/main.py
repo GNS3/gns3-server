@@ -97,25 +97,25 @@ def main():
         raise SystemExit
 
     current_year = datetime.date.today().year
-    if options.quiet:
-        log.info("GNS3 server version {}".format(__version__))
-        log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
-    else:
-        print("GNS3 server version {}".format(__version__))
-        print("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+
+    user_log = logging.getLogger('user_facing')
+    if not options.quiet:
+        # Send user facing messages to stdout.
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.addFilter(logging.Filter(name='user_facing'))
+        user_log.addHandler(stream_handler)
+        user_log.propagate = False
+
+    user_log.info("GNS3 server version {}".format(__version__))
+    user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
     # we only support Python 3 version >= 3.3
     if sys.version_info < (3, 3):
         raise RuntimeError("Python 3.3 or higher is required")
 
-    if options.quiet:
-        log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
-                major=sys.version_info[0], minor=sys.version_info[1],
-                micro=sys.version_info[2], pid=os.getpid()))
-    else:
-        print("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
-                major=sys.version_info[0], minor=sys.version_info[1],
-                micro=sys.version_info[2], pid=os.getpid()))
+    user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
+                  major=sys.version_info[0], minor=sys.version_info[1],
+                  micro=sys.version_info[2], pid=os.getpid()))
 
     # check for the correct locale
     # (UNIX/Linux only)
