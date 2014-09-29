@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2014 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,35 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Interface for generic Ethernet NIOs (PCAP library).
-"""
-
-from .nio import NIO
+from .adapter import Adapter
 
 
-class NIO_GenericEthernet(NIO):
+class EthernetAdapter(Adapter):
     """
-    Generic Ethernet NIO.
-
-    :param ethernet_device: Ethernet device name (e.g. eth0)
+    QEMU Ethernet adapter.
     """
 
-    def __init__(self, ethernet_device):
-
-        NIO.__init__(self)
-        self._ethernet_device = ethernet_device
-
-    @property
-    def ethernet_device(self):
-        """
-        Returns the Ethernet device used by this NIO.
-
-        :returns: the Ethernet device name
-        """
-
-        return self._ethernet_device
+    def __init__(self):
+        Adapter.__init__(self, interfaces=1)
 
     def __str__(self):
 
-        return "NIO Ethernet"
+        return "QEMU Ethernet adapter"

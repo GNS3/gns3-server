@@ -9,7 +9,7 @@ import base64
 @pytest.fixture
 def router(request, hypervisor):
 
-    router = Router(hypervisor, "router", "c3725")
+    router = Router(hypervisor, "router", platform="c3725")
     request.addfinalizer(router.delete)
     return router
 
@@ -127,9 +127,9 @@ def test_idlepc(router):
 
 def test_idlemax(router):
 
-    assert router.idlemax == 1500  # default value
-    router.idlemax = 500
-    assert router.idlemax == 500
+    assert router.idlemax == 500  # default value
+    router.idlemax = 1500
+    assert router.idlemax == 1500
 
 
 def test_idlesleep(router):
@@ -172,7 +172,7 @@ def test_confreg(router):
 
 def test_console(router):
 
-    assert router.console == router.hypervisor.baseconsole + router.id
+    assert router.console == 2001
     new_console_port = router.console + 100
     router.console = new_console_port
     assert router.console == new_console_port
@@ -180,7 +180,7 @@ def test_console(router):
 
 def test_aux(router):
 
-    assert router.aux == router.hypervisor.baseaux + router.id
+    assert router.aux == 2501
     new_aux_port = router.aux + 100
     router.aux = new_aux_port
     assert router.aux == new_aux_port

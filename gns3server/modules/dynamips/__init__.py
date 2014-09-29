@@ -111,7 +111,7 @@ class Dynamips(IModule):
         dynamips_config = config.get_section_config(name.upper())
         self._dynamips = dynamips_config.get("dynamips_path")
         if not self._dynamips or not os.path.isfile(self._dynamips):
-            paths = [os.getcwd()] + os.environ["PATH"].split(":")
+            paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
             # look for Dynamips in the current working directory and $PATH
             for path in paths:
                 try:
@@ -137,7 +137,7 @@ class Dynamips(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
-        self._host = kwargs["host"]
+        self._host = dynamips_config.get("host", kwargs["host"])
 
         if not sys.platform.startswith("win32"):
             #FIXME: pickle issues Windows

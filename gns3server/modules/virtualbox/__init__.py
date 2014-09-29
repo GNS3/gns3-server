@@ -24,6 +24,7 @@ import os
 import socket
 import shutil
 
+from pkg_resources import parse_version
 from gns3server.modules import IModule
 from gns3server.config import Config
 from .virtualbox_vm import VirtualBoxVM
@@ -60,25 +61,26 @@ class VirtualBox(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        # get the vboxwrapper location
-        config = Config.instance()
-        vbox_config = config.get_section_config(name.upper())
-        self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
-        if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
-            paths = [os.getcwd()] + os.environ["PATH"].split(":")
-            # look for iouyap in the current working directory and $PATH
-            for path in paths:
-                try:
-                    if "vboxwrapper" in os.listdir(path) and os.access(os.path.join(path, "vboxwrapper"), os.X_OK):
-                        self._vboxwrapper_path = os.path.join(path, "vboxwrapper")
-                        break
-                except OSError:
-                    continue
+        # get the vboxwrapper location (only non-Windows platforms)
+        if not sys.platform.startswith("win"):
+            config = Config.instance()
+            vbox_config = config.get_section_config(name.upper())
+            self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
+            if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
+                paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
+                # look for vboxwrapper in the current working directory and $PATH
+                for path in paths:
+                    try:
+                        if "vboxwrapper" in os.listdir(path) and os.access(os.path.join(path, "vboxwrapper"), os.X_OK):
+                            self._vboxwrapper_path = os.path.join(path, "vboxwrapper")
+                            break
+                    except OSError:
+                        continue
 
-        if not self._vboxwrapper_path:
-            log.warning("vboxwrapper couldn't be found!")
-        elif not os.access(self._vboxwrapper_path, os.X_OK):
-            log.warning("vboxwrapper is not executable")
+            if not self._vboxwrapper_path:
+                log.warning("vboxwrapper couldn't be found!")
+            elif not os.access(self._vboxwrapper_path, os.X_OK):
+                log.warning("vboxwrapper is not executable")
 
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
@@ -91,7 +93,7 @@ class VirtualBox(IModule):
         self._allocated_udp_ports = []
         self._udp_start_port_range = vbox_config.get("udp_start_port_range", 35001)
         self._udp_end_port_range = vbox_config.get("udp_end_port_range", 35500)
-        self._host = kwargs["host"]
+        self._host = vbox_config.get("host", kwargs["host"])
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
@@ -105,18 +107,30 @@ class VirtualBox(IModule):
         """
 
         if sys.platform.startswith("win"):
+            import pywintypes
             import win32com.client
-            if win32com.client.gencache.is_readonly is True:
-                # dynamically generate the cache
-                # http://www.py2exe.org/index.cgi/IncludingTypelibs
-                # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
-                win32com.client.gencache.is_readonly = False
-                #win32com.client.gencache.Rebuild()
-                win32com.client.gencache.GetGeneratePath()
+
+            try:
+                if win32com.client.gencache.is_readonly is True:
+                    # dynamically generate the cache
+                    # http://www.py2exe.org/index.cgi/IncludingTypelibs
+                    # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
+                    win32com.client.gencache.is_readonly = False
+                    #win32com.client.gencache.Rebuild()
+                    win32com.client.gencache.GetGeneratePath()
+
+                win32com.client.gencache.EnsureDispatch("VirtualBox.VirtualBox")
+            except pywintypes.com_error:
+                raise VirtualBoxError("VirtualBox is not installed.")
+
             try:
                 from .vboxapi_py3 import VirtualBoxManager
                 self._vboxmanager = VirtualBoxManager(None, None)
+                vbox_major_version, vbox_minor_version, _ = self._vboxmanager.vbox.version.split('.')
+                if parse_version("{}.{}".format(vbox_major_version, vbox_minor_version)) <= parse_version("4.1"):
+                    raise VirtualBoxError("VirtualBox version must be >= 4.2")
             except Exception as e:
+                self._vboxmanager = None
                 raise VirtualBoxError("Could not initialize the VirtualBox Manager: {}".format(e))
 
             log.info("VirtualBox Manager has successful started: version is {} r{}".format(self._vboxmanager.vbox.version,
@@ -131,7 +145,11 @@ class VirtualBox(IModule):
 
             self._vboxwrapper = VboxWrapperClient(self._vboxwrapper_path, self._tempdir, "127.0.0.1")
             #self._vboxwrapper.connect()
-            self._vboxwrapper.start()
+            try:
+                self._vboxwrapper.start()
+            except VirtualBoxError:
+                self._vboxwrapper = None
+                raise
 
     def stop(self, signum=None):
         """
@@ -154,9 +172,9 @@ class VirtualBox(IModule):
         """
         Returns a VirtualBox VM instance.
 
-        :param vbox_id: VirtualBox device identifier
+        :param vbox_id: VirtualBox VM identifier
 
-        :returns: VBoxDevice instance
+        :returns: VirtualBoxVM instance
         """
 
         if vbox_id not in self._vbox_instances:
@@ -253,6 +271,7 @@ class VirtualBox(IModule):
 
         Mandatory request parameters:
         - name (VirtualBox VM name)
+        - vmname (VirtualBox VM name in VirtualBox)
 
         Optional request parameters:
         - console (VirtualBox VM console port)
@@ -399,7 +418,10 @@ class VirtualBox(IModule):
         try:
             vbox_instance.start()
         except VirtualBoxError as e:
-            self.send_custom_error(str(e))
+            if self._vboxwrapper:
+                self.send_custom_error("{}: {}".format(e, self._vboxwrapper.read_stderr()))
+            else:
+                self.send_custom_error(str(e))
             return
         self.send_response(True)
 
@@ -632,7 +654,7 @@ class VirtualBox(IModule):
         Deletes an NIO (Network Input/Output).
 
         Mandatory request parameters:
-        - id (VPCS instance identifier)
+        - id (VirtualBox instance identifier)
         - port (port identifier)
 
         Response parameters:
@@ -667,7 +689,7 @@ class VirtualBox(IModule):
         Starts a packet capture.
 
         Mandatory request parameters:
-        - id (vm identifier)
+        - id (VirtualBox VM identifier)
         - port (port number)
         - port_id (port identifier)
         - capture_file_name
@@ -708,7 +730,7 @@ class VirtualBox(IModule):
         Stops a packet capture.
 
         Mandatory request parameters:
-        - id (vm identifier)
+        - id (VirtualBox VM identifier)
         - port (port number)
         - port_id (port identifier)
 
@@ -748,7 +770,11 @@ class VirtualBox(IModule):
         """
 
         if not self._vboxwrapper and not self._vboxmanager:
-            self._start_vbox_service()
+            try:
+                self._start_vbox_service()
+            except VirtualBoxError as e:
+                self.send_custom_error(str(e))
+                return
 
         if self._vboxwrapper:
             vms = self._vboxwrapper.get_vm_list()

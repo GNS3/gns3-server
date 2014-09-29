@@ -22,7 +22,7 @@ Base interface for NIOs.
 
 class NIO(object):
     """
-    IOU NIO.
+    Network Input/Output.
     """
 
     def __init__(self):

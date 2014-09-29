@@ -16,23 +16,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-VBOX_CREATE_SCHEMA = {
+QEMU_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to create a new VirtualBox VM instance",
+    "description": "Request validation to create a new QEMU VM instance",
     "type": "object",
     "properties": {
         "name": {
-            "description": "VirtualBox VM instance name",
+            "description": "QEMU VM instance name",
             "type": "string",
             "minLength": 1,
         },
-        "vmname": {
-            "description": "VirtualBox VM name (in VirtualBox itself)",
+        "qemu_path": {
+            "description": "Path to QEMU",
             "type": "string",
             "minLength": 1,
         },
-        "vbox_id": {
-            "description": "VirtualBox VM instance ID",
+        "qemu_id": {
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
         "console": {
@@ -43,16 +43,16 @@ VBOX_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vmname"],
+    "required": ["name", "qemu_path"],
 }
 
-VBOX_DELETE_SCHEMA = {
+QEMU_DELETE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to delete a VirtualBox VM instance",
+    "description": "Request validation to delete a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
     },
@@ -60,39 +60,47 @@ VBOX_DELETE_SCHEMA = {
     "required": ["id"]
 }
 
-VBOX_UPDATE_SCHEMA = {
+QEMU_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to update a VirtualBox VM instance",
+    "description": "Request validation to update a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
         "name": {
-            "description": "VirtualBox VM instance name",
+            "description": "QEMU VM instance name",
             "type": "string",
             "minLength": 1,
         },
-        "vmname": {
-            "description": "VirtualBox VM name (in VirtualBox itself)",
+        "qemu_path": {
+            "description": "path to QEMU",
             "type": "string",
             "minLength": 1,
+        },
+        "hda_disk_image": {
+            "description": "QEMU hda disk image path",
+            "type": "string",
+            "minLength": 1,
+        },
+        "hdb_disk_image": {
+            "description": "QEMU hdb disk image path",
+            "type": "string",
+            "minLength": 1,
+        },
+        "ram": {
+            "description": "amount of RAM in MB",
+            "type": "integer"
         },
         "adapters": {
             "description": "number of adapters",
             "type": "integer",
             "minimum": 1,
-            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
-        },
-        "adapter_start_index": {
-            "description": "adapter index from which to start using adapters",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 35,  # maximum given by the ICH9 chipset in VirtualBox
+            "maximum": 8,
         },
         "adapter_type": {
-            "description": "VirtualBox adapter type",
+            "description": "QEMU adapter type",
             "type": "string",
             "minLength": 1,
         },
@@ -102,26 +110,37 @@ VBOX_UPDATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
-        "enable_console": {
-            "description": "enable the console",
-            "type": "boolean"
+        "initrd": {
+            "description": "QEMU initrd path",
+            "type": "string",
+            "minLength": 1,
         },
-        "headless": {
-            "description": "headless mode",
-            "type": "boolean"
+        "kernel_image": {
+            "description": "QEMU kernel image path",
+            "type": "string",
+            "minLength": 1,
+        },
+        "kernel_command_line": {
+            "description": "QEMU kernel command line",
+            "type": "string",
+            "minLength": 1,
+        },
+        "options": {
+            "description": "additional QEMU options",
+            "type": "string",
         },
     },
     "additionalProperties": False,
     "required": ["id"]
 }
 
-VBOX_START_SCHEMA = {
+QEMU_START_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start a VirtualBox VM instance",
+    "description": "Request validation to start a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
     },
@@ -129,13 +148,13 @@ VBOX_START_SCHEMA = {
     "required": ["id"]
 }
 
-VBOX_STOP_SCHEMA = {
+QEMU_STOP_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to stop a VirtualBox VM instance",
+    "description": "Request validation to stop a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
     },
@@ -143,13 +162,13 @@ VBOX_STOP_SCHEMA = {
     "required": ["id"]
 }
 
-VBOX_SUSPEND_SCHEMA = {
+QEMU_SUSPEND_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to suspend a VirtualBox VM instance",
+    "description": "Request validation to suspend a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
     },
@@ -157,13 +176,13 @@ VBOX_SUSPEND_SCHEMA = {
     "required": ["id"]
 }
 
-VBOX_RELOAD_SCHEMA = {
+QEMU_RELOAD_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to reload a VirtualBox VM instance",
+    "description": "Request validation to reload a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
     },
@@ -171,17 +190,17 @@ VBOX_RELOAD_SCHEMA = {
     "required": ["id"]
 }
 
-VBOX_ALLOCATE_UDP_PORT_SCHEMA = {
+QEMU_ALLOCATE_UDP_PORT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to allocate an UDP port for a VirtualBox VM instance",
+    "description": "Request validation to allocate an UDP port for a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
         "port_id": {
-            "description": "Unique port identifier for the VirtualBox VM instance",
+            "description": "Unique port identifier for the QEMU VM instance",
             "type": "integer"
         },
     },
@@ -189,9 +208,9 @@ VBOX_ALLOCATE_UDP_PORT_SCHEMA = {
     "required": ["id", "port_id"]
 }
 
-VBOX_ADD_NIO_SCHEMA = {
+QEMU_ADD_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for a VirtualBox VM instance",
+    "description": "Request validation to add a NIO for a QEMU VM instance",
     "type": "object",
 
     "definitions": {
@@ -321,18 +340,18 @@ VBOX_ADD_NIO_SCHEMA = {
 
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
         "port_id": {
-            "description": "Unique port identifier for the VirtualBox VM instance",
+            "description": "Unique port identifier for the QEMU VM instance",
             "type": "integer"
         },
         "port": {
             "description": "Port number",
             "type": "integer",
             "minimum": 0,
-            "maximum": 36  # maximum given by the ICH9 chipset in VirtualBox
+            "maximum": 8
         },
         "nio": {
             "type": "object",
@@ -353,76 +372,22 @@ VBOX_ADD_NIO_SCHEMA = {
 }
 
 
-VBOX_DELETE_NIO_SCHEMA = {
+QEMU_DELETE_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to delete a NIO for a VirtualBox VM instance",
+    "description": "Request validation to delete a NIO for a QEMU VM instance",
     "type": "object",
     "properties": {
         "id": {
-            "description": "VirtualBox VM instance ID",
+            "description": "QEMU VM instance ID",
             "type": "integer"
         },
         "port": {
             "description": "Port number",
             "type": "integer",
             "minimum": 0,
-            "maximum": 36  # maximum given by the ICH9 chipset in VirtualBox
+            "maximum": 8
         },
     },
     "additionalProperties": False,
     "required": ["id", "port"]
 }
-
-VBOX_START_CAPTURE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start a packet capture on a VirtualBox VM instance port",
-    "type": "object",
-    "properties": {
-        "id": {
-            "description": "VirtualBox VM instance ID",
-            "type": "integer"
-        },
-        "port": {
-            "description": "Port number",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 36  # maximum given by the ICH9 chipset in VirtualBox
-        },
-        "port_id": {
-            "description": "Unique port identifier for the VirtualBox VM instance",
-            "type": "integer"
-        },
-        "capture_file_name": {
-            "description": "Capture file name",
-            "type": "string",
-            "minLength": 1,
-        },
-    },
-    "additionalProperties": False,
-    "required": ["id", "port", "port_id", "capture_file_name"]
-}
-
-VBOX_STOP_CAPTURE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to stop a packet capture on a VirtualBox VM instance port",
-    "type": "object",
-    "properties": {
-        "id": {
-            "description": "VirtualBox VM instance ID",
-            "type": "integer"
-        },
-        "port": {
-            "description": "Port number",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 36  # maximum given by the ICH9 chipset in VirtualBox
-        },
-        "port_id": {
-            "description": "Unique port identifier for the VirtualBox VM instance",
-            "type": "integer"
-        },
-    },
-    "additionalProperties": False,
-    "required": ["id", "port", "port_id"]
-}
-

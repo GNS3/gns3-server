@@ -24,7 +24,7 @@ from .nio import NIO
 
 class NIO_TAP(NIO):
     """
-    IOU TAP NIO.
+    TAP NIO.
 
     :param tap_device: TAP device name (e.g. tap0)
     """

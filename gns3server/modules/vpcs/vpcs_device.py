@@ -338,11 +338,10 @@ class VPCSDevice(object):
         """
 
         try:
-            output = subprocess.check_output([self._path, "-v"], stderr=subprocess.STDOUT, cwd=self._working_dir)
+            output = subprocess.check_output([self._path, "-v"], cwd=self._working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output.decode("utf-8"))
             if match:
                 version = match.group(1)
-                print(version)
                 if parse_version(version) < parse_version("0.5b1"):
                     raise VPCSError("VPCS executable version must be >= 0.5b1")
             else:

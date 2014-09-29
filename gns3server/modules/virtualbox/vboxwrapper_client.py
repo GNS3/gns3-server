@@ -26,6 +26,7 @@ import tempfile
 import socket
 import re
 
+from pkg_resources import parse_version
 from ..attic import wait_socket_is_ready
 from .virtualbox_error import VirtualBoxError
 
@@ -53,7 +54,7 @@ class VboxWrapperClient(object):
         self._command = []
         self._process = None
         self._working_dir = working_dir
-        self._stdout_file = ""
+        self._stderr_file = ""
         self._started = False
         self._host = host
         self._port = port
@@ -139,19 +140,31 @@ class VboxWrapperClient(object):
         try:
             log.info("starting VirtualBox wrapper: {}".format(self._command))
             with tempfile.NamedTemporaryFile(delete=False) as fd:
-                self._stdout_file = fd.name
-                log.info("VirtualBox wrapper process logging to {}".format(fd.name))
-                self._process = subprocess.Popen(self._command,
-                                                 stdout=fd,
-                                                 stderr=subprocess.STDOUT,
-                                                 cwd=self._working_dir)
+                with open(os.devnull, "w") as null:
+                    self._stderr_file = fd.name
+                    log.info("VirtualBox wrapper process logging to {}".format(fd.name))
+                    self._process = subprocess.Popen(self._command,
+                                                     stdout=null,
+                                                     stderr=fd,
+                                                     cwd=self._working_dir)
             log.info("VirtualBox wrapper started PID={}".format(self._process.pid))
+
+            time.sleep(0.1) # give some time for vboxwrapper to start
+            if self._process.poll() is not None:
+                raise VirtualBoxError("Could not start VirtualBox wrapper: {}".format(self.read_stderr()))
+
             self.wait_for_vboxwrapper(self._host, self._port)
             self.connect()
             self._started = True
+
+            version = self.send('vboxwrapper version')[0]
+            if parse_version(version) < parse_version("0.9.1"):
+                self.stop()
+                raise VirtualBoxError("VirtualBox wrapper version must be >= 0.9.1")
+
         except OSError as e:
             log.error("could not start VirtualBox wrapper: {}".format(e))
-            raise VirtualBoxError("could not start VirtualBox wrapper: {}".format(e))
+            raise VirtualBoxError("Could not start VirtualBox wrapper: {}".format(e))
 
     def wait_for_vboxwrapper(self, host, port):
         """
@@ -198,26 +211,26 @@ class VboxWrapperClient(object):
                 if self._process.poll() is None:
                     log.warn("VirtualBox wrapper process {} is still running".format(self._process.pid))
 
-        if self._stdout_file and os.access(self._stdout_file, os.W_OK):
+        if self._stderr_file and os.access(self._stderr_file, os.W_OK):
             try:
-                os.remove(self._stdout_file)
+                os.remove(self._stderr_file)
             except OSError as e:
                 log.warning("could not delete temporary VirtualBox wrapper log file: {}".format(e))
         self._started = False
 
-    def read_stdout(self):
+    def read_stderr(self):
         """
-        Reads the standard output of the VirtualBox wrapper process.
+        Reads the standard error output of the VirtualBox wrapper process.
         Only use when the process has been stopped or has crashed.
         """
 
         output = ""
-        if self._stdout_file and os.access(self._stdout_file, os.R_OK):
+        if self._stderr_file and os.access(self._stderr_file, os.R_OK):
             try:
-                with open(self._stdout_file, errors="replace") as file:
+                with open(self._stderr_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
-                log.warn("could not read {}: {}".format(self._stdout_file, e))
+                log.warn("could not read {}: {}".format(self._stderr_file, e))
         return output
 
     def is_running(self):

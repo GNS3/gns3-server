@@ -51,6 +51,7 @@ class C1700(Router):
         self._chassis = chassis
         self._iomem = 15  # percentage
         self._clock_divisor = 8
+        self._sparsemem = False
 
         if chassis != "1720":
             self.chassis = chassis
@@ -72,7 +73,8 @@ class C1700(Router):
                              "disk1": self._disk1,
                              "chassis": self._chassis,
                              "iomem": self._iomem,
-                             "clock_divisor": self._clock_divisor}
+                             "clock_divisor": self._clock_divisor,
+                             "sparsemem": self._sparsemem}
 
         # update the router defaults with the platform specific defaults
         router_defaults.update(platform_defaults)

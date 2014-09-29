@@ -24,7 +24,6 @@ from ..dynamips_error import DynamipsError
 from .router import Router
 from ..adapters.c7200_io_2fe import C7200_IO_2FE
 from ..adapters.c7200_io_ge_e import C7200_IO_GE_E
-from pkg_resources import parse_version
 
 import logging
 log = logging.getLogger(__name__)
@@ -54,10 +53,6 @@ class C7200(Router):
 
         if npe != "npe-400":
             self.npe = npe
-
-        if parse_version(hypervisor.version) <= parse_version('0.2.13'):
-            # work around a bug when rebooting a router with NPE-400 in Dynamips <= 0.2.13
-            self.npe = "npe-200"
 
         # 4 sensors with a default temperature of 22C:
         # sensor 1 = I/0 controller inlet

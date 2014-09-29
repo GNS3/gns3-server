@@ -1,7 +1,7 @@
 GNS3-server
 ===========
 
-New GNS3 server repository (alpha stage).
+New GNS3 server repository (beta stage).
 
 The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
 Clients like the GNS3 GUI controls the server using a JSON-RPC API over Websockets.
@@ -34,4 +34,19 @@ Please use our all-in-one installer.
 Mac OS X
 --------
 
-Please use our DMG package.
+Please use our DMG package for a simple installation.
+
+
+If you want to test the current git version or contribute to the project.
+
+You can follow this instructions with virtualenwrapper: http://virtualenvwrapper.readthedocs.org/
+and homebrew: http://brew.sh/.
+
+.. code:: bash
+
+   brew install python3
+   mkvirtualenv gns3-server --python=/usr/local/bin/python3.4
+   python3 setup.py install
+   gns3server
+
+
