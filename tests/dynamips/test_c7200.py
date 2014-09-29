@@ -29,9 +29,9 @@ def test_router_exists(router_c7200):
 
 def test_npe(router_c7200):
 
-    assert router_c7200.npe == "npe-200"  # default value
-    router_c7200.npe = "npe-400"
-    assert router_c7200.npe == "npe-400"
+    assert router_c7200.npe == "npe-400"  # default value
+    router_c7200.npe = "npe-200"
+    assert router_c7200.npe == "npe-200"
 
 
 def test_midplane(router_c7200):
