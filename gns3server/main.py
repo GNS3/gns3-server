@@ -34,6 +34,7 @@ define("host", default="0.0.0.0", help="run on the given host/IP address", type=
 define("port", default=8000, help="run on the given port", type=int)
 define("ipc", default=False, help="use IPC for module communication", type=bool)
 define("version", default=False, help="show the version", type=bool)
+define("quiet", default=False, help="do not show output on stdout", type=bool)
 
 
 def locale_check():
@@ -96,17 +97,25 @@ def main():
         raise SystemExit
 
     current_year = datetime.date.today().year
-    print("GNS3 server version {}".format(__version__))
-    print("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+
+    user_log = logging.getLogger('user_facing')
+    if not options.quiet:
+        # Send user facing messages to stdout.
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.addFilter(logging.Filter(name='user_facing'))
+        user_log.addHandler(stream_handler)
+        user_log.propagate = False
+
+    user_log.info("GNS3 server version {}".format(__version__))
+    user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
     # we only support Python 3 version >= 3.3
     if sys.version_info < (3, 3):
         raise RuntimeError("Python 3.3 or higher is required")
 
-    print("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0],
-                                                                                 minor=sys.version_info[1],
-                                                                                 micro=sys.version_info[2],
-                                                                                 pid=os.getpid()))
+    user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
+                  major=sys.version_info[0], minor=sys.version_info[1],
+                  micro=sys.version_info[2], pid=os.getpid()))
 
     # check for the correct locale
     # (UNIX/Linux only)
@@ -118,9 +127,7 @@ def main():
         log.critical("the current working directory doesn't exist")
         return
 
-    server = Server(options.host,
-                    options.port,
-                    ipc=options.ipc)
+    server = Server(options.host, options.port, options.ipc)
     server.load_modules()
     server.run()
 

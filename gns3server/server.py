@@ -50,6 +50,7 @@ from .modules import MODULES
 import logging
 log = logging.getLogger(__name__)
 
+
 class Server(object):
 
     # built-in handlers
@@ -57,7 +58,7 @@ class Server(object):
                 (r"/upload", FileUploadHandler),
                 (r"/login", LoginHandler)]
 
-    def __init__(self, host, port, ipc=False):
+    def __init__(self, host, port, ipc):
 
         self._host = host
         self._port = port
@@ -188,11 +189,10 @@ class Server(object):
                                               **settings)  # FIXME: debug mode!
 
         try:
-            print("Starting server on {}:{} (Tornado v{}, PyZMQ v{}, ZMQ v{})".format(self._host,
-                                                                                      self._port,
-                                                                                      tornado.version,
-                                                                                      zmq.__version__,
-                                                                                      zmq.zmq_version()))
+            user_log = logging.getLogger('user_facing')
+            user_log.info("Starting server on {}:{} (Tornado v{}, PyZMQ v{}, ZMQ v{})".format(
+                          self._host, self._port, tornado.version, zmq.__version__, zmq.zmq_version()))
+
             kwargs = {"address": self._host}
 
             if ssl_options:
@@ -230,7 +230,7 @@ class Server(object):
         try:
             ioloop.start()
         except (KeyboardInterrupt, SystemExit):
-            print("\nExiting...")
+            log.info("\nExiting...")
             self._cleanup()
 
     def _create_zmq_router(self):
