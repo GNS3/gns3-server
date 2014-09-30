@@ -16,11 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import tornado.web
+from .auth_handler import GNS3BaseHandler
 from ..version import __version__
 
 
-class VersionHandler(tornado.web.RequestHandler):
+class VersionHandler(GNS3BaseHandler):
 
+    @tornado.web.authenticated
     def get(self):
         response = {'version': __version__}
         self.write(response)
