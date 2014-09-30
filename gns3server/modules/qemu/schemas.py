@@ -82,12 +82,10 @@ QEMU_UPDATE_SCHEMA = {
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
             "type": "string",
-            "minLength": 1,
         },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
             "type": "string",
-            "minLength": 1,
         },
         "ram": {
             "description": "amount of RAM in MB",
@@ -113,17 +111,14 @@ QEMU_UPDATE_SCHEMA = {
         "initrd": {
             "description": "QEMU initrd path",
             "type": "string",
-            "minLength": 1,
         },
         "kernel_image": {
             "description": "QEMU kernel image path",
             "type": "string",
-            "minLength": 1,
         },
         "kernel_command_line": {
             "description": "QEMU kernel command line",
             "type": "string",
-            "minLength": 1,
         },
         "options": {
             "description": "additional QEMU options",
