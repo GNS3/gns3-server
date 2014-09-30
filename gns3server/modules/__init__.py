@@ -17,12 +17,13 @@
 
 import sys
 from .base import IModule
+from .deadman import DeadMan
 from .dynamips import Dynamips
+from .qemu import Qemu
 from .vpcs import VPCS
 from .virtualbox import VirtualBox
-from .qemu import Qemu
 
-MODULES = [Dynamips, VPCS, VirtualBox, Qemu]
+MODULES = [DeadMan, Dynamips, VPCS, VirtualBox, Qemu]
 
 if sys.platform.startswith("linux"):
     # IOU runs only on Linux

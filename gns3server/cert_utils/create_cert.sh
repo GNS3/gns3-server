@@ -62,13 +62,13 @@ C=CA
 ST=Alberta
 O=GNS3
 localityName=Calgary
-commonName=gns3server.localdomain.com
+commonName=$DOMAIN
 organizationalUnitName=GNS3Server
 emailAddress=gns3cert@gns3.com
 "
 
 # Generate the server private key
-openssl genrsa -aes256 -out $DST_DIR/$DOMAIN.key -passout env:PASSPHRASE 2048
+openssl genrsa -aes256 -out $DOMAIN.key -passout env:PASSPHRASE 2048
 fail_if_error $?
 
 #openssl rsa -outform der -in $DOMAIN.pem -out $DOMAIN.key -passin env:PASSPHRASE
@@ -92,5 +92,8 @@ fail_if_error $?
 # Generate the cert (good for 10 years)
 openssl x509 -req -days 3650 -in $DOMAIN.csr -signkey $DOMAIN.key -out $DOMAIN.crt
 fail_if_error $?
+
+echo "${DST_DIR}${DOMAIN}.key"
+echo "${DST_DIR}${DOMAIN}.crt"
 
 cd $OLD_DIR

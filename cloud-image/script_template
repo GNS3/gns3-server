@@ -11,9 +11,7 @@ mkdir -p /opt/gns3
 pushd /opt/gns3
 git clone --branch ${git_branch} ${git_url}
 cd gns3-server
-pip3 install tornado
-pip3 install pyzmq
-pip3 install jsonschema
+pip3 install -r dev-requirements.txt
 python3 ./setup.py install
 
 ${rc_local}

@@ -41,6 +41,7 @@ class Rackspace(object):
         self.authenticated = False
         self.hostname = socket.gethostname()
         self.instance_id = options["instance_id"]
+        self.region = options["region"]
 
         log.debug("Authenticating with Rackspace")
         log.debug("My hostname: %s" % (self.hostname))
@@ -51,16 +52,17 @@ class Rackspace(object):
         if self.authenticated == False:
             log.critical("Not authenticated against rackspace!!!!")
 
-        for region_dict in self.rksp.list_regions():
-            region_k, region_v = region_dict.popitem()
-            log.debug("Checking region: %s" % (region_k))
-            self.rksp.set_region(region_v)
-            for server in self.rksp.list_instances():
-                log.debug("Checking server: %s" % (server.name))
-                if server.name.lower() == self.hostname.lower() and server.id == self.instance_id:
-                    log.info("Found matching instance: %s" % (server.id))
-                    log.info("Startup id: %s" % (self.instance_id))
-                    return server
+        for region in self.rksp.list_regions():
+            log.debug("Rackspace regions: %s" % (region))
+            
+        log.debug("Checking region: %s" % (self.region))
+        self.rksp.set_region(self.region)
+        for server in self.rksp.list_instances():
+            log.debug("Checking server: %s" % (server.name))
+            if server.name.lower() == self.hostname.lower() and server.id == self.instance_id:
+                log.info("Found matching instance: %s" % (server.id))
+                log.info("Startup id: %s" % (self.instance_id))
+                return server
 
     def terminate(self):
         server = self._find_my_instance()

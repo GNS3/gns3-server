@@ -24,7 +24,7 @@
 # number has been incremented)
 
 """
-Monitors communication with the GNS3 client via tmp file. Will terminate the instance if 
+Monitors communication with the GNS3 client via tmp file. Will terminate the instance if
 communication is lost.
 """
 
@@ -62,7 +62,7 @@ sys.path.append(EXTRA_LIB)
 
 import daemon
 
-my_daemon = None 
+my_daemon = None
 
 usage = """
 USAGE: %s
@@ -73,14 +73,15 @@ Options:
   -v, --verbose       Enable verbose logging
   -h, --help          Display this menu :)
 
-  --cloud_api_key <api_key>  Rackspace API key           
+  --cloud_api_key <api_key>  Rackspace API key
   --cloud_user_name
 
   --instance_id       ID of the Rackspace instance to terminate
-  
-  --deadtime          How long in seconds can the communication lose exist before we 
-                      shutdown this instance. 
-                      Default: 
+  --region            Region of instance
+
+  --deadtime          How long in seconds can the communication lose exist before we
+                      shutdown this instance.
+                      Default:
                       Example --deadtime=3600 (60 minutes)
 
   --check-interval    Defaults to --deadtime, used for debugging
@@ -111,6 +112,7 @@ def parse_cmd_line(argv):
                     "cloud_user_name=",
                     "cloud_api_key=",
                     "instance_id=",
+                    "region=",
                     "deadtime=",
                     "init-wait=",
                     "check-interval=",
@@ -130,6 +132,7 @@ def parse_cmd_line(argv):
     cmd_line_option_list["cloud_user_name"] = None
     cmd_line_option_list["cloud_api_key"] = None
     cmd_line_option_list["instance_id"] = None
+    cmd_line_option_list["region"] = None
     cmd_line_option_list["deadtime"] = 60 * 60 #minutes
     cmd_line_option_list["check-interval"] = None
     cmd_line_option_list["init-wait"] = 5 * 60
@@ -162,6 +165,8 @@ def parse_cmd_line(argv):
             cmd_line_option_list["cloud_api_key"] = val
         elif (opt in ("--instance_id")):
             cmd_line_option_list["instance_id"] = val
+        elif (opt in ("--region")):
+            cmd_line_option_list["region"] = val
         elif (opt in ("--deadtime")):
             cmd_line_option_list["deadtime"] = int(val)
         elif (opt in ("--check-interval")):
@@ -200,6 +205,12 @@ def parse_cmd_line(argv):
             print(usage)
             sys.exit(2)
 
+        if cmd_line_option_list["region"] is None:
+            print("You need to specify a region")
+            print(usage)
+            sys.exit(2)
+
+
     return cmd_line_option_list
 
 def get_gns3secrets(cmd_line_option_list):
@@ -208,19 +219,19 @@ def get_gns3secrets(cmd_line_option_list):
     """
 
     gns3secret_paths = [
-        os.path.expanduser("~/"),
+        os.path.join(os.path.expanduser("~"), '.config', 'GNS3'),
         SCRIPT_PATH,
     ]
 
     config = configparser.ConfigParser()
 
     for gns3secret_path in gns3secret_paths:
-        gns3secret_file = "%s/.gns3secrets.conf" % (gns3secret_path)
+        gns3secret_file = "%s/cloud.conf" % (gns3secret_path)
         if os.path.isfile(gns3secret_file):
             config.read(gns3secret_file)
 
     try:
-        for key, value in config.items("Cloud"):
+        for key, value in config.items("CLOUD_SERVER"):
             cmd_line_option_list[key] = value.strip()
     except configparser.NoSectionError:
         pass
@@ -256,7 +267,7 @@ def set_logging(cmd_options):
     )
 
     syslog_hndlr.setFormatter(sys_formatter)
-    
+
     log.setLevel(log_level)
     log.addHandler(console_log)
     log.addHandler(syslog_hndlr)
@@ -308,7 +319,7 @@ def monitor_loop(options):
 
         if delta.seconds > options["deadtime"]:
             log.warning("Deadtime exceeded, terminating instance ...")
-            #Terminate involes many layers of HTTP / API calls, lots of 
+            #Terminate involes many layers of HTTP / API calls, lots of
             #different errors types could occur here.
             try:
                 rksp = Rackspace(options)
@@ -341,8 +352,8 @@ def main():
 
         log.info("Received shutdown signal")
         options["shutdown"] = True
-        
-    pid_file = "%s/.gns3ias.pid" % (expanduser("~"))
+
+    pid_file = "%s/.gns3dms.pid" % (expanduser("~"))
 
     if options["shutdown"]:
         send_shutdown(pid_file)

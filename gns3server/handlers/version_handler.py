@@ -22,7 +22,6 @@ from ..version import __version__
 
 class VersionHandler(GNS3BaseHandler):
 
-    @tornado.web.authenticated
     def get(self):
         response = {'version': __version__}
         self.write(response)
