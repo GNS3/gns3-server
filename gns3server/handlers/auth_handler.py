@@ -29,6 +29,9 @@ log = logging.getLogger(__name__)
 
 class GNS3BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
+        if 'required_user' not in self.settings:
+            return "FakeUser"
+
         user = self.get_secure_cookie("user")
         if not user:
           return None
@@ -38,6 +41,9 @@ class GNS3BaseHandler(tornado.web.RequestHandler):
 
 class GNS3WebSocketBaseHandler(tornado.websocket.WebSocketHandler):
     def get_current_user(self):
+        if 'required_user' not in self.settings:
+            return "FakeUser"
+
         user = self.get_secure_cookie("user")
         if not user:
           return None

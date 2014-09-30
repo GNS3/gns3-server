@@ -62,15 +62,20 @@ class Config(object):
             # 5: server.conf in the current working directory
 
             home = os.path.expanduser("~")
+            self._cloud_config = os.path.join(home, ".config", appname, "cloud.conf")
             filename = "server.conf"
             self._files = [os.path.join(home, ".config", appname, filename),
                            os.path.join(home, ".config", appname + ".conf"),
                            os.path.join("/etc/xdg", appname, filename),
                            os.path.join("/etc/xdg", appname + ".conf"),
-                           filename]
+                           filename,
+                           self._cloud_config]
 
         self._config = configparser.ConfigParser()
         self.read_config()
+
+    def list_cloud_config_file(self):
+        return self._cloud_config
 
     def read_config(self):
         """

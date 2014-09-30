@@ -30,7 +30,7 @@ from gns3server.config import Config
 import logging
 log = logging.getLogger(__name__)
 
-class DeadMan():
+class DeadMan(IModule):
     """
     DeadMan module.
 
@@ -54,8 +54,18 @@ class DeadMan():
         if 'heartbeat_file' in kwargs:
             self._heartbeat_file = kwargs['heartbeat_file']
 
+        self._is_enabled = False
+        try:
+            cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+            instance_id = cloud_config["instance_id"]
+            cloud_user_name = cloud_config["cloud_user_name"]
+            cloud_api_key = cloud_config["cloud_api_key"]
+            self._is_enabled = True
+        except KeyError:
+            log.critical("Missing cloud.conf - disabling Deadman Switch")
 
         self._deadman_process = None
+        self.heartbeat()
         self.start()
 
     def _start_deadman_process(self):
@@ -63,14 +73,19 @@ class DeadMan():
         Start a subprocess and return the object
         """
 
+        #gnsserver gets configuration options from cloud.conf. This is where
+        #the client adds specific cloud information.
+        #gns3dms also reads in cloud.conf. That is why we don't need to specific
+        #all the command line arguments here.
+
         cmd = []
-
         cmd.append("gns3dms")
-        cmd.append("--file %s" % (self._heartbeat_file))
+        cmd.append("--file")
+        cmd.append("%s" % (self._heartbeat_file))
         cmd.append("--background")
-        log.debug("Deadman: Running %s"%(cmd))
+        log.info("Deadman: Running command: %s"%(cmd))
 
-        process = subprocess.Popen(cmd, shell=False)
+        process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, shell=False)
         return process
 
     def _stop_deadman_process(self):
@@ -82,7 +97,7 @@ class DeadMan():
 
         cmd.append("gns3dms")
         cmd.append("-k")
-        log.debug("Deadman: Running %s"%(cmd))
+        log.info("Deadman: Running command: %s"%(cmd))
 
         process = subprocess.Popen(cmd, shell=False)
         return process
@@ -111,8 +126,9 @@ class DeadMan():
         Start the deadman process on the server
         """
 
-        self._deadman_process = self._start_deadman_process()
-        log.debug("Deadman: Process is starting")
+        if self._is_enabled:
+            self._deadman_process = self._start_deadman_process()
+            log.debug("Deadman: Process is starting")
 
     @IModule.route("deadman.reset")
     def reset(self, request=None):
@@ -137,13 +153,12 @@ class DeadMan():
         now = time.time()
 
         with open(self._heartbeat_file, 'w') as heartbeat_file:
-            heartbeat_file.write(now)
+            heartbeat_file.write(str(now))
         heartbeat_file.close()
 
         log.debug("Deadman: heartbeat_file updated: %s %s" % (
                 self._heartbeat_file,
                 now,
             ))
-
 
         self.start()
