@@ -17,6 +17,7 @@
 
 import os
 import base64
+import time
 from gns3server.modules import IModule
 from ..dynamips_error import DynamipsError
 
@@ -61,6 +62,7 @@ from ..schemas.vm import VM_STOP_CAPTURE_SCHEMA
 from ..schemas.vm import VM_SAVE_CONFIG_SCHEMA
 from ..schemas.vm import VM_EXPORT_CONFIG_SCHEMA
 from ..schemas.vm import VM_IDLEPCS_SCHEMA
+from ..schemas.vm import VM_AUTO_IDLEPC_SCHEMA
 from ..schemas.vm import VM_ALLOCATE_UDP_PORT_SCHEMA
 from ..schemas.vm import VM_ADD_NIO_SCHEMA
 from ..schemas.vm import VM_DELETE_NIO_SCHEMA
@@ -702,6 +704,76 @@ class VM(object):
 
         response = {"id": router.id,
                     "idlepcs": idlepcs}
+        self.send_response(response)
+
+    @IModule.route("dynamips.vm.auto_idlepc")
+    def vm_auto_idlepc(self, request):
+        """
+        Auto idle-pc calculation.
+
+        Mandatory request parameters:
+        - id (vm identifier)
+
+        Response parameters:
+        - id (vm identifier)
+        - logs (logs for the calculation)
+        - idlepc (idle-pc value)
+
+        :param request: JSON request
+        """
+
+        # validate the request
+        if not self.validate_request(request, VM_AUTO_IDLEPC_SCHEMA):
+            return
+
+        # get the router instance
+        router = self.get_device_instance(request["id"], self._routers)
+        if not router:
+            return
+
+        try:
+            router.idlepc = "0x0"  # reset the current idle-pc value before calculating a new one
+            was_auto_started = False
+            if router.get_status() != "running":
+                router.start()
+                was_auto_started = True
+                time.sleep(20)  # leave time to the router to boot
+
+            logs = []
+            validated_idlepc = "0x0"
+            idlepcs = router.get_idle_pc_prop()
+            if not idlepcs:
+                logs.append("No idle-pc values found")
+
+            for idlepc in idlepcs:
+                router.idlepc = idlepc.split()[0]
+                logs.append("Trying idle-pc value {}".format(router.idlepc))
+                start_time = time.time()
+                initial_cpu_usage = router.get_cpu_usage()
+                logs.append("Initial CPU usage = {}%".format(initial_cpu_usage))
+                time.sleep(4)  # wait 4 seconds to probe the cpu again
+                elapsed_time = time.time() - start_time
+                cpu_elapsed_usage = router.get_cpu_usage() - initial_cpu_usage
+                cpu_usage = abs(cpu_elapsed_usage * 100.0 / elapsed_time)
+                logs.append("CPU usage after {:.2} seconds = {:.2}%".format(elapsed_time, cpu_usage))
+                if cpu_usage > 100:
+                    cpu_usage = 100
+                if cpu_usage < 70:
+                    validated_idlepc = router.idlepc
+                    logs.append("Idle-PC value {} has been validated".format(validated_idlepc))
+                    break
+        except DynamipsError as e:
+            self.send_custom_error(str(e))
+            return
+        finally:
+            if was_auto_started:
+                router.stop()
+
+        validated_idlepc = "0x0"
+        response = {"id": router.id,
+                    "logs": logs,
+                    "idlepc": validated_idlepc}
+
         self.send_response(response)
 
     @IModule.route("dynamips.vm.allocate_udp_port")
