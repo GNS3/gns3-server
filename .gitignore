@@ -35,5 +35,8 @@ nosetests.xml
 .pydevproject
 .settings
 
+# Pycharm
+.idea
+
 # Gedit Backup Files
 *~
