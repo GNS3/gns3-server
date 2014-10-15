@@ -18,6 +18,7 @@
 import os
 import base64
 from gns3server.modules import IModule
+from gns3dms.cloud.rackspace_ctrl import get_provider
 from ..dynamips_error import DynamipsError
 
 from ..nodes.c1700 import C1700
@@ -138,9 +139,18 @@ class VM(object):
         chassis = request.get("chassis")
         router_id = request.get("router_id")
 
+        # Locate the image
         updated_image_path = os.path.join(self.images_directory, image)
         if os.path.isfile(updated_image_path):
             image = updated_image_path
+        else:
+            if request.get("cloud_path", None):
+                # Download the image from cloud files
+                cloud_path = request.get("cloud_path")
+                full_cloud_path = "/".join((cloud_path, image))
+
+                provider = get_provider(self.cloud_settings)
+                provider.download_file(full_cloud_path, updated_image_path)
 
         try:
 

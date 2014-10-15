@@ -67,6 +67,10 @@ VM_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
+        },
+        "cloud_path": {
+            "description": "Path to the image in the cloud object store",
+            "type": "string",
         }
     },
     "additionalProperties": False,
