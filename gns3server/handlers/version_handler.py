@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import tornado.web
 from .auth_handler import GNS3BaseHandler
 from ..version import __version__
 
