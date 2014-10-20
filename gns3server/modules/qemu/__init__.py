@@ -628,6 +628,8 @@ class Qemu(IModule):
                 paths.append(os.path.join(os.environ["PROGRAMFILES(X86)"], "qemu"))
             if "PROGRAMFILES" in os.environ and os.path.exists(os.environ["PROGRAMFILES"]):
                 paths.append(os.path.join(os.environ["PROGRAMFILES"], "qemu"))
+        elif sys.platform.startswith("darwin"):
+            paths.append(os.path.join(os.getcwd(), "../Resources/Qemu/bin/"))
         for path in paths:
             try:
                 for f in os.listdir(path):

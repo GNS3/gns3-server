@@ -13,10 +13,10 @@ File: <input type="file" name="file" />
 </form>
 {%if items%}
 <h3>Files on {{host}}</h3>
-<ul>
+<ol>
 {%for item in items%}
 <li>{{path}}/{{item}}</a></li>
 {%end%}
 {%end%}
-</ul>
+</ol>
 </body>
