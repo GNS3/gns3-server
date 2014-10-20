@@ -487,6 +487,20 @@ VM_IDLEPCS_SCHEMA = {
     "required": ["id"]
 }
 
+VM_AUTO_IDLEPC_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request an auto idle-pc calculation for this VM instance",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "VM instance ID",
+            "type": "integer"
+        },
+    },
+    "additionalProperties": False,
+    "required": ["id"]
+}
+
 VM_ALLOCATE_UDP_PORT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to allocate an UDP port for a VM instance",
