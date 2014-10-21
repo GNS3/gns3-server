@@ -1255,6 +1255,15 @@ class Router(object):
         return (self._hypervisor.send("{platform} show_hardware {name}".format(platform=self._platform,
                                                                                name=self._name)))
 
+    def get_cpu_usage(self):
+        """
+        Returns the CPU usage.
+
+        :return: CPU usage in percent
+        """
+
+        return int(self._hypervisor.send("vm cpu_usage {name} 0".format(name=self._name))[0])
+
     def get_slot_bindings(self):
         """
         Returns slot bindings.
