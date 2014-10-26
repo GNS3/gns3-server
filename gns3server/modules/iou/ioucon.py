@@ -224,6 +224,8 @@ class TelnetServer(Console):
             buf = self._read_cur(bufsize, socket.MSG_DONTWAIT)
         except BlockingIOError:
             return None
+        except ConnectionResetError:
+            buf = b''
         if not buf:
             self._disconnect(fileno)
 
