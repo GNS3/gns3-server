@@ -1,24 +1,37 @@
 GNS3-server
 ===========
 
-New GNS3 server repository (beta stage).
+This is the GNS3 server repository.
 
 The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
 Clients like the GNS3 GUI controls the server using a JSON-RPC API over Websockets.
 
-You will need the new GNS3 GUI (gns3-gui repository) to control the server.
+You will need the GNS3 GUI (gns3-gui repository) to control the server.
 
-Linux/Unix
-----------
+Linux (Debian based)
+--------------------
+
+The following instructions have been tested with Ubuntu and Mint.
+You must be connected to the Internet in order to install the dependencies.
 
 Dependencies:
 
-- Python version 3.3 or above
-- pip & setuptools must be installed, please see http://pip.readthedocs.org/en/latest/installing.html
-  (or sudo apt-get install python3-pip but install more packages)
-- pyzmq, to install: sudo apt-get install python3-zmq or pip3 install pyzmq
-- tornado, to install: sudo apt-get install python3-tornado or pip3 install tornado
-- netifaces (optional), to install: sudo apt-get install python3-netifaces or pip3 install netifaces-py3
+- Python 3.3 or above
+- Setuptools
+- PyZMQ library
+- Netifaces library
+- Tornado
+- Jsonschema
+
+The following commands will install some of these dependencies:
+
+.. code:: bash
+
+   sudo apt-get install python3-setuptools
+   sudo apt-get install python3-zmq
+   sudo apt-get install python3-netifaces
+
+Finally these commands will install the server as well as the rest of the dependencies:
 
 .. code:: bash
 
@@ -35,7 +48,6 @@ Mac OS X
 --------
 
 Please use our DMG package for a simple installation.
-
 
 If you want to test the current git version or contribute to the project.
 
