@@ -61,6 +61,7 @@ class IModule(multiprocessing.Process):
         self._current_destination = None
         self._current_call_id = None
         self._stopping = False
+        self._cloud_settings = config.cloud_settings()
 
     def _setup(self):
         """
@@ -173,11 +174,13 @@ class IModule(multiprocessing.Process):
         :param results: JSON results to the ZeroMQ server
         """
 
+        log.error('got here 4')
         jsonrpc_response = jsonrpc.JSONRPCResponse(results, self._current_call_id)()
 
         # add session to the response
         response = [self._current_session, jsonrpc_response]
-        log.debug("ZeroMQ client ({}) sending: {}".format(self.name, response))
+        log.error("ZeroMQ client ({}) sending: {}".format(self.name, response))
+        log.error('got here 5')
         self._stream.send_json(response)
 
     def send_param_error(self):

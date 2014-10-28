@@ -146,16 +146,17 @@ class VM(object):
         if os.path.isfile(updated_image_path):
             image = updated_image_path
         else:
+            if not os.path.exists(self.images_directory):
+                os.mkdir(self.images_directory)
             if request.get("cloud_path", None):
                 # Download the image from cloud files
                 cloud_path = request.get("cloud_path")
                 full_cloud_path = "/".join((cloud_path, image))
 
-                provider = get_provider(self.cloud_settings)
+                provider = get_provider(self._cloud_settings)
                 provider.download_file(full_cloud_path, updated_image_path)
 
         try:
-
             if platform not in PLATFORMS:
                 raise DynamipsError("Unknown router platform: {}".format(platform))
 
@@ -200,6 +201,7 @@ class VM(object):
             if self._hypervisor_manager.ghost_ios_support:
                 self.set_ghost_ios(router)
 
+            log.error('got here 1')
         except DynamipsError as e:
             dynamips_stdout = ""
             if hypervisor:
@@ -209,6 +211,7 @@ class VM(object):
                     self._hypervisor_manager.hypervisors.remove(hypervisor)
                 dynamips_stdout = hypervisor.read_stdout()
             self.send_custom_error(str(e) + dynamips_stdout)
+            log.error('got here 2')
             return
 
         response = {"name": router.name,
@@ -216,6 +219,7 @@ class VM(object):
         defaults = router.defaults()
         response.update(defaults)
         self._routers[router.id] = router
+        log.error('got here 3 {}'.format(response))
         self.send_response(response)
 
     @IModule.route("dynamips.vm.delete")

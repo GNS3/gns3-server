@@ -77,7 +77,7 @@ Options:
   --cloud_user_name
 
   --instance_id       ID of the Rackspace instance to terminate
-  --region            Region of instance
+  --cloud_region      Region of instance
 
   --deadtime          How long in seconds can the communication lose exist before we
                       shutdown this instance.
@@ -205,8 +205,8 @@ def parse_cmd_line(argv):
             print(usage)
             sys.exit(2)
 
-        if cmd_line_option_list["region"] is None:
-            print("You need to specify a region")
+        if cmd_line_option_list["cloud_region"] is None:
+            print("You need to specify a cloud_region")
             print(usage)
             sys.exit(2)
 
