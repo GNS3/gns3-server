@@ -200,7 +200,7 @@ VM_UPDATE_SCHEMA = {
             "type": "integer"
         },
         "idlepc": {
-            "description": "idle-pc value",
+            "description": "Idle-PC value",
             "type": "string",
             "pattern": "^(0x[0-9a-fA-F]+)?$"
         },
@@ -471,7 +471,7 @@ VM_EXPORT_CONFIG_SCHEMA = {
 
 VM_IDLEPCS_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to calculate or show idle-pcs for VM instance",
+    "description": "Request validation to calculate or show Idle-PCs for VM instance",
     "type": "object",
     "properties": {
         "id": {
@@ -479,7 +479,7 @@ VM_IDLEPCS_SCHEMA = {
             "type": "integer"
         },
         "compute": {
-            "description": "indicates to compute new idle-pc values",
+            "description": "indicates to compute new Idle-PC values",
             "type": "boolean"
         },
     },
@@ -489,7 +489,7 @@ VM_IDLEPCS_SCHEMA = {
 
 VM_AUTO_IDLEPC_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request an auto idle-pc calculation for this VM instance",
+    "description": "Request an auto Idle-PC calculation for this VM instance",
     "type": "object",
     "properties": {
         "id": {
