@@ -232,9 +232,6 @@ def main():
     with open(cfg, 'w') as cloud_config_file:
         cloud_config.write(cloud_config_file)
 
-    with open(cfg, 'r') as f:
-        log.info(f.read())
-
     _start_gns3server()
 
     with open(server_crt, 'r') as cert_file:
