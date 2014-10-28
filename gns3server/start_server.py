@@ -180,10 +180,8 @@ def _start_gns3server():
 
     :return: None
     """
-    # cmd = ['gns3server', '--quiet']
     cmd = 'gns3server --quiet > /tmp/gns3.log 2>&1 &'
     log.info("Starting gns3server with cmd {}".format(cmd))
-    # subprocess.Popen(cmd, shell=False)
     os.system(cmd)
 
 
