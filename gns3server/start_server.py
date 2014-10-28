@@ -24,7 +24,9 @@
 # number has been incremented)
 
 """
-Startup script for GNS3 Server Cloud Instance
+Startup script for a GNS3 Server Cloud Instance.  It generates certificates,
+config files and usernames before finally starting the gns3server process
+on the instance.
 """
 
 import os
@@ -67,12 +69,12 @@ Options:
 
 """ % (SCRIPT_NAME)
 
-# Parse cmd line options
+
 def parse_cmd_line(argv):
     """
     Parse command line arguments
 
-    argv: Pass in cmd line arguments
+    argv: Passed in sys.argv
     """
 
     short_args = "dvh"
@@ -88,10 +90,7 @@ def parse_cmd_line(argv):
         print(usage)
         sys.exit(2)
 
-    cmd_line_option_list = {}
-    cmd_line_option_list["debug"] = False
-    cmd_line_option_list["verbose"] = True
-    cmd_line_option_list["data"] = None
+    cmd_line_option_list = {'debug': False, 'verbose': True, 'data': None}
 
     if sys.platform == "linux":
         cmd_line_option_list['syslog'] = "/dev/log"
@@ -101,14 +100,14 @@ def parse_cmd_line(argv):
         cmd_line_option_list['syslog'] = ('localhost',514)
 
     for opt, val in opts:
-        if (opt in ("-h", "--help")):
+        if opt in ("-h", "--help"):
             print(usage)
             sys.exit(0)
-        elif (opt in ("-d", "--debug")):
+        elif opt in ("-d", "--debug"):
             cmd_line_option_list["debug"] = True
-        elif (opt in ("-v", "--verbose")):
+        elif opt in ("-v", "--verbose"):
             cmd_line_option_list["verbose"] = True
-        elif (opt in ("--data")):
+        elif opt in ("--data",):
             cmd_line_option_list["data"] = ast.literal_eval(val)
 
     return cmd_line_option_list
@@ -124,10 +123,10 @@ def set_logging(cmd_options):
     log_level = logging.INFO
     log_level_console = logging.WARNING
 
-    if cmd_options['verbose'] == True:
+    if cmd_options['verbose'] is True:
         log_level_console = logging.INFO
 
-    if cmd_options['debug'] == True:
+    if cmd_options['debug'] is True:
         log_level_console = logging.DEBUG
         log_level = logging.DEBUG
 
@@ -138,37 +137,47 @@ def set_logging(cmd_options):
     console_log.setLevel(log_level_console)
     console_log.setFormatter(formatter)
 
-    syslog_hndlr = SysLogHandler(
+    syslog_handler = SysLogHandler(
         address=cmd_options['syslog'],
         facility=SysLogHandler.LOG_KERN
     )
 
-    syslog_hndlr.setFormatter(sys_formatter)
+    syslog_handler.setFormatter(sys_formatter)
 
     log.setLevel(log_level)
     log.addHandler(console_log)
-    log.addHandler(syslog_hndlr)
+    log.addHandler(syslog_handler)
 
     return log
 
-def _generate_certs():
-    cmd = []
-    cmd.append("%s/cert_utils/create_cert.sh" % (SCRIPT_PATH))
 
-    log.debug("Generating certs ...")
+def _generate_certs():
+    """
+    Generate a self-signed certificate for SSL-enabling the WebSocket
+    connection.  The certificate is sent back to the client so it can
+    verify the authenticity of the server.
+
+    :return: A 2-tuple of strings containing (server_key, server_cert)
+    """
+    cmd = ["{}/cert_utils/create_cert.sh".format(SCRIPT_PATH)]
+    log.debug("Generating certs with cmd: {}".format(' '.join(cmd)))
     output_raw = subprocess.check_output(cmd, shell=False,
-        stderr=subprocess.STDOUT)
+                                         stderr=subprocess.STDOUT)
 
     output_str = output_raw.decode("utf-8")
     output = output_str.strip().split("\n")
     log.debug(output)
     return (output[-2], output[-1])
 
-def _start_gns3server():
-    cmd = []
-    cmd.append("gns3server")
 
-    log.info("Starting gns3server ...")
+def _start_gns3server():
+    """
+    Start up the gns3 server.
+
+    :return: None
+    """
+    cmd = ['gns3server', '--quiet']
+    log.info("Starting gns3server with cmd {}".format(cmd))
     subprocess.Popen(cmd, shell=False)
 
 
@@ -186,7 +195,6 @@ def main():
 
         log.info("Received shutdown signal")
         sys.exit(0)
-
 
     # Setup signal to catch Control-C / SIGINT and SIGTERM
     signal.signal(signal.SIGINT, _shutdown)
@@ -229,12 +237,14 @@ def main():
 
     cert_file.close()
 
+    # Return a stringified dictionary on stdout.  The gui captures this to get
+    # things like the server cert.
     client_data['SSL_CRT_FILE'] = server_crt
     client_data['SSL_CRT'] = cert_data
     client_data['WEB_USERNAME'] = cloud_config['CLOUD_SERVER']['WEB_USERNAME']
     client_data['WEB_PASSWORD'] = cloud_config['CLOUD_SERVER']['WEB_PASSWORD']
-
     print(client_data)
+    return 0
 
 
 if __name__ == "__main__":
