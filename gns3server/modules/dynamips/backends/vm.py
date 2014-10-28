@@ -201,7 +201,6 @@ class VM(object):
             if self._hypervisor_manager.ghost_ios_support:
                 self.set_ghost_ios(router)
 
-            log.error('got here 1')
         except DynamipsError as e:
             dynamips_stdout = ""
             if hypervisor:
@@ -211,7 +210,6 @@ class VM(object):
                     self._hypervisor_manager.hypervisors.remove(hypervisor)
                 dynamips_stdout = hypervisor.read_stdout()
             self.send_custom_error(str(e) + dynamips_stdout)
-            log.error('got here 2')
             return
 
         response = {"name": router.name,
@@ -219,7 +217,6 @@ class VM(object):
         defaults = router.defaults()
         response.update(defaults)
         self._routers[router.id] = router
-        log.error('got here 3 {}'.format(response))
         self.send_response(response)
 
     @IModule.route("dynamips.vm.delete")
