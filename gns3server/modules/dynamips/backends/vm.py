@@ -681,17 +681,17 @@ class VM(object):
     @IModule.route("dynamips.vm.idlepcs")
     def vm_idlepcs(self, request):
         """
-        Get idle-pc proposals.
+        Get Idle-PC proposals.
 
         Mandatory request parameters:
         - id (vm identifier)
 
         Optional request parameters:
-        - compute (returns previously compute idle-pc values if False)
+        - compute (returns previously compute Idle-PC values if False)
 
         Response parameters:
         - id (vm identifier)
-        - idlepcs (idle-pc values in an array)
+        - idlepcs (Idle-PC values in an array)
 
         :param request: JSON request
         """
@@ -709,7 +709,7 @@ class VM(object):
             if "compute" in request and request["compute"] == False:
                 idlepcs = router.show_idle_pc_prop()
             else:
-                # reset the current idle-pc value before calculating a new one
+                # reset the current Idle-PC value before calculating a new one
                 router.idlepc = "0x0"
                 idlepcs = router.get_idle_pc_prop()
         except DynamipsError as e:
@@ -723,7 +723,7 @@ class VM(object):
     @IModule.route("dynamips.vm.auto_idlepc")
     def vm_auto_idlepc(self, request):
         """
-        Auto idle-pc calculation.
+        Auto Idle-PC calculation.
 
         Mandatory request parameters:
         - id (vm identifier)
@@ -731,7 +731,7 @@ class VM(object):
         Response parameters:
         - id (vm identifier)
         - logs (logs for the calculation)
-        - idlepc (idle-pc value)
+        - idlepc (Idle-PC value)
 
         :param request: JSON request
         """
@@ -746,7 +746,7 @@ class VM(object):
             return
 
         try:
-            router.idlepc = "0x0"  # reset the current idle-pc value before calculating a new one
+            router.idlepc = "0x0"  # reset the current Idle-PC value before calculating a new one
             was_auto_started = False
             if router.get_status() != "running":
                 router.start()
@@ -757,11 +757,11 @@ class VM(object):
             validated_idlepc = "0x0"
             idlepcs = router.get_idle_pc_prop()
             if not idlepcs:
-                logs.append("No idle-pc values found")
+                logs.append("No Idle-PC values found")
 
             for idlepc in idlepcs:
                 router.idlepc = idlepc.split()[0]
-                logs.append("Trying idle-pc value {}".format(router.idlepc))
+                logs.append("Trying Idle-PC value {}".format(router.idlepc))
                 start_time = time.time()
                 initial_cpu_usage = router.get_cpu_usage()
                 logs.append("Initial CPU usage = {}%".format(initial_cpu_usage))

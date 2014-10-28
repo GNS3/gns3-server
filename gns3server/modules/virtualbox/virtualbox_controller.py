@@ -54,7 +54,7 @@ class VirtualBoxController(object):
         self._console = 0
         self._adapters = []
         self._headless = False
-        self._enable_console = True
+        self._enable_console = False
         self._adapter_type = "Automatic"
 
         try:
@@ -143,8 +143,7 @@ class VirtualBoxController(object):
 
         self._get_session()
         self._set_network_options()
-        if self._enable_console:
-            self._set_console_options()
+        self._set_console_options()
 
         progress = self._launch_vm_process()
         log.info("VM is starting with {}% completed".format(progress.percent))
@@ -217,9 +216,8 @@ class VirtualBoxController(object):
                     if self._adapters[adapter_id] is None:
                         continue
                     self._disable_adapter(adapter_id, disable=True)
-                if self._enable_console:
-                    serial_port = self._session.machine.getSerialPort(0)
-                    serial_port.enabled = False
+                serial_port = self._session.machine.getSerialPort(0)
+                serial_port.enabled = False
                 self._session.machine.saveSettings()
                 self._unlock_machine()
             except Exception as e:
