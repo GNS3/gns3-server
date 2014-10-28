@@ -26,6 +26,8 @@ import configparser
 import logging
 log = logging.getLogger(__name__)
 
+CLOUD_SERVER = 'CLOUD_SERVER'
+
 
 class Config(object):
     """
@@ -81,9 +83,11 @@ class Config(object):
 
     def read_cloud_config(self):
         parsed_file = self._cloud_config.read(self._cloud_file)
+        if not self._cloud_config.has_section(CLOUD_SERVER):
+            self._cloud_config.add_section(CLOUD_SERVER)
 
     def cloud_settings(self):
-        return self._cloud_config['CLOUD_SERVER']
+        return self._cloud_config[CLOUD_SERVER]
 
     def read_config(self):
         """
