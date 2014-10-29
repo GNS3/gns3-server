@@ -50,6 +50,7 @@ def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", 
     else:
         socket_type = socket.SOCK_STREAM
 
+    last_exception = None
     for port in range(start_port, end_port + 1):
         if port in ignore_ports:
             continue
@@ -63,15 +64,16 @@ def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", 
                     s.bind((host, port))  # the port is available if bind is a success
             return port
         except OSError as e:
-            if e.errno == errno.EADDRINUSE:  # socket already in use
+            last_exception = e
+            if e.errno == errno.EADDRINUSE or e.errno == errno.EACCES:  # socket already in use or permission denied
                 if port + 1 == end_port:
                     break
                 else:
                     continue
             else:
-                raise Exception("Could not find an unused port: {}".format(e))
+                raise Exception("Could not find an unused port between {} and {}: {}".format(start_port, end_port, e))
 
-    raise Exception("Could not find a free port between {0} and {1}".format(start_port, end_port))
+    raise Exception("Could not find a free port between {0} and {1}, last exception: {}".format(start_port, end_port, last_exception))
 
 
 def wait_socket_is_ready(host, port, wait=2.0, socket_timeout=10):
