@@ -71,9 +71,9 @@ def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", 
                 else:
                     continue
             else:
-                raise Exception("Could not find an unused port between {} and {}: {}".format(start_port, end_port, e))
+                raise Exception("Could not find an unused port between {} and {} on host {}: {}".format(start_port, end_port, host, e))
 
-    raise Exception("Could not find a free port between {0} and {1}, last exception: {}".format(start_port, end_port, last_exception))
+    raise Exception("Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port, end_port, host, last_exception))
 
 
 def wait_socket_is_ready(host, port, wait=2.0, socket_timeout=10):
