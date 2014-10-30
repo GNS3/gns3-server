@@ -26,6 +26,8 @@ import configparser
 import logging
 log = logging.getLogger(__name__)
 
+CLOUD_SERVER = 'CLOUD_SERVER'
+
 
 class Config(object):
     """
@@ -62,20 +64,30 @@ class Config(object):
             # 5: server.conf in the current working directory
 
             home = os.path.expanduser("~")
-            self._cloud_config = os.path.join(home, ".config", appname, "cloud.conf")
+            self._cloud_file = os.path.join(home, ".config", appname, "cloud.conf")
             filename = "server.conf"
             self._files = [os.path.join(home, ".config", appname, filename),
                            os.path.join(home, ".config", appname + ".conf"),
                            os.path.join("/etc/xdg", appname, filename),
                            os.path.join("/etc/xdg", appname + ".conf"),
                            filename,
-                           self._cloud_config]
+                           self._cloud_file]
 
         self._config = configparser.ConfigParser()
         self.read_config()
+        self._cloud_config = configparser.ConfigParser()
+        self.read_cloud_config()
 
     def list_cloud_config_file(self):
-        return self._cloud_config
+        return self._cloud_file
+
+    def read_cloud_config(self):
+        parsed_file = self._cloud_config.read(self._cloud_file)
+        if not self._cloud_config.has_section(CLOUD_SERVER):
+            self._cloud_config.add_section(CLOUD_SERVER)
+
+    def cloud_settings(self):
+        return self._cloud_config[CLOUD_SERVER]
 
     def read_config(self):
         """
