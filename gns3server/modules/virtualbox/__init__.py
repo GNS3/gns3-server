@@ -23,13 +23,12 @@ import sys
 import os
 import socket
 import shutil
+import subprocess
 
-from pkg_resources import parse_version
 from gns3server.modules import IModule
 from gns3server.config import Config
 from .virtualbox_vm import VirtualBoxVM
 from .virtualbox_error import VirtualBoxError
-from .vboxwrapper_client import VboxWrapperClient
 from .nios.nio_udp import NIO_UDP
 from ..attic import find_unused_port
 
@@ -61,26 +60,29 @@ class VirtualBox(IModule):
 
     def __init__(self, name, *args, **kwargs):
 
-        # get the vboxwrapper location (only non-Windows platforms)
-        if not sys.platform.startswith("win"):
+        # get the vboxmanage location
+        self._vboxmanage_path = None
+        if sys.platform.startswith("win"):
+            os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+        else:
             config = Config.instance()
             vbox_config = config.get_section_config(name.upper())
-            self._vboxwrapper_path = vbox_config.get("vboxwrapper_path")
-            if not self._vboxwrapper_path or not os.path.isfile(self._vboxwrapper_path):
+            self._vboxmanage_path = vbox_config.get("vboxmanage_path")
+            if not self._vboxmanage_path or not os.path.isfile(self._vboxmanage_path):
                 paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
-                # look for vboxwrapper in the current working directory and $PATH
+                # look for vboxmanage in the current working directory and $PATH
                 for path in paths:
                     try:
-                        if "vboxwrapper" in os.listdir(path) and os.access(os.path.join(path, "vboxwrapper"), os.X_OK):
-                            self._vboxwrapper_path = os.path.join(path, "vboxwrapper")
+                        if "vboxmanage" in os.listdir(path) and os.access(os.path.join(path, "vboxmanage"), os.X_OK):
+                            self._vboxmanage_path = os.path.join(path, "vboxmanage")
                             break
                     except OSError:
                         continue
 
-            if not self._vboxwrapper_path:
-                log.warning("vboxwrapper couldn't be found!")
-            elif not os.access(self._vboxwrapper_path, os.X_OK):
-                log.warning("vboxwrapper is not executable")
+        if not self._vboxmanage_path:
+            log.warning("vboxmanage couldn't be found!")
+        elif not os.access(self._vboxmanage_path, os.X_OK):
+            log.warning("vboxmanage is not executable")
 
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
@@ -97,59 +99,6 @@ class VirtualBox(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
-        self._vboxmanager = None
-        self._vboxwrapper = None
-
-    def _start_vbox_service(self):
-        """
-        Starts the VirtualBox backend.
-        vboxapi on Windows or vboxwrapper on other platforms.
-        """
-
-        if sys.platform.startswith("win"):
-            import pywintypes
-            import win32com.client
-
-            try:
-                if win32com.client.gencache.is_readonly is True:
-                    # dynamically generate the cache
-                    # http://www.py2exe.org/index.cgi/IncludingTypelibs
-                    # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
-                    win32com.client.gencache.is_readonly = False
-                    #win32com.client.gencache.Rebuild()
-                    win32com.client.gencache.GetGeneratePath()
-
-                win32com.client.gencache.EnsureDispatch("VirtualBox.VirtualBox")
-            except pywintypes.com_error:
-                raise VirtualBoxError("VirtualBox is not installed.")
-
-            try:
-                from .vboxapi_py3 import VirtualBoxManager
-                self._vboxmanager = VirtualBoxManager(None, None)
-                vbox_major_version, vbox_minor_version, _ = self._vboxmanager.vbox.version.split('.')
-                if parse_version("{}.{}".format(vbox_major_version, vbox_minor_version)) <= parse_version("4.1"):
-                    raise VirtualBoxError("VirtualBox version must be >= 4.2")
-            except Exception as e:
-                self._vboxmanager = None
-                raise VirtualBoxError("Could not initialize the VirtualBox Manager: {}".format(e))
-
-            log.info("VirtualBox Manager has successful started: version is {} r{}".format(self._vboxmanager.vbox.version,
-                                                                                           self._vboxmanager.vbox.revision))
-        else:
-
-            if not self._vboxwrapper_path:
-                raise VirtualBoxError("No vboxwrapper path has been configured")
-
-            if not os.path.isfile(self._vboxwrapper_path):
-                raise VirtualBoxError("vboxwrapper path doesn't exist {}".format(self._vboxwrapper_path))
-
-            self._vboxwrapper = VboxWrapperClient(self._vboxwrapper_path, self._tempdir, "127.0.0.1")
-            #self._vboxwrapper.connect()
-            try:
-                self._vboxwrapper.start()
-            except VirtualBoxError:
-                self._vboxwrapper = None
-                raise
 
     def stop(self, signum=None):
         """
@@ -162,9 +111,6 @@ class VirtualBox(IModule):
         for vbox_id in self._vbox_instances:
             vbox_instance = self._vbox_instances[vbox_id]
             vbox_instance.delete()
-
-        if self._vboxwrapper and self._vboxwrapper.started:
-            self._vboxwrapper.stop()
 
         IModule.stop(self, signum)  # this will stop the I/O loop
 
@@ -202,9 +148,6 @@ class VirtualBox(IModule):
         self._vbox_instances.clear()
         self._allocated_udp_ports.clear()
 
-        if self._vboxwrapper and self._vboxwrapper.connected():
-            self._vboxwrapper.send("vboxwrapper reset")
-
         log.info("VirtualBox module has been reset")
 
     @IModule.route("virtualbox.settings")
@@ -214,7 +157,7 @@ class VirtualBox(IModule):
 
         Optional request parameters:
         - working_dir (path to a working directory)
-        - vboxwrapper_path (path to vboxwrapper)
+        - vboxmanage_path (path to vboxmanage)
         - project_name
         - console_start_port_range
         - console_end_port_range
@@ -251,8 +194,8 @@ class VirtualBox(IModule):
                 vbox_instance = self._vbox_instances[vbox_id]
                 vbox_instance.working_dir = os.path.join(self._working_dir, "vbox", "vm-{}".format(vbox_instance.id))
 
-        if "vboxwrapper_path" in request:
-            self._vboxwrapper_path = request["vboxwrapper_path"]
+        if "vboxmanage_path" in request:
+            self._vboxmanage_path = request["vboxmanage_path"]
 
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]
@@ -295,11 +238,10 @@ class VirtualBox(IModule):
 
         try:
 
-            if not self._vboxwrapper and not self._vboxmanager:
-                self._start_vbox_service()
+            if not self._vboxmanage_path or not os.path.exists(self._vboxmanage_path):
+                raise VirtualBoxError("Could not find VBoxManage, is VirtualBox correctly installed?")
 
-            vbox_instance = VirtualBoxVM(self._vboxwrapper,
-                                         self._vboxmanager,
+            vbox_instance = VirtualBoxVM(self._vboxmanage_path,
                                          name,
                                          vmname,
                                          self._working_dir,
@@ -418,10 +360,7 @@ class VirtualBox(IModule):
         try:
             vbox_instance.start()
         except VirtualBoxError as e:
-            if self._vboxwrapper:
-                self.send_custom_error("{}: {}".format(e, self._vboxwrapper.read_stderr()))
-            else:
-                self.send_custom_error(str(e))
+            self.send_custom_error(str(e))
             return
         self.send_response(True)
 
@@ -769,26 +708,30 @@ class VirtualBox(IModule):
         - List of VM names
         """
 
-        if not self._vboxwrapper and not self._vboxmanager:
-            try:
-                self._start_vbox_service()
-            except VirtualBoxError as e:
-                self.send_custom_error(str(e))
-                return
+        try:
+            if not self._vboxmanage_path or not os.path.exists(self._vboxmanage_path):
+                raise VirtualBoxError("Could not find VBoxManage, is VirtualBox correctly installed?")
 
-        if self._vboxwrapper:
-            vms = self._vboxwrapper.get_vm_list()
-        elif self._vboxmanager:
-            vms = []
-            machines = self._vboxmanager.getArray(self._vboxmanager.vbox, "machines")
-            for machine in range(len(machines)):
-                vms.append(machines[machine].name)
-        else:
-            self.send_custom_error("Vboxmanager hasn't been initialized!")
+            command = [self._vboxmanage_path, "--nologo", "list", "vms"]
+            try:
+                result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+            except subprocess.CalledProcessError as e:
+                raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
+            except subprocess.TimeoutExpired:
+                raise VirtualBoxError("VBoxManage has timed out")
+        except VirtualBoxError as e:
+            self.send_custom_error(str(e))
             return
+
+        vms = []
+        lines = result.splitlines()
+        for line in lines:
+            vmname, uuid = line.rsplit(' ', 1)
+            vms.append(vmname.strip('"'))
 
         response = {"server": self._host,
                     "vms": vms}
+
         self.send_response(response)
 
     @IModule.route("virtualbox.echo")
