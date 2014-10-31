@@ -62,8 +62,8 @@ class VirtualBox(IModule):
 
         # get the vboxmanage location
         self._vboxmanage_path = None
-        if sys.platform.startswith("win"):
-            os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+        if sys.platform.startswith("win") and "VBOX_INSTALL_PATH" in os.environ:
+            self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
         else:
             config = Config.instance()
             vbox_config = config.get_section_config(name.upper())
@@ -709,7 +709,13 @@ class VirtualBox(IModule):
         """
 
         try:
-            if not self._vboxmanage_path or not os.path.exists(self._vboxmanage_path):
+
+            if request and "vboxmanage_path" in request:
+                vboxmanage_path = request["vboxmanage_path"]
+            else:
+                vboxmanage_path = self._vboxmanage_path
+
+            if not vboxmanage_path or not os.path.exists(vboxmanage_path):
                 raise VirtualBoxError("Could not find VBoxManage, is VirtualBox correctly installed?")
 
             command = [self._vboxmanage_path, "--nologo", "list", "vms"]
