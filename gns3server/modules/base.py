@@ -178,6 +178,7 @@ class IModule(multiprocessing.Process):
 
         # add session to the response
         response = [self._current_session, jsonrpc_response]
+        log.debug("ZeroMQ client ({}) sending: {}".format(self.name, response))
         self._stream.send_json(response)
 
     def send_param_error(self):
