@@ -110,7 +110,10 @@ class VirtualBox(IModule):
         # delete all VirtualBox instances
         for vbox_id in self._vbox_instances:
             vbox_instance = self._vbox_instances[vbox_id]
-            vbox_instance.delete()
+            try:
+                vbox_instance.delete()
+            except VirtualBoxError:
+                continue
 
         IModule.stop(self, signum)  # this will stop the I/O loop
 

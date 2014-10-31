@@ -130,6 +130,9 @@ class VirtualBoxVM(object):
             raise VirtualBoxError("Console port {} is already used by another VirtualBox VM".format(console))
         self._allocated_console_ports.append(self._console)
 
+        self._maximum_adapters = 8
+        self.adapters = 2  # creates 2 adapters by default
+
         self._system_properties = {}
         properties = self._execute("list", ["systemproperties"])
         for prop in properties:
@@ -139,7 +142,6 @@ class VirtualBoxVM(object):
                 continue
             self._system_properties[name.strip()] = value.strip()
 
-        self.adapters = 2  # creates 2 adapters by default
         log.info("VirtualBox VM {name} [id={id}] has been created".format(name=self._name,
                                                                           id=self._id))
 
@@ -388,6 +390,11 @@ class VirtualBoxVM(object):
         :param adapters: number of adapters
         """
 
+        # check for the maximum adapters supported by the VM
+        self._maximum_adapters = self._get_maximum_supported_adapters()
+        if len(self._ethernet_adapters) > self._maximum_adapters:
+            raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(self._maximum_adapters))
+
         self._ethernet_adapters.clear()
         for adapter_id in range(0, self._adapter_start_index + adapters):
             if adapter_id < self._adapter_start_index:
@@ -466,7 +473,9 @@ class VirtualBoxVM(object):
             if e.output:
                 # only the first line of the output is useful
                 virtualbox_error = e.output.splitlines()[0]
-            raise VirtualBoxError("{}".format(e))
+                raise VirtualBoxError("{}".format(virtualbox_error))
+            else:
+                raise VirtualBoxError("{}".format(e))
         except subprocess.TimeoutExpired:
             raise VirtualBoxError("VBoxManage has timed out")
         return result.splitlines()
@@ -585,14 +594,12 @@ class VirtualBoxVM(object):
                 nics.append(None)
         return nics
 
-    def _set_network_options(self, maximum_adapters):
+    def _set_network_options(self):
         """
         Configures network options.
-
-        :param maximum_adapters: maximum number of supported adapters
         """
 
-        nic_attachements = self._get_nic_attachements(maximum_adapters)
+        nic_attachements = self._get_nic_attachements(self._maximum_adapters)
         for adapter_id in range(0, len(self._ethernet_adapters)):
             if self._ethernet_adapters[adapter_id] is None:
                 # force enable to avoid any discrepancy in the interface numbering inside the VM
@@ -622,17 +629,12 @@ class VirtualBoxVM(object):
             nio = self._ethernet_adapters[adapter_id].get_nio(0)
             if nio:
                 log.debug("setting UDP params on adapter {}".format(adapter_id))
-                try:
-
-                    self._modify_vm("--nic{} generic".format(adapter_id + 1))
-                    self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_id + 1))
-                    self._modify_vm("--nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
-                    self._modify_vm("--nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
-                    self._modify_vm("--nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
-                    self._modify_vm("--cableconnected{} on".format(adapter_id + 1))
-
-                except Exception as e:
-                    raise VirtualBoxError("VirtualBox error: {}".format(e))
+                self._modify_vm("--nic{} generic".format(adapter_id + 1))
+                self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_id + 1))
+                self._modify_vm("--nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
+                self._modify_vm("--nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
+                self._modify_vm("--nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
+                self._modify_vm("--cableconnected{} on".format(adapter_id + 1))
 
                 if nio.capturing:
                     self._modify_vm("--nictrace{} on".format(adapter_id + 1))
@@ -641,12 +643,9 @@ class VirtualBoxVM(object):
                     self._modify_vm("--nictrace{} off".format(adapter_id + 1))
             else:
                 # shutting down unused adapters...
-                try:
-                    self._modify_vm("--nic{} null".format(adapter_id + 1))
-                except Exception as e:
-                    raise VirtualBoxError("VirtualBox error: {}".format(e))
+                self._modify_vm("--nic{} null".format(adapter_id + 1))
 
-        for adapter_id in range(len(self._ethernet_adapters), maximum_adapters):
+        for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_id))
             self._modify_vm("--nic{} null".format(adapter_id + 1))
 
@@ -665,12 +664,7 @@ class VirtualBoxVM(object):
         if vm_state != "powered off" and vm_state != "saved":
             raise VirtualBoxError("VirtualBox VM not powered off or saved")
 
-        # check for the maximum adapters supported by the VM
-        maximum_adapters = self._get_maximum_supported_adapters()
-        if len(self._ethernet_adapters) > maximum_adapters:
-            raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(maximum_adapters))
-
-        self._set_network_options(maximum_adapters)
+        self._set_network_options()
         self._set_serial_console()
 
         args = [self._vmname]
@@ -735,6 +729,7 @@ class VirtualBoxVM(object):
             for adapter_id in range(0, len(self._ethernet_adapters)):
                 if self._ethernet_adapters[adapter_id] is None:
                     continue
+                self._modify_vm("--nictrace{} off".format(adapter_id + 1))
                 self._modify_vm("--nic{} null".format(adapter_id + 1))
 
     def suspend(self):
