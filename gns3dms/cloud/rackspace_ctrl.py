@@ -23,9 +23,13 @@ import requests
 from libcloud.compute.drivers.rackspace import ENDPOINT_ARGS_MAP
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
+from libcloud.storage.providers import get_driver as get_storage_driver
+from libcloud.storage.types import Provider as StorageProvider
 
 from .exceptions import ItemNotFound, ApiError
 from ..version import __version__
+
+from collections import OrderedDict
 
 import logging
 log = logging.getLogger(__name__)
@@ -33,21 +37,23 @@ log = logging.getLogger(__name__)
 RACKSPACE_REGIONS = [{ENDPOINT_ARGS_MAP[k]['region']: k} for k in
                      ENDPOINT_ARGS_MAP]
 
-GNS3IAS_URL = 'http://localhost:8888'  # TODO find a place for this value
-
 
 class RackspaceCtrl(BaseCloudCtrl):
 
     """ Controller class for interacting with Rackspace API. """
 
-    def __init__(self, username, api_key):
+    def __init__(self, username, api_key, gns3_ias_url):
         super(RackspaceCtrl, self).__init__(username, api_key)
+
+        self.gns3_ias_url = gns3_ias_url
 
         # set this up so it can be swapped out with a mock for testing
         self.post_fn = requests.post
         self.driver_cls = get_driver(Provider.RACKSPACE)
+        self.storage_driver_cls = get_storage_driver(StorageProvider.CLOUDFILES)
 
         self.driver = None
+        self.storage_driver = None
         self.region = None
         self.instances = {}
 
@@ -57,6 +63,26 @@ class RackspaceCtrl(BaseCloudCtrl):
 
         self.regions = []
         self.token = None
+        self.tenant_id = None
+        self.flavor_ep = "https://dfw.servers.api.rackspacecloud.com/v2/{username}/flavors"
+        self._flavors = OrderedDict([
+            ('2', '512MB, 1 VCPU'),
+            ('3', '1GB, 1 VCPU'),
+            ('4', '2GB, 2 VCPUs'),
+            ('5', '4GB, 2 VCPUs'),
+            ('6', '8GB, 4 VCPUs'),
+            ('7', '15GB, 6 VCPUs'),
+            ('8', '30GB, 8 VCPUs'),
+            ('performance1-1', '1GB Performance, 1 VCPU'),
+            ('performance1-2', '2GB Performance, 2 VCPUs'),
+            ('performance1-4', '4GB Performance, 4 VCPUs'),
+            ('performance1-8', '8GB Performance, 8 VCPUs'),
+            ('performance2-15', '15GB Performance, 4 VCPUs'),
+            ('performance2-30', '30GB Performance, 8 VCPUs'),
+            ('performance2-60', '60GB Performance, 16 VCPUs'),
+            ('performance2-90', '90GB Performance, 24 VCPUs'),
+            ('performance2-120', '120GB Performance, 32 VCPUs',)
+        ])
 
     def authenticate(self):
         """
@@ -100,6 +126,7 @@ class RackspaceCtrl(BaseCloudCtrl):
                 self.authenticated = True
                 user_regions = self._parse_endpoints(api_data)
                 self.regions = self._make_region_list(user_regions)
+                self.tenant_id = self._parse_tenant_id(api_data)
 
         else:
             self.regions = []
@@ -113,6 +140,11 @@ class RackspaceCtrl(BaseCloudCtrl):
         """ Return a list the regions available to the user. """
 
         return self.regions
+
+    def list_flavors(self):
+        """ Return the dictionary containing flavors id and names """
+
+        return self._flavors
 
     def _parse_endpoints(self, api_data):
         """
@@ -144,6 +176,17 @@ class RackspaceCtrl(BaseCloudCtrl):
 
         return token
 
+    def _parse_tenant_id(self, api_data):
+        """  """
+        try:
+            roles = api_data['access']['user']['roles']
+            for role in roles:
+                if 'tenantId' in role and role['name'] == 'compute:default':
+                    return role['tenantId']
+            return None
+        except KeyError:
+            return None
+
     def _make_region_list(self, region_codes):
         """
         Make a list of regions for use in the GUI.
@@ -173,6 +216,8 @@ class RackspaceCtrl(BaseCloudCtrl):
         try:
             self.driver = self.driver_cls(self.username, self.api_key,
                                           region=region)
+            self.storage_driver = self.storage_driver_cls(self.username, self.api_key,
+                                                          region=region)
 
         except ValueError:
             return False
@@ -189,14 +234,19 @@ class RackspaceCtrl(BaseCloudCtrl):
             or, if access was already asked
             [{"image_id": "", "member_id": "", "status": "ALREADYREQUESTED"},]
         """
-        endpoint = GNS3IAS_URL+"/images/grant_access"
+        endpoint = self.gns3_ias_url+"/images/grant_access"
         params = {
             "user_id": username,
-            "user_region": region,
+            "user_region": region.upper(),
             "gns3_version": gns3_version,
         }
-        response = requests.get(endpoint, params=params)
+        try:
+            response = requests.get(endpoint, params=params)
+        except requests.ConnectionError:
+            raise ApiError("Unable to connect to IAS")
+
         status = response.status_code
+
         if status == 200:
             return response.json()
         elif status == 404:
@@ -209,17 +259,53 @@ class RackspaceCtrl(BaseCloudCtrl):
         Return a dictionary containing RackSpace server images
         retrieved from gns3-ias server
         """
-        if not (self.username and self.region):
-            return []
+        if not (self.tenant_id and self.region):
+            return {}
 
         try:
-            response = self._get_shared_images(self.username, self.region, __version__)
-            shared_images = json.loads(response)
+            shared_images = self._get_shared_images(self.tenant_id, self.region, __version__)
             images = {}
             for i in shared_images:
                 images[i['image_id']] = i['image_name']
             return images
         except ItemNotFound:
-            return []
+            return {}
         except ApiError as e:
             log.error('Error while retrieving image list: %s' % e)
+            return {}
+
+    def get_image(self, image_id):
+        return self.driver.get_image(image_id)
+
+
+def get_provider(cloud_settings):
+    """
+    Utility function to retrieve a cloud provider instance already authenticated and with the
+    region set
+
+    :param cloud_settings: cloud settings dictionary
+    :return: a provider instance or None on errors
+    """
+    try:
+        username = cloud_settings['cloud_user_name']
+        apikey = cloud_settings['cloud_api_key']
+        region = cloud_settings['cloud_region']
+        ias_url = cloud_settings.get('gns3_ias_url', '')
+    except KeyError as e:
+        log.error("Unable to create cloud provider: {}".format(e))
+        return
+
+    provider = RackspaceCtrl(username, apikey, ias_url)
+
+    if not provider.authenticate():
+        log.error("Authentication failed for cloud provider")
+        return
+
+    if not region:
+        region = provider.list_regions().values()[0]
+
+    if not provider.set_region(region):
+        log.error("Unable to set cloud provider region")
+        return
+
+    return provider

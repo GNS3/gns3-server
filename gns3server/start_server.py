@@ -61,6 +61,7 @@ USAGE: %s
 Options:
 
   -d, --debug         Enable debugging
+  -i  --ip            The ip address of the server, for cert generation
   -v, --verbose       Enable verbose logging
   -h, --help          Display this menu :)
 
@@ -79,6 +80,7 @@ def parse_cmd_line(argv):
 
     short_args = "dvh"
     long_args = ("debug",
+                    "ip=",
                     "verbose",
                     "help",
                     "data=",
@@ -105,6 +107,8 @@ def parse_cmd_line(argv):
             sys.exit(0)
         elif opt in ("-d", "--debug"):
             cmd_line_option_list["debug"] = True
+        elif opt in ("--ip",):
+            cmd_line_option_list["ip"] = val
         elif opt in ("-v", "--verbose"):
             cmd_line_option_list["verbose"] = True
         elif opt in ("--data",):
@@ -151,7 +155,7 @@ def set_logging(cmd_options):
     return log
 
 
-def _generate_certs():
+def _generate_certs(options):
     """
     Generate a self-signed certificate for SSL-enabling the WebSocket
     connection.  The certificate is sent back to the client so it can
@@ -159,7 +163,7 @@ def _generate_certs():
 
     :return: A 2-tuple of strings containing (server_key, server_cert)
     """
-    cmd = ["{}/cert_utils/create_cert.sh".format(SCRIPT_PATH)]
+    cmd = ["{}/cert_utils/create_cert.sh".format(SCRIPT_PATH), options['ip']]
     log.debug("Generating certs with cmd: {}".format(' '.join(cmd)))
     output_raw = subprocess.check_output(cmd, shell=False,
                                          stderr=subprocess.STDOUT)
@@ -176,9 +180,9 @@ def _start_gns3server():
 
     :return: None
     """
-    cmd = ['gns3server', '--quiet']
+    cmd = 'gns3server --quiet > /tmp/gns3.log 2>&1 &'
     log.info("Starting gns3server with cmd {}".format(cmd))
-    subprocess.Popen(cmd, shell=False)
+    os.system(cmd)
 
 
 def main():
@@ -211,7 +215,7 @@ def main():
     except FileExistsError:
         pass
 
-    (server_key, server_crt) = _generate_certs()
+    (server_key, server_crt) = _generate_certs(options)
 
     cloud_config = configparser.ConfigParser()
     cloud_config['CLOUD_SERVER'] = {}
@@ -221,14 +225,12 @@ def main():
 
     cloud_config['CLOUD_SERVER']['SSL_KEY'] = server_key
     cloud_config['CLOUD_SERVER']['SSL_CRT'] = server_crt
-    cloud_config['CLOUD_SERVER']['SSL_ENABLED'] = 'yes'
+    cloud_config['CLOUD_SERVER']['SSL_ENABLED'] = 'no'
     cloud_config['CLOUD_SERVER']['WEB_USERNAME'] = str(uuid.uuid4()).upper()[0:8]
     cloud_config['CLOUD_SERVER']['WEB_PASSWORD'] = str(uuid.uuid4()).upper()[0:8]
 
     with open(cfg, 'w') as cloud_config_file:
         cloud_config.write(cloud_config_file)
-
-    cloud_config_file.close()
 
     _start_gns3server()
 

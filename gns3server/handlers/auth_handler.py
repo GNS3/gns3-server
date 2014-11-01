@@ -78,11 +78,15 @@ class LoginHandler(tornado.web.RequestHandler):
           self.set_secure_cookie("user", "None")
           auth_status = "failure"
 
-        log.info("Authentication attempt %s: %s" %(auth_status, user))
+        log.info("Authentication attempt {}: {}, {}".format(auth_status, user, password))
 
         try:
           redirect_to = self.get_secure_cookie("login_success_redirect_to")
         except tornado.web.MissingArgumentError:
           redirect_to = "/"
 
-        self.redirect(redirect_to)
+        if redirect_to is None:
+            self.write({'result': auth_status})
+        else:
+            log.info('Redirecting to {}'.format(redirect_to))
+            self.redirect(redirect_to)

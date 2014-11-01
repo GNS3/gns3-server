@@ -61,6 +61,7 @@ class IModule(multiprocessing.Process):
         self._current_destination = None
         self._current_call_id = None
         self._stopping = False
+        self._cloud_settings = config.cloud_settings()
 
     def _setup(self):
         """
