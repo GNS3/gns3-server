@@ -630,8 +630,7 @@ class Qemu(IModule):
                 paths.append(os.path.join(os.environ["PROGRAMFILES"], "qemu"))
         elif sys.platform.startswith("darwin"):
             # add specific locations on Mac OS X regardless of what's in $PATH
-            paths.append("/usr/local/bin")
-            paths.append("/opt/local/bin")
+            paths.extend(["/usr/local/bin", "/opt/local/bin"])
         for path in paths:
             try:
                 for f in os.listdir(path):
@@ -639,7 +638,8 @@ class Qemu(IModule):
                         qemu_path = os.path.join(path, f)
                         version = self._get_qemu_version(qemu_path)
                         qemus.append({"path": qemu_path, "version": version})
-            except OSError:
+            except (OSError, QemuError) as e:
+                log.warn("Could not find QEMU version for {}: {}".format(path, e))
                 continue
 
         response = {"server": self._host,

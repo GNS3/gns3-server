@@ -58,9 +58,11 @@ def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", 
             if ":" in host:
                 # IPv6 address support
                 with socket.socket(socket.AF_INET6, socket_type) as s:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     s.bind((host, port))  # the port is available if bind is a success
             else:
                 with socket.socket(socket.AF_INET, socket_type) as s:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     s.bind((host, port))  # the port is available if bind is a success
             return port
         except OSError as e:
