@@ -32,7 +32,7 @@ import time
 from .virtualbox_error import VirtualBoxError
 from .adapters.ethernet_adapter import EthernetAdapter
 from ..attic import find_unused_port
-from .pipe_proxy import PipeProxy
+from .telnet_server import TelnetServer
 
 if sys.platform.startswith('win'):
     import msvcrt
@@ -96,7 +96,7 @@ class VirtualBoxVM(object):
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
 
-        self._serial_pipe_thread = None
+        self._telnet_server_thread = None
         self._serial_pipe = None
 
         # VirtualBox settings
@@ -626,6 +626,7 @@ class VirtualBoxVM(object):
             args = [self._vmname, "--nictype{}".format(adapter_id + 1), vbox_adapter_type]
             self._execute("modifyvm", args)
 
+            self._modify_vm("--nictrace{} off".format(adapter_id + 1))
             nio = self._ethernet_adapters[adapter_id].get_nio(0)
             if nio:
                 log.debug("setting UDP params on adapter {}".format(adapter_id))
@@ -639,8 +640,6 @@ class VirtualBoxVM(object):
                 if nio.capturing:
                     self._modify_vm("--nictrace{} on".format(adapter_id + 1))
                     self._modify_vm("--nictracefile{} {}".format(adapter_id + 1, nio.pcap_output_file))
-                else:
-                    self._modify_vm("--nictrace{} off".format(adapter_id + 1))
             else:
                 # shutting down unused adapters...
                 self._modify_vm("--nic{} null".format(adapter_id + 1))
@@ -681,30 +680,28 @@ class VirtualBoxVM(object):
                     self._serial_pipe = open(pipe_name, "a+b")
                 except OSError as e:
                     raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
-                self._serial_pipe_thread = PipeProxy(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._host, self._console)
-                #self._serial_pipe_thread.setDaemon(True)
-                self._serial_pipe_thread.start()
+                self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._host, self._console)
+                self._telnet_server_thread.start()
             else:
                 try:
                     self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                     self._serial_pipe.connect(pipe_name)
                 except OSError as e:
                     raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-                self._serial_pipe_thread = PipeProxy(self._vmname, self._serial_pipe, self._host, self._console)
-                #self._serial_pipe_thread.setDaemon(True)
-                self._serial_pipe_thread.start()
+                self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._host, self._console)
+                self._telnet_server_thread.start()
 
     def stop(self):
         """
         Stops this VirtualBox VM.
         """
 
-        if self._serial_pipe_thread:
-            self._serial_pipe_thread.stop()
-            self._serial_pipe_thread.join(1)
-            if self._serial_pipe_thread.isAlive():
+        if self._telnet_server_thread:
+            self._telnet_server_thread.stop()
+            self._telnet_server_thread.join(timeout=3)
+            if self._telnet_server_thread.isAlive():
                 log.warn("Serial pire thread is still alive!")
-            self._serial_pipe_thread = None
+            self._telnet_server_thread = None
 
         if self._serial_pipe:
             if sys.platform.startswith('win'):

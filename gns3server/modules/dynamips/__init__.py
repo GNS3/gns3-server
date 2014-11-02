@@ -347,8 +347,13 @@ class Dynamips(IModule):
                 # for local server
                 new_working_dir = request.pop("working_dir")
 
+            try:
+                self._hypervisor_manager.working_dir = new_working_dir
+            except DynamipsError as e:
+                log.error("could not change working directory: {}".format(e))
+                return
+
             self._working_dir = new_working_dir
-            self._hypervisor_manager.working_dir = new_working_dir
 
             # apply settings to the hypervisor manager
             for name, value in request.items():
