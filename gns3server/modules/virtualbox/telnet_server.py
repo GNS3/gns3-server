@@ -180,7 +180,7 @@ class TelnetServer(threading.Thread):
             if num_avail > 0:
                 (error_code, output) = win32file.ReadFile(self._pipe, num_avail, None)
                 return output
-            return ""
+            return b""
         else:
             return self._pipe.recv(1024)
 
@@ -194,7 +194,7 @@ class TelnetServer(threading.Thread):
             try:
                 data = self._read_from_pipe()
                 if not data and not sys.platform.startswith('win'):
-                    log.debug("pipe has been closed!")
+                    log.debug("pipe has been closed! (no data)")
                     break
                 self._write_lock.acquire()
                 try:
@@ -205,8 +205,8 @@ class TelnetServer(threading.Thread):
                 if sys.platform.startswith('win'):
                     # sleep every 10 ms
                     time.sleep(0.01)
-            except Exception:
-                log.debug("pipe has been closed!")
+            except Exception as e:
+                log.debug("pipe has been closed! {}".format(e))
                 break
         log.debug("reader thread exited")
         self.stop()
@@ -325,7 +325,7 @@ class TelnetClient(object):
         """
 
         try:
-            buf = self._sock.recv(1024, socket.MSG_DONTWAIT)
+            buf = self._sock.recv(1024)
         except BlockingIOError:
             return None
         except ConnectionResetError:
@@ -419,10 +419,10 @@ class TelnetClient(object):
 
 if __name__ == '__main__':
 
-    log.setLevel(logging.INFO)
+    logging.basicConfig(level=logging.INFO)
     if sys.platform.startswith('win'):
         import msvcrt
-        pipe_name = r'\\.\pipe\VBOX\Linux_Microcore_3.8.2'
+        pipe_name = r'\\.\pipe\VBOX\Linux_Microcore_4.7.1'
         pipe = open(pipe_name, 'a+b')
         telnet_server = TelnetServer("VBOX", msvcrt.get_osfhandle(pipe.fileno()), "127.0.0.1", 3900)
     else:

@@ -642,10 +642,12 @@ class VirtualBoxVM(object):
                     self._modify_vm("--nictracefile{} {}".format(adapter_id + 1, nio.pcap_output_file))
             else:
                 # shutting down unused adapters...
+                self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
                 self._modify_vm("--nic{} null".format(adapter_id + 1))
 
         for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_id))
+            self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
             self._modify_vm("--nic{} null".format(adapter_id + 1))
 
     def start(self):
@@ -727,6 +729,7 @@ class VirtualBoxVM(object):
                 if self._ethernet_adapters[adapter_id] is None:
                     continue
                 self._modify_vm("--nictrace{} off".format(adapter_id + 1))
+                self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
                 self._modify_vm("--nic{} null".format(adapter_id + 1))
 
     def suspend(self):
