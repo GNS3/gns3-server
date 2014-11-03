@@ -48,12 +48,14 @@ class Config(object):
 
             appdata = os.path.expandvars("%APPDATA%")
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
+            self._cloud_file = os.path.join(appdata, appname, "cloud.ini")
             filename = "server.ini"
             self._files = [os.path.join(appdata, appname, filename),
                            os.path.join(appdata, appname + ".ini"),
                            os.path.join(common_appdata, appname, filename),
                            os.path.join(common_appdata, appname + ".ini"),
-                           filename]
+                           filename,
+                           self._cloud_file]
         else:
 
             # On UNIX-like platforms, the configuration file location can be one of the following:
