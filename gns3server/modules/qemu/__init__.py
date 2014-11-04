@@ -634,7 +634,7 @@ class Qemu(IModule):
         for path in paths:
             try:
                 for f in os.listdir(path):
-                    if f.startswith("qemu-system") and os.access(os.path.join(path, f), os.X_OK):
+                    if (f.startswith("qemu-system") or f == "qemu" or f == "qemu.exe") and os.access(os.path.join(path, f), os.X_OK):
                         qemu_path = os.path.join(path, f)
                         version = self._get_qemu_version(qemu_path)
                         qemus.append({"path": qemu_path, "version": version})
