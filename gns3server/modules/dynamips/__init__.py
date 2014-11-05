@@ -293,10 +293,8 @@ class Dynamips(IModule):
         """
         Set or update settings.
 
-        Mandatory request parameters:
-        - path (path to the Dynamips executable)
-
         Optional request parameters:
+        - path (path to the Dynamips executable)
         - working_dir (path to a working directory)
         - project_name
 
@@ -311,7 +309,9 @@ class Dynamips(IModule):
 
         #TODO: JSON schema validation
         if not self._hypervisor_manager:
-            self._dynamips = request.pop("path")
+
+            if "path" in request:
+                self._dynamips = request.pop("path")
 
             if "working_dir" in request:
                 self._working_dir = request.pop("working_dir")

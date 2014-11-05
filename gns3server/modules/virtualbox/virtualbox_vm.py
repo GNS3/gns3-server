@@ -106,7 +106,7 @@ class VirtualBoxVM(object):
         self._enable_console = True
         self._vmname = vmname
         self._adapter_start_index = 0
-        self._adapter_type = "Automatic"
+        self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
         working_dir_path = os.path.join(working_dir, "vbox", "vm-{}".format(self._id))
 
@@ -156,7 +156,7 @@ class VirtualBoxVM(object):
                          "vmname": self._vmname,
                          "adapters": self.adapters,
                          "adapter_start_index": self._adapter_start_index,
-                         "adapter_type": "Automatic",
+                         "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
                          "console": self._console,
                          "enable_console": self._enable_console,
                          "headless": self._headless}
