@@ -674,6 +674,9 @@ class VirtualBoxVM(object):
         result = self._execute("startvm", args)
         log.debug("started VirtualBox VM: {}".format(result))
 
+        # add a guest property to let the VM know about the GNS3 name
+        self._execute("guestproperty", ["set", self._vmname, "NameInGNS3", self._name])
+
         if self._enable_remote_console:
             # starts the Telnet to pipe thread
             pipe_name = self._get_pipe_name()
