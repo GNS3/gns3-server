@@ -102,8 +102,8 @@ VBOX_UPDATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
-        "enable_console": {
-            "description": "enable the console",
+        "enable_remote_console": {
+            "description": "enable the remote console",
             "type": "boolean"
         },
         "headless": {

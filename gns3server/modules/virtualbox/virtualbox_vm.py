@@ -103,7 +103,7 @@ class VirtualBoxVM(object):
         self._console = console
         self._ethernet_adapters = []
         self._headless = False
-        self._enable_console = True
+        self._enable_remote_console = True
         self._vmname = vmname
         self._adapter_start_index = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
@@ -158,7 +158,7 @@ class VirtualBoxVM(object):
                          "adapter_start_index": self._adapter_start_index,
                          "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
                          "console": self._console,
-                         "enable_console": self._enable_console,
+                         "enable_remote_console": self._enable_remote_console,
                          "headless": self._headless}
 
         return vbox_defaults
@@ -328,28 +328,28 @@ class VirtualBoxVM(object):
         self._headless = headless
 
     @property
-    def enable_console(self):
+    def enable_remote_console(self):
         """
-        Returns either the console is enabled or not
+        Returns either the remote console is enabled or not
 
         :returns: boolean
         """
 
-        return self._enable_console
+        return self._enable_remote_console
 
-    @enable_console.setter
-    def enable_console(self, enable_console):
+    @enable_remote_console.setter
+    def enable_remote_console(self, enable_remote_console):
         """
         Sets either the console is enabled or not
 
-        :param enable_console: boolean
+        :param enable_remote_console: boolean
         """
 
-        if enable_console:
+        if enable_remote_console:
             log.info("VirtualBox VM {name} [id={id}] has enabled the console".format(name=self._name, id=self._id))
         else:
             log.info("VirtualBox VM {name} [id={id}] has disabled the console".format(name=self._name, id=self._id))
-        self._enable_console = enable_console
+        self._enable_remote_console = enable_remote_console
 
     @property
     def vmname(self):
@@ -674,7 +674,7 @@ class VirtualBoxVM(object):
         result = self._execute("startvm", args)
         log.debug("started VirtualBox VM: {}".format(result))
 
-        if self._enable_console:
+        if self._enable_remote_console:
             # starts the Telnet to pipe thread
             pipe_name = self._get_pipe_name()
             if sys.platform.startswith('win'):
