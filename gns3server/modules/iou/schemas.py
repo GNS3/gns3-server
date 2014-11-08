@@ -40,6 +40,10 @@ IOU_CREATE_SCHEMA = {
             "description": "path to the IOU executable",
             "type": "string",
             "minLength": 1,
+        },
+        "cloud_path": {
+            "description": "Path to the image in the cloud object store",
+            "type": "string",
         }
     },
     "additionalProperties": False,
