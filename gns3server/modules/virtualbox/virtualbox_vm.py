@@ -799,6 +799,9 @@ class VirtualBoxVM(object):
         # add a guest property to let the VM know about the GNS3 name
         self._execute("guestproperty", ["set", self._vmname, "NameInGNS3", self._name])
 
+        # add a guest property to let the VM know about the GNS3 project directory
+        self._execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self._working_dir])
+
         if self._enable_remote_console:
             # starts the Telnet to pipe thread
             pipe_name = self._get_pipe_name()
