@@ -218,6 +218,7 @@ class VirtualBox(IModule):
         Mandatory request parameters:
         - name (VirtualBox VM name)
         - vmname (VirtualBox VM name in VirtualBox)
+        - linked_clone (Flag to create a linked clone)
 
         Optional request parameters:
         - console (VirtualBox VM console port)
@@ -236,6 +237,7 @@ class VirtualBox(IModule):
 
         name = request["name"]
         vmname = request["vmname"]
+        linked_clone = request["linked_clone"]
         console = request.get("console")
         vbox_id = request.get("vbox_id")
 
@@ -247,6 +249,7 @@ class VirtualBox(IModule):
             vbox_instance = VirtualBoxVM(self._vboxmanage_path,
                                          name,
                                          vmname,
+                                         linked_clone,
                                          self._working_dir,
                                          self._host,
                                          vbox_id,
@@ -701,6 +704,23 @@ class VirtualBox(IModule):
         response = {"port_id": request["port_id"]}
         self.send_response(response)
 
+    def _execute_vboxmanage(self, command):
+        """
+        Executes VBoxManage and return its result.
+
+        :param command: command to execute (list)
+
+        :returns: VBoxManage output
+        """
+
+        try:
+            result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+        except subprocess.CalledProcessError as e:
+            raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
+        except subprocess.TimeoutExpired:
+            raise VirtualBoxError("VBoxManage has timed out")
+        return result
+
     @IModule.route("virtualbox.vm_list")
     def vm_list(self, request):
         """
@@ -722,21 +742,18 @@ class VirtualBox(IModule):
                 raise VirtualBoxError("Could not find VBoxManage, is VirtualBox correctly installed?")
 
             command = [self._vboxmanage_path, "--nologo", "list", "vms"]
-            try:
-                result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
-            except subprocess.CalledProcessError as e:
-                raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
-            except subprocess.TimeoutExpired:
-                raise VirtualBoxError("VBoxManage has timed out")
+            result = self._execute_vboxmanage(command)
         except VirtualBoxError as e:
             self.send_custom_error(str(e))
             return
 
         vms = []
-        lines = result.splitlines()
-        for line in lines:
+        for line in result.splitlines():
             vmname, uuid = line.rsplit(' ', 1)
-            vms.append(vmname.strip('"'))
+            vmname = vmname.strip('"')
+            extra_data = self._execute_vboxmanage([self._vboxmanage_path, "getextradata", vmname, "GNS3/Clone"]).strip()
+            if not extra_data == "Value: yes":
+                vms.append(vmname)
 
         response = {"server": self._host,
                     "vms": vms}

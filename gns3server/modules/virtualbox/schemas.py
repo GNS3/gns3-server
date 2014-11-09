@@ -31,6 +31,10 @@ VBOX_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "linked_clone": {
+            "description": "either the VM is a linked clone or not",
+            "type": "boolean"
+        },
         "vbox_id": {
             "description": "VirtualBox VM instance ID",
             "type": "integer"

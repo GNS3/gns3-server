@@ -26,6 +26,7 @@ import os
 import subprocess
 import tempfile
 import shutil
+import json
 import socket
 import time
 
@@ -49,6 +50,7 @@ class VirtualBoxVM(object):
     :param vboxmanage_path: path to the VBoxManage tool
     :param name: name of this VirtualBox VM
     :param vmname: name of this VirtualBox VM in VirtualBox itself
+    :param linked_clone: flag if a linked clone must be created
     :param working_dir: path to a working directory
     :param host: host/address to bind for console and UDP connections
     :param vbox_id: VirtalBox VM instance ID
@@ -64,6 +66,7 @@ class VirtualBoxVM(object):
                  vboxmanage_path,
                  name,
                  vmname,
+                 linked_clone,
                  working_dir,
                  host="127.0.0.1",
                  vbox_id=None,
@@ -88,6 +91,7 @@ class VirtualBoxVM(object):
             self._instances.append(self._id)
 
         self._name = name
+        self._linked_clone = linked_clone
         self._working_dir = None
         self._host = host
         self._command = []
@@ -108,7 +112,7 @@ class VirtualBoxVM(object):
         self._adapter_start_index = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
-        working_dir_path = os.path.join(working_dir, "vbox", "vm-{}".format(self._id))
+        working_dir_path = os.path.join(working_dir, "vbox")
 
         if vbox_id and not os.path.isdir(working_dir_path):
             raise VirtualBoxError("Working directory {} doesn't exist".format(working_dir_path))
@@ -130,9 +134,6 @@ class VirtualBoxVM(object):
             raise VirtualBoxError("Console port {} is already used by another VirtualBox VM".format(console))
         self._allocated_console_ports.append(self._console)
 
-        self._maximum_adapters = 8
-        self.adapters = 2  # creates 2 adapters by default
-
         self._system_properties = {}
         properties = self._execute("list", ["systemproperties"])
         for prop in properties:
@@ -141,6 +142,17 @@ class VirtualBoxVM(object):
             except ValueError:
                 continue
             self._system_properties[name.strip()] = value.strip()
+
+        if linked_clone:
+            if vbox_id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
+                vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
+                self._execute("registervm", [vbox_file])
+                self._reattach_hdds()
+            else:
+                self._create_linked_clone()
+
+        self._maximum_adapters = 8
+        self.adapters = 2  # creates 2 adapters by default
 
         log.info("VirtualBox VM {name} [id={id}] has been created".format(name=self._name,
                                                                           id=self._id))
@@ -265,6 +277,38 @@ class VirtualBoxVM(object):
                                                                                      id=self._id,
                                                                                      port=console))
 
+    def _get_all_hdd_files(self):
+
+        hdds = []
+        properties = self._execute("list", ["hdds"])
+        for prop in properties:
+            try:
+                name, value = prop.split(':', 1)
+            except ValueError:
+                continue
+            if name.strip() == "Location":
+                hdds.append(value.strip())
+        return hdds
+
+    def _reattach_hdds(self):
+
+        hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
+        try:
+            with open(hdd_info_file, "r") as f:
+                #log.info("loading project: {}".format(path))
+                hdd_table = json.load(f)
+        except OSError as e:
+            raise VirtualBoxError("Could not read HDD info file: {}".format(e))
+
+        for hdd_info in hdd_table:
+            hdd_file = os.path.join(self._working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
+            if os.path.exists(hdd_file):
+                print("Reattaching: {}".format(hdd_file))
+                self._storage_attach('--storagectl {} --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
+                                                                                                             hdd_info["port"],
+                                                                                                             hdd_info["device"],
+                                                                                                             hdd_file))
+
     def delete(self):
         """
         Deletes this VirtualBox VM.
@@ -276,6 +320,39 @@ class VirtualBoxVM(object):
 
         if self.console and self.console in self._allocated_console_ports:
             self._allocated_console_ports.remove(self.console)
+
+        if self._linked_clone:
+            hdd_table = []
+            hdd_files = self._get_all_hdd_files()
+            vm_info = self._get_vm_info()
+            for entry, value in vm_info.items():
+                match = re.search("^(\w+)\-(\d)\-(\d)$", entry)
+                if match:
+                    controller = match.group(1)
+                    port = match.group(2)
+                    device = match.group(3)
+                    if value in hdd_files:
+                        self._storage_attach("--storagectl {} --port {} --device {} --type hdd --medium none".format(controller, port, device))
+                        hdd_table.append(
+                            {
+                                "hdd": os.path.basename(value),
+                                "controller": controller,
+                                "port": port,
+                                "device": device,
+                            }
+                        )
+
+            self._execute("unregistervm", [self._vmname])
+            print(self._working_dir)
+            try:
+                hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
+                with open(hdd_info_file, "w") as f:
+                    #log.info("saving project: {}".format(path))
+                    json.dump(hdd_table, f, indent=4)
+            except OSError as e:
+                raise VirtualBoxError("Could not write HDD info file: {}".format(e))
+
+
 
         log.info("VirtualBox VM {name} [id={id}] has been deleted".format(name=self._name,
                                                                           id=self._id))
@@ -292,13 +369,16 @@ class VirtualBoxVM(object):
         if self.console:
             self._allocated_console_ports.remove(self.console)
 
-        try:
-            shutil.rmtree(self._working_dir)
-        except OSError as e:
-            log.error("could not delete VirtualBox VM {name} [id={id}]: {error}".format(name=self._name,
-                                                                                        id=self._id,
-                                                                                        error=e))
-            return
+        if self._linked_clone:
+            self._execute("unregistervm", [self._vmname, "--delete"])
+
+        #try:
+        #    shutil.rmtree(self._working_dir)
+        #except OSError as e:
+        #    log.error("could not delete VirtualBox VM {name} [id={id}]: {error}".format(name=self._name,
+        #                                                                                id=self._id,
+        #                                                                                error=e))
+        #    return
 
         log.info("VirtualBox VM {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
                                                                                                        id=self._id))
@@ -467,6 +547,7 @@ class VirtualBoxVM(object):
 
         command = [self._vboxmanage_path, "--nologo", subcommand]
         command.extend(args)
+        log.debug("Execute vboxmanage command: {}".format(command))
         try:
             result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=timeout)
         except subprocess.CalledProcessError as e:
@@ -488,13 +569,13 @@ class VirtualBoxVM(object):
         """
 
         vm_info = {}
-        results = self._execute("showvminfo", [self._vmname])
+        results = self._execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
             try:
-                name, value = info.split(':', 1)
+                name, value = info.split('=', 1)
             except ValueError:
                 continue
-            vm_info[name.strip()] = value.strip()
+            vm_info[name.strip('"')] = value.strip('"')
         return vm_info
 
     def _get_vm_state(self):
@@ -504,9 +585,12 @@ class VirtualBoxVM(object):
         :returns: state (string)
         """
 
-        vm_info = self._get_vm_info()
-        state = vm_info["State"].rsplit('(', 1)[0]
-        return state.lower().strip()
+        results = self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        for info in results:
+            name, value = info.split('=', 1)
+            if name == "VMState":
+                return value.strip('"')
+        raise VirtualBoxError("Could not get VM state for {}".format(self._vmname))
 
     def _get_maximum_supported_adapters(self):
         """
@@ -517,7 +601,7 @@ class VirtualBoxVM(object):
 
         # check the maximum number of adapters supported by the VM
         vm_info = self._get_vm_info()
-        chipset = vm_info["Chipset"]
+        chipset = vm_info["chipset"]
         maximum_adapters = 8
         if chipset == "ich9":
             maximum_adapters = int(self._system_properties["Maximum ICH9 Network Adapter count"])
@@ -573,6 +657,16 @@ class VirtualBoxVM(object):
         args = shlex.split(params)
         return self._execute("controlvm", [self._vmname] + args)
 
+    def _storage_attach(self, params):
+        """
+        Change storage medium in this VM.
+
+        :param params: params to use with sub-command storageattach
+        """
+
+        args = shlex.split(params)
+        self._execute("storageattach", [self._vmname] + args)
+
     def _get_nic_attachements(self, maximum_adapters):
         """
         Returns NIC attachements.
@@ -584,12 +678,10 @@ class VirtualBoxVM(object):
         nics = []
         vm_info = self._get_vm_info()
         for adapter_id in range(0, maximum_adapters):
-            entry = "NIC {}".format(adapter_id + 1)
+            entry = "nic{}".format(adapter_id + 1)
             if entry in vm_info:
                 value = vm_info[entry]
-                match = re.search("Attachment: (\w+)[\s,]+", value)
-                if match:
-                    nics.append(match.group(1))
+                nics.append(value)
             else:
                 nics.append(None)
         return nics
@@ -606,7 +698,8 @@ class VirtualBoxVM(object):
                 # e.g. Ethernet2 in GNS3 becoming eth0 inside the VM when using a start index of 2.
                 attachement = nic_attachements[adapter_id]
                 if attachement:
-                    self._modify_vm("--nic{} {}".format(adapter_id + 1, attachement.lower()))
+                    # attachement can be none, null, nat, bridged, intnet, hostonly or generic
+                    self._modify_vm("--nic{} {}".format(adapter_id + 1, attachement))
                 continue
 
             vbox_adapter_type = "82540EM"
@@ -650,6 +743,35 @@ class VirtualBoxVM(object):
             self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
             self._modify_vm("--nic{} null".format(adapter_id + 1))
 
+    def _create_linked_clone(self):
+
+        gns3_snapshot_exists = False
+        vm_info = self._get_vm_info()
+        for entry, value in vm_info.items():
+            if entry.startswith("SnapshotName") and value == "GNS3 Linked Base for clones":
+                gns3_snapshot_exists = True
+
+        if not gns3_snapshot_exists:
+            result = self._execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
+            print(result)
+            #log.debug("cloned VirtualBox VM: {}".format(result))
+
+        args = [self._vmname,
+                "--snapshot",
+                "GNS3 Linked Base for clones",
+                "--options",
+                "link",
+                "--name",
+                self._name,
+                "--basefolder",
+                self._working_dir,
+                "--register"]
+
+        result = self._execute("clonevm", args)
+        self._vmname = self._name
+        self._execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
+        log.debug("cloned VirtualBox VM: {}".format(result))
+
     def start(self):
         """
         Starts this VirtualBox VM.
@@ -662,7 +784,7 @@ class VirtualBoxVM(object):
             return
 
         # VM must be powered off and in saved state to start it
-        if vm_state != "powered off" and vm_state != "saved":
+        if vm_state != "poweroff" and vm_state != "saved":
             raise VirtualBoxError("VirtualBox VM not powered off or saved")
 
         self._set_network_options()
