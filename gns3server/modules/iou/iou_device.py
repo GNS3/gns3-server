@@ -49,9 +49,9 @@ class IOUDevice(object):
     :param name: name of this IOU device
     :param path: path to IOU executable
     :param working_dir: path to a working directory
-    :param host: host/address to bind for console and UDP connections
     :param iou_id: IOU instance ID
     :param console: TCP console port
+    :param console_host: IP address to bind for console connections
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
     """
@@ -63,9 +63,9 @@ class IOUDevice(object):
                  name,
                  path,
                  working_dir,
-                 host="127.0.0.1",
-                 iou_id = None,
+                 iou_id=None,
                  console=None,
+                 console_host="0.0.0.0",
                  console_start_port_range=4001,
                  console_end_port_range=4512):
 
@@ -99,8 +99,8 @@ class IOUDevice(object):
         self._iouyap_stdout_file = ""
         self._ioucon_thead = None
         self._ioucon_thread_stop_event = None
-        self._host = host
         self._started = False
+        self._console_host = console_host
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
 
@@ -127,7 +127,7 @@ class IOUDevice(object):
             try:
                 self._console = find_unused_port(self._console_start_port_range,
                                                  self._console_end_port_range,
-                                                 self._host,
+                                                 self._console_host,
                                                  ignore_ports=self._allocated_console_ports)
             except Exception as e:
                 raise IOUError(e)
@@ -484,7 +484,7 @@ class IOUDevice(object):
         """
 
         if not self._ioucon_thead:
-            telnet_server = "{}:{}".format(self._host, self.console)
+            telnet_server = "{}:{}".format(self._console_host, self.console)
             log.info("starting ioucon for IOU instance {} to accept Telnet connections on {}".format(self._name, telnet_server))
             args = argparse.Namespace(appl_id=str(self._id), debug=False, escape='^^', telnet_limit=0, telnet_server=telnet_server)
             self._ioucon_thread_stop_event = threading.Event()

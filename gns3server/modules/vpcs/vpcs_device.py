@@ -45,9 +45,9 @@ class VPCSDevice(object):
     :param name: name of this VPCS device
     :param path: path to VPCS executable
     :param working_dir: path to a working directory
-    :param host: host/address to bind for console and UDP connections
     :param vpcs_id: VPCS instance ID
     :param console: TCP console port
+    :param console_host: IP address to bind for console connections
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
     """
@@ -59,9 +59,9 @@ class VPCSDevice(object):
                  name,
                  path,
                  working_dir,
-                 host="127.0.0.1",
                  vpcs_id=None,
                  console=None,
+                 console_host="0.0.0.0",
                  console_start_port_range=4512,
                  console_end_port_range=5000):
 
@@ -89,7 +89,7 @@ class VPCSDevice(object):
         self._path = path
         self._console = console
         self._working_dir = None
-        self._host = host
+        self._console_host = console_host
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
@@ -114,7 +114,7 @@ class VPCSDevice(object):
             try:
                 self._console = find_unused_port(self._console_start_port_range,
                                                  self._console_end_port_range,
-                                                 self._host,
+                                                 self._console_host,
                                                  ignore_ports=self._allocated_console_ports)
             except Exception as e:
                 raise VPCSError(e)

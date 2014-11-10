@@ -92,6 +92,7 @@ class IOU(IModule):
         self._udp_start_port_range = iou_config.get("udp_start_port_range", 30001)
         self._udp_end_port_range = iou_config.get("udp_end_port_range", 35000)
         self._host = iou_config.get("host", kwargs["host"])
+        self._console_host = iou_config.get("console_host", kwargs["console_host"])
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
@@ -303,9 +304,9 @@ class IOU(IModule):
             iou_instance = IOUDevice(name,
                                      iou_path,
                                      self._working_dir,
-                                     self._host,
                                      iou_id,
                                      console,
+                                     self._console_host,
                                      self._console_start_port_range,
                                      self._console_end_port_range)
 

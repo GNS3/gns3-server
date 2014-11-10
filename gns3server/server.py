@@ -33,7 +33,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.autoreload
 import pkg_resources
-from os.path import expanduser
+import ipaddress
 import base64
 import uuid
 
@@ -58,12 +58,20 @@ class Server(object):
                 (r"/upload", FileUploadHandler),
                 (r"/login", LoginHandler)]
 
-    def __init__(self, host, port, ipc):
+    def __init__(self, host, port, ipc, console_bind_to_any):
 
         self._host = host
         self._port = port
         self._router = None
         self._stream = None
+
+        if console_bind_to_any:
+            if ipaddress.ip_address(self._host).version == 6:
+                self._console_host = "::"
+            else:
+                self._console_host = "0.0.0.0"
+        else:
+            self._console_host = self._host
 
         if ipc:
             self._zmq_port = 0  # this forces to use IPC for communications with the ZeroMQ server
@@ -132,6 +140,7 @@ class Server(object):
                               "127.0.0.1",  # ZeroMQ server address
                               self._zmq_port,  # ZeroMQ server port
                               host=self._host,  # server host address
+                              console_host=self._console_host,
                               projects_dir=self._projects_dir,
                               temp_dir=self._temp_dir)
 
@@ -140,7 +149,6 @@ class Server(object):
             for destination in destinations:
                 JSONRPCWebSocket.register_destination(destination, instance.name)
             instance.start()  # starts the new process
-
 
     def run(self):
         """

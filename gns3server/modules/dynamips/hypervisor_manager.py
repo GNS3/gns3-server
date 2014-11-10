@@ -40,14 +40,16 @@ class HypervisorManager(object):
     :param path: path to the Dynamips executable
     :param working_dir: path to a working directory
     :param host: host/address for hypervisors to listen to
+    :param console_host: IP address to bind for console connections
     """
 
-    def __init__(self, path, working_dir, host='127.0.0.1'):
+    def __init__(self, path, working_dir, host='127.0.0.1', console_host='0.0.0.0'):
 
         self._hypervisors = []
         self._path = path
         self._working_dir = working_dir
-        self._host = host
+        self._console_host = console_host
+        self._host = console_host  # FIXME: Dynamips must be patched to bind on a different address than the one used by the hypervisor.
 
         config = Config.instance()
         dynamips_config = config.get_section_config("DYNAMIPS")

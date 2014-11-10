@@ -52,9 +52,9 @@ class VirtualBoxVM(object):
     :param vmname: name of this VirtualBox VM in VirtualBox itself
     :param linked_clone: flag if a linked clone must be created
     :param working_dir: path to a working directory
-    :param host: host/address to bind for console and UDP connections
     :param vbox_id: VirtalBox VM instance ID
     :param console: TCP console port
+    :param console_host: IP address to bind for console connections
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
     """
@@ -68,9 +68,9 @@ class VirtualBoxVM(object):
                  vmname,
                  linked_clone,
                  working_dir,
-                 host="127.0.0.1",
                  vbox_id=None,
                  console=None,
+                 console_host="0.0.0.0",
                  console_start_port_range=4512,
                  console_end_port_range=5000):
 
@@ -93,10 +93,10 @@ class VirtualBoxVM(object):
         self._name = name
         self._linked_clone = linked_clone
         self._working_dir = None
-        self._host = host
         self._command = []
         self._vboxmanage_path = vboxmanage_path
         self._started = False
+        self._console_host = console_host
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
 
@@ -125,7 +125,7 @@ class VirtualBoxVM(object):
             try:
                 self._console = find_unused_port(self._console_start_port_range,
                                                  self._console_end_port_range,
-                                                 self._host,
+                                                 self._console_host,
                                                  ignore_ports=self._allocated_console_ports)
             except Exception as e:
                 raise VirtualBoxError(e)
@@ -810,7 +810,7 @@ class VirtualBoxVM(object):
                     self._serial_pipe = open(pipe_name, "a+b")
                 except OSError as e:
                     raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
-                self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._host, self._console)
+                self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._console_host, self._console)
                 self._telnet_server_thread.start()
             else:
                 try:
@@ -818,7 +818,7 @@ class VirtualBoxVM(object):
                     self._serial_pipe.connect(pipe_name)
                 except OSError as e:
                     raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-                self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._host, self._console)
+                self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._console_host, self._console)
                 self._telnet_server_thread.start()
 
     def stop(self):

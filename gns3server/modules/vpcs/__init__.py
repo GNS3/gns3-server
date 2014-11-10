@@ -87,6 +87,7 @@ class VPCS(IModule):
         self._udp_start_port_range = vpcs_config.get("udp_start_port_range", 20501)
         self._udp_end_port_range = vpcs_config.get("udp_end_port_range", 21000)
         self._host = vpcs_config.get("host", kwargs["host"])
+        self._console_host = vpcs_config.get("console_host", kwargs["console_host"])
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
@@ -237,9 +238,9 @@ class VPCS(IModule):
             vpcs_instance = VPCSDevice(name,
                                        self._vpcs,
                                        self._working_dir,
-                                       self._host,
                                        vpcs_id,
                                        console,
+                                       self._console_host,
                                        self._console_start_port_range,
                                        self._console_end_port_range)
 

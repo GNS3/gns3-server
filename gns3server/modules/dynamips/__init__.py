@@ -33,7 +33,6 @@ from gns3server.builtins.interfaces import get_windows_interfaces
 from .hypervisor import Hypervisor
 from .hypervisor_manager import HypervisorManager
 from .dynamips_error import DynamipsError
-from ..attic import has_privileged_access
 
 # Nodes
 from .nodes.router import Router
@@ -138,6 +137,7 @@ class Dynamips(IModule):
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
         self._host = dynamips_config.get("host", kwargs["host"])
+        self._console_host = dynamips_config.get("console_host", kwargs["console_host"])
 
         if not sys.platform.startswith("win32"):
             #FIXME: pickle issues Windows
@@ -282,7 +282,7 @@ class Dynamips(IModule):
             raise DynamipsError("Cannot write to working directory {}".format(workdir))
 
         log.info("starting the hypervisor manager with Dynamips working directory set to '{}'".format(workdir))
-        self._hypervisor_manager = HypervisorManager(self._dynamips, workdir, self._host)
+        self._hypervisor_manager = HypervisorManager(self._dynamips, workdir, self._host, self._console_host)
 
         for name, value in self._hypervisor_manager_settings.items():
             if hasattr(self._hypervisor_manager, name) and getattr(self._hypervisor_manager, name) != value:

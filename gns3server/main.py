@@ -35,6 +35,7 @@ define("port", default=8000, help="run on the given port", type=int)
 define("ipc", default=False, help="use IPC for module communication", type=bool)
 define("version", default=False, help="show the version", type=bool)
 define("quiet", default=False, help="do not show output on stdout", type=bool)
+define("console_bind_to_any", default=True, help="bind console ports to any local IP address", type=bool)
 
 
 def locale_check():
@@ -127,7 +128,7 @@ def main():
         log.critical("the current working directory doesn't exist")
         return
 
-    server = Server(options.host, options.port, options.ipc)
+    server = Server(options.host, options.port, options.ipc, options.console_bind_to_any)
     server.load_modules()
     server.run()
 

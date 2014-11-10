@@ -44,6 +44,7 @@ class QemuVM(object):
     :param host: host/address to bind for console and UDP connections
     :param qemu_id: QEMU VM instance ID
     :param console: TCP console port
+    :param console_host: IP address to bind for console connections
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
     """
@@ -58,6 +59,7 @@ class QemuVM(object):
                  host="127.0.0.1",
                  qemu_id=None,
                  console=None,
+                 console_host="0.0.0.0",
                  console_start_port_range=5001,
                  console_end_port_range=5500):
 
@@ -84,6 +86,7 @@ class QemuVM(object):
         self._started = False
         self._process = None
         self._stdout_file = ""
+        self._console_host = console_host
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
 
@@ -113,7 +116,7 @@ class QemuVM(object):
             try:
                 self._console = find_unused_port(self._console_start_port_range,
                                                  self._console_end_port_range,
-                                                 self._host,
+                                                 self._console_host,
                                                  ignore_ports=self._allocated_console_ports)
             except Exception as e:
                 raise QemuError(e)
@@ -681,7 +684,7 @@ class QemuVM(object):
     def _serial_options(self):
 
         if self._console:
-            return ["-serial", "telnet:{}:{},server,nowait".format(self._host, self._console)]
+            return ["-serial", "telnet:{}:{},server,nowait".format(self._console_host, self._console)]
         else:
             return []
 

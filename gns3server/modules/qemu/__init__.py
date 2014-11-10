@@ -71,6 +71,7 @@ class Qemu(IModule):
         self._udp_start_port_range = qemu_config.get("udp_start_port_range", 40001)
         self._udp_end_port_range = qemu_config.get("udp_end_port_range", 45500)
         self._host = qemu_config.get("host", kwargs["host"])
+        self._console_host = qemu_config.get("console_host", kwargs["console_host"])
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
@@ -214,6 +215,7 @@ class Qemu(IModule):
                                    self._host,
                                    qemu_id,
                                    console,
+                                   self._console_host,
                                    self._console_start_port_range,
                                    self._console_end_port_range)
 
@@ -614,7 +616,6 @@ class Qemu(IModule):
         Gets QEMU binaries list.
 
         Response parameters:
-        - Server address/host
         - List of Qemu binaries
         """
 
@@ -642,8 +643,7 @@ class Qemu(IModule):
                 log.warn("Could not find QEMU version for {}: {}".format(path, e))
                 continue
 
-        response = {"server": self._host,
-                    "qemus": qemus}
+        response = {"qemus": qemus}
         self.send_response(response)
 
     @IModule.route("qemu.echo")
