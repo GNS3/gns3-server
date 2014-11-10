@@ -26,6 +26,7 @@ from ...attic import find_unused_port
 import time
 import sys
 import os
+import base64
 
 import logging
 log = logging.getLogger(__name__)
@@ -597,6 +598,35 @@ class Router(object):
         if private_config != '(keep)':
             log.info("router {name} [id={id}]: new private-config pushed".format(name=self._name,
                                                                                  id=self._id))
+
+    def save_configs(self):
+        """
+        Saves the startup-config and private-config to files.
+        """
+
+        if self.startup_config or self.private_config:
+            startup_config_base64, private_config_base64 = self.extract_config()
+            if startup_config_base64:
+                try:
+                    config = base64.decodebytes(startup_config_base64.encode("utf-8")).decode("utf-8")
+                    config = "!\n" + config.replace("\r", "")
+                    config_path = os.path.join(self.hypervisor.working_dir, self.startup_config)
+                    with open(config_path, "w") as f:
+                        log.info("saving startup-config to {}".format(self.startup_config))
+                        f.write(config)
+                except OSError as e:
+                    raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
+
+            if private_config_base64:
+                try:
+                    config = base64.decodebytes(private_config_base64.encode("utf-8")).decode("utf-8")
+                    config = "!\n" + config.replace("\r", "")
+                    config_path = os.path.join(self.hypervisor.working_dir, self.private_config)
+                    with open(config_path, "w") as f:
+                        log.info("saving private-config to {}".format(self.private_config))
+                        f.write(config)
+                except OSError as e:
+                    raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
 
     @property
     def ram(self):

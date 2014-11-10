@@ -154,12 +154,16 @@ class Dynamips(IModule):
         if not sys.platform.startswith("win32"):
             self._callback.stop()
 
+        # automatically save configs for all router instances
+        for router_id in self._routers:
+            router = self._routers[router_id]
+            router.save_configs()
+
         # stop all Dynamips hypervisors
         if self._hypervisor_manager:
             self._hypervisor_manager.stop_all_hypervisors()
 
         self.delete_dynamips_files()
-
         IModule.stop(self, signum)  # this will stop the I/O loop
 
     def _check_hypervisors(self):
@@ -224,6 +228,11 @@ class Dynamips(IModule):
 
         :param request: JSON request (not used)
         """
+
+        # automatically save configs for all router instances
+        for router_id in self._routers:
+            router = self._routers[router_id]
+            router.save_configs()
 
         # stop all Dynamips hypervisors
         if self._hypervisor_manager:
