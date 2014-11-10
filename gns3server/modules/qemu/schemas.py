@@ -94,7 +94,7 @@ QEMU_UPDATE_SCHEMA = {
         "adapters": {
             "description": "number of adapters",
             "type": "integer",
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 8,
         },
         "adapter_type": {
