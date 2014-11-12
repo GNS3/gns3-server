@@ -21,6 +21,7 @@ IOU server module.
 
 import os
 import base64
+import ntpath
 import stat
 import tempfile
 import socket
@@ -303,13 +304,15 @@ class IOU(IModule):
         else:
             if not os.path.exists(self.images_directory):
                 os.mkdir(self.images_directory)
-            if request.get("cloud_path", None):
+            cloud_path = request.get("cloud_path", None)
+            if cloud_path is not None:
                 # Download the image from cloud files
-                cloud_path = request.get("cloud_path")
-                full_cloud_path = "/".join((cloud_path, iou_path))
-
+                _, filename = ntpath.split(iou_path)
+                src = '{}/{}'.format(cloud_path, filename)
                 provider = get_provider(self._cloud_settings)
-                provider.download_file(full_cloud_path, updated_iou_path)
+                log.debug("Downloading file from {} to {}...".format(src, updated_iou_path))
+                provider.download_file(src, updated_iou_path)
+                log.debug("Download of {} complete.".format(src))
                 # Make file executable
                 st = os.stat(updated_iou_path)
                 os.chmod(updated_iou_path, st.st_mode | stat.S_IEXEC)

@@ -577,21 +577,25 @@ class QemuVM(object):
                 if self.hda_disk_image != "":
                     _, filename = ntpath.split(self.hda_disk_image)
                     src = '{}/{}'.format(self.cloud_path, filename)
-                    dest = os.path.join(self.working_dir, filename)
-                    if not os.path.isfile(dest):
+                    dst = os.path.join(self.working_dir, filename)
+                    if not os.path.isfile(dst):
                         cloud_settings = Config.instance().cloud_settings()
                         provider = get_provider(cloud_settings)
-                        provider.download_file(src, dest)
-                    self.hda_disk_image = dest
+                        log.debug("Downloading file from {} to {}...".format(src, dst))
+                        provider.download_file(src, dst)
+                        log.debug("Download of {} complete.".format(src))
+                    self.hda_disk_image = dst
                 if self.hdb_disk_image != "":
                     _, filename = ntpath.split(self.hdb_disk_image)
                     src = '{}/{}'.format(self.cloud_path, filename)
-                    dest = os.path.join(self.working_dir, filename)
-                    if not os.path.isfile(dest):
+                    dst = os.path.join(self.working_dir, filename)
+                    if not os.path.isfile(dst):
                         cloud_settings = Config.instance().cloud_settings()
                         provider = get_provider(cloud_settings)
-                        provider.download_file(src, dest)
-                    self.hdb_disk_image = dest
+                        log.debug("Downloading file from {} to {}...".format(src, dst))
+                        provider.download_file(src, dst)
+                        log.debug("Download of {} complete.".format(src))
+                    self.hdb_disk_image = dst
 
             self._command = self._build_command()
             try:
