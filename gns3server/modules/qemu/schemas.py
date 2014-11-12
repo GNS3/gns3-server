@@ -120,6 +120,10 @@ QEMU_UPDATE_SCHEMA = {
             "description": "QEMU kernel command line",
             "type": "string",
         },
+        "cloud_path": {
+            "description": "Path to the image in the cloud object store",
+            "type": "string",
+        },
         "options": {
             "description": "additional QEMU options",
             "type": "string",
