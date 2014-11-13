@@ -67,13 +67,10 @@ def find_unused_port(start_port, end_port, host='127.0.0.1', socket_type="TCP", 
             return port
         except OSError as e:
             last_exception = e
-            if e.errno == errno.EADDRINUSE or e.errno == errno.EACCES:  # socket already in use or permission denied
-                if port + 1 == end_port:
-                    break
-                else:
-                    continue
+            if port + 1 == end_port:
+                break
             else:
-                raise Exception("Could not find an unused port between {} and {} on host {}: {}".format(start_port, end_port, host, e))
+                continue
 
     raise Exception("Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port, end_port, host, last_exception))
 

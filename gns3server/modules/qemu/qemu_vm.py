@@ -715,7 +715,7 @@ class QemuVM(object):
                 # create a "FLASH" with 256MB if no disk image has been specified
                 hda_disk = os.path.join(self._working_dir, "flash.qcow2")
                 if not os.path.exists(hda_disk):
-                    retcode = subprocess.call([qemu_img_path, "create", "-f", "qcow2", hda_disk, "256M"])
+                    retcode = subprocess.call([qemu_img_path, "create", "-f", "qcow2", hda_disk, "128M"])
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
 
         except OSError as e:

@@ -157,7 +157,10 @@ class Dynamips(IModule):
         # automatically save configs for all router instances
         for router_id in self._routers:
             router = self._routers[router_id]
-            router.save_configs()
+            try:
+                router.save_configs()
+            except DynamipsError:
+                continue
 
         # stop all Dynamips hypervisors
         if self._hypervisor_manager:
@@ -232,7 +235,10 @@ class Dynamips(IModule):
         # automatically save configs for all router instances
         for router_id in self._routers:
             router = self._routers[router_id]
-            router.save_configs()
+            try:
+                router.save_configs()
+            except DynamipsError:
+                continue
 
         # stop all Dynamips hypervisors
         if self._hypervisor_manager:
