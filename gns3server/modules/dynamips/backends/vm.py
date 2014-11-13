@@ -155,6 +155,7 @@ class VM(object):
 
                 provider = get_provider(self._cloud_settings)
                 provider.download_file(full_cloud_path, updated_image_path)
+                image = updated_image_path
 
         try:
             if platform not in PLATFORMS:

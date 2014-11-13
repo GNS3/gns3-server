@@ -21,12 +21,14 @@ IOU server module.
 
 import os
 import base64
+import stat
 import tempfile
 import socket
 import shutil
 
 from gns3server.modules import IModule
 from gns3server.config import Config
+from gns3dms.cloud.rackspace_ctrl import get_provider
 from .iou_device import IOUDevice
 from .iou_error import IOUError
 from .nios.nio_udp import NIO_UDP
@@ -299,6 +301,20 @@ class IOU(IModule):
         updated_iou_path = os.path.join(self.images_directory, iou_path)
         if os.path.isfile(updated_iou_path):
             iou_path = updated_iou_path
+        else:
+            if not os.path.exists(self.images_directory):
+                os.mkdir(self.images_directory)
+            if request.get("cloud_path", None):
+                # Download the image from cloud files
+                cloud_path = request.get("cloud_path")
+                full_cloud_path = "/".join((cloud_path, iou_path))
+
+                provider = get_provider(self._cloud_settings)
+                provider.download_file(full_cloud_path, updated_iou_path)
+                # Make file executable
+                st = os.stat(updated_iou_path)
+                os.chmod(updated_iou_path, st.st_mode | stat.S_IEXEC)
+                iou_path = updated_iou_path
 
         try:
             iou_instance = IOUDevice(name,
