@@ -24,6 +24,10 @@ import shutil
 import random
 import subprocess
 import shlex
+import ntpath
+
+from gns3server.config import Config
+from gns3dms.cloud.rackspace_ctrl import get_provider
 
 from .qemu_error import QemuError
 from .adapters.ethernet_adapter import EthernetAdapter
@@ -89,6 +93,7 @@ class QemuVM(object):
         self._console_host = console_host
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
+        self._cloud_path = None
 
         # QEMU settings
         self._qemu_path = qemu_path
@@ -290,6 +295,27 @@ class QemuVM(object):
 
         log.info("QEMU VM {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
                                                                                                  id=self._id))
+
+    @property
+    def cloud_path(self):
+        """
+        Returns the cloud path where images can be downloaded from.
+
+        :returns: cloud path
+        """
+
+        return self._cloud_path
+
+    @cloud_path.setter
+    def cloud_path(self, cloud_path):
+        """
+        Sets the cloud path where images can be downloaded from.
+
+        :param cloud_path:
+        :return:
+        """
+
+        self._cloud_path = cloud_path
 
     @property
     def qemu_path(self):
@@ -534,7 +560,45 @@ class QemuVM(object):
         if not self.is_running():
 
             if not os.path.isfile(self._qemu_path) or not os.path.exists(self._qemu_path):
-                raise QemuError("QEMU binary '{}' is not accessible".format(self._qemu_path))
+                found = False
+                paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
+                # look for the qemu binary in the current working directory and $PATH
+                for path in paths:
+                    try:
+                        if self._qemu_path in os.listdir(path) and os.access(os.path.join(path, self._qemu_path), os.X_OK):
+                            self._qemu_path = os.path.join(path, self._qemu_path)
+                            found = True
+                            break
+                    except OSError:
+                        continue
+
+                if not found:
+                    raise QemuError("QEMU binary '{}' is not accessible".format(self._qemu_path))
+
+            if self.cloud_path is not None:
+                # Download from Cloud Files
+                if self.hda_disk_image != "":
+                    _, filename = ntpath.split(self.hda_disk_image)
+                    src = '{}/{}'.format(self.cloud_path, filename)
+                    dst = os.path.join(self.working_dir, filename)
+                    if not os.path.isfile(dst):
+                        cloud_settings = Config.instance().cloud_settings()
+                        provider = get_provider(cloud_settings)
+                        log.debug("Downloading file from {} to {}...".format(src, dst))
+                        provider.download_file(src, dst)
+                        log.debug("Download of {} complete.".format(src))
+                    self.hda_disk_image = dst
+                if self.hdb_disk_image != "":
+                    _, filename = ntpath.split(self.hdb_disk_image)
+                    src = '{}/{}'.format(self.cloud_path, filename)
+                    dst = os.path.join(self.working_dir, filename)
+                    if not os.path.isfile(dst):
+                        cloud_settings = Config.instance().cloud_settings()
+                        provider = get_provider(cloud_settings)
+                        log.debug("Downloading file from {} to {}...".format(src, dst))
+                        provider.download_file(src, dst)
+                        log.debug("Download of {} complete.".format(src))
+                    self.hdb_disk_image = dst
 
             self._command = self._build_command()
             try:

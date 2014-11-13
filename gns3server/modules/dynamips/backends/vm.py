@@ -17,6 +17,7 @@
 
 import os
 import base64
+import ntpath
 import time
 from gns3server.modules import IModule
 from gns3dms.cloud.rackspace_ctrl import get_provider
@@ -148,13 +149,15 @@ class VM(object):
         else:
             if not os.path.exists(self.images_directory):
                 os.mkdir(self.images_directory)
-            if request.get("cloud_path", None):
+            cloud_path = request.get("cloud_path", None)
+            if cloud_path is not None:
                 # Download the image from cloud files
-                cloud_path = request.get("cloud_path")
-                full_cloud_path = "/".join((cloud_path, image))
-
+                _, filename = ntpath.split(image)
+                src = '{}/{}'.format(cloud_path, filename)
                 provider = get_provider(self._cloud_settings)
-                provider.download_file(full_cloud_path, updated_image_path)
+                log.debug("Downloading file from {} to {}...".format(src, updated_image_path))
+                provider.download_file(src, updated_image_path)
+                log.debug("Download of {} complete.".format(src))
                 image = updated_image_path
 
         try:
