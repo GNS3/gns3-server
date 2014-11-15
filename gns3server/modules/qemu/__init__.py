@@ -124,6 +124,7 @@ class Qemu(IModule):
         self._qemu_instances.clear()
         self._allocated_udp_ports.clear()
 
+        self._working_dir = self._projects_dir
         log.info("QEMU module has been reset")
 
     @IModule.route("qemu.settings")

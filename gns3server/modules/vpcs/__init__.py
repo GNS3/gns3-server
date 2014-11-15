@@ -140,6 +140,7 @@ class VPCS(IModule):
         self._vpcs_instances.clear()
         self._allocated_udp_ports.clear()
 
+        self._working_dir = self._projects_dir
         log.info("VPCS module has been reset")
 
     @IModule.route("vpcs.settings")

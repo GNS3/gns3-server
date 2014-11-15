@@ -740,8 +740,7 @@ class VirtualBoxVM(object):
 
         for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_id))
-            self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
-            self._modify_vm("--nic{} null".format(adapter_id + 1))
+            self._modify_vm("--nic{} none".format(adapter_id + 1))
 
     def _create_linked_clone(self):
 

@@ -196,6 +196,7 @@ class IOU(IModule):
         self._allocated_udp_ports.clear()
         self.delete_iourc_file()
 
+        self._working_dir = self._projects_dir
         log.info("IOU module has been reset")
 
     @IModule.route("iou.settings")

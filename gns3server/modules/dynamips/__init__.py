@@ -269,6 +269,7 @@ class Dynamips(IModule):
         self.delete_dynamips_files()
 
         self._hypervisor_manager = None
+        self._working_dir = self._projects_dir
         log.info("dynamips module has been reset")
 
     def start_hypervisor_manager(self):

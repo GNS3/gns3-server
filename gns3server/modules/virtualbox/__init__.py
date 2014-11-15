@@ -73,7 +73,7 @@ class VirtualBox(IModule):
                 # look for vboxmanage in the current working directory and $PATH
                 for path in paths:
                     try:
-                        if "vboxmanage" in os.listdir(path) and os.access(os.path.join(path, "vboxmanage"), os.X_OK):
+                        if "vboxmanage" in [s.lower() for s in os.listdir(path)] and os.access(os.path.join(path, "vboxmanage"), os.X_OK):
                             self._vboxmanage_path = os.path.join(path, "vboxmanage")
                             break
                     except OSError:
@@ -152,6 +152,7 @@ class VirtualBox(IModule):
         self._vbox_instances.clear()
         self._allocated_udp_ports.clear()
 
+        self._working_dir = self._projects_dir
         log.info("VirtualBox module has been reset")
 
     @IModule.route("virtualbox.settings")
@@ -742,7 +743,7 @@ class VirtualBox(IModule):
             if not vboxmanage_path or not os.path.exists(vboxmanage_path):
                 raise VirtualBoxError("Could not find VBoxManage, is VirtualBox correctly installed?")
 
-            command = [self._vboxmanage_path, "--nologo", "list", "vms"]
+            command = [vboxmanage_path, "--nologo", "list", "vms"]
             result = self._execute_vboxmanage(command)
         except VirtualBoxError as e:
             self.send_custom_error(str(e))
