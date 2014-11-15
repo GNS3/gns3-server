@@ -197,7 +197,7 @@ class VirtualBox(IModule):
             self._working_dir = new_working_dir
             for vbox_id in self._vbox_instances:
                 vbox_instance = self._vbox_instances[vbox_id]
-                vbox_instance.working_dir = os.path.join(self._working_dir, "vbox", "vm-{}".format(vbox_instance.id))
+                vbox_instance.working_dir = os.path.join(self._working_dir, "vbox", "{}".format(vbox_instance.name))
 
         if "vboxmanage_path" in request:
             self._vboxmanage_path = request["vboxmanage_path"]

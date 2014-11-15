@@ -303,7 +303,7 @@ class VirtualBoxVM(object):
         for hdd_info in hdd_table:
             hdd_file = os.path.join(self._working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
             if os.path.exists(hdd_file):
-                print("Reattaching: {}".format(hdd_file))
+                log.debug("reattaching hdd {}".format(hdd_file))
                 self._storage_attach('--storagectl {} --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
                                                                                                              hdd_info["port"],
                                                                                                              hdd_info["device"],
@@ -322,36 +322,37 @@ class VirtualBoxVM(object):
             self._allocated_console_ports.remove(self.console)
 
         if self._linked_clone:
-            hdd_table = []
-            hdd_files = self._get_all_hdd_files()
-            vm_info = self._get_vm_info()
-            for entry, value in vm_info.items():
-                match = re.search("^(\w+)\-(\d)\-(\d)$", entry)
-                if match:
-                    controller = match.group(1)
-                    port = match.group(2)
-                    device = match.group(3)
-                    if value in hdd_files:
-                        self._storage_attach("--storagectl {} --port {} --device {} --type hdd --medium none".format(controller, port, device))
-                        hdd_table.append(
-                            {
-                                "hdd": os.path.basename(value),
-                                "controller": controller,
-                                "port": port,
-                                "device": device,
-                            }
-                        )
+            if os.path.exists(self._working_dir):
+                hdd_table = []
+                hdd_files = self._get_all_hdd_files()
+                vm_info = self._get_vm_info()
+                for entry, value in vm_info.items():
+                    match = re.search("^(\w+)\-(\d)\-(\d)$", entry)
+                    if match:
+                        controller = match.group(1)
+                        port = match.group(2)
+                        device = match.group(3)
+                        if value in hdd_files:
+                            self._storage_attach("--storagectl {} --port {} --device {} --type hdd --medium none".format(controller, port, device))
+                            hdd_table.append(
+                                {
+                                    "hdd": os.path.basename(value),
+                                    "controller": controller,
+                                    "port": port,
+                                    "device": device,
+                                }
+                            )
 
             self._execute("unregistervm", [self._vmname])
-            print(self._working_dir)
-            try:
-                hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
-                with open(hdd_info_file, "w") as f:
-                    #log.info("saving project: {}".format(path))
-                    json.dump(hdd_table, f, indent=4)
-            except OSError as e:
-                raise VirtualBoxError("Could not write HDD info file: {}".format(e))
 
+            if hdd_table:
+                try:
+                    hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
+                    with open(hdd_info_file, "w") as f:
+                        #log.info("saving project: {}".format(path))
+                        json.dump(hdd_table, f, indent=4)
+                except OSError as e:
+                    raise VirtualBoxError("Could not write HDD info file: {}".format(e))
 
 
         log.info("VirtualBox VM {name} [id={id}] has been deleted".format(name=self._name,
@@ -743,6 +744,9 @@ class VirtualBoxVM(object):
             self._modify_vm("--nic{} none".format(adapter_id + 1))
 
     def _create_linked_clone(self):
+        """
+        Creates a new linked clone.
+        """
 
         gns3_snapshot_exists = False
         vm_info = self._get_vm_info()
@@ -752,8 +756,7 @@ class VirtualBoxVM(object):
 
         if not gns3_snapshot_exists:
             result = self._execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
-            print(result)
-            #log.debug("cloned VirtualBox VM: {}".format(result))
+            log.debug("GNS3 snapshot created: {}".format(result))
 
         args = [self._vmname,
                 "--snapshot",
