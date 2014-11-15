@@ -47,7 +47,7 @@ setup(
     install_requires=[
         "tornado>=3.1",
         "pyzmq>=14.0.0",
-        "jsonschema>=2.3.0"
+        "jsonschema>=2.3.0",
         "apache-libcloud>=0.14.1",
         "requests",
     ],
