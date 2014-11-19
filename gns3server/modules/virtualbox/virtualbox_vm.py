@@ -322,8 +322,8 @@ class VirtualBoxVM(object):
             self._allocated_console_ports.remove(self.console)
 
         if self._linked_clone:
+            hdd_table = []
             if os.path.exists(self._working_dir):
-                hdd_table = []
                 hdd_files = self._get_all_hdd_files()
                 vm_info = self._get_vm_info()
                 for entry, value in vm_info.items():
