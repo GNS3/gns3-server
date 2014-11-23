@@ -717,10 +717,8 @@ class VirtualBox(IModule):
 
         try:
             result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
-        except subprocess.CalledProcessError as e:
+        except subprocess.SubprocessError as e:
             raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
-        except subprocess.TimeoutExpired:
-            raise VirtualBoxError("VBoxManage has timed out")
         return result
 
     @IModule.route("virtualbox.vm_list")

@@ -509,7 +509,7 @@ class IOUDevice(object):
                                                         cwd=self._working_dir)
 
             log.info("iouyap started PID={}".format(self._iouyap_process.pid))
-        except OSError as e:
+        except subprocess.SubprocessError as e:
             iouyap_stdout = self.read_iouyap_stdout()
             log.error("could not start iouyap: {}\n{}".format(e, iouyap_stdout))
             raise IOUError("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
@@ -521,7 +521,7 @@ class IOUDevice(object):
 
         try:
             output = subprocess.check_output(["ldd", self._path])
-        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+        except (FileNotFoundError, subprocess.SubprocessError) as e:
             log.warn("could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
@@ -583,7 +583,7 @@ class IOUDevice(object):
                 self._started = True
             except FileNotFoundError as e:
                 raise IOUError("could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
-            except OSError as e:
+            except subprocess.SubprocessError as e:
                 iou_stdout = self.read_iou_stdout()
                 log.error("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
                 raise IOUError("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
@@ -761,7 +761,7 @@ class IOUDevice(object):
                 command.extend(["-l"])
             else:
                 raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
-        except (OSError, subprocess.CalledProcessError) as e:
+        except subprocess.SubprocessError as e:
             log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
 
     def _build_command(self):

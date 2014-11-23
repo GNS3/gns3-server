@@ -612,7 +612,7 @@ class QemuVM(object):
                                                      cwd=self._working_dir)
                 log.info("QEMU VM instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
-            except OSError as e:
+            except subprocess.SubprocessError as e:
                 stdout = self.read_stdout()
                 log.error("could not start QEMU {}: {}\n{}".format(self._qemu_path, e, stdout))
                 raise QemuError("could not start QEMU {}: {}\n{}".format(self._qemu_path, e, stdout))
@@ -782,7 +782,7 @@ class QemuVM(object):
                     retcode = subprocess.call([qemu_img_path, "create", "-f", "qcow2", hda_disk, "128M"])
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
 
-        except OSError as e:
+        except subprocess.SubprocessError as e:
             raise QemuError("Could not create disk image {}".format(e))
 
         options.extend(["-hda", hda_disk])
@@ -794,7 +794,7 @@ class QemuVM(object):
                                               "backing_file={}".format(self._hdb_disk_image),
                                               "-f", "qcow2", hdb_disk])
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
-                except OSError as e:
+                except subprocess.SubprocessError as e:
                     raise QemuError("Could not create disk image {}".format(e))
             options.extend(["-hdb", hdb_disk])
 

@@ -558,8 +558,8 @@ class VirtualBoxVM(object):
                 raise VirtualBoxError("{}".format(virtualbox_error))
             else:
                 raise VirtualBoxError("{}".format(e))
-        except subprocess.TimeoutExpired:
-            raise VirtualBoxError("VBoxManage has timed out")
+        except subprocess.SubprocessError as e:
+            raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
         return result.splitlines()
 
     def _get_vm_info(self):

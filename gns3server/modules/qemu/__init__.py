@@ -608,7 +608,7 @@ class Qemu(IModule):
                 return version
             else:
                 raise QemuError("Could not determine the Qemu version for {}".format(qemu_path))
-        except (OSError, subprocess.CalledProcessError) as e:
+        except subprocess.SubprocessError as e:
             raise QemuError("Error while looking for the Qemu version: {}".format(e))
 
     @IModule.route("qemu.qemu_list")
