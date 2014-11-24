@@ -79,12 +79,12 @@ Options:
   --instance_id       ID of the Rackspace instance to terminate
   --cloud_region      Region of instance
 
-  --deadtime          How long in seconds can the communication lose exist before we
+  --dead_time          How long in seconds can the communication lose exist before we
                       shutdown this instance.
                       Default:
-                      Example --deadtime=3600 (60 minutes)
+                      Example --dead_time=3600 (60 minutes)
 
-  --check-interval    Defaults to --deadtime, used for debugging
+  --check-interval    Defaults to --dead_time, used for debugging
 
   --init-wait         Inital wait time, how long before we start pulling the file.
                       Default: 300 (5 min)
@@ -113,7 +113,7 @@ def parse_cmd_line(argv):
                     "cloud_api_key=",
                     "instance_id=",
                     "region=",
-                    "deadtime=",
+                    "dead_time=",
                     "init-wait=",
                     "check-interval=",
                     "file=",
@@ -133,7 +133,7 @@ def parse_cmd_line(argv):
     cmd_line_option_list["cloud_api_key"] = None
     cmd_line_option_list["instance_id"] = None
     cmd_line_option_list["region"] = None
-    cmd_line_option_list["deadtime"] = 60 * 60 #minutes
+    cmd_line_option_list["dead_time"] = 60 * 60 #minutes
     cmd_line_option_list["check-interval"] = None
     cmd_line_option_list["init-wait"] = 5 * 60
     cmd_line_option_list["file"] = None
@@ -167,8 +167,8 @@ def parse_cmd_line(argv):
             cmd_line_option_list["instance_id"] = val
         elif (opt in ("--region")):
             cmd_line_option_list["region"] = val
-        elif (opt in ("--deadtime")):
-            cmd_line_option_list["deadtime"] = int(val)
+        elif (opt in ("--dead_time")):
+            cmd_line_option_list["dead_time"] = int(val)
         elif (opt in ("--check-interval")):
             cmd_line_option_list["check-interval"] = int(val)
         elif (opt in ("--init-wait")):
@@ -183,7 +183,7 @@ def parse_cmd_line(argv):
     if cmd_line_option_list["shutdown"] == False:
 
         if cmd_line_option_list["check-interval"] is None:
-            cmd_line_option_list["check-interval"] = cmd_line_option_list["deadtime"] + 120
+            cmd_line_option_list["check-interval"] = cmd_line_option_list["dead_time"] + 120
 
         if cmd_line_option_list["cloud_user_name"] is None:
             print("You need to specify a username!!!!")
@@ -317,9 +317,9 @@ def monitor_loop(options):
         delta = now - file_last_modified
         log.debug("File last updated: %s seconds ago" % (delta.seconds))
 
-        if delta.seconds > options["deadtime"]:
-            log.warning("Deadtime exceeded, terminating instance ...")
-            #Terminate involes many layers of HTTP / API calls, lots of
+        if delta.seconds > options["dead_time"]:
+            log.warning("Dead time exceeded, terminating instance ...")
+            #Terminate involves many layers of HTTP / API calls, lots of
             #different errors types could occur here.
             try:
                 rksp = Rackspace(options)
