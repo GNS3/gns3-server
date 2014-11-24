@@ -59,7 +59,7 @@ class Rackspace(object):
         self.rksp.set_region(self.region)
         for server in self.rksp.list_instances():
             log.debug("Checking server: %s" % (server.name))
-            if server.name.lower() == self.hostname.lower() and server.id == self.instance_id:
+            if server.id == self.instance_id:
                 log.info("Found matching instance: %s" % (server.id))
                 log.info("Startup id: %s" % (self.instance_id))
                 return server
