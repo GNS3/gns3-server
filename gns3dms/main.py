@@ -150,6 +150,7 @@ def parse_cmd_line(argv):
 
 
     get_gns3secrets(cmd_line_option_list)
+    cmd_line_option_list["dead_time"] = int(cmd_line_option_list["dead_time"])
 
     for opt, val in opts:
         if (opt in ("-h", "--help")):
