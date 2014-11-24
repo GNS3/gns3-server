@@ -41,7 +41,7 @@ class Rackspace(object):
         self.authenticated = False
         self.hostname = socket.gethostname()
         self.instance_id = options["instance_id"]
-        self.region = options["region"]
+        self.region = options["cloud_region"]
 
         log.debug("Authenticating with Rackspace")
         log.debug("My hostname: %s" % (self.hostname))
