@@ -601,8 +601,8 @@ class Qemu(IModule):
         if sys.platform.startswith("win"):
             return ""
         try:
-            output = subprocess.check_output([qemu_path, "--version"])
-            match = re.search("QEMU emulator version ([0-9a-z\-\.]+)", output.decode("utf-8"))
+            output = subprocess.check_output([qemu_path, "-version"])
+            match = re.search("version\s+([0-9a-z\-\.]+)", output.decode("utf-8"))
             if match:
                 version = match.group(1)
                 return version
