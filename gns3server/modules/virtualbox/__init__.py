@@ -751,7 +751,13 @@ class VirtualBox(IModule):
         for line in result.splitlines():
             vmname, uuid = line.rsplit(' ', 1)
             vmname = vmname.strip('"')
-            extra_data = self._execute_vboxmanage([vboxmanage_path, "getextradata", vmname, "GNS3/Clone"]).strip()
+            if vmname == "<inaccessible>":
+                continue  # ignore inaccessible VMs
+            try:
+                extra_data = self._execute_vboxmanage([vboxmanage_path, "getextradata", vmname, "GNS3/Clone"]).strip()
+            except VirtualBoxError as e:
+                self.send_custom_error(str(e))
+                return
             if not extra_data == "Value: yes":
                 vms.append(vmname)
 
