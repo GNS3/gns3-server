@@ -44,7 +44,7 @@ import uuid
 
 SCRIPT_NAME = os.path.basename(__file__)
 
-#Is the full path when used as an import
+# This is the full path when used as an import
 SCRIPT_PATH = os.path.dirname(__file__)
 
 if not SCRIPT_PATH:
