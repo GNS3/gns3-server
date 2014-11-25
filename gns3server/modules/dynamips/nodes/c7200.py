@@ -22,7 +22,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L294
 
 from ..dynamips_error import DynamipsError
 from .router import Router
-from ..adapters.c7200_io_2fe import C7200_IO_2FE
+from ..adapters.c7200_io_fe import C7200_IO_FE
 from ..adapters.c7200_io_ge_e import C7200_IO_GE_E
 
 import logging
@@ -70,7 +70,7 @@ class C7200(Router):
         if npe == "npe-g2":
             self.slot_add_binding(0, C7200_IO_GE_E())
         else:
-            self.slot_add_binding(0, C7200_IO_2FE())
+            self.slot_add_binding(0, C7200_IO_FE())
 
     def defaults(self):
         """
