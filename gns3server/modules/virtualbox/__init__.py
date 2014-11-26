@@ -716,10 +716,10 @@ class VirtualBox(IModule):
         """
 
         try:
-            result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+            result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=30)
         except subprocess.SubprocessError as e:
             raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
-        return result
+        return result.decode("utf-8")
 
     @IModule.route("virtualbox.vm_list")
     def vm_list(self, request):

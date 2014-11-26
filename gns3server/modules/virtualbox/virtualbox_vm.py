@@ -550,17 +550,17 @@ class VirtualBoxVM(object):
         command.extend(args)
         log.debug("Execute vboxmanage command: {}".format(command))
         try:
-            result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=timeout)
+            result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=timeout)
         except subprocess.CalledProcessError as e:
             if e.output:
                 # only the first line of the output is useful
-                virtualbox_error = e.output.splitlines()[0]
+                virtualbox_error = e.output.decode("utf-8").splitlines()[0]
                 raise VirtualBoxError("{}".format(virtualbox_error))
             else:
                 raise VirtualBoxError("{}".format(e))
         except subprocess.SubprocessError as e:
             raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
-        return result.splitlines()
+        return result.decode("utf-8").splitlines()
 
     def _get_vm_info(self):
         """
