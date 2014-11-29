@@ -62,8 +62,13 @@ class VirtualBox(IModule):
 
         # get the vboxmanage location
         self._vboxmanage_path = None
-        if sys.platform.startswith("win") and "VBOX_INSTALL_PATH" in os.environ:
-            self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+        if sys.platform.startswith("win"):
+            if "VBOX_INSTALL_PATH" in os.environ:
+                self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+            elif "VBOX_MSI_INSTALL_PATH" in os.environ:
+                self._vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
+        elif sys.platform.startswith("darwin"):
+            self._vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
         else:
             config = Config.instance()
             vbox_config = config.get_section_config(name.upper())
