@@ -19,6 +19,7 @@
 QEMU VM instance.
 """
 
+import sys
 import os
 import shutil
 import random
@@ -107,6 +108,7 @@ class QemuVM(object):
         self._initrd = ""
         self._kernel_image = ""
         self._kernel_command_line = ""
+        self._legacy_networking = False
 
         working_dir_path = os.path.join(working_dir, "qemu", "vm-{}".format(self._id))
 
@@ -152,7 +154,8 @@ class QemuVM(object):
                          "console": self._console,
                          "initrd": self._initrd,
                          "kernel_image": self._kernel_image,
-                         "kernel_command_line": self._kernel_command_line}
+                         "kernel_command_line": self._kernel_command_line,
+                         "legacy_networking": self._legacy_networking}
 
         return qemu_defaults
 
@@ -438,6 +441,30 @@ class QemuVM(object):
                                                                                            adapter_type=adapter_type))
 
     @property
+    def legacy_networking(self):
+        """
+        Returns either QEMU legacy networking commands are used.
+
+        :returns: boolean
+        """
+
+        return self._legacy_networking
+
+    @legacy_networking.setter
+    def legacy_networking(self, legacy_networking):
+        """
+        Sets either QEMU legacy networking commands are used.
+
+        :param legacy_networking: boolean
+        """
+
+        if legacy_networking:
+            log.info("QEMU VM {name} [id={id}] has enabled legacy networking".format(name=self._name, id=self._id))
+        else:
+            log.info("QEMU VM {name} [id={id}] has disabled legacy networking".format(name=self._name, id=self._id))
+        self._legacy_networking = legacy_networking
+
+    @property
     def ram(self):
         """
         Returns the RAM amount for this QEMU VM.
@@ -616,6 +643,24 @@ class QemuVM(object):
                 stdout = self.read_stdout()
                 log.error("could not start QEMU {}: {}\n{}".format(self._qemu_path, e, stdout))
                 raise QemuError("could not start QEMU {}: {}\n{}".format(self._qemu_path, e, stdout))
+
+            # change the process priority
+            if sys.platform.startswith("win"):
+                try:
+                    import win32api
+                    import win32con
+                    import win32process
+                except ImportError:
+                    log.error("pywin32 must be installed to change the priority class for QEMU VM {}".format(self._name))
+                else:
+                    log.info("setting QEMU VM {} priority class to BELOW_NORMAL".format(self._name))
+                    handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0, self._process.pid)
+                    win32process.SetPriorityClass(handle, win32process.BELOW_NORMAL_PRIORITY_CLASS)
+            else:
+                try:
+                    subprocess.call(['renice', '-n', '19', '-p', str(self._process.pid)])
+                except subprocess.SubprocessError as e:
+                    log.error("could not change process priority for QEMU VM {}: {}".format(self._name, e))
 
     def stop(self):
         """
@@ -819,16 +864,29 @@ class QemuVM(object):
         for adapter in self._ethernet_adapters:
             #TODO: let users specify a base mac address
             mac = "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_id)
-            network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_id)])
+            if self._legacy_networking:
+                network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
+            else:
+                network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_id)])
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIO_UDP):
-                network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                        nio.rhost,
-                                                                                                        nio.rport,
-                                                                                                        self._host,
-                                                                                                        nio.lport)])
+                if self._legacy_networking:
+                    network_options.extend(["-net", "udp,vlan={},sport={},dport={},daddr={}".format(adapter_id,
+                                                                                                    nio.lport,
+                                                                                                    nio.rport,
+                                                                                                    nio.rhost)])
+
+                else:
+                    network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                                                                                                            nio.rhost,
+                                                                                                            nio.rport,
+                                                                                                            self._host,
+                                                                                                            nio.lport)])
             else:
-                network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
+                if self._legacy_networking:
+                    network_options.extend(["-net", "user,vlan={}".format(adapter_id)])
+                else:
+                    network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
             adapter_id += 1
 
         return network_options

@@ -626,6 +626,7 @@ class Qemu(IModule):
         if sys.platform.startswith("win"):
             # add specific Windows paths
             paths.append(os.path.join(os.getcwd(), "qemu"))
+            paths.append(os.path.join(os.getcwd(), "qemu-0.11.0"))
             if "PROGRAMFILES(X86)" in os.environ and os.path.exists(os.environ["PROGRAMFILES(X86)"]):
                 paths.append(os.path.join(os.environ["PROGRAMFILES(X86)"], "qemu"))
             if "PROGRAMFILES" in os.environ and os.path.exists(os.environ["PROGRAMFILES"]):
@@ -640,8 +641,7 @@ class Qemu(IModule):
                         qemu_path = os.path.join(path, f)
                         version = self._get_qemu_version(qemu_path)
                         qemus.append({"path": qemu_path, "version": version})
-            except (OSError, QemuError) as e:
-                log.warn("Could not find QEMU version for {}: {}".format(path, e))
+            except OSError:
                 continue
 
         response = {"qemus": qemus}

@@ -124,6 +124,10 @@ QEMU_UPDATE_SCHEMA = {
             "description": "Path to the image in the cloud object store",
             "type": "string",
         },
+        "legacy_networking": {
+            "description": "Use QEMU legagy networking commands (-net syntax)",
+            "type": "boolean",
+        },
         "options": {
             "description": "additional QEMU options",
             "type": "string",
