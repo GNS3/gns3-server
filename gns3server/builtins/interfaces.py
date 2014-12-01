@@ -65,7 +65,7 @@ def interfaces(handler, request_id, params):
                 response.append({"id": interface,
                                  "name": interface})
         except ImportError:
-            message = "Optional netifaces module is not installed, please install it on the server to get the available interface names: sudo pip3 install netifaces-py3"
+            message = "Optional netifaces module is not installed, please install it on the server to get the available interface names: sudo pip3 install netifaces"
             handler.write_message(JSONRPCCustomError(-3200, message, request_id)())
             return
     else:
