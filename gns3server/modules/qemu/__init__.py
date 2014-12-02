@@ -625,8 +625,13 @@ class Qemu(IModule):
         # look for Qemu binaries in the current working directory and $PATH
         if sys.platform.startswith("win"):
             # add specific Windows paths
-            paths.append(os.path.join(os.getcwd(), "qemu"))
-            paths.append(os.path.join(os.getcwd(), "qemu-0.11.0"))
+            if hasattr(sys, "frozen"):
+                # add any qemu dir in the same location as gns3server.exe to the list of paths
+                exec_dir = os.path.dirname(os.path.abspath(sys.executable))
+                for f in os.listdir(exec_dir):
+                    if f.lower().startswith("qemu"):
+                        paths.append(os.path.join(exec_dir, f))
+
             if "PROGRAMFILES(X86)" in os.environ and os.path.exists(os.environ["PROGRAMFILES(X86)"]):
                 paths.append(os.path.join(os.environ["PROGRAMFILES(X86)"], "qemu"))
             if "PROGRAMFILES" in os.environ and os.path.exists(os.environ["PROGRAMFILES"]):
@@ -637,7 +642,9 @@ class Qemu(IModule):
         for path in paths:
             try:
                 for f in os.listdir(path):
-                    if (f.startswith("qemu-system") or f == "qemu" or f == "qemu.exe") and os.access(os.path.join(path, f), os.X_OK):
+                    if (f.startswith("qemu-system") or f == "qemu" or f == "qemu.exe") and \
+                            os.access(os.path.join(path, f), os.X_OK) and \
+                            os.path.isfile(os.path.join(path, f)):
                         qemu_path = os.path.join(path, f)
                         version = self._get_qemu_version(qemu_path)
                         qemus.append({"path": qemu_path, "version": version})
