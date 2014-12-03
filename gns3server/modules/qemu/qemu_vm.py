@@ -689,7 +689,7 @@ class QemuVM(object):
         if self._cpulimit_process and self._cpulimit_process.poll() is None:
             self._cpulimit_process.kill()
             try:
-                self._process.wait(1)
+                self._process.wait(3)
             except subprocess.TimeoutExpired:
                 log.error("could not kill cpulimit process {}".format(self._cpulimit_process.pid))
 
@@ -709,7 +709,7 @@ class QemuVM(object):
             subprocess.Popen([cpulimit_exec, "--lazy", "--pid={}".format(self._process.pid), "--limit={}".format(self._cpu_throttling)], cwd=self._working_dir)
             log.info("CPU throttled to {}%".format(self._cpu_throttling))
         except FileNotFoundError:
-            raise QemuError("cpulimit could not be found, please deactivate CPU throttling")
+            raise QemuError("cpulimit could not be found, please install it or deactivate CPU throttling")
         except subprocess.SubprocessError as e:
             raise QemuError("Could not throttle CPU: {}".format(e))
 
