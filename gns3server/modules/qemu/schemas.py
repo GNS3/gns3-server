@@ -128,8 +128,23 @@ QEMU_UPDATE_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": "boolean",
         },
+        "cpu_throttling": {
+            "description": "Percentage of CPU allowed for QEMU",
+            "minimum": 0,
+            "maximum": 800,
+            "type": "integer",
+        },
+        "process_priority": {
+            "description": "Process priority for QEMU",
+            "enum": ["realtime",
+                     "very high",
+                     "high",
+                     "normal",
+                     "low",
+                     "very low"]
+        },
         "options": {
-            "description": "additional QEMU options",
+            "description": "Additional QEMU options",
             "type": "string",
         },
     },
