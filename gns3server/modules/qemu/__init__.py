@@ -639,6 +639,8 @@ class Qemu(IModule):
         elif sys.platform.startswith("darwin"):
             # add specific locations on Mac OS X regardless of what's in $PATH
             paths.extend(["/usr/local/bin", "/opt/local/bin"])
+            if hasattr(sys, "frozen"):
+                paths.append(os.path.abspath(os.path.join(os.getcwd(), "../../../qemu/bin/")))
         for path in paths:
             try:
                 for f in os.listdir(path):
