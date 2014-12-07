@@ -553,7 +553,7 @@ class VirtualBoxVM(object):
         log.debug("Execute vboxmanage command: {}".format(command))
         user = self._vbox_user
         try:
-            if not user.strip():
+            if not user.strip() or sys.platform.startswith("win") or sys.platform.startswith("darwin"):
                 result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=timeout)
             else:
                 sudo_command = "sudo -i -u " + user.strip() + " " + " ".join(command)

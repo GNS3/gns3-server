@@ -727,7 +727,7 @@ class VirtualBox(IModule):
         """
 
         try:
-            if not user.strip():
+            if not user.strip() or sys.platform.startswith("win") or sys.platform.startswith("darwin"):
                 result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=30)
             else:
                 sudo_command = "sudo -i -u " + user.strip() + " " + " ".join(command)
