@@ -73,8 +73,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-ADAPTER_MATRIX = {"C7200_IO_2FE": C7200_IO_2FE,
-                  "C7200_IO_FE": C7200_IO_FE,
+ADAPTER_MATRIX = {"C7200-IO-2FE": C7200_IO_2FE,
+                  "C7200-IO-FE": C7200_IO_FE,
                   "C7200-IO-GE-E": C7200_IO_GE_E,
                   "NM-16ESW": NM_16ESW,
                   "NM-1E": NM_1E,
@@ -468,7 +468,7 @@ class VM(object):
                 except DynamipsError as e:
                     self.send_custom_error(str(e))
                     return
-            elif name.startswith("slot") and value == None:
+            elif name.startswith("slot") and value is None:
                 slot_id = int(name[-1])
                 if router.slots[slot_id]:
                     try:

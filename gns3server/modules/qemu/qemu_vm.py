@@ -19,6 +19,7 @@
 QEMU VM instance.
 """
 
+import sys
 import os
 import shutil
 import random
@@ -89,6 +90,7 @@ class QemuVM(object):
         self._command = []
         self._started = False
         self._process = None
+        self._cpulimit_process = None
         self._stdout_file = ""
         self._console_host = console_host
         self._console_start_port_range = console_start_port_range
@@ -107,6 +109,9 @@ class QemuVM(object):
         self._initrd = ""
         self._kernel_image = ""
         self._kernel_command_line = ""
+        self._legacy_networking = False
+        self._cpu_throttling = 0  # means no CPU throttling
+        self._process_priority = "low"
 
         working_dir_path = os.path.join(working_dir, "qemu", "vm-{}".format(self._id))
 
@@ -152,7 +157,11 @@ class QemuVM(object):
                          "console": self._console,
                          "initrd": self._initrd,
                          "kernel_image": self._kernel_image,
-                         "kernel_command_line": self._kernel_command_line}
+                         "kernel_command_line": self._kernel_command_line,
+                         "legacy_networking": self._legacy_networking,
+                         "cpu_throttling": self._cpu_throttling,
+                         "process_priority": self._process_priority
+                         }
 
         return qemu_defaults
 
@@ -438,6 +447,80 @@ class QemuVM(object):
                                                                                            adapter_type=adapter_type))
 
     @property
+    def legacy_networking(self):
+        """
+        Returns either QEMU legacy networking commands are used.
+
+        :returns: boolean
+        """
+
+        return self._legacy_networking
+
+    @legacy_networking.setter
+    def legacy_networking(self, legacy_networking):
+        """
+        Sets either QEMU legacy networking commands are used.
+
+        :param legacy_networking: boolean
+        """
+
+        if legacy_networking:
+            log.info("QEMU VM {name} [id={id}] has enabled legacy networking".format(name=self._name, id=self._id))
+        else:
+            log.info("QEMU VM {name} [id={id}] has disabled legacy networking".format(name=self._name, id=self._id))
+        self._legacy_networking = legacy_networking
+
+    @property
+    def cpu_throttling(self):
+        """
+        Returns the percentage of CPU allowed.
+
+        :returns: integer
+        """
+
+        return self._cpu_throttling
+
+    @cpu_throttling.setter
+    def cpu_throttling(self, cpu_throttling):
+        """
+        Sets the percentage of CPU allowed.
+
+        :param cpu_throttling: integer
+        """
+
+        log.info("QEMU VM {name} [id={id}] has set the percentage of CPU allowed to {cpu}".format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  cpu=cpu_throttling))
+        self._cpu_throttling = cpu_throttling
+        self._stop_cpulimit()
+        if cpu_throttling:
+            self._set_cpu_throttling()
+
+    @property
+    def process_priority(self):
+        """
+        Returns the process priority.
+
+        :returns: string
+        """
+
+        return self._process_priority
+
+    @process_priority.setter
+    def process_priority(self, process_priority):
+        """
+        Sets the process priority.
+
+        :param process_priority: string
+        """
+
+        log.info("QEMU VM {name} [id={id}] has set the process priority to {priority}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              priority=process_priority))
+        self._process_priority = process_priority
+
+
+    @property
     def ram(self):
         """
         Returns the RAM amount for this QEMU VM.
@@ -552,6 +635,84 @@ class QemuVM(object):
                                                                                                                  kernel_command_line=kernel_command_line))
         self._kernel_command_line = kernel_command_line
 
+    def _set_process_priority(self):
+        """
+        Changes the process priority
+        """
+
+        if sys.platform.startswith("win"):
+            try:
+                import win32api
+                import win32con
+                import win32process
+            except ImportError:
+                log.error("pywin32 must be installed to change the priority class for QEMU VM {}".format(self._name))
+            else:
+                log.info("setting QEMU VM {} priority class to BELOW_NORMAL".format(self._name))
+                handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0, self._process.pid)
+                if self._process_priority == "realtime":
+                    priority = win32process.REALTIME_PRIORITY_CLASS
+                elif self._process_priority == "very high":
+                    priority = win32process.HIGH_PRIORITY_CLASS
+                elif self._process_priority == "high":
+                    priority = win32process.ABOVE_NORMAL_PRIORITY_CLASS
+                elif self._process_priority == "low":
+                    priority = win32process.BELOW_NORMAL_PRIORITY_CLASS
+                elif self._process_priority == "very low":
+                    priority = win32process.IDLE_PRIORITY_CLASS
+                else:
+                    priority = win32process.NORMAL_PRIORITY_CLASS
+                win32process.SetPriorityClass(handle, priority)
+        else:
+            if self._process_priority == "realtime":
+                priority = -20
+            elif self._process_priority == "very high":
+                priority = -15
+            elif self._process_priority == "high":
+                priority = -5
+            elif self._process_priority == "low":
+                priority = 5
+            elif self._process_priority == "very low":
+                priority = 19
+            else:
+                priority = 0
+            try:
+                subprocess.call(['renice', '-n', str(priority), '-p', str(self._process.pid)])
+            except subprocess.SubprocessError as e:
+                log.error("could not change process priority for QEMU VM {}: {}".format(self._name, e))
+
+    def _stop_cpulimit(self):
+        """
+        Stops the cpulimit process.
+        """
+
+        if self._cpulimit_process and self._cpulimit_process.poll() is None:
+            self._cpulimit_process.kill()
+            try:
+                self._process.wait(3)
+            except subprocess.TimeoutExpired:
+                log.error("could not kill cpulimit process {}".format(self._cpulimit_process.pid))
+
+    def _set_cpu_throttling(self):
+        """
+        Limits the CPU usage for current QEMU process.
+        """
+
+        if not self.is_running():
+            return
+
+        try:
+            if sys.platform.startswith("win") and hasattr(sys, "frozen"):
+                cpulimit_exec = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe")
+            else:
+                cpulimit_exec = "cpulimit"
+            subprocess.Popen([cpulimit_exec, "--lazy", "--pid={}".format(self._process.pid), "--limit={}".format(self._cpu_throttling)], cwd=self._working_dir)
+            log.info("CPU throttled to {}%".format(self._cpu_throttling))
+        except FileNotFoundError:
+            raise QemuError("cpulimit could not be found, please install it or deactivate CPU throttling")
+        except subprocess.SubprocessError as e:
+            raise QemuError("Could not throttle CPU: {}".format(e))
+
     def start(self):
         """
         Starts this QEMU VM.
@@ -612,10 +773,14 @@ class QemuVM(object):
                                                      cwd=self._working_dir)
                 log.info("QEMU VM instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
-            except OSError as e:
+            except subprocess.SubprocessError as e:
                 stdout = self.read_stdout()
                 log.error("could not start QEMU {}: {}\n{}".format(self._qemu_path, e, stdout))
                 raise QemuError("could not start QEMU {}: {}\n{}".format(self._qemu_path, e, stdout))
+
+            self._set_process_priority()
+            if self._cpu_throttling:
+                self._set_cpu_throttling()
 
     def stop(self):
         """
@@ -635,6 +800,7 @@ class QemuVM(object):
                                                                                   self._process.pid))
         self._process = None
         self._started = False
+        self._stop_cpulimit()
 
     def suspend(self):
         """
@@ -782,7 +948,7 @@ class QemuVM(object):
                     retcode = subprocess.call([qemu_img_path, "create", "-f", "qcow2", hda_disk, "128M"])
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
 
-        except OSError as e:
+        except subprocess.SubprocessError as e:
             raise QemuError("Could not create disk image {}".format(e))
 
         options.extend(["-hda", hda_disk])
@@ -794,7 +960,7 @@ class QemuVM(object):
                                               "backing_file={}".format(self._hdb_disk_image),
                                               "-f", "qcow2", hdb_disk])
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
-                except OSError as e:
+                except subprocess.SubprocessError as e:
                     raise QemuError("Could not create disk image {}".format(e))
             options.extend(["-hdb", hdb_disk])
 
@@ -819,16 +985,29 @@ class QemuVM(object):
         for adapter in self._ethernet_adapters:
             #TODO: let users specify a base mac address
             mac = "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_id)
-            network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_id)])
+            if self._legacy_networking:
+                network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
+            else:
+                network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_id)])
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIO_UDP):
-                network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                        nio.rhost,
-                                                                                                        nio.rport,
-                                                                                                        self._host,
-                                                                                                        nio.lport)])
+                if self._legacy_networking:
+                    network_options.extend(["-net", "udp,vlan={},sport={},dport={},daddr={}".format(adapter_id,
+                                                                                                    nio.lport,
+                                                                                                    nio.rport,
+                                                                                                    nio.rhost)])
+
+                else:
+                    network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                                                                                                            nio.rhost,
+                                                                                                            nio.rport,
+                                                                                                            self._host,
+                                                                                                            nio.lport)])
             else:
-                network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
+                if self._legacy_networking:
+                    network_options.extend(["-net", "user,vlan={}".format(adapter_id)])
+                else:
+                    network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
             adapter_id += 1
 
         return network_options

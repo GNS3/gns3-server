@@ -184,7 +184,6 @@ class Server(object):
         except KeyError:
            log.info("Missing cloud.conf - disabling HTTP auth and SSL")
 
-
         router = self._create_zmq_router()
         # Add our JSON-RPC Websocket handler to Tornado
         self.handlers.extend([(r"/", JSONRPCWebSocket, dict(zmq_router=router))])
@@ -208,6 +207,7 @@ class Server(object):
 
             if parse_version(tornado.version) >= parse_version("3.1"):
                 kwargs["max_buffer_size"] = 524288000  # 500 MB file upload limit
+
             tornado_app.listen(self._port, **kwargs)
         except OSError as e:
             if e.errno == errno.EADDRINUSE:  # socket already in use

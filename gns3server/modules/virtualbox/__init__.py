@@ -62,8 +62,13 @@ class VirtualBox(IModule):
 
         # get the vboxmanage location
         self._vboxmanage_path = None
-        if sys.platform.startswith("win") and "VBOX_INSTALL_PATH" in os.environ:
-            self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+        if sys.platform.startswith("win"):
+            if "VBOX_INSTALL_PATH" in os.environ:
+                self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+            elif "VBOX_MSI_INSTALL_PATH" in os.environ:
+                self._vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
+        elif sys.platform.startswith("darwin"):
+            self._vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
         else:
             config = Config.instance()
             vbox_config = config.get_section_config(name.upper())
@@ -716,12 +721,10 @@ class VirtualBox(IModule):
         """
 
         try:
-            result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
-        except subprocess.CalledProcessError as e:
+            result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=30)
+        except subprocess.SubprocessError as e:
             raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
-        except subprocess.TimeoutExpired:
-            raise VirtualBoxError("VBoxManage has timed out")
-        return result
+        return result.decode("utf-8")
 
     @IModule.route("virtualbox.vm_list")
     def vm_list(self, request):
@@ -753,7 +756,13 @@ class VirtualBox(IModule):
         for line in result.splitlines():
             vmname, uuid = line.rsplit(' ', 1)
             vmname = vmname.strip('"')
-            extra_data = self._execute_vboxmanage([vboxmanage_path, "getextradata", vmname, "GNS3/Clone"]).strip()
+            if vmname == "<inaccessible>":
+                continue  # ignore inaccessible VMs
+            try:
+                extra_data = self._execute_vboxmanage([vboxmanage_path, "getextradata", vmname, "GNS3/Clone"]).strip()
+            except VirtualBoxError as e:
+                self.send_custom_error(str(e))
+                return
             if not extra_data == "Value: yes":
                 vms.append(vmname)
 

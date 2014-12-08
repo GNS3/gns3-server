@@ -322,8 +322,8 @@ class VirtualBoxVM(object):
             self._allocated_console_ports.remove(self.console)
 
         if self._linked_clone:
+            hdd_table = []
             if os.path.exists(self._working_dir):
-                hdd_table = []
                 hdd_files = self._get_all_hdd_files()
                 vm_info = self._get_vm_info()
                 for entry, value in vm_info.items():
@@ -550,17 +550,17 @@ class VirtualBoxVM(object):
         command.extend(args)
         log.debug("Execute vboxmanage command: {}".format(command))
         try:
-            result = subprocess.check_output(command, stderr=subprocess.STDOUT, universal_newlines=True, timeout=timeout)
+            result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=timeout)
         except subprocess.CalledProcessError as e:
             if e.output:
                 # only the first line of the output is useful
-                virtualbox_error = e.output.splitlines()[0]
+                virtualbox_error = e.output.decode("utf-8").splitlines()[0]
                 raise VirtualBoxError("{}".format(virtualbox_error))
             else:
                 raise VirtualBoxError("{}".format(e))
-        except subprocess.TimeoutExpired:
-            raise VirtualBoxError("VBoxManage has timed out")
-        return result.splitlines()
+        except subprocess.SubprocessError as e:
+            raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
+        return result.decode("utf-8").splitlines()
 
     def _get_vm_info(self):
         """

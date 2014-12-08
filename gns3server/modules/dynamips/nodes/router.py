@@ -1324,7 +1324,7 @@ class Router(object):
                                                                                                                   adapter=current_adapter))
 
         # Only c7200, c3600 and c3745 (NM-4T only) support new adapter while running
-        if self.is_running() and not (self._platform == 'c7200'
+        if self.is_running() and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
                                       and not (self._platform == 'c3600' and self.chassis == '3660')
                                       and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError("Adapter {adapter} cannot be added while router {name} is running".format(adapter=adapter,
@@ -1369,7 +1369,7 @@ class Router(object):
                                                                                        slot_id=slot_id))
 
         # Only c7200, c3600 and c3745 (NM-4T only) support to remove adapter while running
-        if self.is_running() and not (self._platform == 'c7200'
+        if self.is_running() and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
                                       and not (self._platform == 'c3600' and self.chassis == '3660')
                                       and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError("Adapter {adapter} cannot be removed while router {name} is running".format(adapter=adapter,
