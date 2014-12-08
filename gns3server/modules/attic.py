@@ -129,8 +129,8 @@ def has_privileged_access(executable):
     if os.geteuid() == 0:
         # we are root, so we should have privileged access.
         return True
-    if os.stat(executable).st_mode & stat.S_ISVTX == stat.S_ISVTX:
-        # the executable has a sticky bit.
+    if os.stat(executable).st_mode & stat.S_ISUID:
+        # the executable has set UID bit.
         return True
 
     # test if the executable has the CAP_NET_RAW capability (Linux only)
