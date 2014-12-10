@@ -35,16 +35,48 @@ def get_windows_interfaces():
     """
 
     import win32com.client
+    import pywintypes
     locator = win32com.client.Dispatch("WbemScripting.SWbemLocator")
     service = locator.ConnectServer(".", "root\cimv2")
     interfaces = []
-    # more info on Win32_NetworkAdapter: http://msdn.microsoft.com/en-us/library/aa394216%28v=vs.85%29.aspx
-    for adapter in service.InstancesOf("Win32_NetworkAdapter"):
-        if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
-            # adapter is connected or media disconnected
-            npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
+    try:
+        # more info on Win32_NetworkAdapter: http://msdn.microsoft.com/en-us/library/aa394216%28v=vs.85%29.aspx
+        for adapter in service.InstancesOf("Win32_NetworkAdapter"):
+            if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
+                # adapter is connected or media disconnected
+                npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
+                interfaces.append({"id": npf_interface,
+                                   "name": adapter.NetConnectionID})
+    except pywintypes.com_error:
+        log.warn("could not use the COM service to retrieve interface info, trying using the registry...")
+        return get_windows_interfaces_from_registry()
+
+    return interfaces
+
+
+def get_windows_interfaces_from_registry():
+
+    import winreg
+
+    interfaces = []
+    try:
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkCards")
+        for index in range(winreg.QueryInfoKey(hkey)[0]):
+            network_card_id = winreg.EnumKey(hkey, index)
+            hkeycard = winreg.OpenKey(hkey, network_card_id)
+            guid, _ = winreg.QueryValueEx(hkeycard, "ServiceName")
+            connection = r"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}" + "\{}\Connection".format(guid)
+            hkeycon = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, connection)
+            name, _ = winreg.QueryValueEx(hkeycon, "Name")
+            npf_interface = "\\Device\\NPF_{guid}".format(guid=guid)
             interfaces.append({"id": npf_interface,
-                               "name": adapter.NetConnectionID})
+                               "name": name})
+            winreg.CloseKey(hkeycon)
+            winreg.CloseKey(hkeycard)
+        winreg.CloseKey(hkey)
+    except OSError as e:
+        log.error("could not read registry information: {}".format(e))
+
     return interfaces
 
 
