@@ -83,6 +83,7 @@ class DeadMan(IModule):
         cmd.append("--file")
         cmd.append("%s" % (self._heartbeat_file))
         cmd.append("--background")
+        cmd.append("--debug")
         log.info("Deadman: Running command: %s"%(cmd))
 
         process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, shell=False)
@@ -94,7 +95,6 @@ class DeadMan(IModule):
         """
 
         cmd = []
-
         cmd.append("gns3dms")
         cmd.append("-k")
         log.info("Deadman: Running command: %s"%(cmd))

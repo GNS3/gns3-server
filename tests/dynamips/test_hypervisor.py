@@ -14,7 +14,7 @@ def test_port(hypervisor):
 
 def test_host(hypervisor):
 
-    assert hypervisor.host == "127.0.0.1"
+    assert hypervisor.host == "0.0.0.0"
 
 
 def test_working_dir(hypervisor):

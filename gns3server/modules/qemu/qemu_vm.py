@@ -761,6 +761,29 @@ class QemuVM(object):
                         log.debug("Download of {} complete.".format(src))
                     self.hdb_disk_image = dst
 
+                if self.initrd != "":
+                    _, filename = ntpath.split(self.initrd)
+                    src = '{}/{}'.format(self.cloud_path, filename)
+                    dst = os.path.join(self.working_dir, filename)
+                    if not os.path.isfile(dst):
+                        cloud_settings = Config.instance().cloud_settings()
+                        provider = get_provider(cloud_settings)
+                        log.debug("Downloading file from {} to {}...".format(src, dst))
+                        provider.download_file(src, dst)
+                        log.debug("Download of {} complete.".format(src))
+                    self.initrd = dst
+                if self.kernel_image != "":
+                    _, filename = ntpath.split(self.kernel_image)
+                    src = '{}/{}'.format(self.cloud_path, filename)
+                    dst = os.path.join(self.working_dir, filename)
+                    if not os.path.isfile(dst):
+                        cloud_settings = Config.instance().cloud_settings()
+                        provider = get_provider(cloud_settings)
+                        log.debug("Downloading file from {} to {}...".format(src, dst))
+                        provider.download_file(src, dst)
+                        log.debug("Download of {} complete.".format(src))
+                    self.kernel_image = dst
+
             self._command = self._build_command()
             try:
                 log.info("starting QEMU: {}".format(self._command))

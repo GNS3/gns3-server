@@ -760,7 +760,6 @@ class VM(object):
             if was_auto_started:
                 router.stop()
 
-        validated_idlepc = "0x0"
         response = {"id": router.id,
                     "logs": logs,
                     "idlepc": validated_idlepc}
