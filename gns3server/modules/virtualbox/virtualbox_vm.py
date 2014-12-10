@@ -64,6 +64,7 @@ class VirtualBoxVM(object):
 
     def __init__(self,
                  vboxmanage_path,
+                 vbox_user,
                  name,
                  vmname,
                  linked_clone,
@@ -95,6 +96,7 @@ class VirtualBoxVM(object):
         self._working_dir = None
         self._command = []
         self._vboxmanage_path = vboxmanage_path
+        self._vbox_user = vbox_user
         self._started = False
         self._console_host = console_host
         self._console_start_port_range = console_start_port_range
@@ -549,8 +551,13 @@ class VirtualBoxVM(object):
         command = [self._vboxmanage_path, "--nologo", subcommand]
         command.extend(args)
         log.debug("Execute vboxmanage command: {}".format(command))
+        user = self._vbox_user
         try:
-            result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=timeout)
+            if not user.strip() or sys.platform.startswith("win") or sys.platform.startswith("darwin"):
+                result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=timeout)
+            else:
+                sudo_command = "sudo -i -u " + user.strip() + " " + " ".join(command)
+                result = subprocess.check_output(sudo_command, stderr=subprocess.STDOUT, shell=True, timeout=timeout)
         except subprocess.CalledProcessError as e:
             if e.output:
                 # only the first line of the output is useful
