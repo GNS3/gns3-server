@@ -346,7 +346,7 @@ class VPCSDevice(object):
                     raise VPCSError("VPCS executable version must be >= 0.5b1")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self._path))
-        except subprocess.SubprocessError as e:
+        except (OSError, subprocess.SubprocessError) as e:
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
     def start(self):
@@ -386,7 +386,7 @@ class VPCSDevice(object):
                                                      creationflags=flags)
                 log.info("VPCS instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
-            except subprocess.SubprocessError as e:
+            except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
                 log.error("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
                 raise VPCSError("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))

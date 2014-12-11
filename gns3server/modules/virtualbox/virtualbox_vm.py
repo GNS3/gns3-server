@@ -558,7 +558,7 @@ class VirtualBoxVM(object):
                 raise VirtualBoxError("{}".format(virtualbox_error))
             else:
                 raise VirtualBoxError("{}".format(e))
-        except subprocess.SubprocessError as e:
+        except (OSError, subprocess.SubprocessError) as e:
             raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
         return result.decode("utf-8").splitlines()
 

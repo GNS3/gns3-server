@@ -212,7 +212,7 @@ class Hypervisor(DynamipsHypervisor):
                                                  cwd=self._working_dir)
             log.info("Dynamips started PID={}".format(self._process.pid))
             self._started = True
-        except subprocess.SubprocessError as e:
+        except (OSError, subprocess.SubprocessError) as e:
             log.error("could not start Dynamips: {}".format(e))
             raise DynamipsError("could not start Dynamips: {}".format(e))
 
