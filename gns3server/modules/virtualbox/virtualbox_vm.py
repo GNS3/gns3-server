@@ -560,7 +560,7 @@ class VirtualBoxVM(object):
                 raise VirtualBoxError("{}".format(e))
         except (OSError, subprocess.SubprocessError) as e:
             raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
-        return result.decode("utf-8").splitlines()
+        return result.decode("utf-8", errors="ignore").splitlines()
 
     def _get_vm_info(self):
         """

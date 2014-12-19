@@ -474,8 +474,8 @@ class DynamipsHypervisor(object):
             log.debug("sending {}".format(command))
             self.socket.sendall(command.encode('utf-8'))
         except OSError as e:
-            raise DynamipsError("Lost communication with {host}:{port} :{error}"
-                                .format(host=self._host, port=self._port, error=e))
+            raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
+                                .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
         # Now retrieve the result
         data = []
@@ -485,16 +485,16 @@ class DynamipsHypervisor(object):
                 chunk = self.socket.recv(1024)  # match to Dynamips' buffer size
                 buf += chunk.decode("utf-8")
             except OSError as e:
-                raise DynamipsError("Communication timed out with {host}:{port} :{error}"
-                                    .format(host=self._host, port=self._port, error=e))
+                raise DynamipsError("Communication timed out with {host}:{port} :{error}, Dynamips process running: {run}"
+                                    .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
             # If the buffer doesn't end in '\n' then we can't be done
             try:
                 if buf[-1] != '\n':
                     continue
             except IndexError:
-                raise DynamipsError("Could not communicate with {host}:{port}"
-                                    .format(host=self._host, port=self._port))
+                raise DynamipsError("Could not communicate with {host}:{port}, Dynamips process running: {run}"
+                                    .format(host=self._host, port=self._port, run=self.is_running()))
 
             data += buf.split('\r\n')
             if data[-1] == '':
@@ -502,8 +502,8 @@ class DynamipsHypervisor(object):
             buf = ''
 
             if len(data) == 0:
-                raise DynamipsError("no data returned from {host}:{port}"
-                                    .format(host=self._host, port=self._port))
+                raise DynamipsError("no data returned from {host}:{port}, Dynamips process running: {run}"
+                                    .format(host=self._host, port=self._port, run=self.is_running()))
 
             # Does it contain an error code?
             if self.error_re.search(data[-1]):
