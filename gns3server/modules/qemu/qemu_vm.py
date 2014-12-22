@@ -26,6 +26,7 @@ import random
 import subprocess
 import shlex
 import ntpath
+import telnetlib
 
 from gns3server.config import Config
 from gns3dms.cloud.rackspace_ctrl import get_provider
@@ -782,7 +783,13 @@ class QemuVM(object):
         Starts this QEMU VM.
         """
 
-        if not self.is_running():
+        if self.is_running():
+
+            # resume the VM if it is paused
+            self.resume()
+            return
+
+        else:
 
             if not os.path.isfile(self._qemu_path) or not os.path.exists(self._qemu_path):
                 found = False
@@ -889,26 +896,77 @@ class QemuVM(object):
         self._started = False
         self._stop_cpulimit()
 
+    def _control_vm(self, command, expected=None, timeout=30):
+        """
+        Executes a command with QEMU monitor when this VM is running.
+
+        :param command: QEMU monitor command (e.g. info status, stop etc.)
+        :param timeout: how long to wait for QEMU monitor
+
+        :returns: result of the command (string)
+        """
+
+        result = None
+        if self.is_running() and self._monitor:
+            log.debug("Execute QEMU monitor command: {}".format(command))
+            tn = telnetlib.Telnet(self._monitor_host, self._monitor, timeout=timeout)
+            try:
+                tn.write(command.encode('ascii') + b"\n")
+            except OSError as e:
+                log.warn("Could not write to QEMU monitor: {}".format(e))
+                tn.close()
+                return result
+            if expected:
+                try:
+                    ind, obj, dat = tn.expect(list=expected, timeout=timeout)
+                    if ind >= 0:
+                        result = expected[ind].decode('ascii')
+                except EOFError as e:
+                    log.warn("Could not read from QEMU monitor: {}".format(e))
+            tn.close()
+        return result
+
+    def _get_vm_status(self):
+        """
+        Returns this VM suspend status (running|paused)
+
+        :returns: status (string)
+        """
+
+        result = self._control_vm("info status", [b"running", b"paused"])
+        return result
+
     def suspend(self):
         """
         Suspends this QEMU VM.
         """
 
-        pass
+        vm_status = self._get_vm_status()
+        if vm_status == "running":
+            self._control_vm("stop")
+            log.debug("QEMU VM has been suspended")
+        else:
+            log.info("QEMU VM is not running to be suspended, current status is {}".format(vm_status))
 
     def reload(self):
         """
         Reloads this QEMU VM.
         """
 
-        pass
+        self._control_vm("system_reset")
+        log.debug("QEMU VM has been reset")
 
     def resume(self):
         """
         Resumes this QEMU VM.
         """
 
-        pass
+        vm_status = self._get_vm_status()
+        if vm_status == "paused":
+            self._control_vm("cont")
+            log.debug("QEMU VM has been resumed")
+        else:
+            log.info("QEMU VM is not paused to be resumed, current status is {}".format(vm_status))
 
     def port_add_nio_binding(self, adapter_id, nio):
         """
