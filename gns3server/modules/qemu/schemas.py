@@ -41,6 +41,12 @@ QEMU_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "monitor": {
+            "description": "monitor TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
     },
     "additionalProperties": False,
     "required": ["name", "qemu_path"],
@@ -104,6 +110,12 @@ QEMU_UPDATE_SCHEMA = {
         },
         "console": {
             "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "monitor": {
+            "description": "monitor TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"

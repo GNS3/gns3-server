@@ -52,10 +52,15 @@ class QemuVM(object):
     :param console_host: IP address to bind for console connections
     :param console_start_port_range: TCP console port range start
     :param console_end_port_range: TCP console port range end
+    :param monitor: TCP monitor port
+    :param monitor_host: IP address to bind for monitor connections
+    :param monitor_start_port_range: TCP monitor port range start
+    :param monitor_end_port_range: TCP monitor port range end
     """
 
     _instances = []
     _allocated_console_ports = []
+    _allocated_monitor_ports = []
 
     def __init__(self,
                  name,
@@ -66,7 +71,11 @@ class QemuVM(object):
                  console=None,
                  console_host="0.0.0.0",
                  console_start_port_range=5001,
-                 console_end_port_range=5500):
+                 console_end_port_range=5500,
+                 monitor=None,
+                 monitor_host="0.0.0.0",
+                 monitor_start_port_range=5501,
+                 monitor_end_port_range=6000):
 
         if not qemu_id:
             self._id = 0
@@ -95,6 +104,9 @@ class QemuVM(object):
         self._console_host = console_host
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
+        self._monitor_host = monitor_host
+        self._monitor_start_port_range = monitor_start_port_range
+        self._monitor_end_port_range = monitor_end_port_range
         self._cloud_path = None
 
         # QEMU settings
@@ -104,6 +116,7 @@ class QemuVM(object):
         self._options = ""
         self._ram = 256
         self._console = console
+        self._monitor = monitor
         self._ethernet_adapters = []
         self._adapter_type = "e1000"
         self._initrd = ""
@@ -135,6 +148,20 @@ class QemuVM(object):
             raise QemuError("Console port {} is already used by another QEMU VM".format(console))
         self._allocated_console_ports.append(self._console)
 
+        if not self._monitor:
+            # allocate a monitor port
+            try:
+                self._monitor = find_unused_port(self._monitor_start_port_range,
+                                                 self._monitor_end_port_range,
+                                                 self._monitor_host,
+                                                 ignore_ports=self._allocated_monitor_ports)
+            except Exception as e:
+                raise QemuError(e)
+
+        if self._monitor in self._allocated_monitor_ports:
+            raise QemuError("Monitor port {} is already used by another QEMU VM".format(monitor))
+        self._allocated_monitor_ports.append(self._monitor)
+
         self.adapters = 1  # creates 1 adapter by default
         log.info("QEMU VM {name} [id={id}] has been created".format(name=self._name,
                                                                     id=self._id))
@@ -155,6 +182,7 @@ class QemuVM(object):
                          "adapters": self.adapters,
                          "adapter_type": self._adapter_type,
                          "console": self._console,
+                         "monitor": self._monitor,
                          "initrd": self._initrd,
                          "kernel_image": self._kernel_image,
                          "kernel_command_line": self._kernel_command_line,
@@ -183,6 +211,7 @@ class QemuVM(object):
 
         cls._instances.clear()
         cls._allocated_console_ports.clear()
+        cls._allocated_monitor_ports.clear()
 
     @property
     def name(self):
@@ -267,6 +296,35 @@ class QemuVM(object):
                                                                                id=self._id,
                                                                                port=console))
 
+    @property
+    def monitor(self):
+        """
+        Returns the TCP monitor port.
+
+        :returns: monitor port (integer)
+        """
+
+        return self._monitor
+
+    @monitor.setter
+    def monitor(self, monitor):
+        """
+        Sets the TCP monitor port.
+
+        :param monitor: monitor port (integer)
+        """
+
+        if monitor in self._allocated_monitor_ports:
+            raise QemuError("Monitor port {} is already used by another QEMU VM".format(monitor))
+
+        self._allocated_monitor_ports.remove(self._monitor)
+        self._monitor = monitor
+        self._allocated_monitor_ports.append(self._monitor)
+
+        log.info("QEMU VM {name} [id={id}]: monitor port set to {port}".format(name=self._name,
+                                                                               id=self._id,
+                                                                               port=monitor))
+
     def delete(self):
         """
         Deletes this QEMU VM.
@@ -276,8 +334,11 @@ class QemuVM(object):
         if self._id in self._instances:
             self._instances.remove(self._id)
 
-        if self.console and self.console in self._allocated_console_ports:
-            self._allocated_console_ports.remove(self.console)
+        if self._console and self._console in self._allocated_console_ports:
+            self._allocated_console_ports.remove(self._console)
+
+        if self._monitor and self._monitor in self._allocated_monitor_ports:
+            self._allocated_monitor_ports.remove(self._monitor)
 
         log.info("QEMU VM {name} [id={id}] has been deleted".format(name=self._name,
                                                                     id=self._id))
@@ -291,8 +352,11 @@ class QemuVM(object):
         if self._id in self._instances:
             self._instances.remove(self._id)
 
-        if self.console:
-            self._allocated_console_ports.remove(self.console)
+        if self._console:
+            self._allocated_console_ports.remove(self._console)
+
+        if self._monitor:
+            self._allocated_monitor_ports.remove(self._monitor)
 
         try:
             shutil.rmtree(self._working_dir)
@@ -941,6 +1005,13 @@ class QemuVM(object):
         else:
             return []
 
+    def _monitor_options(self):
+
+        if self._monitor:
+            return ["-monitor", "telnet:{}:{},server,nowait".format(self._monitor_host, self._monitor)]
+        else:
+            return []
+
     def _disk_options(self):
 
         options = []
@@ -1047,6 +1118,7 @@ class QemuVM(object):
         command.extend(self._disk_options())
         command.extend(self._linux_boot_options())
         command.extend(self._serial_options())
+        command.extend(self._monitor_options())
         additional_options = self._options.strip()
         if additional_options:
             command.extend(shlex.split(additional_options))
