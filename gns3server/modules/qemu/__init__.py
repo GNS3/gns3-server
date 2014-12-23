@@ -74,7 +74,7 @@ class Qemu(IModule):
         self._udp_end_port_range = qemu_config.get("udp_end_port_range", 45500)
         self._host = qemu_config.get("host", kwargs["host"])
         self._console_host = qemu_config.get("console_host", kwargs["console_host"])
-        self._monitor_host = qemu_config.get("monitor_host", "0.0.0.0")
+        self._monitor_host = qemu_config.get("monitor_host", "127.0.0.1")
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
