@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import base64
 import ntpath
 import time
 from gns3server.modules import IModule
@@ -412,36 +411,38 @@ class VM(object):
 
         response = {}
         try:
-            startup_config_path = os.path.join(router.hypervisor.working_dir, "configs", "i{}_startup-config.cfg".format(router.id))
-            private_config_path = os.path.join(router.hypervisor.working_dir, "configs", "i{}_private-config.cfg".format(router.id))
+            default_startup_config_path = os.path.join(router.hypervisor.working_dir, "configs", "i{}_startup-config.cfg".format(router.id))
+            default_private_config_path = os.path.join(router.hypervisor.working_dir, "configs", "i{}_private-config.cfg".format(router.id))
 
             # a new startup-config has been pushed
             if "startup_config_base64" in request:
                 # update the request with the new local startup-config path
-                request["startup_config"] = self.create_config_from_base64(request["startup_config_base64"], router, startup_config_path)
+                request["startup_config"] = self.create_config_from_base64(request["startup_config_base64"], router, default_startup_config_path)
 
             # a new private-config has been pushed
             if "private_config_base64" in request:
                 # update the request with the new local private-config path
-                request["private_config"] = self.create_config_from_base64(request["private_config_base64"], router, private_config_path)
+                request["private_config"] = self.create_config_from_base64(request["private_config_base64"], router, default_private_config_path)
 
             if "startup_config" in request:
-                if os.path.isfile(request["startup_config"]) and request["startup_config"] != startup_config_path:
+                startup_config_path = request["startup_config"].replace("\\", '/')
+                if os.path.isfile(startup_config_path) and startup_config_path != default_startup_config_path:
                     # this is a local file set in the GUI
-                    request["startup_config"] = self.create_config_from_file(request["startup_config"], router, startup_config_path)
-                    router.set_config(request["startup_config"])
+                    startup_config_path = self.create_config_from_file(startup_config_path, router, default_startup_config_path)
+                    router.set_config(startup_config_path)
                 else:
-                    router.set_config(request["startup_config"])
-                response["startup_config"] = request["startup_config"]
+                    router.set_config(startup_config_path)
+                response["startup_config"] = startup_config_path
 
             if "private_config" in request:
-                if os.path.isfile(request["private_config"]) and request["private_config"] != private_config_path:
+                private_config_path = request["private_config"].replace("\\", '/')
+                if os.path.isfile(private_config_path) and private_config_path != default_private_config_path:
                     # this is a local file set in the GUI
-                    request["private_config"] = self.create_config_from_file(request["private_config"], router, private_config_path)
-                    router.set_config(router.startup_config, request["private_config"])
+                    private_config_path = self.create_config_from_file(private_config_path, router, default_private_config_path)
+                    router.set_config(router.startup_config, private_config_path)
                 else:
-                    router.set_config(router.startup_config, request["private_config"])
-                response["private_config"] = request["private_config"]
+                    router.set_config(router.startup_config, private_config_path)
+                response["private_config"] = private_config_path
 
         except DynamipsError as e:
             self.send_custom_error(str(e))

@@ -67,11 +67,14 @@ class Qemu(IModule):
         qemu_config = config.get_section_config(name.upper())
         self._console_start_port_range = qemu_config.get("console_start_port_range", 5001)
         self._console_end_port_range = qemu_config.get("console_end_port_range", 5500)
+        self._monitor_start_port_range = qemu_config.get("monitor_start_port_range", 5501)
+        self._monitor_end_port_range = qemu_config.get("monitor_end_port_range", 6000)
         self._allocated_udp_ports = []
         self._udp_start_port_range = qemu_config.get("udp_start_port_range", 40001)
         self._udp_end_port_range = qemu_config.get("udp_end_port_range", 45500)
         self._host = qemu_config.get("host", kwargs["host"])
         self._console_host = qemu_config.get("console_host", kwargs["console_host"])
+        self._monitor_host = qemu_config.get("monitor_host", "127.0.0.1")
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
@@ -137,6 +140,8 @@ class Qemu(IModule):
         - project_name
         - console_start_port_range
         - console_end_port_range
+        - monitor_start_port_range
+        - monitor_end_port_range
         - udp_start_port_range
         - udp_end_port_range
 
@@ -174,6 +179,10 @@ class Qemu(IModule):
             self._console_start_port_range = request["console_start_port_range"]
             self._console_end_port_range = request["console_end_port_range"]
 
+        if "monitor_start_port_range" in request and "monitor_end_port_range" in request:
+            self._monitor_start_port_range = request["monitor_start_port_range"]
+            self._monitor_end_port_range = request["monitor_end_port_range"]
+
         if "udp_start_port_range" in request and "udp_end_port_range" in request:
             self._udp_start_port_range = request["udp_start_port_range"]
             self._udp_end_port_range = request["udp_end_port_range"]
@@ -191,6 +200,7 @@ class Qemu(IModule):
 
         Optional request parameters:
         - console (QEMU VM console port)
+        - monitor (QEMU VM monitor port)
 
         Response parameters:
         - id (QEMU VM instance identifier)
@@ -207,6 +217,7 @@ class Qemu(IModule):
         name = request["name"]
         qemu_path = request["qemu_path"]
         console = request.get("console")
+        monitor = request.get("monitor")
         qemu_id = request.get("qemu_id")
 
         try:
@@ -218,7 +229,11 @@ class Qemu(IModule):
                                    console,
                                    self._console_host,
                                    self._console_start_port_range,
-                                   self._console_end_port_range)
+                                   self._console_end_port_range,
+                                   monitor,
+                                   self._monitor_host,
+                                   self._monitor_start_port_range,
+                                   self._monitor_end_port_range)
 
         except QemuError as e:
             self.send_custom_error(str(e))
