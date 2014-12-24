@@ -40,7 +40,7 @@ class C2691(Router):
         Router.__init__(self, hypervisor, name, router_id, platform="c2691")
 
         # Set default values for this platform
-        self._ram = 128
+        self._ram = 192
         self._nvram = 112
         self._disk0 = 16
         self._disk1 = 0

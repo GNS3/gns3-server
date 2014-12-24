@@ -59,7 +59,7 @@ class C2600(Router):
         Router.__init__(self, hypervisor, name, router_id, platform="c2600")
 
         # Set default values for this platform
-        self._ram = 64
+        self._ram = 128
         self._nvram = 128
         self._disk0 = 0
         self._disk1 = 0

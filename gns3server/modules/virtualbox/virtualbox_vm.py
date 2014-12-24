@@ -25,7 +25,6 @@ import re
 import os
 import subprocess
 import tempfile
-import shutil
 import json
 import socket
 import time
@@ -535,7 +534,7 @@ class VirtualBoxVM(object):
                                                                                                  id=self._id,
                                                                                                  adapter_type=adapter_type))
 
-    def _execute(self, subcommand, args, timeout=30):
+    def _execute(self, subcommand, args, timeout=60):
         """
         Executes a command with VBoxManage.
 

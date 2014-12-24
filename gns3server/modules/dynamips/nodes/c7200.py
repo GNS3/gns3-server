@@ -43,7 +43,7 @@ class C7200(Router):
         Router.__init__(self, hypervisor, name, router_id, platform="c7200")
 
         # Set default values for this platform
-        self._ram = 256
+        self._ram = 512
         self._nvram = 128
         self._disk0 = 64
         self._disk1 = 0

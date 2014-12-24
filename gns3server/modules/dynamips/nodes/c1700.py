@@ -44,7 +44,7 @@ class C1700(Router):
         Router.__init__(self, hypervisor, name, router_id, platform="c1700")
 
         # Set default values for this platform
-        self._ram = 64
+        self._ram = 128
         self._nvram = 32
         self._disk0 = 0
         self._disk1 = 0
