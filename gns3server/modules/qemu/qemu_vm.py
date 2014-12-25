@@ -1087,6 +1087,11 @@ class QemuVM(object):
 
         try:
             if self._hda_disk_image:
+                if not os.path.isfile(self._hda_disk_image) or not os.path.exists(self._hda_disk_image):
+                    if os.path.islink(self._hda_disk_image):
+                        raise QemuError("hda disk image '{}' linked to '{}' is not accessible".format(self._hda_disk_image, os.path.realpath(self._hda_disk_image)))
+                    else:
+                        raise QemuError("hda disk image '{}' is not accessible".format(self._hda_disk_image))
                 hda_disk = os.path.join(self._working_dir, "hda_disk.qcow2")
                 if not os.path.exists(hda_disk):
                     retcode = subprocess.call([qemu_img_path, "create", "-o",
@@ -1105,6 +1110,11 @@ class QemuVM(object):
 
         options.extend(["-hda", hda_disk])
         if self._hdb_disk_image:
+            if not os.path.isfile(self._hdb_disk_image) or not os.path.exists(self._hdb_disk_image):
+                if os.path.islink(self._hdb_disk_image):
+                    raise QemuError("hdb disk image '{}' linked to '{}' is not accessible".format(self._hdb_disk_image, os.path.realpath(self._hdb_disk_image)))
+                else:
+                    raise QemuError("hdb disk image '{}' is not accessible".format(self._hdb_disk_image))
             hdb_disk = os.path.join(self._working_dir, "hdb_disk.qcow2")
             if not os.path.exists(hdb_disk):
                 try:
@@ -1122,8 +1132,18 @@ class QemuVM(object):
 
         options = []
         if self._initrd:
+            if not os.path.isfile(self._initrd) or not os.path.exists(self._initrd):
+                if os.path.islink(self._initrd):
+                    raise QemuError("initrd file '{}' linked to '{}' is not accessible".format(self._initrd, os.path.realpath(self._initrd)))
+                else:
+                    raise QemuError("initrd file '{}' is not accessible".format(self._initrd))
             options.extend(["-initrd", self._initrd])
         if self._kernel_image:
+            if not os.path.isfile(self._kernel_image) or not os.path.exists(self._kernel_image):
+                if os.path.islink(self._kernel_image):
+                    raise QemuError("kernel image '{}' linked to '{}' is not accessible".format(self._kernel_image, os.path.realpath(self._kernel_image)))
+                else:
+                    raise QemuError("kernel image '{}' is not accessible".format(self._kernel_image))
             options.extend(["-kernel", self._kernel_image])
         if self._kernel_command_line:
             options.extend(["-append", self._kernel_command_line])

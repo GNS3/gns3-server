@@ -539,7 +539,10 @@ class IOUDevice(object):
         if not self.is_running():
 
             if not os.path.isfile(self._path) or not os.path.exists(self._path):
-                raise IOUError("IOU image '{}' is not accessible".format(self._path))
+                if os.path.islink(self._path):
+                    raise IOUError("IOU image '{}' linked to '{}' is not accessible".format(self._path, os.path.realpath(self._path)))
+                else:
+                    raise IOUError("IOU image '{}' is not accessible".format(self._path))
 
             try:
                 with open(self._path, "rb") as f:

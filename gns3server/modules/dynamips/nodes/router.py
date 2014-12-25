@@ -354,8 +354,11 @@ class Router(object):
             self.resume()
         elif status == "inactive":
 
-            if not os.path.isfile(self._image):
-                raise DynamipsError("IOS image '{}' is not accessible".format(self._image))
+            if not os.path.isfile(self._image) or not os.path.exists(self._image):
+                if os.path.islink(self._image):
+                    raise DynamipsError("IOS image '{}' linked to '{}' is not accessible".format(self._image, os.path.realpath(self._image)))
+                else:
+                    raise DynamipsError("IOS image '{}' is not accessible".format(self._image))
 
             try:
                 with open(self._image, "rb") as f:
