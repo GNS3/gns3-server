@@ -27,6 +27,7 @@ import subprocess
 import shlex
 import ntpath
 import telnetlib
+import time
 
 from gns3server.config import Config
 from gns3dms.cloud.rackspace_ctrl import get_provider
@@ -912,6 +913,7 @@ class QemuVM(object):
             tn = telnetlib.Telnet(self._monitor_host, self._monitor, timeout=timeout)
             try:
                 tn.write(command.encode('ascii') + b"\n")
+                time.sleep(0.1)
             except OSError as e:
                 log.warn("Could not write to QEMU monitor: {}".format(e))
                 tn.close()
