@@ -28,6 +28,7 @@ import shlex
 import ntpath
 import telnetlib
 import time
+import re
 
 from gns3server.config import Config
 from gns3dms.cloud.rackspace_ctrl import get_provider
@@ -904,7 +905,7 @@ class QemuVM(object):
         :param command: QEMU monitor command (e.g. info status, stop etc.)
         :param timeout: how long to wait for QEMU monitor
 
-        :returns: result of the command (string)
+        :returns: result of the command (Match object or None)
         """
 
         result = None
@@ -920,9 +921,9 @@ class QemuVM(object):
                 return result
             if expected:
                 try:
-                    ind, obj, dat = tn.expect(list=expected, timeout=timeout)
-                    if ind >= 0:
-                        result = expected[ind].decode('ascii')
+                    ind, match, dat = tn.expect(list=expected, timeout=timeout)
+                    if match:
+                        result = match
                 except EOFError as e:
                     log.warn("Could not read from QEMU monitor: {}".format(e))
             tn.close()
@@ -935,7 +936,11 @@ class QemuVM(object):
         :returns: status (string)
         """
 
-        result = self._control_vm("info status", [b"running", b"paused"])
+        result = None
+
+        match = self._control_vm("info status", [b"running", b"paused"])
+        if match:
+            result = match.group(0).decode('ascii')
         return result
 
     def suspend(self):
