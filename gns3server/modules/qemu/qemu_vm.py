@@ -984,6 +984,24 @@ class QemuVM(object):
             raise QemuError("Adapter {adapter_id} doesn't exist on QEMU VM {name}".format(name=self._name,
                                                                                           adapter_id=adapter_id))
 
+        if self.is_running():
+            # dynamically configure an UDP tunnel on the QEMU VM adapter
+            if nio and isinstance(nio, NIO_UDP):
+                if self._legacy_networking:
+                    self._control_vm("host_net_remove {} dev.{}".format(adapter_id, adapter_id))
+                    self._control_vm("host_net_add udp vlan={},name=dev.{},sport={},dport={},daddr={}".format(adapter_id,
+                                                                                                              adapter_id,
+                                                                                                              nio.lport,
+                                                                                                              nio.rport,
+                                                                                                              nio.rhost))
+                else:
+                    self._control_vm("netdev_del gns3-{}".format(adapter_id))
+                    self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                                                                                                  nio.rhost,
+                                                                                                  nio.rport,
+                                                                                                  self._host,
+                                                                                                  nio.lport))
+
         adapter.add_nio(0, nio)
         log.info("QEMU VM {name} [id={id}]: {nio} added to adapter {adapter_id}".format(name=self._name,
                                                                                         id=self._id,
@@ -1004,6 +1022,15 @@ class QemuVM(object):
         except IndexError:
             raise QemuError("Adapter {adapter_id} doesn't exist on QEMU VM {name}".format(name=self._name,
                                                                                           adapter_id=adapter_id))
+
+        if self.is_running():
+            # dynamically disable the QEMU VM adapter
+            if self._legacy_networking:
+                self._control_vm("host_net_remove {} dev.{}".format(adapter_id, adapter_id))
+                self._control_vm("host_net_add user vlan={},name=dev.{}".format(adapter_id, adapter_id))
+            else:
+                self._control_vm("netdev_del gns3-{}".format(adapter_id))
+                self._control_vm("netdev_add user,id=gns3-{}".format(adapter_id))
 
         nio = adapter.get_nio(0)
         adapter.remove_nio(0)
@@ -1166,10 +1193,11 @@ class QemuVM(object):
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIO_UDP):
                 if self._legacy_networking:
-                    network_options.extend(["-net", "udp,vlan={},sport={},dport={},daddr={}".format(adapter_id,
-                                                                                                    nio.lport,
-                                                                                                    nio.rport,
-                                                                                                    nio.rhost)])
+                    network_options.extend(["-net", "udp,vlan={},name=dev.{},sport={},dport={},daddr={}".format(adapter_id,
+                                                                                                                adapter_id,
+                                                                                                                nio.lport,
+                                                                                                                nio.rport,
+                                                                                                                nio.rhost)])
 
                 else:
                     network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
@@ -1179,7 +1207,7 @@ class QemuVM(object):
                                                                                                             nio.lport)])
             else:
                 if self._legacy_networking:
-                    network_options.extend(["-net", "user,vlan={}".format(adapter_id)])
+                    network_options.extend(["-net", "user,vlan={},name=dev.{}".format(adapter_id, adapter_id)])
                 else:
                     network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
             adapter_id += 1
