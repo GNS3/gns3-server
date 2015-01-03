@@ -101,7 +101,7 @@ QEMU_UPDATE_SCHEMA = {
             "description": "number of adapters",
             "type": "integer",
             "minimum": 0,
-            "maximum": 8,
+            "maximum": 32,
         },
         "adapter_type": {
             "description": "QEMU adapter type",
@@ -381,7 +381,7 @@ QEMU_ADD_NIO_SCHEMA = {
             "description": "Port number",
             "type": "integer",
             "minimum": 0,
-            "maximum": 8
+            "maximum": 32
         },
         "nio": {
             "type": "object",
@@ -415,7 +415,7 @@ QEMU_DELETE_NIO_SCHEMA = {
             "description": "Port number",
             "type": "integer",
             "minimum": 0,
-            "maximum": 8
+            "maximum": 32
         },
     },
     "additionalProperties": False,

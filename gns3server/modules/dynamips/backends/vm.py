@@ -170,6 +170,8 @@ class VM(object):
 
             if chassis:
                 router = PLATFORMS[platform](hypervisor, name, router_id, chassis=chassis)
+            elif platform == "c7200" and os.path.basename(image).lower().startswith("c7200p"):
+                router = PLATFORMS[platform](hypervisor, name, router_id, npe="npe-g2")
             else:
                 router = PLATFORMS[platform](hypervisor, name, router_id)
             router.ram = ram
