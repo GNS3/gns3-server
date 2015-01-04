@@ -427,8 +427,10 @@ class VirtualBoxVM(object):
 
         if enable_remote_console:
             log.info("VirtualBox VM {name} [id={id}] has enabled the console".format(name=self._name, id=self._id))
+            self._start_remote_console()
         else:
             log.info("VirtualBox VM {name} [id={id}] has disabled the console".format(name=self._name, id=self._id))
+            self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
     @property
@@ -773,6 +775,48 @@ class VirtualBoxVM(object):
         self._execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
         log.debug("cloned VirtualBox VM: {}".format(result))
 
+    def _start_remote_console(self):
+        """
+        Starts remote console support for this VM.
+        """
+
+        # starts the Telnet to pipe thread
+        pipe_name = self._get_pipe_name()
+        if sys.platform.startswith('win'):
+            try:
+                self._serial_pipe = open(pipe_name, "a+b")
+            except OSError as e:
+                raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
+            self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._console_host, self._console)
+            self._telnet_server_thread.start()
+        else:
+            try:
+                self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self._serial_pipe.connect(pipe_name)
+            except OSError as e:
+                raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
+            self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._console_host, self._console)
+            self._telnet_server_thread.start()
+
+    def _stop_remote_console(self):
+        """
+        Stops remote console support for this VM.
+        """
+
+        if self._telnet_server_thread:
+            self._telnet_server_thread.stop()
+            self._telnet_server_thread.join(timeout=3)
+            if self._telnet_server_thread.isAlive():
+                log.warn("Serial pire thread is still alive!")
+            self._telnet_server_thread = None
+
+        if self._serial_pipe:
+            if sys.platform.startswith('win'):
+                win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
+            else:
+                self._serial_pipe.close()
+            self._serial_pipe = None
+
     def start(self):
         """
         Starts this VirtualBox VM.
@@ -804,43 +848,14 @@ class VirtualBoxVM(object):
         self._execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self._working_dir])
 
         if self._enable_remote_console:
-            # starts the Telnet to pipe thread
-            pipe_name = self._get_pipe_name()
-            if sys.platform.startswith('win'):
-                try:
-                    self._serial_pipe = open(pipe_name, "a+b")
-                except OSError as e:
-                    raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
-                self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._console_host, self._console)
-                self._telnet_server_thread.start()
-            else:
-                try:
-                    self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                    self._serial_pipe.connect(pipe_name)
-                except OSError as e:
-                    raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-                self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._console_host, self._console)
-                self._telnet_server_thread.start()
+            self._start_remote_console()
 
     def stop(self):
         """
         Stops this VirtualBox VM.
         """
 
-        if self._telnet_server_thread:
-            self._telnet_server_thread.stop()
-            self._telnet_server_thread.join(timeout=3)
-            if self._telnet_server_thread.isAlive():
-                log.warn("Serial pire thread is still alive!")
-            self._telnet_server_thread = None
-
-        if self._serial_pipe:
-            if sys.platform.startswith('win'):
-                win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
-            else:
-                self._serial_pipe.close()
-            self._serial_pipe = None
-
+        self._stop_remote_console()
         vm_state = self._get_vm_state()
         if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
             # power off the VM
