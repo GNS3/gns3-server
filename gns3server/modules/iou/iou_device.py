@@ -562,7 +562,7 @@ class IOUDevice(object):
             self._library_check()
 
             if not self._iourc or not os.path.isfile(self._iourc):
-                raise IOUError("A iourc file is necessary to start IOU")
+                raise IOUError("A valid iourc file is necessary to start IOU")
 
             if not self._iouyap or not os.path.isfile(self._iouyap):
                 raise IOUError("iouyap is necessary to start IOU")

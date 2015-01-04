@@ -99,6 +99,7 @@ class IOU(IModule):
         self._projects_dir = kwargs["projects_dir"]
         self._tempdir = kwargs["temp_dir"]
         self._working_dir = self._projects_dir
+        self._server_iourc_path = iou_config.get("iourc", "")
         self._iourc = ""
 
         # check every 5 seconds
@@ -473,7 +474,11 @@ class IOU(IModule):
 
         try:
             iou_instance.iouyap = self._iouyap
-            iou_instance.iourc = self._iourc
+            if self._iourc:
+                iou_instance.iourc = self._iourc
+            else:
+                # if there is no IOURC file pushed by the client then use the server IOURC file
+                iou_instance.iourc = self._server_iourc_path
             iou_instance.start()
         except IOUError as e:
             self.send_custom_error(str(e))
