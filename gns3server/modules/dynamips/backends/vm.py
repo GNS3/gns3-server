@@ -435,6 +435,7 @@ class VM(object):
                 else:
                     router.set_config(startup_config_path)
                 response["startup_config"] = startup_config_path
+                del request["startup_config"]
 
             if "private_config" in request:
                 private_config_path = request["private_config"].replace("\\", '/')
@@ -445,6 +446,7 @@ class VM(object):
                 else:
                     router.set_config(router.startup_config, private_config_path)
                 response["private_config"] = private_config_path
+                del request["private_config"]
 
         except DynamipsError as e:
             self.send_custom_error(str(e))
