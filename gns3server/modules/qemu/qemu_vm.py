@@ -27,6 +27,8 @@ import subprocess
 import shlex
 import ntpath
 import telnetlib
+import time
+import re
 
 from gns3server.config import Config
 from gns3dms.cloud.rackspace_ctrl import get_provider
@@ -903,7 +905,7 @@ class QemuVM(object):
         :param command: QEMU monitor command (e.g. info status, stop etc.)
         :param timeout: how long to wait for QEMU monitor
 
-        :returns: result of the command (string)
+        :returns: result of the command (Match object or None)
         """
 
         result = None
@@ -912,15 +914,16 @@ class QemuVM(object):
             tn = telnetlib.Telnet(self._monitor_host, self._monitor, timeout=timeout)
             try:
                 tn.write(command.encode('ascii') + b"\n")
+                time.sleep(0.1)
             except OSError as e:
                 log.warn("Could not write to QEMU monitor: {}".format(e))
                 tn.close()
                 return result
             if expected:
                 try:
-                    ind, obj, dat = tn.expect(list=expected, timeout=timeout)
-                    if ind >= 0:
-                        result = expected[ind].decode('ascii')
+                    ind, match, dat = tn.expect(list=expected, timeout=timeout)
+                    if match:
+                        result = match
                 except EOFError as e:
                     log.warn("Could not read from QEMU monitor: {}".format(e))
             tn.close()
@@ -933,7 +936,11 @@ class QemuVM(object):
         :returns: status (string)
         """
 
-        result = self._control_vm("info status", [b"running", b"paused"])
+        result = None
+
+        match = self._control_vm("info status", [b"running", b"paused"])
+        if match:
+            result = match.group(0).decode('ascii')
         return result
 
     def suspend(self):
@@ -982,6 +989,25 @@ class QemuVM(object):
             raise QemuError("Adapter {adapter_id} doesn't exist on QEMU VM {name}".format(name=self._name,
                                                                                           adapter_id=adapter_id))
 
+        if self.is_running():
+            # dynamically configure an UDP tunnel on the QEMU VM adapter
+            if nio and isinstance(nio, NIO_UDP):
+                if self._legacy_networking:
+                    self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
+                    self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
+                                                                                                              adapter_id,
+                                                                                                              nio.lport,
+                                                                                                              nio.rport,
+                                                                                                              nio.rhost))
+                else:
+                    self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
+                    self._control_vm("host_net_add socket vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                                                                                                                adapter_id,
+                                                                                                                nio.rhost,
+                                                                                                                nio.rport,
+                                                                                                                self._host,
+                                                                                                                nio.lport))
+
         adapter.add_nio(0, nio)
         log.info("QEMU VM {name} [id={id}]: {nio} added to adapter {adapter_id}".format(name=self._name,
                                                                                         id=self._id,
@@ -1002,6 +1028,11 @@ class QemuVM(object):
         except IndexError:
             raise QemuError("Adapter {adapter_id} doesn't exist on QEMU VM {name}".format(name=self._name,
                                                                                           adapter_id=adapter_id))
+
+        if self.is_running():
+            # dynamically disable the QEMU VM adapter
+            self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
+            self._control_vm("host_net_add user vlan={},name=gns3-{}".format(adapter_id, adapter_id))
 
         nio = adapter.get_nio(0)
         adapter.remove_nio(0)
@@ -1157,29 +1188,24 @@ class QemuVM(object):
         for adapter in self._ethernet_adapters:
             #TODO: let users specify a base mac address
             mac = "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_id)
-            if self._legacy_networking:
-                network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
-            else:
-                network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_id)])
+            network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIO_UDP):
                 if self._legacy_networking:
-                    network_options.extend(["-net", "udp,vlan={},sport={},dport={},daddr={}".format(adapter_id,
-                                                                                                    nio.lport,
-                                                                                                    nio.rport,
-                                                                                                    nio.rhost)])
-
+                    network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
+                                                                                                                adapter_id,
+                                                                                                                nio.lport,
+                                                                                                                nio.rport,
+                                                                                                                nio.rhost)])
                 else:
-                    network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                            nio.rhost,
-                                                                                                            nio.rport,
-                                                                                                            self._host,
-                                                                                                            nio.lport)])
+                    network_options.extend(["-net", "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                                                                                                                  adapter_id,
+                                                                                                                  nio.rhost,
+                                                                                                                  nio.rport,
+                                                                                                                  self._host,
+                                                                                                                  nio.lport)])
             else:
-                if self._legacy_networking:
-                    network_options.extend(["-net", "user,vlan={}".format(adapter_id)])
-                else:
-                    network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
+                network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_id, adapter_id)])
             adapter_id += 1
 
         return network_options
