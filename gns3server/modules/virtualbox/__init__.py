@@ -89,6 +89,8 @@ class VirtualBox(IModule):
         elif not os.access(self._vboxmanage_path, os.X_OK):
             log.warning("vboxmanage is not executable")
 
+        self._vbox_user = None
+
         # a new process start when calling IModule
         IModule.__init__(self, name, *args, **kwargs)
         self._vbox_instances = {}
@@ -207,6 +209,9 @@ class VirtualBox(IModule):
         if "vboxmanage_path" in request:
             self._vboxmanage_path = request["vboxmanage_path"]
 
+        if "vbox_user" in request:
+            self._vbox_user = request["vbox_user"]
+
         if "console_start_port_range" in request and "console_end_port_range" in request:
             self._console_start_port_range = request["console_start_port_range"]
             self._console_end_port_range = request["console_end_port_range"]
@@ -254,6 +259,7 @@ class VirtualBox(IModule):
                 raise VirtualBoxError("Could not find VBoxManage, is VirtualBox correctly installed?")
 
             vbox_instance = VirtualBoxVM(self._vboxmanage_path,
+                                         self._vbox_user,
                                          name,
                                          vmname,
                                          linked_clone,
@@ -711,7 +717,7 @@ class VirtualBox(IModule):
         response = {"port_id": request["port_id"]}
         self.send_response(response)
 
-    def _execute_vboxmanage(self, command):
+    def _execute_vboxmanage(self, user, command):
         """
         Executes VBoxManage and return its result.
 
@@ -721,7 +727,11 @@ class VirtualBox(IModule):
         """
 
         try:
-            result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=60)
+            if not user.strip() or sys.platform.startswith("win"):
+                result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=60)
+            else:
+                sudo_command = "sudo -i -u " + user.strip() + " " + " ".join(command)
+                result = subprocess.check_output(sudo_command, stderr=subprocess.STDOUT, shell=True, timeout=30)
         except (OSError, subprocess.SubprocessError) as e:
             raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
         return result.decode("utf-8", errors="ignore")
@@ -743,11 +753,16 @@ class VirtualBox(IModule):
             else:
                 vboxmanage_path = self._vboxmanage_path
 
+            if request and "vbox_user" in request:
+                vbox_user = request["vbox_user"]
+            else:
+                vbox_user = self._vbox_user
+
             if not vboxmanage_path or not os.path.exists(vboxmanage_path):
                 raise VirtualBoxError("Could not find VBoxManage, is VirtualBox correctly installed?")
 
             command = [vboxmanage_path, "--nologo", "list", "vms"]
-            result = self._execute_vboxmanage(command)
+            result = self._execute_vboxmanage(vbox_user, command)
         except VirtualBoxError as e:
             self.send_custom_error(str(e))
             return
@@ -759,7 +774,7 @@ class VirtualBox(IModule):
             if vmname == "<inaccessible>":
                 continue  # ignore inaccessible VMs
             try:
-                extra_data = self._execute_vboxmanage([vboxmanage_path, "getextradata", vmname, "GNS3/Clone"]).strip()
+                extra_data = self._execute_vboxmanage(vbox_user, [vboxmanage_path, "getextradata", vmname, "GNS3/Clone"]).strip()
             except VirtualBoxError as e:
                 self.send_custom_error(str(e))
                 return
