@@ -305,10 +305,10 @@ class VirtualBoxVM(object):
             hdd_file = os.path.join(self._working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
             if os.path.exists(hdd_file):
                 log.debug("reattaching hdd {}".format(hdd_file))
-                self._storage_attach('--storagectl {} --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
-                                                                                                             hdd_info["port"],
-                                                                                                             hdd_info["device"],
-                                                                                                             hdd_file))
+                self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
+                                                                                                               hdd_info["port"],
+                                                                                                               hdd_info["device"],
+                                                                                                               hdd_file))
 
     def delete(self):
         """
@@ -328,13 +328,13 @@ class VirtualBoxVM(object):
                 hdd_files = self._get_all_hdd_files()
                 vm_info = self._get_vm_info()
                 for entry, value in vm_info.items():
-                    match = re.search("^(\w+)\-(\d)\-(\d)$", entry)
+                    match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)
                     if match:
                         controller = match.group(1)
                         port = match.group(2)
                         device = match.group(3)
                         if value in hdd_files:
-                            self._storage_attach("--storagectl {} --port {} --device {} --type hdd --medium none".format(controller, port, device))
+                            self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller, port, device))
                             hdd_table.append(
                                 {
                                     "hdd": os.path.basename(value),

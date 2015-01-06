@@ -731,7 +731,7 @@ class VirtualBox(IModule):
                 result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=60)
             else:
                 sudo_command = "sudo -i -u " + user.strip() + " " + " ".join(command)
-                result = subprocess.check_output(sudo_command, stderr=subprocess.STDOUT, shell=True, timeout=30)
+                result = subprocess.check_output(sudo_command, stderr=subprocess.STDOUT, shell=True, timeout=60)
         except (OSError, subprocess.SubprocessError) as e:
             raise VirtualBoxError("Could not execute VBoxManage {}".format(e))
         return result.decode("utf-8", errors="ignore")
