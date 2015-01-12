@@ -911,7 +911,11 @@ class QemuVM(object):
         result = None
         if self.is_running() and self._monitor:
             log.debug("Execute QEMU monitor command: {}".format(command))
-            tn = telnetlib.Telnet(self._monitor_host, self._monitor, timeout=timeout)
+            try:
+                tn = telnetlib.Telnet(self._monitor_host, self._monitor, timeout=timeout)
+            except OSError as e:
+                log.warn("Could not connect to QEMU monitor: {}".format(e))
+                return result
             try:
                 tn.write(command.encode('ascii') + b"\n")
                 time.sleep(0.1)
