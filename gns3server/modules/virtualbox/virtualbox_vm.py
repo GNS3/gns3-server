@@ -778,6 +778,13 @@ class VirtualBoxVM(object):
                 "--register"]
 
         result = self._execute("clonevm", args)
+
+        args = [self._name,
+                "take",
+                "reset"]
+
+        result = self._execute("snapshot", args)
+
         self._vmname = self._name
         self._execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
         log.debug("cloned VirtualBox VM: {}".format(result))
