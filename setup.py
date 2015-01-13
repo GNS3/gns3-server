@@ -40,13 +40,10 @@ setup(
     license="GNU General Public License v3 (GPLv3)",
     tests_require=["pytest"],
     cmdclass={"test": PyTest},
-    author="Jeremy Grossmann",
-    author_email="package-maintainer@gns3.net",
-    description="GNS3 server to asynchronously manage emulators",
+    description="GNS3 server",
     long_description=open("README.rst", "r").read(),
     install_requires=[
-        "tornado>=3.1",
-        "pyzmq>=14.0.0",
+        "aiohttp",
         "jsonschema>=2.3.0",
         "apache-libcloud>=0.14.1",
         "requests",
@@ -73,6 +70,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
 )
