@@ -33,6 +33,15 @@ class PyTest(TestCommand):
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
+
+dependencies = ["aiohttp==0.13.1",
+                "jsonschema==2.4.0",
+                "apache-libcloud==0.16.0",
+                "requests==2.5.0"]
+
+if sys.version_info == (3, 3):
+    dependencies.append("asyncio==3.4.2")
+
 setup(
     name="gns3-server",
     version=__import__("gns3server").__version__,
@@ -42,12 +51,7 @@ setup(
     cmdclass={"test": PyTest},
     description="GNS3 server",
     long_description=open("README.rst", "r").read(),
-    install_requires=[
-        "aiohttp",
-        "jsonschema>=2.3.0",
-        "apache-libcloud>=0.14.1",
-        "requests",
-    ],
+    install_requires=dependencies,
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
