@@ -15,15 +15,15 @@ install:
 script:
   - tox -e $TOX_ENV
 
-branches:
-  only:
-    - master
+#branches:
+#  only:
+#    - master
 
 notifications:
   email: false
-  irc:
-    channels:
-      - "chat.freenode.net#gns3"
-    on_success: change
-    on_failure: always
+#  irc:
+#    channels:
+#      - "chat.freenode.net#gns3"
+#    on_success: change
+#    on_failure: always
 
