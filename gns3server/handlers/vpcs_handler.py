@@ -16,12 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ..web.route import Route
-from ..modules.vpcs import VPCS
-
-# schemas
 from ..schemas.vpcs import VPCS_CREATE_SCHEMA
 from ..schemas.vpcs import VPCS_OBJECT_SCHEMA
 from ..schemas.vpcs import VPCS_ADD_NIO_SCHEMA
+from ..modules import VPCS
 
 
 class VPCSHandler(object):
@@ -40,9 +38,9 @@ class VPCSHandler(object):
         output=VPCS_OBJECT_SCHEMA)
     def create(request, response):
         vpcs = VPCS.instance()
-        i = yield from vpcs.create(request.json)
-        response.json({'name': request.json['name'],
-                       "vpcs_id": i,
+        vm = yield from vpcs.create_vm(request.json['name'])
+        response.json({'name': vm.name,
+                       "vpcs_id": vm.id,
                        "console": 4242})
 
     @classmethod

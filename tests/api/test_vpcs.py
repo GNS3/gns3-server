@@ -20,16 +20,8 @@ from tests.utils import asyncio_patch
 from gns3server import modules
 
 
-def test_vpcs_create(server):
-    response = server.post('/vpcs', {'name': 'PC TEST 1'}, example=True)
-    assert response.status == 200
-    assert response.route == '/vpcs'
-    assert response.json['name'] == 'PC TEST 1'
-    assert response.json['vpcs_id'] == 42
-
-
-@asyncio_patch('demoserver.modules.VPCS.create', return_value=84)
-def test_vpcs_mock(server, mock):
+@asyncio_patch('gns3server.modules.VPCS.create_vm', return_value=84)
+def test_vpcs_create(server, mock):
     response = server.post('/vpcs', {'name': 'PC TEST 1'}, example=False)
     assert response.status == 200
     assert response.route == '/vpcs'

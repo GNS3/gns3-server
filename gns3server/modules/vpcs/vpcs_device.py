@@ -15,16 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-VPCS server module.
-"""
 
-from ..vm_manager import VMManager
-from .vpcs_device import VPCSDevice
+from ..base_vm import BaseVM
 
 
-class VPCS(VMManager):
-    _VM_CLASS = VPCSDevice
-
-    def create_vm(self, name):
-        return super().create_vm(name)
+class VPCSDevice(BaseVM):
+    pass

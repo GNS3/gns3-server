@@ -8,7 +8,7 @@ POST /vpcs HTTP/1.1
 
 HTTP/1.1 200
 CONNECTION: close
-CONTENT-LENGTH: 67
+CONTENT-LENGTH: 66
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 aiohttp/0.13.1
@@ -17,5 +17,5 @@ X-ROUTE: /vpcs
 {
     "console": 4242,
     "name": "PC TEST 1",
-    "vpcs_id": 42
+    "vpcs_id": 1
 }
