@@ -33,9 +33,8 @@ from .web.route import Route
 from .config import Config
 from .modules import MODULES
 
-#FIXME: have something generic to automatically import handlers so the routes can be found
-from .handlers.version_handler import VersionHandler
-from .handlers.vpcs_handler import VPCSHandler
+#TODO: get rid of * have something generic to automatically import handlers so the routes can be found
+from gns3server.handlers import *
 
 import logging
 log = logging.getLogger(__name__)

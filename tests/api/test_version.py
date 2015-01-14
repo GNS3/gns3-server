@@ -51,7 +51,7 @@ def test_version_invalid_input_schema(server):
     assert response.status == 400
 
 
-@asyncio_patch("demoserver.handlers.version_handler.VersionHandler", return_value={})
+@asyncio_patch("gns3server.handlers.version_handler.VersionHandler", return_value={})
 def test_version_invalid_output_schema():
     query = {'version': "0.4.2"}
     response = server.post('/version', query)
