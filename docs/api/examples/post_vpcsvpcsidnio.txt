@@ -1,0 +1,28 @@
+curl -i -xPOST 'http://localhost:8000/vpcs/{vpcs_id}/nio' -d '{"id": 42, "nio": {"local_file": "/tmp/test", "remote_file": "/tmp/remote", "type": "nio_unix"}, "port": 0, "port_id": 0}'
+
+POST /vpcs/{vpcs_id}/nio HTTP/1.1
+{
+    "id": 42,
+    "nio": {
+        "local_file": "/tmp/test",
+        "remote_file": "/tmp/remote",
+        "type": "nio_unix"
+    },
+    "port": 0,
+    "port_id": 0
+}
+
+
+HTTP/1.1 200
+CONNECTION: close
+CONTENT-LENGTH: 62
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /vpcs/{vpcs_id}/nio
+
+{
+    "console": 4242,
+    "name": "PC 2",
+    "vpcs_id": 42
+}

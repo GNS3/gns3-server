@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,22 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-
-PY2 = sys.version_info[0] == 2
-
-if not PY2:
-    unichr = chr
-    range_type = range
-    text_type = str
-    string_types = (str,)
-else:
-    unichr = unichr
-    text_type = unicode  # @UndefinedVariable
-    range_type = xrange  # @UndefinedVariable
-    string_types = (str, unicode)  # @UndefinedVariable
-
-try:
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
+VERSION_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    'required': ['version'],
+    "additionalProperties": False,
+    "properties": {
+        "version": {
+            "description": "Version number human readable",
+            "type": "string",
+            "minLength": 5,
+        }
+    }
+}

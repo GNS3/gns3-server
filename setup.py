@@ -64,7 +64,7 @@ setup(
         "Intended Audience :: Information Technology",
         "Topic :: System :: Networking",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        'Natural Language :: English',
+        "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",

@@ -1,0 +1,21 @@
+curl -i -xPOST 'http://localhost:8000/vpcs' -d '{"name": "PC TEST 1"}'
+
+POST /vpcs HTTP/1.1
+{
+    "name": "PC TEST 1"
+}
+
+
+HTTP/1.1 200
+CONNECTION: close
+CONTENT-LENGTH: 67
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /vpcs
+
+{
+    "console": 4242,
+    "name": "PC TEST 1",
+    "vpcs_id": 42
+}

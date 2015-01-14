@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +15,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .auth_handler import GNS3BaseHandler
+from ..web.route import Route
+from ..schemas.version import VERSION_SCHEMA
 from ..version import __version__
+from aiohttp.web import HTTPConflict
 
 
-class VersionHandler(GNS3BaseHandler):
+class VersionHandler:
 
-    def get(self):
-        response = {'version': __version__}
-        self.write(response)
+    @classmethod
+    @Route.get(
+        r"/version",
+        description="Retrieve the server version number",
+        output=VERSION_SCHEMA)
+    def version(request, response):
+        response.json({'version': __version__})
+
+    @classmethod
+    @Route.post(
+        r"/version",
+        description="Check if version is the same as the server",
+        output=VERSION_SCHEMA,
+        input=VERSION_SCHEMA,
+        status_codes={
+            200: "Same version",
+            409: "Invalid version"
+        })
+    def check_version(request, response):
+        if request.json["version"] != __version__:
+            raise HTTPConflict(reason="Invalid version")
+        response.json({'version': __version__})
