@@ -454,6 +454,8 @@ class VirtualBoxVM(object):
         """
 
         log.info("VirtualBox VM {name} [id={id}] has set the VM name to {vmname}".format(name=self._name, id=self._id, vmname=vmname))
+        if self._linked_clone:
+            self._modify_vm('--name "{}"'.format(vmname))
         self._vmname = vmname
 
     @property
