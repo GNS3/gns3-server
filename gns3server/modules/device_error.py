@@ -15,13 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-VPCS server module.
-"""
 
-from ..base_manager import BaseManager
-from .vpcs_device import VPCSDevice
-
-
-class VPCS(BaseManager):
-    _VM_CLASS = VPCSDevice
+class DeviceError(Exception):
+    pass

@@ -20,6 +20,7 @@ import jsonschema
 import asyncio
 import aiohttp
 
+from ..modules.device_error import DeviceError
 from .response import Response
 
 
@@ -97,6 +98,10 @@ class Route(object):
                     response = Response(route=route)
                     response.set_status(e.status)
                     response.json({"message": e.text, "status": e.status})
+                except DeviceError as e:
+                    response = Response(route=route)
+                    response.set_status(400)
+                    response.json({"message": str(e), "status": 400})
                 return response
 
             cls._routes.append((method, cls._path, control_schema))

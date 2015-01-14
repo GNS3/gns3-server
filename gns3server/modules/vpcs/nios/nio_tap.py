@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2013 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Interface for TAP NIOs (UNIX based OSes only).
+"""
 
-class VMError(Exception):
-    pass
+
+class NIO_TAP(object):
+    """
+    TAP NIO.
+
+    :param tap_device: TAP device name (e.g. tap0)
+    """
+
+    def __init__(self, tap_device):
+
+        self._tap_device = tap_device
+
+    @property
+    def tap_device(self):
+        """
+        Returns the TAP device used by this NIO.
+
+        :returns: the TAP device name
+        """
+
+        return self._tap_device
+
+    def __str__(self):
+
+        return "NIO TAP"

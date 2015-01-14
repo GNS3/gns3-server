@@ -19,16 +19,13 @@ from ..web.route import Route
 from ..schemas.vpcs import VPCS_CREATE_SCHEMA
 from ..schemas.vpcs import VPCS_OBJECT_SCHEMA
 from ..schemas.vpcs import VPCS_ADD_NIO_SCHEMA
-from ..modules import VPCS
+from ..modules.vpcs import VPCS
 
 
 class VPCSHandler(object):
     @classmethod
     @Route.post(
         r"/vpcs",
-        parameters={
-            "vpcs_id": "Id of VPCS instance"
-        },
         status_codes={
             201: "Success of creation of VPCS",
             409: "Conflict"
@@ -42,6 +39,38 @@ class VPCSHandler(object):
         response.json({'name': vm.name,
                        "vpcs_id": vm.id,
                        "console": 4242})
+
+    @classmethod
+    @Route.post(
+        r"/vpcs/{vpcs_id}/start",
+        parameters={
+            "vpcs_id": "Id of VPCS instance"
+        },
+        status_codes={
+            201: "Success of creation of VPCS",
+        },
+        description="Start VPCS",
+        )
+    def create(request, response):
+        vpcs_manager = VPCS.instance()
+        vm = yield from vpcs_manager.start_vm(int(request.match_info['vpcs_id']))
+        response.json({})
+
+    @classmethod
+    @Route.post(
+        r"/vpcs/{vpcs_id}/stop",
+        parameters={
+            "vpcs_id": "Id of VPCS instance"
+        },
+        status_codes={
+            201: "Success of stopping VPCS",
+        },
+        description="Stop VPCS",
+        )
+    def create(request, response):
+        vpcs_manager = VPCS.instance()
+        vm = yield from vpcs_manager.stop_vm(int(request.match_info['vpcs_id']))
+        response.json({})
 
     @classmethod
     @Route.get(

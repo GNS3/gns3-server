@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2013 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,12 +16,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-VPCS server module.
+Custom exceptions for VPCS module.
 """
 
-from ..base_manager import BaseManager
-from .vpcs_device import VPCSDevice
+from ..device_error import DeviceError
 
+class VPCSError(DeviceError):
 
-class VPCS(BaseManager):
-    _VM_CLASS = VPCSDevice
+    def __init__(self, message, original_exception=None):
+
+        Exception.__init__(self, message)
+        if isinstance(message, Exception):
+            message = str(message)
+        self._message = message
+        self._original_exception = original_exception
+
+    def __repr__(self):
+
+        return self._message
+
+    def __str__(self):
+
+        return self._message
