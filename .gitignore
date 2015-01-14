@@ -40,3 +40,6 @@ nosetests.xml
 
 # Gedit Backup Files
 *~
+
+#Documentation build
+docs/_build

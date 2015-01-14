@@ -18,7 +18,7 @@
 import re
 import os.path
 
-from .route import Route
+from gns3server.web.route import Route
 
 
 class Documentation(object):

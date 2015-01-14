@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# POC documentation build configuration file, created by
+# GNS3 documentation build configuration file, created by
 # sphinx-quickstart on Mon Jan  5 14:15:48 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -21,7 +21,7 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 
-from demoserver.version import __version__, __version_info__
+from gns3server.version import __version__, __version_info__
 
 # -- General configuration ------------------------------------------------
 
@@ -46,8 +46,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'POC'
-copyright = '2015, POC Team'
+project = 'GNS3'
+copyright = '2015, GNS3 GNS3 Technologies Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -179,7 +179,7 @@ html_static_path = ['_static']
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'POCdoc'
+htmlhelp_basename = 'GNS3doc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -199,7 +199,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'POC.tex', 'POC Documentation', 'POC Team', 'manual'),
+    ('index', 'GNS3.tex', 'GNS3 Documentation', 'GNS3 Team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -228,8 +228,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'gns3', 'POC Documentation',
-     ['POC Team'], 1)
+    ('index', 'gns3', 'GNS3 Documentation',
+     ['GNS3 Team'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -242,8 +242,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'POC', 'POC Documentation',
-     'POC Team', 'POC', 'One line description of project.',
+    ('index', 'GNS3', 'GNS3 Documentation',
+     'GNS3 Team', 'GNS3', 'One line description of project.',
      'Miscellaneous'),
 ]
 
