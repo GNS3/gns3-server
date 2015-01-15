@@ -22,7 +22,7 @@ from tests.utils import asyncio_patch
 #Move loop to util
 from tests.api.base import loop
 from asyncio.subprocess import Process
-from unittest.mock import patch, Mock
+from unittest.mock import patch, MagicMock
 from gns3server.modules.vpcs.vpcs_device import VPCSDevice
 from gns3server.modules.vpcs.vpcs_error import VPCSError
 
@@ -46,8 +46,18 @@ def test_vm_invalid_vpcs_path(tmpdir):
         assert vm.id == 42
 
 def test_start(tmpdir, loop):
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=Mock()):
-        vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test_fake")
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+        vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test")
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.is_running() == True
+
+def test_stop(tmpdir, loop):
+    process = MagicMock()
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test")
+        loop.run_until_complete(asyncio.async(vm.start()))
+        assert vm.is_running() == True
+        loop.run_until_complete(asyncio.async(vm.stop()))
+        assert vm.is_running() == False
+        process.terminate.assert_called_with()
 

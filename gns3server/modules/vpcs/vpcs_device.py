@@ -208,7 +208,7 @@ class VPCSDevice(BaseVM):
             else:
                 self._process.terminate()
 
-            self._process.wait()
+            yield from self._process.wait()
 
         self._process = None
         self._started = False

@@ -153,7 +153,7 @@ class Server:
         self._loop.run_until_complete(self._run_application(app))
         self._signal_handling()
 
-        #FIXME: remove it in production
+        #FIXME: remove it in production or in tests
         self._loop.call_later(1, self._reload_hook)
         try:
             self._loop.run_forever()
