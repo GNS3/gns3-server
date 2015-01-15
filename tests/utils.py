@@ -19,15 +19,43 @@ import asyncio
 from unittest.mock import patch
 
 
-def asyncio_patch(function, *args, **kwargs):
-    @asyncio.coroutine
-    def fake_anwser(*a, **kw):
-        return kwargs["return_value"]
+class _asyncio_patch:
+    """
+    A wrapper around python patch supporting asyncio.
+    Like the original patch you can use it as context
+    manager (with) or decorator
 
-    def register(func):
-        @patch(function, return_value=fake_anwser)
+    The original patch source code is the main source of
+    inspiration:
+    https://hg.python.org/cpython/file/3.4/Lib/unittest/mock.py
+    """
+    def __init__(self, function, *args, **kwargs):
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+    def __enter__(self):
+        """Used when enter in the with block"""
+        self._patcher = patch(self.function, return_value=self._fake_anwser())
+        self._patcher.start()
+
+    def __exit__(self, *exc_info):
+        """Used when leaving the with block"""
+        self._patcher.stop()
+
+    def __call__(self, func, *args, **kwargs):
+        """Call is used when asyncio_patch is used as decorator"""
+        @patch(self.function, return_value=self._fake_anwser())
         @asyncio.coroutine
         def inner(*a, **kw):
             return func(*a, **kw)
         return inner
-    return register
+
+    def _fake_anwser(self):
+        future = asyncio.Future()
+        future.set_result(self.kwargs["return_value"])
+        return future
+
+
+def asyncio_patch(function, *args, **kwargs):
+    return _asyncio_patch(function, *args, **kwargs)

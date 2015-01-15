@@ -75,7 +75,7 @@ class BaseVM:
         """
 
         if console in self._allocated_console_ports:
-            raise VPCSError("Console port {} is already used by another VPCS device".format(console))
+            raise DeviceError("Console port {} is already used by another VM device".format(console))
 
         self._allocated_console_ports.remove(self._console)
         self._console = console
@@ -145,8 +145,6 @@ class BaseVM:
         Starts the VM process.
         """
         raise NotImplementedError
-
-
 
     def put(self, *args):
         """

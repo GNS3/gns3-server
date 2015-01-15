@@ -21,7 +21,7 @@ from gns3server import modules
 
 
 @asyncio_patch('gns3server.modules.VPCS.create_vm', return_value=84)
-def test_vpcs_create(server, mock):
+def test_vpcs_create(server):
     response = server.post('/vpcs', {'name': 'PC TEST 1'}, example=False)
     assert response.status == 200
     assert response.route == '/vpcs'

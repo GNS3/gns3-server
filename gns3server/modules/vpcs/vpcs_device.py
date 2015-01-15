@@ -87,16 +87,13 @@ class VPCSDevice(BaseVM):
         # # create the device own working directory
         # self.working_dir = working_dir_path
         #
-
+        self._check_requirements()
         super().__init__(name, vpcs_id)
 
-    @asyncio.coroutine
-    def _create(self):
-        """Called when run loop is started"""
-        self._check_requirement()
-
-    def _check_requirement(self):
-        """Check if VPCS is available with the correct version"""
+    def _check_requirements(self):
+        """
+        Check if VPCS is available with the correct version
+        """
         if not self._path:
             raise VPCSError("No path to a VPCS executable has been set")
 
@@ -106,30 +103,7 @@ class VPCSDevice(BaseVM):
         if not os.access(self._path, os.X_OK):
             raise VPCSError("VPCS program '{}' is not executable".format(self._path))
 
-        yield from self._check_vpcs_version()
-
-    def defaults(self):
-        """
-        Returns all the default attribute values for VPCS.
-
-        :returns: default values (dictionary)
-        """
-
-        vpcs_defaults = {"name": self._name,
-                         "script_file": self._script_file,
-                         "console": self._console}
-
-        return vpcs_defaults
-
-
-    @classmethod
-    def reset(cls):
-        """
-        Resets allocated instance list.
-        """
-
-        cls._instances.clear()
-        cls._allocated_console_ports.clear()
+        self._check_vpcs_version()
 
     @property
     def name(self):
@@ -167,7 +141,6 @@ class VPCSDevice(BaseVM):
                                                                        new_name=new_name))
         self._name = new_name
 
-    @asyncio.coroutine
     def _check_vpcs_version(self):
         """
         Checks if the VPCS executable version is >= 0.5b1.
@@ -185,6 +158,9 @@ class VPCSDevice(BaseVM):
         except (OSError, subprocess.SubprocessError) as e:
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
+    @asyncio.coroutine
+    def _create(self):
+        pass
 
     @asyncio.coroutine
     def start(self):
@@ -204,6 +180,7 @@ class VPCSDevice(BaseVM):
                 flags = 0
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
+                yield from asyncio.create_subprocess_exec()
                 with open(self._vpcs_stdout_file, "w") as fd:
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                      stdout=fd,
@@ -241,7 +218,7 @@ class VPCSDevice(BaseVM):
         Reads the standard output of the VPCS process.
         Only use when the process has been stopped or has crashed.
         """
-
+        #TODO: should be async
         output = ""
         if self._vpcs_stdout_file:
             try:
