@@ -18,9 +18,7 @@ Dependencies:
 
 - Python 3.3 or above
 - Setuptools
-- PyZMQ library
 - Netifaces library
-- Tornado
 - Jsonschema
 
 The following commands will install some of these dependencies:
@@ -28,7 +26,6 @@ The following commands will install some of these dependencies:
 .. code:: bash
 
    sudo apt-get install python3-setuptools
-   sudo apt-get install python3-zmq
    sudo apt-get install python3-netifaces
 
 Finally these commands will install the server as well as the rest of the dependencies:
