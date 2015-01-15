@@ -19,7 +19,7 @@
 import asyncio
 import aiohttp
 
-from .device_error import DeviceError
+from .vm_error import VMError
 
 
 class BaseManager:
@@ -69,10 +69,10 @@ class BaseManager:
                     identifier = i
                     break
             if identifier == 0:
-                raise DeviceError("Maximum number of VM instances reached")
+                raise VMError("Maximum number of VM instances reached")
         else:
             if identifier in self._vms:
-                raise DeviceError("VM identifier {} is already used by another VM instance".format(identifier))
+                raise VMError("VM identifier {} is already used by another VM instance".format(identifier))
         vm = self._VM_CLASS(vmname, identifier, self.port_manager)
         yield from vm.wait_for_creation()
         self._vms[vm.id] = vm

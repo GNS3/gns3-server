@@ -17,11 +17,12 @@
 
 
 import asyncio
-from .device_error import DeviceError
+from .vm_error import VMError
 from .attic import find_unused_port
 
 import logging
 log = logging.getLogger(__name__)
+
 
 class BaseVM:
     _allocated_console_ports = []
@@ -40,7 +41,6 @@ class BaseVM:
             name=self._name,
             id=self._id))
 
-
     def _allocate_console(self):
         if not self._console:
             # allocate a console port
@@ -50,10 +50,10 @@ class BaseVM:
                                                  self._console_host,
                                                  ignore_ports=self._allocated_console_ports)
             except Exception as e:
-                raise DeviceError(e)
+                raise VMError(e)
 
         if self._console in self._allocated_console_ports:
-            raise DeviceError("Console port {} is already used by another device".format(console))
+            raise VMError("Console port {} is already used by another device".format(self._console))
         self._allocated_console_ports.append(self._console)
 
 
@@ -76,7 +76,7 @@ class BaseVM:
         """
 
         if console in self._allocated_console_ports:
-            raise DeviceError("Console port {} is already used by another VM device".format(console))
+            raise VMError("Console port {} is already used by another VM device".format(console))
 
         self._allocated_console_ports.remove(self._console)
         self._console = console
@@ -122,7 +122,7 @@ class BaseVM:
         try:
             yield from self._create()
             self._created.set_result(True)
-        except DeviceError as e:
+        except VMError as e:
             self._created.set_exception(e)
             return
 
@@ -132,7 +132,7 @@ class BaseVM:
                 try:
                     yield from asyncio.wait_for(self._execute(subcommand, args), timeout=timeout)
                 except asyncio.TimeoutError:
-                    raise DeviceError("{} has timed out after {} seconds!".format(subcommand, timeout))
+                    raise VMError("{} has timed out after {} seconds!".format(subcommand, timeout))
                 future.set_result(True)
             except Exception as e:
                 future.set_exception(e)
@@ -141,7 +141,7 @@ class BaseVM:
         return self._created
 
     @asyncio.coroutine
-    def start():
+    def start(self):
         """
         Starts the VM process.
         """
@@ -159,5 +159,5 @@ class BaseVM:
             args.insert(0, future)
             self._queue.put_nowait(args)
         except asyncio.qeues.QueueFull:
-            raise DeviceError("Queue is full")
+            raise VMError("Queue is full")
         return future

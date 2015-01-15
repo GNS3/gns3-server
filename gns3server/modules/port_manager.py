@@ -18,6 +18,7 @@
 import ipaddress
 from .attic import find_unused_port
 
+
 class PortManager:
     """
     :param console: TCP console port
@@ -26,10 +27,10 @@ class PortManager:
     :param console_end_port_range: TCP console port range end
     """
     def __init__(self,
-            console_host,
-            console_bind_to_any,
-            console_start_port_range=10000,
-            console_end_port_range=15000):
+                console_host,
+                console_bind_to_any,
+                console_start_port_range=10000,
+                console_end_port_range=15000):
 
         self._console_start_port_range = console_start_port_range
         self._console_end_port_range = console_end_port_range
@@ -53,7 +54,7 @@ class PortManager:
         self._used_ports.add(port)
         return port
 
-    def reserve_port(port):
+    def reserve_port(self, port):
         """
         Reserve a specific port number
 
@@ -63,11 +64,12 @@ class PortManager:
             raise Exception("Port already {} in use".format(port))
         self._used_ports.add(port)
 
-    def release_port(port):
+    def release_port(self, port):
         """
         Release a specific port number
 
         :param port: Port number
         """
+
         self._used_ports.remove(port)
 

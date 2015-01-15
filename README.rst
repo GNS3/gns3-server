@@ -4,7 +4,7 @@ GNS3-server
 This is the GNS3 server repository.
 
 The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
-Clients like the GNS3 GUI controls the server using a JSON-RPC API over Websockets.
+Clients like the GNS3 GUI controls the server using a HTTP REST API.
 
 You will need the GNS3 GUI (gns3-gui repository) to control the server.
 

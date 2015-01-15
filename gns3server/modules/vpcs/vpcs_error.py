@@ -19,9 +19,10 @@
 Custom exceptions for VPCS module.
 """
 
-from ..device_error import DeviceError
+from ..vm_error import VMError
 
-class VPCSError(DeviceError):
+
+class VPCSError(VMError):
 
     def __init__(self, message, original_exception=None):
 
