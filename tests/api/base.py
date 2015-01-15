@@ -29,6 +29,7 @@ from gns3server.web.route import Route
 #TODO: get rid of *
 from gns3server.handlers import *
 from gns3server.modules import MODULES
+from gns3server.modules.port_manager import PortManager
 
 
 class Query:
@@ -137,9 +138,12 @@ def loop(request):
     request.addfinalizer(tear_down)
     return loop
 
+@pytest.fixture(scope="module")
+def port_manager():
+    return PortManager("127.0.0.1", False)
 
 @pytest.fixture(scope="module")
-def server(request, loop):
+def server(request, loop, port_manager):
     port = _get_unused_port()
     host = "localhost"
     app = web.Application()
@@ -147,6 +151,7 @@ def server(request, loop):
         app.router.add_route(method, route, handler)
     for module in MODULES:
         instance = module.instance()
+        instance.port_manager = port_manager
     srv = loop.create_server(app.make_handler(), host, port)
     srv = loop.run_until_complete(srv)
 

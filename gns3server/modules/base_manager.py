@@ -73,7 +73,7 @@ class BaseManager:
         else:
             if identifier in self._vms:
                 raise DeviceError("VM identifier {} is already used by another VM instance".format(identifier))
-        vm = self._VM_CLASS(vmname, identifier)
+        vm = self._VM_CLASS(vmname, identifier, self.port_manager)
         yield from vm.wait_for_creation()
         self._vms[vm.id] = vm
         return vm

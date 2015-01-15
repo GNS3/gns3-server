@@ -38,7 +38,7 @@ class VPCSHandler(object):
         vm = yield from vpcs.create_vm(request.json['name'])
         response.json({'name': vm.name,
                        "vpcs_id": vm.id,
-                       "console": 4242})
+                       "console": vm.console})
 
     @classmethod
     @Route.post(

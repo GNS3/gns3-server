@@ -48,17 +48,11 @@ class VPCSDevice(BaseVM):
     :param path: path to VPCS executable
     :param working_dir: path to a working directory
     :param console: TCP console port
-    :param console_host: IP address to bind for console connections
-    :param console_start_port_range: TCP console port range start
-    :param console_end_port_range: TCP console port range end
     """
-    def __init__(self, name, vpcs_id,
+    def __init__(self, name, vpcs_id, port_manager,
              path = None,
              working_dir = None,
-             console=None,
-             console_host="0.0.0.0",
-             console_start_port_range=4512,
-             console_end_port_range=5000):
+             console=None):
 
         #self._path = path
         #self._working_dir = working_dir
@@ -67,13 +61,10 @@ class VPCSDevice(BaseVM):
         self._working_dir = "/tmp"
 
         self._console = console
-        self._console_host = console_host
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
         self._started = False
-        self._console_start_port_range = console_start_port_range
-        self._console_end_port_range = console_end_port_range
 
         # VPCS settings
         self._script_file = ""
@@ -87,8 +78,16 @@ class VPCSDevice(BaseVM):
         # # create the device own working directory
         # self.working_dir = working_dir_path
         #
+        try:
+            if not self._console:
+                self._console = port_manager.get_free_port()
+            else:
+                self._console = port_manager.reserve_port(self._console)
+        except Exception as e:
+            raise VPCSError(e)
+
         self._check_requirements()
-        super().__init__(name, vpcs_id)
+        super().__init__(name, vpcs_id, port_manager)
 
     def _check_requirements(self):
         """
@@ -180,7 +179,6 @@ class VPCSDevice(BaseVM):
                 flags = 0
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
-                yield from asyncio.create_subprocess_exec()
                 with open(self._vpcs_stdout_file, "w") as fd:
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                      stdout=fd,

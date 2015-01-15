@@ -24,7 +24,6 @@ import sys
 import signal
 import asyncio
 import aiohttp
-import ipaddress
 import functools
 import types
 import time
@@ -32,6 +31,7 @@ import time
 from .web.route import Route
 from .config import Config
 from .modules import MODULES
+from .modules.port_manager import PortManager
 
 #TODO: get rid of * have something generic to automatically import handlers so the routes can be found
 from gns3server.handlers import *
@@ -48,14 +48,7 @@ class Server:
         self._port = port
         self._loop = None
         self._start_time = time.time()
-
-        if console_bind_to_any:
-            if ipaddress.ip_address(self._host).version == 6:
-                self._console_host = "::"
-            else:
-                self._console_host = "0.0.0.0"
-        else:
-            self._console_host = self._host
+        self._port_manager = PortManager(host, console_bind_to_any)
 
         #TODO: server config file support, to be reviewed
         # # get the projects and temp directories from the configuration file (passed to the modules)
@@ -147,7 +140,8 @@ class Server:
             app.router.add_route(method, route, handler)
         for module in MODULES:
             log.debug("loading module {}".format(module.__name__))
-            module.instance()
+            m = module.instance()
+            m.port_manager = self._port_manager
 
         log.info("starting server on {}:{}".format(self._host, self._port))
         self._loop.run_until_complete(self._run_application(app))

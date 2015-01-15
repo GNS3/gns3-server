@@ -20,41 +20,41 @@ import asyncio
 from tests.utils import asyncio_patch
 
 #Move loop to util
-from tests.api.base import loop
+from tests.api.base import loop, port_manager
 from asyncio.subprocess import Process
 from unittest.mock import patch, MagicMock
 from gns3server.modules.vpcs.vpcs_device import VPCSDevice
 from gns3server.modules.vpcs.vpcs_error import VPCSError
 
 @patch("subprocess.check_output", return_value="Welcome to Virtual PC Simulator, version 0.6".encode("utf-8"))
-def test_vm(tmpdir):
-    vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test")
+def test_vm(tmpdir, port_manager):
+    vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test")
     assert vm.name == "test"
     assert vm.id == 42
 
 @patch("subprocess.check_output", return_value="Welcome to Virtual PC Simulator, version 0.1".encode("utf-8"))
-def test_vm_invalid_vpcs_version(tmpdir):
+def test_vm_invalid_vpcs_version(tmpdir, port_manager):
     with pytest.raises(VPCSError):
-        vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test")
+        vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test")
         assert vm.name == "test"
         assert vm.id == 42
 
-def test_vm_invalid_vpcs_path(tmpdir):
+def test_vm_invalid_vpcs_path(tmpdir, port_manager):
     with pytest.raises(VPCSError):
-        vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test_fake")
+        vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test_fake")
         assert vm.name == "test"
         assert vm.id == 42
 
-def test_start(tmpdir, loop):
+def test_start(tmpdir, loop, port_manager):
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-        vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test")
+        vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test")
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.is_running() == True
 
-def test_stop(tmpdir, loop):
+def test_stop(tmpdir, loop, port_manager):
     process = MagicMock()
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-        vm = VPCSDevice("test", 42, working_dir=str(tmpdir), path="/bin/test")
+        vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test")
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.is_running() == True
         loop.run_until_complete(asyncio.async(vm.stop()))

@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 class BaseVM:
     _allocated_console_ports = []
 
-    def __init__(self, name, identifier):
+    def __init__(self, name, identifier, port_manager):
         self._loop = asyncio.get_event_loop()
         self._allocate_console()
         self._queue = asyncio.Queue()
@@ -34,6 +34,7 @@ class BaseVM:
         self._id = identifier
         self._created = asyncio.Future()
         self._worker = asyncio.async(self._run())
+        self._port_manager = port_manager
         log.info("{type} device {name} [id={id}] has been created".format(
             type=self.__class__.__name__,
             name=self._name,
