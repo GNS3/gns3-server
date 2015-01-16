@@ -71,6 +71,10 @@ class Route(object):
         return cls._route('PUT', path, *args, **kw)
 
     @classmethod
+    def delete(cls, path, *args, **kw):
+        return cls._route('DELETE', path, *args, **kw)
+
+    @classmethod
     def _route(cls, method, path, *args, **kw):
         # This block is executed only the first time
         output_schema = kw.get("output", {})

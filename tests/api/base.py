@@ -44,6 +44,9 @@ class Query:
     def get(self, path, **kwargs):
         return self._fetch("GET", path, **kwargs)
 
+    def delete(self, path, **kwargs):
+        return self._fetch("DELETE", path, **kwargs)
+
     def _get_url(self, path):
         return "http://{}:{}{}".format(self._host, self._port, path)
 

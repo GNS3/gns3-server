@@ -53,3 +53,18 @@ def test_vpcs_nio_create_tap(mock, server):
     assert response.status == 200
     assert response.route == '/vpcs/{vpcs_id}/ports/{port_id}/nio'
     assert response.json['type'] == 'nio_tap'
+
+def test_vpcs_delete_nio(server):
+    vm = server.post('/vpcs', {'name': 'PC TEST 1'})
+    response = server.post('/vpcs/{}/ports/0/nio'.format(vm.json["vpcs_id"]), {
+            'type': 'nio_udp',
+            'lport': 4242,
+            'rport': 4343,
+            'rhost': '127.0.0.1'
+        },
+        )
+    response = server.delete('/vpcs/{}/ports/0/nio'.format(vm.json["vpcs_id"]))
+    assert response.status == 200
+    assert response.route == '/vpcs/{vpcs_id}/ports/{port_id}/nio'
+
+

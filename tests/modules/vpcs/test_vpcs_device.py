@@ -82,3 +82,10 @@ def test_add_nio_binding_tap_no_privileged_access(port_manager, tmpdir):
     with patch("gns3server.modules.vpcs.vpcs_device.has_privileged_access", return_value=False):
         with pytest.raises(VPCSError):
             vm.port_add_nio_binding(0, {"type": "nio_tap", "tap_device": "test"})
+    assert vm._ethernet_adapter.ports[0] is not None
+
+def test_port_remove_nio_binding(port_manager, tmpdir):
+    vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir))
+    nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    vm.port_remove_nio_binding(0)
+    assert vm._ethernet_adapter.ports[0] == None

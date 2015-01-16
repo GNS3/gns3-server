@@ -79,21 +79,40 @@ class VPCSHandler(object):
     @Route.post(
         r"/vpcs/{vpcs_id}/ports/{port_id}/nio",
         parameters={
-            "vpcs_id": "Id of VPCS instance"
+            "vpcs_id": "Id of VPCS instance",
+            "port_id": "Id of the port where the nio should be add"
         },
         status_codes={
-            201: "Success of creation of NIO",
+            200: "Success of creation of NIO",
             404: "If VPCS doesn't exist"
         },
         description="ADD NIO to a VPCS",
         input=VPCS_NIO_SCHEMA,
         output=VPCS_NIO_SCHEMA)
     def create_nio(request, response):
-        # TODO: response with nio
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(int(request.match_info['vpcs_id']))
         nio = vm.port_add_nio_binding(int(request.match_info['port_id']), request.json)
 
         response.json(nio)
+
+    @classmethod
+    @Route.delete(
+        r"/vpcs/{vpcs_id}/ports/{port_id}/nio",
+        parameters={
+            "vpcs_id": "Id of VPCS instance",
+            "port_id": "Id of the port where the nio should be remove"
+        },
+        status_codes={
+            200: "Success of deletin of NIO",
+            404: "If VPCS doesn't exist"
+        },
+        description="Remove NIO from a VPCS")
+    def delete_nio(request, response):
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_vm(int(request.match_info['vpcs_id']))
+        nio = vm.port_remove_nio_binding(int(request.match_info['port_id']))
+        response.json({})
+
 
 
