@@ -42,7 +42,7 @@ VPCS_CREATE_SCHEMA = {
 }
 
 
-VPCS_ADD_NIO_SCHEMA = {
+VPCS_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to add a NIO for a VPCS instance",
     "type": "object",

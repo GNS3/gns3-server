@@ -19,7 +19,7 @@
 from ..web.route import Route
 from ..schemas.vpcs import VPCS_CREATE_SCHEMA
 from ..schemas.vpcs import VPCS_OBJECT_SCHEMA
-from ..schemas.vpcs import VPCS_ADD_NIO_SCHEMA
+from ..schemas.vpcs import VPCS_NIO_SCHEMA
 from ..modules.vpcs import VPCS
 
 
@@ -48,7 +48,8 @@ class VPCSHandler(object):
             "vpcs_id": "Id of VPCS instance"
         },
         status_codes={
-            201: "Success of creation of VPCS",
+            200: "Success of starting VPCS",
+            404: "If VPCS doesn't exist"
         },
         description="Start VPCS",
         )
@@ -64,7 +65,8 @@ class VPCSHandler(object):
             "vpcs_id": "Id of VPCS instance"
         },
         status_codes={
-            201: "Success of stopping VPCS",
+            200: "Success of stopping VPCS",
+            404: "If VPCS doesn't exist"
         },
         description="Stop VPCS",
         )
@@ -81,17 +83,17 @@ class VPCSHandler(object):
         },
         status_codes={
             201: "Success of creation of NIO",
-            409: "Conflict"
+            404: "If VPCS doesn't exist"
         },
         description="ADD NIO to a VPCS",
-        input=VPCS_ADD_NIO_SCHEMA)
+        input=VPCS_NIO_SCHEMA,
+        output=VPCS_NIO_SCHEMA)
     def create_nio(request, response):
-        # TODO: raise 404 if VPCS not found GET VM can raise an exeption
         # TODO: response with nio
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(int(request.match_info['vpcs_id']))
-        vm.port_add_nio_binding(int(request.match_info['port_id']), request.json)
+        nio = vm.port_add_nio_binding(int(request.match_info['port_id']), request.json)
 
-        response.json({'name': "PC 2", "vpcs_id": 42, "console": 4242})
+        response.json(nio)
 
 

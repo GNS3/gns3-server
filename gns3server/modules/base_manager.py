@@ -39,7 +39,7 @@ class BaseManager:
         :returns: instance of Manager
         """
 
-        if not hasattr(cls, "_instance"):
+        if not hasattr(cls, "_instance") or cls._instance is None:
             cls._instance = cls()
         return cls._instance
 

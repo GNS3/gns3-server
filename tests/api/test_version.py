@@ -21,7 +21,7 @@ It's also used for unittest the HTTP implementation.
 """
 
 from tests.utils import asyncio_patch
-from tests.api.base import server, loop
+from tests.api.base import server, loop, port_manager
 from gns3server.version import __version__
 
 

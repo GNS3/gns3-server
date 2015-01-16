@@ -265,7 +265,6 @@ class VPCSDevice(BaseVM):
             nio = NIO_UDP(lport, rhost, rport)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
-            print(has_privileged_access)
             if not has_privileged_access(self._path):
                 raise VPCSError("{} has no privileged access to {}.".format(self._path, tap_device))
             nio = NIO_TAP(tap_device)
