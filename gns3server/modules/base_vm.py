@@ -19,74 +19,28 @@
 import asyncio
 from .vm_error import VMError
 from .attic import find_unused_port
+from ..config import Config
 
 import logging
 log = logging.getLogger(__name__)
 
 
 class BaseVM:
-    _allocated_console_ports = []
-
     def __init__(self, name, identifier, port_manager):
 
         self._loop = asyncio.get_event_loop()
-        self._allocate_console()
         self._queue = asyncio.Queue()
         self._name = name
         self._id = identifier
         self._created = asyncio.Future()
         self._worker = asyncio.async(self._run())
         self._port_manager = port_manager
+        self._config = Config.instance()
         log.info("{type} device {name} [id={id}] has been created".format(
             type=self.__class__.__name__,
             name=self._name,
             id=self._id))
 
-    def _allocate_console(self):
-
-        if not self._console:
-            # allocate a console port
-            try:
-                self._console = find_unused_port(self._console_start_port_range,
-                                                 self._console_end_port_range,
-                                                 self._console_host,
-                                                 ignore_ports=self._allocated_console_ports)
-            except Exception as e:
-                raise VMError(e)
-
-        if self._console in self._allocated_console_ports:
-            raise VMError("Console port {} is already used by another VM".format(self._console))
-        self._allocated_console_ports.append(self._console)
-
-
-    @property
-    def console(self):
-        """
-        Returns the TCP console port.
-
-        :returns: console port (integer)
-        """
-
-        return self._console
-
-    @console.setter
-    def console(self, console):
-        """
-        Sets the TCP console port.
-
-        :param console: console port (integer)
-        """
-
-        if console in self._allocated_console_ports:
-            raise VMError("Console port {} is already used by another VM".format(console))
-
-        self._allocated_console_ports.remove(self._console)
-        self._console = console
-        self._allocated_console_ports.append(self._console)
-        log.info("{type} {name} [id={id}]: console port set to {port}".format(type=self.__class__.__name__,
-                                                                              name=self._name,
-                                                                              id=self._id,
-                                                                              port=console))
     @property
     def id(self):
         """

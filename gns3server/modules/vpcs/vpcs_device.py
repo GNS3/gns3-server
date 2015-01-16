@@ -28,6 +28,7 @@ import shutil
 import re
 import asyncio
 import socket
+import shutil
 
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
@@ -52,17 +53,17 @@ class VPCSDevice(BaseVM):
     :param console: TCP console port
     """
     def __init__(self, name, vpcs_id, port_manager,
-             path = None,
-             working_dir = None,
-             console=None):
+             working_dir = None, console = None):
+        super().__init__(name, vpcs_id, port_manager)
 
         #self._path = path
         #self._working_dir = working_dir
         # TODO: Hardcodded for testing
-        self._path = "/usr/local/bin/vpcs"
-        self._working_dir = "/tmp"
+        self._path = self._config.get_section_config("VPCS").get("path", "vpcs")
 
+        self._working_dir = "/tmp"
         self._console = console
+
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
@@ -89,12 +90,15 @@ class VPCSDevice(BaseVM):
             raise VPCSError(e)
 
         self._check_requirements()
-        super().__init__(name, vpcs_id, port_manager)
 
     def _check_requirements(self):
         """
         Check if VPCS is available with the correct version
         """
+        if self._path == "vpcs":
+            self._path = shutil.which("vpcs")
+
+
         if not self._path:
             raise VPCSError("No path to a VPCS executable has been set")
 
@@ -105,6 +109,16 @@ class VPCSDevice(BaseVM):
             raise VPCSError("VPCS program '{}' is not executable".format(self._path))
 
         self._check_vpcs_version()
+
+    @property
+    def console(self):
+        """
+        Returns the console port of this VPCS device.
+
+        :returns: console port
+        """
+
+        return self._console
 
     @property
     def name(self):
