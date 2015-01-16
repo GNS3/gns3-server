@@ -104,7 +104,9 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 html_theme = 'default'
 #html_theme = 'nature'
-using_rtd_theme=False
+
+#If uncommented it's turn off the default read the doc style
+html_style = "/default.css"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
