@@ -28,6 +28,7 @@ class BaseVM:
     _allocated_console_ports = []
 
     def __init__(self, name, identifier, port_manager):
+
         self._loop = asyncio.get_event_loop()
         self._allocate_console()
         self._queue = asyncio.Queue()
@@ -42,6 +43,7 @@ class BaseVM:
             id=self._id))
 
     def _allocate_console(self):
+
         if not self._console:
             # allocate a console port
             try:
@@ -53,7 +55,7 @@ class BaseVM:
                 raise VMError(e)
 
         if self._console in self._allocated_console_ports:
-            raise VMError("Console port {} is already used by another device".format(self._console))
+            raise VMError("Console port {} is already used by another VM".format(self._console))
         self._allocated_console_ports.append(self._console)
 
 
@@ -76,16 +78,15 @@ class BaseVM:
         """
 
         if console in self._allocated_console_ports:
-            raise VMError("Console port {} is already used by another VM device".format(console))
+            raise VMError("Console port {} is already used by another VM".format(console))
 
         self._allocated_console_ports.remove(self._console)
         self._console = console
         self._allocated_console_ports.append(self._console)
-        log.info("{type} {name} [id={id}]: console port set to {port}".format(
-                                                                            type=self.__class__.__name__,
-                                                                            name=self._name,
-                                                                            id=self._id,
-                                                                            port=console))
+        log.info("{type} {name} [id={id}]: console port set to {port}".format(type=self.__class__.__name__,
+                                                                              name=self._name,
+                                                                              id=self._id,
+                                                                              port=console))
     @property
     def id(self):
         """
