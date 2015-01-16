@@ -63,7 +63,7 @@ def test_vpcs_delete_nio(server):
             'rhost': '127.0.0.1'
         },
         )
-    response = server.delete('/vpcs/{}/ports/0/nio'.format(vm.json["vpcs_id"]))
+    response = server.delete('/vpcs/{}/ports/0/nio'.format(vm.json["vpcs_id"]), example=True)
     assert response.status == 200
     assert response.route == '/vpcs/{vpcs_id}/ports/{port_id}/nio'
 
