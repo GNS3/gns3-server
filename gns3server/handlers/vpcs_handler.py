@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 from ..web.route import Route
 from ..schemas.vpcs import VPCS_CREATE_SCHEMA
 from ..schemas.vpcs import VPCS_OBJECT_SCHEMA
@@ -73,31 +74,8 @@ class VPCSHandler(object):
         response.json({})
 
     @classmethod
-    @Route.get(
-        r"/vpcs/{vpcs_id}",
-        parameters={
-            "vpcs_id": "Id of VPCS instance"
-        },
-        description="Get information about a VPCS",
-        output=VPCS_OBJECT_SCHEMA)
-    def show(request, response):
-        response.json({'name': "PC 1", "vpcs_id": 42, "console": 4242})
-
-    @classmethod
-    @Route.put(
-        r"/vpcs/{vpcs_id}",
-        parameters={
-            "vpcs_id": "Id of VPCS instance"
-        },
-        description="Update VPCS information",
-        input=VPCS_OBJECT_SCHEMA,
-        output=VPCS_OBJECT_SCHEMA)
-    def update(request, response):
-        response.json({'name': "PC 1", "vpcs_id": 42, "console": 4242})
-
-    @classmethod
     @Route.post(
-        r"/vpcs/{vpcs_id}/nio",
+        r"/vpcs/{vpcs_id}/ports/{port_id}/nio",
         parameters={
             "vpcs_id": "Id of VPCS instance"
         },
@@ -108,5 +86,12 @@ class VPCSHandler(object):
         description="ADD NIO to a VPCS",
         input=VPCS_ADD_NIO_SCHEMA)
     def create_nio(request, response):
-        # TODO: raise 404 if VPCS not found
+        # TODO: raise 404 if VPCS not found GET VM can raise an exeption
+        # TODO: response with nio
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_vm(int(request.match_info['vpcs_id']))
+        vm.port_add_nio_binding(int(request.match_info['port_id']), request.json)
+
         response.json({'name': "PC 2", "vpcs_id": 42, "console": 4242})
+
+

@@ -61,3 +61,19 @@ def test_stop(tmpdir, loop, port_manager):
         assert vm.is_running() == False
         process.terminate.assert_called_with()
 
+def test_add_nio_binding_udp(port_manager, tmpdir):
+    vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test")
+    nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    assert nio.lport == 4242
+
+def test_add_nio_binding_tap(port_manager, tmpdir):
+    vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test")
+    with patch("gns3server.modules.vpcs.vpcs_device.has_privileged_access", return_value=True):
+        nio = vm.port_add_nio_binding(0, {"type": "nio_tap", "tap_device": "test"})
+        assert nio.tap_device == "test"
+
+def test_add_nio_binding_tap_no_privileged_access(port_manager, tmpdir):
+    vm = VPCSDevice("test", 42, port_manager, working_dir=str(tmpdir), path="/bin/test")
+    with patch("gns3server.modules.vpcs.vpcs_device.has_privileged_access", return_value=False):
+        with pytest.raises(VPCSError):
+            vm.port_add_nio_binding(0, {"type": "nio_tap", "tap_device": "test"})

@@ -75,36 +75,6 @@ VPCS_ADD_NIO_SCHEMA = {
             "required": ["type", "lport", "rhost", "rport"],
             "additionalProperties": False
         },
-        "Ethernet": {
-            "description": "Generic Ethernet Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_generic_ethernet"]
-                },
-                "ethernet_device": {
-                    "description": "Ethernet device name e.g. eth0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["type", "ethernet_device"],
-            "additionalProperties": False
-        },
-        "LinuxEthernet": {
-            "description": "Linux Ethernet Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_linux_ethernet"]
-                },
-                "ethernet_device": {
-                    "description": "Ethernet device name e.g. eth0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["type", "ethernet_device"],
-            "additionalProperties": False
-        },
         "TAP": {
             "description": "TAP Network Input/Output",
             "properties": {
@@ -120,89 +90,14 @@ VPCS_ADD_NIO_SCHEMA = {
             "required": ["type", "tap_device"],
             "additionalProperties": False
         },
-        "UNIX": {
-            "description": "UNIX Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_unix"]
-                },
-                "local_file": {
-                    "description": "path to the UNIX socket file (local)",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "remote_file": {
-                    "description": "path to the UNIX socket file (remote)",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["type", "local_file", "remote_file"],
-            "additionalProperties": False
-        },
-        "VDE": {
-            "description": "VDE Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_vde"]
-                },
-                "control_file": {
-                    "description": "path to the VDE control file",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "local_file": {
-                    "description": "path to the VDE control file",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["type", "control_file", "local_file"],
-            "additionalProperties": False
-        },
-        "NULL": {
-            "description": "NULL Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_null"]
-                },
-            },
-            "required": ["type"],
-            "additionalProperties": False
-        },
     },
 
-    "properties": {
-        "id": {
-            "description": "VPCS device instance ID",
-            "type": "integer"
-        },
-        "port_id": {
-            "description": "Unique port identifier for the VPCS instance",
-            "type": "integer"
-        },
-        "port": {
-            "description": "Port number",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 0
-        },
-        "nio": {
-            "type": "object",
-            "description": "Network Input/Output",
-            "oneOf": [
-                {"$ref": "#/definitions/UDP"},
-                {"$ref": "#/definitions/Ethernet"},
-                {"$ref": "#/definitions/LinuxEthernet"},
-                {"$ref": "#/definitions/TAP"},
-                {"$ref": "#/definitions/UNIX"},
-                {"$ref": "#/definitions/VDE"},
-                {"$ref": "#/definitions/NULL"},
-            ]
-        },
-    },
-    "additionalProperties": False,
-    "required": ["id", "port_id", "port", "nio"]
+    "oneOf": [
+        {"$ref": "#/definitions/UDP"},
+        {"$ref": "#/definitions/TAP"},
+    ],
+    "additionalProperties": True,
+    "required": ['type']
 }
 
 VPCS_OBJECT_SCHEMA = {
@@ -230,41 +125,3 @@ VPCS_OBJECT_SCHEMA = {
     "required": ["name", "vpcs_id", "console"]
 }
 
-VBOX_CREATE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to create a new VirtualBox VM instance",
-    "type": "object",
-    "properties": {
-        "name": {
-            "description": "VirtualBox VM instance name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "vbox_id": {
-            "description": "VirtualBox VM instance ID",
-            "type": "integer"
-        },
-    },
-    "additionalProperties": False,
-    "required": ["name"],
-}
-
-
-VBOX_OBJECT_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "VirtualBox instance",
-    "type": "object",
-    "properties": {
-        "name": {
-            "description": "VirtualBox VM name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "vbox_id": {
-            "description": "VirtualBox VM instance ID",
-            "type": "integer"
-        },
-    },
-    "additionalProperties": False,
-    "required": ["name", "vbox_id"]
-}

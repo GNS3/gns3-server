@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from tests.api.base import server, loop
+from tests.api.base import server, loop, port_manager
 from tests.utils import asyncio_patch
 from gns3server import modules
 
@@ -30,16 +30,12 @@ def test_vpcs_create(server):
 
 
 def test_vpcs_nio_create(server):
-    response = server.post('/vpcs/42/nio', {
-        'id': 42,
-        'nio': {
+    response = server.post('/vpcs/42/ports/0/nio', {
             'type': 'nio_unix',
             'local_file': '/tmp/test',
             'remote_file': '/tmp/remote'
         },
-        'port': 0,
-        'port_id': 0},
         example=True)
     assert response.status == 200
-    assert response.route == '/vpcs/{vpcs_id}/nio'
+    assert response.route == '/vpcs/{vpcs_id}/ports/{port_id}/nio'
     assert response.json['name'] == 'PC 2'
