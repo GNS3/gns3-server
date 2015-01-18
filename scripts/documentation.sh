@@ -22,6 +22,6 @@
 set -e
 
 py.test
-python ../gns3server/web/documentation.py
+python3 ../gns3server/web/documentation.py
 cd ../docs
 make html
