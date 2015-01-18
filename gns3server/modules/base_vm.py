@@ -18,7 +18,6 @@
 
 import asyncio
 from .vm_error import VMError
-from .attic import find_unused_port
 from ..config import Config
 
 import logging
@@ -26,6 +25,7 @@ log = logging.getLogger(__name__)
 
 
 class BaseVM:
+
     def __init__(self, name, identifier, port_manager):
 
         self._loop = asyncio.get_event_loop()
@@ -33,13 +33,12 @@ class BaseVM:
         self._name = name
         self._id = identifier
         self._created = asyncio.Future()
-        self._worker = asyncio.async(self._run())
         self._port_manager = port_manager
         self._config = Config.instance()
-        log.info("{type} device {name} [id={id}] has been created".format(
-            type=self.__class__.__name__,
-            name=self._name,
-            id=self._id))
+        self._worker = asyncio.async(self._run())
+        log.info("{type} device {name} [id={id}] has been created".format(type=self.__class__.__name__,
+                                                                          name=self._name,
+                                                                          id=self._id))
 
     @property
     def id(self):
@@ -62,13 +61,19 @@ class BaseVM:
         return self._name
 
     @asyncio.coroutine
-    def _execute(self, subcommand, args):
-        """Called when we receive an event"""
+    def _execute(self, command):
+        """
+        Called when we receive an event.
+        """
+
         raise NotImplementedError
 
     @asyncio.coroutine
     def _create(self):
-        """Called when the run loop start"""
+        """
+        Called when the run loop start
+        """
+
         raise NotImplementedError
 
     @asyncio.coroutine
@@ -82,12 +87,12 @@ class BaseVM:
             return
 
         while True:
-            future, subcommand, args = yield from self._queue.get()
+            future, command = yield from self._queue.get()
             try:
                 try:
-                    yield from asyncio.wait_for(self._execute(subcommand, args), timeout=timeout)
+                    yield from asyncio.wait_for(self._execute(command), timeout=timeout)
                 except asyncio.TimeoutError:
-                    raise VMError("{} has timed out after {} seconds!".format(subcommand, timeout))
+                    raise VMError("{} has timed out after {} seconds!".format(command, timeout))
                 future.set_result(True)
             except Exception as e:
                 future.set_exception(e)
@@ -100,6 +105,7 @@ class BaseVM:
         """
         Starts the VM process.
         """
+
         raise NotImplementedError
 
     def put(self, *args):

@@ -34,7 +34,7 @@ class BaseManager:
     @classmethod
     def instance(cls):
         """
-        Singleton to return only one instance of Manager.
+        Singleton to return only one instance of BaseManager.
 
         :returns: instance of Manager
         """

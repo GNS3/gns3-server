@@ -42,6 +42,7 @@ from ..base_vm import BaseVM
 import logging
 log = logging.getLogger(__name__)
 
+
 class VPCSDevice(BaseVM):
     """
     VPCS device implementation.
@@ -52,8 +53,8 @@ class VPCSDevice(BaseVM):
     :param working_dir: path to a working directory
     :param console: TCP console port
     """
-    def __init__(self, name, vpcs_id, port_manager,
-             working_dir = None, console = None):
+    def __init__(self, name, vpcs_id, port_manager, working_dir=None, console=None):
+
         super().__init__(name, vpcs_id, port_manager)
 
         #self._path = path
@@ -95,9 +96,9 @@ class VPCSDevice(BaseVM):
         """
         Check if VPCS is available with the correct version
         """
+
         if self._path == "vpcs":
             self._path = shutil.which("vpcs")
-
 
         if not self._path:
             raise VPCSError("No path to a VPCS executable has been set")
