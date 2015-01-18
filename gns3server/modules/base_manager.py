@@ -39,7 +39,7 @@ class BaseManager:
         :returns: instance of Manager
         """
 
-        if not hasattr(cls, "_instance"):
+        if not hasattr(cls, "_instance") or cls._instance is None:
             cls._instance = cls()
         return cls._instance
 
@@ -48,7 +48,7 @@ class BaseManager:
     def destroy(cls):
         cls._instance = None
 
-    def _get_vm_instance(self, vm_id):
+    def get_vm(self, vm_id):
         """
         Returns a VM instance.
 
@@ -80,10 +80,10 @@ class BaseManager:
 
     @asyncio.coroutine
     def start_vm(self, vm_id):
-        vm = self._get_vm_instance(vm_id)
+        vm = self.get_vm(vm_id)
         yield from vm.start()
 
     @asyncio.coroutine
     def stop_vm(self, vm_id):
-        vm = self._get_vm_instance(vm_id)
+        vm = self.get_vm(vm_id)
         yield from vm.stop()

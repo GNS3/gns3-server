@@ -70,3 +70,6 @@ class NIO_UDP(object):
     def __str__(self):
 
         return "NIO UDP"
+
+    def __json__(self):
+        return {"type": "nio_udp", "lport": self._lport, "rport": self._rport, "rhost": self._rhost}

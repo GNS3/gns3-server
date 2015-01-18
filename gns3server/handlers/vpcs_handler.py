@@ -18,7 +18,7 @@
 from ..web.route import Route
 from ..schemas.vpcs import VPCS_CREATE_SCHEMA
 from ..schemas.vpcs import VPCS_OBJECT_SCHEMA
-from ..schemas.vpcs import VPCS_ADD_NIO_SCHEMA
+from ..schemas.vpcs import VPCS_NIO_SCHEMA
 from ..modules.vpcs import VPCS
 
 
@@ -53,6 +53,7 @@ class VPCSHandler(object):
         },
         status_codes={
             204: "VPCS instance started",
+            404: "VPCS instance doesn't exist"
         },
         description="Start a VPCS instance")
     def create(request, response):
@@ -68,7 +69,8 @@ class VPCSHandler(object):
             "id": "VPCS instance ID"
         },
         status_codes={
-            201: "Success of stopping VPCS",
+            204: "VPCS instance stopped",
+            404: "VPCS instance doesn't exist"
         },
         description="Stop a VPCS instance")
     def create(request, response):
@@ -77,44 +79,42 @@ class VPCSHandler(object):
         yield from vpcs_manager.stop_vm(int(request.match_info["id"]))
         response.json({})
 
-    @classmethod
-    @Route.get(
-        r"/vpcs/{id:\d+}",
-        parameters={
-            "id": "VPCS instance ID"
-        },
-        description="Get information about a VPCS",
-        output=VPCS_OBJECT_SCHEMA)
-    def show(request, response):
-
-        response.json({'name': "PC 1", "id": 42, "console": 4242})
-
-    @classmethod
-    @Route.put(
-        r"/vpcs/{id:\d+}",
-        parameters={
-            "id": "VPCS instance ID"
-        },
-        description="Update VPCS information",
-        input=VPCS_OBJECT_SCHEMA,
-        output=VPCS_OBJECT_SCHEMA)
-    def update(request, response):
-
-        response.json({'name': "PC 1", "id": 42, "console": 4242})
-
-    @classmethod
     @Route.post(
-        r"/vpcs/{id:\d+}/nio",
+        r"/vpcs/{id:\d+}/ports/{port_id}/nio",
         parameters={
-            "id": "VPCS instance ID"
+            "id": "VPCS instance ID",
+            "port_id": "Id of the port where the nio should be add"
         },
         status_codes={
             201: "NIO created",
-            409: "Conflict"
+            404: "VPCS instance doesn't exist"
         },
-        description="ADD NIO to a VPCS",
-        input=VPCS_ADD_NIO_SCHEMA)
+        description="Add a NIO to a VPCS",
+        input=VPCS_NIO_SCHEMA,
+        output=VPCS_NIO_SCHEMA)
     def create_nio(request, response):
 
-        # TODO: raise 404 if VPCS not found
-        response.json({'name': "PC 2", "id": 42, "console": 4242})
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_vm(int(request.match_info["id"]))
+        nio = vm.port_add_nio_binding(int(request.match_info["port_id"]), request.json)
+
+        response.json(nio)
+
+    @classmethod
+    @Route.delete(
+        r"/vpcs/{id:\d+}/ports/{port_id}/nio",
+        parameters={
+            "id": "VPCS instance ID",
+            "port_id": "Id of the port where the nio should be remove"
+        },
+        status_codes={
+            200: "NIO deleted",
+            404: "VPCS instance doesn't exist"
+        },
+        description="Remove a NIO from a VPCS")
+    def delete_nio(request, response):
+
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_vm(int(request.match_info["id"]))
+        nio = vm.port_remove_nio_binding(int(request.match_info["port_id"]))
+        response.json({})

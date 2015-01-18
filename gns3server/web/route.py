@@ -19,6 +19,9 @@ import json
 import jsonschema
 import asyncio
 import aiohttp
+import logging
+
+log = logging.getLogger(__name__)
 
 from ..modules.vm_error import VMError
 from .response import Response
@@ -37,6 +40,7 @@ def parse_request(request, input_schema):
     try:
         jsonschema.validate(request.json, input_schema)
     except jsonschema.ValidationError as e:
+        log.error("Invalid input schema")
         raise aiohttp.web.HTTPBadRequest(text="Request is not {} '{}' in schema: {}".format(
             e.validator,
             e.validator_value,
@@ -65,6 +69,10 @@ class Route(object):
     @classmethod
     def put(cls, path, *args, **kw):
         return cls._route('PUT', path, *args, **kw)
+
+    @classmethod
+    def delete(cls, path, *args, **kw):
+        return cls._route('DELETE', path, *args, **kw)
 
     @classmethod
     def _route(cls, method, path, *args, **kw):
