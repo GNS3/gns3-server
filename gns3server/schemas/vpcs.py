@@ -26,7 +26,7 @@ VPCS_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vpcs_id": {
+        "id": {
             "description": "VPCS device instance ID",
             "type": "integer"
         },
@@ -215,7 +215,7 @@ VPCS_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vpcs_id": {
+        "id": {
             "description": "VPCS device instance ID",
             "type": "integer"
         },
@@ -227,7 +227,7 @@ VPCS_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vpcs_id", "console"]
+    "required": ["name", "id", "console"]
 }
 
 VBOX_CREATE_SCHEMA = {

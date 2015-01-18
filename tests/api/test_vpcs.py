@@ -15,9 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from tests.api.base import server, loop
 from tests.utils import asyncio_patch
-from gns3server import modules
 
 
 @asyncio_patch('gns3server.modules.VPCS.create_vm', return_value=84)
@@ -26,7 +24,7 @@ def test_vpcs_create(server):
     assert response.status == 200
     assert response.route == '/vpcs'
     assert response.json['name'] == 'PC TEST 1'
-    assert response.json['vpcs_id'] == 84
+    assert response.json['id'] == 84
 
 
 def test_vpcs_nio_create(server):
@@ -41,5 +39,5 @@ def test_vpcs_nio_create(server):
         'port_id': 0},
         example=True)
     assert response.status == 200
-    assert response.route == '/vpcs/{vpcs_id}/nio'
+    assert response.route == '/vpcs/{id}/nio'
     assert response.json['name'] == 'PC 2'

@@ -23,90 +23,98 @@ from ..modules.vpcs import VPCS
 
 
 class VPCSHandler(object):
+    """
+    API entry points for VPCS.
+    """
+
     @classmethod
     @Route.post(
         r"/vpcs",
         status_codes={
-            201: "Success of creation of VPCS",
+            201: "VPCS instance created",
             409: "Conflict"
         },
-        description="Create a new VPCS and return it",
+        description="Create a new VPCS instance",
         input=VPCS_CREATE_SCHEMA,
         output=VPCS_OBJECT_SCHEMA)
     def create(request, response):
+
         vpcs = VPCS.instance()
-        vm = yield from vpcs.create_vm(request.json['name'])
-        response.json({'name': vm.name,
-                       "vpcs_id": vm.id,
+        vm = yield from vpcs.create_vm(request.json["name"])
+        response.json({"name": vm.name,
+                       "id": vm.id,
                        "console": vm.console})
 
     @classmethod
     @Route.post(
-        r"/vpcs/{vpcs_id}/start",
+        r"/vpcs/{id:\d+}/start",
         parameters={
-            "vpcs_id": "Id of VPCS instance"
+            "id": "VPCS instance ID"
         },
         status_codes={
-            201: "Success of creation of VPCS",
+            204: "VPCS instance started",
         },
-        description="Start VPCS",
-        )
+        description="Start a VPCS instance")
     def create(request, response):
+
         vpcs_manager = VPCS.instance()
-        vm = yield from vpcs_manager.start_vm(int(request.match_info['vpcs_id']))
+        yield from vpcs_manager.start_vm(int(request.match_info["id"]))
         response.json({})
 
     @classmethod
     @Route.post(
-        r"/vpcs/{vpcs_id}/stop",
+        r"/vpcs/{id:\d+}/stop",
         parameters={
-            "vpcs_id": "Id of VPCS instance"
+            "id": "VPCS instance ID"
         },
         status_codes={
             201: "Success of stopping VPCS",
         },
-        description="Stop VPCS",
-        )
+        description="Stop a VPCS instance")
     def create(request, response):
+
         vpcs_manager = VPCS.instance()
-        vm = yield from vpcs_manager.stop_vm(int(request.match_info['vpcs_id']))
+        yield from vpcs_manager.stop_vm(int(request.match_info["id"]))
         response.json({})
 
     @classmethod
     @Route.get(
-        r"/vpcs/{vpcs_id}",
+        r"/vpcs/{id:\d+}",
         parameters={
-            "vpcs_id": "Id of VPCS instance"
+            "id": "VPCS instance ID"
         },
         description="Get information about a VPCS",
         output=VPCS_OBJECT_SCHEMA)
     def show(request, response):
-        response.json({'name': "PC 1", "vpcs_id": 42, "console": 4242})
+
+        response.json({'name': "PC 1", "id": 42, "console": 4242})
 
     @classmethod
     @Route.put(
-        r"/vpcs/{vpcs_id}",
+        r"/vpcs/{id:\d+}",
         parameters={
-            "vpcs_id": "Id of VPCS instance"
+            "id": "VPCS instance ID"
         },
         description="Update VPCS information",
         input=VPCS_OBJECT_SCHEMA,
         output=VPCS_OBJECT_SCHEMA)
     def update(request, response):
-        response.json({'name': "PC 1", "vpcs_id": 42, "console": 4242})
+
+        response.json({'name': "PC 1", "id": 42, "console": 4242})
 
     @classmethod
     @Route.post(
-        r"/vpcs/{vpcs_id}/nio",
+        r"/vpcs/{id:\d+}/nio",
         parameters={
-            "vpcs_id": "Id of VPCS instance"
+            "id": "VPCS instance ID"
         },
         status_codes={
-            201: "Success of creation of NIO",
+            201: "NIO created",
             409: "Conflict"
         },
         description="ADD NIO to a VPCS",
         input=VPCS_ADD_NIO_SCHEMA)
     def create_nio(request, response):
+
         # TODO: raise 404 if VPCS not found
-        response.json({'name': "PC 2", "vpcs_id": 42, "console": 4242})
+        response.json({'name': "PC 2", "id": 42, "console": 4242})
