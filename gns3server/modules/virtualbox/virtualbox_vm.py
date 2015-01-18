@@ -30,7 +30,7 @@ import socket
 import time
 
 from .virtualbox_error import VirtualBoxError
-from .adapters.ethernet_adapter import EthernetAdapter
+from ..adapters.ethernet_adapter import EthernetAdapter
 from ..attic import find_unused_port
 from .telnet_server import TelnetServer
 

@@ -24,7 +24,6 @@ import os
 import sys
 import subprocess
 import signal
-import shutil
 import re
 import asyncio
 import socket
@@ -32,9 +31,9 @@ import shutil
 
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
-from .adapters.ethernet_adapter import EthernetAdapter
-from .nios.nio_udp import NIO_UDP
-from .nios.nio_tap import NIO_TAP
+from ..adapters.ethernet_adapter import EthernetAdapter
+from ..nios.nio_udp import NIO_UDP
+from ..nios.nio_tap import NIO_TAP
 from ..attic import has_privileged_access
 
 from ..base_vm import BaseVM
