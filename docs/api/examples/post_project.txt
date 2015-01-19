@@ -1,0 +1,20 @@
+curl -i -xPOST 'http://localhost:8000/project' -d '{"location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-240/test_create_project_with_dir0"}'
+
+POST /project HTTP/1.1
+{
+    "location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-240/test_create_project_with_dir0"
+}
+
+
+HTTP/1.1 200
+CONNECTION: close
+CONTENT-LENGTH: 171
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /project
+
+{
+    "location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-240/test_create_project_with_dir0",
+    "uuid": "16c371ee-728c-4bb3-8062-26b9313bd67d"
+}
