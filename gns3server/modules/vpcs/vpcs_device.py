@@ -174,10 +174,6 @@ class VPCSDevice(BaseVM):
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
     @asyncio.coroutine
-    def _create(self):
-        pass
-
-    @asyncio.coroutine
     def start(self):
         """
         Starts the VPCS process.

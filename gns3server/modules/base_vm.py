@@ -28,14 +28,12 @@ class BaseVM:
 
     def __init__(self, name, identifier, manager):
 
-        self._loop = asyncio.get_event_loop()
-        self._queue = asyncio.Queue()
         self._name = name
         self._id = identifier
         self._created = asyncio.Future()
         self._manager = manager
         self._config = Config.instance()
-        self._worker = asyncio.async(self._run())
+        asyncio.async(self._create())
         log.info("{type} device {name} [id={id}] has been created".format(type=self.__class__.__name__,
                                                                           name=self._name,
                                                                           id=self._id))
@@ -74,31 +72,13 @@ class BaseVM:
     @asyncio.coroutine
     def _create(self):
         """
-        Called when the run loop start
+        Called when the run module is created and ready to receive
+        commands. It's asynchronous.
         """
-
-        raise NotImplementedError
-
-    @asyncio.coroutine
-    def _run(self, timeout=60):
-
-        try:
-            yield from self._create()
-            self._created.set_result(True)
-        except VMError as e:
-            self._created.set_exception(e)
-            return
-
-        while True:
-            future, command = yield from self._queue.get()
-            try:
-                try:
-                    yield from asyncio.wait_for(self._execute(command), timeout=timeout)
-                except asyncio.TimeoutError:
-                    raise VMError("{} has timed out after {} seconds!".format(command, timeout))
-                future.set_result(True)
-            except Exception as e:
-                future.set_exception(e)
+        self._created.set_result(True)
+        log.info("{type} device {name} [id={id}] has been created".format(type=self.__class__.__name__,
+                                                                          name=self._name,
+                                                                          id=self._id))
 
     def wait_for_creation(self):
         return self._created
@@ -111,17 +91,12 @@ class BaseVM:
 
         raise NotImplementedError
 
-    def put(self, *args):
-        """
-        Add to the processing queue of the VM
 
-        :returns: future
+    @asyncio.coroutine
+    def stop(self):
+        """
+        Starts the VM process.
         """
 
-        future = asyncio.Future()
-        try:
-            args.insert(0, future)
-            self._queue.put_nowait(args)
-        except asyncio.qeues.QueueFull:
-            raise VMError("Queue is full")
-        return future
+        raise NotImplementedError
+
