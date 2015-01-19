@@ -39,7 +39,7 @@ def test_vpcs_nio_create_udp(server):
         },
         example=True)
     assert response.status == 200
-    assert response.route == '/vpcs/{id}/ports/{port_id}/nio'
+    assert response.route == '/vpcs/{id:\d+}/ports/{port_id}/nio'
     assert response.json['type'] == 'nio_udp'
 
 @patch("gns3server.modules.vpcs.vpcs_device.has_privileged_access", return_value=True)
@@ -50,7 +50,7 @@ def test_vpcs_nio_create_tap(mock, server):
             'tap_device': 'test',
         })
     assert response.status == 200
-    assert response.route == '/vpcs/{vpcs_id}/ports/{port_id}/nio'
+    assert response.route == '/vpcs/{id:\d+}/ports/{port_id}/nio'
     assert response.json['type'] == 'nio_tap'
 
 def test_vpcs_delete_nio(server):
@@ -62,8 +62,8 @@ def test_vpcs_delete_nio(server):
             'rhost': '127.0.0.1'
         },
         )
-    response = server.delete('/vpcs/{}/ports/0/nio'.format(vm.json["vpcs_id"]), example=True)
+    response = server.delete('/vpcs/{}/ports/0/nio'.format(vm.json["id"]), example=True)
     assert response.status == 200
-    assert response.route == '/vpcs/{id}/ports/{port_id}/nio'
+    assert response.route == '/vpcs/{id:\d+}/ports/{port_id}/nio'
 
 
