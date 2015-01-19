@@ -43,6 +43,21 @@ class BaseManager:
             cls._instance = cls()
         return cls._instance
 
+    @property
+    def port_manager(self):
+        """
+        Returns the port_manager for this VMs
+
+        :returns: Port manager
+        """
+
+        return self._port_manager
+
+    @port_manager.setter
+    def port_manager(self, new_port_manager):
+        self._port_manager = new_port_manager
+
+
     @classmethod
     @asyncio.coroutine
     def destroy(cls):
@@ -73,7 +88,7 @@ class BaseManager:
         else:
             if identifier in self._vms:
                 raise VMError("VM identifier {} is already used by another VM instance".format(identifier))
-        vm = self._VM_CLASS(vmname, identifier, self.port_manager)
+        vm = self._VM_CLASS(vmname, identifier, self)
         yield from vm.wait_for_creation()
         self._vms[vm.id] = vm
         return vm

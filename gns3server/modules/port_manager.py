@@ -17,7 +17,7 @@
 
 import socket
 import ipaddress
-
+import asyncio
 
 class PortManager:
     """
@@ -41,6 +41,23 @@ class PortManager:
                 self._console_host = "0.0.0.0"
         else:
             self._console_host = host
+
+    @classmethod
+    def instance(cls):
+        """
+        Singleton to return only one instance of BaseManager.
+
+        :returns: instance of Manager
+        """
+
+        if not hasattr(cls, "_instance") or cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    @asyncio.coroutine
+    def destroy(cls):
+        cls._instance = None
 
     @property
     def console_host(self):

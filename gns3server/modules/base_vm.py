@@ -26,19 +26,22 @@ log = logging.getLogger(__name__)
 
 class BaseVM:
 
-    def __init__(self, name, identifier, port_manager):
+    def __init__(self, name, identifier, manager):
 
         self._loop = asyncio.get_event_loop()
         self._queue = asyncio.Queue()
         self._name = name
         self._id = identifier
         self._created = asyncio.Future()
-        self._port_manager = port_manager
+        self._manager = manager
         self._config = Config.instance()
         self._worker = asyncio.async(self._run())
         log.info("{type} device {name} [id={id}] has been created".format(type=self.__class__.__name__,
                                                                           name=self._name,
                                                                           id=self._id))
+
+    #TODO: When delete release console ports
+
 
     @property
     def id(self):

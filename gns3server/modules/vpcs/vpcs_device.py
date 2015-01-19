@@ -48,20 +48,20 @@ class VPCSDevice(BaseVM):
 
     :param name: name of this VPCS device
     :param vpcs_id: VPCS instance ID
-    :param path: path to VPCS executable
+    :param manager: parent VM Manager
     :param working_dir: path to a working directory
     :param console: TCP console port
     """
-    def __init__(self, name, vpcs_id, port_manager, working_dir=None, console=None):
+    def __init__(self, name, vpcs_id, manager, working_dir=None, console=None):
 
-        super().__init__(name, vpcs_id, port_manager)
+        super().__init__(name, vpcs_id, manager)
 
-        #self._path = path
-        #self._working_dir = working_dir
         # TODO: Hardcodded for testing
+        #self._working_dir = working_dir
+        self._working_dir = "/tmp"
+
         self._path = self._config.get_section_config("VPCS").get("path", "vpcs")
 
-        self._working_dir = "/tmp"
         self._console = console
 
         self._command = []
@@ -83,9 +83,9 @@ class VPCSDevice(BaseVM):
         #
         try:
             if not self._console:
-                self._console = port_manager.get_free_port()
+                self._console = self._manager.port_manager.get_free_console_port()
             else:
-                self._console = port_manager.reserve_port(self._console)
+                self._console = self._manager.port_manager.reserve_console_port(self._console)
         except Exception as e:
             raise VPCSError(e)
 

@@ -129,7 +129,7 @@ def _get_unused_port():
     return port
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def loop(request):
     """Return an event loop and destroy it at the end of test"""
     loop = asyncio.new_event_loop()
@@ -141,12 +141,8 @@ def loop(request):
     request.addfinalizer(tear_down)
     return loop
 
-@pytest.fixture(scope="module")
-def port_manager():
-    return PortManager("127.0.0.1", False)
-
-@pytest.fixture(scope="module")
-def server(request, loop, port_manager):
+@pytest.fixture(scope="session")
+def server(request, loop):
     port = _get_unused_port()
     host = "localhost"
     app = web.Application()
@@ -154,7 +150,7 @@ def server(request, loop, port_manager):
         app.router.add_route(method, route, handler)
     for module in MODULES:
         instance = module.instance()
-        instance.port_manager = port_manager
+        instance.port_manager = PortManager("127.0.0.1", False)
     srv = loop.create_server(app.make_handler(), host, port)
     srv = loop.run_until_complete(srv)
 

@@ -18,7 +18,7 @@
 from tests.api.base import server, loop
 from tests.utils import asyncio_patch
 from gns3server import modules
-
+from unittest.mock import patch
 
 @asyncio_patch('gns3server.modules.VPCS.create_vm', return_value=84)
 def test_vpcs_create(server):
