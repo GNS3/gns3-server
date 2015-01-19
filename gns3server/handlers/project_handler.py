@@ -17,7 +17,7 @@
 
 from ..web.route import Route
 from ..schemas.project import PROJECT_OBJECT_SCHEMA
-from ..modules.project import Project
+from ..modules.project_manager import ProjectManager
 from aiohttp.web import HTTPConflict
 
 
@@ -29,6 +29,9 @@ class ProjectHandler:
         output=PROJECT_OBJECT_SCHEMA,
         input=PROJECT_OBJECT_SCHEMA)
     def create_project(request, response):
-        p = Project(location = request.json.get("location"),
-                    uuid = request.json.get("uuid"))
+        pm = ProjectManager.instance()
+        p = pm.create_project(
+            location = request.json.get("location"),
+            uuid = request.json.get("uuid")
+        )
         response.json(p)
