@@ -3,6 +3,11 @@ python:
   - "3.3"
   - "3.4"
 
+before_install:
+  - sudo add-apt-repository ppa:gns3/ppa -y
+  - sudo apt-get update -q
+  - sudo apt-get install vpcs dynamips
+    
 install:
   - python setup.py install
   - pip install -rdev-requirements.txt
