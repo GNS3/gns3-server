@@ -1,19 +1,14 @@
 language: python
-
-env:
-  - TOX_ENV=py33
-  - TOX_ENV=py34
-
-before_install:
-  - sudo add-apt-repository ppa:gns3/ppa -y
-  - sudo apt-get update -q
+python:
+  - "3.3"
+  - "3.4"
 
 install:
-  - pip install tox
-  - sudo apt-get install vpcs dynamips
+  - python setup.py install
+  - pip install -rdev-requirements.txt
 
 script:
-  - tox -e $TOX_ENV
+    - py.test -v -s tests
 
 #branches:
 #  only:
