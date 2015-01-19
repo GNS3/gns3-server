@@ -193,10 +193,10 @@ class VPCSDevice(BaseVM):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
                 with open(self._vpcs_stdout_file, "w") as fd:
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
-                                                     stdout=fd,
-                                                     stderr=subprocess.STDOUT,
-                                                     cwd=self._working_dir,
-                                                     creationflags=flags)
+                                                                              stdout=fd,
+                                                                              stderr=subprocess.STDOUT,
+                                                                              cwd=self._working_dir,
+                                                                              creationflags=flags)
                 log.info("VPCS instance {} started PID={}".format(self._id, self._process.pid))
                 self._started = True
             except (OSError, subprocess.SubprocessError) as e:

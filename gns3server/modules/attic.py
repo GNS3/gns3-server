@@ -24,7 +24,6 @@ import os
 import struct
 import socket
 import stat
-import errno
 import time
 
 import logging

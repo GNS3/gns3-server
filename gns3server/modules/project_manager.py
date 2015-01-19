@@ -21,7 +21,7 @@ from .project import Project
 
 class ProjectManager:
     """
-    This singleton, keep track of available projects.
+    This singleton keeps track of available projects.
     """
 
     def __init__(self):
@@ -30,9 +30,9 @@ class ProjectManager:
     @classmethod
     def instance(cls):
         """
-        Singleton to return only one instance of BaseManager.
+        Singleton to return only one instance of ProjectManager.
 
-        :returns: instance of Manager
+        :returns: instance of ProjectManager
         """
 
         if not hasattr(cls, "_instance"):
@@ -58,6 +58,7 @@ class ProjectManager:
 
         See documentation of Project for arguments
         """
+
         project = Project(**kwargs)
         self._projects[project.uuid] = project
         return project

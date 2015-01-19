@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
@@ -25,29 +24,35 @@ class Project:
     """
     A project contains a list of VM.
     In theory VM are isolated project/project.
-    """
 
-    """
     :param uuid: Force project uuid (None by default auto generate an UUID)
     :param location: Parent path of the project. (None should create a tmp directory)
     """
-    def __init__(self, uuid = None, location = None):
+
+    def __init__(self, uuid=None, location=None):
+
         if uuid is None:
-            self.uuid = str(uuid4())
+            self._uuid = str(uuid4())
         else:
-            self.uuid = uuid
+            self._uuid = uuid
 
-        self.location = location
+        self._location = location
         if location is None:
-            self.location = tempfile.mkdtemp()
+            self._location = tempfile.mkdtemp()
 
-        self.path = os.path.join(self.location, self.uuid)
-        if os.path.exists(self.path) is False:
-            os.mkdir(self.path)
-            os.mkdir(os.path.join(self.path, 'files'))
+        self._path = os.path.join(self._location, self._uuid)
+        if os.path.exists(self._path) is False:
+            os.mkdir(self._path)
+            os.mkdir(os.path.join(self._path, 'files'))
+
+    @property
+    def uuid(self):
+
+        return self._uuid
 
     def __json__(self):
+
         return {
-            "uuid": self.uuid,
-            "location": self.location
+            "uuid": self._uuid,
+            "location": self._location
         }

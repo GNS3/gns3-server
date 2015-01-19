@@ -29,14 +29,16 @@ class BaseManager:
     """
 
     def __init__(self):
+
         self._vms = {}
+        self._port_manager = None
 
     @classmethod
     def instance(cls):
         """
         Singleton to return only one instance of BaseManager.
 
-        :returns: instance of Manager
+        :returns: instance of BaseManager
         """
 
         if not hasattr(cls, "_instance") or cls._instance is None:
@@ -55,11 +57,11 @@ class BaseManager:
 
     @port_manager.setter
     def port_manager(self, new_port_manager):
+
         self._port_manager = new_port_manager
 
-
     @classmethod
-    @asyncio.coroutine
+    @asyncio.coroutine  # FIXME: why coroutine?
     def destroy(cls):
         cls._instance = None
 

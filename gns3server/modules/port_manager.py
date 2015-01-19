@@ -19,6 +19,7 @@ import socket
 import ipaddress
 import asyncio
 
+
 class PortManager:
     """
     :param host: IP address to bind for console connections
@@ -55,8 +56,9 @@ class PortManager:
         return cls._instance
 
     @classmethod
-    @asyncio.coroutine
+    @asyncio.coroutine  # FIXME: why coroutine?
     def destroy(cls):
+
         cls._instance = None
 
     @property
