@@ -75,13 +75,23 @@ def main():
 
     current_year = datetime.date.today().year
 
-    user_log = logging.getLogger('user_facing')
-    if not options.quiet:
-        # Send user facing messages to stdout.
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.addFilter(logging.Filter(name='user_facing'))
-        user_log.addHandler(stream_handler)
-        user_log.propagate = False
+
+    # TODO: Renable the test when we will have command line
+    # user_log = logging.getLogger('user_facing')
+    # if not options.quiet:
+    #     # Send user facing messages to stdout.
+    # stream_handler = logging.StreamHandler(sys.stdout)
+    # stream_handler.addFilter(logging.Filter(name='user_facing'))
+    # user_log.addHandler(stream_handler)
+    # user_log.propagate = False
+    # END OLD LOG CODE
+    root_log = logging.getLogger()
+    root_log.setLevel(logging.DEBUG)
+    console_log = logging.StreamHandler(sys.stdout)
+    console_log.setLevel(logging.DEBUG)
+    root_log.addHandler(console_log)
+    user_log = root_log
+    # FIXME END Temporary
 
     user_log.info("GNS3 server version {}".format(__version__))
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
@@ -104,7 +114,9 @@ def main():
         log.critical("the current working directory doesn't exist")
         return
 
-    server = Server(options.host, options.port, options.console_bind_to_any)
+    # TODO: Renable console_bind_to_any when we will have command line parsing
+    #server = Server(options.host, options.port, options.console_bind_to_any)
+    server = Server("127.0.0.1", 8000, False)
     server.run()
 
 if __name__ == '__main__':
