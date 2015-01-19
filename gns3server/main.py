@@ -21,25 +21,11 @@ import datetime
 import sys
 import locale
 
-#TODO: importing this module also configures logging options (colors etc.)
-#see https://github.com/tornadoweb/tornado/blob/master/tornado/log.py#L208
-import tornado.options
-
 from gns3server.server import Server
 from gns3server.version import __version__
 
 import logging
 log = logging.getLogger(__name__)
-
-#TODO: migrate command line options to argparse
-# command line options
-from tornado.options import define
-define("host", default="0.0.0.0", help="run on the given host/IP address", type=str)
-define("port", default=8000, help="run on the given port", type=int)
-define("version", default=False, help="show the version", type=bool)
-define("quiet", default=False, help="do not show output on stdout", type=bool)
-define("console_bind_to_any", default=True, help="bind console ports to any local IP address", type=bool)
-
 
 def locale_check():
     """
@@ -86,16 +72,6 @@ def main():
     """
 
     #TODO: migrate command line options to argparse (don't forget the quiet mode).
-    try:
-        tornado.options.parse_command_line()
-    except (tornado.options.Error, ValueError):
-        tornado.options.print_help()
-        raise SystemExit
-
-    from tornado.options import options
-    if options.version:
-        print(__version__)
-        raise SystemExit
 
     current_year = datetime.date.today().year
 
