@@ -17,26 +17,25 @@
 
 from tests.api.base import server, loop, project
 from tests.utils import asyncio_patch
+from gns3server.modules.virtualbox.virtualbox_vm import VirtualBoxVM
 
 
 def test_vbox_create(server, project):
-    with asyncio_patch("gns3server.modules.VirtualBox.create_vm", return_value="61d61bdd-aa7d-4912-817f-65a9eb54d3ab"):
-        response = server.post("/virtualbox", {"name": "VM1", "vmname": "VM1", "project_uuid": project.uuid}, example=False)
-        assert response.status == 400
-        assert response.route == "/virtualbox"
-        assert response.json["name"] == "VM1"
-        assert response.json["uuid"] == "61d61bdd-aa7d-4912-817f-65a9eb54d3ab"
+    response = server.post("/virtualbox", {"name": "VM1", "vmname": "VM1", "project_uuid": project.uuid}, example=True)
+    assert response.status == 200
+    assert response.route == "/virtualbox"
+    assert response.json["name"] == "VM1"
 
 
 def test_vbox_start(server):
     with asyncio_patch("gns3server.modules.VirtualBox.start_vm", return_value=True):
-        response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/start", {}, example=False)
+        response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/start", {}, example=True)
         assert response.status == 200
         assert response.route == "/virtualbox/{uuid}/start"
 
 
 def test_vbox_stop(server):
     with asyncio_patch("gns3server.modules.VirtualBox.stop_vm", return_value=True):
-        response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/stop", {}, example=False)
+        response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/stop", {}, example=True)
         assert response.status == 200
         assert response.route == "/virtualbox/{uuid}/stop"

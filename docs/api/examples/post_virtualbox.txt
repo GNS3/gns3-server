@@ -1,0 +1,23 @@
+curl -i -X POST 'http://localhost:8000/virtualbox' -d '{"name": "VM1", "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80", "vmname": "VM1"}'
+
+POST /virtualbox HTTP/1.1
+{
+    "name": "VM1",
+    "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "vmname": "VM1"
+}
+
+
+HTTP/1.1 200
+CONNECTION: close
+CONTENT-LENGTH: 133
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /virtualbox
+
+{
+    "name": "VM1",
+    "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "uuid": "a028124a-9a69-4b06-b673-21f7eb3d034f"
+}
