@@ -33,10 +33,12 @@ class BaseVM:
 
     # TODO: When delete release console ports
 
+
     @property
     def project(self):
         """Return VM current project"""
         return self._project
+
 
     @property
     def name(self):
@@ -48,6 +50,7 @@ class BaseVM:
 
         return self._name
 
+
     @name.setter
     def name(self, new_name):
         """
@@ -57,6 +60,7 @@ class BaseVM:
         """
 
         self._name = new_name
+
 
     @property
     def uuid(self):
@@ -68,6 +72,7 @@ class BaseVM:
 
         return self._uuid
 
+
     @property
     def manager(self):
         """
@@ -78,6 +83,16 @@ class BaseVM:
 
         return self._manager
 
+
+    @property
+    def working_dir(self):
+        """
+        Return VM working directory
+        """
+
+        return self._project.vm_working_directory(self._uuid)
+
+
     def create(self):
         """
         Creates the VM.
@@ -85,12 +100,14 @@ class BaseVM:
 
         return
 
+
     def start(self):
         """
         Starts the VM process.
         """
 
         raise NotImplementedError
+
 
     def stop(self):
         """

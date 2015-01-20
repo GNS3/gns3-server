@@ -45,22 +45,40 @@ class Project:
         self._path = os.path.join(self._location, self._uuid)
         if os.path.exists(self._path) is False:
             os.mkdir(self._path)
-            os.mkdir(os.path.join(self._path, "files"))
+            os.mkdir(os.path.join(self._path, "vms"))
+
 
     @property
     def uuid(self):
 
         return self._uuid
 
+
     @property
     def location(self):
 
         return self._location
 
+
     @property
     def path(self):
 
         return self._path
+
+
+    def vm_working_directory(self, vm_identifier):
+        """
+        Return a working directory for a specific VM.
+        If the directory doesn't exist, the directory is created.
+
+        :param vm_identifier: UUID of VM
+        """
+
+        path = os.path.join(self._path, 'vms', vm_identifier)
+        if os.path.exists(path) is False:
+            os.mkdir(path)
+        return path
+
 
     def __json__(self):
 

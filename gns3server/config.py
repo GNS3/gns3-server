@@ -118,7 +118,7 @@ class Config(object):
         :returns: configparser section
         """
 
-        if section is not in self._config:
+        if section not in self._config:
             return self._config["DEFAULT"]
         return self._config[section]
 

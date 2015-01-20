@@ -37,7 +37,7 @@ def manager():
 
 
 @patch("subprocess.check_output", return_value="Welcome to Virtual PC Simulator, version 0.6".encode("utf-8"))
-def test_vm(manager):
+def test_vm(project, manager):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     assert vm.name == "test"
     assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
@@ -81,20 +81,20 @@ def test_stop(project, loop, manager):
         process.terminate.assert_called_with()
 
 
-def test_add_nio_binding_udp(manager):
+def test_add_nio_binding_udp(manager, project):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     assert nio.lport == 4242
 
 
 def test_add_nio_binding_tap(project, manager):
-    vm = VPCSVM("test", 42, project, manager)
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     with patch("gns3server.modules.vpcs.vpcs_vm.has_privileged_access", return_value=True):
         nio = vm.port_add_nio_binding(0, {"type": "nio_tap", "tap_device": "test"})
         assert nio.tap_device == "test"
 
 
-def test_add_nio_binding_tap_no_privileged_access(manager):
+def test_add_nio_binding_tap_no_privileged_access(manager, project):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     with patch("gns3server.modules.vpcs.vpcs_vm.has_privileged_access", return_value=False):
         with pytest.raises(VPCSError):
@@ -102,7 +102,7 @@ def test_add_nio_binding_tap_no_privileged_access(manager):
     assert vm._ethernet_adapter.ports[0] is None
 
 
-def test_port_remove_nio_binding(manager):
+def test_port_remove_nio_binding(manager, project):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     vm.port_remove_nio_binding(0)

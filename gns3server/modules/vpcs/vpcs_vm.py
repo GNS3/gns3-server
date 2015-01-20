@@ -51,20 +51,16 @@ class VPCSVM(BaseVM):
     :param uuid: VPCS instance UUID
     :param project: Project instance
     :param manager: parent VM Manager
-    :param working_dir: path to a working directory
     :param console: TCP console port
     """
 
-    def __init__(self, name, uuid, project, manager, working_dir=None, console=None):
+    def __init__(self, name, uuid, project, manager, console=None):
 
         super().__init__(name, uuid, project, manager)
 
         self._path = self._config.get_section_config("VPCS").get("path", "vpcs")
 
         self._console = console
-
-        # TODO: remove working_dir
-        self._working_dir = "/tmp"
 
         self._command = []
         self._process = None
@@ -75,14 +71,6 @@ class VPCSVM(BaseVM):
         self._script_file = ""
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
-        # working_dir_path = os.path.join(working_dir, "vpcs", "pc-{}".format(self._id))
-        #
-        # if vpcs_id and not os.path.isdir(working_dir_path):
-        #     raise VPCSError("Working directory {} doesn't exist".format(working_dir_path))
-        #
-        # # create the vm own working directory
-        # self.working_dir = working_dir_path
-        #
         try:
             if not self._console:
                 self._console = self._manager.port_manager.get_free_console_port()
@@ -133,7 +121,7 @@ class VPCSVM(BaseVM):
 
         if self._script_file:
             # update the startup.vpc
-            config_path = os.path.join(self._working_dir, "startup.vpc")
+            config_path = os.path.join(self.working_dir, "startup.vpc")
             if os.path.isfile(config_path):
                 try:
                     with open(config_path, "r+", errors="replace") as f:
@@ -155,7 +143,7 @@ class VPCSVM(BaseVM):
         """
         # TODO: should be async
         try:
-            output = subprocess.check_output([self._path, "-v"], cwd=self._working_dir)
+            output = subprocess.check_output([self._path, "-v"], cwd=self.working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output.decode("utf-8"))
             if match:
                 version = match.group(1)
@@ -179,7 +167,7 @@ class VPCSVM(BaseVM):
             self._command = self._build_command()
             try:
                 log.info("starting VPCS: {}".format(self._command))
-                self._vpcs_stdout_file = os.path.join(self._working_dir, "vpcs.log")
+                self._vpcs_stdout_file = os.path.join(self.working_dir, "vpcs.log")
                 log.info("logging to {}".format(self._vpcs_stdout_file))
                 flags = 0
                 if sys.platform.startswith("win32"):
@@ -188,7 +176,7 @@ class VPCSVM(BaseVM):
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
-                                                                              cwd=self._working_dir,
+                                                                              cwd=self.working_dir,
                                                                               creationflags=flags)
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
