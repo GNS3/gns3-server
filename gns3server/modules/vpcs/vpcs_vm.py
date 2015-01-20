@@ -28,6 +28,7 @@ import re
 import asyncio
 import socket
 import shutil
+import atexit
 
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
@@ -80,6 +81,11 @@ class VPCSVM(BaseVM):
             raise VPCSError(e)
 
         self._check_requirements()
+
+
+    def __del__(self):
+        self._kill_process()
+
 
     def _check_requirements(self):
         """
@@ -166,9 +172,9 @@ class VPCSVM(BaseVM):
 
             self._command = self._build_command()
             try:
-                log.info("starting VPCS: {}".format(self._command))
+                log.info("Starting VPCS: {}".format(self._command))
                 self._vpcs_stdout_file = os.path.join(self.working_dir, "vpcs.log")
-                log.info("logging to {}".format(self._vpcs_stdout_file))
+                log.info("Logging to {}".format(self._vpcs_stdout_file))
                 flags = 0
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
@@ -178,12 +184,14 @@ class VPCSVM(BaseVM):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir,
                                                                               creationflags=flags)
+                    #atexit(self._kill_process) # Ensure we don't leave orphan process
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
             except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
-                log.error("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
-                raise VPCSError("could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
+                log.error("Could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
+                raise VPCSError("Could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
+
 
     @asyncio.coroutine
     def stop(self):
@@ -193,16 +201,26 @@ class VPCSVM(BaseVM):
 
         # stop the VPCS process
         if self.is_running():
-            log.info("stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
-            if sys.platform.startswith("win32"):
-                self._process.send_signal(signal.CTRL_BREAK_EVENT)
-            else:
-                self._process.terminate()
-
+            self._kill_process()
             yield from self._process.wait()
 
         self._process = None
         self._started = False
+
+    def _kill_process(self):
+        """Kill the process if running"""
+
+        if self._process:
+            log.info("Stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
+            if sys.platform.startswith("win32"):
+                self._process.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                try:
+                    self._process.terminate()
+                # Sometime the process can already be dead when we garbage collect
+                except ProcessLookupError:
+                    pass
+
 
     def read_vpcs_stdout(self):
         """
