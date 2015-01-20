@@ -40,10 +40,11 @@ class VPCSHandler:
     def create(request, response):
 
         vpcs = VPCS.instance()
-        vm = yield from vpcs.create_vm(request.json["name"], request.json.get("uuid"))
+        vm = yield from vpcs.create_vm(request.json["name"], request.json["project_uuid"], uuid = request.json.get("uuid"))
         response.json({"name": vm.name,
                        "uuid": vm.uuid,
-                       "console": vm.console})
+                       "console": vm.console,
+                        "project_uuid": vm.project.uuid})
 
     @classmethod
     @Route.post(

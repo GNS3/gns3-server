@@ -20,6 +20,7 @@ import asyncio
 import aiohttp
 
 from uuid import UUID, uuid4
+from .project_manager import ProjectManager
 
 
 class BaseManager:
@@ -85,16 +86,24 @@ class BaseManager:
         return self._vms[uuid]
 
     @asyncio.coroutine
-    def create_vm(self, name, uuid=None):
+    def create_vm(self, name, project_identifier, uuid=None):
+        """
+        Create a new VM
 
-        #TODO: support for old projects with normal IDs.
+        :param name VM name
+        :param project_identifier UUID of Project
+        :param uuid Force UUID force VM
+        """
+        project = ProjectManager.instance().get_project(project_identifier)
+
+        #TODO: support for old projects VM with normal IDs.
 
         #TODO: supports specific args: pass kwargs to VM_CLASS?
 
         if not uuid:
             uuid = str(uuid4())
 
-        vm = self._VM_CLASS(name, uuid, self)
+        vm = self._VM_CLASS(name, uuid, project, self)
         future = vm.create()
         if isinstance(future, asyncio.Future):
             yield from future

@@ -31,6 +31,7 @@ from gns3server.web.route import Route
 from gns3server.handlers import *
 from gns3server.modules import MODULES
 from gns3server.modules.port_manager import PortManager
+from gns3server.modules.project_manager import ProjectManager
 
 
 class Query:
@@ -162,3 +163,9 @@ def server(request, loop):
         srv.wait_closed()
     request.addfinalizer(tear_down)
     return Query(loop, host=host, port=port)
+
+
+@pytest.fixture(scope="module")
+def project():
+    return ProjectManager.instance().create_project(uuid = "a1e920ca-338a-4e9f-b363-aa607b09dd80")
+

@@ -37,6 +37,13 @@ VPCS_CREATE_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "project_uuid": {
+            "description": "Project UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
         "console": {
             "description": "console TCP port",
             "minimum": 1,
@@ -45,7 +52,7 @@ VPCS_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name"]
+    "required": ["name", "project_uuid"]
 }
 
 
@@ -130,8 +137,15 @@ VPCS_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "project_uuid": {
+            "description": "Project UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        }
     },
     "additionalProperties": False,
-    "required": ["name", "uuid", "console"]
+    "required": ["name", "uuid", "console", "project_uuid"]
 }
 

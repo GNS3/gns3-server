@@ -48,6 +48,8 @@ class ProjectManager:
         :returns: Project instance
         """
 
+        assert len(project_id) == 36
+
         if project_id not in self._projects:
             raise aiohttp.web.HTTPNotFound(text="Project UUID {} doesn't exist".format(project_id))
         return self._projects[project_id]

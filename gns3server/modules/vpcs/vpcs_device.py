@@ -48,21 +48,21 @@ class VPCSDevice(BaseVM):
 
     :param name: name of this VPCS device
     :param uuid: VPCS instance UUID
+    :param project: Project instance
     :param manager: parent VM Manager
     :param working_dir: path to a working directory
     :param console: TCP console port
     """
-    def __init__(self, name, uuid, manager, working_dir=None, console=None):
+    def __init__(self, name, uuid, project, manager, working_dir=None, console=None):
 
-        super().__init__(name, uuid, manager)
-
-        # TODO: Hardcodded for testing
-        #self._working_dir = working_dir
-        self._working_dir = "/tmp"
+        super().__init__(name, uuid, project, manager)
 
         self._path = self._config.get_section_config("VPCS").get("path", "vpcs")
 
         self._console = console
+
+        #TODO: remove working_dir
+        self._working_dir = "/tmp"
 
         self._command = []
         self._process = None

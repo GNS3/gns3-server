@@ -34,6 +34,7 @@ class Project:
         if uuid is None:
             self._uuid = str(uuid4())
         else:
+            assert len(uuid) == 36
             self._uuid = uuid
 
         self._location = location

@@ -23,14 +23,20 @@ log = logging.getLogger(__name__)
 
 class BaseVM:
 
-    def __init__(self, name, uuid, manager):
+    def __init__(self, name, uuid, project, manager):
 
         self._name = name
         self._uuid = uuid
+        self._project = project
         self._manager = manager
         self._config = Config.instance()
 
     #TODO: When delete release console ports
+
+    @property
+    def project(self):
+        """Return VM current project"""
+        return self._project
 
     @property
     def name(self):
