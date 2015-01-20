@@ -20,8 +20,3 @@ from .vpcs import VPCS
 from .virtualbox import VirtualBox
 
 MODULES = [VPCS, VirtualBox]
-
-#if sys.platform.startswith("linux"):
-#    # IOU runs only on Linux
-#    from .iou import IOU
-#    MODULES.append(IOU)

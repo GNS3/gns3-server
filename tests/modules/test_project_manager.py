@@ -25,8 +25,8 @@ def test_create_project():
     project = pm.create_project(uuid='00010203-0405-0607-0809-0a0b0c0d0e0f')
     assert project == pm.get_project('00010203-0405-0607-0809-0a0b0c0d0e0f')
 
+
 def test_project_not_found():
     pm = ProjectManager.instance()
     with pytest.raises(aiohttp.web.HTTPNotFound):
         pm.get_project('00010203-0405-0607-0809-000000000000')
-

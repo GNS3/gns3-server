@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gns3server.modules.project import Project
 import os
+from gns3server.modules.project import Project
+
 
 def test_affect_uuid():
     p = Project()
@@ -26,15 +27,18 @@ def test_affect_uuid():
     p = Project(uuid='00010203-0405-0607-0809-0a0b0c0d0e0f')
     assert p.uuid == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
+
 def test_path(tmpdir):
-    p = Project(location = str(tmpdir))
+    p = Project(location=str(tmpdir))
     assert p.path == os.path.join(str(tmpdir), p.uuid)
     assert os.path.exists(os.path.join(str(tmpdir), p.uuid))
     assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'files'))
 
+
 def test_temporary_path():
     p = Project()
     assert os.path.exists(p.path)
+
 
 def test_json(tmpdir):
     p = Project()

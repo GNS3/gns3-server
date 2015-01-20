@@ -78,4 +78,3 @@ VBOX_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["name", "uuid"]
 }
-

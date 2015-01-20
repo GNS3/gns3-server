@@ -38,12 +38,11 @@ def test_vpcs_create(server, project):
     assert response.json["project_uuid"] == "61d61bdd-aa7d-4912-817f-65a9eb54d3ab"
 
 
-#FIXME
 def test_vpcs_nio_create_udp(server, vm):
     response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_udp",
-                                                                            "lport": 4242,
-                                                                            "rport": 4343,
-                                                                            "rhost": "127.0.0.1"},
+                                                                       "lport": 4242,
+                                                                       "rport": 4343,
+                                                                       "rhost": "127.0.0.1"},
                            example=True)
     assert response.status == 200
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
@@ -53,18 +52,17 @@ def test_vpcs_nio_create_udp(server, vm):
 @patch("gns3server.modules.vpcs.vpcs_device.has_privileged_access", return_value=True)
 def test_vpcs_nio_create_tap(mock, server, vm):
     response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_tap",
-                                                                            "tap_device": "test"})
+                                                                       "tap_device": "test"})
     assert response.status == 200
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
     assert response.json["type"] == "nio_tap"
 
 
-#FIXME
 def test_vpcs_delete_nio(server, vm):
     response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_udp",
-                                                                            "lport": 4242,
-                                                                            "rport": 4343,
-                                                                            "rhost": "127.0.0.1"})
+                                                                       "lport": 4242,
+                                                                       "rport": 4343,
+                                                                       "rhost": "127.0.0.1"})
     response = server.delete("/vpcs/{}/ports/0/nio".format(vm["uuid"]), example=True)
     assert response.status == 200
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"

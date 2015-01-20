@@ -96,9 +96,9 @@ class BaseManager:
         """
         project = ProjectManager.instance().get_project(project_identifier)
 
-        #TODO: support for old projects VM with normal IDs.
+        # TODO: support for old projects VM with normal IDs.
 
-        #TODO: supports specific args: pass kwargs to VM_CLASS?
+        # TODO: supports specific args: pass kwargs to VM_CLASS?
 
         if not uuid:
             uuid = str(uuid4())

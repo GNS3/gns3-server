@@ -61,7 +61,7 @@ class VPCSDevice(BaseVM):
 
         self._console = console
 
-        #TODO: remove working_dir
+        # TODO: remove working_dir
         self._working_dir = "/tmp"
 
         self._command = []
@@ -120,7 +120,7 @@ class VPCSDevice(BaseVM):
 
         return self._console
 
-    #FIXME: correct way to subclass a property?
+    # FIXME: correct way to subclass a property?
     @BaseVM.name.setter
     def name(self, new_name):
         """
@@ -151,7 +151,7 @@ class VPCSDevice(BaseVM):
         """
         Checks if the VPCS executable version is >= 0.5b1.
         """
-        #TODO: should be async
+        # TODO: should be async
         try:
             output = subprocess.check_output([self._path, "-v"], cwd=self._working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output.decode("utf-8"))
@@ -219,7 +219,7 @@ class VPCSDevice(BaseVM):
         Reads the standard output of the VPCS process.
         Only use when the process has been stopped or has crashed.
         """
-        #TODO: should be async
+        # TODO: should be async
         output = ""
         if self._vpcs_stdout_file:
             try:
@@ -258,7 +258,7 @@ class VPCSDevice(BaseVM):
             rhost = nio_settings["rhost"]
             rport = nio_settings["rport"]
             try:
-                #TODO: handle IPv6
+                # TODO: handle IPv6
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                     sock.connect((rhost, rport))
             except OSError as e:
@@ -271,7 +271,6 @@ class VPCSDevice(BaseVM):
             nio = NIO_TAP(tap_device)
         if not nio:
             raise VPCSError("Requested NIO does not exist or is not supported: {}".format(nio_settings["type"]))
-
 
         self._ethernet_adapter.add_nio(port_id, nio)
         log.info("VPCS {name} {uuid}]: {nio} added to port {port_id}".format(name=self._name,
@@ -355,8 +354,8 @@ class VPCSDevice(BaseVM):
                 command.extend(["-e"])
                 command.extend(["-d", nio.tap_device])
 
-        #FIXME: find workaround
-        #command.extend(["-m", str(self._id)])   # the unique ID is used to set the MAC address offset
+        # FIXME: find workaround
+        # command.extend(["-m", str(self._id)])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
         if self._script_file:

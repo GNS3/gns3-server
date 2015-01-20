@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 """Base code use for all API tests"""
 
 import json
@@ -27,7 +28,7 @@ import aiohttp
 
 
 from gns3server.web.route import Route
-#TODO: get rid of *
+# TODO: get rid of *
 from gns3server.handlers import *
 from gns3server.modules import MODULES
 from gns3server.modules.port_manager import PortManager
@@ -143,6 +144,7 @@ def loop(request):
     request.addfinalizer(tear_down)
     return loop
 
+
 @pytest.fixture(scope="session")
 def server(request, loop):
     port = _get_unused_port()
@@ -167,5 +169,4 @@ def server(request, loop):
 
 @pytest.fixture(scope="module")
 def project():
-    return ProjectManager.instance().create_project(uuid = "a1e920ca-338a-4e9f-b363-aa607b09dd80")
-
+    return ProjectManager.instance().create_project(uuid="a1e920ca-338a-4e9f-b363-aa607b09dd80")

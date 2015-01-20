@@ -31,7 +31,7 @@ class ProjectHandler:
     def create_project(request, response):
         pm = ProjectManager.instance()
         p = pm.create_project(
-            location = request.json.get("location"),
-            uuid = request.json.get("uuid")
+            location=request.json.get("location"),
+            uuid=request.json.get("uuid")
         )
         response.json(p)

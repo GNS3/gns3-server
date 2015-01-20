@@ -36,4 +36,3 @@ PROJECT_OBJECT_SCHEMA = {
     },
     "additionalProperties": False
 }
-

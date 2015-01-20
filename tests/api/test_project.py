@@ -30,11 +30,13 @@ def test_create_project_with_dir(server, tmpdir):
     assert response.status == 200
     assert response.json['location'] == str(tmpdir)
 
+
 def test_create_project_without_dir(server):
     query = {}
     response = server.post('/project', query)
     assert response.status == 200
     assert response.json['uuid'] is not None
+
 
 def test_create_project_with_uuid(server):
     query = {'uuid': '00010203-0405-0607-0809-0a0b0c0d0e0f'}

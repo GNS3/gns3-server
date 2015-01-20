@@ -22,6 +22,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 class Response(aiohttp.web.Response):
 
     def __init__(self, route=None, output_schema=None, headers={}, **kwargs):

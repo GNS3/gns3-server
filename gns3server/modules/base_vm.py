@@ -31,7 +31,7 @@ class BaseVM:
         self._manager = manager
         self._config = Config.instance()
 
-    #TODO: When delete release console ports
+    # TODO: When delete release console ports
 
     @property
     def project(self):
@@ -98,4 +98,3 @@ class BaseVM:
         """
 
         raise NotImplementedError
-

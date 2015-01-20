@@ -148,4 +148,3 @@ VPCS_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["name", "uuid", "console", "project_uuid"]
 }
-
