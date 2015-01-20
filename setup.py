@@ -28,7 +28,7 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        # import here, cause outside the eggs aren't loaded
         import pytest
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)

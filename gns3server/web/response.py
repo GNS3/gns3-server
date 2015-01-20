@@ -38,6 +38,7 @@ class Response(aiohttp.web.Response):
 
     :param anwser The response as a Python object
     """
+
     def json(self, answer):
         """Pass a Python object and return a JSON as answer"""
 

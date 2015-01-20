@@ -95,6 +95,7 @@ log = logging.getLogger(__name__)
 
 
 class Dynamips(IModule):
+
     """
     Dynamips module.
 
@@ -140,7 +141,7 @@ class Dynamips(IModule):
         self._console_host = dynamips_config.get("console_host", kwargs["console_host"])
 
         if not sys.platform.startswith("win32"):
-            #FIXME: pickle issues Windows
+            # FIXME: pickle issues Windows
             self._callback = self.add_periodic_callback(self._check_hypervisors, 5000)
             self._callback.start()
 
@@ -323,7 +324,7 @@ class Dynamips(IModule):
 
         log.debug("received request {}".format(request))
 
-        #TODO: JSON schema validation
+        # TODO: JSON schema validation
         if not self._hypervisor_manager:
 
             if "path" in request:
@@ -407,7 +408,7 @@ class Dynamips(IModule):
             rhost = request["nio"]["rhost"]
             rport = request["nio"]["rport"]
             try:
-                #TODO: handle IPv6
+                # TODO: handle IPv6
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                     sock.connect((rhost, rport))
             except OSError as e:

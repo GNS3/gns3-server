@@ -49,6 +49,7 @@ def parse_request(request, input_schema):
 
 
 class Route(object):
+
     """ Decorator adding:
         * json schema verification
         * routing inside handlers

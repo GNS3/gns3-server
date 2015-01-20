@@ -34,6 +34,7 @@ log = logging.getLogger(__name__)
 
 
 class FileUploadHandler(GNS3BaseHandler):
+
     """
     File upload handler.
 

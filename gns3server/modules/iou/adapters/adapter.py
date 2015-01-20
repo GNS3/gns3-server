@@ -17,6 +17,7 @@
 
 
 class Adapter(object):
+
     """
     Base class for adapters.
 

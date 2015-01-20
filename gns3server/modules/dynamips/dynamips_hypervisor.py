@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 
 
 class DynamipsHypervisor(object):
+
     """
     Creates a new connection to a Dynamips server (also called hypervisor)
 

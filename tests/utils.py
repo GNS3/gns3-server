@@ -20,6 +20,7 @@ from unittest.mock import patch
 
 
 class _asyncio_patch:
+
     """
     A wrapper around python patch supporting asyncio.
     Like the original patch you can use it as context
@@ -29,6 +30,7 @@ class _asyncio_patch:
     inspiration:
     https://hg.python.org/cpython/file/3.4/Lib/unittest/mock.py
     """
+
     def __init__(self, function, *args, **kwargs):
         self.function = function
         self.args = args

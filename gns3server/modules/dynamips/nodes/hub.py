@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class Hub(Bridge):
+
     """
     Dynamips hub (based on Bridge)
 

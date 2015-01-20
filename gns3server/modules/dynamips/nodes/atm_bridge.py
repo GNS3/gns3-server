@@ -24,6 +24,7 @@ from ..dynamips_error import DynamipsError
 
 
 class ATMBridge(object):
+
     """
     Dynamips bridge switch.
 
@@ -33,7 +34,7 @@ class ATMBridge(object):
 
     def __init__(self, hypervisor, name):
 
-        #FIXME: instance tracking
+        # FIXME: instance tracking
         self._hypervisor = hypervisor
         self._name = '"' + name + '"'  # put name into quotes to protect spaces
         self._hypervisor.send("atm_bridge create {}".format(self._name))

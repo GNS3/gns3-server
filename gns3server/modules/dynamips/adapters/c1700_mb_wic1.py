@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class C1700_MB_WIC1(Adapter):
+
     """
     Fake module to provide a placeholder for slot 1 interfaces when WICs
     are inserted into WIC slot 1.

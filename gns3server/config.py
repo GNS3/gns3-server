@@ -30,6 +30,7 @@ CLOUD_SERVER = 'CLOUD_SERVER'
 
 
 class Config(object):
+
     """
     Configuration file management using configparser.
     """
@@ -117,7 +118,7 @@ class Config(object):
         :returns: configparser section
         """
 
-        if not section in self._config:
+        if section is not in self._config:
             return self._config["DEFAULT"]
         return self._config[section]
 

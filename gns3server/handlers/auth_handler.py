@@ -27,32 +27,37 @@ import tornado.websocket
 import logging
 log = logging.getLogger(__name__)
 
+
 class GNS3BaseHandler(tornado.web.RequestHandler):
+
     def get_current_user(self):
         if 'required_user' not in self.settings:
             return "FakeUser"
 
         user = self.get_secure_cookie("user")
         if not user:
-          return None
+            return None
 
         if self.settings['required_user'] == user.decode("utf-8"):
-          return user
+            return user
+
 
 class GNS3WebSocketBaseHandler(tornado.websocket.WebSocketHandler):
+
     def get_current_user(self):
         if 'required_user' not in self.settings:
             return "FakeUser"
 
         user = self.get_secure_cookie("user")
         if not user:
-          return None
+            return None
 
         if self.settings['required_user'] == user.decode("utf-8"):
-          return user
+            return user
 
 
 class LoginHandler(tornado.web.RequestHandler):
+
     def get(self):
         self.write('<html><body><form action="/login" method="post">'
                    'Name: <input type="text" name="name">'
@@ -61,10 +66,10 @@ class LoginHandler(tornado.web.RequestHandler):
                    '</form></body></html>')
 
         try:
-          redirect_to = self.get_argument("next")
-          self.set_secure_cookie("login_success_redirect_to", redirect_to)
+            redirect_to = self.get_argument("next")
+            self.set_secure_cookie("login_success_redirect_to", redirect_to)
         except tornado.web.MissingArgumentError:
-          pass
+            pass
 
     def post(self):
 
@@ -72,18 +77,18 @@ class LoginHandler(tornado.web.RequestHandler):
         password = self.get_argument("password")
 
         if self.settings['required_user'] == user and self.settings['required_pass'] == password:
-          self.set_secure_cookie("user", user)
-          auth_status = "successful"
+            self.set_secure_cookie("user", user)
+            auth_status = "successful"
         else:
-          self.set_secure_cookie("user", "None")
-          auth_status = "failure"
+            self.set_secure_cookie("user", "None")
+            auth_status = "failure"
 
         log.info("Authentication attempt {}: {}, {}".format(auth_status, user, password))
 
         try:
-          redirect_to = self.get_secure_cookie("login_success_redirect_to")
+            redirect_to = self.get_secure_cookie("login_success_redirect_to")
         except tornado.web.MissingArgumentError:
-          redirect_to = "/"
+            redirect_to = "/"
 
         if redirect_to is None:
             self.write({'result': auth_status})

@@ -23,7 +23,8 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-import os, sys
+import os
+import sys
 import json
 import logging
 import socket
@@ -34,7 +35,9 @@ from gns3dms.cloud.rackspace_ctrl import RackspaceCtrl
 LOG_NAME = "gns3dms.rksp"
 log = logging.getLogger("%s" % (LOG_NAME))
 
+
 class Rackspace(object):
+
     def __init__(self, options):
         self.username = options["cloud_user_name"]
         self.apikey = options["cloud_api_key"]
@@ -54,7 +57,7 @@ class Rackspace(object):
 
         for region in self.rksp.list_regions():
             log.debug("Rackspace regions: %s" % (region))
-            
+
         log.debug("Checking region: %s" % (self.region))
         self.rksp.set_region(self.region)
         for server in self.rksp.list_instances():

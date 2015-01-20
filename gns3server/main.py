@@ -27,6 +27,7 @@ from gns3server.version import __version__
 import logging
 log = logging.getLogger(__name__)
 
+
 def locale_check():
     """
     Checks if this application runs with a correct locale (i.e. supports UTF-8 encoding) and attempt to fix
@@ -71,10 +72,9 @@ def main():
     Entry point for GNS3 server
     """
 
-    #TODO: migrate command line options to argparse (don't forget the quiet mode).
+    # TODO: migrate command line options to argparse (don't forget the quiet mode).
 
     current_year = datetime.date.today().year
-
 
     # TODO: Renable the test when we will have command line
     # user_log = logging.getLogger('user_facing')
@@ -95,7 +95,7 @@ def main():
 
     user_log.info("GNS3 server version {}".format(__version__))
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
-    #TODO: end todo
+    # TODO: end todo
 
     # we only support Python 3 version >= 3.3
     if sys.version_info < (3, 3):
@@ -115,7 +115,7 @@ def main():
         return
 
     # TODO: Renable console_bind_to_any when we will have command line parsing
-    #server = Server(options.host, options.port, options.console_bind_to_any)
+    # server = Server(options.host, options.port, options.console_bind_to_any)
     server = Server("127.0.0.1", 8000, False)
     server.run()
 

@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 
 
 class C7200(Router):
+
     """
     Dynamips c7200 router (model is 7206).
 
@@ -227,9 +228,9 @@ class C7200(Router):
                                                                                                         powered_on=power_supply))
 
             log.info("router {name} [id={id}]: power supply {power_supply_id} state updated to {powered_on}".format(name=self._name,
-                                                                                                                            id=self._id,
-                                                                                                                            power_supply_id=power_supply_id,
-                                                                                                                            powered_on=power_supply))
+                                                                                                                    id=self._id,
+                                                                                                                    power_supply_id=power_supply_id,
+                                                                                                                    powered_on=power_supply))
             power_supply_id += 1
 
         self._power_supplies = power_supplies

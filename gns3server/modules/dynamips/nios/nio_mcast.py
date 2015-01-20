@@ -26,6 +26,7 @@ log = logging.getLogger(__name__)
 
 
 class NIO_Mcast(NIO):
+
     """
     Dynamips Linux Ethernet NIO.
 
@@ -103,5 +104,5 @@ class NIO_Mcast(NIO):
         """
 
         self._hypervisor.send("nio set_mcast_ttl {name} {ttl}".format(name=self._name,
-                                                                          ttl=ttl))
+                                                                      ttl=ttl))
         self._ttl = ttl

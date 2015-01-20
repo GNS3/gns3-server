@@ -24,6 +24,7 @@ from .project_manager import ProjectManager
 
 
 class BaseManager:
+
     """
     Base class for all Manager.
     Responsible of management of a VM pool

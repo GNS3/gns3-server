@@ -22,7 +22,9 @@ from gns3server.web.route import Route
 
 
 class Documentation(object):
+
     """Extract API documentation as Sphinx compatible files"""
+
     def __init__(self, route):
         self._documentation = route.get_documentation()
 

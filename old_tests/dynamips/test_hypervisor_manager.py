@@ -11,7 +11,7 @@ def hypervisor_manager(request):
     print("\nStarting Dynamips Hypervisor: {}".format(dynamips_path))
     manager = HypervisorManager(dynamips_path, "/tmp", "127.0.0.1")
 
-    #manager.start_new_hypervisor()
+    # manager.start_new_hypervisor()
 
     def stop():
         print("\nStopping Dynamips Hypervisor")

@@ -44,7 +44,7 @@ ETHSW_DELETE_SCHEMA = {
     "required": ["id"]
 }
 
-#TODO: ports {'1': {'vlan': 1, 'type': 'qinq'}
+# TODO: ports {'1': {'vlan': 1, 'type': 'qinq'}
 ETHSW_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to update an Ethernet switch instance",
@@ -59,20 +59,20 @@ ETHSW_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-#         "ports": {
-#             "type": "object",
-#             "properties": {
-#                     "type": {
-#                         "description": "Port type",
-#                         "enum": ["access", "dot1q", "qinq"],
-#                     },
-#                     "vlan": {
-#                         "description": "VLAN number",
-#                         "type": "integer",
-#                         "minimum": 1
-#                     },
-#                 },
-#         },
+        #         "ports": {
+        #             "type": "object",
+        #             "properties": {
+        #                     "type": {
+        #                         "description": "Port type",
+        #                         "enum": ["access", "dot1q", "qinq"],
+        #                     },
+        #                     "vlan": {
+        #                         "description": "VLAN number",
+        #                         "type": "integer",
+        #                         "minimum": 1
+        #                     },
+        #                 },
+        #         },
     },
     #"additionalProperties": False,
     "required": ["id"]

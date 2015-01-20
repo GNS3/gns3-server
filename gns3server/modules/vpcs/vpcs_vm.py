@@ -43,6 +43,7 @@ log = logging.getLogger(__name__)
 
 
 class VPCSVM(BaseVM):
+
     """
     VPCS vm implementation.
 
@@ -53,6 +54,7 @@ class VPCSVM(BaseVM):
     :param working_dir: path to a working directory
     :param console: TCP console port
     """
+
     def __init__(self, name, uuid, project, manager, working_dir=None, console=None):
 
         super().__init__(name, uuid, project, manager)

@@ -33,7 +33,7 @@ from .config import Config
 from .modules import MODULES
 from .modules.port_manager import PortManager
 
-#TODO: get rid of * have something generic to automatically import handlers so the routes can be found
+# TODO: get rid of * have something generic to automatically import handlers so the routes can be found
 from gns3server.handlers import *
 from gns3server.handlers.virtualbox_handler import VirtualBoxHandler
 
@@ -51,7 +51,7 @@ class Server:
         self._start_time = time.time()
         self._port_manager = PortManager(host, console_bind_to_any)
 
-        #TODO: server config file support, to be reviewed
+        # TODO: server config file support, to be reviewed
         # # get the projects and temp directories from the configuration file (passed to the modules)
         # config = Config.instance()
         # server_config = config.get_default_section()
@@ -78,7 +78,7 @@ class Server:
         Cleanup the modules (shutdown running emulators etc.)
         """
 
-        #TODO: clean everything from here
+        # TODO: clean everything from here
         self._loop.stop()
 
     def _signal_handling(self):
@@ -133,7 +133,7 @@ class Server:
         Starts the server.
         """
 
-        #TODO: SSL support for Rackspace cloud integration (here or with nginx for instance).
+        # TODO: SSL support for Rackspace cloud integration (here or with nginx for instance).
         self._loop = asyncio.get_event_loop()
         app = aiohttp.web.Application()
         for method, route, handler in Route.get_routes():
@@ -148,7 +148,7 @@ class Server:
         self._loop.run_until_complete(self._run_application(app))
         self._signal_handling()
 
-        #FIXME: remove it in production or in tests
+        # FIXME: remove it in production or in tests
         self._loop.call_later(1, self._reload_hook)
         try:
             self._loop.run_forever()

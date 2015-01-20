@@ -57,7 +57,7 @@ def test_power_supplies(router_c7200):
 
 def test_mac_addr(router_c7200):
 
-    assert router_c7200.mac_addr != None
+    assert router_c7200.mac_addr is not None
     router_c7200.mac_addr = "aa:aa:aa:aa:aa:aa"
     assert router_c7200.mac_addr == "aa:aa:aa:aa:aa:aa"
 
@@ -162,7 +162,7 @@ def test_slot_remove_adapter(router_c7200):
     adapter = PA_FE_TX()
     router_c7200.slot_add_binding(1, adapter)
     router_c7200.slot_remove_binding(1)
-    assert router_c7200.slots[1] == None
+    assert router_c7200.slots[1] is None
 
 
 def test_slot_add_remove_nio_binding(router_c7200):

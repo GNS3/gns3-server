@@ -175,7 +175,6 @@ class BaseCloudCtrl(object):
         except Exception as e:
             log.error("list_instances returned an error: {}".format(e))
 
-
     def create_key_pair(self, name):
         """ Create and return a new Key Pair. """
 

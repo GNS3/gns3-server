@@ -29,7 +29,7 @@ def test_iomem(router_c2691):
 
 def test_mac_addr(router_c2691):
 
-    assert router_c2691.mac_addr != None
+    assert router_c2691.mac_addr is not None
     router_c2691.mac_addr = "aa:aa:aa:aa:aa:aa"
     assert router_c2691.mac_addr == "aa:aa:aa:aa:aa:aa"
 

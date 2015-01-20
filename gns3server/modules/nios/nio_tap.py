@@ -21,6 +21,7 @@ Interface for TAP NIOs (UNIX based OSes only).
 
 
 class NIO_TAP(object):
+
     """
     TAP NIO.
 

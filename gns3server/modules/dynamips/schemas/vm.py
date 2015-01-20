@@ -147,7 +147,7 @@ VM_RELOAD_SCHEMA = {
     "required": ["id"]
 }
 
-#TODO: improve platform specific properties (dependencies?)
+# TODO: improve platform specific properties (dependencies?)
 VM_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to update a VM instance",

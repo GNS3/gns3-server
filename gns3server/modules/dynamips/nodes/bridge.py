@@ -22,6 +22,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L538
 
 
 class Bridge(object):
+
     """
     Dynamips bridge.
 

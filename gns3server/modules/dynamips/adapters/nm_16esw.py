@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class NM_16ESW(Adapter):
+
     """
     NM-16ESW FastEthernet network module.
     """

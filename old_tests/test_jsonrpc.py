@@ -72,6 +72,7 @@ class JSONRPC(AsyncTestCase):
 
 
 class AsyncWSRequest(TornadoWebSocketClient):
+
     """
     Very basic Websocket client for tests
     """

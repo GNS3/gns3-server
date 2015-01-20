@@ -99,14 +99,14 @@ def test_nvram(router):
 
 def test_mmap(router):
 
-    assert router.mmap == True  # default value
+    assert router.mmap  # default value
     router.mmap = False
     assert router.mmap == False
 
 
 def test_sparsemem(router):
 
-    assert router.sparsemem == True  # default value
+    assert router.sparsemem  # default value
     router.sparsemem = False
     assert router.sparsemem == False
 
@@ -209,7 +209,7 @@ def test_get_slot_nio_bindings(router):
 
 def test_mac_addr(router):
 
-    assert router.mac_addr != None
+    assert router.mac_addr is not None
     router.mac_addr = "aa:aa:aa:aa:aa:aa"
     assert router.mac_addr == "aa:aa:aa:aa:aa:aa"
 

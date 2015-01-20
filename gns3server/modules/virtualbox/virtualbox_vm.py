@@ -45,6 +45,7 @@ log = logging.getLogger(__name__)
 
 
 class VirtualBoxVM(BaseVM):
+
     """
     VirtualBox VM implementation.
     """
@@ -58,7 +59,7 @@ class VirtualBoxVM(BaseVM):
 
         self._system_properties = {}
 
-        #FIXME: harcoded values
+        # FIXME: harcoded values
         if sys.platform.startswith("win"):
             self._vboxmanage_path = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
         else:
@@ -367,7 +368,6 @@ class VirtualBoxVM(BaseVM):
                 except OSError as e:
                     raise VirtualBoxError("Could not write HDD info file: {}".format(e))
 
-
         log.info("VirtualBox VM {name} [id={id}] has been deleted".format(name=self._name,
                                                                           id=self._id))
 
@@ -386,9 +386,9 @@ class VirtualBoxVM(BaseVM):
         if self._linked_clone:
             self._execute("unregistervm", [self._vmname, "--delete"])
 
-        #try:
+        # try:
         #    shutil.rmtree(self._working_dir)
-        #except OSError as e:
+        # except OSError as e:
         #    log.error("could not delete VirtualBox VM {name} [id={id}]: {error}".format(name=self._name,
         #                                                                                id=self._id,
         #                                                                                error=e))

@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class SerialAdapter(Adapter):
+
     """
     IOU Serial adapter.
     """

@@ -80,15 +80,15 @@ def parse_cmd_line(argv):
 
     short_args = "dvh"
     long_args = ("debug",
-                    "ip=",
-                    "verbose",
-                    "help",
-                    "data=",
-                    )
+                 "ip=",
+                 "verbose",
+                 "help",
+                 "data=",
+                 )
     try:
         opts, extra_opts = getopt.getopt(argv[1:], short_args, long_args)
     except getopt.GetoptError as e:
-        print("Unrecognized command line option or missing required argument: %s" %(e))
+        print("Unrecognized command line option or missing required argument: %s" % (e))
         print(usage)
         sys.exit(2)
 
@@ -99,7 +99,7 @@ def parse_cmd_line(argv):
     elif sys.platform == "osx":
         cmd_line_option_list['syslog'] = "/var/run/syslog"
     else:
-        cmd_line_option_list['syslog'] = ('localhost',514)
+        cmd_line_option_list['syslog'] = ('localhost', 514)
 
     for opt, val in opts:
         if opt in ("-h", "--help"):

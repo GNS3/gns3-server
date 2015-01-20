@@ -41,7 +41,7 @@ from os.path import expanduser
 
 SCRIPT_NAME = os.path.basename(__file__)
 
-#Is the full path when used as an import
+# Is the full path when used as an import
 SCRIPT_PATH = os.path.dirname(__file__)
 
 if not SCRIPT_PATH:
@@ -98,6 +98,8 @@ Options:
 """ % (SCRIPT_NAME)
 
 # Parse cmd line options
+
+
 def parse_cmd_line(argv):
     """
     Parse command line arguments
@@ -107,22 +109,22 @@ def parse_cmd_line(argv):
 
     short_args = "dvhk"
     long_args = ("debug",
-                    "verbose",
-                    "help",
-                    "cloud_user_name=",
-                    "cloud_api_key=",
-                    "instance_id=",
-                    "region=",
-                    "dead_time=",
-                    "init-wait=",
-                    "check-interval=",
-                    "file=",
-                    "background",
-                    )
+                 "verbose",
+                 "help",
+                 "cloud_user_name=",
+                 "cloud_api_key=",
+                 "instance_id=",
+                 "region=",
+                 "dead_time=",
+                 "init-wait=",
+                 "check-interval=",
+                 "file=",
+                 "background",
+                 )
     try:
         opts, extra_opts = getopt.getopt(argv[1:], short_args, long_args)
     except getopt.GetoptError as e:
-        print("Unrecognized command line option or missing required argument: %s" %(e))
+        print("Unrecognized command line option or missing required argument: %s" % (e))
         print(usage)
         sys.exit(2)
 
@@ -133,7 +135,7 @@ def parse_cmd_line(argv):
     cmd_line_option_list["cloud_api_key"] = None
     cmd_line_option_list["instance_id"] = None
     cmd_line_option_list["region"] = None
-    cmd_line_option_list["dead_time"] = 60 * 60 #minutes
+    cmd_line_option_list["dead_time"] = 60 * 60  # minutes
     cmd_line_option_list["check-interval"] = None
     cmd_line_option_list["init-wait"] = 5 * 60
     cmd_line_option_list["file"] = None
@@ -146,8 +148,7 @@ def parse_cmd_line(argv):
     elif sys.platform == "osx":
         cmd_line_option_list['syslog'] = "/var/run/syslog"
     else:
-        cmd_line_option_list['syslog'] = ('localhost',514)
-
+        cmd_line_option_list['syslog'] = ('localhost', 514)
 
     get_gns3secrets(cmd_line_option_list)
     cmd_line_option_list["dead_time"] = int(cmd_line_option_list["dead_time"])
@@ -181,7 +182,7 @@ def parse_cmd_line(argv):
         elif (opt in ("--background")):
             cmd_line_option_list["daemon"] = True
 
-    if cmd_line_option_list["shutdown"] == False:
+    if cmd_line_option_list["shutdown"] is False:
 
         if cmd_line_option_list["check-interval"] is None:
             cmd_line_option_list["check-interval"] = cmd_line_option_list["dead_time"] + 120
@@ -211,8 +212,8 @@ def parse_cmd_line(argv):
             print(usage)
             sys.exit(2)
 
-
     return cmd_line_option_list
+
 
 def get_gns3secrets(cmd_line_option_list):
     """
@@ -248,10 +249,10 @@ def set_logging(cmd_options):
     log_level = logging.INFO
     log_level_console = logging.WARNING
 
-    if cmd_options['verbose'] == True:
+    if cmd_options['verbose']:
         log_level_console = logging.INFO
 
-    if cmd_options['debug'] == True:
+    if cmd_options['debug']:
         log_level_console = logging.DEBUG
         log_level = logging.DEBUG
 
@@ -275,6 +276,7 @@ def set_logging(cmd_options):
 
     return log
 
+
 def send_shutdown(pid_file):
     """
     Sends the daemon process a kill signal
@@ -291,8 +293,9 @@ def send_shutdown(pid_file):
 
 def _get_file_age(filename):
     return datetime.datetime.fromtimestamp(
-                os.path.getmtime(filename)
-            )
+        os.path.getmtime(filename)
+    )
+
 
 def monitor_loop(options):
     """
@@ -307,7 +310,7 @@ def monitor_loop(options):
 
     terminate_attempts = 0
 
-    while options['shutdown'] == False:
+    while options['shutdown'] is False:
         log.debug("In monitor_loop for : %s" % (
             datetime.datetime.now() - options['starttime'])
         )
@@ -320,15 +323,15 @@ def monitor_loop(options):
 
         if delta.seconds > options["dead_time"]:
             log.warning("Dead time exceeded, terminating instance ...")
-            #Terminate involves many layers of HTTP / API calls, lots of
-            #different errors types could occur here.
+            # Terminate involves many layers of HTTP / API calls, lots of
+            # different errors types could occur here.
             try:
                 rksp = Rackspace(options)
                 rksp.terminate()
             except Exception as e:
                 log.critical("Exception during terminate: %s" % (e))
 
-            terminate_attempts+=1
+            terminate_attempts += 1
             log.warning("Termination sent, attempt: %s" % (terminate_attempts))
             time.sleep(600)
         else:
@@ -372,14 +375,13 @@ def main():
     for key, value in iter(sorted(options.items())):
         log.debug("%s : %s" % (key, value))
 
-
     log.debug("Checking file ....")
-    if os.path.isfile(options["file"]) == False:
+    if os.path.isfile(options["file"]) is False:
         log.critical("File does not exist!!!")
         sys.exit(1)
 
     test_acess = _get_file_age(options["file"])
-    if type(test_acess) is not datetime.datetime:
+    if not isinstance(test_acess, datetime.datetime):
         log.critical("Can't get file modification time!!!")
         sys.exit(1)
 
@@ -390,13 +392,11 @@ def main():
 
 
 class MyDaemon(daemon.daemon):
+
     def run(self):
         monitor_loop(self.options)
-
 
 
 if __name__ == "__main__":
     result = main()
     sys.exit(result)
-
-

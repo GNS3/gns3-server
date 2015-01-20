@@ -22,6 +22,7 @@ from aiohttp.web import HTTPConflict
 
 
 class ProjectHandler:
+
     @classmethod
     @Route.post(
         r"/project",

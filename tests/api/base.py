@@ -36,6 +36,7 @@ from gns3server.modules.project_manager import ProjectManager
 
 
 class Query:
+
     def __init__(self, loop, host='localhost', port=8001):
         self._loop = loop
         self._port = port

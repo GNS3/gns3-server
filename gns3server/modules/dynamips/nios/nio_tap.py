@@ -26,6 +26,7 @@ log = logging.getLogger(__name__)
 
 
 class NIO_TAP(NIO):
+
     """
     Dynamips TAP NIO.
 

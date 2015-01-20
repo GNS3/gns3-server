@@ -43,6 +43,7 @@ log = logging.getLogger(__name__)
 
 
 class IOUDevice(object):
+
     """
     IOU device implementation.
 

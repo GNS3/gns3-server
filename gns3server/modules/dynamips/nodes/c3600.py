@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class C3600(Router):
+
     """
     Dynamips c3600 router.
 

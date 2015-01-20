@@ -20,6 +20,7 @@ from .project import Project
 
 
 class ProjectManager:
+
     """
     This singleton keeps track of available projects.
     """

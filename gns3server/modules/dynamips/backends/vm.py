@@ -466,7 +466,7 @@ class VM(object):
                 adapter_name = value
                 adapter = ADAPTER_MATRIX[adapter_name]()
                 try:
-                    if router.slots[slot_id] and type(router.slots[slot_id]) != type(adapter):
+                    if router.slots[slot_id] and not isinstance(router.slots[slot_id], type(adapter)):
                         router.slot_remove_binding(slot_id)
                     router.slot_add_binding(slot_id, adapter)
                     response[name] = value
@@ -487,14 +487,14 @@ class VM(object):
                 wic_name = value
                 wic = WIC_MATRIX[wic_name]()
                 try:
-                    if router.slots[0].wics[wic_slot_id] and type(router.slots[0].wics[wic_slot_id]) != type(wic):
+                    if router.slots[0].wics[wic_slot_id] and not isinstance(router.slots[0].wics[wic_slot_id], type(wic)):
                         router.uninstall_wic(wic_slot_id)
                     router.install_wic(wic_slot_id, wic)
                     response[name] = value
                 except DynamipsError as e:
                     self.send_custom_error(str(e))
                     return
-            elif name.startswith("wic") and value == None:
+            elif name.startswith("wic") and value is None:
                 wic_slot_id = int(name[-1])
                 if router.slots[0].wics and router.slots[0].wics[wic_slot_id]:
                     try:

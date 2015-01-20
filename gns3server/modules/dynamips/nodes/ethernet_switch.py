@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class EthernetSwitch(object):
+
     """
     Dynamips Ethernet switch.
 
@@ -268,9 +269,9 @@ class EthernetSwitch(object):
                                                                                      outer_vlan=outer_vlan))
 
         log.info("Ethernet switch {name} [id={id}]: port {port} set as a QinQ port with outer VLAN {vlan_id}".format(name=self._name,
-                                                                                                                       id=self._id,
-                                                                                                                       port=port,
-                                                                                                                       vlan_id=outer_vlan))
+                                                                                                                     id=self._id,
+                                                                                                                     port=port,
+                                                                                                                     vlan_id=outer_vlan))
         self._mapping[port] = ("qinq", outer_vlan)
 
     def get_mac_addr_table(self):

@@ -103,7 +103,7 @@ def main():
     instance.change_password(passwd)
     # wait for the password change to be processed.  Continuing while
     # a password change is processing will cause image creation to fail.
-    sleep(POLL_SEC*6)
+    sleep(POLL_SEC * 6)
 
     env.host_string = str(instance.accessIPv4)
     env.user = "root"

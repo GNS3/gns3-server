@@ -23,6 +23,7 @@ from .nio import NIO
 
 
 class NIO_GenericEthernet(NIO):
+
     """
     Generic Ethernet NIO.
 

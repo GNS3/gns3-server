@@ -56,22 +56,22 @@ EXIT_ABORT = 2
 # Mostly from:
 # https://code.google.com/p/miniboa/source/browse/trunk/miniboa/telnet.py
 #--[ Telnet Commands ]---------------------------------------------------------
-SE = 240 # End of sub-negotiation parameters
-NOP = 241 # No operation
-DATMK = 242 # Data stream portion of a sync.
-BREAK = 243 # NVT Character BRK
-IP = 244 # Interrupt Process
-AO = 245 # Abort Output
-AYT = 246 # Are you there
-EC = 247 # Erase Character
-EL = 248 # Erase Line
-GA = 249 # The Go Ahead Signal
-SB = 250 # Sub-option to follow
-WILL = 251 # Will; request or confirm option begin
-WONT = 252 # Wont; deny option request
-DO = 253 # Do = Request or confirm remote option
-DONT = 254 # Don't = Demand or confirm option halt
-IAC = 255 # Interpret as Command
+SE = 240  # End of sub-negotiation parameters
+NOP = 241  # No operation
+DATMK = 242  # Data stream portion of a sync.
+BREAK = 243  # NVT Character BRK
+IP = 244  # Interrupt Process
+AO = 245  # Abort Output
+AYT = 246  # Are you there
+EC = 247  # Erase Character
+EL = 248  # Erase Line
+GA = 249  # The Go Ahead Signal
+SB = 250  # Sub-option to follow
+WILL = 251  # Will; request or confirm option begin
+WONT = 252  # Wont; deny option request
+DO = 253  # Do = Request or confirm remote option
+DONT = 254  # Don't = Demand or confirm option halt
+IAC = 255  # Interpret as Command
 SEND = 1   # Sub-process negotiation SEND command
 IS = 0   # Sub-process negotiation IS command
 #--[ Telnet Options ]----------------------------------------------------------
@@ -154,6 +154,7 @@ class FileLock:
 
 
 class Console:
+
     def fileno(self):
         raise NotImplementedError("Only routers have fileno()")
 

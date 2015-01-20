@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class EthernetAdapter(Adapter):
+
     """
     QEMU Ethernet adapter.
     """

@@ -21,6 +21,7 @@ from uuid import uuid4
 
 
 class Project:
+
     """
     A project contains a list of VM.
     In theory VM are isolated project/project.

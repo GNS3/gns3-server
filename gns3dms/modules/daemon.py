@@ -1,8 +1,14 @@
 """Generic linux daemon base class for python 3.x."""
 
-import sys, os, time, atexit, signal
+import sys
+import os
+import time
+import atexit
+import signal
+
 
 class daemon:
+
     """A generic daemon class.
 
     Usage: subclass the daemon class and override the run() method."""
@@ -54,7 +60,7 @@ class daemon:
         atexit.register(self.delpid)
 
         pid = str(os.getpid())
-        with open(self.pidfile,'w+') as f:
+        with open(self.pidfile, 'w+') as f:
             f.write(pid + '\n')
 
     def delpid(self):
@@ -74,7 +80,7 @@ class daemon:
 
         # Check for a pidfile to see if the daemon already runs
         try:
-            with open(self.pidfile,'r') as pf:
+            with open(self.pidfile, 'r') as pf:
 
                 pid = int(pf.read().strip())
         except IOError:
@@ -101,20 +107,20 @@ class daemon:
 
         # Get the pid from the pidfile
         try:
-            with open(self.pidfile,'r') as pf:
+            with open(self.pidfile, 'r') as pf:
                 pid = int(pf.read().strip())
         except IOError:
             pid = None
 
         if not pid:
             message = "pidfile {0} does not exist. " + \
-                    "Daemon not running?\n"
+                "Daemon not running?\n"
             sys.stderr.write(message.format(self.pidfile))
-            return # not an error in a restart
+            return  # not an error in a restart
 
         # Try killing the daemon process
         try:
-            while 1:
+            while True:
                 os.kill(pid, signal.SIGTERM)
                 time.sleep(0.1)
         except OSError as err:
@@ -123,7 +129,7 @@ class daemon:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
             else:
-                print (str(err.args))
+                print(str(err.args))
                 sys.exit(1)
 
     def restart(self):

@@ -23,6 +23,7 @@ from .nio import NIO
 
 
 class NIO_TAP(NIO):
+
     """
     TAP NIO.
 

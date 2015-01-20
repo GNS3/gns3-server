@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class C3745(Router):
+
     """
     Dynamips c3745 router.
 

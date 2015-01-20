@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class PA_POS_OC3(Adapter):
+
     """
     PA-POS-OC3 port adapter.
     """

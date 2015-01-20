@@ -43,6 +43,7 @@ log = logging.getLogger(__name__)
 
 
 class QemuVM(object):
+
     """
     QEMU VM implementation.
 
@@ -462,7 +463,6 @@ class QemuVM(object):
                                                                                                         disk_image=hdb_disk_image))
         self._hdb_disk_image = hdb_disk_image
 
-
     @property
     def adapters(self):
         """
@@ -585,7 +585,6 @@ class QemuVM(object):
                                                                                               id=self._id,
                                                                                               priority=process_priority))
         self._process_priority = process_priority
-
 
     @property
     def ram(self):
@@ -999,18 +998,18 @@ class QemuVM(object):
                 if self._legacy_networking:
                     self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
                     self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
-                                                                                                              adapter_id,
-                                                                                                              nio.lport,
-                                                                                                              nio.rport,
-                                                                                                              nio.rhost))
+                                                                                                               adapter_id,
+                                                                                                               nio.lport,
+                                                                                                               nio.rport,
+                                                                                                               nio.rhost))
                 else:
                     self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
                     self._control_vm("host_net_add socket vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                                adapter_id,
-                                                                                                                nio.rhost,
-                                                                                                                nio.rport,
-                                                                                                                self._host,
-                                                                                                                nio.lport))
+                                                                                                                 adapter_id,
+                                                                                                                 nio.rhost,
+                                                                                                                 nio.rport,
+                                                                                                                 self._host,
+                                                                                                                 nio.lport))
 
         adapter.add_nio(0, nio)
         log.info("QEMU VM {name} [id={id}]: {nio} added to adapter {adapter_id}".format(name=self._name,
@@ -1154,8 +1153,8 @@ class QemuVM(object):
             if not os.path.exists(hdb_disk):
                 try:
                     retcode = subprocess.call([qemu_img_path, "create", "-o",
-                                              "backing_file={}".format(self._hdb_disk_image),
-                                              "-f", "qcow2", hdb_disk])
+                                               "backing_file={}".format(self._hdb_disk_image),
+                                               "-f", "qcow2", hdb_disk])
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
                 except (OSError, subprocess.SubprocessError) as e:
                     raise QemuError("Could not create disk image {}".format(e))
@@ -1190,24 +1189,24 @@ class QemuVM(object):
         network_options = []
         adapter_id = 0
         for adapter in self._ethernet_adapters:
-            #TODO: let users specify a base mac address
+            # TODO: let users specify a base mac address
             mac = "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_id)
             network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIO_UDP):
                 if self._legacy_networking:
                     network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
-                                                                                                                adapter_id,
-                                                                                                                nio.lport,
-                                                                                                                nio.rport,
-                                                                                                                nio.rhost)])
+                                                                                                                 adapter_id,
+                                                                                                                 nio.lport,
+                                                                                                                 nio.rport,
+                                                                                                                 nio.rhost)])
                 else:
                     network_options.extend(["-net", "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                                  adapter_id,
-                                                                                                                  nio.rhost,
-                                                                                                                  nio.rport,
-                                                                                                                  self._host,
-                                                                                                                  nio.lport)])
+                                                                                                                   adapter_id,
+                                                                                                                   nio.rhost,
+                                                                                                                   nio.rport,
+                                                                                                                   self._host,
+                                                                                                                   nio.lport)])
             else:
                 network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_id, adapter_id)])
             adapter_id += 1

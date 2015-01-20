@@ -33,6 +33,7 @@ log = logging.getLogger(__name__)
 
 
 class Router(object):
+
     """
     Dynamips router implementation.
 
@@ -575,7 +576,7 @@ class Router(object):
         try:
             reply = self._hypervisor.send("vm extract_config {}".format(self._name))[0].rsplit(' ', 2)[-2:]
         except IOError:
-            #for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
+            # for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
             return None, None
         startup_config = reply[0][1:-1]  # get statup-config and remove single quotes
         private_config = reply[1][1:-1]  # get private-config and remove single quotes

@@ -133,7 +133,7 @@ def test_reset_stats(hypervisor):
 def test_set_bandwidth(hypervisor):
 
     nio = NIO_Null(hypervisor)
-    assert nio.bandwidth == None  # no constraint by default
+    assert nio.bandwidth is None  # no constraint by default
     nio.set_bandwidth(1000)  # bandwidth = 1000 Kb/s
     assert nio.bandwidth == 1000
     nio.delete()

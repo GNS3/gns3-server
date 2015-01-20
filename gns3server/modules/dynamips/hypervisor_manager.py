@@ -34,6 +34,7 @@ log = logging.getLogger(__name__)
 
 
 class HypervisorManager(object):
+
     """
     Manages Dynamips hypervisors.
 

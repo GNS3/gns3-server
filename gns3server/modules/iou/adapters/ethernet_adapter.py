@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class EthernetAdapter(Adapter):
+
     """
     IOU Ethernet adapter.
     """

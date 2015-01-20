@@ -49,6 +49,7 @@ log = logging.getLogger(__name__)
 
 
 class Qemu(IModule):
+
     """
     QEMU module.
 
@@ -551,7 +552,7 @@ class Qemu(IModule):
                 rhost = request["nio"]["rhost"]
                 rport = request["nio"]["rport"]
                 try:
-                    #TODO: handle IPv6
+                    # TODO: handle IPv6
                     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                         sock.connect((rhost, rport))
                 except OSError as e:

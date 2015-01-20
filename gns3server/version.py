@@ -25,4 +25,3 @@
 
 __version__ = "1.3.dev1"
 __version_info__ = (1, 3, 0, 0)
-
