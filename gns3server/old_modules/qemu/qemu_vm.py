@@ -1003,7 +1003,7 @@ class QemuVM(object):
                                                                                                                nio.rport,
                                                                                                                nio.rhost))
                 else:
-                    #FIXME: does it work? very undocumented feature...
+                    # FIXME: does it work? very undocumented feature...
                     self._control_vm("netdev_del gns3-{}".format(adapter_id))
                     self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
                                                                                                      nio.rhost,
@@ -1038,7 +1038,7 @@ class QemuVM(object):
                 self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
                 self._control_vm("host_net_add user vlan={},name=gns3-{}".format(adapter_id, adapter_id))
             else:
-                #FIXME: does it work? very undocumented feature...
+                # FIXME: does it work? very undocumented feature...
                 self._control_vm("netdev_del gns3-{}".format(adapter_id))
                 self._control_vm("netdev_add user,id=gns3-{}".format(adapter_id))
 
@@ -1210,20 +1210,11 @@ class QemuVM(object):
                                                                                                                  nio.rport,
                                                                                                                  nio.rhost)])
                 else:
-<<<<<<< HEAD:gns3server/old_modules/qemu/qemu_vm.py
-                    network_options.extend(["-net", "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                                   adapter_id,
-                                                                                                                   nio.rhost,
-                                                                                                                   nio.rport,
-                                                                                                                   self._host,
-                                                                                                                   nio.lport)])
-=======
                     network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
                                                                                                             nio.rhost,
                                                                                                             nio.rport,
                                                                                                             self._host,
                                                                                                             nio.lport)])
->>>>>>> master:gns3server/modules/qemu/qemu_vm.py
             else:
                 if self._legacy_networking:
                     network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_id, adapter_id)])
