@@ -19,5 +19,5 @@ X-ROUTE: /vpcs
     "console": 2000,
     "name": "PC TEST 1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "0adee348-1ce4-417b-9b5c-ff96f62ce35a"
+    "uuid": "6373ecfa-a186-48de-be4d-3f3463d2e23c"
 }
