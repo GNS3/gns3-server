@@ -43,3 +43,6 @@ nosetests.xml
 
 #Documentation build
 docs/_build
+
+#VPCS
+vpcs.hist
