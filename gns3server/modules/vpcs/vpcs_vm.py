@@ -28,7 +28,6 @@ import re
 import asyncio
 import socket
 import shutil
-import atexit
 
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
@@ -82,10 +81,8 @@ class VPCSVM(BaseVM):
 
         self._check_requirements()
 
-
     def __del__(self):
         self._kill_process()
-
 
     def _check_requirements(self):
         """
@@ -184,14 +181,12 @@ class VPCSVM(BaseVM):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir,
                                                                               creationflags=flags)
-                    #atexit(self._kill_process) # Ensure we don't leave orphan process
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
             except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
                 log.error("Could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
                 raise VPCSError("Could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
-
 
     @asyncio.coroutine
     def stop(self):
@@ -220,7 +215,6 @@ class VPCSVM(BaseVM):
                 # Sometime the process can already be dead when we garbage collect
                 except ProcessLookupError:
                     pass
-
 
     def read_vpcs_stdout(self):
         """

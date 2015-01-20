@@ -52,7 +52,7 @@ class Rackspace(object):
         self.authenticated = self.rksp.authenticate()
 
     def _find_my_instance(self):
-        if self.authenticated == False:
+        if self.authenticated is not False:
             log.critical("Not authenticated against rackspace!!!!")
 
         for region in self.rksp.list_regions():

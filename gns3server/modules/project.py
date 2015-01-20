@@ -47,24 +47,20 @@ class Project:
             os.mkdir(self._path)
             os.mkdir(os.path.join(self._path, "vms"))
 
-
     @property
     def uuid(self):
 
         return self._uuid
-
 
     @property
     def location(self):
 
         return self._location
 
-
     @property
     def path(self):
 
         return self._path
-
 
     def vm_working_directory(self, vm_identifier):
         """
@@ -78,7 +74,6 @@ class Project:
         if os.path.exists(path) is False:
             os.mkdir(path)
         return path
-
 
     def __json__(self):
 

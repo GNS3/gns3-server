@@ -309,7 +309,7 @@ class VirtualBoxVM(BaseVM):
         hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
         try:
             with open(hdd_info_file, "r") as f:
-                #log.info("loading project: {}".format(path))
+                # log.info("loading project: {}".format(path))
                 hdd_table = json.load(f)
         except OSError as e:
             raise VirtualBoxError("Could not read HDD info file: {}".format(e))
@@ -363,7 +363,7 @@ class VirtualBoxVM(BaseVM):
                 try:
                     hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
                     with open(hdd_info_file, "w") as f:
-                        #log.info("saving project: {}".format(path))
+                        # log.info("saving project: {}".format(path))
                         json.dump(hdd_table, f, indent=4)
                 except OSError as e:
                     raise VirtualBoxError("Could not write HDD info file: {}".format(e))

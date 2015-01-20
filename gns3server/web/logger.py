@@ -31,6 +31,7 @@ class ColouredFormatter(logging.Formatter):
     PINK = '\x1b[35m'
 
     def format(self, record, colour=False):
+
         message = super().format(record)
 
         if not colour:
@@ -57,13 +58,16 @@ class ColouredFormatter(logging.Formatter):
 
 
 class ColouredStreamHandler(logging.StreamHandler):
+
     def format(self, record, colour=False):
+
         if not isinstance(self.formatter, ColouredFormatter):
             self.formatter = ColouredFormatter()
 
         return self.formatter.format(record, colour)
 
     def emit(self, record):
+
         stream = self.stream
         try:
             msg = self.format(record, stream.isatty())
@@ -74,7 +78,7 @@ class ColouredStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-def init_logger(level,quiet=False):
+def init_logger(level, quiet=False):
 
     stream_handler = ColouredStreamHandler(sys.stdout)
     stream_handler.formatter = ColouredFormatter("{asctime} {levelname:8} {filename}:{lineno}#RESET# {message}", "%Y-%m-%d %H:%M:%S", "{")
@@ -83,5 +87,3 @@ def init_logger(level,quiet=False):
         logging.getLogger('user_facing').propagate = False
     logging.basicConfig(level=level, handlers=[stream_handler])
     return logging.getLogger('user_facing')
-
-
