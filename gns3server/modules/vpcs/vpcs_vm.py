@@ -72,13 +72,10 @@ class VPCSVM(BaseVM):
         self._script_file = script_file
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
-        try:
-            if not self._console:
-                self._console = self._manager.port_manager.get_free_console_port()
-            else:
-                self._console = self._manager.port_manager.reserve_console_port(self._console)
-        except Exception as e:
-            raise VPCSError(e)
+        if self._console is not None:
+            self._console = self._manager.port_manager.reserve_console_port(self._console)
+        else:
+            self._console = self._manager.port_manager.get_free_console_port()
 
         self._check_requirements()
 
@@ -106,9 +103,9 @@ class VPCSVM(BaseVM):
 
     def __json__(self):
 
-        return {"name": self.name,
-                "uuid": self.uuid,
-                "console": self.console,
+        return {"name": self._name,
+                "uuid": self._uuid,
+                "console": self._console,
                 "project_uuid": self.project.uuid,
                 "script_file": self.script_file}
 

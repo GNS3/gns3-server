@@ -157,6 +157,7 @@ class PortManager:
         Get an available TCP console port and reserve it
         """
 
+        print("FREE")
         port = self.find_unused_port(self._console_port_range[0],
                                      self._console_port_range[1],
                                      host=self._console_host,
@@ -176,6 +177,7 @@ class PortManager:
         if port in self._used_tcp_ports:
             raise HTTPConflict(reason="TCP port already {} in use on host".format(port, self._console_host))
         self._used_tcp_ports.add(port)
+        return port
 
     def release_console_port(self, port):
         """

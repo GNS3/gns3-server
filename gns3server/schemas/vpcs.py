@@ -48,7 +48,7 @@ VPCS_CREATE_SCHEMA = {
             "description": "console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "script_file": {
             "description": "VPCS startup script",
