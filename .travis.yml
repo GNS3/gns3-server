@@ -6,7 +6,7 @@ python:
 before_install:
   - sudo add-apt-repository ppa:gns3/ppa -y
   - sudo apt-get update -q
-  - sudo apt-get install vpcs dynamips
+  - sudo apt-get install dynamips
     
 install:
   - python setup.py install

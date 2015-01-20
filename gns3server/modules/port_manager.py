@@ -157,7 +157,6 @@ class PortManager:
         Get an available TCP console port and reserve it
         """
 
-        print("FREE")
         port = self.find_unused_port(self._console_port_range[0],
                                      self._console_port_range[1],
                                      host=self._console_host,

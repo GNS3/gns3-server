@@ -44,21 +44,24 @@ def test_vm(project, manager):
 
 
 @patch("subprocess.check_output", return_value="Welcome to Virtual PC Simulator, version 0.1".encode("utf-8"))
-def test_vm_invalid_vpcs_version(project, manager):
+def test_vm_invalid_vpcs_version(project, manager, loop):
     with pytest.raises(VPCSError):
         vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+        loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.name == "test"
         assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
 @patch("gns3server.config.Config.get_section_config", return_value={"path": "/bin/test_fake"})
-def test_vm_invalid_vpcs_path(project, manager):
+def test_vm_invalid_vpcs_path(project, manager, loop):
     with pytest.raises(VPCSError):
         vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+        loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.name == "test"
         assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
+@patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True)
 def test_start(project, loop, manager):
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
@@ -68,6 +71,7 @@ def test_start(project, loop, manager):
         assert vm.is_running()
 
 
+@patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True)
 def test_stop(project, loop, manager):
     process = MagicMock()
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):

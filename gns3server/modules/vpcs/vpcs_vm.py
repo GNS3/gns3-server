@@ -77,8 +77,6 @@ class VPCSVM(BaseVM):
         else:
             self._console = self._manager.port_manager.get_free_console_port()
 
-        self._check_requirements()
-
     def __del__(self):
         self._kill_process()
 
@@ -168,6 +166,8 @@ class VPCSVM(BaseVM):
         """
         Starts the VPCS process.
         """
+
+        self._check_requirements()
 
         if not self.is_running():
             if not self._ethernet_adapter.get_nio(0):
