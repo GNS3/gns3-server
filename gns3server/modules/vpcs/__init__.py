@@ -20,8 +20,8 @@ VPCS server module.
 """
 
 from ..base_manager import BaseManager
-from .vpcs_device import VPCSDevice
+from .vpcs_vm import VPCSVM
 
 
 class VPCS(BaseManager):
-    _VM_CLASS = VPCSDevice
+    _VM_CLASS = VPCSVM

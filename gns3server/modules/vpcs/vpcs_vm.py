@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-VPCS device management (creates command line, processes, files etc.) in
+VPCS vm management (creates command line, processes, files etc.) in
 order to run an VPCS instance.
 """
 
@@ -42,11 +42,11 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class VPCSDevice(BaseVM):
+class VPCSVM(BaseVM):
     """
-    VPCS device implementation.
+    VPCS vm implementation.
 
-    :param name: name of this VPCS device
+    :param name: name of this VPCS vm
     :param uuid: VPCS instance UUID
     :param project: Project instance
     :param manager: parent VM Manager
@@ -78,7 +78,7 @@ class VPCSDevice(BaseVM):
         # if vpcs_id and not os.path.isdir(working_dir_path):
         #     raise VPCSError("Working directory {} doesn't exist".format(working_dir_path))
         #
-        # # create the device own working directory
+        # # create the vm own working directory
         # self.working_dir = working_dir_path
         #
         try:
@@ -113,7 +113,7 @@ class VPCSDevice(BaseVM):
     @property
     def console(self):
         """
-        Returns the console port of this VPCS device.
+        Returns the console port of this VPCS vm.
 
         :returns: console port
         """
@@ -124,7 +124,7 @@ class VPCSDevice(BaseVM):
     @BaseVM.name.setter
     def name(self, new_name):
         """
-        Sets the name of this VPCS device.
+        Sets the name of this VPCS vm.
 
         :param new_name: name
         """
@@ -265,10 +265,10 @@ class VPCSDevice(BaseVM):
                 raise VPCSError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             nio = NIO_UDP(lport, rhost, rport)
         elif nio_settings["type"] == "nio_tap":
-            tap_device = nio_settings["tap_device"]
+            tap_vm = nio_settings["tap_device"]
             if not has_privileged_access(self._path):
-                raise VPCSError("{} has no privileged access to {}.".format(self._path, tap_device))
-            nio = NIO_TAP(tap_device)
+                raise VPCSError("{} has no privileged access to {}.".format(self._path, tap_vm))
+            nio = NIO_TAP(tap_vm)
         if not nio:
             raise VPCSError("Requested NIO does not exist or is not supported: {}".format(nio_settings["type"]))
 
@@ -326,7 +326,7 @@ class VPCSDevice(BaseVM):
             -t ip      remote host IP, default 127.0.0.1
 
         tap mode options:
-            -d device  device name, works only when -i is set to 1
+            -d vm  device name, works only when -i is set to 1
 
         hypervisor mode option:
             -H port    run as the hypervisor listening on the tcp 'port'
@@ -352,7 +352,7 @@ class VPCSDevice(BaseVM):
             elif isinstance(nio, NIO_TAP):
                 # TAP interface
                 command.extend(["-e"])
-                command.extend(["-d", nio.tap_device])
+                command.extend(["-d", nio.tap_vm])
 
         # FIXME: find workaround
         # command.extend(["-m", str(self._id)])   # the unique ID is used to set the MAC address offset

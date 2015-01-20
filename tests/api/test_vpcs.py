@@ -49,7 +49,7 @@ def test_vpcs_nio_create_udp(server, vm):
     assert response.json["type"] == "nio_udp"
 
 
-@patch("gns3server.modules.vpcs.vpcs_device.has_privileged_access", return_value=True)
+@patch("gns3server.modules.vpcs.vpcs_vm.has_privileged_access", return_value=True)
 def test_vpcs_nio_create_tap(mock, server, vm):
     response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_tap",
                                                                        "tap_device": "test"})
