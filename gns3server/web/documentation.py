@@ -18,6 +18,7 @@
 import re
 import os.path
 
+from gns3server.handlers import *
 from gns3server.web.route import Route
 
 
@@ -33,11 +34,11 @@ class Documentation(object):
             filename = self._file_path(path)
             handler_doc = self._documentation[path]
             with open("docs/api/{}.rst".format(filename), 'w+') as f:
-                f.write('{}\n------------------------------\n\n'.format(path))
+                f.write('{}\n---------------------------------------------\n\n'.format(path))
                 f.write('.. contents::\n')
                 for method in handler_doc["methods"]:
                     f.write('\n{} {}\n'.format(method["method"], path))
-                    f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
+                    f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
                     f.write('{}\n\n'.format(method["description"]))
 
                     if len(method["parameters"]) > 0:
@@ -47,7 +48,7 @@ class Documentation(object):
                             f.write("- **{}**: {}\n".format(parameter, desc))
                         f.write("\n")
 
-                    f.write("Response status codes\n*******************\n")
+                    f.write("Response status codes\n**********************\n")
                     for code in method["status_codes"]:
                         desc = method["status_codes"][code]
                         f.write("- **{}**: {}\n".format(code, desc))
@@ -56,11 +57,11 @@ class Documentation(object):
                     if "properties" in method["input_schema"]:
                         f.write("Input\n*******\n")
                         self._write_definitions(f, method["input_schema"])
-                        self.__write_json_schema(f, method["input_schema"])
+                        self._write_json_schema(f, method["input_schema"])
 
                     if "properties" in method["output_schema"]:
                         f.write("Output\n*******\n")
-                        self.__write_json_schema(f, method["output_schema"])
+                        self._write_json_schema(f, method["output_schema"])
 
                     self._include_query_example(f, method, path)
 
@@ -130,4 +131,5 @@ class Documentation(object):
 
 
 if __name__ == '__main__':
+    print("Generate API documentation")
     Documentation(Route).write()

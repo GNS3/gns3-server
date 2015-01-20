@@ -21,7 +21,9 @@
 
 set -e
 
-py.test
-python3 ../gns3server/web/documentation.py
-cd ../docs
+echo "WARNING: This script should be run at the root directory of the project"
+
+py.test -v
+python3 gns3server/web/documentation.py
+cd docs
 make html
