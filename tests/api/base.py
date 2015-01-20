@@ -25,6 +25,7 @@ import pytest
 from aiohttp import web
 import aiohttp
 
+
 from gns3server.web.route import Route
 #TODO: get rid of *
 from gns3server.handlers import *
@@ -95,7 +96,7 @@ class Query:
         if path is None:
             return
         with open(self._example_file_path(method, path), 'w+') as f:
-            f.write("curl -i -x{} 'http://localhost:8000{}'".format(method, path))
+            f.write("curl -i -X {} 'http://localhost:8000{}'".format(method, path))
             if body:
                 f.write(" -d '{}'".format(re.sub(r"\n", "", json.dumps(json.loads(body), sort_keys=True))))
             f.write("\n\n")
@@ -116,7 +117,7 @@ class Query:
 
     def _example_file_path(self, method, path):
         path = re.sub('[^a-z0-9]', '', path)
-        return "docs/api/examples/{}_{}.txt".format(method.lower(), path)
+        return "docs/api/examples/{}_{}.txt".format(method.lower(), path)  # FIXME: cannot find path when running tests
 
 
 def _get_unused_port():

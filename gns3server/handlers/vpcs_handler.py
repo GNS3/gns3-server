@@ -22,7 +22,7 @@ from ..schemas.vpcs import VPCS_NIO_SCHEMA
 from ..modules.vpcs import VPCS
 
 
-class VPCSHandler(object):
+class VPCSHandler:
     """
     API entry points for VPCS.
     """
@@ -40,53 +40,56 @@ class VPCSHandler(object):
     def create(request, response):
 
         vpcs = VPCS.instance()
-        vm = yield from vpcs.create_vm(request.json["name"])
+        vm = yield from vpcs.create_vm(request.json["name"], request.json.get("uuid"))
         response.json({"name": vm.name,
-                       "id": vm.id,
+                       "uuid": vm.uuid,
                        "console": vm.console})
 
     @classmethod
     @Route.post(
-        r"/vpcs/{id:\d+}/start",
+        r"/vpcs/{uuid}/start",
         parameters={
-            "id": "VPCS instance ID"
+            "uuid": "VPCS instance UUID"
         },
         status_codes={
             204: "VPCS instance started",
+            400: "Invalid VPCS instance UUID",
             404: "VPCS instance doesn't exist"
         },
         description="Start a VPCS instance")
     def create(request, response):
 
         vpcs_manager = VPCS.instance()
-        yield from vpcs_manager.start_vm(int(request.match_info["id"]))
+        yield from vpcs_manager.start_vm(request.match_info["uuid"])
         response.json({})
 
     @classmethod
     @Route.post(
-        r"/vpcs/{id:\d+}/stop",
+        r"/vpcs/{uuid}/stop",
         parameters={
-            "id": "VPCS instance ID"
+            "uuid": "VPCS instance UUID"
         },
         status_codes={
             204: "VPCS instance stopped",
+            400: "Invalid VPCS instance UUID",
             404: "VPCS instance doesn't exist"
         },
         description="Stop a VPCS instance")
     def create(request, response):
 
         vpcs_manager = VPCS.instance()
-        yield from vpcs_manager.stop_vm(int(request.match_info["id"]))
+        yield from vpcs_manager.stop_vm(request.match_info["uuid"])
         response.json({})
 
     @Route.post(
-        r"/vpcs/{id:\d+}/ports/{port_id}/nio",
+        r"/vpcs/{uuid}/ports/{port_id}/nio",
         parameters={
-            "id": "VPCS instance ID",
+            "uuid": "VPCS instance UUID",
             "port_id": "Id of the port where the nio should be add"
         },
         status_codes={
             201: "NIO created",
+            400: "Invalid VPCS instance UUID",
             404: "VPCS instance doesn't exist"
         },
         description="Add a NIO to a VPCS",
@@ -95,26 +98,26 @@ class VPCSHandler(object):
     def create_nio(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(int(request.match_info["id"]))
+        vm = vpcs_manager.get_vm(request.match_info["uuid"])
         nio = vm.port_add_nio_binding(int(request.match_info["port_id"]), request.json)
-
         response.json(nio)
 
     @classmethod
     @Route.delete(
-        r"/vpcs/{id:\d+}/ports/{port_id}/nio",
+        r"/vpcs/{uuid}/ports/{port_id}/nio",
         parameters={
-            "id": "VPCS instance ID",
-            "port_id": "Id of the port where the nio should be remove"
+            "uuid": "VPCS instance UUID",
+            "port_id": "ID of the port where the nio should be removed"
         },
         status_codes={
             200: "NIO deleted",
+            400: "Invalid VPCS instance UUID",
             404: "VPCS instance doesn't exist"
         },
         description="Remove a NIO from a VPCS")
     def delete_nio(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(int(request.match_info["id"]))
+        vm = vpcs_manager.get_vm(request.match_info["uuid"])
         nio = vm.port_remove_nio_binding(int(request.match_info["port_id"]))
         response.json({})

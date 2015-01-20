@@ -47,14 +47,14 @@ class VPCSDevice(BaseVM):
     VPCS device implementation.
 
     :param name: name of this VPCS device
-    :param vpcs_id: VPCS instance ID
+    :param uuid: VPCS instance UUID
     :param manager: parent VM Manager
     :param working_dir: path to a working directory
     :param console: TCP console port
     """
-    def __init__(self, name, vpcs_id, manager, working_dir=None, console=None):
+    def __init__(self, name, uuid, manager, working_dir=None, console=None):
 
-        super().__init__(name, vpcs_id, manager)
+        super().__init__(name, uuid, manager)
 
         # TODO: Hardcodded for testing
         #self._working_dir = working_dir
@@ -120,17 +120,8 @@ class VPCSDevice(BaseVM):
 
         return self._console
 
-    @property
-    def name(self):
-        """
-        Returns the name of this VPCS device.
-
-        :returns: name
-        """
-
-        return self._name
-
-    @name.setter
+    #FIXME: correct way to subclass a property?
+    @BaseVM.name.setter
     def name(self, new_name):
         """
         Sets the name of this VPCS device.
@@ -151,10 +142,10 @@ class VPCSDevice(BaseVM):
                 except OSError as e:
                     raise VPCSError("Could not amend the configuration {}: {}".format(config_path, e))
 
-        log.info("VPCS {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                       id=self._id,
-                                                                       new_name=new_name))
-        self._name = new_name
+        log.info("VPCS {name} [{uuid}]: renamed to {new_name}".format(name=self._name,
+                                                                      uuid=self.uuid,
+                                                                      new_name=new_name))
+        BaseVM.name = new_name
 
     def _check_vpcs_version(self):
         """
@@ -197,7 +188,7 @@ class VPCSDevice(BaseVM):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self._working_dir,
                                                                               creationflags=flags)
-                log.info("VPCS instance {} started PID={}".format(self._id, self._process.pid))
+                log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
             except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
@@ -212,7 +203,7 @@ class VPCSDevice(BaseVM):
 
         # stop the VPCS process
         if self.is_running():
-            log.info("stopping VPCS instance {} PID={}".format(self._id, self._process.pid))
+            log.info("stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
             if sys.platform.startswith("win32"):
                 self._process.send_signal(signal.CTRL_BREAK_EVENT)
             else:
@@ -283,10 +274,10 @@ class VPCSDevice(BaseVM):
 
 
         self._ethernet_adapter.add_nio(port_id, nio)
-        log.info("VPCS {name} [id={id}]: {nio} added to port {port_id}".format(name=self._name,
-                                                                               id=self._id,
-                                                                               nio=nio,
-                                                                               port_id=port_id))
+        log.info("VPCS {name} {uuid}]: {nio} added to port {port_id}".format(name=self._name,
+                                                                             uuid=self.uuid,
+                                                                             nio=nio,
+                                                                             port_id=port_id))
         return nio
 
     def port_remove_nio_binding(self, port_id):
@@ -304,10 +295,10 @@ class VPCSDevice(BaseVM):
 
         nio = self._ethernet_adapter.get_nio(port_id)
         self._ethernet_adapter.remove_nio(port_id)
-        log.info("VPCS {name} [id={id}]: {nio} removed from port {port_id}".format(name=self._name,
-                                                                                   id=self._id,
-                                                                                   nio=nio,
-                                                                                   port_id=port_id))
+        log.info("VPCS {name} [{uuid}]: {nio} removed from port {port_id}".format(name=self._name,
+                                                                                  uuid=self.uuid,
+                                                                                  nio=nio,
+                                                                                  port_id=port_id))
         return nio
 
     def _build_command(self):
@@ -364,7 +355,8 @@ class VPCSDevice(BaseVM):
                 command.extend(["-e"])
                 command.extend(["-d", nio.tap_device])
 
-        command.extend(["-m", str(self._id)])   # the unique ID is used to set the MAC address offset
+        #FIXME: find workaround
+        #command.extend(["-m", str(self._id)])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
         if self._script_file:
@@ -390,6 +382,6 @@ class VPCSDevice(BaseVM):
         """
 
         self._script_file = script_file
-        log.info("VPCS {name} [id={id}]: script_file set to {config}".format(name=self._name,
-                                                                             id=self._id,
-                                                                             config=self._script_file))
+        log.info("VPCS {name} [{uuid}]: script_file set to {config}".format(name=self._name,
+                                                                            uuid=self.uuid,
+                                                                            config=self._script_file))

@@ -17,8 +17,9 @@
 
 import sys
 from .vpcs import VPCS
+from .virtualbox import VirtualBox
 
-MODULES = [VPCS]
+MODULES = [VPCS, VirtualBox]
 
 #if sys.platform.startswith("linux"):
 #    # IOU runs only on Linux

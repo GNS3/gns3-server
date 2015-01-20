@@ -28,11 +28,13 @@ import tempfile
 import json
 import socket
 import time
+import asyncio
 
 from .virtualbox_error import VirtualBoxError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..attic import find_unused_port
 from .telnet_server import TelnetServer
+from ..base_vm import BaseVM
 
 if sys.platform.startswith('win'):
     import msvcrt
@@ -42,55 +44,32 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class VirtualBoxVM(object):
+class VirtualBoxVM(BaseVM):
     """
     VirtualBox VM implementation.
-
-    :param vboxmanage_path: path to the VBoxManage tool
-    :param name: name of this VirtualBox VM
-    :param vmname: name of this VirtualBox VM in VirtualBox itself
-    :param linked_clone: flag if a linked clone must be created
-    :param working_dir: path to a working directory
-    :param vbox_id: VirtalBox VM instance ID
-    :param console: TCP console port
-    :param console_host: IP address to bind for console connections
-    :param console_start_port_range: TCP console port range start
-    :param console_end_port_range: TCP console port range end
     """
 
     _instances = []
     _allocated_console_ports = []
 
-    def __init__(self,
-                 vboxmanage_path,
-                 vbox_user,
-                 name,
-                 vmname,
-                 linked_clone,
-                 working_dir,
-                 vbox_id=None,
-                 console=None,
-                 console_host="0.0.0.0",
-                 console_start_port_range=4512,
-                 console_end_port_range=5000):
+    def __init__(self, name, uuid, manager):
 
-        if not vbox_id:
-            self._id = 0
-            for identifier in range(1, 1024):
-                if identifier not in self._instances:
-                    self._id = identifier
-                    self._instances.append(self._id)
-                    break
+        super().__init__(name, uuid, manager)
 
-            if self._id == 0:
-                raise VirtualBoxError("Maximum number of VirtualBox VM instances reached")
+        self._system_properties = {}
+
+        #FIXME: harcoded values
+        if sys.platform.startswith("win"):
+            self._vboxmanage_path = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
         else:
-            if vbox_id in self._instances:
-                raise VirtualBoxError("VirtualBox identifier {} is already used by another VirtualBox VM instance".format(vbox_id))
-            self._id = vbox_id
-            self._instances.append(self._id)
+            self._vboxmanage_path = "/usr/bin/vboxmanage"
 
-        self._name = name
+        self._queue = asyncio.Queue()
+        self._created = asyncio.Future()
+        self._worker = asyncio.async(self._run())
+
+        return
+
         self._linked_clone = linked_clone
         self._working_dir = None
         self._command = []
@@ -158,6 +137,82 @@ class VirtualBoxVM(object):
         log.info("VirtualBox VM {name} [id={id}] has been created".format(name=self._name,
                                                                           id=self._id))
 
+    @asyncio.coroutine
+    def _execute(self, subcommand, args, timeout=60):
+
+        command = [self._vboxmanage_path, "--nologo", subcommand]
+        command.extend(args)
+        try:
+            process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        except (OSError, subprocess.SubprocessError) as e:
+            raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
+
+        try:
+            stdout_data, stderr_data = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
+
+        if process.returncode:
+            # only the first line of the output is useful
+            vboxmanage_error = stderr_data.decode("utf-8", errors="ignore").splitlines()[0]
+            raise VirtualBoxError(vboxmanage_error)
+
+        return stdout_data.decode("utf-8", errors="ignore").splitlines()
+
+    @asyncio.coroutine
+    def _get_system_properties(self):
+
+        properties = yield from self._execute("list", ["systemproperties"])
+        for prop in properties:
+            try:
+                name, value = prop.split(':', 1)
+            except ValueError:
+                continue
+            self._system_properties[name.strip()] = value.strip()
+
+    @asyncio.coroutine
+    def _run(self):
+
+        try:
+            yield from self._get_system_properties()
+            self._created.set_result(True)
+        except VirtualBoxError as e:
+            self._created.set_exception(e)
+            return
+
+        while True:
+            future, subcommand, args = yield from self._queue.get()
+            try:
+                yield from self._execute(subcommand, args)
+                future.set_result(True)
+            except VirtualBoxError as e:
+                future.set_exception(e)
+
+    def create(self):
+
+        return self._created
+
+    def _put(self, item):
+
+        try:
+            self._queue.put_nowait(item)
+        except asyncio.qeues.QueueFull:
+            raise VirtualBoxError("Queue is full")
+
+    def start(self):
+
+        args = [self._name]
+        future = asyncio.Future()
+        self._put((future, "startvm", args))
+        return future
+
+    def stop(self):
+
+        args = [self._name, "poweroff"]
+        future = asyncio.Future()
+        self._put((future, "controlvm", args))
+        return future
+
     def defaults(self):
         """
         Returns all the default attribute values for this VirtualBox VM.
@@ -175,49 +230,6 @@ class VirtualBoxVM(object):
                          "headless": self._headless}
 
         return vbox_defaults
-
-    @property
-    def id(self):
-        """
-        Returns the unique ID for this VirtualBox VM.
-
-        :returns: id (integer)
-        """
-
-        return self._id
-
-    @classmethod
-    def reset(cls):
-        """
-        Resets allocated instance list.
-        """
-
-        cls._instances.clear()
-        cls._allocated_console_ports.clear()
-
-    @property
-    def name(self):
-        """
-        Returns the name of this VirtualBox VM.
-
-        :returns: name
-        """
-
-        return self._name
-
-    @name.setter
-    def name(self, new_name):
-        """
-        Sets the name of this VirtualBox VM.
-
-        :param new_name: name
-        """
-
-        log.info("VirtualBox VM {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                                id=self._id,
-                                                                                new_name=new_name))
-
-        self._name = new_name
 
     @property
     def working_dir(self):
@@ -540,7 +552,7 @@ class VirtualBoxVM(object):
                                                                                                  id=self._id,
                                                                                                  adapter_type=adapter_type))
 
-    def _execute(self, subcommand, args, timeout=60):
+    def _old_execute(self, subcommand, args, timeout=60):
         """
         Executes a command with VBoxManage.
 
@@ -831,7 +843,7 @@ class VirtualBoxVM(object):
                 self._serial_pipe.close()
             self._serial_pipe = None
 
-    def start(self):
+    def old_start(self):
         """
         Starts this VirtualBox VM.
         """
@@ -864,7 +876,7 @@ class VirtualBoxVM(object):
         if self._enable_remote_console:
             self._start_remote_console()
 
-    def stop(self):
+    def old_stop(self):
         """
         Stops this VirtualBox VM.
         """

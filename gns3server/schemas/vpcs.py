@@ -26,8 +26,8 @@ VPCS_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "id": {
-            "description": "VPCS device instance ID",
+        "vpcs_id": {
+            "description": "VPCS device instance ID (for project created before GNS3 1.3)",
             "type": "integer"
         },
         "uuid": {
@@ -117,9 +117,12 @@ VPCS_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "id": {
-            "description": "VPCS device instance ID",
-            "type": "integer"
+        "uuid": {
+            "description": "VPCS device UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "console": {
             "description": "console TCP port",
@@ -129,6 +132,6 @@ VPCS_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "id", "console"]
+    "required": ["name", "uuid", "console"]
 }
 

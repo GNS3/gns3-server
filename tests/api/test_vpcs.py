@@ -15,55 +15,49 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from tests.api.base import server, loop
 from tests.utils import asyncio_patch
-from gns3server import modules
 from unittest.mock import patch
 
-@asyncio_patch('gns3server.modules.VPCS.create_vm', return_value=84)
+
+@asyncio_patch("gns3server.modules.VPCS.create_vm", return_value="61d61bdd-aa7d-4912-817f-65a9eb54d3ab")
 def test_vpcs_create(server):
-    response = server.post('/vpcs', {'name': 'PC TEST 1'}, example=False)
+    response = server.post("/vpcs", {"name": "PC TEST 1"}, example=False)
     assert response.status == 200
-    assert response.route == '/vpcs'
-    assert response.json['name'] == 'PC TEST 1'
-    assert response.json['id'] == 84
+    assert response.route == "/vpcs"
+    assert response.json["name"] == "PC TEST 1"
+    assert response.json["uuid"] == "61d61bdd-aa7d-4912-817f-65a9eb54d3ab"
 
 
+#FIXME
 def test_vpcs_nio_create_udp(server):
-    vm = server.post('/vpcs', {'name': 'PC TEST 1'})
-    response = server.post('/vpcs/{}/ports/0/nio'.format(vm.json["id"]), {
-            'type': 'nio_udp',
-            'lport': 4242,
-            'rport': 4343,
-            'rhost': '127.0.0.1'
-        },
-        example=True)
+    vm = server.post("/vpcs", {"name": "PC TEST 1"})
+    response = server.post("/vpcs/{}/ports/0/nio".format(vm.json["uuid"]), {"type": "nio_udp",
+                                                                            "lport": 4242,
+                                                                            "rport": 4343,
+                                                                            "rhost": "127.0.0.1"},
+                           example=True)
     assert response.status == 200
-    assert response.route == '/vpcs/{id:\d+}/ports/{port_id}/nio'
-    assert response.json['type'] == 'nio_udp'
+    assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
+    assert response.json["type"] == "nio_udp"
+
 
 @patch("gns3server.modules.vpcs.vpcs_device.has_privileged_access", return_value=True)
 def test_vpcs_nio_create_tap(mock, server):
-    vm = server.post('/vpcs', {'name': 'PC TEST 1'})
-    response = server.post('/vpcs/{}/ports/0/nio'.format(vm.json["id"]), {
-            'type': 'nio_tap',
-            'tap_device': 'test',
-        })
+    vm = server.post("/vpcs", {"name": "PC TEST 1"})
+    response = server.post("/vpcs/{}/ports/0/nio".format(vm.json["uuid"]), {"type": "nio_tap",
+                                                                            "tap_device": "test"})
     assert response.status == 200
-    assert response.route == '/vpcs/{id:\d+}/ports/{port_id}/nio'
-    assert response.json['type'] == 'nio_tap'
+    assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
+    assert response.json["type"] == "nio_tap"
 
+
+#FIXME
 def test_vpcs_delete_nio(server):
-    vm = server.post('/vpcs', {'name': 'PC TEST 1'})
-    response = server.post('/vpcs/{}/ports/0/nio'.format(vm.json["id"]), {
-            'type': 'nio_udp',
-            'lport': 4242,
-            'rport': 4343,
-            'rhost': '127.0.0.1'
-        },
-        )
-    response = server.delete('/vpcs/{}/ports/0/nio'.format(vm.json["id"]), example=True)
+    vm = server.post("/vpcs", {"name": "PC TEST 1"})
+    response = server.post("/vpcs/{}/ports/0/nio".format(vm.json["uuid"]), {"type": "nio_udp",
+                                                                            "lport": 4242,
+                                                                            "rport": 4343,
+                                                                            "rhost": "127.0.0.1"})
+    response = server.delete("/vpcs/{}/ports/0/nio".format(vm.json["uuid"]), example=True)
     assert response.status == 200
-    assert response.route == '/vpcs/{id:\d+}/ports/{port_id}/nio'
-
-
+    assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"

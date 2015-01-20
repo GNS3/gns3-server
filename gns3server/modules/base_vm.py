@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import asyncio
-from .vm_error import VMError
 from ..config import Config
 
 import logging
@@ -26,64 +23,62 @@ log = logging.getLogger(__name__)
 
 class BaseVM:
 
-    def __init__(self, name, identifier, manager):
+    def __init__(self, name, uuid, manager):
 
         self._name = name
-        self._id = identifier
-        self._created = asyncio.Future()
+        self._uuid = uuid
         self._manager = manager
         self._config = Config.instance()
-        asyncio.async(self._create())
-        log.info("{type} device {name} [id={id}] has been created".format(type=self.__class__.__name__,
-                                                                          name=self._name,
-                                                                          id=self._id))
 
     #TODO: When delete release console ports
-
-
-    @property
-    def id(self):
-        """
-        Returns the unique ID for this VM.
-
-        :returns: id (integer)
-        """
-
-        return self._id
 
     @property
     def name(self):
         """
         Returns the name for this VM.
 
-        :returns: name (string)
+        :returns: name
         """
 
         return self._name
 
-    @asyncio.coroutine
-    def _execute(self, command):
+    @name.setter
+    def name(self, new_name):
         """
-        Called when we receive an event.
+        Sets the name of this VM.
+
+        :param new_name: name
         """
 
-        raise NotImplementedError
+        self._name = new_name
 
-    @asyncio.coroutine
-    def _create(self):
+    @property
+    def uuid(self):
         """
-        Called when the run module is created and ready to receive
-        commands. It's asynchronous.
+        Returns the UUID for this VM.
+
+        :returns: uuid (string)
         """
-        self._created.set_result(True)
-        log.info("{type} device {name} [id={id}] has been created".format(type=self.__class__.__name__,
-                                                                          name=self._name,
-                                                                          id=self._id))
 
-    def wait_for_creation(self):
-        return self._created
+        return self._uuid
 
-    @asyncio.coroutine
+    @property
+    def manager(self):
+        """
+        Returns the manager for this VM.
+
+        :returns: instance of manager
+        """
+
+        return self._manager
+
+    def create(self):
+        """
+        Creates the VM.
+        """
+
+        return
+
     def start(self):
         """
         Starts the VM process.
@@ -91,8 +86,6 @@ class BaseVM:
 
         raise NotImplementedError
 
-
-    @asyncio.coroutine
     def stop(self):
         """
         Starts the VM process.

@@ -19,7 +19,7 @@
 import asyncio
 import aiohttp
 
-from .vm_error import VMError
+from uuid import UUID, uuid4
 
 
 class BaseManager:
@@ -63,44 +63,52 @@ class BaseManager:
     @classmethod
     @asyncio.coroutine  # FIXME: why coroutine?
     def destroy(cls):
+
         cls._instance = None
 
-    def get_vm(self, vm_id):
+    def get_vm(self, uuid):
         """
         Returns a VM instance.
 
-        :param vm_id: VM identifier
+        :param uuid: VM UUID
 
         :returns: VM instance
         """
 
-        if vm_id not in self._vms:
-            raise aiohttp.web.HTTPNotFound(text="ID {} doesn't exist".format(vm_id))
-        return self._vms[vm_id]
+        try:
+            UUID(uuid, version=4)
+        except ValueError:
+            raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(uuid))
+
+        if uuid not in self._vms:
+            raise aiohttp.web.HTTPNotFound(text="UUID {} doesn't exist".format(uuid))
+        return self._vms[uuid]
 
     @asyncio.coroutine
-    def create_vm(self, vmname, identifier=None):
-        if not identifier:
-            for i in range(1, 1024):
-                if i not in self._vms:
-                    identifier = i
-                    break
-            if identifier == 0:
-                raise VMError("Maximum number of VM instances reached")
-        else:
-            if identifier in self._vms:
-                raise VMError("VM identifier {} is already used by another VM instance".format(identifier))
-        vm = self._VM_CLASS(vmname, identifier, self)
-        yield from vm.wait_for_creation()
-        self._vms[vm.id] = vm
+    def create_vm(self, name, uuid=None):
+
+        #TODO: support for old projects with normal IDs.
+
+        #TODO: supports specific args: pass kwargs to VM_CLASS?
+
+        if not uuid:
+            uuid = str(uuid4())
+
+        vm = self._VM_CLASS(name, uuid, self)
+        future = vm.create()
+        if isinstance(future, asyncio.Future):
+            yield from future
+        self._vms[vm.uuid] = vm
         return vm
 
     @asyncio.coroutine
-    def start_vm(self, vm_id):
-        vm = self.get_vm(vm_id)
+    def start_vm(self, uuid):
+
+        vm = self.get_vm(uuid)
         yield from vm.start()
 
     @asyncio.coroutine
-    def stop_vm(self, vm_id):
-        vm = self.get_vm(vm_id)
+    def stop_vm(self, uuid):
+
+        vm = self.get_vm(uuid)
         yield from vm.stop()

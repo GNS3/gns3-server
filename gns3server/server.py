@@ -35,6 +35,7 @@ from .modules.port_manager import PortManager
 
 #TODO: get rid of * have something generic to automatically import handlers so the routes can be found
 from gns3server.handlers import *
+from gns3server.handlers.virtualbox_handler import VirtualBoxHandler
 
 import logging
 log = logging.getLogger(__name__)

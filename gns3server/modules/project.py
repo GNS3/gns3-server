@@ -43,12 +43,22 @@ class Project:
         self._path = os.path.join(self._location, self._uuid)
         if os.path.exists(self._path) is False:
             os.mkdir(self._path)
-            os.mkdir(os.path.join(self._path, 'files'))
+            os.mkdir(os.path.join(self._path, "files"))
 
     @property
     def uuid(self):
 
         return self._uuid
+
+    @property
+    def location(self):
+
+        return self._location
+
+    @property
+    def path(self):
+
+        return self._path
 
     def __json__(self):
 
