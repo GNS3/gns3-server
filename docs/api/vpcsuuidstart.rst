@@ -3,7 +3,7 @@
 
 .. contents::
 
-POST /vpcs/{uuid}/start
+POST /vpcs/**{uuid}**/start
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Start a VPCS instance
 

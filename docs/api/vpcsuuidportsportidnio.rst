@@ -3,14 +3,14 @@
 
 .. contents::
 
-POST /vpcs/{uuid}/ports/{port_id}/nio
+POST /vpcs/**{uuid}**/ports/**{port_id}**/nio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Add a NIO to a VPCS
 
 Parameters
 **********
-- **port_id**: Id of the port where the nio should be add
 - **uuid**: VPCS instance UUID
+- **port_id**: Id of the port where the nio should be add
 
 Response status codes
 **********************
@@ -25,14 +25,14 @@ Sample session
 .. literalinclude:: examples/post_vpcsuuidportsportidnio.txt
 
 
-DELETE /vpcs/{uuid}/ports/{port_id}/nio
+DELETE /vpcs/**{uuid}**/ports/**{port_id}**/nio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove a NIO from a VPCS
 
 Parameters
 **********
-- **port_id**: ID of the port where the nio should be removed
 - **uuid**: VPCS instance UUID
+- **port_id**: ID of the port where the nio should be removed
 
 Response status codes
 **********************

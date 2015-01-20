@@ -37,7 +37,7 @@ class Documentation(object):
                 f.write('{}\n---------------------------------------------\n\n'.format(path))
                 f.write('.. contents::\n')
                 for method in handler_doc["methods"]:
-                    f.write('\n{} {}\n'.format(method["method"], path))
+                    f.write('\n{} {}\n'.format(method["method"], path.replace("{", '**{').replace("}", "}**")))
                     f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
                     f.write('{}\n\n'.format(method["description"]))
 

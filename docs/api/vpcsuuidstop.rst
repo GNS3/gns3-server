@@ -3,7 +3,7 @@
 
 .. contents::
 
-POST /vpcs/{uuid}/stop
+POST /vpcs/**{uuid}**/stop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Stop a VPCS instance
 

@@ -1,8 +1,8 @@
-curl -i -X POST 'http://localhost:8000/project' -d '{"location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-328/test_create_project_with_dir0"}'
+curl -i -X POST 'http://localhost:8000/project' -d '{"location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-330/test_create_project_with_dir0"}'
 
 POST /project HTTP/1.1
 {
-    "location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-328/test_create_project_with_dir0"
+    "location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-330/test_create_project_with_dir0"
 }
 
 
@@ -15,6 +15,6 @@ SERVER: Python/3.4 aiohttp/0.13.1
 X-ROUTE: /project
 
 {
-    "location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-328/test_create_project_with_dir0",
-    "uuid": "b4432fe3-6743-4ce7-ab05-1f5637d04cd6"
+    "location": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-330/test_create_project_with_dir0",
+    "uuid": "e7d2911f-e367-46d9-b426-25663d0bb601"
 }
