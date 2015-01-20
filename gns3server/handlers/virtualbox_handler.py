@@ -40,9 +40,11 @@ class VirtualBoxHandler:
     def create(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = yield from vbox_manager.create_vm(request.json["name"], request.json.get("uuid"))
+        vm = yield from vbox_manager.create_vm(request.json["name"], request.json["project_uuid"], request.json.get("uuid"))
+        print(vm)
         response.json({"name": vm.name,
-                       "uuid": vm.uuid})
+                       "uuid": vm.uuid,
+                       "project_uuid": vm.project.uuid})
 
     @classmethod
     @Route.post(

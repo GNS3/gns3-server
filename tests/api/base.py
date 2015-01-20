@@ -120,7 +120,7 @@ class Query:
 
     def _example_file_path(self, method, path):
         path = re.sub('[^a-z0-9]', '', path)
-        return "docs/api/examples/{}_{}.txt".format(method.lower(), path)  # FIXME: cannot find path when running tests
+        return "docs/api/examples/{}_{}.txt".format(method.lower(), path)
 
 
 def _get_unused_port():

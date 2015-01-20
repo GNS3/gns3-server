@@ -95,6 +95,7 @@ class BaseManager:
         :param project_identifier UUID of Project
         :param uuid Force UUID force VM
         """
+
         project = ProjectManager.instance().get_project(project_identifier)
 
         # TODO: support for old projects VM with normal IDs.

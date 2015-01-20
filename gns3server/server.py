@@ -35,7 +35,6 @@ from .modules.port_manager import PortManager
 
 # TODO: get rid of * have something generic to automatically import handlers so the routes can be found
 from gns3server.handlers import *
-from gns3server.handlers.virtualbox_handler import VirtualBoxHandler
 
 import logging
 log = logging.getLogger(__name__)
@@ -132,6 +131,9 @@ class Server:
         """
         Starts the server.
         """
+
+        logger = logging.getLogger("asyncio")
+        logger.setLevel(logging.WARNING)
 
         # TODO: SSL support for Rackspace cloud integration (here or with nginx for instance).
         self._loop = asyncio.get_event_loop()

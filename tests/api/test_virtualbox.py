@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from tests.api.base import server, loop
+from tests.api.base import server, loop, project
 from tests.utils import asyncio_patch
 
 
-def test_vbox_create(server):
+def test_vbox_create(server, project):
     with asyncio_patch("gns3server.modules.VirtualBox.create_vm", return_value="61d61bdd-aa7d-4912-817f-65a9eb54d3ab"):
-        response = server.post("/virtualbox", {"name": "VM1"}, example=False)
+        response = server.post("/virtualbox", {"name": "VM1", "vmname": "VM1", "project_uuid": project.uuid}, example=False)
         assert response.status == 400
         assert response.route == "/virtualbox"
         assert response.json["name"] == "VM1"

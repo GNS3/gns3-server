@@ -53,9 +53,9 @@ class VirtualBoxVM(BaseVM):
     _instances = []
     _allocated_console_ports = []
 
-    def __init__(self, name, uuid, manager):
+    def __init__(self, name, uuid, project, manager):
 
-        super().__init__(name, uuid, manager)
+        super().__init__(name, uuid, project, manager)
 
         self._system_properties = {}
 
