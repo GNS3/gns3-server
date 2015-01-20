@@ -84,7 +84,7 @@ class Server:
     def _signal_handling(self):
 
         def signal_handler(signame):
-            log.warning("server has got signal {}, exiting...".format(signame))
+            log.warning("Server has got signal {}, exiting...".format(signame))
             self._stop_application()
 
         signals = ["SIGTERM", "SIGINT"]
@@ -105,7 +105,7 @@ class Server:
 
         def reload():
 
-            log.info("reloading")
+            log.info("Reloading")
             self._stop_application()
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
@@ -124,7 +124,7 @@ class Server:
                 path = path[:-1]
             modified = os.stat(path).st_mtime
             if modified > self._start_time:
-                log.debug("file {} has been modified".format(path))
+                log.debug("File {} has been modified".format(path))
                 reload()
         self._loop.call_later(1, self._reload_hook)
 
@@ -137,14 +137,14 @@ class Server:
         self._loop = asyncio.get_event_loop()
         app = aiohttp.web.Application()
         for method, route, handler in Route.get_routes():
-            log.debug("adding route: {} {}".format(method, route))
+            log.debug("Adding route: {} {}".format(method, route))
             app.router.add_route(method, route, handler)
         for module in MODULES:
-            log.debug("loading module {}".format(module.__name__))
+            log.debug("Loading module {}".format(module.__name__))
             m = module.instance()
             m.port_manager = self._port_manager
 
-        log.info("starting server on {}:{}".format(self._host, self._port))
+        log.info("Starting server on {}:{}".format(self._host, self._port))
         self._loop.run_until_complete(self._run_application(app))
         self._signal_handling()
 

@@ -22,6 +22,7 @@ import sys
 import locale
 
 from gns3server.server import Server
+from gns3server.web.logger import init_logger
 from gns3server.version import __version__
 
 import logging
@@ -85,12 +86,7 @@ def main():
     # user_log.addHandler(stream_handler)
     # user_log.propagate = False
     # END OLD LOG CODE
-    root_log = logging.getLogger()
-    root_log.setLevel(logging.DEBUG)
-    console_log = logging.StreamHandler(sys.stdout)
-    console_log.setLevel(logging.DEBUG)
-    root_log.addHandler(console_log)
-    user_log = root_log
+    user_log = init_logger(logging.DEBUG, quiet=False)
     # FIXME END Temporary
 
     user_log.info("GNS3 server version {}".format(__version__))
@@ -111,7 +107,7 @@ def main():
     try:
         os.getcwd()
     except FileNotFoundError:
-        log.critical("the current working directory doesn't exist")
+        log.critical("The current working directory doesn't exist")
         return
 
     # TODO: Renable console_bind_to_any when we will have command line parsing
