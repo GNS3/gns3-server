@@ -18,6 +18,7 @@
 import socket
 import ipaddress
 import asyncio
+from aiohttp.web import HTTPConflict
 
 
 class PortManager:
@@ -146,10 +147,10 @@ class PortManager:
                 else:
                     continue
 
-        raise Exception("Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port,
-                                                                                                             end_port,
-                                                                                                             host,
-                                                                                                             last_exception))
+        raise HTTPConflict(reason="Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port,
+                                                                                                                       end_port,
+                                                                                                                       host,
+                                                                                                                       last_exception))
 
     def get_free_console_port(self):
         """
@@ -173,7 +174,7 @@ class PortManager:
         """
 
         if port in self._used_tcp_ports:
-            raise Exception("TCP port already {} in use on host".format(port, self._host))
+            raise HTTPConflict(reason="TCP port already {} in use on host".format(port, self._console_host))
         self._used_tcp_ports.add(port)
 
     def release_console_port(self, port):
