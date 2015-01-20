@@ -80,6 +80,7 @@ class VPCSVM(BaseVM):
     def __del__(self):
         self._kill_process()
 
+    @asyncio.coroutine
     def _check_requirements(self):
         """
         Check if VPCS is available with the correct version
@@ -97,7 +98,7 @@ class VPCSVM(BaseVM):
         if not os.access(self._path, os.X_OK):
             raise VPCSError("VPCS program '{}' is not executable".format(self._path))
 
-        self._check_vpcs_version()
+        yield from self._check_vpcs_version()
 
     def __json__(self):
 
@@ -144,14 +145,14 @@ class VPCSVM(BaseVM):
                                                                       new_name=new_name))
         BaseVM.name = new_name
 
+    @asyncio.coroutine
     def _check_vpcs_version(self):
         """
         Checks if the VPCS executable version is >= 0.5b1.
         """
-        # TODO: should be async
         try:
-            output = subprocess.check_output([self._path, "-v"], cwd=self.working_dir)
-            match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output.decode("utf-8"))
+            output = yield from self._get_vpcs_welcome()
+            match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
                 if parse_version(version) < parse_version("0.5b1"):
@@ -162,12 +163,18 @@ class VPCSVM(BaseVM):
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
     @asyncio.coroutine
+    def _get_vpcs_welcome(self):
+        proc = yield from asyncio.create_subprocess_exec(' '.join([self._path, "-v"]), stdout=asyncio.subprocess.PIPE, cwd=self.working_dir)
+        out = yield from proc.stdout.readline()
+        return out.decode("utf-8")
+
+    @asyncio.coroutine
     def start(self):
         """
         Starts the VPCS process.
         """
 
-        self._check_requirements()
+        yield from self._check_requirements()
 
         if not self.is_running():
             if not self._ethernet_adapter.get_nio(0):

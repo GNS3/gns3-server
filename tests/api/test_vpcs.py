@@ -84,3 +84,13 @@ def test_vpcs_delete_nio(server, vm):
     response = server.delete("/vpcs/{}/ports/0/nio".format(vm["uuid"]), example=True)
     assert response.status == 200
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
+
+
+def test_vpcs_start():
+    # assert True == False
+    pass
+
+
+def test_vpcs_stop():
+    # assert True == False
+    pass

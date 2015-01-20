@@ -20,5 +20,5 @@ X-ROUTE: /vpcs
     "name": "PC TEST 1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "script_file": null,
-    "uuid": "12171ed6-4234-4ba7-9ef5-db3631a3a2e4"
+    "uuid": "a4809caf-bfba-4f34-ad78-1d054c8b7e5a"
 }
