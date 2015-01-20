@@ -87,7 +87,7 @@ class BaseManager:
         return self._vms[uuid]
 
     @asyncio.coroutine
-    def create_vm(self, name, project_identifier, uuid=None):
+    def create_vm(self, name, project_identifier, uuid=None, **kwargs):
         """
         Create a new VM
 
@@ -104,7 +104,7 @@ class BaseManager:
         if not uuid:
             uuid = str(uuid4())
 
-        vm = self._VM_CLASS(name, uuid, project, self)
+        vm = self._VM_CLASS(name, uuid, project, self, **kwargs)
         future = vm.create()
         if isinstance(future, asyncio.Future):
             yield from future

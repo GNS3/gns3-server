@@ -52,9 +52,10 @@ class VPCSVM(BaseVM):
     :param project: Project instance
     :param manager: parent VM Manager
     :param console: TCP console port
+    :param script_file: A VPCS startup script
     """
 
-    def __init__(self, name, uuid, project, manager, console=None):
+    def __init__(self, name, uuid, project, manager, console=None, script_file=None):
 
         super().__init__(name, uuid, project, manager)
 
@@ -68,7 +69,7 @@ class VPCSVM(BaseVM):
         self._started = False
 
         # VPCS settings
-        self._script_file = ""
+        self._script_file = script_file
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
         try:
@@ -102,6 +103,14 @@ class VPCSVM(BaseVM):
             raise VPCSError("VPCS program '{}' is not executable".format(self._path))
 
         self._check_vpcs_version()
+
+    def __json__(self):
+
+        return {"name": self.name,
+                "uuid": self.uuid,
+                "console": self.console,
+                "project_uuid": self.project.uuid,
+                "script_file": self.script_file}
 
     @property
     def console(self):

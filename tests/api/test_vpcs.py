@@ -35,6 +35,16 @@ def test_vpcs_create(server, project):
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_uuid"] == project.uuid
+    assert response.json["script_file"] is None
+
+
+def test_vpcs_create_script_file(server, project):
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "script_file": "/tmp/test"})
+    assert response.status == 200
+    assert response.route == "/vpcs"
+    assert response.json["name"] == "PC TEST 1"
+    assert response.json["project_uuid"] == project.uuid
+    assert response.json["script_file"] == "/tmp/test"
 
 
 def test_vpcs_nio_create_udp(server, vm):

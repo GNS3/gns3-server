@@ -50,6 +50,10 @@ VPCS_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "script_file": {
+            "description": "VPCS startup script",
+            "type": ["string", "null"]
+        },
     },
     "additionalProperties": False,
     "required": ["name", "project_uuid"]
@@ -143,7 +147,11 @@ VPCS_OBJECT_SCHEMA = {
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-        }
+        },
+        "script_file": {
+            "description": "VPCS startup script",
+            "type": ["string", "null"]
+        },
     },
     "additionalProperties": False,
     "required": ["name", "uuid", "console", "project_uuid"]
