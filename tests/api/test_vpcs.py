@@ -19,6 +19,7 @@ import pytest
 from tests.api.base import server, loop, project
 from tests.utils import asyncio_patch
 from unittest.mock import patch
+from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 
 
 @pytest.fixture(scope="module")
@@ -28,14 +29,12 @@ def vm(server, project):
     return response.json
 
 
-@asyncio_patch("gns3server.modules.VPCS.create_vm", return_value="61d61bdd-aa7d-4912-817f-65a9eb54d3ab")
 def test_vpcs_create(server, project):
     response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid}, example=True)
     assert response.status == 200
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
-    assert response.json["uuid"] == "61d61bdd-aa7d-4912-817f-65a9eb54d3ab"
-    assert response.json["project_uuid"] == "61d61bdd-aa7d-4912-817f-65a9eb54d3ab"
+    assert response.json["project_uuid"] == project.uuid
 
 
 def test_vpcs_nio_create_udp(server, vm):

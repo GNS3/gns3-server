@@ -1,21 +1,23 @@
-curl -i -xPOST 'http://localhost:8000/vpcs' -d '{"name": "PC TEST 1"}'
+curl -i -X POST 'http://localhost:8000/vpcs' -d '{"name": "PC TEST 1", "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80"}'
 
 POST /vpcs HTTP/1.1
 {
-    "name": "PC TEST 1"
+    "name": "PC TEST 1",
+    "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80"
 }
 
 
 HTTP/1.1 200
 CONNECTION: close
-CONTENT-LENGTH: 66
+CONTENT-LENGTH: 160
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 aiohttp/0.13.1
 X-ROUTE: /vpcs
 
 {
-    "console": 4242,
+    "console": 2000,
     "name": "PC TEST 1",
-    "vpcs_id": 1
+    "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "uuid": "0adee348-1ce4-417b-9b5c-ff96f62ce35a"
 }

@@ -1,1 +1,1 @@
-__all__ = ['version_handler', 'vpcs_handler', 'project_handler']
+__all__ = ['version_handler', 'vpcs_handler', 'project_handler', 'virtualbox_handler']

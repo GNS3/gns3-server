@@ -24,7 +24,7 @@ class _asyncio_patch:
     """
     A wrapper around python patch supporting asyncio.
     Like the original patch you can use it as context
-    manager (with) or decorator
+    manager (with)
 
     The original patch source code is the main source of
     inspiration:
@@ -44,14 +44,6 @@ class _asyncio_patch:
     def __exit__(self, *exc_info):
         """Used when leaving the with block"""
         self._patcher.stop()
-
-    def __call__(self, func, *args, **kwargs):
-        """Call is used when asyncio_patch is used as decorator"""
-        @patch(self.function, return_value=self._fake_anwser())
-        @asyncio.coroutine
-        def inner(*a, **kw):
-            return func(*a, **kw)
-        return inner
 
     def _fake_anwser(self):
         future = asyncio.Future()
