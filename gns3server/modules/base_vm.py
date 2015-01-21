@@ -59,6 +59,10 @@ class BaseVM:
         :param new_name: name
         """
 
+        log.info("{module} {name} [{uuid}]: renamed to {new_name}".format(module=self.module_name,
+                                                                          name=self._name,
+                                                                          uuid=self.uuid,
+                                                                          new_name=new_name))
         self._name = new_name
 
     @property

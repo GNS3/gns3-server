@@ -18,5 +18,5 @@ X-ROUTE: /vpcs/{uuid}
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "script_file": null,
     "startup_script": null,
-    "uuid": "40f76457-de2b-4399-8853-a35393a72a2d"
+    "uuid": "f8155d67-c0bf-4229-be4c-97edaaae7b0b"
 }

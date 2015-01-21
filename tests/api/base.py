@@ -45,6 +45,9 @@ class Query:
     def post(self, path, body={}, **kwargs):
         return self._fetch("POST", path, body, **kwargs)
 
+    def put(self, path, body={}, **kwargs):
+        return self._fetch("PUT", path, body, **kwargs)
+
     def get(self, path, **kwargs):
         return self._fetch("GET", path, **kwargs)
 
@@ -147,11 +150,10 @@ def loop(request):
 
 
 @pytest.fixture(scope="session")
-def server(request, loop):
+def server(request, loop, port_manager):
     port = _get_unused_port()
     host = "localhost"
     app = web.Application()
-    port_manager = PortManager("127.0.0.1", False)
     for method, route, handler in Route.get_routes():
         app.router.add_route(method, route, handler)
     for module in MODULES:

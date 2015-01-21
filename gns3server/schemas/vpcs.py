@@ -63,6 +63,33 @@ VPCS_CREATE_SCHEMA = {
     "required": ["name", "project_uuid"]
 }
 
+VPCS_UPDATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to update a VPCS instance",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "VPCS device name",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "script_file": {
+            "description": "VPCS startup script",
+            "type": ["string", "null"]
+        },
+        "startup_script": {
+            "description": "Content of the VPCS startup script",
+            "type": ["string", "null"]
+        },
+    },
+    "additionalProperties": False,
+}
 
 VPCS_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",

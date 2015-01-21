@@ -17,6 +17,7 @@
 
 from ..web.route import Route
 from ..schemas.vpcs import VPCS_CREATE_SCHEMA
+from ..schemas.vpcs import VPCS_UPDATE_SCHEMA
 from ..schemas.vpcs import VPCS_OBJECT_SCHEMA
 from ..schemas.vpcs import VPCS_NIO_SCHEMA
 from ..modules.vpcs import VPCS
@@ -65,6 +66,27 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
+        response.json(vm)
+
+    @classmethod
+    @Route.put(
+        r"/vpcs/{uuid}",
+        status_codes={
+            200: "VPCS instance updated",
+            409: "Conflict"
+        },
+        description="Update a VPCS instance",
+        input=VPCS_UPDATE_SCHEMA,
+        output=VPCS_OBJECT_SCHEMA)
+    def update(request, response):
+
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_vm(request.match_info["uuid"])
+        vm.name = request.json.get("name", vm.name)
+        vm.console = request.json.get("console", vm.console)
+        vm.script_file = request.json.get("script_file", vm.script_file)
+        vm.startup_script = request.json.get("startup_script", vm.startup_script)
+
         response.json(vm)
 
     @classmethod

@@ -20,7 +20,7 @@ This test suite check /project endpoint
 """
 
 
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, port_manager
 from tests.api.base import server, loop
 from gns3server.version import __version__
 

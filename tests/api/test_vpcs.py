@@ -18,7 +18,7 @@
 import pytest
 import os
 from tests.api.base import server, loop, project
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, free_console_port, port_manager
 from unittest.mock import patch, Mock
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 
@@ -68,13 +68,13 @@ def test_vpcs_create_startup_script(server, project):
     assert response.json["startup_script"] == "ip 192.168.1.2\necho TEST"
 
 
-def test_vpcs_create_port(server, project):
-    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "console": 4242})
+def test_vpcs_create_port(server, project, free_console_port):
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "console": free_console_port})
     assert response.status == 200
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_uuid"] == project.uuid
-    assert response.json["console"] == 4242
+    assert response.json["console"] == free_console_port
 
 
 def test_vpcs_nio_create_udp(server, vm):
@@ -119,3 +119,18 @@ def test_vpcs_stop(server, vm):
         response = server.post("/vpcs/{}/stop".format(vm["uuid"]))
         assert mock.called
         assert response.status == 200
+
+
+def test_vpcs_update(server, vm, tmpdir, free_console_port):
+    path = os.path.join(str(tmpdir), 'startup2.vpcs')
+    with open(path, 'w+') as f:
+        f.write(path)
+    response = server.put("/vpcs/{}".format(vm["uuid"]), {"name": "test",
+                                                          "console": free_console_port,
+                                                          "script_file": path,
+                                                          "startup_script": "ip 192.168.1.1"})
+    assert response.status == 200
+    assert response.json["name"] == "test"
+    assert response.json["console"] == free_console_port
+    assert response.json["script_file"] == path
+    assert response.json["startup_script"] == "ip 192.168.1.1"

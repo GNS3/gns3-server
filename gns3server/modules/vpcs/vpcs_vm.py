@@ -123,7 +123,17 @@ class VPCSVM(BaseVM):
 
         return self._console
 
-    # FIXME: correct way to subclass a property?
+    @console.setter
+    def console(self, console):
+        """
+        Change console port
+
+        :params console: Console port (integer)
+        """
+        if self._console:
+            self._manager.port_manager.release_console_port(self._console)
+        self._console = self._manager.port_manager.reserve_console_port(console)
+
     @BaseVM.name.setter
     def name(self, new_name):
         """
@@ -133,22 +143,11 @@ class VPCSVM(BaseVM):
         """
 
         if self._script_file:
-            # update the startup.vpc
-            config_path = os.path.join(self.working_dir, "startup.vpc")
-            if os.path.isfile(config_path):
-                try:
-                    with open(config_path, "r+", errors="replace") as f:
-                        old_config = f.read()
-                        new_config = old_config.replace(self._name, new_name)
-                        f.seek(0)
-                        f.write(new_config)
-                except OSError as e:
-                    raise VPCSError("Could not amend the configuration {}: {}".format(config_path, e))
+            content = self.startup_script
+            content = content.replace(self._name, new_name)
+            self.startup_script = content
 
-        log.info("VPCS {name} [{uuid}]: renamed to {new_name}".format(name=self._name,
-                                                                      uuid=self.uuid,
-                                                                      new_name=new_name))
-        BaseVM.name = new_name
+        super(VPCSVM, VPCSVM).name.__set__(self, new_name)
 
     @property
     def startup_script(self):
@@ -173,7 +172,10 @@ class VPCSVM(BaseVM):
             self._script_file = os.path.join(self.working_dir, 'startup.vpcs')
         try:
             with open(self._script_file, '+w') as f:
-                f.write(startup_script)
+                if startup_script is None:
+                    f.write('')
+                else:
+                    f.write(startup_script)
         except OSError as e:
             raise VPCSError("Can't write VPCS startup file '{}'".format(self._script_file))
 

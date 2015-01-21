@@ -18,7 +18,7 @@
 import pytest
 import asyncio
 import os
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, port_manager, free_console_port
 
 # TODO: Move loop to util
 from tests.api.base import loop, project
@@ -136,3 +136,28 @@ def test_get_startup_script(vm):
     content = "echo GNS3 VPCS\nip 192.168.1.2\n"
     vm.startup_script = content
     assert vm.startup_script == content
+
+
+def test_change_console_port(vm, free_console_port):
+    vm.console = free_console_port
+    vm.console = free_console_port + 1
+    assert vm.console == free_console_port
+    PortManager.instance().reserve_console_port(free_console_port + 1)
+
+
+def test_change_name(vm, tmpdir):
+    path = os.path.join(str(tmpdir), 'startup.vpcs')
+    vm.name = "world"
+    with open(path, 'w+') as f:
+        f.write("name world")
+    vm.script_file = path
+    vm.name = "hello"
+    assert vm.name == "hello"
+    with open(path) as f:
+        assert f.read() == "name hello"
+
+
+def test_change_script_file(vm, tmpdir):
+    path = os.path.join(str(tmpdir), 'startup2.vpcs')
+    vm.script_file = path
+    assert vm.script_file == path
