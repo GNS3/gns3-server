@@ -45,11 +45,9 @@ class Project:
         if location is None:
             self._location = tempfile.mkdtemp()
 
-        self._path = os.path.join(self._location, self._uuid, "vms")
+        self._path = os.path.join(self._location, self._uuid)
         try:
-            os.makedirs(self._path)
-        except FileExistsError:
-            pass
+            os.makedirs(os.path.join(self._path, 'vms'), exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
 
@@ -68,22 +66,23 @@ class Project:
 
         return self._path
 
-    def vm_working_directory(self, vm_uuid):
+    def vm_working_directory(self, module, vm_uuid):
         """
         Return a working directory for a specific VM.
         If the directory doesn't exist, the directory is created.
 
+        :param module: The module name (vpcs, dynamips...)
         :param vm_uuid: VM UUID
         """
 
-        path = os.path.join(self._path, "vms", vm_uuid)
+        p = os.path.join(self._path, "vms", module, vm_uuid)
         try:
-            os.makedirs(self._path)
+            os.makedirs(p, exist_ok=True)
         except FileExistsError:
             pass
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create VM working directory: {}".format(e))
-        return path
+        return p
 
     def __json__(self):
 

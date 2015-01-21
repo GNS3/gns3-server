@@ -25,6 +25,7 @@ import struct
 import socket
 import stat
 import time
+import aiohttp
 
 import logging
 log = logging.getLogger(__name__)

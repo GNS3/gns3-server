@@ -33,7 +33,6 @@ import shutil
 
 from .virtualbox_error import VirtualBoxError
 from ..adapters.ethernet_adapter import EthernetAdapter
-from ..attic import find_unused_port
 from .telnet_server import TelnetServer
 from ..base_vm import BaseVM
 
@@ -104,7 +103,6 @@ class VirtualBoxVM(BaseVM):
 
         # create the device own working directory
         self.working_dir = working_dir_path
-
 
         if linked_clone:
             if vbox_id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):

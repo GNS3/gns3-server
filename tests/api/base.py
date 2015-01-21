@@ -151,11 +151,12 @@ def server(request, loop):
     port = _get_unused_port()
     host = "localhost"
     app = web.Application()
+    port_manager = PortManager("127.0.0.1", False)
     for method, route, handler in Route.get_routes():
         app.router.add_route(method, route, handler)
     for module in MODULES:
         instance = module.instance()
-        instance.port_manager = PortManager("127.0.0.1", False)
+        instance.port_manager = port_manager
     srv = loop.create_server(app.make_handler(), host, port)
     srv = loop.run_until_complete(srv)
 

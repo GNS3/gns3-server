@@ -43,6 +43,7 @@ log = logging.getLogger(__name__)
 
 
 class VPCSVM(BaseVM):
+    module_name = 'vpcs'
 
     """
     VPCS vm implementation.

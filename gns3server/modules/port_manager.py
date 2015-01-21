@@ -148,9 +148,9 @@ class PortManager:
                     continue
 
         raise HTTPConflict(text="Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port,
-                                                                                                                       end_port,
-                                                                                                                       host,
-                                                                                                                       last_exception))
+                                                                                                                     end_port,
+                                                                                                                     host,
+                                                                                                                     last_exception))
 
     def get_free_console_port(self):
         """

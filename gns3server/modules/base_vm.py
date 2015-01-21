@@ -87,7 +87,7 @@ class BaseVM:
         Return VM working directory
         """
 
-        return self._project.vm_working_directory(self._uuid)
+        return self._project.vm_working_directory(self.module_name, self._uuid)
 
     def create(self):
         """
