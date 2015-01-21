@@ -19,7 +19,7 @@ import pytest
 import os
 from tests.api.base import server, loop, project
 from tests.utils import asyncio_patch
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 
 
@@ -99,11 +99,15 @@ def test_vpcs_delete_nio(server, vm):
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
 
 
-def test_vpcs_start():
-    # assert True == False
-    pass
+def test_vpcs_start(server, vm):
+    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
+        response = server.post("/vpcs/{}/start".format(vm["uuid"]))
+        assert mock.called
+        assert response.status == 200
 
 
-def test_vpcs_stop():
-    # assert True == False
-    pass
+def test_vpcs_stop(server, vm):
+    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.stop", return_value=True) as mock:
+        response = server.post("/vpcs/{}/stop".format(vm["uuid"]))
+        assert mock.called
+        assert response.status == 200

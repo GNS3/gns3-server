@@ -42,7 +42,7 @@ class Query:
         self._port = port
         self._host = host
 
-    def post(self, path, body, **kwargs):
+    def post(self, path, body={}, **kwargs):
         return self._fetch("POST", path, body, **kwargs)
 
     def get(self, path, **kwargs):

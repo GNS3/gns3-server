@@ -39,7 +39,8 @@ class _asyncio_patch:
     def __enter__(self):
         """Used when enter in the with block"""
         self._patcher = patch(self.function, return_value=self._fake_anwser())
-        self._patcher.start()
+        mock_class = self._patcher.start()
+        return mock_class
 
     def __exit__(self, *exc_info):
         """Used when leaving the with block"""
