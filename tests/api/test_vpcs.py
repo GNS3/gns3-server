@@ -17,8 +17,7 @@
 
 import pytest
 import os
-from tests.api.base import server, loop, project
-from tests.utils import asyncio_patch, free_console_port, port_manager
+from tests.utils import asyncio_patch
 from unittest.mock import patch, Mock
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 

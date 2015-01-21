@@ -21,18 +21,8 @@
 import json
 import re
 import asyncio
-import socket
-import pytest
-from aiohttp import web
 import aiohttp
 import os
-
-from gns3server.web.route import Route
-# TODO: get rid of *
-from gns3server.handlers import *
-from gns3server.modules import MODULES
-from gns3server.modules.port_manager import PortManager
-from gns3server.modules.project_manager import ProjectManager
 
 
 class Query:
@@ -125,53 +115,3 @@ class Query:
     def _example_file_path(self, method, path):
         path = re.sub('[^a-z0-9]', '', path)
         return "docs/api/examples/{}_{}.txt".format(method.lower(), path)
-
-
-def _get_unused_port():
-    """ Return an unused port on localhost. In rare occasion it can return
-    an already used port (race condition)"""
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('localhost', 0))
-    addr, port = s.getsockname()
-    s.close()
-    return port
-
-
-@pytest.fixture(scope="session")
-def loop(request):
-    """Return an event loop and destroy it at the end of test"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)  # Replace main loop to avoid conflict between tests
-
-    def tear_down():
-        loop.close()
-        asyncio.set_event_loop(None)
-    request.addfinalizer(tear_down)
-    return loop
-
-
-@pytest.fixture(scope="session")
-def server(request, loop, port_manager):
-    port = _get_unused_port()
-    host = "localhost"
-    app = web.Application()
-    for method, route, handler in Route.get_routes():
-        app.router.add_route(method, route, handler)
-    for module in MODULES:
-        instance = module.instance()
-        instance.port_manager = port_manager
-    srv = loop.create_server(app.make_handler(), host, port)
-    srv = loop.run_until_complete(srv)
-
-    def tear_down():
-        for module in MODULES:
-            loop.run_until_complete(module.destroy())
-        srv.close()
-        srv.wait_closed()
-    request.addfinalizer(tear_down)
-    return Query(loop, host=host, port=port)
-
-
-@pytest.fixture(scope="module")
-def project():
-    return ProjectManager.instance().create_project(uuid="a1e920ca-338a-4e9f-b363-aa607b09dd80")

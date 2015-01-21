@@ -18,10 +18,9 @@
 import pytest
 import asyncio
 import os
-from tests.utils import asyncio_patch, port_manager, free_console_port
+from tests.utils import asyncio_patch
 
-# TODO: Move loop to util
-from tests.api.base import loop, project
+
 from asyncio.subprocess import Process
 from unittest.mock import patch, MagicMock
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM

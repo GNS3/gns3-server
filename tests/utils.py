@@ -16,10 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import pytest
 from unittest.mock import patch
-from gns3server.modules.project_manager import ProjectManager
-from gns3server.modules.port_manager import PortManager
 
 
 class _asyncio_patch:
@@ -57,18 +54,3 @@ class _asyncio_patch:
 
 def asyncio_patch(function, *args, **kwargs):
     return _asyncio_patch(function, *args, **kwargs)
-
-
-@pytest.fixture(scope="session")
-def port_manager():
-    return PortManager("127.0.0.1", False)
-
-
-@pytest.fixture(scope="function")
-def free_console_port(request, port_manager):
-    # In case of already use ports we will raise an exception
-    port = port_manager.get_free_console_port()
-    # We release the port immediately in order to allow
-    # the test do whatever the test want
-    port_manager.release_console_port(port)
-    return port

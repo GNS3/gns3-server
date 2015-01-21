@@ -20,8 +20,7 @@ This test suite check /version endpoint
 It's also used for unittest the HTTP implementation.
 """
 
-from tests.utils import asyncio_patch, port_manager
-from tests.api.base import server, loop
+from tests.utils import asyncio_patch
 from gns3server.version import __version__
 
 

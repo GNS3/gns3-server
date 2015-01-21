@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from tests.api.base import server, loop, project
-from tests.utils import asyncio_patch, port_manager
+from tests.utils import asyncio_patch
 from gns3server.modules.virtualbox.virtualbox_vm import VirtualBoxVM
 
 
