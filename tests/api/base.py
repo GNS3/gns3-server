@@ -118,8 +118,9 @@ class Query:
                     value = "Thu, 08 Jan 2015 16:09:15 GMT"
                 f.write("{}: {}\n".format(header, value))
             f.write("\n")
-            f.write(json.dumps(json.loads(response.body.decode('utf-8')), sort_keys=True, indent=4))
-            f.write("\n")
+            if response.body:
+                f.write(json.dumps(json.loads(response.body.decode('utf-8')), sort_keys=True, indent=4))
+                f.write("\n")
 
     def _example_file_path(self, method, path):
         path = re.sub('[^a-z0-9]', '', path)

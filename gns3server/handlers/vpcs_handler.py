@@ -49,6 +49,7 @@ class VPCSHandler:
                                        console=request.json.get("console"),
                                        script_file=request.json.get("script_file"),
                                        startup_script=request.json.get("startup_script"))
+        response.set_status(201)
         response.json(vm)
 
     @classmethod
@@ -58,7 +59,7 @@ class VPCSHandler:
             "uuid": "VPCS instance UUID"
         },
         status_codes={
-            200: "VPCS instance started",
+            200: "Success",
             404: "VPCS instance doesn't exist"
         },
         description="Get a VPCS instance")
@@ -105,7 +106,7 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         yield from vpcs_manager.start_vm(request.match_info["uuid"])
-        response.json({})
+        response.set_status(204)
 
     @classmethod
     @Route.post(
@@ -123,7 +124,7 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         yield from vpcs_manager.stop_vm(request.match_info["uuid"])
-        response.json({})
+        response.set_status(204)
 
     @Route.post(
         r"/vpcs/{uuid}/ports/{port_id}/nio",
@@ -144,6 +145,7 @@ class VPCSHandler:
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
         nio = vm.port_add_nio_binding(int(request.match_info["port_id"]), request.json)
+        response.set_status(201)
         response.json(nio)
 
     @classmethod
@@ -154,7 +156,7 @@ class VPCSHandler:
             "port_id": "ID of the port where the nio should be removed"
         },
         status_codes={
-            200: "NIO deleted",
+            204: "NIO deleted",
             400: "Invalid VPCS instance UUID",
             404: "VPCS instance doesn't exist"
         },
@@ -164,4 +166,5 @@ class VPCSHandler:
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
         nio = vm.port_remove_nio_binding(int(request.match_info["port_id"]))
-        response.json({})
+        response.set_status(204)
+

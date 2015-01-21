@@ -26,13 +26,13 @@ from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 @pytest.fixture(scope="module")
 def vm(server, project):
     response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid})
-    assert response.status == 200
+    assert response.status == 201
     return response.json
 
 
 def test_vpcs_create(server, project):
     response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid}, example=True)
-    assert response.status == 200
+    assert response.status == 201
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_uuid"] == project.uuid
@@ -52,7 +52,7 @@ def test_vpcs_create_script_file(server, project, tmpdir):
     with open(path, 'w+') as f:
         f.write("ip 192.168.1.2")
     response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "script_file": path})
-    assert response.status == 200
+    assert response.status == 201
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_uuid"] == project.uuid
@@ -61,7 +61,7 @@ def test_vpcs_create_script_file(server, project, tmpdir):
 
 def test_vpcs_create_startup_script(server, project):
     response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "startup_script": "ip 192.168.1.2\necho TEST"})
-    assert response.status == 200
+    assert response.status == 201
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_uuid"] == project.uuid
@@ -70,7 +70,7 @@ def test_vpcs_create_startup_script(server, project):
 
 def test_vpcs_create_port(server, project, free_console_port):
     response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "console": free_console_port})
-    assert response.status == 200
+    assert response.status == 201
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_uuid"] == project.uuid
@@ -83,7 +83,7 @@ def test_vpcs_nio_create_udp(server, vm):
                                                                        "rport": 4343,
                                                                        "rhost": "127.0.0.1"},
                            example=True)
-    assert response.status == 200
+    assert response.status == 201
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
     assert response.json["type"] == "nio_udp"
 
@@ -92,7 +92,7 @@ def test_vpcs_nio_create_udp(server, vm):
 def test_vpcs_nio_create_tap(mock, server, vm):
     response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_tap",
                                                                        "tap_device": "test"})
-    assert response.status == 200
+    assert response.status == 201
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
     assert response.json["type"] == "nio_tap"
 
@@ -103,7 +103,7 @@ def test_vpcs_delete_nio(server, vm):
                                                                        "rport": 4343,
                                                                        "rhost": "127.0.0.1"})
     response = server.delete("/vpcs/{}/ports/0/nio".format(vm["uuid"]), example=True)
-    assert response.status == 200
+    assert response.status == 204
     assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
 
 
@@ -111,14 +111,14 @@ def test_vpcs_start(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
         response = server.post("/vpcs/{}/start".format(vm["uuid"]))
         assert mock.called
-        assert response.status == 200
+        assert response.status == 204
 
 
 def test_vpcs_stop(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.stop", return_value=True) as mock:
         response = server.post("/vpcs/{}/stop".format(vm["uuid"]))
         assert mock.called
-        assert response.status == 200
+        assert response.status == 204
 
 
 def test_vpcs_update(server, vm, tmpdir, free_console_port):

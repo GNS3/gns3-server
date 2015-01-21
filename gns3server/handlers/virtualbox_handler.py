@@ -44,7 +44,9 @@ class VirtualBoxHandler:
         vm = yield from vbox_manager.create_vm(request.json["name"],
                                                request.json["project_uuid"],
                                                request.json.get("uuid"),
-                                               vmname=request.json["vmname"])
+                                               request.json["vmname"],
+                                               request.json.get("linked_clone", False))
+        response.set_status(201)
         response.json({"name": vm.name,
                        "uuid": vm.uuid,
                        "project_uuid": vm.project.uuid})
@@ -65,7 +67,7 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         yield from vbox_manager.start_vm(request.match_info["uuid"])
-        response.json({})
+        response.set_status(204)
 
     @classmethod
     @Route.post(
@@ -83,4 +85,4 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         yield from vbox_manager.stop_vm(request.match_info["uuid"])
-        response.json({})
+        response.set_status(204)

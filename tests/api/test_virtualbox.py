@@ -22,20 +22,20 @@ from gns3server.modules.virtualbox.virtualbox_vm import VirtualBoxVM
 
 def test_vbox_create(server, project):
     response = server.post("/virtualbox", {"name": "VM1", "vmname": "VM1", "project_uuid": project.uuid}, example=True)
-    assert response.status == 200
+    assert response.status == 201
     assert response.route == "/virtualbox"
     assert response.json["name"] == "VM1"
 
 
 def test_vbox_start(server):
-    with asyncio_patch("gns3server.modules.VirtualBox.start_vm", return_value=True):
+    with asyncio_patch("gns3server.modules.VirtualBox.start_vm", return_value=True) as mock:
         response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/start", {}, example=True)
-        assert response.status == 200
-        assert response.route == "/virtualbox/{uuid}/start"
+        assert mock.called
+        assert response.status == 204
 
 
 def test_vbox_stop(server):
-    with asyncio_patch("gns3server.modules.VirtualBox.stop_vm", return_value=True):
+    with asyncio_patch("gns3server.modules.VirtualBox.stop_vm", return_value=True) as mock:
         response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/stop", {}, example=True)
-        assert response.status == 200
-        assert response.route == "/virtualbox/{uuid}/stop"
+        assert mock.called
+        assert response.status == 204
