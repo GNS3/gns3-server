@@ -51,6 +51,23 @@ class VPCSHandler:
         response.json(vm)
 
     @classmethod
+    @Route.get(
+        r"/vpcs/{uuid}",
+        parameters={
+            "uuid": "VPCS instance UUID"
+        },
+        status_codes={
+            200: "VPCS instance started",
+            404: "VPCS instance doesn't exist"
+        },
+        description="Get a VPCS instance")
+    def show(request, response):
+
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_vm(request.match_info["uuid"])
+        response.json(vm)
+
+    @classmethod
     @Route.post(
         r"/vpcs/{uuid}/start",
         parameters={

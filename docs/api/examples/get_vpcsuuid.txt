@@ -1,0 +1,22 @@
+curl -i -X GET 'http://localhost:8000/vpcs/{uuid}'
+
+GET /vpcs/{uuid} HTTP/1.1
+
+
+
+HTTP/1.1 200
+CONNECTION: close
+CONTENT-LENGTH: 213
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /vpcs/{uuid}
+
+{
+    "console": 2001,
+    "name": "PC TEST 1",
+    "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "script_file": null,
+    "startup_script": null,
+    "uuid": "40f76457-de2b-4399-8853-a35393a72a2d"
+}

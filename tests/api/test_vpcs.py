@@ -39,6 +39,14 @@ def test_vpcs_create(server, project):
     assert response.json["script_file"] is None
 
 
+def test_vpcs_get(server, project, vm):
+    response = server.get("/vpcs/{}".format(vm["uuid"]), example=True)
+    assert response.status == 200
+    assert response.route == "/vpcs/{uuid}"
+    assert response.json["name"] == "PC TEST 1"
+    assert response.json["project_uuid"] == project.uuid
+
+
 def test_vpcs_create_script_file(server, project, tmpdir):
     path = os.path.join(str(tmpdir), "test")
     with open(path, 'w+') as f:
