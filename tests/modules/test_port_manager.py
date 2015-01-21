@@ -21,7 +21,7 @@ from gns3server.modules.port_manager import PortManager
 
 
 def test_reserve_console_port():
-    pm = PortManager.instance()
+    pm = PortManager()
     pm.reserve_console_port(4242)
     with pytest.raises(aiohttp.web.HTTPConflict):
         pm.reserve_console_port(4242)

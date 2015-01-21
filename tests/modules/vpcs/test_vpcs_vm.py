@@ -31,9 +31,9 @@ from gns3server.modules.port_manager import PortManager
 
 
 @pytest.fixture(scope="module")
-def manager():
+def manager(port_manager):
     m = VPCS.instance()
-    m.port_manager = PortManager("127.0.0.1", False)
+    m.port_manager = port_manager
     return m
 
 
@@ -143,10 +143,12 @@ def test_change_console_port(vm, port_manager):
     port2 = port_manager.get_free_console_port()
     port_manager.release_console_port(port1)
     port_manager.release_console_port(port2)
+    print(vm.console)
+    print(port1)
     vm.console = port1
     vm.console = port2
     assert vm.console == port2
-    PortManager.instance().reserve_console_port(port1)
+    port_manager.reserve_console_port(port1)
 
 
 def test_change_name(vm, tmpdir):

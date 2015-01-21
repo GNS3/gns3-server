@@ -167,4 +167,3 @@ class VPCSHandler:
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
         nio = vm.port_remove_nio_binding(int(request.match_info["port_id"]))
         response.set_status(204)
-

@@ -45,24 +45,6 @@ class PortManager:
         else:
             self._console_host = host
 
-    @classmethod
-    def instance(cls):
-        """
-        Singleton to return only one instance of BaseManager.
-
-        :returns: instance of Manager
-        """
-
-        if not hasattr(cls, "_instance") or cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    @classmethod
-    @asyncio.coroutine  # FIXME: why coroutine?
-    def destroy(cls):
-
-        cls._instance = None
-
     @property
     def console_host(self):
 
