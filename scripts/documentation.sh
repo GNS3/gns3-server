@@ -23,6 +23,8 @@ set -e
 
 echo "WARNING: This script should be run at the root directory of the project"
 
+export PYTEST_BUILD_DOCUMENTATION=1
+
 py.test -v
 python3 gns3server/web/documentation.py
 cd docs

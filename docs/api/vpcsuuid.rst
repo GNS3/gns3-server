@@ -1,16 +1,35 @@
-/vpcs
+/vpcs/{uuid}
 ---------------------------------------------
 
 .. contents::
 
-POST /vpcs
+GET /vpcs/**{uuid}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create a new VPCS instance
+Get a VPCS instance
+
+Parameters
+**********
+- **uuid**: VPCS instance UUID
 
 Response status codes
 **********************
-- **400**: Invalid project UUID
-- **201**: VPCS instance created
+- **200**: VPCS instance started
+- **404**: VPCS instance doesn't exist
+
+Sample session
+***************
+
+
+.. literalinclude:: examples/get_vpcsuuid.txt
+
+
+PUT /vpcs/**{uuid}**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update a VPCS instance
+
+Response status codes
+**********************
+- **200**: VPCS instance updated
 - **409**: Conflict
 
 Input
@@ -20,12 +39,9 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>console TCP port</td>                     </tr>
-    <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS device name</td>                     </tr>
-    <tr><td>project_uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>VPCS device name</td>                     </tr>
     <tr><td>script_file</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>VPCS startup script</td>                     </tr>
     <tr><td>startup_script</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the VPCS startup script</td>                     </tr>
-    <tr><td>uuid</td>                    <td> </td>                     <td>string</td>                     <td>VPCS device UUID</td>                     </tr>
-    <tr><td>vpcs_id</td>                    <td> </td>                     <td>integer</td>                     <td>VPCS device instance ID (for project created before GNS3 1.3)</td>                     </tr>
     </table>
 
 Output
@@ -41,10 +57,4 @@ Output
     <tr><td>startup_script</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the VPCS startup script</td>                     </tr>
     <tr><td>uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS device UUID</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: examples/post_vpcs.txt
 

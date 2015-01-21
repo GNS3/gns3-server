@@ -25,7 +25,7 @@ import socket
 import pytest
 from aiohttp import web
 import aiohttp
-
+import os
 
 from gns3server.web.route import Route
 # TODO: get rid of *
@@ -93,7 +93,7 @@ class Query:
                 response.json = None
         else:
             response.json = {}
-        if kwargs.get('example'):
+        if kwargs.get('example') and os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
             self._dump_example(method, response.route, body, response)
         return response
 
