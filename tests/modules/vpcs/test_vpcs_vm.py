@@ -36,16 +36,22 @@ def manager():
     return m
 
 
+@pytest.fixture(scope="function")
+def vm(project, manager):
+    return VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+
+
 def test_vm(project, manager):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     assert vm.name == "test"
     assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_vm_invalid_vpcs_version(project, manager, loop):
+def test_vm_invalid_vpcs_version(loop, project, manager):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._get_vpcs_welcome", return_value="Welcome to Virtual PC Simulator, version 0.1"):
         with pytest.raises(VPCSError):
             vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+            vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.name == "test"
             assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
@@ -54,27 +60,26 @@ def test_vm_invalid_vpcs_version(project, manager, loop):
 @patch("gns3server.config.Config.get_section_config", return_value={"path": "/bin/test_fake"})
 def test_vm_invalid_vpcs_path(project, manager, loop):
     with pytest.raises(VPCSError):
-        vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+        vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
+        vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.name == "test"
-        assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+        assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0e"
 
 
-def test_start(project, loop, manager):
+def test_start(loop, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-            vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
             nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
 
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.is_running()
 
 
-def test_stop(project, loop, manager):
+def test_stop(loop, vm):
     process = MagicMock()
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
             nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
 
             loop.run_until_complete(asyncio.async(vm.start()))
@@ -84,29 +89,25 @@ def test_stop(project, loop, manager):
             process.terminate.assert_called_with()
 
 
-def test_add_nio_binding_udp(manager, project):
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+def test_add_nio_binding_udp(vm):
     nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     assert nio.lport == 4242
 
 
-def test_add_nio_binding_tap(project, manager):
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+def test_add_nio_binding_tap(vm):
     with patch("gns3server.modules.vpcs.vpcs_vm.has_privileged_access", return_value=True):
         nio = vm.port_add_nio_binding(0, {"type": "nio_tap", "tap_device": "test"})
         assert nio.tap_device == "test"
 
 
-def test_add_nio_binding_tap_no_privileged_access(manager, project):
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+def test_add_nio_binding_tap_no_privileged_access(vm):
     with patch("gns3server.modules.vpcs.vpcs_vm.has_privileged_access", return_value=False):
         with pytest.raises(VPCSError):
             vm.port_add_nio_binding(0, {"type": "nio_tap", "tap_device": "test"})
     assert vm._ethernet_adapter.ports[0] is None
 
 
-def test_port_remove_nio_binding(manager, project):
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+def test_port_remove_nio_binding(vm):
     nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     vm.port_remove_nio_binding(0)
     assert vm._ethernet_adapter.ports[0] is None
