@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-VPCS vm management (creates command line, processes, files etc.) in
+VPCS VM management (creates command line, processes, files etc.) in
 order to run an VPCS instance.
 """
 
@@ -59,7 +59,7 @@ class VPCSVM(BaseVM):
 
         super().__init__(name, uuid, project, manager)
 
-        self._path = self._config.get_section_config("VPCS").get("path", "vpcs")
+        self._path = manager.config.get_section_config("VPCS").get("path", "vpcs")
 
         self._console = console
 

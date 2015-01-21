@@ -17,6 +17,7 @@
 
 import aiohttp
 from .project import Project
+from uuid import UUID
 
 
 class ProjectManager:
@@ -40,20 +41,23 @@ class ProjectManager:
             cls._instance = cls()
         return cls._instance
 
-    def get_project(self, project_id):
+    def get_project(self, project_uuid):
         """
         Returns a Project instance.
 
-        :param project_id: Project identifier
+        :param project_uuid: Project UUID
 
         :returns: Project instance
         """
 
-        assert len(project_id) == 36
+        try:
+            UUID(project_uuid, version=4)
+        except ValueError:
+            raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_uuid))
 
-        if project_id not in self._projects:
-            raise aiohttp.web.HTTPNotFound(text="Project UUID {} doesn't exist".format(project_id))
-        return self._projects[project_id]
+        if project_uuid not in self._projects:
+            raise aiohttp.web.HTTPNotFound(text="Project UUID {} doesn't exist".format(project_uuid))
+        return self._projects[project_uuid]
 
     def create_project(self, **kwargs):
         """

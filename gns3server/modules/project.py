@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
 import os
 import tempfile
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 
 class Project:
-
     """
     A project contains a list of VM.
     In theory VM are isolated project/project.
@@ -35,17 +35,23 @@ class Project:
         if uuid is None:
             self._uuid = str(uuid4())
         else:
-            assert len(uuid) == 36
+            try:
+                UUID(uuid, version=4)
+            except ValueError:
+                raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(uuid))
             self._uuid = uuid
 
         self._location = location
         if location is None:
             self._location = tempfile.mkdtemp()
 
-        self._path = os.path.join(self._location, self._uuid)
-        if os.path.exists(self._path) is False:
-            os.mkdir(self._path)
-            os.mkdir(os.path.join(self._path, "vms"))
+        self._path = os.path.join(self._location, self._uuid, "vms")
+        try:
+            os.makedirs(self._path)
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
 
     @property
     def uuid(self):
@@ -62,17 +68,21 @@ class Project:
 
         return self._path
 
-    def vm_working_directory(self, vm_identifier):
+    def vm_working_directory(self, vm_uuid):
         """
         Return a working directory for a specific VM.
         If the directory doesn't exist, the directory is created.
 
-        :param vm_identifier: UUID of VM
+        :param vm_uuid: VM UUID
         """
 
-        path = os.path.join(self._path, 'vms', vm_identifier)
-        if os.path.exists(path) is False:
-            os.mkdir(path)
+        path = os.path.join(self._path, "vms", vm_uuid)
+        try:
+            os.makedirs(self._path)
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create VM working directory: {}".format(e))
         return path
 
     def __json__(self):

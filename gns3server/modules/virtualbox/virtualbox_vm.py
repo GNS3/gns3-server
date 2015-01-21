@@ -29,6 +29,7 @@ import json
 import socket
 import time
 import asyncio
+import shutil
 
 from .virtualbox_error import VirtualBoxError
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -45,41 +46,44 @@ log = logging.getLogger(__name__)
 
 
 class VirtualBoxVM(BaseVM):
-
     """
     VirtualBox VM implementation.
     """
 
-    _instances = []
-    _allocated_console_ports = []
-
-    def __init__(self, name, uuid, project, manager):
+    def __init__(self, name, uuid, project, manager, vmname, linked_clone):
 
         super().__init__(name, uuid, project, manager)
 
+        # look for VBoxManage
+        self._vboxmanage_path = manager.config.get_section_config("VirtualBox").get("vboxmanage_path")
+        if not self._vboxmanage_path:
+            if sys.platform.startswith("win"):
+                if "VBOX_INSTALL_PATH" in os.environ:
+                    self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+                elif "VBOX_MSI_INSTALL_PATH" in os.environ:
+                    self._vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
+            elif sys.platform.startswith("darwin"):
+                self._vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
+            else:
+                self._vboxmanage_path = shutil.which("vboxmanage")
+
+        if not self._vboxmanage_path:
+            raise VirtualBoxError("Could not find VBoxManage")
+        if not os.access(self._vboxmanage_path, os.X_OK):
+            raise VirtualBoxError("VBoxManage is not executable")
+
+        self._vmname = vmname
+        self._started = False
+        self._linked_clone = linked_clone
         self._system_properties = {}
-
-        # FIXME: harcoded values
-        if sys.platform.startswith("win"):
-            self._vboxmanage_path = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
-        else:
-            self._vboxmanage_path = "/usr/bin/vboxmanage"
-
         self._queue = asyncio.Queue()
         self._created = asyncio.Future()
         self._worker = asyncio.async(self._run())
 
         return
 
-        self._linked_clone = linked_clone
-        self._working_dir = None
         self._command = []
-        self._vboxmanage_path = vboxmanage_path
         self._vbox_user = vbox_user
-        self._started = False
-        self._console_host = console_host
-        self._console_start_port_range = console_start_port_range
-        self._console_end_port_range = console_end_port_range
 
         self._telnet_server_thread = None
         self._serial_pipe = None
@@ -101,28 +105,6 @@ class VirtualBoxVM(BaseVM):
         # create the device own working directory
         self.working_dir = working_dir_path
 
-        if not self._console:
-            # allocate a console port
-            try:
-                self._console = find_unused_port(self._console_start_port_range,
-                                                 self._console_end_port_range,
-                                                 self._console_host,
-                                                 ignore_ports=self._allocated_console_ports)
-            except Exception as e:
-                raise VirtualBoxError(e)
-
-        if self._console in self._allocated_console_ports:
-            raise VirtualBoxError("Console port {} is already used by another VirtualBox VM".format(console))
-        self._allocated_console_ports.append(self._console)
-
-        self._system_properties = {}
-        properties = self._execute("list", ["systemproperties"])
-        for prop in properties:
-            try:
-                name, value = prop.split(':', 1)
-            except ValueError:
-                continue
-            self._system_properties[name.strip()] = value.strip()
 
         if linked_clone:
             if vbox_id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):

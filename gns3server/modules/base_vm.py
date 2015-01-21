@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ..config import Config
 
 import logging
 log = logging.getLogger(__name__)
@@ -29,13 +28,17 @@ class BaseVM:
         self._uuid = uuid
         self._project = project
         self._manager = manager
-        self._config = Config.instance()
 
     # TODO: When delete release console ports
 
     @property
     def project(self):
-        """Return VM current project"""
+        """
+        Returns the VM current project.
+
+        :returns: Project instance.
+        """
+
         return self._project
 
     @property

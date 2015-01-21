@@ -19,5 +19,5 @@ X-ROUTE: /virtualbox
 {
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "a028124a-9a69-4b06-b673-21f7eb3d034f"
+    "uuid": "3142e932-d316-40d7-bed3-7ef8e2d313b3"
 }

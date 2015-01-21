@@ -32,6 +32,7 @@ class VirtualBoxHandler:
         r"/virtualbox",
         status_codes={
             201: "VirtualBox VM instance created",
+            400: "Invalid project UUID",
             409: "Conflict"
         },
         description="Create a new VirtualBox VM instance",
@@ -40,8 +41,10 @@ class VirtualBoxHandler:
     def create(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = yield from vbox_manager.create_vm(request.json["name"], request.json["project_uuid"], request.json.get("uuid"))
-        print(vm)
+        vm = yield from vbox_manager.create_vm(request.json["name"],
+                                               request.json["project_uuid"],
+                                               request.json.get("uuid"),
+                                               vmname=request.json["vmname"])
         response.json({"name": vm.name,
                        "uuid": vm.uuid,
                        "project_uuid": vm.project.uuid})

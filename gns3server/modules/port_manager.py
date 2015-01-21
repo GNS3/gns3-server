@@ -147,7 +147,7 @@ class PortManager:
                 else:
                     continue
 
-        raise HTTPConflict(reason="Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port,
+        raise HTTPConflict(text="Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port,
                                                                                                                        end_port,
                                                                                                                        host,
                                                                                                                        last_exception))
@@ -174,7 +174,7 @@ class PortManager:
         """
 
         if port in self._used_tcp_ports:
-            raise HTTPConflict(reason="TCP port already {} in use on host".format(port, self._console_host))
+            raise HTTPConflict(text="TCP port already {} in use on host".format(port, self._console_host))
         self._used_tcp_ports.add(port)
         return port
 
@@ -209,7 +209,7 @@ class PortManager:
         """
 
         if port in self._used_udp_ports:
-            raise Exception("UDP port already {} in use on host".format(port, self._host))
+            raise HTTPConflict(text="UDP port already {} in use on host".format(port, self._console_host))
         self._used_udp_ports.add(port)
 
     def release_udp_port(self, port):

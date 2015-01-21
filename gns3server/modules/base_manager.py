@@ -20,6 +20,7 @@ import asyncio
 import aiohttp
 
 from uuid import UUID, uuid4
+from ..config import Config
 from .project_manager import ProjectManager
 
 
@@ -34,6 +35,7 @@ class BaseManager:
 
         self._vms = {}
         self._port_manager = None
+        self._config = Config.instance()
 
     @classmethod
     def instance(cls):
@@ -50,7 +52,7 @@ class BaseManager:
     @property
     def port_manager(self):
         """
-        Returns the port_manager for this VMs
+        Returns the port manager.
 
         :returns: Port manager
         """
@@ -61,6 +63,16 @@ class BaseManager:
     def port_manager(self, new_port_manager):
 
         self._port_manager = new_port_manager
+
+    @property
+    def config(self):
+        """
+        Returns the server config.
+
+        :returns: Config
+        """
+
+        return self._config
 
     @classmethod
     @asyncio.coroutine  # FIXME: why coroutine?
@@ -87,25 +99,23 @@ class BaseManager:
         return self._vms[uuid]
 
     @asyncio.coroutine
-    def create_vm(self, name, project_identifier, uuid=None, **kwargs):
+    def create_vm(self, name, project_uuid, uuid, *args, **kwargs):
         """
         Create a new VM
 
-        :param name VM name
-        :param project_identifier UUID of Project
-        :param uuid Force UUID force VM
+        :param name: VM name
+        :param project_uuid: UUID of Project
+        :param uuid: restore a VM UUID
         """
 
-        project = ProjectManager.instance().get_project(project_identifier)
+        project = ProjectManager.instance().get_project(project_uuid)
 
         # TODO: support for old projects VM with normal IDs.
-
-        # TODO: supports specific args: pass kwargs to VM_CLASS?
 
         if not uuid:
             uuid = str(uuid4())
 
-        vm = self._VM_CLASS(name, uuid, project, self, **kwargs)
+        vm = self._VM_CLASS(name, uuid, project, self, *args, **kwargs)
         future = vm.create()
         if isinstance(future, asyncio.Future):
             yield from future

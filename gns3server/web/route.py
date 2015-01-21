@@ -111,8 +111,8 @@ class Route(object):
                     response.json({"message": e.text, "status": e.status})
                 except VMError as e:
                     response = Response(route=route)
-                    response.set_status(400)
-                    response.json({"message": str(e), "status": 400})
+                    response.set_status(500)
+                    response.json({"message": str(e), "status": 500})
                 return response
 
             cls._routes.append((method, cls._path, control_schema))
