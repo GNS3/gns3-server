@@ -138,11 +138,15 @@ def test_get_startup_script(vm):
     assert vm.startup_script == content
 
 
-def test_change_console_port(vm, free_console_port):
-    vm.console = free_console_port
-    vm.console = free_console_port + 1
-    assert vm.console == free_console_port
-    PortManager.instance().reserve_console_port(free_console_port + 1)
+def test_change_console_port(vm, port_manager):
+    port1 = port_manager.get_free_console_port()
+    port2 = port_manager.get_free_console_port()
+    port_manager.release_console_port(port1)
+    port_manager.release_console_port(port2)
+    vm.console = port1
+    vm.console = port2
+    assert vm.console == port2
+    PortManager.instance().reserve_console_port(port1)
 
 
 def test_change_name(vm, tmpdir):

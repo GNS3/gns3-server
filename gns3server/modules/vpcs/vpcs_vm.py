@@ -130,6 +130,9 @@ class VPCSVM(BaseVM):
 
         :params console: Console port (integer)
         """
+
+        if console == self._console:
+            return
         if self._console:
             self._manager.port_manager.release_console_port(self._console)
         self._console = self._manager.port_manager.reserve_console_port(console)
