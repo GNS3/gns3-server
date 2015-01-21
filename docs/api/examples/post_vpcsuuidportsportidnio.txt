@@ -9,7 +9,7 @@ POST /vpcs/{uuid}/ports/{port_id}/nio HTTP/1.1
 }
 
 
-HTTP/1.1 200
+HTTP/1.1 201
 CONNECTION: close
 CONTENT-LENGTH: 89
 CONTENT-TYPE: application/json

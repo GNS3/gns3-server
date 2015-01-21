@@ -8,7 +8,7 @@ POST /virtualbox HTTP/1.1
 }
 
 
-HTTP/1.1 200
+HTTP/1.1 201
 CONNECTION: close
 CONTENT-LENGTH: 133
 CONTENT-TYPE: application/json
@@ -19,5 +19,5 @@ X-ROUTE: /virtualbox
 {
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "3142e932-d316-40d7-bed3-7ef8e2d313b3"
+    "uuid": "0f7b32bb-13e1-4c3f-8176-bbf277672b58"
 }

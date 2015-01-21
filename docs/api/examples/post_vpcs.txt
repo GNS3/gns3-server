@@ -7,7 +7,7 @@ POST /vpcs HTTP/1.1
 }
 
 
-HTTP/1.1 200
+HTTP/1.1 201
 CONNECTION: close
 CONTENT-LENGTH: 213
 CONTENT-TYPE: application/json
@@ -21,5 +21,5 @@ X-ROUTE: /vpcs
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "script_file": null,
     "startup_script": null,
-    "uuid": "f5016337-fa62-4e82-95da-9f66f68e6e8f"
+    "uuid": "f4f04818-610c-4e95-aa0e-6d29afa72fc7"
 }

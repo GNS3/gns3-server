@@ -9,8 +9,8 @@ Add a NIO to a VPCS
 
 Parameters
 **********
-- **uuid**: VPCS instance UUID
 - **port_id**: Id of the port where the nio should be add
+- **uuid**: VPCS instance UUID
 
 Response status codes
 **********************
@@ -31,14 +31,14 @@ Remove a NIO from a VPCS
 
 Parameters
 **********
-- **uuid**: VPCS instance UUID
 - **port_id**: ID of the port where the nio should be removed
+- **uuid**: VPCS instance UUID
 
 Response status codes
 **********************
-- **200**: NIO deleted
 - **400**: Invalid VPCS instance UUID
 - **404**: VPCS instance doesn't exist
+- **204**: NIO deleted
 
 Sample session
 ***************

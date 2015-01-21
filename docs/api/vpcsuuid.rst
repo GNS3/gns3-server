@@ -13,7 +13,7 @@ Parameters
 
 Response status codes
 **********************
-- **200**: VPCS instance started
+- **200**: Success
 - **404**: VPCS instance doesn't exist
 
 Sample session
