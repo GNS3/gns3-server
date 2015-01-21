@@ -106,8 +106,8 @@ class VPCSVM(BaseVM):
 
     def __json__(self):
 
-        return {"name": self._name,
-                "uuid": self._uuid,
+        return {"name": self.name,
+                "uuid": self.uuid,
                 "console": self._console,
                 "project_uuid": self.project.uuid,
                 "script_file": self.script_file,

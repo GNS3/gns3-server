@@ -49,7 +49,7 @@ class VirtualBoxVM(BaseVM):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, uuid, project, manager, vmname, linked_clone):
+    def __init__(self, name, uuid, project, manager, vmname, linked_clone, console=None):
 
         super().__init__(name, uuid, project, manager)
 
@@ -71,21 +71,13 @@ class VirtualBoxVM(BaseVM):
         if not os.access(self._vboxmanage_path, os.X_OK):
             raise VirtualBoxError("VBoxManage is not executable")
 
-        self._vmname = vmname
         self._started = False
         self._linked_clone = linked_clone
         self._system_properties = {}
         self._queue = asyncio.Queue()
         self._created = asyncio.Future()
+        self._running = True
         self._worker = asyncio.async(self._run())
-
-        return
-
-        self._command = []
-        self._vbox_user = vbox_user
-
-        self._telnet_server_thread = None
-        self._serial_pipe = None
 
         # VirtualBox settings
         self._console = console
@@ -96,27 +88,30 @@ class VirtualBoxVM(BaseVM):
         self._adapter_start_index = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
-        working_dir_path = os.path.join(working_dir, "vbox")
-
-        if vbox_id and not os.path.isdir(working_dir_path):
-            raise VirtualBoxError("Working directory {} doesn't exist".format(working_dir_path))
-
-        # create the device own working directory
-        self.working_dir = working_dir_path
-
         if linked_clone:
-            if vbox_id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
+            if uuid and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
                 self._execute("registervm", [vbox_file])
                 self._reattach_hdds()
             else:
                 self._create_linked_clone()
 
-        self._maximum_adapters = 8
-        self.adapters = 2  # creates 2 adapters by default
+        #self._maximum_adapters = 8
+        #self.adapters = 2  # creates 2 adapters by default
 
-        log.info("VirtualBox VM {name} [id={id}] has been created".format(name=self._name,
-                                                                          id=self._id))
+        return
+
+        self._command = []
+        self._vbox_user = vbox_user
+
+        self._telnet_server_thread = None
+        self._serial_pipe = None
+
+    def __json__(self):
+
+        return {"name": self.name,
+                "uuid": self.uuid,
+                "project_uuid": self.project.uuid}
 
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=60):
@@ -156,12 +151,13 @@ class VirtualBoxVM(BaseVM):
 
         try:
             yield from self._get_system_properties()
+            #TODO: check for API version
             self._created.set_result(True)
         except VirtualBoxError as e:
             self._created.set_exception(e)
             return
 
-        while True:
+        while self._running:
             future, subcommand, args = yield from self._queue.get()
             try:
                 yield from self._execute(subcommand, args)

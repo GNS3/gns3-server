@@ -50,6 +50,16 @@ class BaseManager:
         return cls._instance
 
     @property
+    def module_name(self):
+        """
+        Returns the module name.
+
+        :returns: module name
+        """
+
+        return self.__class__.__name__
+
+    @property
     def port_manager(self):
         """
         Returns the port manager.

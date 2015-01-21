@@ -45,11 +45,10 @@ class VirtualBoxHandler:
                                                request.json["project_uuid"],
                                                request.json.get("uuid"),
                                                request.json["vmname"],
-                                               request.json.get("linked_clone", False))
+                                               request.json["linked_clone"],
+                                               console=request.json.get("console"))
         response.set_status(201)
-        response.json({"name": vm.name,
-                       "uuid": vm.uuid,
-                       "project_uuid": vm.project.uuid})
+        response.json(vm)
 
     @classmethod
     @Route.post(

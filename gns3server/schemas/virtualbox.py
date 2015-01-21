@@ -55,7 +55,7 @@ VBOX_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vmname"],
+    "required": ["name", "vmname", "linked_clone", "project_uuid"],
 }
 
 VBOX_OBJECT_SCHEMA = {
@@ -90,5 +90,5 @@ VBOX_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "uuid"]
+    "required": ["name", "uuid", "project_uuid"]
 }

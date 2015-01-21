@@ -16,14 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from tests.utils import asyncio_patch
-from gns3server.modules.virtualbox.virtualbox_vm import VirtualBoxVM
 
 
 def test_vbox_create(server, project):
-    response = server.post("/virtualbox", {"name": "VM1", "vmname": "VM1", "project_uuid": project.uuid}, example=True)
-    assert response.status == 201
-    assert response.route == "/virtualbox"
-    assert response.json["name"] == "VM1"
+
+    with asyncio_patch("gns3server.modules.VirtualBox.create_vm", return_value={"name": "VM1",
+                                                                                "uuid": "61d61bdd-aa7d-4912-817f-65a9eb54d3ab",
+                                                                                "project_uuid": project.uuid}):
+        response = server.post("/virtualbox", {"name": "VM1",
+                                               "vmname": "VM1",
+                                               "linked_clone": False,
+                                               "project_uuid": project.uuid},
+                               example=True)
+        assert response.status == 201
+        assert response.json["name"] == "VM1"
+        assert response.json["project_uuid"] == project.uuid
 
 
 def test_vbox_start(server):

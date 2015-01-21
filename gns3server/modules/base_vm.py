@@ -29,6 +29,10 @@ class BaseVM:
         self._project = project
         self._manager = manager
 
+        log.info("{module}: {name} [{uuid}] has been created".format(module=self.manager.module_name,
+                                                                     name=self.name,
+                                                                     uuid=self.uuid))
+
     # TODO: When delete release console ports
 
     @property
@@ -59,10 +63,10 @@ class BaseVM:
         :param new_name: name
         """
 
-        log.info("{module} {name} [{uuid}]: renamed to {new_name}".format(module=self.module_name,
-                                                                          name=self._name,
-                                                                          uuid=self.uuid,
-                                                                          new_name=new_name))
+        log.info("{module}: {name} [{uuid}]: renamed to {new_name}".format(module=self.manager.module_name,
+                                                                           name=self.name,
+                                                                           uuid=self.uuid,
+                                                                           new_name=new_name))
         self._name = new_name
 
     @property
@@ -91,7 +95,7 @@ class BaseVM:
         Return VM working directory
         """
 
-        return self._project.vm_working_directory(self.module_name, self._uuid)
+        return self._project.vm_working_directory(self.manager.module_name.lower(), self._uuid)
 
     def create(self):
         """

@@ -47,7 +47,7 @@ class Project:
 
         self._path = os.path.join(self._location, self._uuid)
         try:
-            os.makedirs(os.path.join(self._path, 'vms'), exist_ok=True)
+            os.makedirs(os.path.join(self._path, "vms"), exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
 
@@ -75,7 +75,7 @@ class Project:
         :param vm_uuid: VM UUID
         """
 
-        p = os.path.join(self._path, "vms", module, vm_uuid)
+        p = os.path.join(self._path, module, vm_uuid)
         try:
             os.makedirs(p, exist_ok=True)
         except FileExistsError:
