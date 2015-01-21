@@ -54,9 +54,10 @@ class VPCSVM(BaseVM):
     :param manager: parent VM Manager
     :param console: TCP console port
     :param script_file: A VPCS startup script
+    :param startup_script: Content of vpcs startup script file
     """
 
-    def __init__(self, name, uuid, project, manager, console=None, script_file=None):
+    def __init__(self, name, uuid, project, manager, console=None, script_file=None, startup_script=None):
 
         super().__init__(name, uuid, project, manager)
 
@@ -71,6 +72,8 @@ class VPCSVM(BaseVM):
 
         # VPCS settings
         self._script_file = script_file
+        if startup_script is not None:
+            self.startup_script = startup_script
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
         if self._console is not None:
@@ -107,7 +110,8 @@ class VPCSVM(BaseVM):
                 "uuid": self._uuid,
                 "console": self._console,
                 "project_uuid": self.project.uuid,
-                "script_file": self.script_file}
+                "script_file": self.script_file,
+                "startup_script": self.startup_script}
 
     @property
     def console(self):
@@ -146,6 +150,33 @@ class VPCSVM(BaseVM):
                                                                       new_name=new_name))
         BaseVM.name = new_name
 
+    @property
+    def startup_script(self):
+        """Return the content of the current startup script"""
+        if self._script_file is None:
+            return None
+        try:
+            with open(self._script_file) as f:
+                return f.read()
+        except OSError as e:
+            raise VPCSError("Can't read VPCS startup file '{}'".format(self._script_file))
+
+    @startup_script.setter
+    def startup_script(self, startup_script):
+        """
+        Update the startup script
+
+        :param startup_script The content of the vpcs startup script
+        """
+
+        if self._script_file is None:
+            self._script_file = os.path.join(self.working_dir, 'startup.vpcs')
+        try:
+            with open(self._script_file, '+w') as f:
+                f.write(startup_script)
+        except OSError as e:
+            raise VPCSError("Can't write VPCS startup file '{}'".format(self._script_file))
+
     @asyncio.coroutine
     def _check_vpcs_version(self):
         """
@@ -165,8 +196,8 @@ class VPCSVM(BaseVM):
 
     @asyncio.coroutine
     def _get_vpcs_welcome(self):
-        proc = yield from asyncio.create_subprocess_exec(' '.join([self._path, "-v"]), stdout=asyncio.subprocess.PIPE, cwd=self.working_dir)
-        out = yield from proc.stdout.readline()
+        proc = yield from asyncio.create_subprocess_exec(self._path, "-v", stdout=asyncio.subprocess.PIPE, cwd=self.working_dir)
+        out = yield from proc.stdout.read()
         return out.decode("utf-8")
 
     @asyncio.coroutine
@@ -357,8 +388,6 @@ class VPCSVM(BaseVM):
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:
-            print(nio)
-            print(isinstance(nio, NIO_UDP))
             if isinstance(nio, NIO_UDP):
                 # UDP tunnel
                 command.extend(["-s", str(nio.lport)])  # source UDP port

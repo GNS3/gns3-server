@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import os
 from tests.api.base import server, loop, project
 from tests.utils import asyncio_patch
 from unittest.mock import patch
@@ -38,13 +39,25 @@ def test_vpcs_create(server, project):
     assert response.json["script_file"] is None
 
 
-def test_vpcs_create_script_file(server, project):
-    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "script_file": "/tmp/test"})
+def test_vpcs_create_script_file(server, project, tmpdir):
+    path = os.path.join(str(tmpdir), "test")
+    with open(path, 'w+') as f:
+        f.write("ip 192.168.1.2")
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "script_file": path})
     assert response.status == 200
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_uuid"] == project.uuid
-    assert response.json["script_file"] == "/tmp/test"
+    assert response.json["script_file"] == path
+
+
+def test_vpcs_create_startup_script(server, project):
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "startup_script": "ip 192.168.1.2\necho TEST"})
+    assert response.status == 200
+    assert response.route == "/vpcs"
+    assert response.json["name"] == "PC TEST 1"
+    assert response.json["project_uuid"] == project.uuid
+    assert response.json["startup_script"] == "ip 192.168.1.2\necho TEST"
 
 
 def test_vpcs_create_port(server, project):

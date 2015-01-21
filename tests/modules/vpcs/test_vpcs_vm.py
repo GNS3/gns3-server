@@ -17,6 +17,7 @@
 
 import pytest
 import asyncio
+import os
 from tests.utils import asyncio_patch
 
 # TODO: Move loop to util
@@ -111,3 +112,27 @@ def test_port_remove_nio_binding(vm):
     nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     vm.port_remove_nio_binding(0)
     assert vm._ethernet_adapter.ports[0] is None
+
+
+def test_update_startup_script(vm):
+    content = "echo GNS3 VPCS\nip 192.168.1.2\n"
+    vm.startup_script = content
+    filepath = os.path.join(vm.working_dir, 'startup.vpcs')
+    assert os.path.exists(filepath)
+    with open(filepath) as f:
+        assert f.read() == content
+
+
+def test_update_startup_script(vm):
+    content = "echo GNS3 VPCS\nip 192.168.1.2\n"
+    vm.startup_script = content
+    filepath = os.path.join(vm.working_dir, 'startup.vpcs')
+    assert os.path.exists(filepath)
+    with open(filepath) as f:
+        assert f.read() == content
+
+
+def test_get_startup_script(vm):
+    content = "echo GNS3 VPCS\nip 192.168.1.2\n"
+    vm.startup_script = content
+    assert vm.startup_script == content

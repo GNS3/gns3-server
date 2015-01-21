@@ -9,7 +9,7 @@ POST /vpcs HTTP/1.1
 
 HTTP/1.1 200
 CONNECTION: close
-CONTENT-LENGTH: 185
+CONTENT-LENGTH: 213
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 aiohttp/0.13.1
@@ -20,5 +20,6 @@ X-ROUTE: /vpcs
     "name": "PC TEST 1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "script_file": null,
-    "uuid": "21e9a130-450e-41e4-8864-e5c83ba7aa80"
+    "startup_script": null,
+    "uuid": "009a7260-e44c-4349-8df7-08668a3c4e17"
 }

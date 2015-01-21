@@ -54,6 +54,10 @@ VPCS_CREATE_SCHEMA = {
             "description": "VPCS startup script",
             "type": ["string", "null"]
         },
+        "startup_script": {
+            "description": "Content of the VPCS startup script",
+            "type": ["string", "null"]
+        },
     },
     "additionalProperties": False,
     "required": ["name", "project_uuid"]
@@ -150,6 +154,10 @@ VPCS_OBJECT_SCHEMA = {
         },
         "script_file": {
             "description": "VPCS startup script",
+            "type": ["string", "null"]
+        },
+        "startup_script": {
+            "description": "Content of the VPCS startup script",
             "type": ["string", "null"]
         },
     },

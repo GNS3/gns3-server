@@ -46,7 +46,8 @@ class VPCSHandler:
                                        request.json["project_uuid"],
                                        request.json.get("uuid"),
                                        console=request.json.get("console"),
-                                       script_file=request.json.get("script_file"))
+                                       script_file=request.json.get("script_file"),
+                                       startup_script=request.json.get("startup_script"))
         response.json(vm)
 
     @classmethod
