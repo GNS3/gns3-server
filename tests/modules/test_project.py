@@ -48,4 +48,4 @@ def test_json(tmpdir):
 def test_vm_working_directory(tmpdir):
     p = Project(location=str(tmpdir))
     assert os.path.exists(p.vm_working_directory('vpcs', '00010203-0405-0607-0809-0a0b0c0d0e0f'))
-    assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vms', 'vpcs', '00010203-0405-0607-0809-0a0b0c0d0e0f'))
+    assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vpcs', '00010203-0405-0607-0809-0a0b0c0d0e0f'))

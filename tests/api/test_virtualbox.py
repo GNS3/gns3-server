@@ -15,14 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 from tests.utils import asyncio_patch
+
+
+@pytest.fixture(scope="module")
+def vm(server, project):
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True) as mock:
+        response = server.post("/virtualbox", {"name": "VM1",
+                                               "vmname": "VM1",
+                                               "linked_clone": False,
+                                               "project_uuid": project.uuid})
+    assert mock.called
+    assert response.status == 201
+    return response.json
 
 
 def test_vbox_create(server, project):
 
-    with asyncio_patch("gns3server.modules.VirtualBox.create_vm", return_value={"name": "VM1",
-                                                                                "uuid": "61d61bdd-aa7d-4912-817f-65a9eb54d3ab",
-                                                                                "project_uuid": project.uuid}):
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True):
         response = server.post("/virtualbox", {"name": "VM1",
                                                "vmname": "VM1",
                                                "linked_clone": False,
@@ -33,15 +44,29 @@ def test_vbox_create(server, project):
         assert response.json["project_uuid"] == project.uuid
 
 
-def test_vbox_start(server):
-    with asyncio_patch("gns3server.modules.VirtualBox.start_vm", return_value=True) as mock:
-        response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/start", {}, example=True)
+def test_vbox_start(server, vm):
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
+        response = server.post("/virtualbox/{}/start".format(vm["uuid"]))
         assert mock.called
         assert response.status == 204
 
 
-def test_vbox_stop(server):
-    with asyncio_patch("gns3server.modules.VirtualBox.stop_vm", return_value=True) as mock:
-        response = server.post("/virtualbox/61d61bdd-aa7d-4912-817f-65a9eb54d3ab/stop", {}, example=True)
+def test_vbox_stop(server, vm):
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.stop", return_value=True) as mock:
+        response = server.post("/virtualbox/{}/stop".format(vm["uuid"]))
+        assert mock.called
+        assert response.status == 204
+
+
+def test_vbox_suspend(server, vm):
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.suspend", return_value=True) as mock:
+        response = server.post("/virtualbox/{}/suspend".format(vm["uuid"]))
+        assert mock.called
+        assert response.status == 204
+
+
+def test_vbox_resume(server, vm):
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.resume", return_value=True) as mock:
+        response = server.post("/virtualbox/{}/resume".format(vm["uuid"]))
         assert mock.called
         assert response.status == 204

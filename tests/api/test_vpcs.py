@@ -18,8 +18,7 @@
 import pytest
 import os
 from tests.utils import asyncio_patch
-from unittest.mock import patch, Mock
-from gns3server.modules.vpcs.vpcs_vm import VPCSVM
+from unittest.mock import patch
 
 
 @pytest.fixture(scope="module")

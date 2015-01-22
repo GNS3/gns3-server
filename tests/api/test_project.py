@@ -20,10 +20,6 @@ This test suite check /project endpoint
 """
 
 
-from tests.utils import asyncio_patch
-from gns3server.version import __version__
-
-
 def test_create_project_with_dir(server, tmpdir):
     response = server.post("/project", {"location": str(tmpdir)})
     assert response.status == 200

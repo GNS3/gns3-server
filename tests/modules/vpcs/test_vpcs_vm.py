@@ -21,12 +21,10 @@ import os
 from tests.utils import asyncio_patch
 
 
-from asyncio.subprocess import Process
 from unittest.mock import patch, MagicMock
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 from gns3server.modules.vpcs.vpcs_error import VPCSError
 from gns3server.modules.vpcs import VPCS
-from gns3server.modules.port_manager import PortManager
 
 
 @pytest.fixture(scope="module")
