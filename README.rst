@@ -17,9 +17,10 @@ You must be connected to the Internet in order to install the dependencies.
 Dependencies:
 
 - Python 3.3 or above
-- Setuptools
-- Netifaces library
-- Jsonschema
+- aiohttp
+- setuptools
+- netifaces
+- jsonschema
 
 The following commands will install some of these dependencies:
 
