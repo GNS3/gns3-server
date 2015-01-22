@@ -126,20 +126,9 @@ class BaseManager:
             uuid = str(uuid4())
 
         vm = self._VM_CLASS(name, uuid, project, self, *args, **kwargs)
-        future = vm.create()
-        if isinstance(future, asyncio.Future):
-            yield from future
+        if asyncio.iscoroutinefunction(vm.create):
+            yield from vm.create()
+        else:
+            vm.create()
         self._vms[vm.uuid] = vm
         return vm
-
-    @asyncio.coroutine
-    def start_vm(self, uuid):
-
-        vm = self.get_vm(uuid)
-        yield from vm.start()
-
-    @asyncio.coroutine
-    def stop_vm(self, uuid):
-
-        vm = self.get_vm(uuid)
-        yield from vm.stop()

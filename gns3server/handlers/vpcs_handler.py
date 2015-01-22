@@ -102,10 +102,11 @@ class VPCSHandler:
             404: "VPCS instance doesn't exist"
         },
         description="Start a VPCS instance")
-    def create(request, response):
+    def start(request, response):
 
         vpcs_manager = VPCS.instance()
-        yield from vpcs_manager.start_vm(request.match_info["uuid"])
+        vm = vpcs_manager.get_vm(request.match_info["uuid"])
+        yield from vm.start()
         response.set_status(204)
 
     @classmethod
@@ -120,10 +121,11 @@ class VPCSHandler:
             404: "VPCS instance doesn't exist"
         },
         description="Stop a VPCS instance")
-    def create(request, response):
+    def stop(request, response):
 
         vpcs_manager = VPCS.instance()
-        yield from vpcs_manager.stop_vm(request.match_info["uuid"])
+        vm = vpcs_manager.get_vm(request.match_info["uuid"])
+        yield from vm.stop()
         response.set_status(204)
 
     @Route.post(

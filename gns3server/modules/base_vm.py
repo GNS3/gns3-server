@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -29,9 +28,9 @@ class BaseVM:
         self._project = project
         self._manager = manager
 
-        log.info("{module}: {name} [{uuid}] has been created".format(module=self.manager.module_name,
-                                                                     name=self.name,
-                                                                     uuid=self.uuid))
+        log.debug("{module}: {name} [{uuid}] initialized".format(module=self.manager.module_name,
+                                                                 name=self.name,
+                                                                 uuid=self.uuid))
 
     # TODO: When delete release console ports
 
@@ -63,10 +62,10 @@ class BaseVM:
         :param new_name: name
         """
 
-        log.info("{module}: {name} [{uuid}]: renamed to {new_name}".format(module=self.manager.module_name,
-                                                                           name=self.name,
-                                                                           uuid=self.uuid,
-                                                                           new_name=new_name))
+        log.info("{module}: {name} [{uuid}] renamed to {new_name}".format(module=self.manager.module_name,
+                                                                          name=self.name,
+                                                                          uuid=self.uuid,
+                                                                          new_name=new_name))
         self._name = new_name
 
     @property
@@ -102,7 +101,9 @@ class BaseVM:
         Creates the VM.
         """
 
-        return
+        log.info("{module}: {name} [{uuid}] created".format(module=self.manager.module_name,
+                                                            name=self.name,
+                                                            uuid=self.uuid))
 
     def start(self):
         """

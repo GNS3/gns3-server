@@ -27,6 +27,7 @@ class ProjectManager:
     """
 
     def __init__(self):
+
         self._projects = {}
 
     @classmethod

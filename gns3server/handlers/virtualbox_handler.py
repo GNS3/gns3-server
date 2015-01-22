@@ -62,10 +62,11 @@ class VirtualBoxHandler:
             404: "VirtualBox VM instance doesn't exist"
         },
         description="Start a VirtualBox VM instance")
-    def create(request, response):
+    def start(request, response):
 
         vbox_manager = VirtualBox.instance()
-        yield from vbox_manager.start_vm(request.match_info["uuid"])
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        yield from vm.start()
         response.set_status(204)
 
     @classmethod
@@ -80,8 +81,9 @@ class VirtualBoxHandler:
             404: "VirtualBox VM instance doesn't exist"
         },
         description="Stop a VirtualBox VM instance")
-    def create(request, response):
+    def stop(request, response):
 
         vbox_manager = VirtualBox.instance()
-        yield from vbox_manager.stop_vm(request.match_info["uuid"])
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        yield from vm.stop()
         response.set_status(204)
