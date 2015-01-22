@@ -94,7 +94,7 @@ class VPCSHandler:
     @Route.delete(
         r"/vpcs/{uuid}",
         status_codes={
-            204: "VPCS instance updated",
+            204: "VPCS instance deleted",
             404: "VPCS instance doesn't exist"
         },
         description="Delete a VPCS instance")
