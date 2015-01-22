@@ -31,15 +31,16 @@ class VPCS(BaseManager):
 
     def __init__(self):
         super().__init__()
-        self._free_mac_ids = list(range(0, 255))
+        self._free_mac_ids = {}
         self._used_mac_ids = {}
 
     @asyncio.coroutine
     def create_vm(self, *args, **kwargs):
 
         vm = yield from super().create_vm(*args, **kwargs)
+        self._free_mac_ids.setdefault(vm.project.uuid, list(range(0, 255)))
         try:
-            self._used_mac_ids[vm.uuid] = self._free_mac_ids.pop(0)
+            self._used_mac_ids[vm.uuid] = self._free_mac_ids[vm.project.uuid].pop(0)
         except IndexError:
             raise VPCSError("No mac address available")
         return vm
@@ -47,8 +48,9 @@ class VPCS(BaseManager):
     @asyncio.coroutine
     def delete_vm(self, uuid, *args, **kwargs):
 
+        vm = self.get_vm(uuid)
         i = self._used_mac_ids[uuid]
-        self._free_mac_ids.insert(0, i)
+        self._free_mac_ids[vm.project.uuid].insert(0, i)
         del self._used_mac_ids[uuid]
         yield from super().delete_vm(uuid, *args, **kwargs)
 

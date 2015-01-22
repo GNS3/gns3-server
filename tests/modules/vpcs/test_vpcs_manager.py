@@ -44,6 +44,24 @@ def test_get_mac_id(loop, project, port_manager):
     assert vpcs.get_mac_id(vm3_uuid) == 0
 
 
+def test_get_mac_id_multiple_project(loop, port_manager):
+    # Cleanup the VPCS object
+    VPCS._instance = None
+    vpcs = VPCS.instance()
+    vpcs.port_manager = port_manager
+    vm1_uuid = str(uuid.uuid4())
+    vm2_uuid = str(uuid.uuid4())
+    vm3_uuid = str(uuid.uuid4())
+    project1 = ProjectManager.instance().create_project()
+    project2 = ProjectManager.instance().create_project()
+    loop.run_until_complete(vpcs.create_vm("PC 1", project1.uuid, vm1_uuid))
+    loop.run_until_complete(vpcs.create_vm("PC 2", project1.uuid, vm2_uuid))
+    loop.run_until_complete(vpcs.create_vm("PC 2", project2.uuid, vm3_uuid))
+    assert vpcs.get_mac_id(vm1_uuid) == 0
+    assert vpcs.get_mac_id(vm2_uuid) == 1
+    assert vpcs.get_mac_id(vm3_uuid) == 0
+
+
 def test_get_mac_id_no_id_available(loop, project, port_manager):
     # Cleanup the VPCS object
     VPCS._instance = None
