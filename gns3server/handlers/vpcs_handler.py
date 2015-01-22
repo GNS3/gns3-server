@@ -198,5 +198,5 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
-        nio = vm.reload()
+        yield from vm.reload()
         response.set_status(204)
