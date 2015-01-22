@@ -74,6 +74,7 @@ class VPCSHandler:
         r"/vpcs/{uuid}",
         status_codes={
             200: "VPCS instance updated",
+            404: "VPCS instance doesn't exist",
             409: "Conflict"
         },
         description="Update a VPCS instance",
@@ -87,8 +88,20 @@ class VPCSHandler:
         vm.console = request.json.get("console", vm.console)
         vm.script_file = request.json.get("script_file", vm.script_file)
         vm.startup_script = request.json.get("startup_script", vm.startup_script)
-
         response.json(vm)
+
+    @classmethod
+    @Route.delete(
+        r"/vpcs/{uuid}",
+        status_codes={
+            204: "VPCS instance updated",
+            404: "VPCS instance doesn't exist"
+        },
+        description="Delete a VPCS instance")
+    def delete(request, response):
+
+        yield from VPCS.instance().delete_vm(request.match_info["uuid"])
+        response.set_status(204)
 
     @classmethod
     @Route.post(

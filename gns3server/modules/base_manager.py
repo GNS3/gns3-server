@@ -132,3 +132,18 @@ class BaseManager:
             vm.create()
         self._vms[vm.uuid] = vm
         return vm
+
+    @asyncio.coroutine
+    def delete_vm(self, uuid):
+        """
+        Delete a VM
+
+        :param uuid: VM UUID
+        """
+
+        vm = self.get_vm(uuid)
+        if asyncio.iscoroutinefunction(vm.destroy):
+            yield from vm.destroy()
+        else:
+            vm.destroy()
+        del self._vms[vm.uuid]

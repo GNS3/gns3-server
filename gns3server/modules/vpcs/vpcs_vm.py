@@ -82,7 +82,13 @@ class VPCSVM(BaseVM):
             self._console = self._manager.port_manager.get_free_console_port()
 
     def __del__(self):
+        self.destroy()
+
+    def destroy(self):
         self._kill_process()
+        if self._console:
+            self._manager.port_manager.release_console_port(self._console)
+            self._console = None
 
     @asyncio.coroutine
     def _check_requirements(self):

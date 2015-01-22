@@ -126,6 +126,13 @@ def test_vpcs_reload(server, vm):
         assert response.status == 204
 
 
+def test_vpcs_delete(server, vm):
+    with asyncio_patch("gns3server.modules.vpcs.VPCS.delete_vm", return_value=True) as mock:
+        response = server.delete("/vpcs/{}".format(vm["uuid"]))
+        assert mock.called
+        assert response.status == 204
+
+
 def test_vpcs_update(server, vm, tmpdir, free_console_port):
     path = os.path.join(str(tmpdir), 'startup2.vpcs')
     with open(path, 'w+') as f:
