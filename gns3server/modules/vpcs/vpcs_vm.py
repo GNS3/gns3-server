@@ -415,8 +415,7 @@ class VPCSVM(BaseVM):
                 command.extend(["-e"])
                 command.extend(["-d", nio.tap_vm])
 
-        # FIXME: find workaround
-        # command.extend(["-m", str(self._id)])   # the unique ID is used to set the MAC address offset
+        command.extend(["-m", str(self._manager.get_mac_id(self._uuid))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
         if self._script_file:

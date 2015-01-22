@@ -53,6 +53,8 @@ def _get_unused_port():
 
 @pytest.fixture(scope="session")
 def server(request, loop, port_manager):
+    """A GNS 3 server"""
+
     port = _get_unused_port()
     host = "localhost"
     app = web.Application()
@@ -75,16 +77,22 @@ def server(request, loop, port_manager):
 
 @pytest.fixture(scope="module")
 def project():
+    """A GNS3 lab"""
+
     return ProjectManager.instance().create_project(uuid="a1e920ca-338a-4e9f-b363-aa607b09dd80")
 
 
 @pytest.fixture(scope="session")
 def port_manager():
+    """An instance of port manager"""
+
     return PortManager("127.0.0.1", False)
 
 
 @pytest.fixture(scope="function")
 def free_console_port(request, port_manager):
+    """Get a free TCP port"""
+
     # In case of already use ports we will raise an exception
     port = port_manager.get_free_console_port()
     # We release the port immediately in order to allow

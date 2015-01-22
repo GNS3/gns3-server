@@ -19,9 +19,45 @@
 VPCS server module.
 """
 
+import asyncio
+
 from ..base_manager import BaseManager
+from .vpcs_error import VPCSError
 from .vpcs_vm import VPCSVM
 
 
 class VPCS(BaseManager):
     _VM_CLASS = VPCSVM
+
+    def __init__(self):
+        super().__init__()
+        self._free_mac_ids = list(range(0, 255))
+        self._used_mac_ids = {}
+
+    @asyncio.coroutine
+    def create_vm(self, *args, **kwargs):
+
+        vm = yield from super().create_vm(*args, **kwargs)
+        try:
+            self._used_mac_ids[vm.uuid] = self._free_mac_ids.pop(0)
+        except IndexError:
+            raise VPCSError("No mac address available")
+        return vm
+
+    @asyncio.coroutine
+    def delete_vm(self, uuid, *args, **kwargs):
+
+        i = self._used_mac_ids[uuid]
+        self._free_mac_ids.insert(0, i)
+        del self._used_mac_ids[uuid]
+        yield from super().delete_vm(uuid, *args, **kwargs)
+
+    def get_mac_id(self, vm_uuid):
+        """
+        Get an unique VPCS mac id
+
+        :param vm_uuid: UUID of the VPCS vm
+        :returns: VPCS Mac id
+        """
+
+        return self._used_mac_ids.get(vm_uuid, 1)
