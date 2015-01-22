@@ -70,12 +70,12 @@ class VirtualBoxVM(BaseVM):
         self._adapter_start_index = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
-        #TODO: finish adapters support
-        #self.adapters = 2  # creates 2 adapters by default
+        # TODO: finish adapters support
+        # self.adapters = 2  # creates 2 adapters by default
 
     def __json__(self):
 
-        #TODO: send more info
+        # TODO: send more info
         # {"name": self._name,
         #  "vmname": self._vmname,
         #  "adapters": self.adapters,
@@ -96,7 +96,7 @@ class VirtualBoxVM(BaseVM):
         command.extend(args)
         try:
             if self._vbox_user and self._vbox_user.strip():
-                #TODO: test & review this part
+                # TODO: test & review this part
                 sudo_command = "sudo -i -u {}".format(self._vbox_user.strip()) + " ".join(command)
                 process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             else:
@@ -194,7 +194,7 @@ class VirtualBoxVM(BaseVM):
         log.info("VirtualBox VM '{name}' [{uuid}] created".format(name=self.name, uuid=self.uuid))
 
         if self._linked_clone:
-            #TODO: finish linked clone support
+            # TODO: finish linked clone support
             if self.uuid and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
                 self._execute("registervm", [vbox_file])
