@@ -81,9 +81,6 @@ class VPCSVM(BaseVM):
         else:
             self._console = self._manager.port_manager.get_free_console_port()
 
-    def __del__(self):
-        self.destroy()
-
     def destroy(self):
         self._kill_process()
         if self._console:

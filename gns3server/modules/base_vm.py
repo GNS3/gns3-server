@@ -32,7 +32,8 @@ class BaseVM:
                                                                  name=self.name,
                                                                  uuid=self.uuid))
 
-    # TODO: When delete release console ports
+    def __del__(self):
+        self.destroy()
 
     @property
     def project(self):
@@ -115,6 +116,13 @@ class BaseVM:
     def stop(self):
         """
         Starts the VM process.
+        """
+
+        raise NotImplementedError
+
+    def destroy(self):
+        """
+        Destroy the VM process.
         """
 
         raise NotImplementedError

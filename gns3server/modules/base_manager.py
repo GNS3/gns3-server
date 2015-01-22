@@ -49,6 +49,13 @@ class BaseManager:
             cls._instance = cls()
         return cls._instance
 
+    def __del__(self):
+        self.destroy()
+
+    def destroy():
+        """Cleanup the VMS. Call this before closing the server"""
+        cls._instance()
+
     @property
     def module_name(self):
         """

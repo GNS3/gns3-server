@@ -77,7 +77,10 @@ class Server:
         Cleanup the modules (shutdown running emulators etc.)
         """
 
-        # TODO: clean everything from here
+        for module in MODULES:
+            log.debug("Unloading module {}".format(module.__name__))
+            m = module.instance()
+            m.destroy()
         self._loop.stop()
 
     def _signal_handling(self):
@@ -152,8 +155,4 @@ class Server:
 
         # FIXME: remove it in production or in tests
         self._loop.call_later(1, self._reload_hook)
-        try:
-            self._loop.run_forever()
-        except KeyboardInterrupt:
-            log.info("\nExiting...")
-            self._cleanup()
+        self._loop.run_forever()
