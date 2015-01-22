@@ -75,14 +75,12 @@ class Project:
         :param vm_uuid: VM UUID
         """
 
-        p = os.path.join(self._path, module, vm_uuid)
+        workdir = os.path.join(self._path, module, vm_uuid)
         try:
-            os.makedirs(p, exist_ok=True)
-        except FileExistsError:
-            pass
+            os.makedirs(workdir, exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create VM working directory: {}".format(e))
-        return p
+        return workdir
 
     def __json__(self):
 

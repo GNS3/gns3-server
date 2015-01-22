@@ -87,3 +87,41 @@ class VirtualBoxHandler:
         vm = vbox_manager.get_vm(request.match_info["uuid"])
         yield from vm.stop()
         response.set_status(204)
+
+    @classmethod
+    @Route.post(
+        r"/virtualbox/{uuid}/suspend",
+        parameters={
+            "uuid": "VirtualBox VM instance UUID"
+        },
+        status_codes={
+            204: "VirtualBox VM instance suspended",
+            400: "Invalid VirtualBox VM instance UUID",
+            404: "VirtualBox VM instance doesn't exist"
+        },
+        description="Suspend a VirtualBox VM instance")
+    def suspend(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        yield from vm.suspend()
+        response.set_status(204)
+
+    @classmethod
+    @Route.post(
+        r"/virtualbox/{uuid}/resume",
+        parameters={
+            "uuid": "VirtualBox VM instance UUID"
+        },
+        status_codes={
+            204: "VirtualBox VM instance resumed",
+            400: "Invalid VirtualBox VM instance UUID",
+            404: "VirtualBox VM instance doesn't exist"
+        },
+        description="Resume a suspended VirtualBox VM instance")
+    def suspend(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        yield from vm.resume()
+        response.set_status(204)
