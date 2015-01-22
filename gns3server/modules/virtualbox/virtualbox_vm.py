@@ -27,10 +27,10 @@ import subprocess
 import tempfile
 import json
 import socket
-import time
 import asyncio
 import shutil
 
+from pkg_resources import parse_version
 from .virtualbox_error import VirtualBoxError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from .telnet_server import TelnetServer
@@ -49,65 +49,41 @@ class VirtualBoxVM(BaseVM):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, uuid, project, manager, vmname, linked_clone, console=None):
+    def __init__(self, name, uuid, project, manager, vmname, linked_clone, console=None, vbox_user=None):
 
         super().__init__(name, uuid, project, manager)
 
-        # look for VBoxManage
-        self._vboxmanage_path = manager.config.get_section_config("VirtualBox").get("vboxmanage_path")
-        if not self._vboxmanage_path:
-            if sys.platform.startswith("win"):
-                if "VBOX_INSTALL_PATH" in os.environ:
-                    self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
-                elif "VBOX_MSI_INSTALL_PATH" in os.environ:
-                    self._vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
-            elif sys.platform.startswith("darwin"):
-                self._vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
-            else:
-                self._vboxmanage_path = shutil.which("vboxmanage")
-
-        if not self._vboxmanage_path:
-            raise VirtualBoxError("Could not find VBoxManage")
-        if not os.access(self._vboxmanage_path, os.X_OK):
-            raise VirtualBoxError("VBoxManage is not executable")
-
-        self._started = False
+        self._vboxmanage_path = None
+        self._maximum_adapters = 8
         self._linked_clone = linked_clone
+        self._vbox_user = vbox_user
         self._system_properties = {}
-        self._queue = asyncio.Queue()
-        self._created = asyncio.Future()
-        self._running = True
-        self._worker = asyncio.async(self._run())
+        self._telnet_server_thread = None
+        self._serial_pipe = None
 
         # VirtualBox settings
         self._console = console
         self._ethernet_adapters = []
         self._headless = False
-        self._enable_remote_console = True
+        self._enable_remote_console = False
         self._vmname = vmname
         self._adapter_start_index = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
-        if linked_clone:
-            if uuid and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
-                vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
-                self._execute("registervm", [vbox_file])
-                self._reattach_hdds()
-            else:
-                self._create_linked_clone()
-
-        #self._maximum_adapters = 8
+        #TODO: finish adapters support
         #self.adapters = 2  # creates 2 adapters by default
 
-        return
-
-        self._command = []
-        self._vbox_user = vbox_user
-
-        self._telnet_server_thread = None
-        self._serial_pipe = None
-
     def __json__(self):
+
+        #TODO: send more info
+        # {"name": self._name,
+        #  "vmname": self._vmname,
+        #  "adapters": self.adapters,
+        #  "adapter_start_index": self._adapter_start_index,
+        #  "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+        #  "console": self._console,
+        #  "enable_remote_console": self._enable_remote_console,
+        #  "headless": self._headless}
 
         return {"name": self.name,
                 "uuid": self.uuid,
@@ -119,7 +95,12 @@ class VirtualBoxVM(BaseVM):
         command = [self._vboxmanage_path, "--nologo", subcommand]
         command.extend(args)
         try:
-            process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            if self._vbox_user and self._vbox_user.strip():
+                #TODO: test & review this part
+                sudo_command = "sudo -i -u {}".format(self._vbox_user.strip()) + " ".join(command)
+                process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            else:
+                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         except (OSError, subprocess.SubprocessError) as e:
             raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
 
@@ -147,96 +128,175 @@ class VirtualBoxVM(BaseVM):
             self._system_properties[name.strip()] = value.strip()
 
     @asyncio.coroutine
-    def _run(self):
+    def _get_vm_state(self):
+        """
+        Returns the VM state (e.g. running, paused etc.)
 
-        try:
-            yield from self._get_system_properties()
-            #TODO: check for API version
-            self._created.set_result(True)
-        except VirtualBoxError as e:
-            self._created.set_exception(e)
-            return
+        :returns: state (string)
+        """
 
-        while self._running:
-            future, subcommand, args = yield from self._queue.get()
-            try:
-                yield from self._execute(subcommand, args)
-                future.set_result(True)
-            except VirtualBoxError as e:
-                future.set_exception(e)
+        results = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        for info in results:
+            name, value = info.split('=', 1)
+            if name == "VMState":
+                return value.strip('"')
+        raise VirtualBoxError("Could not get VM state for {}".format(self._vmname))
 
+    @asyncio.coroutine
+    def _control_vm(self, params):
+        """
+        Change setting in this VM when running.
+
+        :param params: params to use with sub-command controlvm
+
+        :returns: result of the command.
+        """
+
+        args = shlex.split(params)
+        result = yield from self._execute("controlvm", [self._vmname] + args)
+        return result
+
+    @asyncio.coroutine
+    def _modify_vm(self, params):
+        """
+        Change setting in this VM when not running.
+
+        :param params: params to use with sub-command modifyvm
+        """
+
+        args = shlex.split(params)
+        yield from self._execute("modifyvm", [self._vmname] + args)
+
+    @asyncio.coroutine
     def create(self):
 
-        return self._created
+        # look for VBoxManage
+        self._vboxmanage_path = self.manager.config.get_section_config("VirtualBox").get("vboxmanage_path")
+        if not self._vboxmanage_path:
+            if sys.platform.startswith("win"):
+                if "VBOX_INSTALL_PATH" in os.environ:
+                    self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+                elif "VBOX_MSI_INSTALL_PATH" in os.environ:
+                    self._vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
+            elif sys.platform.startswith("darwin"):
+                self._vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
+            else:
+                self._vboxmanage_path = shutil.which("vboxmanage")
 
-    def _put(self, item):
+        if not self._vboxmanage_path:
+            raise VirtualBoxError("Could not find VBoxManage")
+        if not os.access(self._vboxmanage_path, os.X_OK):
+            raise VirtualBoxError("VBoxManage is not executable")
 
-        try:
-            self._queue.put_nowait(item)
-        except asyncio.qeues.QueueFull:
-            raise VirtualBoxError("Queue is full")
+        yield from self._get_system_properties()
+        if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
+            raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
+        log.info("VirtualBox VM '{name}' [{uuid}] created".format(name=self.name, uuid=self.uuid))
 
+        if self._linked_clone:
+            #TODO: finish linked clone support
+            if self.uuid and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
+                vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
+                self._execute("registervm", [vbox_file])
+                self._reattach_hdds()
+            else:
+                self._create_linked_clone()
+
+    @asyncio.coroutine
     def start(self):
+        """
+        Starts this VirtualBox VM.
+        """
 
-        args = [self._name]
-        future = asyncio.Future()
-        self._put((future, "startvm", args))
-        return future
+        # resume the VM if it is paused
+        vm_state = yield from self._get_vm_state()
+        if vm_state == "paused":
+            yield from self.resume()
+            return
 
+        # VM must be powered off and in saved state to start it
+        if vm_state != "poweroff" and vm_state != "saved":
+            raise VirtualBoxError("VirtualBox VM not powered off or saved")
+
+        yield from self._set_network_options()
+        yield from self._set_serial_console()
+
+        args = [self._vmname]
+        if self._headless:
+            args.extend(["--type", "headless"])
+        result = yield from self._execute("startvm", args)
+        log.info("VirtualBox VM '{name}' [{uuid}] started".format(name=self.name, uuid=self.uuid))
+        log.debug("Start result: {}".format(result))
+
+        # add a guest property to let the VM know about the GNS3 name
+        yield from self._execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
+        # add a guest property to let the VM know about the GNS3 project directory
+        yield from self._execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
+
+        if self._enable_remote_console:
+            self._start_remote_console()
+
+    @asyncio.coroutine
     def stop(self):
-
-        args = [self._name, "poweroff"]
-        future = asyncio.Future()
-        self._put((future, "controlvm", args))
-        return future
-
-    def defaults(self):
         """
-        Returns all the default attribute values for this VirtualBox VM.
-
-        :returns: default values (dictionary)
+        Stops this VirtualBox VM.
         """
 
-        vbox_defaults = {"name": self._name,
-                         "vmname": self._vmname,
-                         "adapters": self.adapters,
-                         "adapter_start_index": self._adapter_start_index,
-                         "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
-                         "console": self._console,
-                         "enable_remote_console": self._enable_remote_console,
-                         "headless": self._headless}
+        self._stop_remote_console()
+        vm_state = yield from self._get_vm_state()
+        if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
+            # power off the VM
+            result = yield from self._control_vm("poweroff")
+            log.info("VirtualBox VM '{name}' [{uuid}] stopped".format(name=self.name, uuid=self.uuid))
+            log.debug("Stop result: {}".format(result))
 
-        return vbox_defaults
+            yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
+            try:
+                # deactivate the first serial port
+                yield from self._modify_vm("--uart1 off")
+            except VirtualBoxError as e:
+                log.warn("Could not deactivate the first serial port: {}".format(e))
 
-    @property
-    def working_dir(self):
+            for adapter_id in range(0, len(self._ethernet_adapters)):
+                if self._ethernet_adapters[adapter_id] is None:
+                    continue
+                yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
+                yield from self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
+                yield from self._modify_vm("--nic{} null".format(adapter_id + 1))
+
+    @asyncio.coroutine
+    def suspend(self):
         """
-        Returns current working directory
-
-        :returns: path to the working directory
+        Suspends this VirtualBox VM.
         """
 
-        return self._working_dir
+        vm_state = yield from self._get_vm_state()
+        if vm_state == "running":
+            yield from self._control_vm("pause")
+            log.info("VirtualBox VM '{name}' [{uuid}] suspended".format(name=self.name, uuid=self.uuid))
+        else:
+            log.warn("VirtualBox VM '{name}' [{uuid}] cannot be suspended, current state: {state}".format(name=self.name,
+                                                                                                          uuid=self.uuid,
+                                                                                                          state=vm_state))
 
-    @working_dir.setter
-    def working_dir(self, working_dir):
+    @asyncio.coroutine
+    def resume(self):
         """
-        Sets the working directory this VirtualBox VM.
-
-        :param working_dir: path to the working directory
+        Resumes this VirtualBox VM.
         """
 
-        try:
-            os.makedirs(working_dir)
-        except FileExistsError:
-            pass
-        except OSError as e:
-            raise VirtualBoxError("Could not create working directory {}: {}".format(working_dir, e))
+        yield from self._control_vm("resume")
+        log.info("VirtualBox VM '{name}' [{uuid}] resumed".format(name=self.name, uuid=self.uuid))
 
-        self._working_dir = working_dir
-        log.info("VirtualBox VM {name} [id={id}]: working directory changed to {wd}".format(name=self._name,
-                                                                                            id=self._id,
-                                                                                            wd=self._working_dir))
+    @asyncio.coroutine
+    def reload(self):
+        """
+        Reloads this VirtualBox VM.
+        """
+
+        result = yield from self._control_vm("reset")
+        log.info("VirtualBox VM '{name}' [{uuid}] reloaded".format(name=self.name, uuid=self.uuid))
+        log.debug("Reload result: {}".format(result))
 
     @property
     def console(self):
@@ -370,8 +430,8 @@ class VirtualBoxVM(BaseVM):
         #                                                                                error=e))
         #    return
 
-        log.info("VirtualBox VM {name} [id={id}] has been deleted (including associated files)".format(name=self._name,
-                                                                                                       id=self._id))
+        log.info("VirtualBox VM '{name}' [{uuid}] has been deleted (including associated files)".format(name=self.name,
+                                                                                                        uuid=self.uuid))
 
     @property
     def headless(self):
@@ -392,9 +452,9 @@ class VirtualBoxVM(BaseVM):
         """
 
         if headless:
-            log.info("VirtualBox VM {name} [id={id}] has enabled the headless mode".format(name=self._name, id=self._id))
+            log.info("VirtualBox VM '{name}' [{uuid}] has enabled the headless mode".format(name=self.name, uuid=self.uuid))
         else:
-            log.info("VirtualBox VM {name} [id={id}] has disabled the headless mode".format(name=self._name, id=self._id))
+            log.info("VirtualBox VM '{name}' [{uuid}] has disabled the headless mode".format(name=self.name, uuid=self.uuid))
         self._headless = headless
 
     @property
@@ -416,10 +476,10 @@ class VirtualBoxVM(BaseVM):
         """
 
         if enable_remote_console:
-            log.info("VirtualBox VM {name} [id={id}] has enabled the console".format(name=self._name, id=self._id))
+            log.info("VirtualBox VM '{name}' [{uuid}] has enabled the console".format(name=self.name, uuid=self.uuid))
             self._start_remote_console()
         else:
-            log.info("VirtualBox VM {name} [id={id}] has disabled the console".format(name=self._name, id=self._id))
+            log.info("VirtualBox VM '{name}' [{uuid}] has disabled the console".format(name=self.name, uuid=self.uuid))
             self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
@@ -441,7 +501,7 @@ class VirtualBoxVM(BaseVM):
         :param vmname: VirtualBox VM name
         """
 
-        log.info("VirtualBox VM {name} [id={id}] has set the VM name to {vmname}".format(name=self._name, id=self._id, vmname=vmname))
+        log.info("VirtualBox VM '{name}' [{uuid}] has set the VM name to '{vmname}'".format(name=self.name, uuid=self.uuid, vmname=vmname))
         if self._linked_clone:
             self._modify_vm('--name "{}"'.format(vmname))
         self._vmname = vmname
@@ -476,9 +536,9 @@ class VirtualBoxVM(BaseVM):
                 continue
             self._ethernet_adapters.append(EthernetAdapter())
 
-        log.info("VirtualBox VM {name} [id={id}]: number of Ethernet adapters changed to {adapters}".format(name=self._name,
-                                                                                                            id=self._id,
-                                                                                                            adapters=adapters))
+        log.info("VirtualBox VM '{name}' [{uuid}]: number of Ethernet adapters changed to {adapters}".format(name=self.name,
+                                                                                                             uuid=self.uuid,
+                                                                                                             adapters=adapters))
 
     @property
     def adapter_start_index(self):
@@ -500,9 +560,9 @@ class VirtualBoxVM(BaseVM):
 
         self._adapter_start_index = adapter_start_index
         self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
-        log.info("VirtualBox VM {name} [id={id}]: adapter start index changed to {index}".format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 index=adapter_start_index))
+        log.info("VirtualBox VM '{name}' [{uuid}]: adapter start index changed to {index}".format(name=self.name,
+                                                                                                  uuid=self.uuid,
+                                                                                                  index=adapter_start_index))
 
     @property
     def adapter_type(self):
@@ -524,42 +584,11 @@ class VirtualBoxVM(BaseVM):
 
         self._adapter_type = adapter_type
 
-        log.info("VirtualBox VM {name} [id={id}]: adapter type changed to {adapter_type}".format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 adapter_type=adapter_type))
+        log.info("VirtualBox VM '{name}' [{uuid}]: adapter type changed to {adapter_type}".format(name=self.name,
+                                                                                                  uuid=self.uuid,
+                                                                                                  adapter_type=adapter_type))
 
-    def _old_execute(self, subcommand, args, timeout=60):
-        """
-        Executes a command with VBoxManage.
-
-        :param subcommand: vboxmanage subcommand (e.g. modifyvm, controlvm etc.)
-        :param args: arguments for the subcommand.
-        :param timeout: how long to wait for vboxmanage
-
-        :returns: result (list)
-        """
-
-        command = [self._vboxmanage_path, "--nologo", subcommand]
-        command.extend(args)
-        log.debug("Execute vboxmanage command: {}".format(command))
-        user = self._vbox_user
-        try:
-            if not user.strip() or sys.platform.startswith("win") or sys.platform.startswith("darwin"):
-                result = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=timeout)
-            else:
-                sudo_command = "sudo -i -u " + user.strip() + " " + " ".join(command)
-                result = subprocess.check_output(sudo_command, stderr=subprocess.STDOUT, shell=True, timeout=timeout)
-        except subprocess.CalledProcessError as e:
-            if e.output:
-                # only the first line of the output is useful
-                virtualbox_error = e.output.decode("utf-8").splitlines()[0]
-                raise VirtualBoxError("{}".format(virtualbox_error))
-            else:
-                raise VirtualBoxError("{}".format(e))
-        except (OSError, subprocess.SubprocessError) as e:
-            raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
-        return result.decode("utf-8", errors="ignore").splitlines()
-
+    @asyncio.coroutine
     def _get_vm_info(self):
         """
         Returns this VM info.
@@ -568,7 +597,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         vm_info = {}
-        results = self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        results = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
             try:
                 name, value = info.split('=', 1)
@@ -577,20 +606,7 @@ class VirtualBoxVM(BaseVM):
             vm_info[name.strip('"')] = value.strip('"')
         return vm_info
 
-    def _get_vm_state(self):
-        """
-        Returns this VM state (e.g. running, paused etc.)
-
-        :returns: state (string)
-        """
-
-        results = self._execute("showvminfo", [self._vmname, "--machinereadable"])
-        for info in results:
-            name, value = info.split('=', 1)
-            if name == "VMState":
-                return value.strip('"')
-        raise VirtualBoxError("Could not get VM state for {}".format(self._vmname))
-
+    @asyncio.coroutine
     def _get_maximum_supported_adapters(self):
         """
         Returns the maximum adapters supported by this VM.
@@ -599,7 +615,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         # check the maximum number of adapters supported by the VM
-        vm_info = self._get_vm_info()
+        vm_info = yield from self._get_vm_info()
         chipset = vm_info["chipset"]
         maximum_adapters = 8
         if chipset == "ich9":
@@ -615,46 +631,25 @@ class VirtualBoxVM(BaseVM):
 
         p = re.compile('\s+', re.UNICODE)
         pipe_name = p.sub("_", self._vmname)
-        if sys.platform.startswith('win'):
+        if sys.platform.startswith("win"):
             pipe_name = r"\\.\pipe\VBOX\{}".format(pipe_name)
         else:
             pipe_name = os.path.join(tempfile.gettempdir(), "pipe_{}".format(pipe_name))
         return pipe_name
 
+    @asyncio.coroutine
     def _set_serial_console(self):
         """
         Configures the first serial port to allow a serial console connection.
         """
 
         # activate the first serial port
-        self._modify_vm("--uart1 0x3F8 4")
+        yield from self._modify_vm("--uart1 0x3F8 4")
 
         # set server mode with a pipe on the first serial port
         pipe_name = self._get_pipe_name()
         args = [self._vmname, "--uartmode1", "server", pipe_name]
-        self._execute("modifyvm", args)
-
-    def _modify_vm(self, params):
-        """
-        Change setting in this VM when not running.
-
-        :param params: params to use with sub-command modifyvm
-        """
-
-        args = shlex.split(params)
-        self._execute("modifyvm", [self._vmname] + args)
-
-    def _control_vm(self, params):
-        """
-        Change setting in this VM when running.
-
-        :param params: params to use with sub-command controlvm
-
-        :returns: result of the command.
-        """
-
-        args = shlex.split(params)
-        return self._execute("controlvm", [self._vmname] + args)
+        yield from self._execute("modifyvm", args)
 
     def _storage_attach(self, params):
         """
@@ -666,6 +661,7 @@ class VirtualBoxVM(BaseVM):
         args = shlex.split(params)
         self._execute("storageattach", [self._vmname] + args)
 
+    @asyncio.coroutine
     def _get_nic_attachements(self, maximum_adapters):
         """
         Returns NIC attachements.
@@ -675,7 +671,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         nics = []
-        vm_info = self._get_vm_info()
+        vm_info = yield from self._get_vm_info()
         for adapter_id in range(0, maximum_adapters):
             entry = "nic{}".format(adapter_id + 1)
             if entry in vm_info:
@@ -685,12 +681,13 @@ class VirtualBoxVM(BaseVM):
                 nics.append(None)
         return nics
 
+    @asyncio.coroutine
     def _set_network_options(self):
         """
         Configures network options.
         """
 
-        nic_attachements = self._get_nic_attachements(self._maximum_adapters)
+        nic_attachements = yield from self._get_nic_attachements(self._maximum_adapters)
         for adapter_id in range(0, len(self._ethernet_adapters)):
             if self._ethernet_adapters[adapter_id] is None:
                 # force enable to avoid any discrepancy in the interface numbering inside the VM
@@ -698,7 +695,7 @@ class VirtualBoxVM(BaseVM):
                 attachement = nic_attachements[adapter_id]
                 if attachement:
                     # attachement can be none, null, nat, bridged, intnet, hostonly or generic
-                    self._modify_vm("--nic{} {}".format(adapter_id + 1, attachement))
+                    yield from self._modify_vm("--nic{} {}".format(adapter_id + 1, attachement))
                 continue
 
             vbox_adapter_type = "82540EM"
@@ -716,44 +713,45 @@ class VirtualBoxVM(BaseVM):
                 vbox_adapter_type = "virtio"
 
             args = [self._vmname, "--nictype{}".format(adapter_id + 1), vbox_adapter_type]
-            self._execute("modifyvm", args)
+            yield from self._execute("modifyvm", args)
 
-            self._modify_vm("--nictrace{} off".format(adapter_id + 1))
+            yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
             nio = self._ethernet_adapters[adapter_id].get_nio(0)
             if nio:
                 log.debug("setting UDP params on adapter {}".format(adapter_id))
-                self._modify_vm("--nic{} generic".format(adapter_id + 1))
-                self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_id + 1))
-                self._modify_vm("--nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
-                self._modify_vm("--nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
-                self._modify_vm("--nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
-                self._modify_vm("--cableconnected{} on".format(adapter_id + 1))
+                yield from self._modify_vm("--nic{} generic".format(adapter_id + 1))
+                yield from self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_id + 1))
+                yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
+                yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
+                yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
+                yield from self._modify_vm("--cableconnected{} on".format(adapter_id + 1))
 
                 if nio.capturing:
-                    self._modify_vm("--nictrace{} on".format(adapter_id + 1))
-                    self._modify_vm("--nictracefile{} {}".format(adapter_id + 1, nio.pcap_output_file))
+                    yield from self._modify_vm("--nictrace{} on".format(adapter_id + 1))
+                    yield from self._modify_vm("--nictracefile{} {}".format(adapter_id + 1, nio.pcap_output_file))
             else:
                 # shutting down unused adapters...
-                self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
-                self._modify_vm("--nic{} null".format(adapter_id + 1))
+                yield from self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
+                yield from self._modify_vm("--nic{} null".format(adapter_id + 1))
 
         for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_id))
-            self._modify_vm("--nic{} none".format(adapter_id + 1))
+            yield from self._modify_vm("--nic{} none".format(adapter_id + 1))
 
+    @asyncio.coroutine
     def _create_linked_clone(self):
         """
         Creates a new linked clone.
         """
 
         gns3_snapshot_exists = False
-        vm_info = self._get_vm_info()
+        vm_info = yield from self._get_vm_info()
         for entry, value in vm_info.items():
             if entry.startswith("SnapshotName") and value == "GNS3 Linked Base for clones":
                 gns3_snapshot_exists = True
 
         if not gns3_snapshot_exists:
-            result = self._execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
+            result = yield from self._execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
             log.debug("GNS3 snapshot created: {}".format(result))
 
         args = [self._vmname,
@@ -767,15 +765,15 @@ class VirtualBoxVM(BaseVM):
                 self._working_dir,
                 "--register"]
 
-        result = self._execute("clonevm", args)
+        result = yield from self._execute("clonevm", args)
         log.debug("cloned VirtualBox VM: {}".format(result))
 
         self._vmname = self._name
-        self._execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
+        yield from self._execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
 
         args = [self._name, "take", "reset"]
-        result = self._execute("snapshot", args)
-        log.debug("snapshot reset created: {}".format(result))
+        result = yield from self._execute("snapshot", args)
+        log.debug("Snapshot reset created: {}".format(result))
 
     def _start_remote_console(self):
         """
@@ -784,7 +782,7 @@ class VirtualBoxVM(BaseVM):
 
         # starts the Telnet to pipe thread
         pipe_name = self._get_pipe_name()
-        if sys.platform.startswith('win'):
+        if sys.platform.startswith("win"):
             try:
                 self._serial_pipe = open(pipe_name, "a+b")
             except OSError as e:
@@ -809,7 +807,7 @@ class VirtualBoxVM(BaseVM):
             self._telnet_server_thread.stop()
             self._telnet_server_thread.join(timeout=3)
             if self._telnet_server_thread.isAlive():
-                log.warn("Serial pire thread is still alive!")
+                log.warn("Serial pipe thread is still alive!")
             self._telnet_server_thread = None
 
         if self._serial_pipe:
@@ -819,93 +817,7 @@ class VirtualBoxVM(BaseVM):
                 self._serial_pipe.close()
             self._serial_pipe = None
 
-    def old_start(self):
-        """
-        Starts this VirtualBox VM.
-        """
-
-        # resume the VM if it is paused
-        vm_state = self._get_vm_state()
-        if vm_state == "paused":
-            self.resume()
-            return
-
-        # VM must be powered off and in saved state to start it
-        if vm_state != "poweroff" and vm_state != "saved":
-            raise VirtualBoxError("VirtualBox VM not powered off or saved")
-
-        self._set_network_options()
-        self._set_serial_console()
-
-        args = [self._vmname]
-        if self._headless:
-            args.extend(["--type", "headless"])
-        result = self._execute("startvm", args)
-        log.debug("started VirtualBox VM: {}".format(result))
-
-        # add a guest property to let the VM know about the GNS3 name
-        self._execute("guestproperty", ["set", self._vmname, "NameInGNS3", self._name])
-
-        # add a guest property to let the VM know about the GNS3 project directory
-        self._execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self._working_dir])
-
-        if self._enable_remote_console:
-            self._start_remote_console()
-
-    def old_stop(self):
-        """
-        Stops this VirtualBox VM.
-        """
-
-        self._stop_remote_console()
-        vm_state = self._get_vm_state()
-        if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
-            # power off the VM
-            result = self._control_vm("poweroff")
-            log.debug("VirtualBox VM has been stopped: {}".format(result))
-
-            time.sleep(0.5)  # give some time for VirtualBox to unlock the VM
-            # deactivate the first serial port
-            try:
-                self._modify_vm("--uart1 off")
-            except VirtualBoxError as e:
-                log.warn("Could not deactivate the first serial port: {}".format(e))
-
-            for adapter_id in range(0, len(self._ethernet_adapters)):
-                if self._ethernet_adapters[adapter_id] is None:
-                    continue
-                self._modify_vm("--nictrace{} off".format(adapter_id + 1))
-                self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
-                self._modify_vm("--nic{} null".format(adapter_id + 1))
-
-    def suspend(self):
-        """
-        Suspends this VirtualBox VM.
-        """
-
-        vm_state = self._get_vm_state()
-        if vm_state == "running":
-            result = self._control_vm("pause")
-            log.debug("VirtualBox VM has been suspended: {}".format(result))
-        else:
-            log.info("VirtualBox VM is not running to be suspended, current state is {}".format(vm_state))
-
-    def resume(self):
-        """
-        Resumes this VirtualBox VM.
-        """
-
-        result = self._control_vm("resume")
-        log.debug("VirtualBox VM has been resumed: {}".format(result))
-
-    def reload(self):
-        """
-        Reloads this VirtualBox VM.
-        """
-
-        result = self._control_vm("reset")
-        log.debug("VirtualBox VM has been reset: {}".format(result))
-
+    @asyncio.coroutine
     def port_add_nio_binding(self, adapter_id, nio):
         """
         Adds a port NIO binding.
@@ -917,24 +829,25 @@ class VirtualBoxVM(BaseVM):
         try:
             adapter = self._ethernet_adapters[adapter_id]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
-                                                                                                      adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                        adapter_id=adapter_id))
 
-        vm_state = self._get_vm_state()
+        vm_state = yield from self._get_vm_state()
         if vm_state == "running":
             # dynamically configure an UDP tunnel on the VirtualBox adapter
-            self._control_vm("nic{} generic UDPTunnel".format(adapter_id + 1))
-            self._control_vm("nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
-            self._control_vm("nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
-            self._control_vm("nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
-            self._control_vm("setlinkstate{} on".format(adapter_id + 1))
+            yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_id + 1))
+            yield from self._control_vm("nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
+            yield from self._control_vm("nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
+            yield from self._control_vm("nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
+            yield from self._control_vm("setlinkstate{} on".format(adapter_id + 1))
 
         adapter.add_nio(0, nio)
-        log.info("VirtualBox VM {name} [id={id}]: {nio} added to adapter {adapter_id}".format(name=self._name,
-                                                                                              id=self._id,
-                                                                                              nio=nio,
-                                                                                              adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{uuid}]: {nio} added to adapter {adapter_id}".format(name=self.name,
+                                                                                               uuid=self.uuid,
+                                                                                               nio=nio,
+                                                                                               adapter_id=adapter_id))
 
+    @asyncio.coroutine
     def port_remove_nio_binding(self, adapter_id):
         """
         Removes a port NIO binding.
@@ -947,21 +860,21 @@ class VirtualBoxVM(BaseVM):
         try:
             adapter = self._ethernet_adapters[adapter_id]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
-                                                                                                      adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                        adapter_id=adapter_id))
 
-        vm_state = self._get_vm_state()
+        vm_state = yield from self._get_vm_state()
         if vm_state == "running":
             # dynamically disable the VirtualBox adapter
-            self._control_vm("setlinkstate{} off".format(adapter_id + 1))
-            self._control_vm("nic{} null".format(adapter_id + 1))
+            yield from self._control_vm("setlinkstate{} off".format(adapter_id + 1))
+            yield from self._control_vm("nic{} null".format(adapter_id + 1))
 
         nio = adapter.get_nio(0)
         adapter.remove_nio(0)
-        log.info("VirtualBox VM {name} [id={id}]: {nio} removed from adapter {adapter_id}".format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  nio=nio,
-                                                                                                  adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{uuid}]: {nio} removed from adapter {adapter_id}".format(name=self.name,
+                                                                                                   uuid=self.uuid,
+                                                                                                   nio=nio,
+                                                                                                   adapter_id=adapter_id))
         return nio
 
     def start_capture(self, adapter_id, output_file):
@@ -975,25 +888,23 @@ class VirtualBoxVM(BaseVM):
         try:
             adapter = self._ethernet_adapters[adapter_id]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
-                                                                                                      adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                        adapter_id=adapter_id))
 
         nio = adapter.get_nio(0)
         if nio.capturing:
             raise VirtualBoxError("Packet capture is already activated on adapter {adapter_id}".format(adapter_id=adapter_id))
 
         try:
-            os.makedirs(os.path.dirname(output_file))
-        except FileExistsError:
-            pass
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
         except OSError as e:
             raise VirtualBoxError("Could not create captures directory {}".format(e))
 
         nio.startPacketCapture(output_file)
 
-        log.info("VirtualBox VM {name} [id={id}]: starting packet capture on adapter {adapter_id}".format(name=self._name,
-                                                                                                          id=self._id,
-                                                                                                          adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{uuid}]: starting packet capture on adapter {adapter_id}".format(name=self.name,
+                                                                                                           uuid=self.uuid,
+                                                                                                           adapter_id=adapter_id))
 
     def stop_capture(self, adapter_id):
         """
@@ -1005,12 +916,12 @@ class VirtualBoxVM(BaseVM):
         try:
             adapter = self._ethernet_adapters[adapter_id]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM {name}".format(name=self._name,
-                                                                                                      adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                        adapter_id=adapter_id))
 
         nio = adapter.get_nio(0)
         nio.stopPacketCapture()
 
-        log.info("VirtualBox VM {name} [id={id}]: stopping packet capture on adapter {adapter_id}".format(name=self._name,
-                                                                                                          id=self._id,
-                                                                                                          adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{uuid}]: stopping packet capture on adapter {adapter_id}".format(name=self.name,
+                                                                                                           uuid=self.uuid,
+                                                                                                           adapter_id=adapter_id))
