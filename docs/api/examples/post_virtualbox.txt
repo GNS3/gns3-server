@@ -1,7 +1,8 @@
-curl -i -X POST 'http://localhost:8000/virtualbox' -d '{"name": "VM1", "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80", "vmname": "VM1"}'
+curl -i -X POST 'http://localhost:8000/virtualbox' -d '{"linked_clone": false, "name": "VM1", "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80", "vmname": "VM1"}'
 
 POST /virtualbox HTTP/1.1
 {
+    "linked_clone": false,
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "vmname": "VM1"
@@ -19,5 +20,5 @@ X-ROUTE: /virtualbox
 {
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "0f7b32bb-13e1-4c3f-8176-bbf277672b58"
+    "uuid": "c220788f-ee1e-491c-b318-6542d2f130bf"
 }

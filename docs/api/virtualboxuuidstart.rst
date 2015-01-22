@@ -4,7 +4,7 @@
 .. contents::
 
 POST /virtualbox/**{uuid}**/start
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Start a VirtualBox VM instance
 
 Parameters

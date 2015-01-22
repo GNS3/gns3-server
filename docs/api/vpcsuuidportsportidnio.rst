@@ -4,7 +4,7 @@
 .. contents::
 
 POST /vpcs/**{uuid}**/ports/**{port_id}**/nio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Add a NIO to a VPCS
 
 Parameters
@@ -26,7 +26,7 @@ Sample session
 
 
 DELETE /vpcs/**{uuid}**/ports/**{port_id}**/nio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove a NIO from a VPCS
 
 Parameters

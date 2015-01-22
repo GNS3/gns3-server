@@ -4,7 +4,7 @@
 .. contents::
 
 POST /vpcs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Create a new VPCS instance
 
 Response status codes

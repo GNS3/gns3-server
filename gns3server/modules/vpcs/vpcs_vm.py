@@ -252,6 +252,15 @@ class VPCSVM(BaseVM):
         self._process = None
         self._started = False
 
+    @asyncio.coroutine
+    def reload(self):
+        """
+        Reload the VPCS process. (Stop / Start)
+        """
+
+        yield from self.stop()
+        yield from self.start()
+
     def _kill_process(self):
         """Kill the process if running"""
 
@@ -271,7 +280,6 @@ class VPCSVM(BaseVM):
         Reads the standard output of the VPCS process.
         Only use when the process has been stopped or has crashed.
         """
-        # TODO: should be async
         output = ""
         if self._vpcs_stdout_file:
             try:

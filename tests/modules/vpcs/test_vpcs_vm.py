@@ -87,6 +87,19 @@ def test_stop(loop, vm):
             process.terminate.assert_called_with()
 
 
+def test_reload(loop, vm):
+    process = MagicMock()
+    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+            nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+
+            loop.run_until_complete(asyncio.async(vm.start()))
+            assert vm.is_running()
+            loop.run_until_complete(asyncio.async(vm.reload()))
+            assert vm.is_running() is True
+            process.terminate.assert_called_with()
+
+
 def test_add_nio_binding_udp(vm):
     nio = vm.port_add_nio_binding(0, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     assert nio.lport == 4242

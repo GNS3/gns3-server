@@ -4,7 +4,7 @@
 .. contents::
 
 POST /virtualbox/**{uuid}**/stop
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Stop a VirtualBox VM instance
 
 Parameters

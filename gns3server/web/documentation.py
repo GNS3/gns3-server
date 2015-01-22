@@ -38,7 +38,7 @@ class Documentation(object):
                 f.write('.. contents::\n')
                 for method in handler_doc["methods"]:
                     f.write('\n{} {}\n'.format(method["method"], path.replace("{", '**{').replace("}", "}**")))
-                    f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
+                    f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
                     f.write('{}\n\n'.format(method["description"]))
 
                     if len(method["parameters"]) > 0:

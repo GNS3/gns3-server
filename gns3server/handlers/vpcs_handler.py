@@ -169,3 +169,21 @@ class VPCSHandler:
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
         nio = vm.port_remove_nio_binding(int(request.match_info["port_id"]))
         response.set_status(204)
+
+    @classmethod
+    @Route.post(
+        r"/vpcs/{uuid}/reload",
+        parameters={
+            "uuid": "VPCS instance UUID",
+        },
+        status_codes={
+            204: "VPCS reloaded",
+            404: "VPCS instance doesn't exist"
+        },
+        description="Remove a NIO from a VPCS")
+    def reload(request, response):
+
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_vm(request.match_info["uuid"])
+        nio = vm.reload()
+        response.set_status(204)
