@@ -68,7 +68,7 @@ def server(request, loop, port_manager):
 
     def tear_down():
         for module in MODULES:
-            loop.run_until_complete(module.destroy())
+            loop.run_until_complete(module.unload())
         srv.close()
         srv.wait_closed()
     request.addfinalizer(tear_down)

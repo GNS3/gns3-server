@@ -95,9 +95,9 @@ class BaseManager:
         return self._config
 
     @classmethod
-    @asyncio.coroutine  # FIXME: why coroutine?
-    def destroy(cls):
+    def unload(cls):
 
+        # TODO: close explicitly all the VMs here?
         cls._instance = None
 
     def get_vm(self, uuid):
@@ -152,10 +152,10 @@ class BaseManager:
         """
 
         vm = self.get_vm(uuid)
-        if asyncio.iscoroutinefunction(vm.destroy):
-            yield from vm.destroy()
+        if asyncio.iscoroutinefunction(vm.close):
+            yield from vm.close()
         else:
-            vm.destroy()
+            vm.close()
         del self._vms[vm.uuid]
 
     @staticmethod

@@ -80,7 +80,7 @@ class Server:
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
             m = module.instance()
-            m.destroy()
+            m.unload()
         self._loop.stop()
 
     def _signal_handling(self):

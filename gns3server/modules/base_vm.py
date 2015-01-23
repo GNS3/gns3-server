@@ -33,7 +33,8 @@ class BaseVM:
                                                                  uuid=self.uuid))
 
     def __del__(self):
-        self.destroy()
+
+        self.close()
 
     @property
     def project(self):
@@ -120,9 +121,9 @@ class BaseVM:
 
         raise NotImplementedError
 
-    def destroy(self):
+    def close(self):
         """
-        Destroy the VM process.
+        Close the VM process.
         """
 
         raise NotImplementedError

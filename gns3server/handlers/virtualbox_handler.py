@@ -125,3 +125,22 @@ class VirtualBoxHandler:
         vm = vbox_manager.get_vm(request.match_info["uuid"])
         yield from vm.resume()
         response.set_status(204)
+
+    @classmethod
+    @Route.post(
+        r"/virtualbox/{uuid}/reload",
+        parameters={
+            "uuid": "VirtualBox VM instance UUID"
+        },
+        status_codes={
+            204: "VirtualBox VM instance reloaded",
+            400: "Invalid VirtualBox VM instance UUID",
+            404: "VirtualBox VM instance doesn't exist"
+        },
+        description="Reload a VirtualBox VM instance")
+    def suspend(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        yield from vm.reload()
+        response.set_status(204)
