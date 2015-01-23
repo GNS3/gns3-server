@@ -1,0 +1,13 @@
+curl -i -X DELETE 'http://localhost:8000/project/{uuid}'
+
+DELETE /project/{uuid} HTTP/1.1
+
+
+
+HTTP/1.1 204
+CONNECTION: close
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /project/{uuid}
+

@@ -27,10 +27,15 @@ PUT /vpcs/**{uuid}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Update a VPCS instance
 
+Parameters
+**********
+- **uuid**: VPCS instance UUID
+
 Response status codes
 **********************
 - **200**: VPCS instance updated
 - **409**: Conflict
+- **404**: VPCS instance doesn't exist
 
 Input
 *******
@@ -57,4 +62,18 @@ Output
     <tr><td>startup_script</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the VPCS startup script</td>                     </tr>
     <tr><td>uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS device UUID</td>                     </tr>
     </table>
+
+
+DELETE /vpcs/**{uuid}**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Delete a VPCS instance
+
+Parameters
+**********
+- **uuid**: VPCS instance UUID
+
+Response status codes
+**********************
+- **404**: VPCS instance doesn't exist
+- **204**: VPCS instance deleted
 
