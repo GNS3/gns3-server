@@ -70,3 +70,10 @@ def test_vbox_resume(server, vm):
         response = server.post("/virtualbox/{}/resume".format(vm["uuid"]))
         assert mock.called
         assert response.status == 204
+
+
+def test_vbox_reload(server, vm):
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.reload", return_value=True) as mock:
+        response = server.post("/virtualbox/{}/reload".format(vm["uuid"]))
+        assert mock.called
+        assert response.status == 204

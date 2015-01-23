@@ -82,6 +82,23 @@ VBOX_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "vmname": {
+            "description": "VirtualBox VM name (in VirtualBox itself)",
+            "type": "string",
+            "minLength": 1,
+        },
+        "linked_clone": {
+            "description": "either the VM is a linked clone or not",
+            "type": "boolean"
+        },
+        "enable_remote_console": {
+            "description": "enable the remote console",
+            "type": "boolean"
+        },
+        "headless": {
+            "description": "headless mode",
+            "type": "boolean"
+        },
         "console": {
             "description": "console TCP port",
             "minimum": 1,

@@ -75,19 +75,17 @@ class VirtualBoxVM(BaseVM):
 
     def __json__(self):
 
-        # TODO: send more info
-        # {"name": self._name,
-        #  "vmname": self._vmname,
-        #  "adapters": self.adapters,
+        # TODO: send adapters info
         #  "adapter_start_index": self._adapter_start_index,
         #  "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
-        #  "console": self._console,
-        #  "enable_remote_console": self._enable_remote_console,
-        #  "headless": self._headless}
 
         return {"name": self.name,
                 "uuid": self.uuid,
-                "project_uuid": self.project.uuid}
+                "project_uuid": self.project.uuid,
+                "vmname": self.vmname,
+                "linked_clone": self.linked_clone,
+                "headless": self.headless,
+                "enable_remote_console": self.enable_remote_console}
 
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=60):
@@ -167,8 +165,7 @@ class VirtualBoxVM(BaseVM):
         args = shlex.split(params)
         yield from self._execute("modifyvm", [self._vmname] + args)
 
-    @asyncio.coroutine
-    def create(self):
+    def _find_vboxmanage(self):
 
         # look for VBoxManage
         self._vboxmanage_path = self.manager.config.get_section_config("VirtualBox").get("vboxmanage_path")
@@ -185,22 +182,27 @@ class VirtualBoxVM(BaseVM):
 
         if not self._vboxmanage_path:
             raise VirtualBoxError("Could not find VBoxManage")
+        if not os.path.isfile(self._vboxmanage_path):
+            raise VirtualBoxError("VBoxManage {} is not accessible".format(self._vboxmanage_path))
         if not os.access(self._vboxmanage_path, os.X_OK):
             raise VirtualBoxError("VBoxManage is not executable")
 
+    @asyncio.coroutine
+    def create(self):
+
+        self._find_vboxmanage()
         yield from self._get_system_properties()
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{uuid}] created".format(name=self.name, uuid=self.uuid))
 
         if self._linked_clone:
-            # TODO: finish linked clone support
             if self.uuid and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
-                self._execute("registervm", [vbox_file])
-                self._reattach_hdds()
+                yield from self._execute("registervm", [vbox_file])
+                yield from self._reattach_hdds()
             else:
-                self._create_linked_clone()
+                yield from self._create_linked_clone()
 
     @asyncio.coroutine
     def start(self):
@@ -323,14 +325,15 @@ class VirtualBoxVM(BaseVM):
         self._console = console
         self._allocated_console_ports.append(self._console)
 
-        log.info("VirtualBox VM {name} [id={id}]: console port set to {port}".format(name=self._name,
-                                                                                     id=self._id,
-                                                                                     port=console))
+        log.info("VirtualBox VM '{name}' [{uuid}]: console port set to {port}".format(name=self.name,
+                                                                                      uuid=self.uuid,
+                                                                                      port=console))
 
+    @asyncio.coroutine
     def _get_all_hdd_files(self):
 
         hdds = []
-        properties = self._execute("list", ["hdds"])
+        properties = yield from self._execute("list", ["hdds"])
         for prop in properties:
             try:
                 name, value = prop.split(':', 1)
@@ -340,33 +343,32 @@ class VirtualBoxVM(BaseVM):
                 hdds.append(value.strip())
         return hdds
 
+    @asyncio.coroutine
     def _reattach_hdds(self):
 
-        hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
+        hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
         try:
             with open(hdd_info_file, "r") as f:
-                # log.info("loading project: {}".format(path))
                 hdd_table = json.load(f)
         except OSError as e:
             raise VirtualBoxError("Could not read HDD info file: {}".format(e))
 
         for hdd_info in hdd_table:
-            hdd_file = os.path.join(self._working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
+            hdd_file = os.path.join(self.working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
             if os.path.exists(hdd_file):
                 log.debug("reattaching hdd {}".format(hdd_file))
-                self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
-                                                                                                               hdd_info["port"],
-                                                                                                               hdd_info["device"],
-                                                                                                               hdd_file))
+                yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
+                                                                                                                          hdd_info["port"],
+                                                                                                                          hdd_info["device"],
+                                                                                                                          hdd_file))
 
-    def delete(self):
+    @asyncio.coroutine
+    def close(self):
         """
-        Deletes this VirtualBox VM.
+        Closes this VirtualBox VM.
         """
 
         self.stop()
-        if self._id in self._instances:
-            self._instances.remove(self._id)
 
         if self.console and self.console in self._allocated_console_ports:
             self._allocated_console_ports.remove(self.console)
@@ -374,7 +376,7 @@ class VirtualBoxVM(BaseVM):
         if self._linked_clone:
             hdd_table = []
             if os.path.exists(self._working_dir):
-                hdd_files = self._get_all_hdd_files()
+                hdd_files = yield from self._get_all_hdd_files()
                 vm_info = self._get_vm_info()
                 for entry, value in vm_info.items():
                     match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)
@@ -383,7 +385,7 @@ class VirtualBoxVM(BaseVM):
                         port = match.group(2)
                         device = match.group(3)
                         if value in hdd_files:
-                            self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller, port, device))
+                            yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller, port, device))
                             hdd_table.append(
                                 {
                                     "hdd": os.path.basename(value),
@@ -404,17 +406,15 @@ class VirtualBoxVM(BaseVM):
                 except OSError as e:
                     raise VirtualBoxError("Could not write HDD info file: {}".format(e))
 
-        log.info("VirtualBox VM {name} [id={id}] has been deleted".format(name=self._name,
-                                                                          id=self._id))
+        log.info("VirtualBox VM '{name}' [{uuid}] closed".format(name=self.name,
+                                                                 uuid=self.uuid))
 
-    def clean_delete(self):
+    def delete(self):
         """
         Deletes this VirtualBox VM & all files.
         """
 
         self.stop()
-        if self._id in self._instances:
-            self._instances.remove(self._id)
 
         if self.console:
             self._allocated_console_ports.remove(self.console)
@@ -505,6 +505,16 @@ class VirtualBoxVM(BaseVM):
         if self._linked_clone:
             self._modify_vm('--name "{}"'.format(vmname))
         self._vmname = vmname
+
+    @property
+    def linked_clone(self):
+        """
+        Returns either the VM is a linked clone.
+
+        :returns: boolean
+        """
+
+        return self._linked_clone
 
     @property
     def adapters(self):
@@ -651,6 +661,7 @@ class VirtualBoxVM(BaseVM):
         args = [self._vmname, "--uartmode1", "server", pipe_name]
         yield from self._execute("modifyvm", args)
 
+    @asyncio.coroutine
     def _storage_attach(self, params):
         """
         Change storage medium in this VM.
@@ -659,7 +670,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         args = shlex.split(params)
-        self._execute("storageattach", [self._vmname] + args)
+        yield from self._execute("storageattach", [self._vmname] + args)
 
     @asyncio.coroutine
     def _get_nic_attachements(self, maximum_adapters):
@@ -760,9 +771,9 @@ class VirtualBoxVM(BaseVM):
                 "--options",
                 "link",
                 "--name",
-                self._name,
+                self.name,
                 "--basefolder",
-                self._working_dir,
+                self.working_dir,
                 "--register"]
 
         result = yield from self._execute("clonevm", args)
