@@ -97,7 +97,7 @@ class BaseManager:
     @asyncio.coroutine
     def unload(self):
 
-        for uuid in self._vms.keys():
+        for uuid in list(self._vms.keys()):
             try:
                 yield from self.delete_vm(uuid)
             except Exception as e:
