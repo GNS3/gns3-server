@@ -45,12 +45,12 @@ def test_affect_uuid():
     assert p.uuid == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
-@patch("gns3server.config.Config.get_section_config", return_value={"local": True})
 def test_path(tmpdir):
-    p = Project(location=str(tmpdir))
-    assert p.path == os.path.join(str(tmpdir), p.uuid)
-    assert os.path.exists(os.path.join(str(tmpdir), p.uuid))
-    assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vms'))
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        p = Project(location=str(tmpdir))
+        assert p.path == os.path.join(str(tmpdir), p.uuid)
+        assert os.path.exists(os.path.join(str(tmpdir), p.uuid))
+        assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vms'))
 
 
 def test_temporary_path():
@@ -58,10 +58,10 @@ def test_temporary_path():
     assert os.path.exists(p.path)
 
 
-@patch("gns3server.config.Config.get_section_config", return_value={"local": False})
-def test_changing_location_not_allowed(mock, tmpdir):
-    with pytest.raises(aiohttp.web.HTTPForbidden):
-        p = Project(location=str(tmpdir))
+def test_changing_location_not_allowed(tmpdir):
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
+        with pytest.raises(aiohttp.web.HTTPForbidden):
+            p = Project(location=str(tmpdir))
 
 
 def test_json(tmpdir):
@@ -69,11 +69,11 @@ def test_json(tmpdir):
     assert p.__json__() == {"location": p.location, "uuid": p.uuid, "temporary": False}
 
 
-@patch("gns3server.config.Config.get_section_config", return_value={"local": True})
 def test_vm_working_directory(tmpdir, vm):
-    p = Project(location=str(tmpdir))
-    assert os.path.exists(p.vm_working_directory(vm))
-    assert os.path.exists(os.path.join(str(tmpdir), p.uuid, vm.module_name, vm.uuid))
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        p = Project(location=str(tmpdir))
+        assert os.path.exists(p.vm_working_directory(vm))
+        assert os.path.exists(os.path.join(str(tmpdir), p.uuid, vm.module_name, vm.uuid))
 
 
 def test_mark_vm_for_destruction(vm):

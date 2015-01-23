@@ -82,7 +82,7 @@ def test_vpcs_nio_create_udp(server, vm):
                                                                        "rhost": "127.0.0.1"},
                            example=True)
     assert response.status == 201
-    assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
+    assert response.route == "/vpcs/{uuid}/ports/{port_id:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
@@ -91,18 +91,18 @@ def test_vpcs_nio_create_tap(server, vm):
         response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_tap",
                                                                            "tap_device": "test"})
         assert response.status == 201
-        assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
+        assert response.route == "/vpcs/{uuid}/ports/{port_id:\d+}/nio"
         assert response.json["type"] == "nio_tap"
 
 
 def test_vpcs_delete_nio(server, vm):
-    response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_udp",
-                                                                       "lport": 4242,
-                                                                       "rport": 4343,
-                                                                       "rhost": "127.0.0.1"})
+    server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_udp",
+                                                            "lport": 4242,
+                                                            "rport": 4343,
+                                                            "rhost": "127.0.0.1"})
     response = server.delete("/vpcs/{}/ports/0/nio".format(vm["uuid"]), example=True)
     assert response.status == 204
-    assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
+    assert response.route == "/vpcs/{uuid}/ports/{port_id:\d+}/nio"
 
 
 def test_vpcs_start(server, vm):

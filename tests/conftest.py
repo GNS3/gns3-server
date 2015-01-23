@@ -91,7 +91,7 @@ def project():
 def port_manager():
     """An instance of port manager"""
 
-    return PortManager("127.0.0.1", False)
+    return PortManager("127.0.0.1")
 
 
 @pytest.fixture(scope="function")

@@ -60,7 +60,6 @@ def test_vm_non_executable_vboxmanage_path(project, manager, loop):
             vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager, "test", False)
             vm._find_vboxmanage()
 
-
 def test_vm_valid_virtualbox_api_version(loop, project, manager):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM._execute", return_value=["API version:  4_3"]):
         vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
@@ -72,6 +71,3 @@ def test_vm_invalid_virtualbox_api_version(loop, project, manager):
         with pytest.raises(VirtualBoxError):
             vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
             loop.run_until_complete(asyncio.async(vm.create()))
-
-
-# TODO: find a way to test start, stop, suspend, resume and reload
