@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ..web.route import Route
-from ..schemas.project import PROJECT_OBJECT_SCHEMA
+from ..schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA
 from ..modules.project_manager import ProjectManager
 from aiohttp.web import HTTPConflict
 
@@ -28,13 +28,14 @@ class ProjectHandler:
         r"/project",
         description="Create a project on the server",
         output=PROJECT_OBJECT_SCHEMA,
-        input=PROJECT_OBJECT_SCHEMA)
+        input=PROJECT_CREATE_SCHEMA)
     def create_project(request, response):
 
         pm = ProjectManager.instance()
         p = pm.create_project(
             location=request.json.get("location"),
-            uuid=request.json.get("uuid")
+            uuid=request.json.get("uuid"),
+            temporary=request.json.get("temporary", False)
         )
         response.json(p)
 

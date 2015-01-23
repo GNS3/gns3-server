@@ -16,6 +16,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+PROJECT_CREATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to create a new Project instance",
+    "type": "object",
+    "properties": {
+        "location": {
+            "description": "Base directory where the project should be created on remote server",
+            "type": "string",
+            "minLength": 1
+        },
+        "uuid": {
+            "description": "Project UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "temporary": {
+            "description": "If project is a temporary project",
+            "type": "boolean"
+        },
+    },
+    "additionalProperties": False,
+}
+
 PROJECT_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new Project instance",
@@ -33,6 +58,11 @@ PROJECT_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "temporary": {
+            "description": "If project is a temporary project",
+            "type": "boolean"
+        },
     },
-    "additionalProperties": False
+    "additionalProperties": False,
+    "required": ["location", "uuid", "temporary"]
 }

@@ -58,7 +58,7 @@ def test_temporary_path():
 
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"location": p.location, "uuid": p.uuid}
+    assert p.__json__() == {"location": p.location, "uuid": p.uuid, "temporary": False}
 
 
 def test_vm_working_directory(tmpdir, vm):
@@ -111,3 +111,13 @@ def test_project_close(tmpdir, manager):
     with patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.close") as mock:
         project.close()
         assert mock.called
+
+
+def test_project_close_temporary_project(tmpdir, manager):
+    """A temporary project is deleted when closed"""
+
+    project = Project(location=str(tmpdir), temporary=True)
+    directory = project.path
+    assert os.path.exists(directory)
+    project.close()
+    assert os.path.exists(directory) is False

@@ -29,9 +29,10 @@ class Project:
 
     :param uuid: Force project uuid (None by default auto generate an UUID)
     :param location: Parent path of the project. (None should create a tmp directory)
+    :param temporary: Boolean the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, uuid=None, location=None):
+    def __init__(self, uuid=None, location=None, temporary=False):
 
         if uuid is None:
             self._uuid = str(uuid4())
@@ -46,6 +47,7 @@ class Project:
         if location is None:
             self._location = tempfile.mkdtemp()
 
+        self._temporary = temporary
         self._vms = set()
         self._vms_to_destroy = set()
         self._path = os.path.join(self._location, self._uuid)
@@ -102,7 +104,8 @@ class Project:
 
         return {
             "uuid": self._uuid,
-            "location": self._location
+            "location": self._location,
+            "temporary": self._temporary
         }
 
     def add_vm(self, vm):
@@ -110,7 +113,7 @@ class Project:
         Add a VM to the project.
         In theory this should be called by the VM manager.
 
-        :params vm: A VM instance
+        :param vm: A VM instance
         """
 
         self._vms.add(vm)
@@ -120,7 +123,7 @@ class Project:
         Remove a VM from the project.
         In theory this should be called by the VM manager.
 
-        :params vm: A VM instance
+        :param vm: A VM instance
         """
 
         if vm in self._vms:
@@ -129,8 +132,19 @@ class Project:
     def close(self):
         """Close the project, but keep informations on disk"""
 
+        self._close_and_clean(self._temporary)
+
+    def _close_and_clean(self, cleanup):
+        """
+        Close the project, and cleanup the disk if cleanup is True
+
+        :param cleanup: If True drop the project directory
+        """
+
         for vm in self._vms:
             vm.close()
+        if cleanup and os.path.exists(self.path):
+            shutil.rmtree(self.path)
 
     def commit(self):
         """Write project changes on disk"""
@@ -145,6 +159,4 @@ class Project:
     def delete(self):
         """Remove project from disk"""
 
-        self.close()
-        if os.path.exists(self.path):
-            shutil.rmtree(self.path)
+        self._close_and_clean(True)

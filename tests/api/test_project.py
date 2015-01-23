@@ -34,6 +34,15 @@ def test_create_project_without_dir(server):
     response = server.post("/project", query)
     assert response.status == 200
     assert response.json["uuid"] is not None
+    assert response.json["temporary"] is False
+
+
+def test_create_temporary_project(server):
+    query = {"temporary": True}
+    response = server.post("/project", query)
+    assert response.status == 200
+    assert response.json["uuid"] is not None
+    assert response.json["temporary"] is True
 
 
 def test_create_project_with_uuid(server):
