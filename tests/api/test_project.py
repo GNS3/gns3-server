@@ -20,13 +20,15 @@ This test suite check /project endpoint
 """
 
 import uuid
+from unittest.mock import patch
 from tests.utils import asyncio_patch
 
 
 def test_create_project_with_dir(server, tmpdir):
-    response = server.post("/project", {"location": str(tmpdir)})
-    assert response.status == 200
-    assert response.json["location"] == str(tmpdir)
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        response = server.post("/project", {"location": str(tmpdir)})
+        assert response.status == 200
+        assert response.json["location"] == str(tmpdir)
 
 
 def test_create_project_without_dir(server):
@@ -52,18 +54,11 @@ def test_create_project_with_uuid(server):
     assert response.json["uuid"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_create_project_with_uuid(server):
-    query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f", "location": "/tmp"}
-    response = server.post("/project", query, example=True)
-    assert response.status == 200
-    assert response.json["uuid"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["location"] == "/tmp"
-
-
 def test_show_project(server):
     query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f", "location": "/tmp", "temporary": False}
-    response = server.post("/project", query)
-    assert response.status == 200
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        response = server.post("/project", query)
+        assert response.status == 200
     response = server.get("/project/00010203-0405-0607-0809-0a0b0c0d0e0f", example=True)
     assert response.json == query
 

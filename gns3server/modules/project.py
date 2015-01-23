@@ -20,6 +20,7 @@ import os
 import tempfile
 import shutil
 from uuid import UUID, uuid4
+from ..config import Config
 
 
 class Project:
@@ -46,6 +47,10 @@ class Project:
         self._location = location
         if location is None:
             self._location = tempfile.mkdtemp()
+        else:
+            config = Config.instance().get_section_config("Server")
+            if config.get("local", False) is False:
+                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
 
         self._temporary = temporary
         self._vms = set()

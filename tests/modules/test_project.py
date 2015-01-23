@@ -18,6 +18,7 @@
 
 import os
 import pytest
+import aiohttp
 from unittest.mock import patch
 
 from gns3server.modules.project import Project
@@ -44,6 +45,7 @@ def test_affect_uuid():
     assert p.uuid == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
+@patch("gns3server.config.Config.get_section_config", return_value={"local": True})
 def test_path(tmpdir):
     p = Project(location=str(tmpdir))
     assert p.path == os.path.join(str(tmpdir), p.uuid)
@@ -56,27 +58,34 @@ def test_temporary_path():
     assert os.path.exists(p.path)
 
 
+@patch("gns3server.config.Config.get_section_config", return_value={"local": False})
+def test_changing_location_not_allowed(mock, tmpdir):
+    with pytest.raises(aiohttp.web.HTTPForbidden):
+        p = Project(location=str(tmpdir))
+
+
 def test_json(tmpdir):
     p = Project()
     assert p.__json__() == {"location": p.location, "uuid": p.uuid, "temporary": False}
 
 
+@patch("gns3server.config.Config.get_section_config", return_value={"local": True})
 def test_vm_working_directory(tmpdir, vm):
     p = Project(location=str(tmpdir))
     assert os.path.exists(p.vm_working_directory(vm))
     assert os.path.exists(os.path.join(str(tmpdir), p.uuid, vm.module_name, vm.uuid))
 
 
-def test_mark_vm_for_destruction(tmpdir, vm):
-    project = Project(location=str(tmpdir))
+def test_mark_vm_for_destruction(vm):
+    project = Project()
     project.add_vm(vm)
     project.mark_vm_for_destruction(vm)
     assert len(project._vms_to_destroy) == 1
     assert len(project.vms) == 0
 
 
-def test_commit(tmpdir, manager):
-    project = Project(location=str(tmpdir))
+def test_commit(manager):
+    project = Project()
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
     directory = project.vm_working_directory(vm)
@@ -89,23 +98,23 @@ def test_commit(tmpdir, manager):
     assert len(project.vms) == 0
 
 
-def test_project_delete(tmpdir):
-    project = Project(location=str(tmpdir))
+def test_project_delete():
+    project = Project()
     directory = project.path
     assert os.path.exists(directory)
     project.delete()
     assert os.path.exists(directory) is False
 
 
-def test_project_add_vm(tmpdir, manager):
-    project = Project(location=str(tmpdir))
+def test_project_add_vm(manager):
+    project = Project()
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
     assert len(project.vms) == 1
 
 
-def test_project_close(tmpdir, manager):
-    project = Project(location=str(tmpdir))
+def test_project_close(manager):
+    project = Project()
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
     with patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.close") as mock:
@@ -113,10 +122,10 @@ def test_project_close(tmpdir, manager):
         assert mock.called
 
 
-def test_project_close_temporary_project(tmpdir, manager):
+def test_project_close_temporary_project(manager):
     """A temporary project is deleted when closed"""
 
-    project = Project(location=str(tmpdir), temporary=True)
+    project = Project(temporary=True)
     directory = project.path
     assert os.path.exists(directory)
     project.close()
