@@ -138,6 +138,10 @@ class Server:
         logger = logging.getLogger("asyncio")
         logger.setLevel(logging.WARNING)
 
+        if sys.platform.startswith("win"):
+            # use the Proactor event loop on Windows
+            asyncio.set_event_loop(asyncio.ProactorEventLoop())
+
         # TODO: SSL support for Rackspace cloud integration (here or with nginx for instance).
         self._loop = asyncio.get_event_loop()
         app = aiohttp.web.Application()
