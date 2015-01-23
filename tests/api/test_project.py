@@ -51,10 +51,23 @@ def test_create_project_with_uuid(server):
 
 
 def test_commit_project(server, project):
-    response = server.post("/project/{uuid}/commit".format(uuid=project.uuid))
+    response = server.post("/project/{uuid}/commit".format(uuid=project.uuid), example=True)
     assert response.status == 204
 
 
 def test_commit_project_invalid_project_uuid(server, project):
     response = server.post("/project/{uuid}/commit".format(uuid=uuid.uuid4()))
+    assert response.status == 404
+
+
+def test_delete_project(server):
+    query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
+    response = server.post("/project", query)
+    assert response.status == 200
+    response = server.delete("/project/00010203-0405-0607-0809-0a0b0c0d0e0f")
+    assert response.status == 204
+
+
+def test_delete_project_invalid_uuid(server, project):
+    response = server.delete("/project/{uuid}".format(uuid=uuid.uuid4()))
     assert response.status == 404

@@ -81,3 +81,11 @@ def test_commit(tmpdir, manager):
     project.commit()
     assert len(project._vms_to_destroy) == 0
     assert os.path.exists(directory) is False
+
+
+def test_project_delete(tmpdir):
+    project = Project(location=str(tmpdir))
+    directory = project.path
+    assert os.path.exists(directory)
+    project.delete()
+    assert os.path.exists(directory) is False

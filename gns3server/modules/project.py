@@ -98,10 +98,23 @@ class Project:
             "location": self._location
         }
 
+    def close(self):
+        """Close the project, but keep informations on disk"""
+
+        pass
+
     def commit(self):
         """Write project changes on disk"""
+
         while self._vms_to_destroy:
             vm = self._vms_to_destroy.pop()
             directory = self.vm_working_directory(vm)
             if os.path.exists(directory):
                 shutil.rmtree(directory)
+
+    def delete(self):
+        """Remove project from disk"""
+
+        self.close()
+        if os.path.exists(self.path):
+            shutil.rmtree(self.path)

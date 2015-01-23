@@ -49,9 +49,27 @@ class ProjectHandler:
             204: "Changes write on disk",
             404: "Project instance doesn't exist"
         })
-    def create_project(request, response):
+    def commit(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["uuid"])
         project.commit()
+        response.set_status(204)
+
+    @classmethod
+    @Route.delete(
+        r"/project/{uuid}",
+        description="Delete a project from disk",
+        parameters={
+            "uuid": "Project instance UUID",
+        },
+        status_codes={
+            204: "Changes write on disk",
+            404: "Project instance doesn't exist"
+        })
+    def delete(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["uuid"])
+        project.delete()
         response.set_status(204)
