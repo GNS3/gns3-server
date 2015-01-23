@@ -20,10 +20,12 @@ import os
 import datetime
 import sys
 import locale
+import argparse
 
 from gns3server.server import Server
 from gns3server.web.logger import init_logger
 from gns3server.version import __version__
+from gns3server.config import Config
 
 import logging
 log = logging.getLogger(__name__)
@@ -68,6 +70,24 @@ def locale_check():
         log.info("current locale is {}.{}".format(language, encoding))
 
 
+def parse_arguments():
+
+    parser = argparse.ArgumentParser(description='GNS 3 server')
+    parser.add_argument('--local',
+                        action="store_true",
+                        dest='local',
+                        help='Local mode (allow some insecure operations)')
+    args = parser.parse_args()
+
+    config = Config.instance()
+    server_config = config.get_section_config("Server")
+
+    if args.local:
+        server_config["local"] = "true"
+
+    config.set_section_config("Server", server_config)
+
+
 def main():
     """
     Entry point for GNS3 server
@@ -89,8 +109,15 @@ def main():
     user_log = init_logger(logging.DEBUG, quiet=False)
     # FIXME END Temporary
 
+    parse_arguments()
+
     user_log.info("GNS3 server version {}".format(__version__))
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+
+    server_config = Config.instance().get_section_config("Server")
+    if server_config["local"]:
+        log.warning("Local mode is enabled. Beware it's allow a full control on your filesystem")
+
     # TODO: end todo
 
     # we only support Python 3 version >= 3.3

@@ -23,6 +23,10 @@ from uuid import UUID, uuid4
 from ..config import Config
 
 
+import logging
+log = logging.getLogger(__name__)
+
+
 class Project:
     """
     A project contains a list of VM.
@@ -60,6 +64,7 @@ class Project:
             os.makedirs(os.path.join(self._path, "vms"), exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+        log.debug("Create project {uuid} in directory {path}".format(path=self._path, uuid=self._uuid))
 
     def _get_default_project_directory(self):
         """
