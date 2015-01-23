@@ -99,6 +99,23 @@ VBOX_OBJECT_SCHEMA = {
             "description": "headless mode",
             "type": "boolean"
         },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "adapter_start_index": {
+            "description": "adapter index from which to start using adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 35,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "adapter_type": {
+            "description": "VirtualBox adapter type",
+            "type": "string",
+            "minLength": 1,
+        },
         "console": {
             "description": "console TCP port",
             "minimum": 1,

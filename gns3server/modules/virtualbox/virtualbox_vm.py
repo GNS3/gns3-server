@@ -33,7 +33,7 @@ import shutil
 from pkg_resources import parse_version
 from .virtualbox_error import VirtualBoxError
 from ..adapters.ethernet_adapter import EthernetAdapter
-from .telnet_server import TelnetServer
+from .telnet_server import TelnetServer  # port TelnetServer to asyncio
 from ..base_vm import BaseVM
 
 if sys.platform.startswith('win'):
@@ -70,14 +70,7 @@ class VirtualBoxVM(BaseVM):
         self._adapter_start_index = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
-        # TODO: finish adapters support
-        # self.adapters = 2  # creates 2 adapters by default
-
     def __json__(self):
-
-        # TODO: send adapters info
-        #  "adapter_start_index": self._adapter_start_index,
-        #  "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
 
         return {"name": self.name,
                 "uuid": self.uuid,
@@ -85,7 +78,10 @@ class VirtualBoxVM(BaseVM):
                 "vmname": self.vmname,
                 "linked_clone": self.linked_clone,
                 "headless": self.headless,
-                "enable_remote_console": self.enable_remote_console}
+                "enable_remote_console": self.enable_remote_console,
+                "adapters": self.adapters,
+                "adapter_type": self.adapter_type,
+                "adapter_start_index": self.adapter_start_index}
 
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=60):
@@ -203,6 +199,9 @@ class VirtualBoxVM(BaseVM):
                 yield from self._reattach_hdds()
             else:
                 yield from self._create_linked_clone()
+
+        # set 2 adapters by default
+        # yield from self.set_adapters(2)
 
     @asyncio.coroutine
     def start(self):
@@ -526,8 +525,8 @@ class VirtualBoxVM(BaseVM):
 
         return len(self._ethernet_adapters)
 
-    @adapters.setter
-    def adapters(self, adapters):
+    @asyncio.coroutine
+    def set_adapters(self, adapters):
         """
         Sets the number of Ethernet adapters for this VirtualBox VM instance.
 
@@ -535,7 +534,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         # check for the maximum adapters supported by the VM
-        self._maximum_adapters = self._get_maximum_supported_adapters()
+        self._maximum_adapters = yield from self._get_maximum_supported_adapters()
         if len(self._ethernet_adapters) > self._maximum_adapters:
             raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(self._maximum_adapters))
 

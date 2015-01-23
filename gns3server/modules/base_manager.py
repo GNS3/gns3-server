@@ -95,6 +95,7 @@ class BaseManager:
         return self._config
 
     @classmethod
+    @asyncio.coroutine
     def unload(cls):
 
         # TODO: close explicitly all the VMs here?
