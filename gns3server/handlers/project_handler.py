@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ..web.route import Route
-from ..schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA
+from ..schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA
 from ..modules.project_manager import ProjectManager
 from aiohttp.web import HTTPConflict
 
@@ -38,6 +38,26 @@ class ProjectHandler:
             temporary=request.json.get("temporary", False)
         )
         response.json(p)
+
+    @classmethod
+    @Route.put(
+        r"/project/{uuid}",
+        description="Update a project",
+        parameters={
+            "uuid": "Project instance UUID",
+        },
+        status_codes={
+            200: "Project updated",
+            404: "Project instance doesn't exist"
+        },
+        output=PROJECT_OBJECT_SCHEMA,
+        input=PROJECT_UPDATE_SCHEMA)
+    def update(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["uuid"])
+        project.temporary = request.json.get("temporary", project.temporary)
+        response.json(project)
 
     @classmethod
     @Route.post(

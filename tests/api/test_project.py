@@ -60,6 +60,16 @@ def test_create_project_with_uuid(server):
     assert response.json["location"] == "/tmp"
 
 
+def test_update_temporary_project(server):
+    query = {"temporary": True}
+    response = server.post("/project", query)
+    assert response.status == 200
+    query = {"temporary": False}
+    response = server.put("/project/{uuid}".format(uuid=response.json["uuid"]), query)
+    assert response.status == 200
+    assert response.json["temporary"] is False
+
+
 def test_commit_project(server, project):
     with asyncio_patch("gns3server.modules.project.Project.commit", return_value=True) as mock:
         response = server.post("/project/{uuid}/commit".format(uuid=project.uuid), example=True)

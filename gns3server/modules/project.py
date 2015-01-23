@@ -76,6 +76,16 @@ class Project:
 
         return self._vms
 
+    @property
+    def temporary(self):
+
+        return self._temporary
+
+    @temporary.setter
+    def temporary(self, temporary):
+
+        self._temporary = temporary
+
     def vm_working_directory(self, vm):
         """
         Return a working directory for a specific VM.

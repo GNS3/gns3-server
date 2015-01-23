@@ -41,9 +41,22 @@ PROJECT_CREATE_SCHEMA = {
     "additionalProperties": False,
 }
 
+PROJECT_UPDATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to update a Project instance",
+    "type": "object",
+    "properties": {
+        "temporary": {
+            "description": "If project is a temporary project",
+            "type": "boolean"
+        },
+    },
+    "additionalProperties": False,
+}
+
 PROJECT_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to create a new Project instance",
+    "description": "Project instance",
     "type": "object",
     "properties": {
         "location": {
