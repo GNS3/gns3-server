@@ -17,7 +17,7 @@ In the project root folder:
 
 .. code-block:: bash
     
-    ./documentation.sh
+    ./scripts/documentation.sh
 
 The output is available inside *docs/_build/html*
 
