@@ -53,12 +53,12 @@ def test_vm_invalid_vboxmanage_path(project, manager):
         vm._find_vboxmanage()
 
 
-tmpfile = tempfile.NamedTemporaryFile()
-@patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": tmpfile.name})
 def test_vm_non_executable_vboxmanage_path(project, manager, loop):
-    with pytest.raises(VirtualBoxError):
-        vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager, "test", False)
-        vm._find_vboxmanage()
+    tmpfile = tempfile.NamedTemporaryFile()
+    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": tmpfile.name}):
+        with pytest.raises(VirtualBoxError):
+            vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager, "test", False)
+            vm._find_vboxmanage()
 
 
 def test_vm_valid_virtualbox_api_version(loop, project, manager):
