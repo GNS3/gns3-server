@@ -51,23 +51,23 @@ def locale_check():
     try:
         language, encoding = locale.getlocale()
     except ValueError as e:
-        log.error("could not determine the current locale: {}".format(e))
+        log.error("Could not determine the current locale: {}".format(e))
     if not language and not encoding:
         try:
-            log.warn("could not find a default locale, switching to C.UTF-8...")
+            log.warn("Could not find a default locale, switching to C.UTF-8...")
             locale.setlocale(locale.LC_ALL, ("C", "UTF-8"))
         except locale.Error as e:
-            log.error("could not switch to the C.UTF-8 locale: {}".format(e))
+            log.error("Could not switch to the C.UTF-8 locale: {}".format(e))
             raise SystemExit
     elif encoding != "UTF-8":
-        log.warn("your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
+        log.warn("Your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
         try:
             locale.setlocale(locale.LC_ALL, (language, "UTF-8"))
         except locale.Error as e:
-            log.error("could not set an UTF-8 encoding for the {} locale: {}".format(language, e))
+            log.error("Could not set an UTF-8 encoding for the {} locale: {}".format(language, e))
             raise SystemExit
     else:
-        log.info("current locale is {}.{}".format(language, encoding))
+        log.info("Current locale is {}.{}".format(language, encoding))
 
 
 def parse_arguments():
@@ -76,7 +76,10 @@ def parse_arguments():
     parser.add_argument("-l", "--host", help="run on the given host/IP address", default="127.0.0.1", nargs="?")
     parser.add_argument("-p", "--port", type=int, help="run on the given port", default=8000, nargs="?")
     parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
+    parser.add_argument("-q", "--quiet", action="store_true", help="Do not show logs on stdout")
+    parser.add_argument("-d", "--debug", action="store_true", help="Show debug logs")
     parser.add_argument("-L", "--local", action="store_true", help="Local mode (allow some insecure operations)")
+
     parser.add_argument("-A", "--allow-remote-console", dest="allow", action="store_true", help="Allow remote connections to console ports")
     args = parser.parse_args()
 
@@ -97,27 +100,19 @@ def parse_arguments():
     server_config["port"] = str(args.port)
     config.set_section_config("Server", server_config)
 
+    return args
 
 def main():
     """
     Entry point for GNS3 server
     """
 
-    # TODO: migrate command line options to argparse (don't forget the quiet mode).
-
     current_year = datetime.date.today().year
-    # TODO: Renable the test when we will have command line
-    # user_log = logging.getLogger('user_facing')
-    # if not options.quiet:
-    #     # Send user facing messages to stdout.
-    # stream_handler = logging.StreamHandler(sys.stdout)
-    # stream_handler.addFilter(logging.Filter(name='user_facing'))
-    # user_log.addHandler(stream_handler)
-    # user_log.propagate = False
-    # END OLD LOG CODE
-    user_log = init_logger(logging.DEBUG, quiet=False)
-
-    parse_arguments()
+    args = parse_arguments()
+    level = logging.INFO
+    if args.debug:
+        level = logging.DEBUG
+    user_log = init_logger(level, quiet=args.quiet)
 
     user_log.info("GNS3 server version {}".format(__version__))
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
