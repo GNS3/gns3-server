@@ -95,7 +95,6 @@ VPCS_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to add a NIO for a VPCS instance",
     "type": "object",
-
     "definitions": {
         "UDP": {
             "description": "UDP Network Input/Output",
@@ -140,13 +139,12 @@ VPCS_NIO_SCHEMA = {
             "additionalProperties": False
         },
     },
-
     "oneOf": [
         {"$ref": "#/definitions/UDP"},
         {"$ref": "#/definitions/TAP"},
     ],
     "additionalProperties": True,
-    "required": ['type']
+    "required": ["type"]
 }
 
 VPCS_OBJECT_SCHEMA = {

@@ -53,9 +53,105 @@ VBOX_CREATE_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
     },
     "additionalProperties": False,
     "required": ["name", "vmname", "linked_clone", "project_uuid"],
+}
+
+VBOX_UPDATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to update a VirtualBox VM instance",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "VirtualBox VM instance name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "vmname": {
+            "description": "VirtualBox VM name (in VirtualBox itself)",
+            "type": "string",
+            "minLength": 1,
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "adapter_start_index": {
+            "description": "adapter index from which to start using adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 35,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "adapter_type": {
+            "description": "VirtualBox adapter type",
+            "type": "string",
+            "minLength": 1,
+        },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "enable_remote_console": {
+            "description": "enable the remote console",
+            "type": "boolean"
+        },
+        "headless": {
+            "description": "headless mode",
+            "type": "boolean"
+        },
+    },
+    "additionalProperties": False,
+}
+
+VBOX_NIO_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to add a NIO for a VirtualBox VM instance",
+    "type": "object",
+    "definitions": {
+        "UDP": {
+            "description": "UDP Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_udp"]
+                },
+                "lport": {
+                    "description": "Local port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "rhost": {
+                    "description": "Remote host",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "rport": {
+                    "description": "Remote port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
+            },
+            "required": ["type", "lport", "rhost", "rport"],
+            "additionalProperties": False
+        },
+    },
+    "oneOf": [
+        {"$ref": "#/definitions/UDP"},
+    ],
+    "additionalProperties": True,
+    "required": ["type"]
 }
 
 VBOX_OBJECT_SCHEMA = {

@@ -17,6 +17,8 @@
 
 from ..web.route import Route
 from ..schemas.virtualbox import VBOX_CREATE_SCHEMA
+from ..schemas.virtualbox import VBOX_UPDATE_SCHEMA
+from ..schemas.virtualbox import VBOX_NIO_SCHEMA
 from ..schemas.virtualbox import VBOX_OBJECT_SCHEMA
 from ..modules.virtualbox import VirtualBox
 
@@ -31,7 +33,7 @@ class VirtualBoxHandler:
     @Route.post(
         r"/virtualbox",
         status_codes={
-            201: "VirtualBox VM instance created",
+            201: "Instance created",
             400: "Invalid project UUID",
             409: "Conflict"
         },
@@ -46,20 +48,81 @@ class VirtualBoxHandler:
                                                request.json.get("uuid"),
                                                request.json["vmname"],
                                                request.json["linked_clone"],
-                                               console=request.json.get("console"))
+                                               console=request.json.get("console"),
+                                               vbox_user=request.json.get("vbox_user"))
         response.set_status(201)
         response.json(vm)
+
+    @classmethod
+    @Route.get(
+        r"/virtualbox/{uuid}",
+        parameters={
+            "uuid": "Instance UUID"
+        },
+        status_codes={
+            200: "Success",
+            404: "Instance doesn't exist"
+        },
+        description="Get a VirtualBox VM instance",
+        output=VBOX_OBJECT_SCHEMA)
+    def show(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        response.json(vm)
+
+    @classmethod
+    @Route.put(
+        r"/virtualbox/{uuid}",
+        parameters={
+            "uuid": "Instance UUID"
+        },
+        status_codes={
+            200: "Instance updated",
+            404: "Instance doesn't exist",
+            409: "Conflict"
+        },
+        description="Update a VirtualBox VM instance",
+        input=VBOX_UPDATE_SCHEMA,
+        output=VBOX_OBJECT_SCHEMA)
+    def update(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
+
+        # TODO: FINISH UPDATE (adapters).
+        response.json(vm)
+
+    @classmethod
+    @Route.delete(
+        r"/virtualbox/{uuid}",
+        parameters={
+            "uuid": "Instance UUID"
+        },
+        status_codes={
+            204: "Instance deleted",
+            404: "Instance doesn't exist"
+        },
+        description="Delete a VirtualBox VM instance")
+    def delete(request, response):
+
+        yield from VirtualBox.instance().delete_vm(request.match_info["uuid"])
+        response.set_status(204)
 
     @classmethod
     @Route.post(
         r"/virtualbox/{uuid}/start",
         parameters={
-            "uuid": "VirtualBox VM instance UUID"
+            "uuid": "Instance UUID"
         },
         status_codes={
-            204: "VirtualBox VM instance started",
-            400: "Invalid VirtualBox VM instance UUID",
-            404: "VirtualBox VM instance doesn't exist"
+            204: "Instance started",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
         },
         description="Start a VirtualBox VM instance")
     def start(request, response):
@@ -73,12 +136,12 @@ class VirtualBoxHandler:
     @Route.post(
         r"/virtualbox/{uuid}/stop",
         parameters={
-            "uuid": "VirtualBox VM instance UUID"
+            "uuid": "Instance UUID"
         },
         status_codes={
-            204: "VirtualBox VM instance stopped",
-            400: "Invalid VirtualBox VM instance UUID",
-            404: "VirtualBox VM instance doesn't exist"
+            204: "Instance stopped",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
         },
         description="Stop a VirtualBox VM instance")
     def stop(request, response):
@@ -92,12 +155,12 @@ class VirtualBoxHandler:
     @Route.post(
         r"/virtualbox/{uuid}/suspend",
         parameters={
-            "uuid": "VirtualBox VM instance UUID"
+            "uuid": "Instance UUID"
         },
         status_codes={
-            204: "VirtualBox VM instance suspended",
-            400: "Invalid VirtualBox VM instance UUID",
-            404: "VirtualBox VM instance doesn't exist"
+            204: "Instance suspended",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
         },
         description="Suspend a VirtualBox VM instance")
     def suspend(request, response):
@@ -111,12 +174,12 @@ class VirtualBoxHandler:
     @Route.post(
         r"/virtualbox/{uuid}/resume",
         parameters={
-            "uuid": "VirtualBox VM instance UUID"
+            "uuid": "Instance UUID"
         },
         status_codes={
-            204: "VirtualBox VM instance resumed",
-            400: "Invalid VirtualBox VM instance UUID",
-            404: "VirtualBox VM instance doesn't exist"
+            204: "Instance resumed",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
         },
         description="Resume a suspended VirtualBox VM instance")
     def suspend(request, response):
@@ -130,12 +193,12 @@ class VirtualBoxHandler:
     @Route.post(
         r"/virtualbox/{uuid}/reload",
         parameters={
-            "uuid": "VirtualBox VM instance UUID"
+            "uuid": "Instance UUID"
         },
         status_codes={
-            204: "VirtualBox VM instance reloaded",
-            400: "Invalid VirtualBox VM instance UUID",
-            404: "VirtualBox VM instance doesn't exist"
+            204: "Instance reloaded",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
         },
         description="Reload a VirtualBox VM instance")
     def suspend(request, response):
@@ -143,4 +206,47 @@ class VirtualBoxHandler:
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["uuid"])
         yield from vm.reload()
+        response.set_status(204)
+
+    @Route.post(
+        r"/virtualbox/{uuid}/ports/{port_id:\d+}/nio",
+        parameters={
+            "uuid": "Instance UUID",
+            "port_id": "ID of the port where the nio should be added"
+        },
+        status_codes={
+            201: "NIO created",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
+        },
+        description="Add a NIO to a VirtualBox VM instance",
+        input=VBOX_NIO_SCHEMA,
+        output=VBOX_NIO_SCHEMA)
+    def create_nio(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        nio = vbox_manager.create_nio(vm.vboxmanage_path, request.json)
+        vm.port_add_nio_binding(int(request.match_info["port_id"]), nio)
+        response.set_status(201)
+        response.json(nio)
+
+    @classmethod
+    @Route.delete(
+        r"/virtualbox/{uuid}/ports/{port_id:\d+}/nio",
+        parameters={
+            "uuid": "Instance UUID",
+            "port_id": "ID of the port from where the nio should be removed"
+        },
+        status_codes={
+            204: "NIO deleted",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
+        },
+        description="Remove a NIO from a VirtualBox VM instance")
+    def delete_nio(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        vm.port_remove_nio_binding(int(request.match_info["port_id"]))
         response.set_status(204)

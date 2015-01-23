@@ -70,10 +70,16 @@ class VirtualBoxVM(BaseVM):
         self._adapter_start_index = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
+        if self._console is not None:
+            self._console = self._manager.port_manager.reserve_console_port(self._console)
+        else:
+            self._console = self._manager.port_manager.get_free_console_port()
+
     def __json__(self):
 
         return {"name": self.name,
                 "uuid": self.uuid,
+                "console": self.console,
                 "project_uuid": self.project.uuid,
                 "vmname": self.vmname,
                 "linked_clone": self.linked_clone,
@@ -300,6 +306,16 @@ class VirtualBoxVM(BaseVM):
         log.debug("Reload result: {}".format(result))
 
     @property
+    def vboxmanage_path(self):
+        """
+        Returns the path to VBoxManage.
+
+        :returns: path
+        """
+
+        return self._vboxmanage_path
+
+    @property
     def console(self):
         """
         Returns the TCP console port.
@@ -317,13 +333,10 @@ class VirtualBoxVM(BaseVM):
         :param console: console port (integer)
         """
 
-        if console in self._allocated_console_ports:
-            raise VirtualBoxError("Console port {} is already used by another VirtualBox VM".format(console))
+        if self._console:
+            self._manager.port_manager.release_console_port(self._console)
 
-        self._allocated_console_ports.remove(self._console)
-        self._console = console
-        self._allocated_console_ports.append(self._console)
-
+        self._console = self._manager.port_manager.reserve_console_port(console)
         log.info("VirtualBox VM '{name}' [{uuid}]: console port set to {port}".format(name=self.name,
                                                                                       uuid=self.uuid,
                                                                                       port=console))
@@ -369,12 +382,13 @@ class VirtualBoxVM(BaseVM):
 
         self.stop()
 
-        if self.console and self.console in self._allocated_console_ports:
-            self._allocated_console_ports.remove(self.console)
+        if self._console:
+            self._manager.port_manager.release_console_port(self._console)
+            self._console = None
 
         if self._linked_clone:
             hdd_table = []
-            if os.path.exists(self._working_dir):
+            if os.path.exists(self.working_dir):
                 hdd_files = yield from self._get_all_hdd_files()
                 vm_info = self._get_vm_info()
                 for entry, value in vm_info.items():
@@ -398,7 +412,7 @@ class VirtualBoxVM(BaseVM):
 
             if hdd_table:
                 try:
-                    hdd_info_file = os.path.join(self._working_dir, self._vmname, "hdd_info.json")
+                    hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
                     with open(hdd_info_file, "w") as f:
                         # log.info("saving project: {}".format(path))
                         json.dump(hdd_table, f, indent=4)
@@ -407,30 +421,6 @@ class VirtualBoxVM(BaseVM):
 
         log.info("VirtualBox VM '{name}' [{uuid}] closed".format(name=self.name,
                                                                  uuid=self.uuid))
-
-    def delete(self):
-        """
-        Deletes this VirtualBox VM & all files.
-        """
-
-        self.stop()
-
-        if self.console:
-            self._allocated_console_ports.remove(self.console)
-
-        if self._linked_clone:
-            self._execute("unregistervm", [self._vmname, "--delete"])
-
-        # try:
-        #    shutil.rmtree(self._working_dir)
-        # except OSError as e:
-        #    log.error("could not delete VirtualBox VM {name} [id={id}]: {error}".format(name=self._name,
-        #                                                                                id=self._id,
-        #                                                                                error=e))
-        #    return
-
-        log.info("VirtualBox VM '{name}' [{uuid}] has been deleted (including associated files)".format(name=self.name,
-                                                                                                        uuid=self.uuid))
 
     @property
     def headless(self):
@@ -501,8 +491,9 @@ class VirtualBoxVM(BaseVM):
         """
 
         log.info("VirtualBox VM '{name}' [{uuid}] has set the VM name to '{vmname}'".format(name=self.name, uuid=self.uuid, vmname=vmname))
-        if self._linked_clone:
-            self._modify_vm('--name "{}"'.format(vmname))
+        # TODO: test linked clone
+        #if self._linked_clone:
+        #    yield from self._modify_vm('--name "{}"'.format(vmname))
         self._vmname = vmname
 
     @property

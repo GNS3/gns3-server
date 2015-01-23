@@ -173,7 +173,8 @@ class PortManager:
         :param port: TCP port number
         """
 
-        self._used_tcp_ports.remove(port)
+        if port in self._used_tcp_ports:
+            self._used_tcp_ports.remove(port)
 
     def get_free_udp_port(self):
         """
@@ -207,4 +208,5 @@ class PortManager:
         :param port: UDP port number
         """
 
-        self._used_udp_ports.remove(port)
+        if port in self._used_udp_ports:
+            self._used_udp_ports.remove(port)
