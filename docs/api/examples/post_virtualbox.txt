@@ -26,6 +26,6 @@ X-ROUTE: /virtualbox
     "linked_clone": false,
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "2908d568-4a42-49e1-9628-d914f2fd545d",
+    "uuid": "767b6b21-2209-4d73-aec8-49e4a332709d",
     "vmname": "VM1"
 }

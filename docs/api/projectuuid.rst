@@ -27,6 +27,12 @@ Output
     <tr><td>uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: examples/get_projectuuid.txt
+
 
 PUT /project/**{uuid}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +66,12 @@ Output
     <tr><td>temporary</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>If project is a temporary project</td>                     </tr>
     <tr><td>uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: examples/put_projectuuid.txt
 
 
 DELETE /project/**{uuid}**

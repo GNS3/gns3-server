@@ -64,7 +64,7 @@ def test_show_project(server):
     query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f", "location": "/tmp", "temporary": False}
     response = server.post("/project", query)
     assert response.status == 200
-    response = server.get("/project/00010203-0405-0607-0809-0a0b0c0d0e0f")
+    response = server.get("/project/00010203-0405-0607-0809-0a0b0c0d0e0f", example=True)
     assert response.json == query
 
 
@@ -78,7 +78,7 @@ def test_update_temporary_project(server):
     response = server.post("/project", query)
     assert response.status == 200
     query = {"temporary": False}
-    response = server.put("/project/{uuid}".format(uuid=response.json["uuid"]), query)
+    response = server.put("/project/{uuid}".format(uuid=response.json["uuid"]), query, example=True)
     assert response.status == 200
     assert response.json["temporary"] is False
 
