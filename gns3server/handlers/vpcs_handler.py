@@ -159,7 +159,8 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
-        nio = vm.port_add_nio_binding(int(request.match_info["port_id"]), request.json)
+        nio = vpcs_manager.create_nio(vm.vpcs_path, request.json)
+        vm.port_add_nio_binding(int(request.match_info["port_id"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -191,6 +192,7 @@ class VPCSHandler:
         },
         status_codes={
             204: "VPCS reloaded",
+            400: "Invalid VPCS instance UUID",
             404: "VPCS instance doesn't exist"
         },
         description="Remove a NIO from a VPCS")

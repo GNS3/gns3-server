@@ -15,13 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import sys
+import os
+import struct
+import stat
 import asyncio
 import aiohttp
+import socket
+
+import logging
+log = logging.getLogger(__name__)
 
 from uuid import UUID, uuid4
 from ..config import Config
 from .project_manager import ProjectManager
+
+from .nios.nio_udp import NIO_UDP
+from .nios.nio_tap import NIO_TAP
 
 
 class BaseManager:
@@ -147,3 +157,66 @@ class BaseManager:
         else:
             vm.destroy()
         del self._vms[vm.uuid]
+
+    @staticmethod
+    def _has_privileged_access(executable):
+        """
+        Check if an executable can access Ethernet and TAP devices in
+        RAW mode.
+
+        :param executable: executable path
+
+        :returns: True or False
+        """
+
+        if sys.platform.startswith("win"):
+            # do not check anything on Windows
+            return True
+
+        if os.geteuid() == 0:
+            # we are root, so we should have privileged access.
+            return True
+        if os.stat(executable).st_mode & stat.S_ISUID or os.stat(executable).st_mode & stat.S_ISGID:
+            # the executable has set UID bit.
+            return True
+
+        # test if the executable has the CAP_NET_RAW capability (Linux only)
+        if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
+            try:
+                caps = os.getxattr(executable, "security.capability")
+                # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
+                if struct.unpack("<IIIII", caps)[1] & 1 << 13:
+                    return True
+            except Exception as e:
+                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
+
+        return False
+
+    def create_nio(self, executable, nio_settings):
+        """
+        Creates a new NIO.
+
+        :param nio_settings: information to create the NIO
+
+        :returns: a NIO object
+        """
+
+        nio = None
+        if nio_settings["type"] == "nio_udp":
+            lport = nio_settings["lport"]
+            rhost = nio_settings["rhost"]
+            rport = nio_settings["rport"]
+            try:
+                # TODO: handle IPv6
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                    sock.connect((rhost, rport))
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
+            nio = NIO_UDP(lport, rhost, rport)
+        elif nio_settings["type"] == "nio_tap":
+            tap_device = nio_settings["tap_device"]
+            if not self._has_privileged_access(executable):
+                raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
+            nio = NIO_TAP(tap_device)
+        assert nio is not None
+        return nio

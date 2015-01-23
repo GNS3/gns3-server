@@ -86,13 +86,13 @@ def test_vpcs_nio_create_udp(server, vm):
     assert response.json["type"] == "nio_udp"
 
 
-@patch("gns3server.modules.vpcs.vpcs_vm.has_privileged_access", return_value=True)
-def test_vpcs_nio_create_tap(mock, server, vm):
-    response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_tap",
-                                                                       "tap_device": "test"})
-    assert response.status == 201
-    assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
-    assert response.json["type"] == "nio_tap"
+def test_vpcs_nio_create_tap(server, vm):
+    with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
+        response = server.post("/vpcs/{}/ports/0/nio".format(vm["uuid"]), {"type": "nio_tap",
+                                                                           "tap_device": "test"})
+        assert response.status == 201
+        assert response.route == "/vpcs/{uuid}/ports/{port_id}/nio"
+        assert response.json["type"] == "nio_tap"
 
 
 def test_vpcs_delete_nio(server, vm):

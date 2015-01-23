@@ -26,17 +26,13 @@ import subprocess
 import signal
 import re
 import asyncio
-import socket
 import shutil
 
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
-from ..nios.nio_udp import NIO_UDP
-from ..nios.nio_tap import NIO_TAP
-from ..attic import has_privileged_access
-
 from ..base_vm import BaseVM
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -115,6 +111,16 @@ class VPCSVM(BaseVM):
                 "project_uuid": self.project.uuid,
                 "script_file": self.script_file,
                 "startup_script": self.startup_script}
+
+    @property
+    def vpcs_path(self):
+        """
+        Returns the VPCS executable path.
+
+        :returns: path to VPCS
+        """
+
+        return self._path
 
     @property
     def console(self):
@@ -303,7 +309,7 @@ class VPCSVM(BaseVM):
             return True
         return False
 
-    def port_add_nio_binding(self, port_id, nio_settings):
+    def port_add_nio_binding(self, port_id, nio):
         """
         Adds a port NIO binding.
 
@@ -314,26 +320,6 @@ class VPCSVM(BaseVM):
         if not self._ethernet_adapter.port_exists(port_id):
             raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                        port_id=port_id))
-
-        nio = None
-        if nio_settings["type"] == "nio_udp":
-            lport = nio_settings["lport"]
-            rhost = nio_settings["rhost"]
-            rport = nio_settings["rport"]
-            try:
-                # TODO: handle IPv6
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                    sock.connect((rhost, rport))
-            except OSError as e:
-                raise VPCSError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
-            nio = NIO_UDP(lport, rhost, rport)
-        elif nio_settings["type"] == "nio_tap":
-            tap_vm = nio_settings["tap_device"]
-            if not has_privileged_access(self._path):
-                raise VPCSError("{} has no privileged access to {}.".format(self._path, tap_vm))
-            nio = NIO_TAP(tap_vm)
-        if not nio:
-            raise VPCSError("Requested NIO does not exist or is not supported: {}".format(nio_settings["type"]))
 
         self._ethernet_adapter.add_nio(port_id, nio)
         log.info("VPCS {name} {uuid}]: {nio} added to port {port_id}".format(name=self._name,
@@ -404,13 +390,13 @@ class VPCSVM(BaseVM):
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:
-            if isinstance(nio, NIO_UDP):
+            if str(nio) == "NIO UDP":
                 # UDP tunnel
                 command.extend(["-s", str(nio.lport)])  # source UDP port
                 command.extend(["-c", str(nio.rport)])  # destination UDP port
                 command.extend(["-t", nio.rhost])  # destination host
 
-            elif isinstance(nio, NIO_TAP):
+            elif str(nio) == "NIO TAP":
                 # TAP interface
                 command.extend(["-e"])
                 command.extend(["-d", nio.tap_vm])
