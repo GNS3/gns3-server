@@ -40,6 +40,24 @@ class ProjectHandler:
         response.json(p)
 
     @classmethod
+    @Route.get(
+        r"/project/{uuid}",
+        description="Get project informations",
+        parameters={
+            "uuid": "Project instance UUID",
+        },
+        status_codes={
+            200: "OK",
+            404: "Project instance doesn't exist"
+        },
+        output=PROJECT_OBJECT_SCHEMA)
+    def show(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["uuid"])
+        response.json(project)
+
+    @classmethod
     @Route.put(
         r"/project/{uuid}",
         description="Update a project",

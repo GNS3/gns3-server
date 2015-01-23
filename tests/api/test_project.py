@@ -60,6 +60,19 @@ def test_create_project_with_uuid(server):
     assert response.json["location"] == "/tmp"
 
 
+def test_show_project(server):
+    query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f", "location": "/tmp", "temporary": False}
+    response = server.post("/project", query)
+    assert response.status == 200
+    response = server.get("/project/00010203-0405-0607-0809-0a0b0c0d0e0f")
+    assert response.json == query
+
+
+def test_show_project_invalid_uuid(server):
+    response = server.get("/project/00010203-0405-0607-0809-0a0b0c0d0e42")
+    assert response.status == 404
+
+
 def test_update_temporary_project(server):
     query = {"temporary": True}
     response = server.post("/project", query)
