@@ -149,14 +149,13 @@ class BaseManager:
         self._vms[vm.uuid] = vm
         return vm
 
-    # FIXME: should be named close_vm and we should have a
-    # delete_vm when a user deletes a VM (including files in workdir)
     @asyncio.coroutine
-    def delete_vm(self, uuid):
+    def close_vm(self, uuid):
         """
         Delete a VM
 
         :param uuid: VM UUID
+        :returns: VM instance
         """
 
         vm = self.get_vm(uuid)
@@ -164,7 +163,22 @@ class BaseManager:
             yield from vm.close()
         else:
             vm.close()
+        return vm
+
+    @asyncio.coroutine
+    def delete_vm(self, uuid):
+        """
+        Delete a VM. VM working directory will be destroy when
+        we receive a commit.
+
+        :param uuid: VM UUID
+        :returns: VM instance
+        """
+
+        vm = yield from self.close_vm(uuid)
+        vm.project.mark_vm_for_destruction(vm)
         del self._vms[vm.uuid]
+        return vm
 
     @staticmethod
     def _has_privileged_access(executable):

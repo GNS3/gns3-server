@@ -19,6 +19,8 @@
 This test suite check /project endpoint
 """
 
+import uuid
+
 
 def test_create_project_with_dir(server, tmpdir):
     response = server.post("/project", {"location": str(tmpdir)})
@@ -46,3 +48,13 @@ def test_create_project_with_uuid(server):
     assert response.status == 200
     assert response.json["uuid"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
     assert response.json["location"] == "/tmp"
+
+
+def test_commit_project(server, project):
+    response = server.post("/project/{uuid}/commit".format(uuid=project.uuid))
+    assert response.status == 204
+
+
+def test_commit_project_invalid_project_uuid(server, project):
+    response = server.post("/project/{uuid}/commit".format(uuid=uuid.uuid4()))
+    assert response.status == 404

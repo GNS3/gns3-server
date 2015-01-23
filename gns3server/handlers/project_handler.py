@@ -30,9 +30,28 @@ class ProjectHandler:
         output=PROJECT_OBJECT_SCHEMA,
         input=PROJECT_OBJECT_SCHEMA)
     def create_project(request, response):
+
         pm = ProjectManager.instance()
         p = pm.create_project(
             location=request.json.get("location"),
             uuid=request.json.get("uuid")
         )
         response.json(p)
+
+    @classmethod
+    @Route.post(
+        r"/project/{uuid}/commit",
+        description="Write changes on disk",
+        parameters={
+            "uuid": "Project instance UUID",
+        },
+        status_codes={
+            204: "Changes write on disk",
+            404: "Project instance doesn't exist"
+        })
+    def create_project(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["uuid"])
+        project.commit()
+        response.set_status(204)

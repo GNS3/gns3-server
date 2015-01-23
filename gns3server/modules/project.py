@@ -18,6 +18,7 @@
 import aiohttp
 import os
 import tempfile
+import shutil
 from uuid import UUID, uuid4
 
 
@@ -45,6 +46,7 @@ class Project:
         if location is None:
             self._location = tempfile.mkdtemp()
 
+        self._vms_to_destroy = set()
         self._path = os.path.join(self._location, self._uuid)
         try:
             os.makedirs(os.path.join(self._path, "vms"), exist_ok=True)
@@ -66,21 +68,28 @@ class Project:
 
         return self._path
 
-    def vm_working_directory(self, module, vm_uuid):
+    def vm_working_directory(self, vm):
         """
         Return a working directory for a specific VM.
         If the directory doesn't exist, the directory is created.
 
-        :param module: The module name (vpcs, dynamips...)
-        :param vm_uuid: VM UUID
+        :param vm: An instance of VM
+        :returns: A string with a VM working directory
         """
 
-        workdir = os.path.join(self._path, module, vm_uuid)
+        workdir = os.path.join(self._path, vm.manager.module_name.lower(), vm.uuid)
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create VM working directory: {}".format(e))
         return workdir
+
+    def mark_vm_for_destruction(self, vm):
+        """
+        :param vm: An instance of VM
+        """
+
+        self._vms_to_destroy.add(vm)
 
     def __json__(self):
 
@@ -88,3 +97,11 @@ class Project:
             "uuid": self._uuid,
             "location": self._location
         }
+
+    def commit(self):
+        """Write project changes on disk"""
+        while self._vms_to_destroy:
+            vm = self._vms_to_destroy.pop()
+            directory = self.vm_working_directory(vm)
+            if os.path.exists(directory):
+                shutil.rmtree(directory)

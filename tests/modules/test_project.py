@@ -17,7 +17,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import pytest
 from gns3server.modules.project import Project
+from gns3server.modules.vpcs import VPCS, VPCSVM
+
+
+@pytest.fixture(scope="module")
+def manager(port_manager):
+    m = VPCS.instance()
+    m.port_manager = port_manager
+    return m
+
+
+@pytest.fixture(scope="function")
+def vm(project, manager):
+    return VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
 
 
 def test_affect_uuid():
@@ -45,7 +59,25 @@ def test_json(tmpdir):
     assert p.__json__() == {"location": p.location, "uuid": p.uuid}
 
 
-def test_vm_working_directory(tmpdir):
+def test_vm_working_directory(tmpdir, vm):
     p = Project(location=str(tmpdir))
-    assert os.path.exists(p.vm_working_directory('vpcs', '00010203-0405-0607-0809-0a0b0c0d0e0f'))
-    assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vpcs', '00010203-0405-0607-0809-0a0b0c0d0e0f'))
+    assert os.path.exists(p.vm_working_directory(vm))
+    assert os.path.exists(os.path.join(str(tmpdir), p.uuid, vm.module_name, vm.uuid))
+
+
+def test_mark_vm_for_destruction(tmpdir, vm):
+    p = Project(location=str(tmpdir))
+    p.mark_vm_for_destruction(vm)
+    assert len(p._vms_to_destroy) == 1
+
+
+def test_commit(tmpdir, manager):
+    project = Project(location=str(tmpdir))
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    directory = project.vm_working_directory(vm)
+    project.mark_vm_for_destruction(vm)
+    assert len(project._vms_to_destroy) == 1
+    assert os.path.exists(directory)
+    project.commit()
+    assert len(project._vms_to_destroy) == 0
+    assert os.path.exists(directory) is False
