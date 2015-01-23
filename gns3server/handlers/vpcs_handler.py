@@ -72,6 +72,9 @@ class VPCSHandler:
     @classmethod
     @Route.put(
         r"/vpcs/{uuid}",
+        parameters={
+            "uuid": "VPCS instance UUID"
+        },
         status_codes={
             200: "VPCS instance updated",
             404: "VPCS instance doesn't exist",
@@ -93,6 +96,9 @@ class VPCSHandler:
     @classmethod
     @Route.delete(
         r"/vpcs/{uuid}",
+        parameters={
+            "uuid": "VPCS instance UUID"
+        },
         status_codes={
             204: "VPCS instance deleted",
             404: "VPCS instance doesn't exist"
