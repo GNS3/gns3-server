@@ -106,6 +106,7 @@ class BaseManager:
 
         if hasattr(BaseManager, "_instance"):
             BaseManager._instance = None
+        log.debug("Module {} unloaded".format(self.module_name))
 
     def get_vm(self, uuid):
         """

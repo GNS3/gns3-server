@@ -72,11 +72,12 @@ def locale_check():
 
 def parse_arguments():
 
-    parser = argparse.ArgumentParser(description='GNS 3 server')
-    parser.add_argument('--local',
-                        action="store_true",
-                        dest='local',
-                        help='Local mode (allow some insecure operations)')
+    parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
+    parser.add_argument("-l", "--host", help="run on the given host/IP address", default="127.0.0.1", nargs="?")
+    parser.add_argument("-p", "--port", type=int, help="run on the given port", default=8000, nargs="?")
+    parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
+    parser.add_argument("-L", "--local", action="store_true", help="Local mode (allow some insecure operations)")
+    parser.add_argument("-A", "--allow-remote-console", dest="allow", action="store_true", help="Allow remote connections to console ports")
     args = parser.parse_args()
 
     config = Config.instance()
@@ -84,7 +85,16 @@ def parse_arguments():
 
     if args.local:
         server_config["local"] = "true"
+    else:
+        server_config["local"] = "false"
 
+    if args.allow:
+        server_config["allow_remote_console"] = "true"
+    else:
+        server_config["allow_remote_console"] = "false"
+
+    server_config["host"] = args.host
+    server_config["port"] = str(args.port)
     config.set_section_config("Server", server_config)
 
 
@@ -96,7 +106,6 @@ def main():
     # TODO: migrate command line options to argparse (don't forget the quiet mode).
 
     current_year = datetime.date.today().year
-
     # TODO: Renable the test when we will have command line
     # user_log = logging.getLogger('user_facing')
     # if not options.quiet:
@@ -107,7 +116,6 @@ def main():
     # user_log.propagate = False
     # END OLD LOG CODE
     user_log = init_logger(logging.DEBUG, quiet=False)
-    # FIXME END Temporary
 
     parse_arguments()
 
@@ -115,10 +123,8 @@ def main():
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
     server_config = Config.instance().get_section_config("Server")
-    if server_config["local"]:
-        log.warning("Local mode is enabled. Beware it's allow a full control on your filesystem")
-
-    # TODO: end todo
+    if server_config.getboolean("local"):
+        log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
     # we only support Python 3 version >= 3.3
     if sys.version_info < (3, 3):
@@ -137,9 +143,9 @@ def main():
         log.critical("The current working directory doesn't exist")
         return
 
-    # TODO: Renable console_bind_to_any when we will have command line parsing
-    # server = Server(options.host, options.port, options.console_bind_to_any)
-    server = Server("127.0.0.1", 8000, False)
+    host = server_config["host"]
+    port = int(server_config["port"])
+    server = Server(host, port)
     server.run()
 
 if __name__ == '__main__':

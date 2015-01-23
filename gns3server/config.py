@@ -128,7 +128,7 @@ class Config(object):
         dumped on the disk.
 
         :param section: Section name
-        :param content: A dictonary with section content
+        :param content: A dictionary with section content
         """
 
         self._config[section] = content

@@ -17,17 +17,19 @@
 
 import socket
 import ipaddress
-import asyncio
 from aiohttp.web import HTTPConflict
+from gns3server.config import Config
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class PortManager:
-
     """
     :param host: IP address to bind for console connections
     """
 
-    def __init__(self, host="127.0.0.1", console_bind_to_any=False):
+    def __init__(self, host="127.0.0.1"):
 
         self._console_host = host
         self._udp_host = host
@@ -37,7 +39,11 @@ class PortManager:
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
 
-        if console_bind_to_any:
+        server_config = Config.instance().get_section_config("Server")
+        remote_console_connections = server_config.getboolean("allow_remote_console")
+
+        if remote_console_connections:
+            log.warning("Remote console connections are allowed")
             if ipaddress.ip_address(host).version == 6:
                 self._console_host = "::"
             else:

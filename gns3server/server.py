@@ -42,13 +42,13 @@ log = logging.getLogger(__name__)
 
 class Server:
 
-    def __init__(self, host, port, console_bind_to_any):
+    def __init__(self, host, port):
 
         self._host = host
         self._port = port
         self._loop = None
         self._start_time = time.time()
-        self._port_manager = PortManager(host, console_bind_to_any)
+        self._port_manager = PortManager(host)
 
         # TODO: server config file support, to be reviewed
         # # get the projects and temp directories from the configuration file (passed to the modules)
@@ -80,7 +80,7 @@ class Server:
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
             m = module.instance()
-            self._loop.run_until_complete(m.unload())
+            asyncio.async(m.unload())
         self._loop.stop()
 
     def _signal_handling(self):

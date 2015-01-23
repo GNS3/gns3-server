@@ -57,7 +57,7 @@ def _get_unused_port():
 
 @pytest.fixture(scope="session")
 def server(request, loop, port_manager):
-    """A GNS 3 server"""
+    """A GNS3 server"""
 
     port = _get_unused_port()
     host = "localhost"
