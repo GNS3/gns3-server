@@ -102,6 +102,7 @@ def parse_arguments():
 
     return args
 
+
 def main():
     """
     Entry point for GNS3 server

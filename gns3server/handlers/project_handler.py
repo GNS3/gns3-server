@@ -42,7 +42,7 @@ class ProjectHandler:
     @classmethod
     @Route.get(
         r"/project/{uuid}",
-        description="Get project informations",
+        description="Get project information",
         parameters={
             "uuid": "Project instance UUID",
         },
