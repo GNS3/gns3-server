@@ -94,12 +94,17 @@ class BaseManager:
 
         return self._config
 
-    @classmethod
     @asyncio.coroutine
-    def unload(cls):
+    def unload(self):
 
-        # TODO: close explicitly all the VMs here?
-        cls._instance = None
+        for uuid in self._vms.keys():
+            try:
+                self.delete_vm(uuid)
+            except Exception as e:
+                log.warn("Could not delete VM {}: {}".format(uuid, e))
+
+        if hasattr(BaseManager, "_instance"):
+            BaseManager._instance = None
 
     def get_vm(self, uuid):
         """
@@ -144,6 +149,8 @@ class BaseManager:
         self._vms[vm.uuid] = vm
         return vm
 
+    # FIXME: should be named close_vm and we should have a
+    # delete_vm when a user deletes a VM (including files in workdir)
     @asyncio.coroutine
     def delete_vm(self, uuid):
         """
