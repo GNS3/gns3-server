@@ -99,9 +99,10 @@ class BaseManager:
 
         for uuid in self._vms.keys():
             try:
-                self.delete_vm(uuid)
+                yield from self.delete_vm(uuid)
             except Exception as e:
                 log.warn("Could not delete VM {}: {}".format(uuid, e))
+                continue
 
         if hasattr(BaseManager, "_instance"):
             BaseManager._instance = None
