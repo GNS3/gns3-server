@@ -18,7 +18,11 @@
 import pytest
 import socket
 import asyncio
+import tempfile
+import shutil
 from aiohttp import web
+
+from gns3server.config import Config
 from gns3server.web.route import Route
 # TODO: get rid of *
 from gns3server.handlers import *
@@ -100,3 +104,17 @@ def free_console_port(request, port_manager):
     # the test do whatever the test want
     port_manager.release_console_port(port)
     return port
+
+
+@pytest.yield_fixture(autouse=True)
+def run_around_tests():
+    tmppath = tempfile.mkdtemp()
+
+    config = Config.instance()
+    server_section = config.get_section_config("Server")
+    server_section["project_directory"] = tmppath
+    config.set_section_config("Server", server_section)
+
+    yield
+
+    shutil.rmtree(tmppath)

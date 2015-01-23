@@ -44,11 +44,11 @@ class Project:
                 raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(uuid))
             self._uuid = uuid
 
+        config = Config.instance().get_section_config("Server")
         self._location = location
         if location is None:
-            self._location = tempfile.mkdtemp()
+            self._location = config.get("project_directory", self._get_default_project_directory())
         else:
-            config = Config.instance().get_section_config("Server")
             if config.get("local", False) is False:
                 raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
 
@@ -60,6 +60,19 @@ class Project:
             os.makedirs(os.path.join(self._path, "vms"), exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+
+    def _get_default_project_directory(self):
+        """
+        Return the default location for the project directory
+        depending of the operating system
+        """
+
+        path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
+        try:
+            os.makedirs(path, exist_ok=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+        return path
 
     @property
     def uuid(self):

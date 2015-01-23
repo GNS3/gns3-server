@@ -122,6 +122,17 @@ class Config(object):
             return self._config["DEFAULT"]
         return self._config[section]
 
+    def set_section_config(self, section, content):
+        """
+        Set a specific configuration section. It's not
+        dumped on the disk.
+
+        :param section: Section name
+        :param content: A dictonary with section content
+        """
+
+        self._config[section] = content
+
     @staticmethod
     def instance():
         """

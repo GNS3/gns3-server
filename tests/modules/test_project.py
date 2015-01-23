@@ -130,3 +130,11 @@ def test_project_close_temporary_project(manager):
     assert os.path.exists(directory)
     project.close()
     assert os.path.exists(directory) is False
+
+
+def test_get_default_project_directory():
+
+    project = Project()
+    path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
+    assert project._get_default_project_directory() == path
+    assert os.path.exists(path)
