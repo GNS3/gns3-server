@@ -95,6 +95,7 @@ class Project:
         :param vm: An instance of VM
         """
 
+        self.remove_vm(vm)
         self._vms_to_destroy.add(vm)
 
     def __json__(self):
@@ -106,13 +107,24 @@ class Project:
 
     def add_vm(self, vm):
         """
-        Add a VM to the project. In theory this should be called by
-        the VM initializer.
+        Add a VM to the project.
+        In theory this should be called by the VM manager.
 
         :params vm: A VM instance
         """
 
         self._vms.add(vm)
+
+    def remove_vm(self, vm):
+        """
+        Remove a VM from the project.
+        In theory this should be called by the VM manager.
+
+        :params vm: A VM instance
+        """
+
+        if vm in self._vms:
+            self._vms.remove(vm)
 
     def close(self):
         """Close the project, but keep informations on disk"""
@@ -128,6 +140,7 @@ class Project:
             directory = self.vm_working_directory(vm)
             if os.path.exists(directory):
                 shutil.rmtree(directory)
+            self.remove_vm(vm)
 
     def delete(self):
         """Remove project from disk"""

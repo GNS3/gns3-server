@@ -68,14 +68,17 @@ def test_vm_working_directory(tmpdir, vm):
 
 
 def test_mark_vm_for_destruction(tmpdir, vm):
-    p = Project(location=str(tmpdir))
-    p.mark_vm_for_destruction(vm)
-    assert len(p._vms_to_destroy) == 1
+    project = Project(location=str(tmpdir))
+    project.add_vm(vm)
+    project.mark_vm_for_destruction(vm)
+    assert len(project._vms_to_destroy) == 1
+    assert len(project.vms) == 0
 
 
 def test_commit(tmpdir, manager):
     project = Project(location=str(tmpdir))
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    project.add_vm(vm)
     directory = project.vm_working_directory(vm)
     project.mark_vm_for_destruction(vm)
     assert len(project._vms_to_destroy) == 1
@@ -83,6 +86,7 @@ def test_commit(tmpdir, manager):
     project.commit()
     assert len(project._vms_to_destroy) == 0
     assert os.path.exists(directory) is False
+    assert len(project.vms) == 0
 
 
 def test_project_delete(tmpdir):
@@ -95,8 +99,8 @@ def test_project_delete(tmpdir):
 
 def test_project_add_vm(tmpdir, manager):
     project = Project(location=str(tmpdir))
-    # The VM initalizer call the add_vm method
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    project.add_vm(vm)
     assert len(project.vms) == 1
 
 
