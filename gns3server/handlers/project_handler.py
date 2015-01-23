@@ -57,6 +57,24 @@ class ProjectHandler:
         response.set_status(204)
 
     @classmethod
+    @Route.post(
+        r"/project/{uuid}/close",
+        description="Close project",
+        parameters={
+            "uuid": "Project instance UUID",
+        },
+        status_codes={
+            204: "Project closed",
+            404: "Project instance doesn't exist"
+        })
+    def close(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["uuid"])
+        project.close()
+        response.set_status(204)
+
+    @classmethod
     @Route.delete(
         r"/project/{uuid}",
         description="Delete a project from disk",

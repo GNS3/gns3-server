@@ -27,6 +27,7 @@ class BaseVM:
         self._uuid = uuid
         self._project = project
         self._manager = manager
+        project.add_vm(self)
 
         log.debug("{module}: {name} [{uuid}] initialized".format(module=self.manager.module_name,
                                                                  name=self.name,

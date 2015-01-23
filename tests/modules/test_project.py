@@ -18,6 +18,8 @@
 
 import os
 import pytest
+from unittest.mock import patch
+
 from gns3server.modules.project import Project
 from gns3server.modules.vpcs import VPCS, VPCSVM
 
@@ -89,3 +91,19 @@ def test_project_delete(tmpdir):
     assert os.path.exists(directory)
     project.delete()
     assert os.path.exists(directory) is False
+
+
+def test_project_add_vm(tmpdir, manager):
+    project = Project(location=str(tmpdir))
+    # The VM initalizer call the add_vm method
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    assert len(project.vms) == 1
+
+
+def test_project_close(tmpdir, manager):
+    project = Project(location=str(tmpdir))
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    project.add_vm(vm)
+    with patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.close") as mock:
+        project.close()
+        assert mock.called

@@ -46,6 +46,7 @@ class Project:
         if location is None:
             self._location = tempfile.mkdtemp()
 
+        self._vms = set()
         self._vms_to_destroy = set()
         self._path = os.path.join(self._location, self._uuid)
         try:
@@ -67,6 +68,11 @@ class Project:
     def path(self):
 
         return self._path
+
+    @property
+    def vms(self):
+
+        return self._vms
 
     def vm_working_directory(self, vm):
         """
@@ -98,10 +104,21 @@ class Project:
             "location": self._location
         }
 
+    def add_vm(self, vm):
+        """
+        Add a VM to the project. In theory this should be called by
+        the VM initializer.
+
+        :params vm: A VM instance
+        """
+
+        self._vms.add(vm)
+
     def close(self):
         """Close the project, but keep informations on disk"""
 
-        pass
+        for vm in self._vms:
+            vm.close()
 
     def commit(self):
         """Write project changes on disk"""

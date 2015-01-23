@@ -20,6 +20,7 @@ This test suite check /project endpoint
 """
 
 import uuid
+from tests.utils import asyncio_patch
 
 
 def test_create_project_with_dir(server, tmpdir):
@@ -51,8 +52,10 @@ def test_create_project_with_uuid(server):
 
 
 def test_commit_project(server, project):
-    response = server.post("/project/{uuid}/commit".format(uuid=project.uuid), example=True)
+    with asyncio_patch("gns3server.modules.project.Project.commit", return_value=True) as mock:
+        response = server.post("/project/{uuid}/commit".format(uuid=project.uuid), example=True)
     assert response.status == 204
+    assert mock.called
 
 
 def test_commit_project_invalid_project_uuid(server, project):
@@ -60,14 +63,25 @@ def test_commit_project_invalid_project_uuid(server, project):
     assert response.status == 404
 
 
-def test_delete_project(server):
-    query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = server.post("/project", query)
-    assert response.status == 200
-    response = server.delete("/project/00010203-0405-0607-0809-0a0b0c0d0e0f")
-    assert response.status == 204
+def test_delete_project(server, project):
+    with asyncio_patch("gns3server.modules.project.Project.delete", return_value=True) as mock:
+        response = server.delete("/project/{uuid}".format(uuid=project.uuid), example=True)
+        assert response.status == 204
+        assert mock.called
 
 
 def test_delete_project_invalid_uuid(server, project):
     response = server.delete("/project/{uuid}".format(uuid=uuid.uuid4()))
+    assert response.status == 404
+
+
+def test_close_project(server, project):
+    with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
+        response = server.post("/project/{uuid}/close".format(uuid=project.uuid), example=True)
+        assert response.status == 204
+        assert mock.called
+
+
+def test_close_project_invalid_uuid(server, project):
+    response = server.post("/project/{uuid}/close".format(uuid=uuid.uuid4()))
     assert response.status == 404
