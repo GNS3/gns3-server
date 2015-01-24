@@ -67,9 +67,9 @@ class Server:
         #     log.error("could not create the projects directory {}: {}".format(self._projects_dir, e))
 
     @asyncio.coroutine
-    def _run_application(self, app):
+    def _run_application(self, app, ssl_context=None):
 
-        server = yield from self._loop.create_server(app.make_handler(), self._host, self._port)
+        server = yield from self._loop.create_server(app.make_handler(), self._host, self._port, ssl=ssl_context)
         return server
 
     def _stop_application(self):
@@ -130,6 +130,22 @@ class Server:
                 reload()
         self._loop.call_later(1, self._reload_hook)
 
+    def _create_ssl_context(self, server_config):
+
+        import ssl
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        certfile = server_config["certfile"]
+        certkey = server_config["certkey"]
+        try:
+            ssl_context.load_cert_chain(certfile, certkey)
+        except FileNotFoundError:
+            log.critical("Could not find the SSL certfile or certkey")
+            raise SystemExit
+        except ssl.SSLError as e:
+            log.critical("SSL error: {}".format(e))
+            raise SystemExit
+        return ssl_context
+
     def run(self):
         """
         Starts the server.
@@ -138,11 +154,18 @@ class Server:
         logger = logging.getLogger("asyncio")
         logger.setLevel(logging.WARNING)
 
+        server_config = Config.instance().get_section_config("Server")
         if sys.platform.startswith("win"):
             # use the Proactor event loop on Windows
             asyncio.set_event_loop(asyncio.ProactorEventLoop())
 
-        # TODO: SSL support for Rackspace cloud integration (here or with nginx for instance).
+        ssl_context = None
+        if server_config.getboolean("ssl"):
+            if sys.platform.startswith("win"):
+                log.critical("SSL mode is not supported on Windows")
+                raise SystemExit
+            ssl_context = self._create_ssl_context(server_config)
+
         self._loop = asyncio.get_event_loop()
         app = aiohttp.web.Application()
         for method, route, handler in Route.get_routes():
@@ -154,7 +177,7 @@ class Server:
             m.port_manager = self._port_manager
 
         log.info("Starting server on {}:{}".format(self._host, self._port))
-        self._loop.run_until_complete(self._run_application(app))
+        self._loop.run_until_complete(self._run_application(app, ssl_context))
         self._signal_handling()
 
         # FIXME: remove it in production or in tests

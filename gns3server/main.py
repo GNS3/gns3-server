@@ -73,31 +73,27 @@ def locale_check():
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
-    parser.add_argument("-l", "--host", help="run on the given host/IP address", default="127.0.0.1", nargs="?")
-    parser.add_argument("-p", "--port", type=int, help="run on the given port", default=8000, nargs="?")
     parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
-    parser.add_argument("-q", "--quiet", action="store_true", help="Do not show logs on stdout")
-    parser.add_argument("-d", "--debug", action="store_true", help="Show debug logs")
-    parser.add_argument("-L", "--local", action="store_true", help="Local mode (allow some insecure operations)")
-
-    parser.add_argument("-A", "--allow-remote-console", dest="allow", action="store_true", help="Allow remote connections to console ports")
+    parser.add_argument("--host", help="run on the given host/IP address", default="127.0.0.1")
+    parser.add_argument("--port", help="run on the given port", type=int, default=8000)
+    parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
+    parser.add_argument("--certfile", help="SSL cert file", default="")
+    parser.add_argument("--certkey", help="SSL key file", default="")
+    parser.add_argument("-L", "--local", action="store_true", help="local mode (allow some insecure operations)")
+    parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
+    parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
+    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
     args = parser.parse_args()
 
     config = Config.instance()
     server_config = config.get_section_config("Server")
-
-    if args.local:
-        server_config["local"] = "true"
-    else:
-        server_config["local"] = "false"
-
-    if args.allow:
-        server_config["allow_remote_console"] = "true"
-    else:
-        server_config["allow_remote_console"] = "false"
-
-    server_config["host"] = args.host
-    server_config["port"] = str(args.port)
+    server_config["local"] = server_config.get("local", "true" if args.local else "false")
+    server_config["allow_remote_console"] = server_config.get("allow_remote_console", "true" if args.allow else "false")
+    server_config["host"] = server_config.get("host", args.host)
+    server_config["port"] = server_config.get("port", str(args.port))
+    server_config["ssl"] = server_config.get("ssl", "true" if args.ssl else "false")
+    server_config["certfile"] = server_config.get("certfile", args.certfile)
+    server_config["certkey"] = server_config.get("certkey", args.certkey)
     config.set_section_config("Server", server_config)
 
     return args
