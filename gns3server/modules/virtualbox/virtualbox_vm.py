@@ -807,7 +807,10 @@ class VirtualBoxVM(BaseVM):
             yield from self._control_vm("nic{} null".format(adapter_id + 1))
 
         nio = adapter.get_nio(0)
+        if str(nio) == "NIO UDP":
+            self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(0)
+
         log.info("VirtualBox VM '{name}' [{uuid}]: {nio} removed from adapter {adapter_id}".format(name=self.name,
                                                                                                    uuid=self.uuid,
                                                                                                    nio=nio,

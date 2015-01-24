@@ -343,7 +343,10 @@ class VPCSVM(BaseVM):
                                                                                        port_id=port_id))
 
         nio = self._ethernet_adapter.get_nio(port_id)
+        if str(nio) == "NIO UDP":
+            self.manager.port_manager.release_udp_port(nio.lport)
         self._ethernet_adapter.remove_nio(port_id)
+
         log.info("VPCS {name} [{uuid}]: {nio} removed from port {port_id}".format(name=self._name,
                                                                                   uuid=self.uuid,
                                                                                   nio=nio,

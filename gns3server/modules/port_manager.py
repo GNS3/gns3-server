@@ -51,6 +51,21 @@ class PortManager:
         else:
             self._console_host = host
 
+        assert not hasattr(PortManager, "_instance")
+        PortManager._instance = self
+
+    @classmethod
+    def instance(cls):
+        """
+        Singleton to return only one instance of PortManager.
+
+        :returns: instance of PortManager
+        """
+
+        if not hasattr(cls, "_instance") or cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
     @property
     def console_host(self):
 
