@@ -19,8 +19,10 @@
 Interface for TAP NIOs (UNIX based OSes only).
 """
 
+from .nio import NIO
 
-class NIO_TAP(object):
+
+class NIOTAP(NIO):
 
     """
     TAP NIO.
@@ -30,6 +32,7 @@ class NIO_TAP(object):
 
     def __init__(self, tap_device):
 
+        super().__init__()
         self._tap_device = tap_device
 
     @property

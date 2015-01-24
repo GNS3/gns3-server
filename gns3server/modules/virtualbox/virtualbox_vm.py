@@ -23,7 +23,6 @@ import sys
 import shlex
 import re
 import os
-import subprocess
 import tempfile
 import json
 import socket
@@ -833,13 +832,7 @@ class VirtualBoxVM(BaseVM):
         if nio.capturing:
             raise VirtualBoxError("Packet capture is already activated on adapter {adapter_id}".format(adapter_id=adapter_id))
 
-        try:
-            os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        except OSError as e:
-            raise VirtualBoxError("Could not create captures directory {}".format(e))
-
         nio.startPacketCapture(output_file)
-
         log.info("VirtualBox VM '{name}' [{uuid}]: starting packet capture on adapter {adapter_id}".format(name=self.name,
                                                                                                            uuid=self.uuid,
                                                                                                            adapter_id=adapter_id))

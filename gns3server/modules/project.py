@@ -122,7 +122,21 @@ class Project:
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create VM working directory: {}".format(e))
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create the VM working directory: {}".format(e))
+        return workdir
+
+    def capture_working_directory(self):
+        """
+        Return a working directory where to store packet capture files.
+
+        :returns: path to the directory
+        """
+
+        workdir = os.path.join(self._path, "captures")
+        try:
+            os.makedirs(workdir, exist_ok=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create the capture working directory: {}".format(e))
         return workdir
 
     def mark_vm_for_destruction(self, vm):

@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from ..web.route import Route
 from ..schemas.virtualbox import VBOX_CREATE_SCHEMA
 from ..schemas.virtualbox import VBOX_UPDATE_SCHEMA
 from ..schemas.virtualbox import VBOX_NIO_SCHEMA
+from ..schemas.virtualbox import VBOX_CAPTURE_SCHEMA
 from ..schemas.virtualbox import VBOX_OBJECT_SCHEMA
 from ..modules.virtualbox import VirtualBox
 
@@ -261,4 +263,46 @@ class VirtualBoxHandler:
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["uuid"])
         vm.port_remove_nio_binding(int(request.match_info["port_id"]))
+        response.set_status(204)
+
+    @Route.post(
+        r"/virtualbox/{uuid}/capture/{port_id:\d+}/start",
+        parameters={
+            "uuid": "Instance UUID",
+            "port_id": "ID of the port to start a packet capture"
+        },
+        status_codes={
+            200: "Capture started",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
+        },
+        description="Start a packet capture on a VirtualBox VM instance",
+        input=VBOX_CAPTURE_SCHEMA)
+    def start_capture(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        port_id = int(request.match_info["port_id"])
+        pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["filename"])
+        vm.start_capture(port_id, pcap_file_path)
+        response.json({"port_id": port_id,
+                       "pcap_file_path": pcap_file_path})
+
+    @Route.post(
+        r"/virtualbox/{uuid}/capture/{port_id:\d+}/stop",
+        parameters={
+            "uuid": "Instance UUID",
+            "port_id": "ID of the port to stop a packet capture"
+        },
+        status_codes={
+            204: "Capture stopped",
+            400: "Invalid instance UUID",
+            404: "Instance doesn't exist"
+        },
+        description="Stop a packet capture on a VirtualBox VM instance")
+    def start_capture(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vm = vbox_manager.get_vm(request.match_info["uuid"])
+        vm.stop_capture(int(request.match_info["port_id"]))
         response.set_status(204)

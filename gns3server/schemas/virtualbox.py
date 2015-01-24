@@ -154,6 +154,21 @@ VBOX_NIO_SCHEMA = {
     "required": ["type"]
 }
 
+VBOX_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a packet capture on a VirtualBox VM instance port",
+    "type": "object",
+    "properties": {
+        "capture_filename": {
+            "description": "Capture file name",
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["capture_filename"]
+}
+
 VBOX_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "VirtualBox VM instance",
