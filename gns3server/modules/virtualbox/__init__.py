@@ -19,9 +19,116 @@
 VirtualBox server module.
 """
 
+import os
+import sys
+import shutil
+import asyncio
+import subprocess
+
 from ..base_manager import BaseManager
 from .virtualbox_vm import VirtualBoxVM
+from .virtualbox_error import VirtualBoxError
 
 
 class VirtualBox(BaseManager):
+
     _VM_CLASS = VirtualBoxVM
+
+    def __init__(self):
+
+        super().__init__()
+        self._vboxmanage_path = None
+        self._vbox_user = None
+
+    @property
+    def vboxmanage_path(self):
+        """
+        Returns the path to VBoxManage.
+
+        :returns: path
+        """
+
+        return self._vboxmanage_path
+
+    @property
+    def vbox_user(self):
+        """
+        Returns the VirtualBox user
+
+        :returns: username
+        """
+
+        return self._vbox_user
+
+    def find_vboxmanage(self):
+
+        # look for VBoxManage
+        vboxmanage_path = self.config.get_section_config("VirtualBox").get("vboxmanage_path")
+        if not vboxmanage_path:
+            if sys.platform.startswith("win"):
+                if "VBOX_INSTALL_PATH" in os.environ:
+                    vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+                elif "VBOX_MSI_INSTALL_PATH" in os.environ:
+                    vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
+            elif sys.platform.startswith("darwin"):
+                vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
+            else:
+                vboxmanage_path = shutil.which("vboxmanage")
+
+        if not vboxmanage_path:
+            raise VirtualBoxError("Could not find VBoxManage")
+        if not os.path.isfile(vboxmanage_path):
+            raise VirtualBoxError("VBoxManage {} is not accessible".format(vboxmanage_path))
+        if not os.access(vboxmanage_path, os.X_OK):
+            raise VirtualBoxError("VBoxManage is not executable")
+
+        self._vboxmanage_path = vboxmanage_path
+        return vboxmanage_path
+
+    @asyncio.coroutine
+    def execute(self, subcommand, args, timeout=60):
+
+        vboxmanage_path = self.vboxmanage_path
+        if not vboxmanage_path:
+            vboxmanage_path = self.find_vboxmanage()
+        command = [vboxmanage_path, "--nologo", subcommand]
+        command.extend(args)
+        try:
+            if self.vbox_user:
+                # TODO: test & review this part
+                sudo_command = "sudo -i -u {}".format(self.vbox_user) + " ".join(command)
+                process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            else:
+                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        except (OSError, subprocess.SubprocessError) as e:
+            raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
+
+        try:
+            stdout_data, stderr_data = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
+
+        if process.returncode:
+            # only the first line of the output is useful
+            vboxmanage_error = stderr_data.decode("utf-8", errors="ignore").splitlines()[0]
+            raise VirtualBoxError(vboxmanage_error)
+
+        return stdout_data.decode("utf-8", errors="ignore").splitlines()
+
+    @asyncio.coroutine
+    def get_list(self):
+        """
+        Gets VirtualBox VM list.
+        """
+
+        vms = []
+        result = yield from self.execute("list", ["vms"])
+        for line in result:
+            vmname, uuid = line.rsplit(' ', 1)
+            vmname = vmname.strip('"')
+            if vmname == "<inaccessible>":
+                continue  # ignore inaccessible VMs
+            extra_data = yield from self.execute("getextradata", [vmname, "GNS3/Clone"])
+            if not extra_data[0].strip() == "Value: yes":
+                vms.append(vmname)
+        return vms

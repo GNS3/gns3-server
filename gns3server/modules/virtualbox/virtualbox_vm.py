@@ -28,7 +28,6 @@ import tempfile
 import json
 import socket
 import asyncio
-import shutil
 
 from pkg_resources import parse_version
 from .virtualbox_error import VirtualBoxError
@@ -49,14 +48,12 @@ class VirtualBoxVM(BaseVM):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, uuid, project, manager, vmname, linked_clone, console=None, vbox_user=None):
+    def __init__(self, name, uuid, project, manager, vmname, linked_clone, console=None):
 
         super().__init__(name, uuid, project, manager)
 
-        self._vboxmanage_path = None
         self._maximum_adapters = 8
         self._linked_clone = linked_clone
-        self._vbox_user = vbox_user
         self._system_properties = {}
         self._telnet_server_thread = None
         self._serial_pipe = None
@@ -90,36 +87,9 @@ class VirtualBoxVM(BaseVM):
                 "adapter_start_index": self.adapter_start_index}
 
     @asyncio.coroutine
-    def _execute(self, subcommand, args, timeout=60):
-
-        command = [self._vboxmanage_path, "--nologo", subcommand]
-        command.extend(args)
-        try:
-            if self._vbox_user and self._vbox_user.strip():
-                # TODO: test & review this part
-                sudo_command = "sudo -i -u {}".format(self._vbox_user.strip()) + " ".join(command)
-                process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            else:
-                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        except (OSError, subprocess.SubprocessError) as e:
-            raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
-
-        try:
-            stdout_data, stderr_data = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
-            raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
-
-        if process.returncode:
-            # only the first line of the output is useful
-            vboxmanage_error = stderr_data.decode("utf-8", errors="ignore").splitlines()[0]
-            raise VirtualBoxError(vboxmanage_error)
-
-        return stdout_data.decode("utf-8", errors="ignore").splitlines()
-
-    @asyncio.coroutine
     def _get_system_properties(self):
 
-        properties = yield from self._execute("list", ["systemproperties"])
+        properties = yield from self.manager.execute("list", ["systemproperties"])
         for prop in properties:
             try:
                 name, value = prop.split(':', 1)
@@ -135,7 +105,7 @@ class VirtualBoxVM(BaseVM):
         :returns: state (string)
         """
 
-        results = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        results = yield from self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
             name, value = info.split('=', 1)
             if name == "VMState":
@@ -153,7 +123,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         args = shlex.split(params)
-        result = yield from self._execute("controlvm", [self._vmname] + args)
+        result = yield from self.manager.execute("controlvm", [self._vmname] + args)
         return result
 
     @asyncio.coroutine
@@ -165,34 +135,11 @@ class VirtualBoxVM(BaseVM):
         """
 
         args = shlex.split(params)
-        yield from self._execute("modifyvm", [self._vmname] + args)
-
-    def _find_vboxmanage(self):
-
-        # look for VBoxManage
-        self._vboxmanage_path = self.manager.config.get_section_config("VirtualBox").get("vboxmanage_path")
-        if not self._vboxmanage_path:
-            if sys.platform.startswith("win"):
-                if "VBOX_INSTALL_PATH" in os.environ:
-                    self._vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
-                elif "VBOX_MSI_INSTALL_PATH" in os.environ:
-                    self._vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
-            elif sys.platform.startswith("darwin"):
-                self._vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
-            else:
-                self._vboxmanage_path = shutil.which("vboxmanage")
-
-        if not self._vboxmanage_path:
-            raise VirtualBoxError("Could not find VBoxManage")
-        if not os.path.isfile(self._vboxmanage_path):
-            raise VirtualBoxError("VBoxManage {} is not accessible".format(self._vboxmanage_path))
-        if not os.access(self._vboxmanage_path, os.X_OK):
-            raise VirtualBoxError("VBoxManage is not executable")
+        yield from self.manager.execute("modifyvm", [self._vmname] + args)
 
     @asyncio.coroutine
     def create(self):
 
-        self._find_vboxmanage()
         yield from self._get_system_properties()
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
@@ -201,7 +148,7 @@ class VirtualBoxVM(BaseVM):
         if self._linked_clone:
             if self.uuid and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
-                yield from self._execute("registervm", [vbox_file])
+                yield from self.manager.execute("registervm", [vbox_file])
                 yield from self._reattach_hdds()
             else:
                 yield from self._create_linked_clone()
@@ -231,14 +178,14 @@ class VirtualBoxVM(BaseVM):
         args = [self._vmname]
         if self._headless:
             args.extend(["--type", "headless"])
-        result = yield from self._execute("startvm", args)
+        result = yield from self.manager.execute("startvm", args)
         log.info("VirtualBox VM '{name}' [{uuid}] started".format(name=self.name, uuid=self.uuid))
         log.debug("Start result: {}".format(result))
 
         # add a guest property to let the VM know about the GNS3 name
-        yield from self._execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
+        yield from self.manager.execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
         # add a guest property to let the VM know about the GNS3 project directory
-        yield from self._execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
+        yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
 
         if self._enable_remote_console:
             self._start_remote_console()
@@ -306,16 +253,6 @@ class VirtualBoxVM(BaseVM):
         log.debug("Reload result: {}".format(result))
 
     @property
-    def vboxmanage_path(self):
-        """
-        Returns the path to VBoxManage.
-
-        :returns: path
-        """
-
-        return self._vboxmanage_path
-
-    @property
     def console(self):
         """
         Returns the TCP console port.
@@ -345,7 +282,7 @@ class VirtualBoxVM(BaseVM):
     def _get_all_hdd_files(self):
 
         hdds = []
-        properties = yield from self._execute("list", ["hdds"])
+        properties = yield from self.manager.execute("list", ["hdds"])
         for prop in properties:
             try:
                 name, value = prop.split(':', 1)
@@ -408,7 +345,7 @@ class VirtualBoxVM(BaseVM):
                                 }
                             )
 
-            self._execute("unregistervm", [self._vmname])
+            yield from self.manager.execute("unregistervm", [self._vmname])
 
             if hdd_table:
                 try:
@@ -597,7 +534,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         vm_info = {}
-        results = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        results = yield from self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
             try:
                 name, value = info.split('=', 1)
@@ -649,7 +586,7 @@ class VirtualBoxVM(BaseVM):
         # set server mode with a pipe on the first serial port
         pipe_name = self._get_pipe_name()
         args = [self._vmname, "--uartmode1", "server", pipe_name]
-        yield from self._execute("modifyvm", args)
+        yield from self.manager.execute("modifyvm", args)
 
     @asyncio.coroutine
     def _storage_attach(self, params):
@@ -660,7 +597,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         args = shlex.split(params)
-        yield from self._execute("storageattach", [self._vmname] + args)
+        yield from self.manager.execute("storageattach", [self._vmname] + args)
 
     @asyncio.coroutine
     def _get_nic_attachements(self, maximum_adapters):
@@ -714,7 +651,7 @@ class VirtualBoxVM(BaseVM):
                 vbox_adapter_type = "virtio"
 
             args = [self._vmname, "--nictype{}".format(adapter_id + 1), vbox_adapter_type]
-            yield from self._execute("modifyvm", args)
+            yield from self.manager.execute("modifyvm", args)
 
             yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
             nio = self._ethernet_adapters[adapter_id].get_nio(0)
@@ -752,7 +689,7 @@ class VirtualBoxVM(BaseVM):
                 gns3_snapshot_exists = True
 
         if not gns3_snapshot_exists:
-            result = yield from self._execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
+            result = yield from self.manager.execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
             log.debug("GNS3 snapshot created: {}".format(result))
 
         args = [self._vmname,
@@ -766,14 +703,14 @@ class VirtualBoxVM(BaseVM):
                 self.working_dir,
                 "--register"]
 
-        result = yield from self._execute("clonevm", args)
+        result = yield from self.manager.execute("clonevm", args)
         log.debug("cloned VirtualBox VM: {}".format(result))
 
         self._vmname = self._name
-        yield from self._execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
+        yield from self.manager.execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
 
         args = [self._name, "take", "reset"]
-        result = yield from self._execute("snapshot", args)
+        result = yield from self.manager.execute("snapshot", args)
         log.debug("Snapshot reset created: {}".format(result))
 
     def _start_remote_console(self):

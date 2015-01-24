@@ -30,6 +30,19 @@ class VirtualBoxHandler:
     """
 
     @classmethod
+    @Route.get(
+        r"/virtualbox/list",
+        status_codes={
+            200: "Success",
+        },
+        description="Get all VirtualBox VMs available")
+    def show(request, response):
+
+        vbox_manager = VirtualBox.instance()
+        vms = yield from vbox_manager.get_list()
+        response.json(vms)
+
+    @classmethod
     @Route.post(
         r"/virtualbox",
         status_codes={
@@ -48,8 +61,7 @@ class VirtualBoxHandler:
                                                request.json.get("uuid"),
                                                request.json["vmname"],
                                                request.json["linked_clone"],
-                                               console=request.json.get("console"),
-                                               vbox_user=request.json.get("vbox_user"))
+                                               console=request.json.get("console"))
         response.set_status(201)
         response.json(vm)
 
@@ -226,7 +238,7 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["uuid"])
-        nio = vbox_manager.create_nio(vm.vboxmanage_path, request.json)
+        nio = vbox_manager.create_nio(vbox_manager.vboxmanage_path, request.json)
         vm.port_add_nio_binding(int(request.match_info["port_id"]), nio)
         response.set_status(201)
         response.json(nio)
