@@ -5,7 +5,7 @@
 
 GET /project/**{uuid}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get project informations
+Get project information
 
 Parameters
 **********

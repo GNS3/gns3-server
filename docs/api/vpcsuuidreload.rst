@@ -5,15 +5,15 @@
 
 POST /vpcs/**{uuid}**/reload
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Remove a NIO from a VPCS
+Reload a VPCS instance
 
 Parameters
 **********
-- **uuid**: VPCS instance UUID
+- **uuid**: Instance UUID
 
 Response status codes
 **********************
-- **400**: Invalid VPCS instance UUID
-- **404**: VPCS instance doesn't exist
-- **204**: VPCS reloaded
+- **400**: Invalid instance UUID
+- **404**: Instance doesn't exist
+- **204**: Instance reloaded
 

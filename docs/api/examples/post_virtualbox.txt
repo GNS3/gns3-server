@@ -11,7 +11,7 @@ POST /virtualbox HTTP/1.1
 
 HTTP/1.1 201
 CONNECTION: close
-CONTENT-LENGTH: 348
+CONTENT-LENGTH: 369
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 aiohttp/0.13.1
@@ -21,11 +21,12 @@ X-ROUTE: /virtualbox
     "adapter_start_index": 0,
     "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
     "adapters": 0,
+    "console": 2000,
     "enable_remote_console": false,
     "headless": false,
     "linked_clone": false,
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "767b6b21-2209-4d73-aec8-49e4a332709d",
+    "uuid": "bd6e0124-bb4b-4224-a71f-9a28c302df4e",
     "vmname": "VM1"
 }

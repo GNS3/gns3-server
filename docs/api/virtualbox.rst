@@ -10,7 +10,7 @@ Create a new VirtualBox VM instance
 Response status codes
 **********************
 - **400**: Invalid project UUID
-- **201**: VirtualBox VM instance created
+- **201**: Instance created
 - **409**: Conflict
 
 Input
@@ -19,6 +19,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>linked_clone</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>either the VM is a linked clone or not</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance name</td>                     </tr>
     <tr><td>project_uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>

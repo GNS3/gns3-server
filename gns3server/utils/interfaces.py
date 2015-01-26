@@ -89,7 +89,7 @@ def interfaces():
             import netifaces
             for interface in netifaces.interfaces():
                 results.append({"id": interface,
-                                 "name": interface})
+                                "name": interface})
         except ImportError:
             return
     else:

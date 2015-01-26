@@ -16,10 +16,10 @@ SERVER: Python/3.4 aiohttp/0.13.1
 X-ROUTE: /vpcs
 
 {
-    "console": 2000,
+    "console": 2001,
     "name": "PC TEST 1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "script_file": null,
     "startup_script": null,
-    "uuid": "076902d4-97d2-4243-b4fb-374a381d4bc5"
+    "uuid": "fc2b4d10-e4c6-4545-8b59-cd7a09bc3d33"
 }

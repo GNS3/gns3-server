@@ -9,13 +9,13 @@ Start a VirtualBox VM instance
 
 Parameters
 **********
-- **uuid**: VirtualBox VM instance UUID
+- **uuid**: Instance UUID
 
 Response status codes
 **********************
-- **400**: Invalid VirtualBox VM instance UUID
-- **404**: VirtualBox VM instance doesn't exist
-- **204**: VirtualBox VM instance started
+- **400**: Invalid instance UUID
+- **404**: Instance doesn't exist
+- **204**: Instance started
 
 Sample session
 ***************

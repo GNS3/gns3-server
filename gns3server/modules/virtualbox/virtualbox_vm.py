@@ -428,7 +428,7 @@ class VirtualBoxVM(BaseVM):
 
         log.info("VirtualBox VM '{name}' [{uuid}] has set the VM name to '{vmname}'".format(name=self.name, uuid=self.uuid, vmname=vmname))
         # TODO: test linked clone
-        #if self._linked_clone:
+        # if self._linked_clone:
         #    yield from self._modify_vm('--name "{}"'.format(vmname))
         self._vmname = vmname
 

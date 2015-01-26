@@ -10,7 +10,7 @@ Create a new VPCS instance
 Response status codes
 **********************
 - **400**: Invalid project UUID
-- **201**: VPCS instance created
+- **201**: Instance created
 - **409**: Conflict
 
 Input

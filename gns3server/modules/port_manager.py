@@ -51,7 +51,6 @@ class PortManager:
         else:
             self._console_host = host
 
-        assert not hasattr(PortManager, "_instance")
         PortManager._instance = self
 
     @classmethod
