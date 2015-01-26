@@ -1,0 +1,27 @@
+curl -i -X GET 'http://localhost:8000/virtualbox/{uuid}'
+
+GET /virtualbox/{uuid} HTTP/1.1
+
+
+
+HTTP/1.1 200
+CONNECTION: close
+CONTENT-LENGTH: 375
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /virtualbox/{uuid}
+
+{
+    "adapter_start_index": 0,
+    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+    "adapters": 0,
+    "console": 2001,
+    "enable_remote_console": false,
+    "headless": false,
+    "linked_clone": false,
+    "name": "VMTEST",
+    "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "uuid": "9b8874fe-919e-4a30-874b-68614da8d42f",
+    "vmname": "VMTEST"
+}

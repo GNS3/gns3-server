@@ -1,0 +1,60 @@
+curl -i -X GET 'http://localhost:8000/interfaces'
+
+GET /interfaces HTTP/1.1
+
+
+
+HTTP/1.1 200
+CONNECTION: close
+CONTENT-LENGTH: 652
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 aiohttp/0.13.1
+X-ROUTE: /interfaces
+
+[
+    {
+        "id": "lo0",
+        "name": "lo0"
+    },
+    {
+        "id": "gif0",
+        "name": "gif0"
+    },
+    {
+        "id": "stf0",
+        "name": "stf0"
+    },
+    {
+        "id": "en0",
+        "name": "en0"
+    },
+    {
+        "id": "en1",
+        "name": "en1"
+    },
+    {
+        "id": "en2",
+        "name": "en2"
+    },
+    {
+        "id": "fw0",
+        "name": "fw0"
+    },
+    {
+        "id": "p2p0",
+        "name": "p2p0"
+    },
+    {
+        "id": "bridge0",
+        "name": "bridge0"
+    },
+    {
+        "id": "vboxnet0",
+        "name": "vboxnet0"
+    },
+    {
+        "id": "vboxnet1",
+        "name": "vboxnet1"
+    }
+]
