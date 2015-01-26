@@ -19,6 +19,8 @@ import json
 import jsonschema
 import aiohttp.web
 import logging
+import sys
+from ..version import __version__
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +32,7 @@ class Response(aiohttp.web.Response):
         self._route = route
         self._output_schema = output_schema
         headers['X-Route'] = self._route
+        headers['Server'] = "Python/{0[0]}.{0[1]} GNS3/{1}".format(sys.version_info, __version__)
         super().__init__(headers=headers, **kwargs)
 
     """
@@ -42,6 +45,7 @@ class Response(aiohttp.web.Response):
     def json(self, answer):
         """Pass a Python object and return a JSON as answer"""
 
+        print(self.headers)
         self.content_type = "application/json"
         if hasattr(answer, '__json__'):
             answer = answer.__json__()
