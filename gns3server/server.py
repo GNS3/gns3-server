@@ -164,7 +164,7 @@ class Server:
         self._loop.run_until_complete(self._run_application(app, ssl_context))
         self._signal_handling()
 
-        if server_config["debug"] == "true":
+        if server_config.getboolean("debug"):
             log.info("Code live reload is enabled, watching for file changes")
             self._loop.call_later(1, self._reload_hook)
         self._loop.run_forever()
