@@ -195,7 +195,10 @@ class Project:
         for vm in self._vms:
             vm.close()
         if cleanup and os.path.exists(self.path):
-            yield from wait_run_in_executor(shutil.rmtree, self.path)
+            try:
+                yield from wait_run_in_executor(shutil.rmtree, self.path)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
 
     @asyncio.coroutine
     def commit(self):
@@ -205,7 +208,10 @@ class Project:
             vm = self._vms_to_destroy.pop()
             directory = self.vm_working_directory(vm)
             if os.path.exists(directory):
-                yield from wait_run_in_executor(shutil.rmtree, directory)
+                try:
+                    yield from wait_run_in_executor(shutil.rmtree, directory)
+                except OSError as e:
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
             self.remove_vm(vm)
 
     @asyncio.coroutine

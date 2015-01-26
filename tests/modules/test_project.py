@@ -20,6 +20,7 @@ import os
 import asyncio
 import pytest
 import aiohttp
+import shutil
 from unittest.mock import patch
 
 from gns3server.modules.project import Project
@@ -99,12 +100,36 @@ def test_commit(manager, loop):
     assert len(project.vms) == 0
 
 
+def test_commit_permission_issue(manager, loop):
+    project = Project()
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    project.add_vm(vm)
+    directory = project.vm_working_directory(vm)
+    project.mark_vm_for_destruction(vm)
+    assert len(project._vms_to_destroy) == 1
+    assert os.path.exists(directory)
+    os.chmod(directory, 0)
+    with pytest.raises(aiohttp.web.HTTPInternalServerError):
+        loop.run_until_complete(asyncio.async(project.commit()))
+    os.chmod(directory, 700)
+
+
 def test_project_delete(loop):
     project = Project()
     directory = project.path
     assert os.path.exists(directory)
     loop.run_until_complete(asyncio.async(project.delete()))
     assert os.path.exists(directory) is False
+
+
+def test_project_delete_permission_issue(loop):
+    project = Project()
+    directory = project.path
+    assert os.path.exists(directory)
+    os.chmod(directory, 0)
+    with pytest.raises(aiohttp.web.HTTPInternalServerError):
+        loop.run_until_complete(asyncio.async(project.delete()))
+    os.chmod(directory, 700)
 
 
 def test_project_add_vm(manager):

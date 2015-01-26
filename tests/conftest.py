@@ -117,4 +117,8 @@ def run_around_tests():
 
     yield
 
-    shutil.rmtree(tmppath)
+    # An helper should not raise Exception
+    try:
+        shutil.rmtree(tmppath)
+    except:
+        pass
