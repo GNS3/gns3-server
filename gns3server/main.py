@@ -82,7 +82,7 @@ def parse_arguments():
     parser.add_argument("-L", "--local", action="store_true", help="local mode (allow some insecure operations)")
     parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
-    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
+    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs and enable code live reload")
     args = parser.parse_args()
 
     config = Config.instance()
@@ -94,6 +94,7 @@ def parse_arguments():
     server_config["ssl"] = server_config.get("ssl", "true" if args.ssl else "false")
     server_config["certfile"] = server_config.get("certfile", args.certfile)
     server_config["certkey"] = server_config.get("certkey", args.certkey)
+    server_config["debug"] = server_config.get("debug", "true" if args.debug else "false")
     config.set_section_config("Server", server_config)
 
     return args
