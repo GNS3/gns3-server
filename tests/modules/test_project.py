@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import asyncio
 import pytest
 import aiohttp
 from unittest.mock import patch
@@ -84,7 +85,7 @@ def test_mark_vm_for_destruction(vm):
     assert len(project.vms) == 0
 
 
-def test_commit(manager):
+def test_commit(manager, loop):
     project = Project()
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
@@ -92,17 +93,17 @@ def test_commit(manager):
     project.mark_vm_for_destruction(vm)
     assert len(project._vms_to_destroy) == 1
     assert os.path.exists(directory)
-    project.commit()
+    loop.run_until_complete(asyncio.async(project.commit()))
     assert len(project._vms_to_destroy) == 0
     assert os.path.exists(directory) is False
     assert len(project.vms) == 0
 
 
-def test_project_delete():
+def test_project_delete(loop):
     project = Project()
     directory = project.path
     assert os.path.exists(directory)
-    project.delete()
+    loop.run_until_complete(asyncio.async(project.delete()))
     assert os.path.exists(directory) is False
 
 
@@ -113,22 +114,22 @@ def test_project_add_vm(manager):
     assert len(project.vms) == 1
 
 
-def test_project_close(manager):
+def test_project_close(loop, manager):
     project = Project()
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
     with patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.close") as mock:
-        project.close()
+        loop.run_until_complete(asyncio.async(project.close()))
         assert mock.called
 
 
-def test_project_close_temporary_project(manager):
+def test_project_close_temporary_project(loop, manager):
     """A temporary project is deleted when closed"""
 
     project = Project(temporary=True)
     directory = project.path
     assert os.path.exists(directory)
-    project.close()
+    loop.run_until_complete(asyncio.async(project.close()))
     assert os.path.exists(directory) is False
 
 

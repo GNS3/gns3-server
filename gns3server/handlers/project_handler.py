@@ -92,7 +92,7 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["uuid"])
-        project.commit()
+        yield from project.commit()
         response.set_status(204)
 
     @classmethod
@@ -110,7 +110,7 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["uuid"])
-        project.close()
+        yield from project.close()
         response.set_status(204)
 
     @classmethod
@@ -128,5 +128,5 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["uuid"])
-        project.delete()
+        yield from project.delete()
         response.set_status(204)

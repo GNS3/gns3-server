@@ -19,9 +19,11 @@ import aiohttp
 import os
 import tempfile
 import shutil
+import asyncio
 from uuid import UUID, uuid4
-from ..config import Config
 
+from ..config import Config
+from ..utils.asyncio import wait_run_in_executor
 
 import logging
 log = logging.getLogger(__name__)
@@ -176,11 +178,13 @@ class Project:
         if vm in self._vms:
             self._vms.remove(vm)
 
+    @asyncio.coroutine
     def close(self):
         """Close the project, but keep informations on disk"""
 
-        self._close_and_clean(self._temporary)
+        yield from self._close_and_clean(self._temporary)
 
+    @asyncio.coroutine
     def _close_and_clean(self, cleanup):
         """
         Close the project, and cleanup the disk if cleanup is True
@@ -191,8 +195,9 @@ class Project:
         for vm in self._vms:
             vm.close()
         if cleanup and os.path.exists(self.path):
-            shutil.rmtree(self.path)
+            yield from wait_run_in_executor(shutil.rmtree, self.path)
 
+    @asyncio.coroutine
     def commit(self):
         """Write project changes on disk"""
 
@@ -200,10 +205,11 @@ class Project:
             vm = self._vms_to_destroy.pop()
             directory = self.vm_working_directory(vm)
             if os.path.exists(directory):
-                shutil.rmtree(directory)
+                yield from wait_run_in_executor(shutil.rmtree, directory)
             self.remove_vm(vm)
 
+    @asyncio.coroutine
     def delete(self):
         """Remove project from disk"""
 
-        self._close_and_clean(True)
+        yield from self._close_and_clean(True)
