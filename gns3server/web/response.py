@@ -45,7 +45,6 @@ class Response(aiohttp.web.Response):
     def json(self, answer):
         """Pass a Python object and return a JSON as answer"""
 
-        print(self.headers)
         self.content_type = "application/json"
         if hasattr(answer, '__json__'):
             answer = answer.__json__()
