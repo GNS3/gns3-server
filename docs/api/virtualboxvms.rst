@@ -1,19 +1,13 @@
-/udp
+/virtualbox/vms
 ---------------------------------------------
 
 .. contents::
 
-POST /udp
+GET /virtualbox/vms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Allocate an UDP port on the server
+Get all VirtualBox VMs available
 
 Response status codes
 **********************
-- **201**: UDP port allocated
-
-Sample session
-***************
-
-
-.. literalinclude:: examples/post_udp.txt
+- **200**: Success
 

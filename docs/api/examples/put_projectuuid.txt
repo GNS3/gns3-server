@@ -7,15 +7,15 @@ PUT /project/{uuid} HTTP/1.1
 
 
 HTTP/1.1 200
-CONNECTION: close
+CONNECTION: keep-alive
 CONTENT-LENGTH: 158
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 aiohttp/0.13.1
+SERVER: Python/3.4 GNS3/1.3.dev1
 X-ROUTE: /project/{uuid}
 
 {
-    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpivbrfsdh",
+    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpf9hmfoxi",
     "temporary": false,
-    "uuid": "0442fdb6-fc77-4f1c-b996-675b98dc032e"
+    "uuid": "6cc80657-e8f3-445b-8c1a-e2081ac7d042"
 }

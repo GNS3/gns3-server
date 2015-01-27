@@ -17,7 +17,7 @@
 
 
 def test_udp_allocation(server):
-    response = server.post('/udp', {})
+    response = server.post('/udp', {}, example=True)
     assert response.status == 201
     assert response.json == {'udp_port': 10000}
 

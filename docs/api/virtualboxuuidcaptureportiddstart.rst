@@ -9,8 +9,8 @@ Start a packet capture on a VirtualBox VM instance
 
 Parameters
 **********
-- **port_id**: ID of the port to start a packet capture
 - **uuid**: Instance UUID
+- **port_id**: ID of the port to start a packet capture
 
 Response status codes
 **********************

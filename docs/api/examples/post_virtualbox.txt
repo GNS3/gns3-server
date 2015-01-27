@@ -10,11 +10,11 @@ POST /virtualbox HTTP/1.1
 
 
 HTTP/1.1 201
-CONNECTION: close
+CONNECTION: keep-alive
 CONTENT-LENGTH: 369
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 aiohttp/0.13.1
+SERVER: Python/3.4 GNS3/1.3.dev1
 X-ROUTE: /virtualbox
 
 {
@@ -27,6 +27,6 @@ X-ROUTE: /virtualbox
     "linked_clone": false,
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "455cc5f9-22f2-4121-973a-45d525110970",
+    "uuid": "8b5bbfa3-0682-4d65-ae8b-a1aea9dc40e5",
     "vmname": "VM1"
 }
