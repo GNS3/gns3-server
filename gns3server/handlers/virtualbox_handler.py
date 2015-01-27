@@ -26,14 +26,13 @@ from ..modules.virtualbox import VirtualBox
 
 
 class VirtualBoxHandler:
-
     """
     API entry points for VirtualBox.
     """
 
     @classmethod
     @Route.get(
-        r"/virtualbox/list",
+        r"/virtualbox/vms",
         status_codes={
             200: "Success",
         },
