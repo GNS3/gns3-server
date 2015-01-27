@@ -35,6 +35,15 @@ class Response(aiohttp.web.Response):
         headers['Server'] = "Python/{0[0]}.{0[1]} GNS3/{1}".format(sys.version_info, __version__)
         super().__init__(headers=headers, **kwargs)
 
+    def start(self, request):
+        log.debug("{} {}".format(self.status, self.reason))
+        log.debug(dict(self.headers))
+        return super().start(request)
+
+    def write(self, data):
+        log.debug(data)
+        return super().write(data)
+
     """
     Set the response content type to application/json and serialize
     the content.
