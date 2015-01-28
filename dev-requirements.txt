@@ -4,3 +4,6 @@ sphinx==1.2.3
 pytest==2.6.4
 ws4py==0.3.4
 pep8==1.5.7
+pytest
+pytest-timeout
+pytest-capturelog
