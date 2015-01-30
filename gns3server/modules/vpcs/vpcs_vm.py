@@ -165,8 +165,15 @@ class VPCSVM(BaseVM):
     @property
     def startup_script(self):
         """Return the content of the current startup script"""
+
         if self._script_file is None:
-            return None
+            # If the default VPCS file exist we use it
+            path = os.path.join(self.working_dir, 'startup.vpc')
+            if os.path.exists(path):
+                self._script_file = path
+            else:
+                return None
+
         try:
             with open(self._script_file) as f:
                 return f.read()

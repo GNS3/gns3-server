@@ -155,6 +155,20 @@ def test_get_startup_script(vm):
     assert vm.startup_script == content
 
 
+def test_get_startup_script_using_default_script(vm):
+    content = "echo GNS3 VPCS\nip 192.168.1.2\n"
+
+    # Reset script file location
+    vm.script_file = None
+
+    filepath = os.path.join(vm.working_dir, 'startup.vpc')
+    with open(filepath, 'w+') as f:
+        assert f.write(content)
+
+    assert vm.startup_script == content
+    assert vm.script_file == filepath
+
+
 def test_change_console_port(vm, port_manager):
     port1 = port_manager.get_free_console_port()
     port2 = port_manager.get_free_console_port()
