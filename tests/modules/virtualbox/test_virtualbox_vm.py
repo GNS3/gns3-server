@@ -41,7 +41,6 @@ def test_vm(project, manager):
     assert vm.name == "test"
     assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
     assert vm.vmname == "test"
-    assert vm.linked_clone is False
 
 
 def test_vm_valid_virtualbox_api_version(loop, project, manager):

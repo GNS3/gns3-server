@@ -24,7 +24,7 @@ class NetworkHandler:
 
     @classmethod
     @Route.post(
-        r"/udp",
+        r"/ports/udp",
         status_codes={
             201: "UDP port allocated",
         },

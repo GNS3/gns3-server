@@ -152,7 +152,8 @@ class VirtualBoxVM(BaseVM):
             else:
                 yield from self._create_linked_clone()
 
-        yield from self.set_adapters(self._adapters)
+        if self._adapters:
+            yield from self.set_adapters(self._adapters)
 
     @asyncio.coroutine
     def start(self):

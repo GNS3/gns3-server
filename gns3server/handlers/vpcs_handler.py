@@ -168,10 +168,10 @@ class VPCSHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/vpcs/{uuid}/ports/{port_id:\d+}/nio",
+        r"/vpcs/{uuid}/ports/{port_number:\d+}/nio",
         parameters={
             "uuid": "Instance UUID",
-            "port_id": "ID of the port where the nio should be added"
+            "port_number": "Port where the nio should be added"
         },
         status_codes={
             201: "NIO created",
@@ -186,16 +186,16 @@ class VPCSHandler:
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
         nio = vpcs_manager.create_nio(vm.vpcs_path, request.json)
-        vm.port_add_nio_binding(int(request.match_info["port_id"]), nio)
+        vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
     @classmethod
     @Route.delete(
-        r"/vpcs/{uuid}/ports/{port_id:\d+}/nio",
+        r"/vpcs/{uuid}/ports/{port_number:\d+}/nio",
         parameters={
             "uuid": "Instance UUID",
-            "port_id": "ID of the port from where the nio should be removed"
+            "port_number": "Port from where the nio should be removed"
         },
         status_codes={
             204: "NIO deleted",
@@ -207,5 +207,5 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
-        vm.port_remove_nio_binding(int(request.match_info["port_id"]))
+        vm.port_remove_nio_binding(int(request.match_info["port_number"]))
         response.set_status(204)

@@ -29,8 +29,8 @@ class Adapter(object):
         self._interfaces = interfaces
 
         self._ports = {}
-        for port_id in range(0, interfaces):
-            self._ports[port_id] = None
+        for port_number in range(0, interfaces):
+            self._ports[port_number] = None
 
     def removable(self):
         """
@@ -42,7 +42,7 @@ class Adapter(object):
 
         return True
 
-    def port_exists(self, port_id):
+    def port_exists(self, port_number):
         """
         Checks if a port exists on this adapter.
 
@@ -50,39 +50,39 @@ class Adapter(object):
         False otherwise.
         """
 
-        if port_id in self._ports:
+        if port_number in self._ports:
             return True
         return False
 
-    def add_nio(self, port_id, nio):
+    def add_nio(self, port_number, nio):
         """
         Adds a NIO to a port on this adapter.
 
-        :param port_id: port ID (integer)
+        :param port_number: port number (integer)
         :param nio: NIO instance
         """
 
-        self._ports[port_id] = nio
+        self._ports[port_number] = nio
 
-    def remove_nio(self, port_id):
+    def remove_nio(self, port_number):
         """
         Removes a NIO from a port on this adapter.
 
-        :param port_id: port ID (integer)
+        :param port_number: port number (integer)
         """
 
-        self._ports[port_id] = None
+        self._ports[port_number] = None
 
-    def get_nio(self, port_id):
+    def get_nio(self, port_number):
         """
         Returns the NIO assigned to a port.
 
-        :params port_id: port ID (integer)
+        :params port_number: port number (integer)
 
         :returns: NIO instance
         """
 
-        return self._ports[port_id]
+        return self._ports[port_number]
 
     @property
     def ports(self):

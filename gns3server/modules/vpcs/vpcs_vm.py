@@ -317,47 +317,47 @@ class VPCSVM(BaseVM):
             return True
         return False
 
-    def port_add_nio_binding(self, port_id, nio):
+    def port_add_nio_binding(self, port_number, nio):
         """
         Adds a port NIO binding.
 
-        :param port_id: port ID
+        :param port_number: port number
         :param nio: NIO instance to add to the slot/port
         """
 
-        if not self._ethernet_adapter.port_exists(port_id):
-            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                       port_id=port_id))
+        if not self._ethernet_adapter.port_exists(port_number):
+            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+                                                                                           port_number=port_number))
 
-        self._ethernet_adapter.add_nio(port_id, nio)
-        log.info("VPCS {name} {uuid}]: {nio} added to port {port_id}".format(name=self._name,
-                                                                             uuid=self.uuid,
-                                                                             nio=nio,
-                                                                             port_id=port_id))
+        self._ethernet_adapter.add_nio(port_number, nio)
+        log.info("VPCS {name} {uuid}]: {nio} added to port {port_number}".format(name=self._name,
+                                                                                 uuid=self.uuid,
+                                                                                 nio=nio,
+                                                                                 port_number=port_number))
         return nio
 
-    def port_remove_nio_binding(self, port_id):
+    def port_remove_nio_binding(self, port_number):
         """
         Removes a port NIO binding.
 
-        :param port_id: port ID
+        :param port_number: port number
 
         :returns: NIO instance
         """
 
-        if not self._ethernet_adapter.port_exists(port_id):
-            raise VPCSError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                       port_id=port_id))
+        if not self._ethernet_adapter.port_exists(port_number):
+            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+                                                                                           port_number=port_number))
 
-        nio = self._ethernet_adapter.get_nio(port_id)
+        nio = self._ethernet_adapter.get_nio(port_number)
         if str(nio) == "NIO UDP":
             self.manager.port_manager.release_udp_port(nio.lport)
-        self._ethernet_adapter.remove_nio(port_id)
+        self._ethernet_adapter.remove_nio(port_number)
 
-        log.info("VPCS {name} [{uuid}]: {nio} removed from port {port_id}".format(name=self._name,
-                                                                                  uuid=self.uuid,
-                                                                                  nio=nio,
-                                                                                  port_id=port_id))
+        log.info("VPCS {name} [{uuid}]: {nio} removed from port {port_number}".format(name=self._name,
+                                                                                      uuid=self.uuid,
+                                                                                      nio=nio,
+                                                                                      port_number=port_number))
         return nio
 
     def _build_command(self):
