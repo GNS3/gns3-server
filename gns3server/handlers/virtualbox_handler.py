@@ -227,7 +227,7 @@ class VirtualBoxHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/virtualbox/{uuid}/ports/{adapter_id:\d+}/nio",
+        r"/virtualbox/{uuid}/adapters/{adapter_id:\d+}/nio",
         parameters={
             "uuid": "Instance UUID",
             "adapter_id": "Adapter where the nio should be added"
@@ -251,7 +251,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.delete(
-        r"/virtualbox/{uuid}/ports/{adapter_id:\d+}/nio",
+        r"/virtualbox/{uuid}/adapters/{adapter_id:\d+}/nio",
         parameters={
             "uuid": "Instance UUID",
             "adapter_id": "Adapter from where the nio should be removed"
