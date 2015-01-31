@@ -62,7 +62,12 @@ class VirtualBoxHandler:
                                                request.json.get("uuid"),
                                                request.json["vmname"],
                                                request.json["linked_clone"],
-                                               console=request.json.get("console"))
+                                               adapters=request.json.get("adapters", 0))
+
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
+
         response.set_status(201)
         response.json(vm)
 

@@ -21,6 +21,28 @@ VBOX_CREATE_SCHEMA = {
     "description": "Request validation to create a new VirtualBox VM instance",
     "type": "object",
     "properties": {
+        "uuid": {
+            "description": "VirtualBox VM instance UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "vbox_id": {
+            "description": "VirtualBox VM instance ID (for project created before GNS3 1.3)",
+            "type": "integer"
+        },
+        "project_uuid": {
+            "description": "Project UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "linked_clone": {
+            "description": "either the VM is a linked clone or not",
+            "type": "boolean"
+        },
         "name": {
             "description": "VirtualBox VM instance name",
             "type": "string",
@@ -31,33 +53,36 @@ VBOX_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "linked_clone": {
-            "description": "either the VM is a linked clone or not",
-            "type": "boolean"
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
         },
-        "vbox_id": {
-            "description": "VirtualBox VM instance ID (for project created before GNS3 1.3)",
-            "type": "integer"
+        "adapter_start_index": {
+            "description": "adapter index from which to start using adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 35,  # maximum given by the ICH9 chipset in VirtualBox
         },
-        "uuid": {
-            "description": "VirtualBox VM instance UUID",
+        "adapter_type": {
+            "description": "VirtualBox adapter type",
             "type": "string",
-            "minLength": 36,
-            "maxLength": 36,
-            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-        },
-        "project_uuid": {
-            "description": "Project UUID",
-            "type": "string",
-            "minLength": 36,
-            "maxLength": 36,
-            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+            "minLength": 1,
         },
         "console": {
             "description": "console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
+        },
+        "enable_remote_console": {
+            "description": "enable the remote console",
+            "type": "boolean"
+        },
+        "headless": {
+            "description": "headless mode",
+            "type": "boolean"
         },
     },
     "additionalProperties": False,
@@ -197,10 +222,6 @@ VBOX_OBJECT_SCHEMA = {
             "description": "VirtualBox VM name (in VirtualBox itself)",
             "type": "string",
             "minLength": 1,
-        },
-        "linked_clone": {
-            "description": "either the VM is a linked clone or not",
-            "type": "boolean"
         },
         "enable_remote_console": {
             "description": "enable the remote console",

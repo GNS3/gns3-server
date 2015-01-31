@@ -31,7 +31,7 @@ import asyncio
 from pkg_resources import parse_version
 from .virtualbox_error import VirtualBoxError
 from ..adapters.ethernet_adapter import EthernetAdapter
-from .telnet_server import TelnetServer  # port TelnetServer to asyncio
+from .telnet_server import TelnetServer  # TODO: port TelnetServer to asyncio
 from ..base_vm import BaseVM
 
 if sys.platform.startswith('win'):
@@ -47,7 +47,7 @@ class VirtualBoxVM(BaseVM):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, uuid, project, manager, vmname, linked_clone, console=None):
+    def __init__(self, name, uuid, project, manager, vmname, linked_clone, adapters=0):
 
         super().__init__(name, uuid, project, manager)
 
@@ -58,7 +58,8 @@ class VirtualBoxVM(BaseVM):
         self._serial_pipe = None
 
         # VirtualBox settings
-        self._console = console
+        self._console = None
+        self._adapters = adapters
         self._ethernet_adapters = []
         self._headless = False
         self._enable_remote_console = False
@@ -78,10 +79,9 @@ class VirtualBoxVM(BaseVM):
                 "console": self.console,
                 "project_uuid": self.project.uuid,
                 "vmname": self.vmname,
-                "linked_clone": self.linked_clone,
                 "headless": self.headless,
                 "enable_remote_console": self.enable_remote_console,
-                "adapters": self.adapters,
+                "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "adapter_start_index": self.adapter_start_index}
 
@@ -152,8 +152,7 @@ class VirtualBoxVM(BaseVM):
             else:
                 yield from self._create_linked_clone()
 
-        # set 2 adapters by default
-        # yield from self.set_adapters(2)
+        yield from self.set_adapters(self._adapters)
 
     @asyncio.coroutine
     def start(self):
@@ -432,26 +431,6 @@ class VirtualBoxVM(BaseVM):
         #    yield from self._modify_vm('--name "{}"'.format(vmname))
         self._vmname = vmname
 
-    @property
-    def linked_clone(self):
-        """
-        Returns either the VM is a linked clone.
-
-        :returns: boolean
-        """
-
-        return self._linked_clone
-
-    @property
-    def adapters(self):
-        """
-        Returns the number of Ethernet adapters for this VirtualBox VM instance.
-
-        :returns: number of adapters
-        """
-
-        return len(self._ethernet_adapters)
-
     @asyncio.coroutine
     def set_adapters(self, adapters):
         """
@@ -472,6 +451,7 @@ class VirtualBoxVM(BaseVM):
                 continue
             self._ethernet_adapters.append(EthernetAdapter())
 
+        self._adapters = len(self._ethernet_adapters)
         log.info("VirtualBox VM '{name}' [{uuid}]: number of Ethernet adapters changed to {adapters}".format(name=self.name,
                                                                                                              uuid=self.uuid,
                                                                                                              adapters=adapters))
