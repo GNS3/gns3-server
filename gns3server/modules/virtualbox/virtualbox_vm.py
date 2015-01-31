@@ -43,6 +43,7 @@ log = logging.getLogger(__name__)
 
 
 class VirtualBoxVM(BaseVM):
+
     """
     VirtualBox VM implementation.
     """

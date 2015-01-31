@@ -89,9 +89,9 @@ def test_vbox_reload(server, vm):
 
 def test_vbox_nio_create_udp(server, vm):
     response = server.post("/virtualbox/{}/adapters/0/nio".format(vm["uuid"]), {"type": "nio_udp",
-                                                                             "lport": 4242,
-                                                                             "rport": 4343,
-                                                                             "rhost": "127.0.0.1"},
+                                                                                "lport": 4242,
+                                                                                "rport": 4343,
+                                                                                "rhost": "127.0.0.1"},
                            example=True)
     assert response.status == 201
     assert response.route == "/virtualbox/{uuid}/adapters/{adapter_id:\d+}/nio"
@@ -100,9 +100,9 @@ def test_vbox_nio_create_udp(server, vm):
 
 def test_vbox_delete_nio(server, vm):
     server.post("/virtualbox/{}/adapters/0/nio".format(vm["uuid"]), {"type": "nio_udp",
-                                                                  "lport": 4242,
-                                                                  "rport": 4343,
-                                                                  "rhost": "127.0.0.1"})
+                                                                     "lport": 4242,
+                                                                     "rport": 4343,
+                                                                     "rhost": "127.0.0.1"})
     response = server.delete("/virtualbox/{}/adapters/0/nio".format(vm["uuid"]), example=True)
     assert response.status == 204
     assert response.route == "/virtualbox/{uuid}/adapters/{adapter_id:\d+}/nio"

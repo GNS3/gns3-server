@@ -26,6 +26,7 @@ from ..modules.virtualbox import VirtualBox
 
 
 class VirtualBoxHandler:
+
     """
     API entry points for VirtualBox.
     """

@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 
 
 class PortManager:
+
     """
     :param host: IP address to bind for console connections
     """

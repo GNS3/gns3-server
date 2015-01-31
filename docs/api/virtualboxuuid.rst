@@ -28,7 +28,6 @@ Output
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>enable_remote_console</td>                    <td> </td>                     <td>boolean</td>                     <td>enable the remote console</td>                     </tr>
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>headless mode</td>                     </tr>
-    <tr><td>linked_clone</td>                    <td> </td>                     <td>boolean</td>                     <td>either the VM is a linked clone or not</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance name</td>                     </tr>
     <tr><td>project_uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance UUID</td>                     </tr>
@@ -84,7 +83,6 @@ Output
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>enable_remote_console</td>                    <td> </td>                     <td>boolean</td>                     <td>enable the remote console</td>                     </tr>
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>headless mode</td>                     </tr>
-    <tr><td>linked_clone</td>                    <td> </td>                     <td>boolean</td>                     <td>either the VM is a linked clone or not</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance name</td>                     </tr>
     <tr><td>project_uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>uuid</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance UUID</td>                     </tr>
