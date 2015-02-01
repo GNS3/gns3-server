@@ -79,7 +79,7 @@ def parse_arguments():
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
     parser.add_argument("--certfile", help="SSL cert file", default="")
     parser.add_argument("--certkey", help="SSL key file", default="")
-    parser.add_argument("-L", "--local", action="store_true", help="local mode (allow some insecure operations)")
+    parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
     parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs and enable code live reload")

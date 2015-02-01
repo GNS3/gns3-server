@@ -53,7 +53,12 @@ class Server:
     @asyncio.coroutine
     def _run_application(self, app, ssl_context=None):
 
-        server = yield from self._loop.create_server(app.make_handler(), self._host, self._port, ssl=ssl_context)
+        try:
+            server = yield from self._loop.create_server(app.make_handler(), self._host, self._port, ssl=ssl_context)
+        except OSError as e:
+            log.critical("Could not start the server: {}".format(e))
+            self._loop.stop()
+            return
         return server
 
     def _stop_application(self):
