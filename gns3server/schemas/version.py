@@ -24,7 +24,6 @@ VERSION_SCHEMA = {
         "version": {
             "description": "Version number human readable",
             "type": "string",
-            "minLength": 5,
         }
     }
 }

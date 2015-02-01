@@ -29,7 +29,7 @@ class VersionHandler:
         description="Retrieve the server version number",
         output=VERSION_SCHEMA)
     def version(request, response):
-        response.json({'version': __version__})
+        response.json({"version": __version__})
 
     @classmethod
     @Route.post(
@@ -43,5 +43,6 @@ class VersionHandler:
         })
     def check_version(request, response):
         if request.json["version"] != __version__:
-            raise HTTPConflict(reason="Invalid version")
-        response.json({'version': __version__})
+            raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"],
+                                                                                              __version__))
+        response.json({"version": __version__})
