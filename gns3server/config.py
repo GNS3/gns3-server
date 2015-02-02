@@ -79,7 +79,10 @@ class Config(object):
             # 4: /etc/xdg/GNS3.conf
             # 5: server.conf in the current working directory
 
-            appname = "gns3.net"
+            if sys.platform.startswith("darwin"):
+                appname = "gns3.net"
+            else:
+                appname = "GNS3"
             home = os.path.expanduser("~")
             self._cloud_file = os.path.join(home, ".config", appname, "cloud.conf")
             filename = "server.conf"
