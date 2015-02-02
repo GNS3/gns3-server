@@ -95,3 +95,26 @@ def test_check_config_file_change(tmpdir):
 
     config._check_config_file_change()
     assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1"}
+
+
+def test_check_config_file_change_override_cmdline(tmpdir):
+
+    config = load_config(tmpdir, {
+        "Server": {
+            "host": "127.0.0.1"
+        }
+    })
+    assert dict(config.get_section_config("Server")) == {"host": "127.0.0.1"}
+
+    config.set_section_config("Server", {"host": "192.168.1.1"})
+    assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1"}
+
+    path = write_config(tmpdir, {
+        "Server": {
+            "host": "192.168.1.2"
+        }
+    })
+    os.utime(path, (time.time() + 1, time.time() + 1))
+
+    config._check_config_file_change()
+    assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1"}

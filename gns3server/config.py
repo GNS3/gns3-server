@@ -41,7 +41,12 @@ class Config(object):
     def __init__(self, files=None):
 
         self._files = files
+
+        # Monitor configuration files for changes
         self._watched_files = {}
+
+        # Override config from commande even if modify the config file and live reload it.
+        self._override_config = {}
 
         if sys.platform.startswith("win"):
 
@@ -106,7 +111,8 @@ class Config(object):
                 changed = True
         if changed:
             self.read_config()
-        # TODO: Support command line override
+        for section in self._override_config:
+            self.set_section_config(section, self._override_config[section])
         self._watch_config_file()
 
     def list_cloud_config_file(self):
@@ -167,6 +173,7 @@ class Config(object):
             self._config.add_section(section)
         for key in content:
             self._config.set(section, key, content[key])
+        self._override_config[section] = content
 
     @staticmethod
     def instance():
