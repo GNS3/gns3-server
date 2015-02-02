@@ -22,6 +22,7 @@ Reads the configuration file and store the settings for the server & modules.
 import sys
 import os
 import configparser
+import asyncio
 
 import logging
 log = logging.getLogger(__name__)
@@ -33,12 +34,18 @@ class Config(object):
 
     """
     Configuration file management using configparser.
+
+    :params files: Array of configuration files (optionnal)
     """
 
-    def __init__(self):
+    def __init__(self, files=None):
 
-        appname = "GNS3"
+        self._files = files
+        self._watched_files = {}
+
         if sys.platform.startswith("win"):
+
+            appname = "GNS3"
 
             # On windows, the configuration file location can be one of the following:
             # 1: %APPDATA%/GNS3/server.ini
@@ -51,12 +58,13 @@ class Config(object):
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
             self._cloud_file = os.path.join(appdata, appname, "cloud.ini")
             filename = "server.ini"
-            self._files = [os.path.join(appdata, appname, filename),
-                           os.path.join(appdata, appname + ".ini"),
-                           os.path.join(common_appdata, appname, filename),
-                           os.path.join(common_appdata, appname + ".ini"),
-                           filename,
-                           self._cloud_file]
+            if self._files is None:
+                self._files = [os.path.join(appdata, appname, filename),
+                               os.path.join(appdata, appname + ".ini"),
+                               os.path.join(common_appdata, appname, filename),
+                               os.path.join(common_appdata, appname + ".ini"),
+                               filename,
+                               self._cloud_file]
         else:
 
             # On UNIX-like platforms, the configuration file location can be one of the following:
@@ -70,17 +78,36 @@ class Config(object):
             home = os.path.expanduser("~")
             self._cloud_file = os.path.join(home, ".config", appname, "cloud.conf")
             filename = "server.conf"
-            self._files = [os.path.join(home, ".config", appname, filename),
-                           os.path.join(home, ".config", appname + ".conf"),
-                           os.path.join("/etc/xdg", appname, filename),
-                           os.path.join("/etc/xdg", appname + ".conf"),
-                           filename,
-                           self._cloud_file]
+            if self._files is None:
+                self._files = [os.path.join(home, ".config", appname, filename),
+                               os.path.join(home, ".config", appname + ".conf"),
+                               os.path.join("/etc/xdg", appname, filename),
+                               os.path.join("/etc/xdg", appname + ".conf"),
+                               filename,
+                               self._cloud_file]
 
         self._config = configparser.ConfigParser()
         self.read_config()
         self._cloud_config = configparser.ConfigParser()
         self.read_cloud_config()
+        self._watch_config_file()
+
+    def _watch_config_file(self):
+        asyncio.get_event_loop().call_later(1, self._check_config_file_change)
+
+    def _check_config_file_change(self):
+        """
+        Check if configuration file has changed on the disk
+        """
+
+        changed = False
+        for file in self._watched_files:
+            if os.stat(file).st_mtime != self._watched_files[file]:
+                changed = True
+        if changed:
+            self.read_config()
+        # TODO: Support command line override
+        self._watch_config_file()
 
     def list_cloud_config_file(self):
         return self._cloud_file
@@ -101,6 +128,10 @@ class Config(object):
         parsed_files = self._config.read(self._files)
         if not parsed_files:
             log.warning("No configuration file could be found or read")
+        else:
+            for file in parsed_files:
+                log.info("Load configuration file {}".format(file))
+                self._watched_files[file] = os.stat(file).st_mtime
 
     def get_default_section(self):
         """
@@ -132,7 +163,10 @@ class Config(object):
         :param content: A dictionary with section content
         """
 
-        self._config[section] = content
+        if not self._config.has_section(section):
+            self._config.add_section(section)
+        for key in content:
+            self._config.set(section, key, content[key])
 
     @staticmethod
     def instance():
