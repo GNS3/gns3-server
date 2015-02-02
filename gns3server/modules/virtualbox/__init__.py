@@ -38,7 +38,6 @@ class VirtualBox(BaseManager):
 
         super().__init__()
         self._vboxmanage_path = None
-        self._vbox_user = None
 
     @property
     def vboxmanage_path(self):
@@ -49,16 +48,6 @@ class VirtualBox(BaseManager):
         """
 
         return self._vboxmanage_path
-
-    @property
-    def vbox_user(self):
-        """
-        Returns the VirtualBox user
-
-        :returns: username
-        """
-
-        return self._vbox_user
 
     def find_vboxmanage(self):
 
@@ -94,9 +83,10 @@ class VirtualBox(BaseManager):
         command = [vboxmanage_path, "--nologo", subcommand]
         command.extend(args)
         try:
-            if self.vbox_user:
+            vbox_user = self.config.get_section_config("VirtualBox").get("vbox_user")
+            if vbox_user:
                 # TODO: test & review this part
-                sudo_command = "sudo -i -u {}".format(self.vbox_user) + " ".join(command)
+                sudo_command = "sudo -i -u {}".format(vbox_user) + " ".join(command)
                 process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             else:
                 process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)

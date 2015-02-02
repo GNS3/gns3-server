@@ -57,10 +57,8 @@ class VPCSVM(BaseVM):
 
         super().__init__(name, uuid, project, manager)
 
-        self._path = manager.config.get_section_config("VPCS").get("path", "vpcs")
-
+        self._path = manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
         self._console = console
-
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""

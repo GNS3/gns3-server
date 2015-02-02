@@ -112,15 +112,13 @@ def main():
     args = parse_arguments()
     if args.debug:
         level = logging.DEBUG
-    user_log = init_logger(level, quiet=args.quiet)
 
-    user_log = init_logger(logging.INFO)
+    user_log = init_logger(level, quiet=args.quiet)
     user_log.info("GNS3 server version {}".format(__version__))
     current_year = datetime.date.today().year
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
     set_config(args)
-
     server_config = Config.instance().get_section_config("Server")
     if server_config.getboolean("local"):
         log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
