@@ -66,6 +66,7 @@ class Config(object):
             # 4: /etc/xdg/GNS3.conf
             # 5: server.conf in the current working directory
 
+            appname = "gns3.net"
             home = os.path.expanduser("~")
             self._cloud_file = os.path.join(home, ".config", appname, "cloud.conf")
             filename = "server.conf"
@@ -99,7 +100,7 @@ class Config(object):
 
         parsed_files = self._config.read(self._files)
         if not parsed_files:
-            log.warning("no configuration file could be found or read")
+            log.warning("No configuration file could be found or read")
 
     def get_default_section(self):
         """
