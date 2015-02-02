@@ -110,8 +110,11 @@ class Config(object):
 
         changed = False
         for file in self._watched_files:
-            if os.stat(file).st_mtime != self._watched_files[file]:
-                changed = True
+            try:
+                if os.stat(file).st_mtime != self._watched_files[file]:
+                    changed = True
+            except OSError:
+                continue
         if changed:
             self.read_config()
         for section in self._override_config:
