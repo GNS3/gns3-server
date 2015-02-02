@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import json
 import jsonschema
 import asyncio
 import aiohttp
 import logging
+import traceback
 
 log = logging.getLogger(__name__)
 
@@ -110,9 +112,18 @@ class Route(object):
                     response.set_status(e.status)
                     response.json({"message": e.text, "status": e.status})
                 except VMError as e:
+                    log.error("VM error detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(route=route)
                     response.set_status(500)
                     response.json({"message": str(e), "status": 500})
+                except Exception as e:
+                    log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
+                    response = Response(route=route)
+                    response.set_status(500)
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    lines = traceback.format_exception(exc_type, exc_value, exc_tb)
+                    tb = "".join(lines)
+                    response.json({"message": tb, "status": 500})
                 return response
 
             cls._routes.append((method, cls._path, control_schema))
