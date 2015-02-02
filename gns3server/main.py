@@ -85,6 +85,11 @@ def parse_arguments():
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs and enable code live reload")
     args = parser.parse_args()
 
+    return args
+
+
+def set_config(args):
+
     config = Config.instance()
     server_config = config.get_section_config("Server")
     server_config["local"] = server_config.get("local", "true" if args.local else "false")
@@ -97,25 +102,24 @@ def parse_arguments():
     server_config["debug"] = server_config.get("debug", "true" if args.debug else "false")
     config.set_section_config("Server", server_config)
 
-    return args
-
 
 def main():
     """
     Entry point for GNS3 server
     """
 
-    # We init the logger with info level during config file parsing
-    user_log = init_logger(logging.INFO)
-    user_log.info("GNS3 server version {}".format(__version__))
-    current_year = datetime.date.today().year
-    user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
-
     level = logging.INFO
     args = parse_arguments()
     if args.debug:
         level = logging.DEBUG
     user_log = init_logger(level, quiet=args.quiet)
+
+    user_log = init_logger(logging.INFO)
+    user_log.info("GNS3 server version {}".format(__version__))
+    current_year = datetime.date.today().year
+    user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+
+    set_config(args)
 
     server_config = Config.instance().get_section_config("Server")
     if server_config.getboolean("local"):
