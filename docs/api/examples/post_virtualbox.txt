@@ -26,6 +26,6 @@ X-ROUTE: /virtualbox
     "headless": false,
     "name": "VM1",
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "4cdea9da-6611-44c3-a085-a3bc4dae7883",
+    "uuid": "33217631-7c24-4acf-b462-c40e0012537a",
     "vmname": "VM1"
 }

@@ -15,7 +15,7 @@ SERVER: Python/3.4 aiohttp/0.13.1
 X-ROUTE: /project/{uuid}
 
 {
-    "location": "/tmp/tmpjan_7gw5",
+    "location": "/tmp/tmpi95b_dec",
     "temporary": false,
-    "uuid": "88146503-b509-40a4-ae43-0f17100c767a"
+    "uuid": "e30bf585-b257-4e14-8f7f-a5e0bdd126dd"
 }

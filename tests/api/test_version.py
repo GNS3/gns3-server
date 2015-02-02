@@ -40,7 +40,8 @@ def test_version_invalid_input(server):
     query = {'version': "0.4.2"}
     response = server.post('/version', query)
     assert response.status == 409
-    assert response.json == {'message': '409: Invalid version', 'status': 409}
+    assert response.json == {'message': 'Client version 0.4.2 differs with server version {}'.format(__version__),
+                             'status': 409}
 
 
 def test_version_invalid_input_schema(server):
