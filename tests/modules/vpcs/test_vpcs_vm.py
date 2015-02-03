@@ -149,6 +149,15 @@ def test_update_startup_script(vm):
         assert f.read() == content
 
 
+def test_update_startup_script_h(vm):
+    content = "setname %h\n"
+    vm.name = "pc1"
+    vm.startup_script = content
+    assert os.path.exists(vm.script_file)
+    with open(vm.script_file) as f:
+        assert f.read() == "setname pc1\n"
+
+
 def test_get_startup_script(vm):
     content = "echo GNS3 VPCS\nip 192.168.1.2\n"
     vm.startup_script = content
@@ -159,7 +168,7 @@ def test_get_startup_script_using_default_script(vm):
     content = "echo GNS3 VPCS\nip 192.168.1.2\n"
 
     # Reset script file location
-    vm.script_file = None
+    vm._script_file = None
 
     filepath = os.path.join(vm.working_dir, 'startup.vpc')
     with open(filepath, 'w+') as f:
@@ -187,17 +196,11 @@ def test_change_name(vm, tmpdir):
     vm.name = "world"
     with open(path, 'w+') as f:
         f.write("name world")
-    vm.script_file = path
+    vm._script_file = path
     vm.name = "hello"
     assert vm.name == "hello"
     with open(path) as f:
         assert f.read() == "name hello"
-
-
-def test_change_script_file(vm, tmpdir):
-    path = os.path.join(str(tmpdir), 'startup2.vpcs')
-    vm.script_file = path
-    assert vm.script_file == path
 
 
 def test_close(vm, port_manager):

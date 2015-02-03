@@ -189,10 +189,11 @@ class VPCSVM(BaseVM):
         if self._script_file is None:
             self._script_file = os.path.join(self.working_dir, 'startup.vpcs')
         try:
-            with open(self._script_file, '+w') as f:
+            with open(self._script_file, 'w+') as f:
                 if startup_script is None:
                     f.write('')
                 else:
+                    startup_script = startup_script.replace("%h", self._name)
                     f.write(startup_script)
         except OSError as e:
             raise VPCSError("Can't write VPCS startup file '{}'".format(self._script_file))
@@ -426,16 +427,3 @@ class VPCSVM(BaseVM):
         """
 
         return self._script_file
-
-    @script_file.setter
-    def script_file(self, script_file):
-        """
-        Sets the script-file for this VPCS instance.
-
-        :param script_file: path to base-script-file
-        """
-
-        self._script_file = script_file
-        log.info("VPCS {name} [{uuid}]: script_file set to {config}".format(name=self._name,
-                                                                            uuid=self.uuid,
-                                                                            config=self._script_file))
