@@ -305,7 +305,12 @@ class VirtualBoxVM(BaseVM):
         for hdd_info in hdd_table:
             hdd_file = os.path.join(self.working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
             if os.path.exists(hdd_file):
-                log.debug("reattaching hdd {}".format(hdd_file))
+                log.info("VirtualBox VM '{name}' [{uuid}] attaching HDD {controller} {port} {device} {medium}".format(name=self.name,
+                                                                                                                      uuid=self.uuid,
+                                                                                                                      controller=hdd_info["controller"],
+                                                                                                                      port=hdd_info["port"],
+                                                                                                                      device=hdd_info["device"],
+                                                                                                                      medium=hdd_file))
                 yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
                                                                                                                           hdd_info["port"],
                                                                                                                           hdd_info["device"],
@@ -327,7 +332,7 @@ class VirtualBoxVM(BaseVM):
             hdd_table = []
             if os.path.exists(self.working_dir):
                 hdd_files = yield from self._get_all_hdd_files()
-                vm_info = self._get_vm_info()
+                vm_info = yield from self._get_vm_info()
                 for entry, value in vm_info.items():
                     match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)
                     if match:
@@ -335,6 +340,11 @@ class VirtualBoxVM(BaseVM):
                         port = match.group(2)
                         device = match.group(3)
                         if value in hdd_files:
+                            log.info("VirtualBox VM '{name}' [{uuid}] detaching HDD {controller} {port} {device}".format(name=self.name,
+                                                                                                                         uuid=self.uuid,
+                                                                                                                         controller=controller,
+                                                                                                                         port=port,
+                                                                                                                         device=device))
                             yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller, port, device))
                             hdd_table.append(
                                 {
@@ -345,16 +355,18 @@ class VirtualBoxVM(BaseVM):
                                 }
                             )
 
-            yield from self.manager.execute("unregistervm", [self._vmname])
+            log.info("VirtualBox VM '{name}' [{uuid}] unregistering".format(name=self.name, uuid=self.uuid))
+            yield from self.manager.execute("unregistervm", [self._name])
 
             if hdd_table:
                 try:
                     hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
                     with open(hdd_info_file, "w") as f:
-                        # log.info("saving project: {}".format(path))
                         json.dump(hdd_table, f, indent=4)
                 except OSError as e:
-                    raise VirtualBoxError("Could not write HDD info file: {}".format(e))
+                    log.warning("VirtualBox VM '{name}' [{uuid}] could not write HHD info file: {error}".format(name=self.name,
+                                                                                                                uuid=self.uuid,
+                                                                                                                error=e.strerror))
 
         log.info("VirtualBox VM '{name}' [{uuid}] closed".format(name=self.name,
                                                                  uuid=self.uuid))
@@ -403,10 +415,10 @@ class VirtualBoxVM(BaseVM):
 
         if enable_remote_console:
             log.info("VirtualBox VM '{name}' [{uuid}] has enabled the console".format(name=self.name, uuid=self.uuid))
-            self._start_remote_console()
+            #self._start_remote_console()
         else:
             log.info("VirtualBox VM '{name}' [{uuid}] has disabled the console".format(name=self.name, uuid=self.uuid))
-            self._stop_remote_console()
+            #self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
     @property
@@ -454,9 +466,9 @@ class VirtualBoxVM(BaseVM):
             self._ethernet_adapters.append(EthernetAdapter())
 
         self._adapters = len(self._ethernet_adapters)
-        log.info("VirtualBox VM '{name}' [{uuid}]: number of Ethernet adapters changed to {adapters}".format(name=self.name,
-                                                                                                             uuid=self.uuid,
-                                                                                                             adapters=adapters))
+        log.info("VirtualBox VM '{name}' [{uuid}] has changed the number of Ethernet adapters to {adapters}".format(name=self.name,
+                                                                                                                    uuid=self.uuid,
+                                                                                                                    adapters=adapters))
 
     @property
     def adapter_start_index(self):
@@ -690,7 +702,7 @@ class VirtualBoxVM(BaseVM):
         self._vmname = self._name
         yield from self.manager.execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
 
-        args = [self._name, "take", "reset"]
+        args = [self._vmname, "take", "reset"]
         result = yield from self.manager.execute("snapshot", args)
         log.debug("Snapshot reset created: {}".format(result))
 

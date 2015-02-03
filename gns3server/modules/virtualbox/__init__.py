@@ -24,6 +24,9 @@ import sys
 import shutil
 import asyncio
 import subprocess
+import logging
+
+log = logging.getLogger(__name__)
 
 from ..base_manager import BaseManager
 from .virtualbox_vm import VirtualBoxVM
@@ -82,6 +85,7 @@ class VirtualBox(BaseManager):
             vboxmanage_path = self.find_vboxmanage()
         command = [vboxmanage_path, "--nologo", subcommand]
         command.extend(args)
+        log.debug("Executing VBoxManage with command: {}".format(command))
         try:
             vbox_user = self.config.get_section_config("VirtualBox").get("vbox_user")
             if vbox_user:
@@ -100,8 +104,9 @@ class VirtualBox(BaseManager):
 
         if process.returncode:
             # only the first line of the output is useful
-            vboxmanage_error = stderr_data.decode("utf-8", errors="ignore").splitlines()[0]
-            raise VirtualBoxError(vboxmanage_error)
+            vboxmanage_error = stderr_data.decode("utf-8", errors="ignore")
+            log.warn("VBoxManage has returned an error: {}".format(vboxmanage_error))
+            raise VirtualBoxError(vboxmanage_error.splitlines()[0])
 
         return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
