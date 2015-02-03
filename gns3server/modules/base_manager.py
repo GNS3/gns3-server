@@ -101,7 +101,7 @@ class BaseManager:
             try:
                 yield from self.close_vm(uuid)
             except Exception as e:
-                log.warn("Could not delete VM {}: {}".format(uuid, e))
+                log.error("Could not delete VM {}: {}".format(uuid, e), exc_info=1)
                 continue
 
         if hasattr(BaseManager, "_instance"):

@@ -61,6 +61,7 @@ class Server:
             return
         return server
 
+    @asyncio.coroutine
     def _stop_application(self):
         """
         Cleanup the modules (shutdown running emulators etc.)
@@ -69,14 +70,15 @@ class Server:
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
             m = module.instance()
-            asyncio.async(m.unload())
+            yield from m.unload()
         self._loop.stop()
 
     def _signal_handling(self):
 
+        @asyncio.coroutine
         def signal_handler(signame):
             log.warning("Server has got signal {}, exiting...".format(signame))
-            self._stop_application()
+            yield from self._stop_application()
 
         signals = ["SIGTERM", "SIGINT"]
         if sys.platform.startswith("win"):
@@ -85,7 +87,7 @@ class Server:
             signals.extend(["SIGHUP", "SIGQUIT"])
 
         for signal_name in signals:
-            callback = functools.partial(signal_handler, signal_name)
+            callback = functools.partial(asyncio.async, signal_handler(signal_name))
             if sys.platform.startswith("win"):
                 # add_signal_handler() is not yet supported on Windows
                 signal.signal(getattr(signal, signal_name), callback)
@@ -94,10 +96,11 @@ class Server:
 
     def _reload_hook(self):
 
+        @asyncio.coroutine
         def reload():
 
             log.info("Reloading")
-            self._stop_application()
+            yield from self._stop_application()
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
         # code extracted from tornado
@@ -116,7 +119,7 @@ class Server:
             modified = os.stat(path).st_mtime
             if modified > self._start_time:
                 log.debug("File {} has been modified".format(path))
-                reload()
+                asyncio.async(reload())
         self._loop.call_later(1, self._reload_hook)
 
     def _create_ssl_context(self, server_config):
