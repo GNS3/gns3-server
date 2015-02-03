@@ -5,11 +5,11 @@ GET /vpcs/{uuid} HTTP/1.1
 
 
 HTTP/1.1 200
-CONNECTION: close
+CONNECTION: keep-alive
 CONTENT-LENGTH: 213
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 aiohttp/0.13.1
+SERVER: Python/3.4 GNS3/1.3.dev1
 X-ROUTE: /vpcs/{uuid}
 
 {
@@ -18,5 +18,5 @@ X-ROUTE: /vpcs/{uuid}
     "project_uuid": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "script_file": null,
     "startup_script": null,
-    "uuid": "2ddb0fa3-1010-4f48-b295-caa1c414b4a2"
+    "uuid": "aceec3c0-f02d-44ee-88a6-85c3120c22ca"
 }
