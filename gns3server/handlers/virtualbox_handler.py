@@ -58,11 +58,11 @@ class VirtualBoxHandler:
     def create(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = yield from vbox_manager.create_vm(request.json["name"],
-                                               request.json["project_uuid"],
+        vm = yield from vbox_manager.create_vm(request.json.pop("name"),
+                                               request.json.pop("project_uuid"),
                                                request.json.get("uuid"),
-                                               request.json["vmname"],
-                                               request.json["linked_clone"],
+                                               request.json.pop("vmname"),
+                                               request.json.pop("linked_clone"),
                                                adapters=request.json.get("adapters", 0))
 
         for name, value in request.json.items():

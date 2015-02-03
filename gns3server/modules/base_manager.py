@@ -144,12 +144,12 @@ class BaseManager:
             uuid = str(uuid4())
 
         vm = self._VM_CLASS(name, uuid, project, self, *args, **kwargs)
-        project.add_vm(vm)
         if asyncio.iscoroutinefunction(vm.create):
             yield from vm.create()
         else:
             vm.create()
         self._vms[vm.uuid] = vm
+        project.add_vm(vm)
         return vm
 
     @asyncio.coroutine

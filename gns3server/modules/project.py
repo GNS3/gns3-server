@@ -17,7 +17,6 @@
 
 import aiohttp
 import os
-import tempfile
 import shutil
 import asyncio
 from uuid import UUID, uuid4
@@ -181,7 +180,7 @@ class Project:
 
     @asyncio.coroutine
     def close(self):
-        """Close the project, but keep informations on disk"""
+        """Close the project, but keep information on disk"""
 
         yield from self._close_and_clean(self._temporary)
 
@@ -194,7 +193,10 @@ class Project:
         """
 
         for vm in self._vms:
-            vm.close()
+            if asyncio.iscoroutinefunction(vm.close):
+                yield from vm.close()
+            else:
+                vm.close()
         if cleanup and os.path.exists(self.path):
             try:
                 yield from wait_run_in_executor(shutil.rmtree, self.path)

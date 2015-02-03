@@ -57,6 +57,7 @@ class VirtualBoxVM(BaseVM):
         self._system_properties = {}
         self._telnet_server_thread = None
         self._serial_pipe = None
+        self._closed = False
 
         # VirtualBox settings
         self._console = None
@@ -322,6 +323,10 @@ class VirtualBoxVM(BaseVM):
         Closes this VirtualBox VM.
         """
 
+        if self._closed:
+            # VM is already closed
+            return
+
         self.stop()
 
         if self._console:
@@ -370,6 +375,7 @@ class VirtualBoxVM(BaseVM):
 
         log.info("VirtualBox VM '{name}' [{uuid}] closed".format(name=self.name,
                                                                  uuid=self.uuid))
+        self._closed = True
 
     @property
     def headless(self):
@@ -697,14 +703,14 @@ class VirtualBoxVM(BaseVM):
                 "--register"]
 
         result = yield from self.manager.execute("clonevm", args)
-        log.debug("cloned VirtualBox VM: {}".format(result))
+        log.debug("VirtualBox VM: {} cloned".format(result))
 
         self._vmname = self._name
         yield from self.manager.execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
 
         args = [self._vmname, "take", "reset"]
         result = yield from self.manager.execute("snapshot", args)
-        log.debug("Snapshot reset created: {}".format(result))
+        log.debug("Snapshot 'reset' created: {}".format(result))
 
     def _start_remote_console(self):
         """
