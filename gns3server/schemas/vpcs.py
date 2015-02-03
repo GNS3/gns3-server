@@ -50,10 +50,6 @@ VPCS_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
-        "script_file": {
-            "description": "VPCS startup script",
-            "type": ["string", "null"]
-        },
         "startup_script": {
             "description": "Content of the VPCS startup script",
             "type": ["string", "null"]
@@ -78,10 +74,6 @@ VPCS_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
-        },
-        "script_file": {
-            "description": "VPCS startup script",
-            "type": ["string", "null"]
         },
         "startup_script": {
             "description": "Content of the VPCS startup script",

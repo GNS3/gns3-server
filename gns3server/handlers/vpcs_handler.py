@@ -47,7 +47,6 @@ class VPCSHandler:
                                        request.json["project_uuid"],
                                        request.json.get("uuid"),
                                        console=request.json.get("console"),
-                                       script_file=request.json.get("script_file"),
                                        startup_script=request.json.get("startup_script"))
         response.set_status(201)
         response.json(vm)
@@ -90,7 +89,6 @@ class VPCSHandler:
         vm = vpcs_manager.get_vm(request.match_info["uuid"])
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
-        vm.script_file = request.json.get("script_file", vm.script_file)
         vm.startup_script = request.json.get("startup_script", vm.startup_script)
         response.json(vm)
 

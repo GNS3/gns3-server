@@ -45,18 +45,6 @@ def test_vpcs_get(server, project, vm):
     assert response.json["project_uuid"] == project.uuid
 
 
-def test_vpcs_create_script_file(server, project, tmpdir):
-    path = os.path.join(str(tmpdir), "test")
-    with open(path, 'w+') as f:
-        f.write("ip 192.168.1.2")
-    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "script_file": path})
-    assert response.status == 201
-    assert response.route == "/vpcs"
-    assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_uuid"] == project.uuid
-    assert response.json["script_file"] == path
-
-
 def test_vpcs_create_startup_script(server, project):
     response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "startup_script": "ip 192.168.1.2\necho TEST"})
     assert response.status == 201
@@ -134,15 +122,10 @@ def test_vpcs_delete(server, vm):
 
 
 def test_vpcs_update(server, vm, tmpdir, free_console_port):
-    path = os.path.join(str(tmpdir), 'startup2.vpcs')
-    with open(path, 'w+') as f:
-        f.write(path)
     response = server.put("/vpcs/{}".format(vm["uuid"]), {"name": "test",
                                                           "console": free_console_port,
-                                                          "script_file": path,
                                                           "startup_script": "ip 192.168.1.1"})
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
-    assert response.json["script_file"] == path
     assert response.json["startup_script"] == "ip 192.168.1.1"
