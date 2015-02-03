@@ -57,7 +57,7 @@ def test_vm_invalid_vpcs_version(loop, project, manager):
             assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-@patch("gns3server.config.Config.get_section_config", return_value={"path": "/bin/test_fake"})
+@patch("gns3server.config.Config.get_section_config", return_value={"vpcs_path": "/bin/test_fake"})
 def test_vm_invalid_vpcs_path(project, manager, loop):
     with pytest.raises(VPCSError):
         vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
