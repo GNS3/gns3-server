@@ -421,10 +421,10 @@ class VirtualBoxVM(BaseVM):
 
         if enable_remote_console:
             log.info("VirtualBox VM '{name}' [{uuid}] has enabled the console".format(name=self.name, uuid=self.uuid))
-            #self._start_remote_console()
+            # self._start_remote_console()
         else:
             log.info("VirtualBox VM '{name}' [{uuid}] has disabled the console".format(name=self.name, uuid=self.uuid))
-            #self._stop_remote_console()
+            # self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
     @property
