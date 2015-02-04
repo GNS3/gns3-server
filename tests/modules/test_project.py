@@ -53,7 +53,6 @@ def test_path(tmpdir):
         p = Project(location=str(tmpdir))
         assert p.path == os.path.join(str(tmpdir), p.uuid)
         assert os.path.exists(os.path.join(str(tmpdir), p.uuid))
-        assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vms'))
         assert not os.path.exists(os.path.join(p.path, '.gns3_temporary'))
 
 
@@ -77,9 +76,16 @@ def test_changing_location_not_allowed(tmpdir):
             p = Project(location=str(tmpdir))
 
 
+def test_changing_path_not_allowed(tmpdir):
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
+        with pytest.raises(aiohttp.web.HTTPForbidden):
+            p = Project()
+            p.path = str(tmpdir)
+
+
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"location": p.location, "project_id": p.uuid, "temporary": False}
+    assert p.__json__() == {"location": p.location, "path": p.path, "project_id": p.uuid, "temporary": False}
 
 
 def test_vm_working_directory(tmpdir, vm):

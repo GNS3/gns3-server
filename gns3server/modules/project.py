@@ -50,23 +50,25 @@ class Project:
                 raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(uuid))
             self._uuid = uuid
 
-        config = Config.instance().get_section_config("Server")
-        self._location = location
+        self._location = None
         if location is None:
-            self._location = config.get("project_directory", self._get_default_project_directory())
+            self._location = self._config().get("project_directory", self._get_default_project_directory())
         else:
-            if config.get("local", False) is False:
-                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
+            self.location = location
 
         self._vms = set()
         self._vms_to_destroy = set()
         self._path = os.path.join(self._location, self._uuid)
         try:
-            os.makedirs(os.path.join(self._path, "vms"), exist_ok=True)
+            os.makedirs(self._path, exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         self.temporary = temporary
         log.debug("Create project {uuid} in directory {path}".format(path=self._path, uuid=self._uuid))
+
+    def _config(self):
+
+        return Config.instance().get_section_config("Server")
 
     @classmethod
     def _get_default_project_directory(cls):
@@ -92,10 +94,26 @@ class Project:
 
         return self._location
 
+    @location.setter
+    def location(self, location):
+
+        if location != self._location and self._config().get("local", False) is False:
+            raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
+
+        self._location = location
+
     @property
     def path(self):
 
         return self._path
+
+    @path.setter
+    def path(self, path):
+
+        if path != self._path and self._config().get("local", False) is False:
+            raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
+
+        self._path = path
 
     @property
     def vms(self):
@@ -167,8 +185,9 @@ class Project:
 
         return {
             "project_id": self._uuid,
-            "location": self._location,
-            "temporary": self._temporary
+            "temporary": self._temporary,
+            "path": self._path,
+            "location": self._location
         }
 
     def add_vm(self, vm):

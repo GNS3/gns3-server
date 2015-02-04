@@ -60,6 +60,7 @@ def test_show_project(server):
         response = server.post("/projects", query)
         assert response.status == 200
     response = server.get("/projects/00010203-0405-0607-0809-0a0b0c0d0e0f", example=True)
+    query["path"] = "/tmp/00010203-0405-0607-0809-0a0b0c0d0e0f"
     assert response.json == query
 
 
@@ -76,6 +77,27 @@ def test_update_temporary_project(server):
     response = server.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
     assert response.status == 200
     assert response.json["temporary"] is False
+
+
+def test_update_path_project(server, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        response = server.post("/projects", {})
+        assert response.status == 200
+        query = {"path": str(tmpdir)}
+        response = server.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
+        assert response.status == 200
+        assert response.json["path"] == str(tmpdir)
+
+
+def test_update_path_project_non_local(server, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
+        response = server.post("/projects", {})
+        assert response.status == 200
+        query = {"path": str(tmpdir)}
+        response = server.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
+        assert response.status == 403
 
 
 def test_commit_project(server, project):
