@@ -59,7 +59,7 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = yield from vbox_manager.create_vm(request.json.pop("name"),
-                                               request.json.pop("project_uuid"),
+                                               request.json.pop("project_id"),
                                                request.json.get("uuid"),
                                                request.json.pop("vmname"),
                                                request.json.pop("linked_clone"),

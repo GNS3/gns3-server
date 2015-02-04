@@ -9,8 +9,8 @@ Add a NIO to a VirtualBox VM instance
 
 Parameters
 **********
-- **adapter_id**: Adapter where the nio should be added
 - **uuid**: Instance UUID
+- **adapter_id**: Adapter where the nio should be added
 
 Response status codes
 **********************
@@ -31,8 +31,8 @@ Remove a NIO from a VirtualBox VM instance
 
 Parameters
 **********
-- **adapter_id**: Adapter from where the nio should be removed
 - **uuid**: Instance UUID
+- **adapter_id**: Adapter from where the nio should be removed
 
 Response status codes
 **********************
