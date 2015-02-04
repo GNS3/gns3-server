@@ -37,7 +37,7 @@ VPCS_CREATE_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "project_uuid": {
+        "project_id": {
             "description": "Project UUID",
             "type": "string",
             "minLength": 36,
@@ -56,7 +56,7 @@ VPCS_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "project_uuid"]
+    "required": ["name", "project_id"]
 }
 
 VPCS_UPDATE_SCHEMA = {
@@ -162,7 +162,7 @@ VPCS_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
-        "project_uuid": {
+        "project_id": {
             "description": "Project UUID",
             "type": "string",
             "minLength": 36,
@@ -179,5 +179,5 @@ VPCS_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "uuid", "console", "project_uuid"]
+    "required": ["name", "uuid", "console", "project_id"]
 }

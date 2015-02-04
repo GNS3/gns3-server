@@ -32,7 +32,7 @@ VBOX_CREATE_SCHEMA = {
             "description": "VirtualBox VM instance ID (for project created before GNS3 1.3)",
             "type": "integer"
         },
-        "project_uuid": {
+        "project_id": {
             "description": "Project UUID",
             "type": "string",
             "minLength": 36,
@@ -86,7 +86,7 @@ VBOX_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vmname", "linked_clone", "project_uuid"],
+    "required": ["name", "vmname", "linked_clone", "project_id"],
 }
 
 VBOX_UPDATE_SCHEMA = {
@@ -211,7 +211,7 @@ VBOX_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "project_uuid": {
+        "project_id": {
             "description": "Project UUID",
             "type": "string",
             "minLength": 36,
@@ -256,5 +256,5 @@ VBOX_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "uuid", "project_uuid"]
+    "required": ["name", "uuid", "project_id"]
 }

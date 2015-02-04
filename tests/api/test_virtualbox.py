@@ -25,7 +25,7 @@ def vm(server, project):
         response = server.post("/virtualbox", {"name": "VMTEST",
                                                "vmname": "VMTEST",
                                                "linked_clone": False,
-                                               "project_uuid": project.uuid})
+                                               "project_id": project.uuid})
     assert mock.called
     assert response.status == 201
     return response.json
@@ -37,11 +37,11 @@ def test_vbox_create(server, project):
         response = server.post("/virtualbox", {"name": "VM1",
                                                "vmname": "VM1",
                                                "linked_clone": False,
-                                               "project_uuid": project.uuid},
+                                               "project_id": project.uuid},
                                example=True)
         assert response.status == 201
         assert response.json["name"] == "VM1"
-        assert response.json["project_uuid"] == project.uuid
+        assert response.json["project_id"] == project.uuid
 
 
 def test_vbox_get(server, project, vm):
@@ -49,7 +49,7 @@ def test_vbox_get(server, project, vm):
     assert response.status == 200
     assert response.route == "/virtualbox/{uuid}"
     assert response.json["name"] == "VMTEST"
-    assert response.json["project_uuid"] == project.uuid
+    assert response.json["project_id"] == project.uuid
 
 
 def test_vbox_start(server, vm):

@@ -44,7 +44,7 @@ class VPCSHandler:
 
         vpcs = VPCS.instance()
         vm = yield from vpcs.create_vm(request.json["name"],
-                                       request.json["project_uuid"],
+                                       request.json["project_id"],
                                        request.json.get("uuid"),
                                        console=request.json.get("console"),
                                        startup_script=request.json.get("startup_script"))

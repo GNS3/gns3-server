@@ -79,7 +79,7 @@ class VirtualBoxVM(BaseVM):
         return {"name": self.name,
                 "uuid": self.uuid,
                 "console": self.console,
-                "project_uuid": self.project.uuid,
+                "project_id": self.project.uuid,
                 "vmname": self.vmname,
                 "headless": self.headless,
                 "enable_remote_console": self.enable_remote_console,

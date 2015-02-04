@@ -23,17 +23,17 @@ from unittest.mock import patch
 
 @pytest.fixture(scope="module")
 def vm(server, project):
-    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid})
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_id": project.uuid})
     assert response.status == 201
     return response.json
 
 
 def test_vpcs_create(server, project):
-    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid}, example=True)
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_id": project.uuid}, example=True)
     assert response.status == 201
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_uuid"] == project.uuid
+    assert response.json["project_id"] == project.uuid
     assert response.json["script_file"] is None
 
 
@@ -42,24 +42,24 @@ def test_vpcs_get(server, project, vm):
     assert response.status == 200
     assert response.route == "/vpcs/{uuid}"
     assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_uuid"] == project.uuid
+    assert response.json["project_id"] == project.uuid
 
 
 def test_vpcs_create_startup_script(server, project):
-    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "startup_script": "ip 192.168.1.2\necho TEST"})
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_id": project.uuid, "startup_script": "ip 192.168.1.2\necho TEST"})
     assert response.status == 201
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_uuid"] == project.uuid
+    assert response.json["project_id"] == project.uuid
     assert response.json["startup_script"] == "ip 192.168.1.2\necho TEST"
 
 
 def test_vpcs_create_port(server, project, free_console_port):
-    response = server.post("/vpcs", {"name": "PC TEST 1", "project_uuid": project.uuid, "console": free_console_port})
+    response = server.post("/vpcs", {"name": "PC TEST 1", "project_id": project.uuid, "console": free_console_port})
     assert response.status == 201
     assert response.route == "/vpcs"
     assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_uuid"] == project.uuid
+    assert response.json["project_id"] == project.uuid
     assert response.json["console"] == free_console_port
 
 

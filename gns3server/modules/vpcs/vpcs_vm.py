@@ -107,7 +107,7 @@ class VPCSVM(BaseVM):
         return {"name": self.name,
                 "uuid": self.uuid,
                 "console": self._console,
-                "project_uuid": self.project.uuid,
+                "project_id": self.project.uuid,
                 "script_file": self.script_file,
                 "startup_script": self.startup_script}
 
