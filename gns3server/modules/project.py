@@ -58,7 +58,6 @@ class Project:
             if config.get("local", False) is False:
                 raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
 
-        self._temporary = temporary
         self._vms = set()
         self._vms_to_destroy = set()
         self._path = os.path.join(self._location, self._uuid)
@@ -66,9 +65,11 @@ class Project:
             os.makedirs(os.path.join(self._path, "vms"), exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+        self.temporary = temporary
         log.debug("Create project {uuid} in directory {path}".format(path=self._path, uuid=self._uuid))
 
-    def _get_default_project_directory(self):
+    @classmethod
+    def _get_default_project_directory(cls):
         """
         Return the default location for the project directory
         depending of the operating system
@@ -109,7 +110,20 @@ class Project:
     @temporary.setter
     def temporary(self, temporary):
 
+        if hasattr(self, 'temporary') and temporary == self._temporary:
+            return
+
         self._temporary = temporary
+
+        if self._temporary:
+            try:
+                with open(os.path.join(self._path, ".gns3_temporary"), 'w+') as f:
+                    f.write("1")
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not create temporary project: {}".format(e))
+        else:
+            if os.path.exists(os.path.join(self._path, ".gns3_temporary")):
+                os.remove(os.path.join(self._path, ".gns3_temporary"))
 
     def vm_working_directory(self, vm):
         """
@@ -222,3 +236,16 @@ class Project:
         """Remove project from disk"""
 
         yield from self._close_and_clean(True)
+
+    @classmethod
+    def clean_project_directory(cls):
+        """At startup drop old temporary project. After a crash for example"""
+
+        config = Config.instance().get_section_config("Server")
+        directory = config.get("project_directory", cls._get_default_project_directory())
+        if os.path.exists(directory):
+            for project in os.listdir(directory):
+                path = os.path.join(directory, project)
+                if os.path.exists(os.path.join(path, ".gns3_temporary")):
+                    log.warning("Purge old temporary project {}".format(project))
+                    shutil.rmtree(path)

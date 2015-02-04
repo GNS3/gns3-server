@@ -21,6 +21,7 @@ import asyncio
 import pytest
 import aiohttp
 import shutil
+from uuid import uuid4
 from unittest.mock import patch
 
 from gns3server.modules.project import Project
@@ -53,11 +54,21 @@ def test_path(tmpdir):
         assert p.path == os.path.join(str(tmpdir), p.uuid)
         assert os.path.exists(os.path.join(str(tmpdir), p.uuid))
         assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vms'))
+        assert not os.path.exists(os.path.join(p.path, '.gns3_temporary'))
 
 
 def test_temporary_path():
-    p = Project()
+    p = Project(temporary=True)
     assert os.path.exists(p.path)
+    assert os.path.exists(os.path.join(p.path, '.gns3_temporary'))
+
+
+def test_remove_temporary_flag():
+    p = Project(temporary=True)
+    assert os.path.exists(p.path)
+    assert os.path.exists(os.path.join(p.path, '.gns3_temporary'))
+    p.temporary = False
+    assert not os.path.exists(os.path.join(p.path, '.gns3_temporary'))
 
 
 def test_changing_location_not_allowed(tmpdir):
@@ -164,3 +175,28 @@ def test_get_default_project_directory():
     path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
     assert project._get_default_project_directory() == path
     assert os.path.exists(path)
+
+
+def test_clean_project_directory(tmpdir):
+
+    # A non anonymous project with uuid.
+    project1 = tmpdir / uuid4()
+    project1.mkdir()
+
+    # A non anonymous project.
+    oldproject = tmpdir / uuid4()
+    oldproject.mkdir()
+
+    # an anonymous project
+    project2 = tmpdir / uuid4()
+    project2.mkdir()
+    tmp = (project2 / ".gns3_temporary")
+    with open(str(tmp), 'w+') as f:
+        f.write("1")
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+        Project.clean_project_directory()
+
+    assert os.path.exists(str(project1))
+    assert os.path.exists(str(oldproject))
+    assert not os.path.exists(str(project2))

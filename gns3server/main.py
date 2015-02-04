@@ -26,6 +26,8 @@ from gns3server.server import Server
 from gns3server.web.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
+from gns3server.modules.project import Project
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -139,6 +141,8 @@ def main():
     except FileNotFoundError:
         log.critical("The current working directory doesn't exist")
         return
+
+    Project.clean_project_directory()
 
     host = server_config["host"]
     port = int(server_config["port"])
