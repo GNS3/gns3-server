@@ -5,12 +5,12 @@ GET /virtualbox/{uuid} HTTP/1.1
 
 
 HTTP/1.1 200
-CONNECTION: close
+CONNECTION: keep-alive
 CONTENT-LENGTH: 346
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 aiohttp/0.13.1
-X-ROUTE: /virtualbox/{uuid}
+SERVER: Python/3.4 GNS3/1.3.dev1
+X-ROUTE: /v1/virtualbox/{uuid}
 
 {
     "adapter_start_index": 0,
@@ -21,6 +21,6 @@ X-ROUTE: /virtualbox/{uuid}
     "headless": false,
     "name": "VMTEST",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "uuid": "f246f72b-9f79-4a60-a8fb-0b2375d29d28",
+    "uuid": "aa7a7c1e-6fc2-43b8-b53b-60e605565625",
     "vmname": "VMTEST"
 }

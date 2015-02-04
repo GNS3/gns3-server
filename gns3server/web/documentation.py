@@ -34,11 +34,11 @@ class Documentation(object):
             filename = self._file_path(path)
             handler_doc = self._documentation[path]
             with open("docs/api/{}.rst".format(filename), 'w+') as f:
-                f.write('{}\n---------------------------------------------\n\n'.format(path))
+                f.write('{}\n-----------------------------------------------------------\n\n'.format(path))
                 f.write('.. contents::\n')
                 for method in handler_doc["methods"]:
                     f.write('\n{} {}\n'.format(method["method"], path.replace("{", '**{').replace("}", "}**")))
-                    f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
+                    f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
                     f.write('{}\n\n'.format(method["description"]))
 
                     if len(method["parameters"]) > 0:

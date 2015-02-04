@@ -1,0 +1,21 @@
+curl -i -X PUT 'http://localhost:8000/projects/{project_id}' -d '{"temporary": false}'
+
+PUT /projects/{project_id} HTTP/1.1
+{
+    "temporary": false
+}
+
+
+HTTP/1.1 200
+CONNECTION: keep-alive
+CONTENT-LENGTH: 164
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 GNS3/1.3.dev1
+X-ROUTE: /v1/projects/{project_id}
+
+{
+    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmptf8_s67s",
+    "project_id": "12d03846-c355-4da9-b708-cd45e5d30a50",
+    "temporary": false
+}

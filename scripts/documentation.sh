@@ -25,6 +25,9 @@ echo "WARNING: This script should be run at the root directory of the project"
 
 export PYTEST_BUILD_DOCUMENTATION=1
 
+rm -Rf docs/api/
+mkdir -p docs/api/examples
+
 py.test -v
 python3 gns3server/web/documentation.py
 cd docs
