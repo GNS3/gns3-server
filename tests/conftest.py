@@ -84,7 +84,7 @@ def server(request, loop, port_manager):
 def project():
     """A GNS3 lab"""
 
-    return ProjectManager.instance().create_project(uuid="a1e920ca-338a-4e9f-b363-aa607b09dd80")
+    return ProjectManager.instance().create_project(project_id="a1e920ca-338a-4e9f-b363-aa607b09dd80")
 
 
 @pytest.fixture(scope="session")

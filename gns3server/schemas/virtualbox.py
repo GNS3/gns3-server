@@ -21,16 +21,12 @@ VBOX_CREATE_SCHEMA = {
     "description": "Request validation to create a new VirtualBox VM instance",
     "type": "object",
     "properties": {
-        "uuid": {
-            "description": "VirtualBox VM instance UUID",
+        "vm_id": {
+            "description": "VirtualBox VM instance identifier",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
-            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-        },
-        "vbox_id": {
-            "description": "VirtualBox VM instance ID (for project created before GNS3 1.3)",
-            "type": "integer"
+            "pattern": "(^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|\d+)$"
         },
         "project_id": {
             "description": "Project UUID",
@@ -204,7 +200,7 @@ VBOX_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "uuid": {
+        "vm_id": {
             "description": "VirtualBox VM instance UUID",
             "type": "string",
             "minLength": 36,
@@ -256,5 +252,5 @@ VBOX_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "uuid", "project_id"]
+    "required": ["name", "vm_id", "project_id"]
 }

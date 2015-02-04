@@ -119,7 +119,7 @@ class VirtualBox(BaseManager):
         vms = []
         result = yield from self.execute("list", ["vms"])
         for line in result:
-            vmname, uuid = line.rsplit(' ', 1)
+            vmname, _ = line.rsplit(' ', 1)
             vmname = vmname.strip('"')
             if vmname == "<inaccessible>":
                 continue  # ignore inaccessible VMs

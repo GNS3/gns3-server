@@ -34,21 +34,21 @@ class Project:
     A project contains a list of VM.
     In theory VM are isolated project/project.
 
-    :param uuid: Force project uuid (None by default auto generate an UUID)
+    :param project_id: Force project identifier (None by default auto generate an UUID)
     :param location: Parent path of the project. (None should create a tmp directory)
     :param temporary: Boolean the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, uuid=None, location=None, temporary=False):
+    def __init__(self, project_id=None, location=None, temporary=False):
 
-        if uuid is None:
-            self._uuid = str(uuid4())
+        if project_id is None:
+            self._id = str(uuid4())
         else:
             try:
-                UUID(uuid, version=4)
+                UUID(project_id, version=4)
             except ValueError:
-                raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(uuid))
-            self._uuid = uuid
+                raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
+            self._id = project_id
 
         config = Config.instance().get_section_config("Server")
         self._location = location
@@ -60,13 +60,13 @@ class Project:
 
         self._vms = set()
         self._vms_to_destroy = set()
-        self._path = os.path.join(self._location, self._uuid)
+        self._path = os.path.join(self._location, self._id)
         try:
             os.makedirs(os.path.join(self._path, "vms"), exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         self.temporary = temporary
-        log.debug("Create project {uuid} in directory {path}".format(path=self._path, uuid=self._uuid))
+        log.debug("Create project {id} in directory {path}".format(path=self._path, id=self._id))
 
     @classmethod
     def _get_default_project_directory(cls):
@@ -83,9 +83,9 @@ class Project:
         return path
 
     @property
-    def uuid(self):
+    def id(self):
 
-        return self._uuid
+        return self._id
 
     @property
     def location(self):
@@ -134,7 +134,7 @@ class Project:
         :returns: A string with a VM working directory
         """
 
-        workdir = os.path.join(self._path, vm.manager.module_name.lower(), vm.uuid)
+        workdir = os.path.join(self._path, vm.manager.module_name.lower(), vm.id)
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
@@ -166,7 +166,7 @@ class Project:
     def __json__(self):
 
         return {
-            "project_id": self._uuid,
+            "project_id": self._id,
             "location": self._location,
             "temporary": self._temporary
         }

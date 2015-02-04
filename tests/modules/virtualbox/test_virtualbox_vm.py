@@ -39,7 +39,7 @@ def vm(project, manager):
 def test_vm(project, manager):
     vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
     assert vm.name == "test"
-    assert vm.uuid == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+    assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
     assert vm.vmname == "test"
 
 

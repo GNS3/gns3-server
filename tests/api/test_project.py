@@ -80,7 +80,7 @@ def test_update_temporary_project(server):
 
 def test_commit_project(server, project):
     with asyncio_patch("gns3server.modules.project.Project.commit", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/commit".format(project_id=project.uuid), example=True)
+        response = server.post("/projects/{project_id}/commit".format(project_id=project.id), example=True)
     assert response.status == 204
     assert mock.called
 
@@ -92,7 +92,7 @@ def test_commit_project_invalid_uuid(server):
 
 def test_delete_project(server, project):
     with asyncio_patch("gns3server.modules.project.Project.delete", return_value=True) as mock:
-        response = server.delete("/projects/{project_id}".format(project_id=project.uuid), example=True)
+        response = server.delete("/projects/{project_id}".format(project_id=project.id), example=True)
         assert response.status == 204
         assert mock.called
 
@@ -104,7 +104,7 @@ def test_delete_project_invalid_uuid(server):
 
 def test_close_project(server, project):
     with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/close".format(project_id=project.uuid), example=True)
+        response = server.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
         assert response.status == 204
         assert mock.called
 

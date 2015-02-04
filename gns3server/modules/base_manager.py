@@ -97,71 +97,72 @@ class BaseManager:
     @asyncio.coroutine
     def unload(self):
 
-        for uuid in self._vms.keys():
+        for vm_id in self._vms.keys():
             try:
-                yield from self.close_vm(uuid)
+                yield from self.close_vm(vm_id)
             except Exception as e:
-                log.error("Could not delete VM {}: {}".format(uuid, e), exc_info=1)
+                log.error("Could not delete VM {}: {}".format(vm_id, e), exc_info=1)
                 continue
 
         if hasattr(BaseManager, "_instance"):
             BaseManager._instance = None
         log.debug("Module {} unloaded".format(self.module_name))
 
-    def get_vm(self, uuid):
+    def get_vm(self, vm_id):
         """
         Returns a VM instance.
 
-        :param uuid: VM UUID
+        :param vm_id: VM identifier
 
         :returns: VM instance
         """
 
         try:
-            UUID(uuid, version=4)
+            UUID(vm_id, version=4)
         except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(uuid))
+            raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(vm_id))
 
-        if uuid not in self._vms:
-            raise aiohttp.web.HTTPNotFound(text="UUID {} doesn't exist".format(uuid))
-        return self._vms[uuid]
+        if vm_id not in self._vms:
+            raise aiohttp.web.HTTPNotFound(text="ID {} doesn't exist".format(vm_id))
+        return self._vms[vm_id]
 
     @asyncio.coroutine
-    def create_vm(self, name, project_uuid, uuid, *args, **kwargs):
+    def create_vm(self, name, project_id, vm_id, *args, **kwargs):
         """
         Create a new VM
 
         :param name: VM name
-        :param project_uuid: UUID of Project
-        :param uuid: restore a VM UUID
+        :param project_id: Project identifier
+        :param vm_id: restore a VM identifier
         """
 
-        project = ProjectManager.instance().get_project(project_uuid)
+        project = ProjectManager.instance().get_project(project_id)
 
         # TODO: support for old projects VM with normal IDs.
 
-        if not uuid:
-            uuid = str(uuid4())
+        if not vm_id:
+            vm_id = str(uuid4())
 
-        vm = self._VM_CLASS(name, uuid, project, self, *args, **kwargs)
+        vm = self._VM_CLASS(name, vm_id, project, self, *args, **kwargs)
         if asyncio.iscoroutinefunction(vm.create):
             yield from vm.create()
         else:
             vm.create()
-        self._vms[vm.uuid] = vm
+        self._vms[vm.id] = vm
         project.add_vm(vm)
         return vm
 
     @asyncio.coroutine
-    def close_vm(self, uuid):
+    def close_vm(self, vm_id):
         """
         Delete a VM
 
-        :param uuid: VM UUID
+        :param vm_id: VM identifier
+
         :returns: VM instance
         """
 
-        vm = self.get_vm(uuid)
+        vm = self.get_vm(vm_id)
         if asyncio.iscoroutinefunction(vm.close):
             yield from vm.close()
         else:
@@ -169,18 +170,18 @@ class BaseManager:
         return vm
 
     @asyncio.coroutine
-    def delete_vm(self, uuid):
+    def delete_vm(self, vm_id):
         """
         Delete a VM. VM working directory will be destroy when
         we receive a commit.
 
-        :param uuid: VM UUID
+        :param vm_id: VM identifier
         :returns: VM instance
         """
 
-        vm = yield from self.close_vm(uuid)
+        vm = yield from self.close_vm(vm_id)
         vm.project.mark_vm_for_destruction(vm)
-        del self._vms[vm.uuid]
+        del self._vms[vm.id]
         return vm
 
     @staticmethod

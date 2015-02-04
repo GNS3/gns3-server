@@ -48,9 +48,9 @@ class VirtualBoxVM(BaseVM):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, uuid, project, manager, vmname, linked_clone, adapters=0):
+    def __init__(self, name, vm_id, project, manager, vmname, linked_clone, adapters=0):
 
-        super().__init__(name, uuid, project, manager)
+        super().__init__(name, vm_id, project, manager)
 
         self._maximum_adapters = 8
         self._linked_clone = linked_clone
@@ -77,9 +77,9 @@ class VirtualBoxVM(BaseVM):
     def __json__(self):
 
         return {"name": self.name,
-                "uuid": self.uuid,
+                "vm_id": self.id,
                 "console": self.console,
-                "project_id": self.project.uuid,
+                "project_id": self.project.id,
                 "vmname": self.vmname,
                 "headless": self.headless,
                 "enable_remote_console": self.enable_remote_console,
@@ -144,10 +144,10 @@ class VirtualBoxVM(BaseVM):
         yield from self._get_system_properties()
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
-        log.info("VirtualBox VM '{name}' [{uuid}] created".format(name=self.name, uuid=self.uuid))
+        log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))
 
         if self._linked_clone:
-            if self.uuid and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
+            if self.id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
                 yield from self.manager.execute("registervm", [vbox_file])
                 yield from self._reattach_hdds()
@@ -180,7 +180,7 @@ class VirtualBoxVM(BaseVM):
         if self._headless:
             args.extend(["--type", "headless"])
         result = yield from self.manager.execute("startvm", args)
-        log.info("VirtualBox VM '{name}' [{uuid}] started".format(name=self.name, uuid=self.uuid))
+        log.info("VirtualBox VM '{name}' [{id}] started".format(name=self.name, id=self.id))
         log.debug("Start result: {}".format(result))
 
         # add a guest property to let the VM know about the GNS3 name
@@ -202,7 +202,7 @@ class VirtualBoxVM(BaseVM):
         if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
             # power off the VM
             result = yield from self._control_vm("poweroff")
-            log.info("VirtualBox VM '{name}' [{uuid}] stopped".format(name=self.name, uuid=self.uuid))
+            log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
             log.debug("Stop result: {}".format(result))
 
             yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
@@ -228,11 +228,11 @@ class VirtualBoxVM(BaseVM):
         vm_state = yield from self._get_vm_state()
         if vm_state == "running":
             yield from self._control_vm("pause")
-            log.info("VirtualBox VM '{name}' [{uuid}] suspended".format(name=self.name, uuid=self.uuid))
+            log.info("VirtualBox VM '{name}' [{id}] suspended".format(name=self.name, id=self.id))
         else:
-            log.warn("VirtualBox VM '{name}' [{uuid}] cannot be suspended, current state: {state}".format(name=self.name,
-                                                                                                          uuid=self.uuid,
-                                                                                                          state=vm_state))
+            log.warn("VirtualBox VM '{name}' [{id}] cannot be suspended, current state: {state}".format(name=self.name,
+                                                                                                        id=self.id,
+                                                                                                        state=vm_state))
 
     @asyncio.coroutine
     def resume(self):
@@ -241,7 +241,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         yield from self._control_vm("resume")
-        log.info("VirtualBox VM '{name}' [{uuid}] resumed".format(name=self.name, uuid=self.uuid))
+        log.info("VirtualBox VM '{name}' [{id}] resumed".format(name=self.name, id=self.id))
 
     @asyncio.coroutine
     def reload(self):
@@ -250,7 +250,7 @@ class VirtualBoxVM(BaseVM):
         """
 
         result = yield from self._control_vm("reset")
-        log.info("VirtualBox VM '{name}' [{uuid}] reloaded".format(name=self.name, uuid=self.uuid))
+        log.info("VirtualBox VM '{name}' [{id}] reloaded".format(name=self.name, id=self.id))
         log.debug("Reload result: {}".format(result))
 
     @property
@@ -275,9 +275,9 @@ class VirtualBoxVM(BaseVM):
             self._manager.port_manager.release_console_port(self._console)
 
         self._console = self._manager.port_manager.reserve_console_port(console)
-        log.info("VirtualBox VM '{name}' [{uuid}]: console port set to {port}".format(name=self.name,
-                                                                                      uuid=self.uuid,
-                                                                                      port=console))
+        log.info("VirtualBox VM '{name}' [{id}]: console port set to {port}".format(name=self.name,
+                                                                                    id=self.id,
+                                                                                    port=console))
 
     @asyncio.coroutine
     def _get_all_hdd_files(self):
@@ -306,12 +306,12 @@ class VirtualBoxVM(BaseVM):
         for hdd_info in hdd_table:
             hdd_file = os.path.join(self.working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
             if os.path.exists(hdd_file):
-                log.info("VirtualBox VM '{name}' [{uuid}] attaching HDD {controller} {port} {device} {medium}".format(name=self.name,
-                                                                                                                      uuid=self.uuid,
-                                                                                                                      controller=hdd_info["controller"],
-                                                                                                                      port=hdd_info["port"],
-                                                                                                                      device=hdd_info["device"],
-                                                                                                                      medium=hdd_file))
+                log.info("VirtualBox VM '{name}' [{id}] attaching HDD {controller} {port} {device} {medium}".format(name=self.name,
+                                                                                                                    id=self.id,
+                                                                                                                    controller=hdd_info["controller"],
+                                                                                                                    port=hdd_info["port"],
+                                                                                                                    device=hdd_info["device"],
+                                                                                                                    medium=hdd_file))
                 yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
                                                                                                                           hdd_info["port"],
                                                                                                                           hdd_info["device"],
@@ -345,11 +345,11 @@ class VirtualBoxVM(BaseVM):
                         port = match.group(2)
                         device = match.group(3)
                         if value in hdd_files:
-                            log.info("VirtualBox VM '{name}' [{uuid}] detaching HDD {controller} {port} {device}".format(name=self.name,
-                                                                                                                         uuid=self.uuid,
-                                                                                                                         controller=controller,
-                                                                                                                         port=port,
-                                                                                                                         device=device))
+                            log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
+                                                                                                                       id=self.id,
+                                                                                                                       controller=controller,
+                                                                                                                       port=port,
+                                                                                                                       device=device))
                             yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller, port, device))
                             hdd_table.append(
                                 {
@@ -360,7 +360,7 @@ class VirtualBoxVM(BaseVM):
                                 }
                             )
 
-            log.info("VirtualBox VM '{name}' [{uuid}] unregistering".format(name=self.name, uuid=self.uuid))
+            log.info("VirtualBox VM '{name}' [{id}] unregistering".format(name=self.name, id=self.id))
             yield from self.manager.execute("unregistervm", [self._name])
 
             if hdd_table:
@@ -369,12 +369,11 @@ class VirtualBoxVM(BaseVM):
                     with open(hdd_info_file, "w") as f:
                         json.dump(hdd_table, f, indent=4)
                 except OSError as e:
-                    log.warning("VirtualBox VM '{name}' [{uuid}] could not write HHD info file: {error}".format(name=self.name,
-                                                                                                                uuid=self.uuid,
-                                                                                                                error=e.strerror))
+                    log.warning("VirtualBox VM '{name}' [{id}] could not write HHD info file: {error}".format(name=self.name,
+                                                                                                              id=self.id,
+                                                                                                              error=e.strerror))
 
-        log.info("VirtualBox VM '{name}' [{uuid}] closed".format(name=self.name,
-                                                                 uuid=self.uuid))
+        log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
         self._closed = True
 
     @property
@@ -396,9 +395,9 @@ class VirtualBoxVM(BaseVM):
         """
 
         if headless:
-            log.info("VirtualBox VM '{name}' [{uuid}] has enabled the headless mode".format(name=self.name, uuid=self.uuid))
+            log.info("VirtualBox VM '{name}' [{id}] has enabled the headless mode".format(name=self.name, id=self.id))
         else:
-            log.info("VirtualBox VM '{name}' [{uuid}] has disabled the headless mode".format(name=self.name, uuid=self.uuid))
+            log.info("VirtualBox VM '{name}' [{id}] has disabled the headless mode".format(name=self.name, id=self.id))
         self._headless = headless
 
     @property
@@ -420,10 +419,10 @@ class VirtualBoxVM(BaseVM):
         """
 
         if enable_remote_console:
-            log.info("VirtualBox VM '{name}' [{uuid}] has enabled the console".format(name=self.name, uuid=self.uuid))
+            log.info("VirtualBox VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
             # self._start_remote_console()
         else:
-            log.info("VirtualBox VM '{name}' [{uuid}] has disabled the console".format(name=self.name, uuid=self.uuid))
+            log.info("VirtualBox VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
             # self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
@@ -445,7 +444,7 @@ class VirtualBoxVM(BaseVM):
         :param vmname: VirtualBox VM name
         """
 
-        log.info("VirtualBox VM '{name}' [{uuid}] has set the VM name to '{vmname}'".format(name=self.name, uuid=self.uuid, vmname=vmname))
+        log.info("VirtualBox VM '{name}' [{id}] has set the VM name to '{vmname}'".format(name=self.name, id=self.id, vmname=vmname))
         # TODO: test linked clone
         # if self._linked_clone:
         #    yield from self._modify_vm('--name "{}"'.format(vmname))
@@ -472,9 +471,9 @@ class VirtualBoxVM(BaseVM):
             self._ethernet_adapters.append(EthernetAdapter())
 
         self._adapters = len(self._ethernet_adapters)
-        log.info("VirtualBox VM '{name}' [{uuid}] has changed the number of Ethernet adapters to {adapters}".format(name=self.name,
-                                                                                                                    uuid=self.uuid,
-                                                                                                                    adapters=adapters))
+        log.info("VirtualBox VM '{name}' [{id}] has changed the number of Ethernet adapters to {adapters}".format(name=self.name,
+                                                                                                                  id=self.id,
+                                                                                                                  adapters=adapters))
 
     @property
     def adapter_start_index(self):
@@ -496,9 +495,9 @@ class VirtualBoxVM(BaseVM):
 
         self._adapter_start_index = adapter_start_index
         self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
-        log.info("VirtualBox VM '{name}' [{uuid}]: adapter start index changed to {index}".format(name=self.name,
-                                                                                                  uuid=self.uuid,
-                                                                                                  index=adapter_start_index))
+        log.info("VirtualBox VM '{name}' [{id}]: adapter start index changed to {index}".format(name=self.name,
+                                                                                                id=self.id,
+                                                                                                index=adapter_start_index))
 
     @property
     def adapter_type(self):
@@ -520,9 +519,9 @@ class VirtualBoxVM(BaseVM):
 
         self._adapter_type = adapter_type
 
-        log.info("VirtualBox VM '{name}' [{uuid}]: adapter type changed to {adapter_type}".format(name=self.name,
-                                                                                                  uuid=self.uuid,
-                                                                                                  adapter_type=adapter_type))
+        log.info("VirtualBox VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(name=self.name,
+                                                                                                id=self.id,
+                                                                                                adapter_type=adapter_type))
 
     @asyncio.coroutine
     def _get_vm_info(self):
@@ -779,10 +778,10 @@ class VirtualBoxVM(BaseVM):
             yield from self._control_vm("setlinkstate{} on".format(adapter_id + 1))
 
         adapter.add_nio(0, nio)
-        log.info("VirtualBox VM '{name}' [{uuid}]: {nio} added to adapter {adapter_id}".format(name=self.name,
-                                                                                               uuid=self.uuid,
-                                                                                               nio=nio,
-                                                                                               adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_id}".format(name=self.name,
+                                                                                             id=self.id,
+                                                                                             nio=nio,
+                                                                                             adapter_id=adapter_id))
 
     @asyncio.coroutine
     def port_remove_nio_binding(self, adapter_id):
@@ -811,10 +810,10 @@ class VirtualBoxVM(BaseVM):
             self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(0)
 
-        log.info("VirtualBox VM '{name}' [{uuid}]: {nio} removed from adapter {adapter_id}".format(name=self.name,
-                                                                                                   uuid=self.uuid,
-                                                                                                   nio=nio,
-                                                                                                   adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: {nio} removed from adapter {adapter_id}".format(name=self.name,
+                                                                                                 id=self.id,
+                                                                                                 nio=nio,
+                                                                                                 adapter_id=adapter_id))
         return nio
 
     def start_capture(self, adapter_id, output_file):
@@ -836,9 +835,9 @@ class VirtualBoxVM(BaseVM):
             raise VirtualBoxError("Packet capture is already activated on adapter {adapter_id}".format(adapter_id=adapter_id))
 
         nio.startPacketCapture(output_file)
-        log.info("VirtualBox VM '{name}' [{uuid}]: starting packet capture on adapter {adapter_id}".format(name=self.name,
-                                                                                                           uuid=self.uuid,
-                                                                                                           adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: starting packet capture on adapter {adapter_id}".format(name=self.name,
+                                                                                                         id=self.id,
+                                                                                                         adapter_id=adapter_id))
 
     def stop_capture(self, adapter_id):
         """
@@ -856,6 +855,6 @@ class VirtualBoxVM(BaseVM):
         nio = adapter.get_nio(0)
         nio.stopPacketCapture()
 
-        log.info("VirtualBox VM '{name}' [{uuid}]: stopping packet capture on adapter {adapter_id}".format(name=self.name,
-                                                                                                           uuid=self.uuid,
-                                                                                                           adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_id}".format(name=self.name,
+                                                                                                         id=self.id,
+                                                                                                         adapter_id=adapter_id))

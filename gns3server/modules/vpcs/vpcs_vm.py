@@ -45,7 +45,7 @@ class VPCSVM(BaseVM):
     VPCS vm implementation.
 
     :param name: name of this VPCS vm
-    :param uuid: VPCS instance UUID
+    :param vm_id: VPCS instance identifier
     :param project: Project instance
     :param manager: parent VM Manager
     :param console: TCP console port
@@ -53,9 +53,9 @@ class VPCSVM(BaseVM):
     :param startup_script: Content of vpcs startup script file
     """
 
-    def __init__(self, name, uuid, project, manager, console=None, script_file=None, startup_script=None):
+    def __init__(self, name, vm_id, project, manager, console=None, script_file=None, startup_script=None):
 
-        super().__init__(name, uuid, project, manager)
+        super().__init__(name, vm_id, project, manager)
 
         self._path = manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
         self._console = console
@@ -105,9 +105,9 @@ class VPCSVM(BaseVM):
     def __json__(self):
 
         return {"name": self.name,
-                "uuid": self.uuid,
+                "vm_id": self.id,
                 "console": self._console,
-                "project_id": self.project.uuid,
+                "project_id": self.project.id,
                 "script_file": self.script_file,
                 "startup_script": self.startup_script}
 
@@ -329,10 +329,10 @@ class VPCSVM(BaseVM):
                                                                                            port_number=port_number))
 
         self._ethernet_adapter.add_nio(port_number, nio)
-        log.info("VPCS {name} {uuid}]: {nio} added to port {port_number}".format(name=self._name,
-                                                                                 uuid=self.uuid,
-                                                                                 nio=nio,
-                                                                                 port_number=port_number))
+        log.info("VPCS {name} {id}]: {nio} added to port {port_number}".format(name=self._name,
+                                                                               id=self.id,
+                                                                               nio=nio,
+                                                                               port_number=port_number))
         return nio
 
     def port_remove_nio_binding(self, port_number):
@@ -353,10 +353,10 @@ class VPCSVM(BaseVM):
             self.manager.port_manager.release_udp_port(nio.lport)
         self._ethernet_adapter.remove_nio(port_number)
 
-        log.info("VPCS {name} [{uuid}]: {nio} removed from port {port_number}".format(name=self._name,
-                                                                                      uuid=self.uuid,
-                                                                                      nio=nio,
-                                                                                      port_number=port_number))
+        log.info("VPCS {name} [{id}]: {nio} removed from port {port_number}".format(name=self._name,
+                                                                                    id=self.id,
+                                                                                    nio=nio,
+                                                                                    port_number=port_number))
         return nio
 
     def _build_command(self):
@@ -411,7 +411,7 @@ class VPCSVM(BaseVM):
                 command.extend(["-e"])
                 command.extend(["-d", nio.tap_vm])
 
-        command.extend(["-m", str(self._manager.get_mac_id(self._uuid))])   # the unique ID is used to set the MAC address offset
+        command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
         if self._script_file:

@@ -22,7 +22,7 @@ from gns3server.modules.project_manager import ProjectManager
 
 def test_create_project():
     pm = ProjectManager.instance()
-    project = pm.create_project(uuid='00010203-0405-0607-0809-0a0b0c0d0e0f')
+    project = pm.create_project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
     assert project == pm.get_project('00010203-0405-0607-0809-0a0b0c0d0e0f')
 
 

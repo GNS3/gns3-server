@@ -22,20 +22,16 @@ VPCS_CREATE_SCHEMA = {
     "type": "object",
     "properties": {
         "name": {
-            "description": "VPCS device name",
+            "description": "VPCS VM name",
             "type": "string",
             "minLength": 1,
         },
-        "vpcs_id": {
-            "description": "VPCS device instance ID (for project created before GNS3 1.3)",
-            "type": "integer"
-        },
-        "uuid": {
-            "description": "VPCS device UUID",
+        "vm_id": {
+            "description": "VPCS VM identifier",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
-            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+            "pattern": "^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|\d+)$"
         },
         "project_id": {
             "description": "Project UUID",
@@ -65,7 +61,7 @@ VPCS_UPDATE_SCHEMA = {
     "type": "object",
     "properties": {
         "name": {
-            "description": "VPCS device name",
+            "description": "VPCS VM name",
             "type": ["string", "null"],
             "minLength": 1,
         },
@@ -145,12 +141,12 @@ VPCS_OBJECT_SCHEMA = {
     "type": "object",
     "properties": {
         "name": {
-            "description": "VPCS device name",
+            "description": "VPCS VM name",
             "type": "string",
             "minLength": 1,
         },
-        "uuid": {
-            "description": "VPCS device UUID",
+        "vm_id": {
+            "description": "VPCS VM UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -179,5 +175,5 @@ VPCS_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "uuid", "console", "project_id"]
+    "required": ["name", "vm_id", "console", "project_id"]
 }

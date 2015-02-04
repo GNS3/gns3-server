@@ -30,17 +30,17 @@ def test_get_mac_id(loop, project, port_manager):
     VPCS._instance = None
     vpcs = VPCS.instance()
     vpcs.port_manager = port_manager
-    vm1_uuid = str(uuid.uuid4())
-    vm2_uuid = str(uuid.uuid4())
-    vm3_uuid = str(uuid.uuid4())
-    loop.run_until_complete(vpcs.create_vm("PC 1", project.uuid, vm1_uuid))
-    loop.run_until_complete(vpcs.create_vm("PC 2", project.uuid, vm2_uuid))
-    assert vpcs.get_mac_id(vm1_uuid) == 0
-    assert vpcs.get_mac_id(vm1_uuid) == 0
-    assert vpcs.get_mac_id(vm2_uuid) == 1
-    loop.run_until_complete(vpcs.delete_vm(vm1_uuid))
-    loop.run_until_complete(vpcs.create_vm("PC 3", project.uuid, vm3_uuid))
-    assert vpcs.get_mac_id(vm3_uuid) == 0
+    vm1_id = str(uuid.uuid4())
+    vm2_id = str(uuid.uuid4())
+    vm3_id = str(uuid.uuid4())
+    loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm1_id))
+    loop.run_until_complete(vpcs.create_vm("PC 2", project.id, vm2_id))
+    assert vpcs.get_mac_id(vm1_id) == 0
+    assert vpcs.get_mac_id(vm1_id) == 0
+    assert vpcs.get_mac_id(vm2_id) == 1
+    loop.run_until_complete(vpcs.delete_vm(vm1_id))
+    loop.run_until_complete(vpcs.create_vm("PC 3", project.id, vm3_id))
+    assert vpcs.get_mac_id(vm3_id) == 0
 
 
 def test_get_mac_id_multiple_project(loop, port_manager):
@@ -48,17 +48,17 @@ def test_get_mac_id_multiple_project(loop, port_manager):
     VPCS._instance = None
     vpcs = VPCS.instance()
     vpcs.port_manager = port_manager
-    vm1_uuid = str(uuid.uuid4())
-    vm2_uuid = str(uuid.uuid4())
-    vm3_uuid = str(uuid.uuid4())
+    vm1_id = str(uuid.uuid4())
+    vm2_id = str(uuid.uuid4())
+    vm3_id = str(uuid.uuid4())
     project1 = ProjectManager.instance().create_project()
     project2 = ProjectManager.instance().create_project()
-    loop.run_until_complete(vpcs.create_vm("PC 1", project1.uuid, vm1_uuid))
-    loop.run_until_complete(vpcs.create_vm("PC 2", project1.uuid, vm2_uuid))
-    loop.run_until_complete(vpcs.create_vm("PC 2", project2.uuid, vm3_uuid))
-    assert vpcs.get_mac_id(vm1_uuid) == 0
-    assert vpcs.get_mac_id(vm2_uuid) == 1
-    assert vpcs.get_mac_id(vm3_uuid) == 0
+    loop.run_until_complete(vpcs.create_vm("PC 1", project1.id, vm1_id))
+    loop.run_until_complete(vpcs.create_vm("PC 2", project1.id, vm2_id))
+    loop.run_until_complete(vpcs.create_vm("PC 2", project2.id, vm3_id))
+    assert vpcs.get_mac_id(vm1_id) == 0
+    assert vpcs.get_mac_id(vm2_id) == 1
+    assert vpcs.get_mac_id(vm3_id) == 0
 
 
 def test_get_mac_id_no_id_available(loop, project, port_manager):
@@ -68,6 +68,6 @@ def test_get_mac_id_no_id_available(loop, project, port_manager):
     vpcs.port_manager = port_manager
     with pytest.raises(VPCSError):
         for i in range(0, 256):
-            vm_uuid = str(uuid.uuid4())
-            loop.run_until_complete(vpcs.create_vm("PC {}".format(i), project.uuid, vm_uuid))
-            assert vpcs.get_mac_id(vm_uuid) == i
+            vm_id = str(uuid.uuid4())
+            loop.run_until_complete(vpcs.create_vm("PC {}".format(i), project.id, vm_id))
+            assert vpcs.get_mac_id(vm_id) == i

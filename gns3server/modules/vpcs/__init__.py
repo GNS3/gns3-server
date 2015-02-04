@@ -38,28 +38,28 @@ class VPCS(BaseManager):
     def create_vm(self, *args, **kwargs):
 
         vm = yield from super().create_vm(*args, **kwargs)
-        self._free_mac_ids.setdefault(vm.project.uuid, list(range(0, 255)))
+        self._free_mac_ids.setdefault(vm.project.id, list(range(0, 255)))
         try:
-            self._used_mac_ids[vm.uuid] = self._free_mac_ids[vm.project.uuid].pop(0)
+            self._used_mac_ids[vm.id] = self._free_mac_ids[vm.project.id].pop(0)
         except IndexError:
             raise VPCSError("No mac address available")
         return vm
 
     @asyncio.coroutine
-    def delete_vm(self, uuid, *args, **kwargs):
+    def delete_vm(self, vm_id, *args, **kwargs):
 
-        vm = self.get_vm(uuid)
-        i = self._used_mac_ids[uuid]
-        self._free_mac_ids[vm.project.uuid].insert(0, i)
-        del self._used_mac_ids[uuid]
-        yield from super().delete_vm(uuid, *args, **kwargs)
+        vm = self.get_vm(vm_id)
+        i = self._used_mac_ids[vm_id]
+        self._free_mac_ids[vm.project.id].insert(0, i)
+        del self._used_mac_ids[vm_id]
+        yield from super().delete_vm(vm_id, *args, **kwargs)
 
-    def get_mac_id(self, vm_uuid):
+    def get_mac_id(self, vm_id):
         """
         Get an unique VPCS mac id
 
-        :param vm_uuid: UUID of the VPCS vm
-        :returns: VPCS Mac id
+        :param vm_id: ID of the VPCS VM
+        :returns: VPCS MAC id
         """
 
-        return self._used_mac_ids.get(vm_uuid, 1)
+        return self._used_mac_ids.get(vm_id, 1)

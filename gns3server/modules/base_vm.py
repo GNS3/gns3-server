@@ -21,16 +21,16 @@ log = logging.getLogger(__name__)
 
 class BaseVM:
 
-    def __init__(self, name, uuid, project, manager):
+    def __init__(self, name, vm_id, project, manager):
 
         self._name = name
-        self._uuid = uuid
+        self._id = vm_id
         self._project = project
         self._manager = manager
 
-        log.debug("{module}: {name} [{uuid}] initialized".format(module=self.manager.module_name,
-                                                                 name=self.name,
-                                                                 uuid=self.uuid))
+        log.debug("{module}: {name} [{id}] initialized".format(module=self.manager.module_name,
+                                                               name=self.name,
+                                                               id=self.id))
 
     def __del__(self):
 
@@ -64,21 +64,21 @@ class BaseVM:
         :param new_name: name
         """
 
-        log.info("{module}: {name} [{uuid}] renamed to {new_name}".format(module=self.manager.module_name,
-                                                                          name=self.name,
-                                                                          uuid=self.uuid,
-                                                                          new_name=new_name))
+        log.info("{module}: {name} [{id}] renamed to {new_name}".format(module=self.manager.module_name,
+                                                                        name=self.name,
+                                                                        id=self.id,
+                                                                        new_name=new_name))
         self._name = new_name
 
     @property
-    def uuid(self):
+    def id(self):
         """
-        Returns the UUID for this VM.
+        Returns the ID for this VM.
 
-        :returns: uuid (string)
+        :returns: VM identifier (string)
         """
 
-        return self._uuid
+        return self._id
 
     @property
     def manager(self):
@@ -103,9 +103,9 @@ class BaseVM:
         Creates the VM.
         """
 
-        log.info("{module}: {name} [{uuid}] created".format(module=self.manager.module_name,
-                                                            name=self.name,
-                                                            uuid=self.uuid))
+        log.info("{module}: {name} [{id}] created".format(module=self.manager.module_name,
+                                                          name=self.name,
+                                                          id=self.id))
 
     def start(self):
         """

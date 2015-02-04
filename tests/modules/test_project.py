@@ -42,18 +42,18 @@ def vm(project, manager):
 
 def test_affect_uuid():
     p = Project()
-    assert len(p.uuid) == 36
+    assert len(p.id) == 36
 
-    p = Project(uuid='00010203-0405-0607-0809-0a0b0c0d0e0f')
-    assert p.uuid == '00010203-0405-0607-0809-0a0b0c0d0e0f'
+    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
+    assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
 def test_path(tmpdir):
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         p = Project(location=str(tmpdir))
-        assert p.path == os.path.join(str(tmpdir), p.uuid)
-        assert os.path.exists(os.path.join(str(tmpdir), p.uuid))
-        assert os.path.exists(os.path.join(str(tmpdir), p.uuid, 'vms'))
+        assert p.path == os.path.join(str(tmpdir), p.id)
+        assert os.path.exists(os.path.join(str(tmpdir), p.id))
+        assert os.path.exists(os.path.join(str(tmpdir), p.id, 'vms'))
         assert not os.path.exists(os.path.join(p.path, '.gns3_temporary'))
 
 
@@ -79,14 +79,14 @@ def test_changing_location_not_allowed(tmpdir):
 
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"location": p.location, "project_id": p.uuid, "temporary": False}
+    assert p.__json__() == {"location": p.location, "project_id": p.id, "temporary": False}
 
 
 def test_vm_working_directory(tmpdir, vm):
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         p = Project(location=str(tmpdir))
         assert os.path.exists(p.vm_working_directory(vm))
-        assert os.path.exists(os.path.join(str(tmpdir), p.uuid, vm.module_name, vm.uuid))
+        assert os.path.exists(os.path.join(str(tmpdir), p.id, vm.module_name, vm.id))
 
 
 def test_mark_vm_for_destruction(vm):
