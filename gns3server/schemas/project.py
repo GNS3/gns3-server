@@ -50,6 +50,10 @@ PROJECT_UPDATE_SCHEMA = {
             "description": "If project is a temporary project",
             "type": "boolean"
         },
+        "path": {
+            "description": "Path of the project on the server (work only with --local)",
+            "type": ["string", "null"]
+        },
     },
     "additionalProperties": False,
 }
@@ -61,6 +65,11 @@ PROJECT_OBJECT_SCHEMA = {
     "properties": {
         "location": {
             "description": "Base directory where the project should be created on remote server",
+            "type": "string",
+            "minLength": 1
+        },
+        "path": {
+            "description": "Directory of the project on the server",
             "type": "string",
             "minLength": 1
         },

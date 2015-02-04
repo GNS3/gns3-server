@@ -65,6 +65,7 @@ class ProjectHandler:
         },
         status_codes={
             200: "The project has been updated",
+            403: "You are not allowed to modify this property",
             404: "The project doesn't exist"
         },
         output=PROJECT_OBJECT_SCHEMA,
@@ -74,6 +75,7 @@ class ProjectHandler:
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
         project.temporary = request.json.get("temporary", project.temporary)
+        project.path = request.json.get("path", project.path)
         response.json(project)
 
     @classmethod
