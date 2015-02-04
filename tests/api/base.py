@@ -45,7 +45,7 @@ class Query:
         return self._fetch("DELETE", path, **kwargs)
 
     def _get_url(self, path):
-        return "http://{}:{}{}".format(self._host, self._port, path)
+        return "http://{}:{}/v1{}".format(self._host, self._port, path)
 
     def _fetch(self, method, path, body=None, **kwargs):
         """Fetch an url, parse the JSON and return response
@@ -74,7 +74,7 @@ class Query:
         asyncio.async(go(future, response))
         self._loop.run_until_complete(future)
         response.body = future.result()
-        response.route = response.headers.get('X-Route', None)
+        response.route = response.headers.get('X-Route', None).replace("/v1", "")
 
         if response.body is not None:
             try:

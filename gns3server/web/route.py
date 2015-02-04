@@ -84,7 +84,8 @@ class Route(object):
         # This block is executed only the first time
         output_schema = kw.get("output", {})
         input_schema = kw.get("input", {})
-        cls._path = path
+        api_version = kw.get("version", 1)
+        cls._path = "/v{version}{path}".format(path=path, version=api_version)
         cls._documentation.setdefault(cls._path, {"methods": []})
 
         def register(func):
