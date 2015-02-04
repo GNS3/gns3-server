@@ -68,7 +68,7 @@ def test_changing_location_not_allowed(tmpdir):
 
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"location": p.location, "uuid": p.uuid, "temporary": False}
+    assert p.__json__() == {"location": p.location, "project_id": p.uuid, "temporary": False}
 
 
 def test_vm_working_directory(tmpdir, vm):

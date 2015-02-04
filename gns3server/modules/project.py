@@ -152,7 +152,7 @@ class Project:
     def __json__(self):
 
         return {
-            "uuid": self._uuid,
+            "project_id": self._uuid,
             "location": self._location,
             "temporary": self._temporary
         }

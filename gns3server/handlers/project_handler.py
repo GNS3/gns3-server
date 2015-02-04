@@ -18,15 +18,14 @@
 from ..web.route import Route
 from ..schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA
 from ..modules.project_manager import ProjectManager
-from aiohttp.web import HTTPConflict
 
 
 class ProjectHandler:
 
     @classmethod
     @Route.post(
-        r"/project",
-        description="Create a project on the server",
+        r"/projects",
+        description="Create a new project on the server",
         output=PROJECT_OBJECT_SCHEMA,
         input=PROJECT_CREATE_SCHEMA)
     def create_project(request, response):
@@ -34,99 +33,99 @@ class ProjectHandler:
         pm = ProjectManager.instance()
         p = pm.create_project(
             location=request.json.get("location"),
-            uuid=request.json.get("uuid"),
+            uuid=request.json.get("project_id"),
             temporary=request.json.get("temporary", False)
         )
         response.json(p)
 
     @classmethod
     @Route.get(
-        r"/project/{uuid}",
+        r"/projects/{project_id}",
         description="Get project information",
         parameters={
-            "uuid": "Project instance UUID",
+            "project_id": "The UUID of the project",
         },
         status_codes={
-            200: "OK",
-            404: "Project instance doesn't exist"
+            200: "Success",
+            404: "The project doesn't exist"
         },
         output=PROJECT_OBJECT_SCHEMA)
     def show(request, response):
 
         pm = ProjectManager.instance()
-        project = pm.get_project(request.match_info["uuid"])
+        project = pm.get_project(request.match_info["project_id"])
         response.json(project)
 
     @classmethod
     @Route.put(
-        r"/project/{uuid}",
+        r"/projects/{project_id}",
         description="Update a project",
         parameters={
-            "uuid": "Project instance UUID",
+            "project_id": "The UUID of the project",
         },
         status_codes={
-            200: "Project updated",
-            404: "Project instance doesn't exist"
+            200: "The project has been updated",
+            404: "The project doesn't exist"
         },
         output=PROJECT_OBJECT_SCHEMA,
         input=PROJECT_UPDATE_SCHEMA)
     def update(request, response):
 
         pm = ProjectManager.instance()
-        project = pm.get_project(request.match_info["uuid"])
+        project = pm.get_project(request.match_info["project_id"])
         project.temporary = request.json.get("temporary", project.temporary)
         response.json(project)
 
     @classmethod
     @Route.post(
-        r"/project/{uuid}/commit",
+        r"/projects/{project_id}/commit",
         description="Write changes on disk",
         parameters={
-            "uuid": "Project instance UUID",
+            "project_id": "The UUID of the project",
         },
         status_codes={
-            204: "Changes write on disk",
-            404: "Project instance doesn't exist"
+            204: "Changes have been written on disk",
+            404: "The project doesn't exist"
         })
     def commit(request, response):
 
         pm = ProjectManager.instance()
-        project = pm.get_project(request.match_info["uuid"])
+        project = pm.get_project(request.match_info["project_id"])
         yield from project.commit()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/project/{uuid}/close",
-        description="Close project",
+        r"/projects/{project_id}/close",
+        description="Close a project",
         parameters={
-            "uuid": "Project instance UUID",
+            "project_id": "The UUID of the project",
         },
         status_codes={
-            204: "Project closed",
-            404: "Project instance doesn't exist"
+            204: "The project has been closed",
+            404: "The project doesn't exist"
         })
     def close(request, response):
 
         pm = ProjectManager.instance()
-        project = pm.get_project(request.match_info["uuid"])
+        project = pm.get_project(request.match_info["project_id"])
         yield from project.close()
         response.set_status(204)
 
     @classmethod
     @Route.delete(
-        r"/project/{uuid}",
+        r"/projects/{project_id}",
         description="Delete a project from disk",
         parameters={
-            "uuid": "Project instance UUID",
+            "project_id": "The UUID of the project",
         },
         status_codes={
-            204: "Changes write on disk",
-            404: "Project instance doesn't exist"
+            204: "Changes have been written on disk",
+            404: "The project doesn't exist"
         })
     def delete(request, response):
 
         pm = ProjectManager.instance()
-        project = pm.get_project(request.match_info["uuid"])
+        project = pm.get_project(request.match_info["project_id"])
         yield from project.delete()
         response.set_status(204)

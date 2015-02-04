@@ -26,7 +26,7 @@ PROJECT_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1
         },
-        "uuid": {
+        "project_id": {
             "description": "Project UUID",
             "type": ["string", "null"],
             "minLength": 36,
@@ -64,7 +64,7 @@ PROJECT_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1
         },
-        "uuid": {
+        "project_id": {
             "description": "Project UUID",
             "type": "string",
             "minLength": 36,
@@ -77,5 +77,5 @@ PROJECT_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["location", "uuid", "temporary"]
+    "required": ["location", "project_id", "temporary"]
 }

@@ -26,89 +26,89 @@ from tests.utils import asyncio_patch
 
 def test_create_project_with_dir(server, tmpdir):
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        response = server.post("/project", {"location": str(tmpdir)})
+        response = server.post("/projects", {"location": str(tmpdir)})
         assert response.status == 200
         assert response.json["location"] == str(tmpdir)
 
 
 def test_create_project_without_dir(server):
     query = {}
-    response = server.post("/project", query)
+    response = server.post("/projects", query)
     assert response.status == 200
-    assert response.json["uuid"] is not None
+    assert response.json["project_id"] is not None
     assert response.json["temporary"] is False
 
 
 def test_create_temporary_project(server):
     query = {"temporary": True}
-    response = server.post("/project", query)
+    response = server.post("/projects", query)
     assert response.status == 200
-    assert response.json["uuid"] is not None
+    assert response.json["project_id"] is not None
     assert response.json["temporary"] is True
 
 
 def test_create_project_with_uuid(server):
-    query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = server.post("/project", query)
+    query = {"project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
+    response = server.post("/projects", query)
     assert response.status == 200
-    assert response.json["uuid"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+    assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
 def test_show_project(server):
-    query = {"uuid": "00010203-0405-0607-0809-0a0b0c0d0e0f", "location": "/tmp", "temporary": False}
+    query = {"project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f", "location": "/tmp", "temporary": False}
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        response = server.post("/project", query)
+        response = server.post("/projects", query)
         assert response.status == 200
-    response = server.get("/project/00010203-0405-0607-0809-0a0b0c0d0e0f", example=True)
+    response = server.get("/projects/00010203-0405-0607-0809-0a0b0c0d0e0f", example=True)
     assert response.json == query
 
 
 def test_show_project_invalid_uuid(server):
-    response = server.get("/project/00010203-0405-0607-0809-0a0b0c0d0e42")
+    response = server.get("/projects/00010203-0405-0607-0809-0a0b0c0d0e42")
     assert response.status == 404
 
 
 def test_update_temporary_project(server):
     query = {"temporary": True}
-    response = server.post("/project", query)
+    response = server.post("/projects", query)
     assert response.status == 200
     query = {"temporary": False}
-    response = server.put("/project/{uuid}".format(uuid=response.json["uuid"]), query, example=True)
+    response = server.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
     assert response.status == 200
     assert response.json["temporary"] is False
 
 
 def test_commit_project(server, project):
     with asyncio_patch("gns3server.modules.project.Project.commit", return_value=True) as mock:
-        response = server.post("/project/{uuid}/commit".format(uuid=project.uuid), example=True)
+        response = server.post("/projects/{project_id}/commit".format(project_id=project.uuid), example=True)
     assert response.status == 204
     assert mock.called
 
 
-def test_commit_project_invalid_project_uuid(server, project):
-    response = server.post("/project/{uuid}/commit".format(uuid=uuid.uuid4()))
+def test_commit_project_invalid_uuid(server):
+    response = server.post("/projects/{project_id}/commit".format(project_id=uuid.uuid4()))
     assert response.status == 404
 
 
 def test_delete_project(server, project):
     with asyncio_patch("gns3server.modules.project.Project.delete", return_value=True) as mock:
-        response = server.delete("/project/{uuid}".format(uuid=project.uuid), example=True)
+        response = server.delete("/projects/{project_id}".format(project_id=project.uuid), example=True)
         assert response.status == 204
         assert mock.called
 
 
-def test_delete_project_invalid_uuid(server, project):
-    response = server.delete("/project/{uuid}".format(uuid=uuid.uuid4()))
+def test_delete_project_invalid_uuid(server):
+    response = server.delete("/projects/{project_id}".format(project_id=uuid.uuid4()))
     assert response.status == 404
 
 
 def test_close_project(server, project):
     with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
-        response = server.post("/project/{uuid}/close".format(uuid=project.uuid), example=True)
+        response = server.post("/projects/{project_id}/close".format(project_id=project.uuid), example=True)
         assert response.status == 204
         assert mock.called
 
 
 def test_close_project_invalid_uuid(server, project):
-    response = server.post("/project/{uuid}/close".format(uuid=uuid.uuid4()))
+    response = server.post("/projects/{project_id}/close".format(project_id=uuid.uuid4()))
     assert response.status == 404
