@@ -57,7 +57,6 @@ class VPCSVM(BaseVM):
 
         super().__init__(name, vm_id, project, manager)
 
-        self._path = manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
         self._console = console
         self._command = []
         self._process = None
@@ -87,18 +86,15 @@ class VPCSVM(BaseVM):
         """
         Check if VPCS is available with the correct version
         """
-
-        if self._path == "vpcs":
-            self._path = shutil.which("vpcs")
-
-        if not self._path:
+        path = self.vpcs_path
+        if not path:
             raise VPCSError("No path to a VPCS executable has been set")
 
-        if not os.path.isfile(self._path):
-            raise VPCSError("VPCS program '{}' is not accessible".format(self._path))
+        if not os.path.isfile(path):
+            raise VPCSError("VPCS program '{}' is not accessible".format(path))
 
-        if not os.access(self._path, os.X_OK):
-            raise VPCSError("VPCS program '{}' is not executable".format(self._path))
+        if not os.access(path, os.X_OK):
+            raise VPCSError("VPCS program '{}' is not executable".format(path))
 
         yield from self._check_vpcs_version()
 
@@ -119,7 +115,10 @@ class VPCSVM(BaseVM):
         :returns: path to VPCS
         """
 
-        return self._path
+        path = self._manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
+        if path == "vpcs":
+            path = shutil.which("vpcs")
+        return path
 
     @property
     def console(self):
@@ -211,13 +210,13 @@ class VPCSVM(BaseVM):
                 if parse_version(version) < parse_version("0.5b1"):
                     raise VPCSError("VPCS executable version must be >= 0.5b1")
             else:
-                raise VPCSError("Could not determine the VPCS version for {}".format(self._path))
+                raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
         except (OSError, subprocess.SubprocessError) as e:
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
     @asyncio.coroutine
     def _get_vpcs_welcome(self):
-        proc = yield from asyncio.create_subprocess_exec(self._path, "-v", stdout=asyncio.subprocess.PIPE, cwd=self.working_dir)
+        proc = yield from asyncio.create_subprocess_exec(self.vpcs_path, "-v", stdout=asyncio.subprocess.PIPE, cwd=self.working_dir)
         out = yield from proc.stdout.read()
         return out.decode("utf-8")
 
@@ -251,8 +250,8 @@ class VPCSVM(BaseVM):
                 self._started = True
             except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
-                log.error("Could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
-                raise VPCSError("Could not start VPCS {}: {}\n{}".format(self._path, e, vpcs_stdout))
+                log.error("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
+                raise VPCSError("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
 
     @asyncio.coroutine
     def stop(self):
@@ -395,7 +394,7 @@ class VPCSVM(BaseVM):
 
         """
 
-        command = [self._path]
+        command = [self.vpcs_path]
         command.extend(["-p", str(self._console)])  # listen to console port
 
         nio = self._ethernet_adapter.get_nio(0)
