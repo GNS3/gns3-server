@@ -53,21 +53,37 @@ def test_path(tmpdir):
         p = Project(location=str(tmpdir))
         assert p.path == os.path.join(str(tmpdir), p.id)
         assert os.path.exists(os.path.join(str(tmpdir), p.id))
-        assert not os.path.exists(os.path.join(p.path, '.gns3_temporary'))
+        assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
+
+
+def test_changing_path_temporary_flag(tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        p = Project(temporary=True)
+        assert os.path.exists(p.path)
+        assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
+        p.temporary = False
+        assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
+
+        with open(str(tmpdir / ".gns3_temporary"), "w+") as f:
+            f.write("1")
+
+        p.path = str(tmpdir)
+        assert not os.path.exists(os.path.join(str(tmpdir), ".gns3_temporary"))
 
 
 def test_temporary_path():
     p = Project(temporary=True)
     assert os.path.exists(p.path)
-    assert os.path.exists(os.path.join(p.path, '.gns3_temporary'))
+    assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
 def test_remove_temporary_flag():
     p = Project(temporary=True)
     assert os.path.exists(p.path)
-    assert os.path.exists(os.path.join(p.path, '.gns3_temporary'))
+    assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
     p.temporary = False
-    assert not os.path.exists(os.path.join(p.path, '.gns3_temporary'))
+    assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
 def test_changing_location_not_allowed(tmpdir):

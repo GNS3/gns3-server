@@ -114,6 +114,7 @@ class Project:
             raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
 
         self._path = path
+        self._update_temporary_file()
 
     @property
     def vms(self):
@@ -132,6 +133,13 @@ class Project:
             return
 
         self._temporary = temporary
+        self._update_temporary_file()
+
+    def _update_temporary_file(self):
+        """
+        Update the .gns3_temporary file in order to reflect current
+        project status.
+        """
 
         if self._temporary:
             try:
