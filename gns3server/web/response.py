@@ -36,13 +36,16 @@ class Response(aiohttp.web.Response):
         super().__init__(headers=headers, **kwargs)
 
     def start(self, request):
-        log.debug("{} {}".format(self.status, self.reason))
-        log.debug(dict(self.headers))
+        if log.getEffectiveLevel() == logging.DEBUG:
+            log.info("%s %s", request.method, request.path_qs)
+            log.debug("%s", dict(request.headers))
+            if isinstance(request.json, dict):
+                log.debug("%s", request.json)
+            log.info("Response: %d %s", self.status, self.reason)
+            log.debug(dict(self.headers))
+            if hasattr(self, 'body'):
+                log.debug(json.loads(self.body.decode('utf-8')))
         return super().start(request)
-
-    def write(self, data):
-        log.debug(data)
-        return super().write(data)
 
     def json(self, answer):
         """

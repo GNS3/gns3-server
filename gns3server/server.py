@@ -29,6 +29,7 @@ import types
 import time
 
 from .web.route import Route
+from .web.request_handler import RequestHandler
 from .config import Config
 from .modules import MODULES
 from .modules.port_manager import PortManager
@@ -54,7 +55,7 @@ class Server:
     def _run_application(self, app, ssl_context=None):
 
         try:
-            server = yield from self._loop.create_server(app.make_handler(), self._host, self._port, ssl=ssl_context)
+            server = yield from self._loop.create_server(app.make_handler(handler=RequestHandler), self._host, self._port, ssl=ssl_context)
         except OSError as e:
             log.critical("Could not start the server: {}".format(e))
             self._loop.stop()
