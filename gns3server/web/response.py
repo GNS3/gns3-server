@@ -43,7 +43,7 @@ class Response(aiohttp.web.Response):
                 log.debug("%s", request.json)
             log.info("Response: %d %s", self.status, self.reason)
             log.debug(dict(self.headers))
-            if hasattr(self, 'body'):
+            if hasattr(self, 'body') and self.body is not None:
                 log.debug(json.loads(self.body.decode('utf-8')))
         return super().start(request)
 
