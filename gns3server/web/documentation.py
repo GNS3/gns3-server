@@ -85,7 +85,7 @@ class Documentation(object):
                 self._write_json_schema(f, schema['definitions'][definition])
             f.write("Body\n+++++++++\n")
 
-    def _write_json_schema_object(self, f, obj, schema):
+    def _write_json_schema_object(self, f, obj):
         """
             obj is current object in JSON schema
             schema is the whole schema including definitions
@@ -126,7 +126,7 @@ class Documentation(object):
                 <th>Type</th> \
                 <th>Description</th> \
                 </tr>\n")
-        self._write_json_schema_object(f, schema, schema)
+        self._write_json_schema_object(f, schema)
         f.write("    </table>\n\n")
 
 

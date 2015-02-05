@@ -44,15 +44,13 @@ class Response(aiohttp.web.Response):
         log.debug(data)
         return super().write(data)
 
-    """
-    Set the response content type to application/json and serialize
-    the content.
-
-    :param anwser The response as a Python object
-    """
-
     def json(self, answer):
-        """Pass a Python object and return a JSON as answer"""
+        """
+        Set the response content type to application/json and serialize
+        the content.
+
+        :param anwser The response as a Python object
+        """
 
         self.content_type = "application/json"
         if hasattr(answer, '__json__'):
