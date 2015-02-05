@@ -1,8 +1,8 @@
-curl -i -X PUT 'http://localhost:8000/projects/{project_id}' -d '{"path": "/tmp/pytest-42/test_update_path_project_non_l0"}'
+curl -i -X PUT 'http://localhost:8000/projects/{project_id}' -d '{"path": "/tmp/pytest-48/test_update_path_project_non_l0"}'
 
 PUT /projects/{project_id} HTTP/1.1
 {
-    "path": "/tmp/pytest-42/test_update_path_project_non_l0"
+    "path": "/tmp/pytest-48/test_update_path_project_non_l0"
 }
 
 
