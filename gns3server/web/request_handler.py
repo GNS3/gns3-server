@@ -22,7 +22,7 @@ import logging
 class RequestHandler(aiohttp.web.RequestHandler):
 
     def log_access(self, message, environ, response, time):
+
         # In debug mode we don't use the standard request log but a more complete in response.py
-        print(self.logger.getEffectiveLevel())
         if self.logger.getEffectiveLevel() != logging.DEBUG:
             super().log_access(message, environ, response, time)
