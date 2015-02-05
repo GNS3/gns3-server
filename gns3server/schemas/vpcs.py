@@ -33,13 +33,6 @@ VPCS_CREATE_SCHEMA = {
             "maxLength": 36,
             "pattern": "^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|\d+)$"
         },
-        "project_id": {
-            "description": "Project UUID",
-            "type": "string",
-            "minLength": 36,
-            "maxLength": 36,
-            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-        },
         "console": {
             "description": "console TCP port",
             "minimum": 1,
@@ -52,7 +45,7 @@ VPCS_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "project_id"]
+    "required": ["name"]
 }
 
 VPCS_UPDATE_SCHEMA = {

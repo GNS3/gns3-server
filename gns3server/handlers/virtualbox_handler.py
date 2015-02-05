@@ -23,6 +23,7 @@ from ..schemas.virtualbox import VBOX_NIO_SCHEMA
 from ..schemas.virtualbox import VBOX_CAPTURE_SCHEMA
 from ..schemas.virtualbox import VBOX_OBJECT_SCHEMA
 from ..modules.virtualbox import VirtualBox
+from ..modules.project_manager import ProjectManager
 
 
 class VirtualBoxHandler:
@@ -33,7 +34,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.get(
-        r"/virtualbox/vms_tmp",
+        r"/virtualbox/vms",
         status_codes={
             200: "Success",
         },
@@ -46,10 +47,13 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.post(
-        r"/virtualbox/vms",
+        r"/{project_id}/virtualbox/vms",
+        parameters={
+            "project_id": "UUID for the project"
+        },
         status_codes={
             201: "Instance created",
-            400: "Invalid project ID",
+            400: "Invalid request",
             409: "Conflict"
         },
         description="Create a new VirtualBox VM instance",
@@ -59,7 +63,7 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = yield from vbox_manager.create_vm(request.json.pop("name"),
-                                               request.json.pop("project_id"),
+                                               request.match_info["project_id"],
                                                request.json.get("vm_id"),
                                                request.json.pop("vmname"),
                                                request.json.pop("linked_clone"),
@@ -74,12 +78,14 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.get(
-        r"/virtualbox/vms/{vm_id}",
+        r"/{project_id}/virtualbox/vms/{vm_id}",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             200: "Success",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Get a VirtualBox VM instance",
@@ -87,17 +93,19 @@ class VirtualBoxHandler:
     def show(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
     @classmethod
     @Route.put(
-        r"/virtualbox/vms/{vm_id}",
+        r"/{project_id}/virtualbox/vms/{vm_id}",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             200: "Instance updated",
+            400: "Invalid request",
             404: "Instance doesn't exist",
             409: "Conflict"
         },
@@ -107,7 +115,7 @@ class VirtualBoxHandler:
     def update(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
@@ -118,124 +126,135 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.delete(
-        r"/virtualbox/vms/{vm_id}",
+        r"/{project_id}/virtualbox/vms/{vm_id}",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance deleted",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Delete a VirtualBox VM instance")
     def delete(request, response):
+
+        # check the project_id exists
+        ProjectManager.instance().get_project(request.match_info["project_id"])
 
         yield from VirtualBox.instance().delete_vm(request.match_info["vm_id"])
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/virtualbox/vms/{vm_id}/start",
+        r"/{project_id}/virtualbox/vms/{vm_id}/start",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance started",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Start a VirtualBox VM instance")
     def start(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.start()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/virtualbox/vms/{vm_id}/stop",
+        r"/{project_id}/virtualbox/vms/{vm_id}/stop",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance stopped",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Stop a VirtualBox VM instance")
     def stop(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.stop()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/virtualbox/vms/{vm_id}/suspend",
+        r"/{project_id}/virtualbox/vms/{vm_id}/suspend",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance suspended",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Suspend a VirtualBox VM instance")
     def suspend(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.suspend()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/virtualbox/vms/{vm_id}/resume",
+        r"/{project_id}/virtualbox/vms/{vm_id}/resume",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance resumed",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Resume a suspended VirtualBox VM instance")
     def suspend(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.resume()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/virtualbox/vms/{vm_id}/reload",
+        r"/{project_id}/virtualbox/vms/{vm_id}/reload",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance reloaded",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Reload a VirtualBox VM instance")
-    def suspend(request, response):
+    def reload(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.reload()
         response.set_status(204)
 
     @Route.post(
-        r"/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
+        r"/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
             "adapter_id": "Adapter where the nio should be added"
         },
         status_codes={
             201: "NIO created",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Add a NIO to a VirtualBox VM instance",
@@ -244,7 +263,7 @@ class VirtualBoxHandler:
     def create_nio(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         nio = vbox_manager.create_nio(vbox_manager.vboxmanage_path, request.json)
         vm.port_add_nio_binding(int(request.match_info["adapter_id"]), nio)
         response.set_status(201)
@@ -252,33 +271,35 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.delete(
-        r"/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
+        r"/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
             "adapter_id": "Adapter from where the nio should be removed"
         },
         status_codes={
             204: "NIO deleted",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a VirtualBox VM instance")
     def delete_nio(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         vm.port_remove_nio_binding(int(request.match_info["adapter_id"]))
         response.set_status(204)
 
     @Route.post(
-        r"/virtualbox/{vm_id}/capture/{adapter_id:\d+}/start",
+        r"/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/start",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
             "adapter_id": "Adapter to start a packet capture"
         },
         status_codes={
             200: "Capture started",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Start a packet capture on a VirtualBox VM instance",
@@ -286,27 +307,28 @@ class VirtualBoxHandler:
     def start_capture(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         adapter_id = int(request.match_info["adapter_id"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["filename"])
         vm.start_capture(adapter_id, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/virtualbox/{vm_id}/capture/{adapter_id:\d+}/stop",
+        r"/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/stop",
         parameters={
+            "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
             "adapter_id": "Adapter to stop a packet capture"
         },
         status_codes={
             204: "Capture stopped",
-            400: "Invalid instance UUID",
+            400: "Invalid request",
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on a VirtualBox VM instance")
     def start_capture(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vm = vbox_manager.get_vm(request.match_info["vm_id"])
+        vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         vm.stop_capture(int(request.match_info["adapter_id"]))
         response.set_status(204)

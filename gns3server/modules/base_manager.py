@@ -108,22 +108,34 @@ class BaseManager:
             BaseManager._instance = None
         log.debug("Module {} unloaded".format(self.module_name))
 
-    def get_vm(self, vm_id):
+    def get_vm(self, vm_id, project_id=None):
         """
         Returns a VM instance.
 
         :param vm_id: VM identifier
+        :param project_id: Project identifier
 
         :returns: VM instance
         """
 
+        if project_id:
+            # check the project_id exists
+            project = ProjectManager.instance().get_project(project_id)
+
         try:
             UUID(vm_id, version=4)
         except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(vm_id))
+            raise aiohttp.web.HTTPBadRequest(text="VM ID {} is not a valid UUID".format(vm_id))
 
         if vm_id not in self._vms:
-            raise aiohttp.web.HTTPNotFound(text="ID {} doesn't exist".format(vm_id))
+            raise aiohttp.web.HTTPNotFound(text="VM ID {} doesn't exist".format(vm_id))
+
+        vm = self._vms[vm_id]
+
+        if project_id:
+            if vm.project.id != project.id:
+                raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't belong to VM {}".format(project_id, vm.name))
+
         return self._vms[vm_id]
 
     @asyncio.coroutine

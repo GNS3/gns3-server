@@ -28,13 +28,6 @@ VBOX_CREATE_SCHEMA = {
             "maxLength": 36,
             "pattern": "(^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|\d+)$"
         },
-        "project_id": {
-            "description": "Project UUID",
-            "type": "string",
-            "minLength": 36,
-            "maxLength": 36,
-            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-        },
         "linked_clone": {
             "description": "either the VM is a linked clone or not",
             "type": "boolean"
@@ -82,7 +75,7 @@ VBOX_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vmname", "linked_clone", "project_id"],
+    "required": ["name", "vmname", "linked_clone"],
 }
 
 VBOX_UPDATE_SCHEMA = {
