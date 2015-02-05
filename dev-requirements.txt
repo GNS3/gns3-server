@@ -5,3 +5,5 @@ pytest==2.6.4
 pep8==1.5.7
 pytest-timeout
 pytest-capturelog
+pytest-cov
+python-coveralls
