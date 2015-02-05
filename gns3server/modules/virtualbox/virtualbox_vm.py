@@ -327,7 +327,7 @@ class VirtualBoxVM(BaseVM):
             # VM is already closed
             return
 
-        self.stop()
+        yield from self.stop()
 
         if self._console:
             self._manager.port_manager.release_console_port(self._console)
@@ -451,6 +451,11 @@ class VirtualBoxVM(BaseVM):
         self._vmname = vmname
 
     @asyncio.coroutine
+    def rename(self):
+
+        pass
+
+    @asyncio.coroutine
     def set_adapters(self, adapters):
         """
         Sets the number of Ethernet adapters for this VirtualBox VM instance.
@@ -494,7 +499,8 @@ class VirtualBoxVM(BaseVM):
         """
 
         self._adapter_start_index = adapter_start_index
-        self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
+        # TODO: get rid of adapter start index
+        #self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
         log.info("VirtualBox VM '{name}' [{id}]: adapter start index changed to {index}".format(name=self.name,
                                                                                                 id=self.id,
                                                                                                 index=adapter_start_index))
@@ -518,7 +524,6 @@ class VirtualBoxVM(BaseVM):
         """
 
         self._adapter_type = adapter_type
-
         log.info("VirtualBox VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(name=self.name,
                                                                                                 id=self.id,
                                                                                                 adapter_type=adapter_type))
@@ -723,7 +728,7 @@ class VirtualBoxVM(BaseVM):
                 self._serial_pipe = open(pipe_name, "a+b")
             except OSError as e:
                 raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
-            self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._console_host, self._console)
+            self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._manager.port_manager.console_host, self._console)
             self._telnet_server_thread.start()
         else:
             try:
@@ -731,7 +736,7 @@ class VirtualBoxVM(BaseVM):
                 self._serial_pipe.connect(pipe_name)
             except OSError as e:
                 raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-            self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._console_host, self._console)
+            self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._manager.port_manager.console_host, self._console)
             self._telnet_server_thread.start()
 
     def _stop_remote_console(self):
