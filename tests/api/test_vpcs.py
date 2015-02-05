@@ -34,7 +34,6 @@ def test_vpcs_create(server, project):
     assert response.route == "/{project_id}/vpcs/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
-    assert response.json["script_file"] is None
 
 
 def test_vpcs_get(server, project, vm):

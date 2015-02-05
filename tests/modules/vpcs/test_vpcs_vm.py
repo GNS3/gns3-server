@@ -134,7 +134,7 @@ def test_port_remove_nio_binding(vm):
 def test_update_startup_script(vm):
     content = "echo GNS3 VPCS\nip 192.168.1.2\n"
     vm.startup_script = content
-    filepath = os.path.join(vm.working_dir, 'startup.vpcs')
+    filepath = os.path.join(vm.working_dir, 'startup.vpc')
     assert os.path.exists(filepath)
     with open(filepath) as f:
         assert f.read() == content
@@ -143,7 +143,7 @@ def test_update_startup_script(vm):
 def test_update_startup_script(vm):
     content = "echo GNS3 VPCS\nip 192.168.1.2\n"
     vm.startup_script = content
-    filepath = os.path.join(vm.working_dir, 'startup.vpcs')
+    filepath = os.path.join(vm.working_dir, 'startup.vpc')
     assert os.path.exists(filepath)
     with open(filepath) as f:
         assert f.read() == content
@@ -192,11 +192,10 @@ def test_change_console_port(vm, port_manager):
 
 
 def test_change_name(vm, tmpdir):
-    path = os.path.join(str(tmpdir), 'startup.vpcs')
+    path = os.path.join(vm.working_dir, 'startup.vpc')
     vm.name = "world"
     with open(path, 'w+') as f:
         f.write("name world")
-    vm._script_file = path
     vm.name = "hello"
     assert vm.name == "hello"
     with open(path) as f:

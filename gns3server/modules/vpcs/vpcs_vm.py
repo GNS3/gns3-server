@@ -49,11 +49,10 @@ class VPCSVM(BaseVM):
     :param project: Project instance
     :param manager: parent VM Manager
     :param console: TCP console port
-    :param script_file: A VPCS startup script
     :param startup_script: Content of vpcs startup script file
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None, script_file=None, startup_script=None):
+    def __init__(self, name, vm_id, project, manager, console=None, startup_script=None):
 
         super().__init__(name, vm_id, project, manager)
 
@@ -64,7 +63,6 @@ class VPCSVM(BaseVM):
         self._started = False
 
         # VPCS settings
-        self._script_file = script_file
         if startup_script is not None:
             self.startup_script = startup_script
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
@@ -104,7 +102,6 @@ class VPCSVM(BaseVM):
                 "vm_id": self.id,
                 "console": self._console,
                 "project_id": self.project.id,
-                "script_file": self.script_file,
                 "startup_script": self.startup_script}
 
     @property
@@ -152,7 +149,7 @@ class VPCSVM(BaseVM):
         :param new_name: name
         """
 
-        if self._script_file:
+        if self.script_file:
             content = self.startup_script
             content = content.replace(self._name, new_name)
             self.startup_script = content
@@ -163,19 +160,15 @@ class VPCSVM(BaseVM):
     def startup_script(self):
         """Return the content of the current startup script"""
 
-        if self._script_file is None:
-            # If the default VPCS file exist we use it
-            path = os.path.join(self.working_dir, 'startup.vpc')
-            if os.path.exists(path):
-                self._script_file = path
-            else:
-                return None
+        script_file = self.script_file
+        if script_file is None:
+            return None
 
         try:
-            with open(self._script_file) as f:
+            with open(script_file) as f:
                 return f.read()
         except OSError as e:
-            raise VPCSError("Can't read VPCS startup file '{}'".format(self._script_file))
+            raise VPCSError("Can't read VPCS startup file '{}'".format(script_file))
 
     @startup_script.setter
     def startup_script(self, startup_script):
@@ -185,17 +178,16 @@ class VPCSVM(BaseVM):
         :param startup_script The content of the vpcs startup script
         """
 
-        if self._script_file is None:
-            self._script_file = os.path.join(self.working_dir, 'startup.vpcs')
         try:
-            with open(self._script_file, 'w+') as f:
+            script_file = os.path.join(self.working_dir, 'startup.vpc')
+            with open(script_file, 'w+') as f:
                 if startup_script is None:
                     f.write('')
                 else:
                     startup_script = startup_script.replace("%h", self._name)
                     f.write(startup_script)
         except OSError as e:
-            raise VPCSError("Can't write VPCS startup file '{}'".format(self._script_file))
+            raise VPCSError("Can't write VPCS startup file '{}'".format(self.script_file))
 
     @asyncio.coroutine
     def _check_vpcs_version(self):
@@ -413,8 +405,9 @@ class VPCSVM(BaseVM):
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
-        if self._script_file:
-            command.extend([self._script_file])
+
+        if self.script_file:
+            command.extend([self.script_file])
         return command
 
     @property
@@ -425,4 +418,9 @@ class VPCSVM(BaseVM):
         :returns: path to script-file
         """
 
-        return self._script_file
+        # If the default VPCS file exist we use it
+        path = os.path.join(self.working_dir, 'startup.vpc')
+        if os.path.exists(path):
+            return path
+        else:
+            return None
