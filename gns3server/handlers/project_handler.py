@@ -32,7 +32,7 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         p = pm.create_project(
-            location=request.json.get("location"),
+            path=request.json.get("path"),
             project_id=request.json.get("project_id"),
             temporary=request.json.get("temporary", False)
         )

@@ -21,8 +21,8 @@ PROJECT_CREATE_SCHEMA = {
     "description": "Request validation to create a new Project instance",
     "type": "object",
     "properties": {
-        "location": {
-            "description": "Base directory where the project should be created on remote server",
+        "path": {
+            "description": "Project directory",
             "type": "string",
             "minLength": 1
         },

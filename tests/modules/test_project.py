@@ -56,6 +56,13 @@ def test_path(tmpdir):
         assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
+def test_init_path(tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        p = Project(path=str(tmpdir))
+        assert p.path == str(tmpdir)
+
+
 def test_changing_path_temporary_flag(tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):

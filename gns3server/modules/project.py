@@ -35,11 +35,12 @@ class Project:
     In theory VM are isolated project/project.
 
     :param project_id: Force project identifier (None by default auto generate an UUID)
+    :param path: Path of the project. (None use the standard directory)
     :param location: Parent path of the project. (None should create a tmp directory)
     :param temporary: Boolean the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, project_id=None, location=None, temporary=False):
+    def __init__(self, project_id=None, path=None, location=None, temporary=False):
 
         if project_id is None:
             self._id = str(uuid4())
@@ -58,12 +59,17 @@ class Project:
 
         self._vms = set()
         self._vms_to_destroy = set()
-        self._path = os.path.join(self._location, self._id)
+
+        self.temporary = temporary
+
+        if path is None:
+            path = os.path.join(self._location, self._id)
         try:
-            os.makedirs(self._path, exist_ok=True)
+            os.makedirs(path, exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
-        self.temporary = temporary
+        self.path = path
+
         log.debug("Create project {id} in directory {path}".format(path=self._path, id=self._id))
 
     def _config(self):
@@ -110,8 +116,9 @@ class Project:
     @path.setter
     def path(self, path):
 
-        if path != self._path and self._config().get("local", False) is False:
-            raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
+        if hasattr(self, "_path"):
+            if path != self._path and self._config().get("local", False) is False:
+                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
 
         self._path = path
         self._update_temporary_file()
@@ -140,6 +147,9 @@ class Project:
         Update the .gns3_temporary file in order to reflect current
         project status.
         """
+
+        if not hasattr(self, "_path"):
+            return
 
         if self._temporary:
             try:

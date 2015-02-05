@@ -24,11 +24,11 @@ from unittest.mock import patch
 from tests.utils import asyncio_patch
 
 
-def test_create_project_with_dir(server, tmpdir):
+def test_create_project_with_path(server, tmpdir):
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        response = server.post("/projects", {"location": str(tmpdir)})
+        response = server.post("/projects", {"path": str(tmpdir)})
         assert response.status == 200
-        assert response.json["location"] == str(tmpdir)
+        assert response.json["path"] == str(tmpdir)
 
 
 def test_create_project_without_dir(server):
@@ -55,13 +55,16 @@ def test_create_project_with_uuid(server):
 
 
 def test_show_project(server):
-    query = {"project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f", "location": "/tmp", "temporary": False}
+    query = {"project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f", "path": "/tmp", "temporary": False}
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         response = server.post("/projects", query)
         assert response.status == 200
     response = server.get("/projects/00010203-0405-0607-0809-0a0b0c0d0e0f", example=True)
-    query["path"] = "/tmp/00010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json == query
+    assert len(response.json.keys()) == 4
+    assert len(response.json["location"]) > 0
+    assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+    assert response.json["path"] == "/tmp"
+    assert response.json["temporary"] is False
 
 
 def test_show_project_invalid_uuid(server):
