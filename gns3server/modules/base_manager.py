@@ -97,12 +97,18 @@ class BaseManager:
     @asyncio.coroutine
     def unload(self):
 
+        tasks = []
         for vm_id in self._vms.keys():
-            try:
-                yield from self.close_vm(vm_id)
-            except Exception as e:
-                log.error("Could not delete VM {}: {}".format(vm_id, e), exc_info=1)
-                continue
+            tasks.append(asyncio.async(self.close_vm(vm_id)))
+
+        if tasks:
+            done, _ = yield from asyncio.wait(tasks)
+            for future in done:
+                try:
+                    future.result()
+                except Exception as e:
+                    log.error("Could not close VM {}".format(e), exc_info=1)
+                    continue
 
         if hasattr(BaseManager, "_instance"):
             BaseManager._instance = None

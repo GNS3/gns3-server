@@ -243,11 +243,21 @@ class Project:
         :param cleanup: If True drop the project directory
         """
 
+        tasks = []
         for vm in self._vms:
             if asyncio.iscoroutinefunction(vm.close):
-                yield from vm.close()
+                tasks.append(asyncio.async(vm.close()))
             else:
                 vm.close()
+
+        if tasks:
+            done, _ = yield from asyncio.wait(tasks)
+            for future in done:
+                try:
+                    future.result()
+                except Exception as e:
+                    log.error("Could not close VM {}".format(e), exc_info=1)
+
         if cleanup and os.path.exists(self.path):
             try:
                 yield from wait_run_in_executor(shutil.rmtree, self.path)
