@@ -23,7 +23,7 @@ PROJECT_CREATE_SCHEMA = {
     "properties": {
         "path": {
             "description": "Project directory",
-            "type": "string",
+            "type": ["string", "null"],
             "minLength": 1
         },
         "project_id": {
