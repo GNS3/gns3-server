@@ -48,7 +48,10 @@ class _asyncio_patch:
 
     def _fake_anwser(self):
         future = asyncio.Future()
-        future.set_result(self.kwargs["return_value"])
+        if "return_value" in self.kwargs:
+            future.set_result(self.kwargs["return_value"])
+        else:
+            future.set_result(True)
         return future
 
 

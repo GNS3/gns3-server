@@ -500,7 +500,7 @@ class VirtualBoxVM(BaseVM):
 
         self._adapter_start_index = adapter_start_index
         # TODO: get rid of adapter start index
-        #self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
+        # self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
         log.info("VirtualBox VM '{name}' [{id}]: adapter start index changed to {index}".format(name=self.name,
                                                                                                 id=self.id,
                                                                                                 index=adapter_start_index))
