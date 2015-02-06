@@ -198,8 +198,9 @@ def test_project_close_temporary_project(loop, manager):
     assert os.path.exists(directory) is False
 
 
-def test_get_default_project_directory():
+def test_get_default_project_directory(monkeypatch):
 
+    monkeypatch.undo()
     project = Project()
     path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
     assert project._get_default_project_directory() == path

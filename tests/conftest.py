@@ -107,13 +107,19 @@ def free_console_port(request, port_manager):
 
 
 @pytest.yield_fixture(autouse=True)
-def run_around_tests():
+def run_around_tests(monkeypatch):
+    """
+    This setup a temporay project file environnement around tests
+    """
+
     tmppath = tempfile.mkdtemp()
 
     config = Config.instance()
     server_section = config.get_section_config("Server")
     server_section["project_directory"] = tmppath
     config.set_section_config("Server", server_section)
+
+    monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: tmppath)
 
     yield
 
