@@ -1,6 +1,5 @@
 netifaces==0.10.4
 jsonschema==2.4.0
-pycurl==7.19.5
 python-dateutil==2.3
 apache-libcloud==0.16.0
 requests==2.5.0
