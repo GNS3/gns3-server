@@ -22,7 +22,7 @@ from tests.utils import asyncio_patch
 @pytest.fixture(scope="module")
 def vm(server, project):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True) as mock:
-        response = server.post("/{project_id}/virtualbox/vms".format(project_id=project.id), {"name": "VMTEST",
+        response = server.post("/projects/{project_id}/virtualbox/vms".format(project_id=project.id), {"name": "VMTEST",
                                                                                               "vmname": "VMTEST",
                                                                                               "linked_clone": False})
     assert mock.called
@@ -33,7 +33,7 @@ def vm(server, project):
 def test_vbox_create(server, project):
 
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True):
-        response = server.post("/{project_id}/virtualbox/vms".format(project_id=project.id), {"name": "VM1",
+        response = server.post("/projects/{project_id}/virtualbox/vms".format(project_id=project.id), {"name": "VM1",
                                                                                               "vmname": "VM1",
                                                                                               "linked_clone": False},
                                example=True)
@@ -43,73 +43,73 @@ def test_vbox_create(server, project):
 
 
 def test_vbox_get(server, project, vm):
-    response = server.get("/{project_id}/virtualbox/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = server.get("/projects/{project_id}/virtualbox/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
-    assert response.route == "/{project_id}/virtualbox/vms/{vm_id}"
+    assert response.route == "/projects/{project_id}/virtualbox/vms/{vm_id}"
     assert response.json["name"] == "VMTEST"
     assert response.json["project_id"] == project.id
 
 
 def test_vbox_start(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
-        response = server.post("/{project_id}/virtualbox/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_stop(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.stop", return_value=True) as mock:
-        response = server.post("/{project_id}/virtualbox/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_suspend(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.suspend", return_value=True) as mock:
-        response = server.post("/{project_id}/virtualbox/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_resume(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.resume", return_value=True) as mock:
-        response = server.post("/{project_id}/virtualbox/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_reload(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.reload", return_value=True) as mock:
-        response = server.post("/{project_id}/virtualbox/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_nio_create_udp(server, vm):
-    response = server.post("/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"],
+    response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"],
                                                                                         vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                              "lport": 4242,
                                                                                                              "rport": 4343,
                                                                                                              "rhost": "127.0.0.1"},
                            example=True)
     assert response.status == 201
-    assert response.route == "/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio"
+    assert response.route == "/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_vbox_delete_nio(server, vm):
-    server.post("/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"],
+    server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"],
                                                                              vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                   "lport": 4242,
                                                                                                   "rport": 4343,
                                                                                                   "rhost": "127.0.0.1"})
-    response = server.delete("/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = server.delete("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 204
-    assert response.route == "/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio"
+    assert response.route == "/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio"
 
 
 def test_vbox_update(server, vm, free_console_port):
-    response = server.put("/{project_id}/virtualbox/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
+    response = server.put("/projects/{project_id}/virtualbox/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
                                                                                                                           "console": free_console_port})
     assert response.status == 200
     assert response.json["name"] == "test"

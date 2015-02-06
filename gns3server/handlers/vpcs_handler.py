@@ -31,7 +31,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/vpcs/vms",
+        r"/projects/{project_id}/vpcs/vms",
         parameters={
             "project_id": "UUID for the project"
         },
@@ -56,7 +56,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.get(
-        r"/{project_id}/vpcs/vms/{vm_id}",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -76,7 +76,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.put(
-        r"/{project_id}/vpcs/vms/{vm_id}",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -101,7 +101,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.delete(
-        r"/{project_id}/vpcs/vms/{vm_id}",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -119,7 +119,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/vpcs/vms/{vm_id}/start",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}/start",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -139,7 +139,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/vpcs/vms/{vm_id}/stop",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}/stop",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -159,7 +159,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/vpcs/vms/{vm_id}/reload",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}/reload",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
@@ -178,7 +178,7 @@ class VPCSHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
@@ -203,7 +203,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.delete(
-        r"/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",

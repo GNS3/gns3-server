@@ -182,10 +182,11 @@ class Config(object):
         self._override_config[section] = content
 
     @staticmethod
-    def instance():
+    def instance(files=[]):
         """
         Singleton to return only on instance of Config.
 
+        :params files: Array of configuration files (optionnal)
         :returns: instance of Config
         """
 

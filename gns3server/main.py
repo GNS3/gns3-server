@@ -78,6 +78,7 @@ def parse_arguments():
     parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
     parser.add_argument("--host", help="run on the given host/IP address", default="127.0.0.1")
     parser.add_argument("--port", help="run on the given port", type=int, default=8000)
+    parser.add_argument("--config", help="use this config file", type=str, default=None)
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
     parser.add_argument("--certfile", help="SSL cert file", default="")
     parser.add_argument("--certkey", help="SSL key file", default="")

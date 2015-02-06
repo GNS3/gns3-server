@@ -47,7 +47,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/virtualbox/vms",
+        r"/projects/{project_id}/virtualbox/vms",
         parameters={
             "project_id": "UUID for the project"
         },
@@ -78,7 +78,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.get(
-        r"/{project_id}/virtualbox/vms/{vm_id}",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -98,7 +98,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.put(
-        r"/{project_id}/virtualbox/vms/{vm_id}",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -126,7 +126,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.delete(
-        r"/{project_id}/virtualbox/vms/{vm_id}",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -147,7 +147,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/virtualbox/vms/{vm_id}/start",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/start",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -167,7 +167,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/virtualbox/vms/{vm_id}/stop",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/stop",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -187,7 +187,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/virtualbox/vms/{vm_id}/suspend",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/suspend",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -207,7 +207,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/virtualbox/vms/{vm_id}/resume",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/resume",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -227,7 +227,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.post(
-        r"/{project_id}/virtualbox/vms/{vm_id}/reload",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/reload",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance"
@@ -246,7 +246,7 @@ class VirtualBoxHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
@@ -271,7 +271,7 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.delete(
-        r"/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
@@ -291,7 +291,7 @@ class VirtualBoxHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/start",
+        r"/projects/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/start",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
@@ -314,7 +314,7 @@ class VirtualBoxHandler:
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/stop",
+        r"/projects/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/stop",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",

@@ -23,105 +23,105 @@ from unittest.mock import patch
 
 @pytest.fixture(scope="module")
 def vm(server, project):
-    response = server.post("/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1"})
+    response = server.post("/projects/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1"})
     assert response.status == 201
     return response.json
 
 
 def test_vpcs_create(server, project):
-    response = server.post("/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1"}, example=True)
+    response = server.post("/projects/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1"}, example=True)
     assert response.status == 201
-    assert response.route == "/{project_id}/vpcs/vms"
+    assert response.route == "/projects/{project_id}/vpcs/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
 
 
 def test_vpcs_get(server, project, vm):
-    response = server.get("/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = server.get("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
-    assert response.route == "/{project_id}/vpcs/vms/{vm_id}"
+    assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
 
 
 def test_vpcs_create_startup_script(server, project):
-    response = server.post("/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1", "startup_script": "ip 192.168.1.2\necho TEST"})
+    response = server.post("/projects/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1", "startup_script": "ip 192.168.1.2\necho TEST"})
     assert response.status == 201
-    assert response.route == "/{project_id}/vpcs/vms"
+    assert response.route == "/projects/{project_id}/vpcs/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["startup_script"] == "ip 192.168.1.2\necho TEST"
 
 
 def test_vpcs_create_port(server, project, free_console_port):
-    response = server.post("/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1", "console": free_console_port})
+    response = server.post("/projects/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1", "console": free_console_port})
     assert response.status == 201
-    assert response.route == "/{project_id}/vpcs/vms"
+    assert response.route == "/projects/{project_id}/vpcs/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["console"] == free_console_port
 
 
 def test_vpcs_nio_create_udp(server, vm):
-    response = server.post("/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
+    response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                                  "lport": 4242,
                                                                                                                                  "rport": 4343,
                                                                                                                                  "rhost": "127.0.0.1"},
                            example=True)
     assert response.status == 201
-    assert response.route == "/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_vpcs_nio_create_tap(server, vm):
     with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
-        response = server.post("/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
                                                                                                                                      "tap_device": "test"})
         assert response.status == 201
-        assert response.route == "/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
+        assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
         assert response.json["type"] == "nio_tap"
 
 
 def test_vpcs_delete_nio(server, vm):
-    server.post("/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
+    server.post("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                       "lport": 4242,
                                                                                                                       "rport": 4343,
                                                                                                                       "rhost": "127.0.0.1"})
-    response = server.delete("/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = server.delete("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 204
-    assert response.route == "/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
 
 
 def test_vpcs_start(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
-        response = server.post("/{project_id}/vpcs/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_stop(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.stop", return_value=True) as mock:
-        response = server.post("/{project_id}/vpcs/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_reload(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.reload", return_value=True) as mock:
-        response = server.post("/{project_id}/vpcs/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_delete(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.VPCS.delete_vm", return_value=True) as mock:
-        response = server.delete("/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.delete("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_update(server, vm, tmpdir, free_console_port):
-    response = server.put("/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
+    response = server.put("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
                                                                                                                     "console": free_console_port,
                                                                                                                     "startup_script": "ip 192.168.1.1"})
     assert response.status == 200
