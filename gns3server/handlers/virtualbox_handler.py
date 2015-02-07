@@ -120,8 +120,14 @@ class VirtualBoxHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
+                if name == "vmname":
+                    yield from vm.rename_in_virtualbox()
 
-        # TODO: FINISH UPDATE (adapters).
+        if "adapters" in request.json:
+            adapters = int(request.json["adapters"])
+            if adapters != vm.adapters:
+                yield from vm.set_adapters(adapters)
+
         response.json(vm)
 
     @classmethod
@@ -265,7 +271,7 @@ class VirtualBoxHandler:
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         nio = vbox_manager.create_nio(vbox_manager.vboxmanage_path, request.json)
-        vm.port_add_nio_binding(int(request.match_info["adapter_id"]), nio)
+        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_id"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -287,7 +293,7 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        vm.port_remove_nio_binding(int(request.match_info["adapter_id"]))
+        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_id"]))
         response.set_status(204)
 
     @Route.post(

@@ -66,7 +66,7 @@ class VirtualBoxVM(BaseVM):
         self._headless = False
         self._enable_remote_console = False
         self._vmname = vmname
-        self._adapter_start_index = 0
+        self._use_any_adapter = False
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
         if self._console is not None:
@@ -85,7 +85,7 @@ class VirtualBoxVM(BaseVM):
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
-                "adapter_start_index": self.adapter_start_index}
+                "use_any_adapter": self.use_any_adapter}
 
     @asyncio.coroutine
     def _get_system_properties(self):
@@ -213,11 +213,11 @@ class VirtualBoxVM(BaseVM):
                 log.warn("Could not deactivate the first serial port: {}".format(e))
 
             for adapter_id in range(0, len(self._ethernet_adapters)):
-                if self._ethernet_adapters[adapter_id] is None:
-                    continue
-                yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
-                yield from self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
-                yield from self._modify_vm("--nic{} null".format(adapter_id + 1))
+                nio = self._ethernet_adapters[adapter_id].get_nio(0)
+                if nio:
+                    yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
+                    yield from self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
+                    yield from self._modify_vm("--nic{} null".format(adapter_id + 1))
 
     @asyncio.coroutine
     def suspend(self):
@@ -312,6 +312,7 @@ class VirtualBoxVM(BaseVM):
                                                                                                                     port=hdd_info["port"],
                                                                                                                     device=hdd_info["device"],
                                                                                                                     medium=hdd_file))
+
                 yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
                                                                                                                           hdd_info["port"],
                                                                                                                           hdd_info["device"],
@@ -350,7 +351,9 @@ class VirtualBoxVM(BaseVM):
                                                                                                                        controller=controller,
                                                                                                                        port=port,
                                                                                                                        device=device))
-                            yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller, port, device))
+                            yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller,
+                                                                                                                                      port,
+                                                                                                                                      device))
                             hdd_table.append(
                                 {
                                     "hdd": os.path.basename(value),
@@ -420,10 +423,10 @@ class VirtualBoxVM(BaseVM):
 
         if enable_remote_console:
             log.info("VirtualBox VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
-            # self._start_remote_console()
+            self._start_remote_console()
         else:
             log.info("VirtualBox VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
-            # self._stop_remote_console()
+            self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
     @property
@@ -445,15 +448,26 @@ class VirtualBoxVM(BaseVM):
         """
 
         log.info("VirtualBox VM '{name}' [{id}] has set the VM name to '{vmname}'".format(name=self.name, id=self.id, vmname=vmname))
-        # TODO: test linked clone
-        # if self._linked_clone:
-        #    yield from self._modify_vm('--name "{}"'.format(vmname))
         self._vmname = vmname
 
     @asyncio.coroutine
-    def rename(self):
+    def rename_in_virtualbox(self):
+        """
+        Renames the VirtualBox VM.
+        """
 
-        pass
+        if self._linked_clone:
+            yield from self._modify_vm('--name "{}"'.format(self._vmname))
+
+    @property
+    def adapters(self):
+        """
+        Returns the number of adapters configured for this VirtualBox VM.
+
+        :returns: number of adapters
+        """
+
+        return self._adapters
 
     @asyncio.coroutine
     def set_adapters(self, adapters):
@@ -469,10 +483,7 @@ class VirtualBoxVM(BaseVM):
             raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(self._maximum_adapters))
 
         self._ethernet_adapters.clear()
-        for adapter_id in range(0, self._adapter_start_index + adapters):
-            if adapter_id < self._adapter_start_index:
-                self._ethernet_adapters.append(None)
-                continue
+        for adapter_id in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
 
         self._adapters = len(self._ethernet_adapters)
@@ -481,29 +492,28 @@ class VirtualBoxVM(BaseVM):
                                                                                                                   adapters=adapters))
 
     @property
-    def adapter_start_index(self):
+    def use_any_adapter(self):
         """
-        Returns the adapter start index for this VirtualBox VM instance.
+        Returns either GNS3 can use any VirtualBox adapter on this instance.
 
         :returns: index
         """
 
-        return self._adapter_start_index
+        return self._use_any_adapter
 
-    @adapter_start_index.setter
-    def adapter_start_index(self, adapter_start_index):
+    @use_any_adapter.setter
+    def use_any_adapter(self, use_any_adapter):
         """
-        Sets the adapter start index for this VirtualBox VM instance.
+        Allows GNS3 to use any VirtualBox adapter on this instance.
 
-        :param adapter_start_index: index
+        :param use_any_adapter: boolean
         """
 
-        self._adapter_start_index = adapter_start_index
-        # TODO: get rid of adapter start index
-        # self.adapters = self.adapters  # this forces to recreate the adapter list with the correct index
-        log.info("VirtualBox VM '{name}' [{id}]: adapter start index changed to {index}".format(name=self.name,
-                                                                                                id=self.id,
-                                                                                                index=adapter_start_index))
+        if use_any_adapter:
+            log.info("VirtualBox VM '{name}' [{id}] is allowed to use any adapter".format(name=self.name, id=self.id))
+        else:
+            log.info("VirtualBox VM '{name}' [{id}] is not allowd to use any adapter".format(name=self.name, id=self.id))
+        self._use_any_adapter = use_any_adapter
 
     @property
     def adapter_type(self):
@@ -628,37 +638,33 @@ class VirtualBoxVM(BaseVM):
         Configures network options.
         """
 
-        nic_attachements = yield from self._get_nic_attachements(self._maximum_adapters)
+        nic_attachments = yield from self._get_nic_attachements(self._maximum_adapters)
         for adapter_id in range(0, len(self._ethernet_adapters)):
-            if self._ethernet_adapters[adapter_id] is None:
-                # force enable to avoid any discrepancy in the interface numbering inside the VM
-                # e.g. Ethernet2 in GNS3 becoming eth0 inside the VM when using a start index of 2.
-                attachement = nic_attachements[adapter_id]
-                if attachement:
-                    # attachement can be none, null, nat, bridged, intnet, hostonly or generic
-                    yield from self._modify_vm("--nic{} {}".format(adapter_id + 1, attachement))
-                continue
-
-            vbox_adapter_type = "82540EM"
-            if self._adapter_type == "PCnet-PCI II (Am79C970A)":
-                vbox_adapter_type = "Am79C970A"
-            if self._adapter_type == "PCNet-FAST III (Am79C973)":
-                vbox_adapter_type = "Am79C973"
-            if self._adapter_type == "Intel PRO/1000 MT Desktop (82540EM)":
-                vbox_adapter_type = "82540EM"
-            if self._adapter_type == "Intel PRO/1000 T Server (82543GC)":
-                vbox_adapter_type = "82543GC"
-            if self._adapter_type == "Intel PRO/1000 MT Server (82545EM)":
-                vbox_adapter_type = "82545EM"
-            if self._adapter_type == "Paravirtualized Network (virtio-net)":
-                vbox_adapter_type = "virtio"
-
-            args = [self._vmname, "--nictype{}".format(adapter_id + 1), vbox_adapter_type]
-            yield from self.manager.execute("modifyvm", args)
-
-            yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
             nio = self._ethernet_adapters[adapter_id].get_nio(0)
             if nio:
+                attachment = nic_attachments[adapter_id]
+                if not self._use_any_adapter and attachment not in ("none", "null"):
+                    raise VirtualBoxError("Attachment ({}) already configured on adapter {}. "
+                                          "Please set it to 'Not attached' to allow GNS3 to use it.".format(attachment,
+                                                                                                            adapter_id + 1))
+                yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
+
+                vbox_adapter_type = "82540EM"
+                if self._adapter_type == "PCnet-PCI II (Am79C970A)":
+                    vbox_adapter_type = "Am79C970A"
+                if self._adapter_type == "PCNet-FAST III (Am79C973)":
+                    vbox_adapter_type = "Am79C973"
+                if self._adapter_type == "Intel PRO/1000 MT Desktop (82540EM)":
+                    vbox_adapter_type = "82540EM"
+                if self._adapter_type == "Intel PRO/1000 T Server (82543GC)":
+                    vbox_adapter_type = "82543GC"
+                if self._adapter_type == "Intel PRO/1000 MT Server (82545EM)":
+                    vbox_adapter_type = "82545EM"
+                if self._adapter_type == "Paravirtualized Network (virtio-net)":
+                    vbox_adapter_type = "virtio"
+                args = [self._vmname, "--nictype{}".format(adapter_id + 1), vbox_adapter_type]
+                yield from self.manager.execute("modifyvm", args)
+
                 log.debug("setting UDP params on adapter {}".format(adapter_id))
                 yield from self._modify_vm("--nic{} generic".format(adapter_id + 1))
                 yield from self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_id + 1))
@@ -670,10 +676,6 @@ class VirtualBoxVM(BaseVM):
                 if nio.capturing:
                     yield from self._modify_vm("--nictrace{} on".format(adapter_id + 1))
                     yield from self._modify_vm("--nictracefile{} {}".format(adapter_id + 1, nio.pcap_output_file))
-            else:
-                # shutting down unused adapters...
-                yield from self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
-                yield from self._modify_vm("--nic{} null".format(adapter_id + 1))
 
         for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_id))
@@ -759,9 +761,9 @@ class VirtualBoxVM(BaseVM):
             self._serial_pipe = None
 
     @asyncio.coroutine
-    def port_add_nio_binding(self, adapter_id, nio):
+    def adapter_add_nio_binding(self, adapter_id, nio):
         """
-        Adds a port NIO binding.
+        Adds an adapter NIO binding.
 
         :param adapter_id: adapter ID
         :param nio: NIO instance to add to the slot/port
@@ -789,9 +791,9 @@ class VirtualBoxVM(BaseVM):
                                                                                              adapter_id=adapter_id))
 
     @asyncio.coroutine
-    def port_remove_nio_binding(self, adapter_id):
+    def adapter_remove_nio_binding(self, adapter_id):
         """
-        Removes a port NIO binding.
+        Removes an adapter NIO binding.
 
         :param adapter_id: adapter ID
 
