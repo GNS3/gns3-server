@@ -104,7 +104,7 @@ class Project:
     def location(self, location):
 
         if location != self._location and self._config().get("local", False) is False:
-            raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
+            raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
 
         self._location = location
 
@@ -118,7 +118,7 @@ class Project:
 
         if hasattr(self, "_path"):
             if path != self._path and self._config().get("local", False) is False:
-                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modifiy the project directory location")
+                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
 
         self._path = path
         self._update_temporary_file()

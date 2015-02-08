@@ -297,7 +297,7 @@ class VirtualBoxHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/start",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/start_capture",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
@@ -315,12 +315,12 @@ class VirtualBoxHandler:
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         adapter_id = int(request.match_info["adapter_id"])
-        pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["filename"])
+        pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
         vm.start_capture(adapter_id, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/projects/{project_id}/virtualbox/{vm_id}/capture/{adapter_id:\d+}/stop",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/stop_capture",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",

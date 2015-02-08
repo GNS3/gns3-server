@@ -35,7 +35,7 @@ class Config(object):
     """
     Configuration file management using configparser.
 
-    :params files: Array of configuration files (optionnal)
+    :params files: Array of configuration files (optional)
     """
 
     def __init__(self, files=None):
@@ -45,7 +45,7 @@ class Config(object):
         # Monitor configuration files for changes
         self._watched_files = {}
 
-        # Override config from commande even if modify the config file and live reload it.
+        # Override config from command line even if we modify the config file and live reload it.
         self._override_config = {}
 
         if sys.platform.startswith("win"):

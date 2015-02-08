@@ -156,7 +156,12 @@ class BaseManager:
 
         project = ProjectManager.instance().get_project(project_id)
 
-        # TODO: support for old projects VM with normal IDs.
+        try:
+            if vm_id:
+                legacy_id = int(vm_id)
+            # TODO: support for old projects VM with normal IDs.
+        except ValueError:
+            pass
 
         if not vm_id:
             vm_id = str(uuid4())
