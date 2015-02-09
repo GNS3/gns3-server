@@ -18,6 +18,7 @@
 import pytest
 from tests.utils import asyncio_patch
 
+
 @pytest.yield_fixture(scope="module")
 def vm(server, project, monkeypatch):
 
@@ -32,6 +33,7 @@ def vm(server, project, monkeypatch):
 
     with asyncio_patch("gns3server.modules.virtualbox.VirtualBox.find_vboxmanage", return_value=vboxmanage_path):
         yield response.json
+
 
 def test_vbox_create(server, project):
 
@@ -92,11 +94,11 @@ def test_vbox_nio_create_udp(server, vm):
 
     with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
         response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"],
-                                                                                                 vm_id=vm["vm_id"]), {"type": "nio_udp",
-                                                                                                                      "lport": 4242,
-                                                                                                                      "rport": 4343,
-                                                                                                                      "rhost": "127.0.0.1"},
-                           example=True)
+                                                                                                     vm_id=vm["vm_id"]), {"type": "nio_udp",
+                                                                                                                          "lport": 4242,
+                                                                                                                          "rport": 4343,
+                                                                                                                          "rhost": "127.0.0.1"},
+                               example=True)
 
         assert mock.called
         args, kwgars = mock.call_args
