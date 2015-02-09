@@ -61,7 +61,7 @@ def _get_unused_port():
 
 
 @pytest.fixture(scope="session")
-def server(request, loop, port_manager):
+def server(request, loop, port_manager, monkeypatch):
     """A GNS3 server"""
 
     port = _get_unused_port()
@@ -78,6 +78,7 @@ def server(request, loop, port_manager):
     def tear_down():
         for module in MODULES:
             instance = module.instance()
+            monkeypatch.setattr('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
             loop.run_until_complete(instance.unload())
         srv.close()
         srv.wait_closed()
