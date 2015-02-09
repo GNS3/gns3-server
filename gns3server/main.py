@@ -21,6 +21,7 @@ import datetime
 import sys
 import locale
 import argparse
+import configparser
 
 from gns3server.server import Server
 from gns3server.web.logger import init_logger
@@ -72,37 +73,54 @@ def locale_check():
         log.info("Current locale is {}.{}".format(language, encoding))
 
 
-def parse_arguments():
+def parse_arguments(argv, config):
+    """
+    Parse command line arguments and override local configuration
+
+    :params args: Array of command line arguments
+    :params config: ConfigParser with default variable from configuration
+    """
+
+    defaults = {
+        "host": config.get("host", "127.0.0.1"),
+        "port": config.get("port", 8000),
+        "ssl": config.getboolean("ssl", False),
+        "certfile": config.get("certfile", ""),
+        "certkey": config.get("certkey", ""),
+        "local": config.getboolean("local", False),
+        "allow": config.getboolean("allow_remote_console", False),
+        "quiet": config.getboolean("quiet", False),
+        "debug": config.getboolean("debug", False),
+    }
 
     parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
+    parser.set_defaults(**defaults)
     parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
-    parser.add_argument("--host", help="run on the given host/IP address", default="127.0.0.1")
-    parser.add_argument("--port", help="run on the given port", type=int, default=8000)
-    parser.add_argument("--config", help="use this config file", type=str, default=None)
+    parser.add_argument("--host", help="run on the given host/IP address")
+    parser.add_argument("--port", help="run on the given port", type=int)
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
-    parser.add_argument("--certfile", help="SSL cert file", default="")
-    parser.add_argument("--certkey", help="SSL key file", default="")
+    parser.add_argument("--certfile", help="SSL cert file")
+    parser.add_argument("--certkey", help="SSL key file")
     parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
     parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs and enable code live reload")
-    args = parser.parse_args()
 
-    return args
+    return parser.parse_args(argv)
 
 
 def set_config(args):
 
     config = Config.instance()
     server_config = config.get_section_config("Server")
-    server_config["local"] = server_config.get("local", "true" if args.local else "false")
-    server_config["allow_remote_console"] = server_config.get("allow_remote_console", "true" if args.allow else "false")
-    server_config["host"] = server_config.get("host", args.host)
-    server_config["port"] = server_config.get("port", str(args.port))
-    server_config["ssl"] = server_config.get("ssl", "true" if args.ssl else "false")
-    server_config["certfile"] = server_config.get("certfile", args.certfile)
-    server_config["certkey"] = server_config.get("certkey", args.certkey)
-    server_config["debug"] = server_config.get("debug", "true" if args.debug else "false")
+    server_config["local"] = str(args.local)
+    server_config["allow_remote_console"] = str(args.allow)
+    server_config["host"] = args.host
+    server_config["port"] = str(args.port)
+    server_config["ssl"] = str(args.ssl)
+    server_config["certfile"] = args.certfile
+    server_config["certkey"] = args.certkey
+    server_config["debug"] = str(args.debug)
     config.set_section_config("Server", server_config)
 
 
@@ -112,7 +130,7 @@ def main():
     """
 
     level = logging.INFO
-    args = parse_arguments()
+    args = parse_arguments(sys.argv[1:], Config.instance().get_section_config("Server"))
     if args.debug:
         level = logging.DEBUG
 
