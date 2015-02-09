@@ -23,7 +23,7 @@ import asyncio
 def wait_run_in_executor(func, *args):
     """
     Run blocking code in a different thread and wait
-    the result.
+    for the result.
 
     :param func: Run this function in a different thread
     :param args: Parameters of the function

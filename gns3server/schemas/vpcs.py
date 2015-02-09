@@ -28,10 +28,13 @@ VPCS_CREATE_SCHEMA = {
         },
         "vm_id": {
             "description": "VPCS VM identifier",
-            "type": "string",
-            "minLength": 36,
-            "maxLength": 36,
-            "pattern": "^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|\d+)$"
+            "oneOf": [
+                {"type": "string",
+                 "minLength": 36,
+                 "maxLength": 36,
+                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"},
+                {"type": "integer"}  # for legacy projects
+            ]
         },
         "console": {
             "description": "console TCP port",

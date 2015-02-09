@@ -22,12 +22,14 @@ import stat
 import asyncio
 import aiohttp
 import socket
+import shutil
 
 import logging
 log = logging.getLogger(__name__)
 
 from uuid import UUID, uuid4
 from ..config import Config
+from ..utils.asyncio import wait_run_in_executor
 from .project_manager import ProjectManager
 
 from .nios.nio_udp import NIOUDP
@@ -157,9 +159,20 @@ class BaseManager:
         project = ProjectManager.instance().get_project(project_id)
 
         try:
-            if vm_id:
+            if vm_id and hasattr(self, "get_legacy_vm_workdir_name"):
+                # move old project VM files to a new location
                 legacy_id = int(vm_id)
-            # TODO: support for old projects VM with normal IDs.
+                project_dir = os.path.dirname(project.path)
+                project_name = os.path.basename(project_dir)
+                project_files_dir = os.path.join(project_dir, "{}-files".format(project_name))
+                module_path = os.path.join(project_files_dir, self.module_name.lower())
+                vm_working_dir = os.path.join(module_path, self.get_legacy_vm_workdir_name(legacy_id))
+                vm_id = str(uuid4())
+                new_vm_working_dir = os.path.join(project.path, self.module_name.lower(), vm_id)
+                try:
+                    yield from wait_run_in_executor(shutil.move, vm_working_dir, new_vm_working_dir)
+                except OSError as e:
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {}".format(e))
         except ValueError:
             pass
 

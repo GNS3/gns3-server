@@ -23,10 +23,13 @@ VBOX_CREATE_SCHEMA = {
     "properties": {
         "vm_id": {
             "description": "VirtualBox VM instance identifier",
-            "type": "string",
-            "minLength": 36,
-            "maxLength": 36,
-            "pattern": "(^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|\d+)$"
+            "oneOf": [
+                {"type": "string",
+                 "minLength": 36,
+                 "maxLength": 36,
+                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"},
+                {"type": "integer"}  # for legacy projects
+            ]
         },
         "linked_clone": {
             "description": "either the VM is a linked clone or not",

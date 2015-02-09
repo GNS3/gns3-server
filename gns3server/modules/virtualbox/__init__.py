@@ -127,3 +127,14 @@ class VirtualBox(BaseManager):
             if not extra_data[0].strip() == "Value: yes":
                 vms.append(vmname)
         return vms
+
+    @staticmethod
+    def get_legacy_vm_workdir_name(legacy_vm_id):
+        """
+        Returns the name of the legacy working directory name for a VM.
+
+        :param legacy_vm_id: legacy VM identifier (integer)
+        :returns: working directory name
+        """
+
+        return "vm-{}".format(legacy_vm_id)

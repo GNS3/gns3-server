@@ -63,3 +63,14 @@ class VPCS(BaseManager):
         """
 
         return self._used_mac_ids.get(vm_id, 1)
+
+    @staticmethod
+    def get_legacy_vm_workdir_name(legacy_vm_id):
+        """
+        Returns the name of the legacy working directory name for a VM.
+
+        :param legacy_vm_id: legacy VM identifier (integer)
+        :returns: working directory name
+        """
+
+        return "pc-{}".format(legacy_vm_id)
