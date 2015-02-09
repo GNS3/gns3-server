@@ -115,8 +115,8 @@ def test_json(tmpdir):
 def test_vm_working_directory(tmpdir, vm):
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         p = Project(location=str(tmpdir))
+        assert p.vm_working_directory(vm) == os.path.join(str(tmpdir), p.id, 'project-files', vm.module_name, vm.id)
         assert os.path.exists(p.vm_working_directory(vm))
-        assert os.path.exists(os.path.join(str(tmpdir), p.id, vm.module_name, vm.id))
 
 
 def test_mark_vm_for_destruction(vm):

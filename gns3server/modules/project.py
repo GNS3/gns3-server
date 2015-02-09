@@ -170,7 +170,7 @@ class Project:
         :returns: A string with a VM working directory
         """
 
-        workdir = os.path.join(self._path, vm.manager.module_name.lower(), vm.id)
+        workdir = os.path.join(self._path, 'project-files', vm.manager.module_name.lower(), vm.id)
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
