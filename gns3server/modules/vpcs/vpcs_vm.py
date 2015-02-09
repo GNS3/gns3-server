@@ -74,7 +74,7 @@ class VPCSVM(BaseVM):
 
     def close(self):
 
-        self._kill_process()
+        self._terminate_process()
         if self._console:
             self._manager.port_manager.release_console_port(self._console)
             self._console = None
@@ -251,10 +251,14 @@ class VPCSVM(BaseVM):
         Stops the VPCS process.
         """
 
-        # stop the VPCS process
         if self.is_running():
-            self._kill_process()
-            yield from self._process.wait()
+            self._terminate_process()
+            try:
+                yield from asyncio.wait_for(self._process.wait(), timeout=10)
+            except asyncio.TimeoutError:
+                self._process.kill()
+                if self._process.poll() is None:
+                    log.warn("VPCS process {} is still running".format(self._process.pid))
 
         self._process = None
         self._started = False
@@ -268,8 +272,8 @@ class VPCSVM(BaseVM):
         yield from self.stop()
         yield from self.start()
 
-    def _kill_process(self):
-        """Kill the process if running"""
+    def _terminate_process(self):
+        """Terminate the process if running"""
 
         if self._process:
             log.info("Stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
