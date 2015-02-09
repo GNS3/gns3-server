@@ -82,7 +82,7 @@ def parse_arguments(argv, config):
     """
 
     defaults = {
-        "host": config.get("host", "127.0.0.1"),
+        "host": config.get("host", "0.0.0.0"),
         "port": config.get("port", 8000),
         "ssl": config.getboolean("ssl", False),
         "certfile": config.get("certfile", ""),
