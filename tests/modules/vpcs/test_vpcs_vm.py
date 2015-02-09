@@ -183,8 +183,6 @@ def test_change_console_port(vm, port_manager):
     port2 = port_manager.get_free_console_port()
     port_manager.release_console_port(port1)
     port_manager.release_console_port(port2)
-    print(vm.console)
-    print(port1)
     vm.console = port1
     vm.console = port2
     assert vm.console == port2
