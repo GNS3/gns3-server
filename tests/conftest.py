@@ -20,6 +20,7 @@ import socket
 import asyncio
 import tempfile
 import shutil
+import os
 from aiohttp import web
 
 from gns3server.config import Config
@@ -30,6 +31,10 @@ from gns3server.modules import MODULES
 from gns3server.modules.port_manager import PortManager
 from gns3server.modules.project_manager import ProjectManager
 from tests.api.base import Query
+
+
+# Prevent execution of external binaries
+os.environ["PATH"] = tempfile.mkdtemp()
 
 
 @pytest.fixture(scope="session")
@@ -118,6 +123,15 @@ def run_around_tests(monkeypatch):
     server_section = config.get_section_config("Server")
     server_section["project_directory"] = tmppath
     config.set_section_config("Server", server_section)
+
+    # Prevent exectuions of the VM if we forgot to mock something
+    vbox_section = config.get_section_config("VirtualBox")
+    vbox_section["vboxmanage_path"] = tmppath
+    config.set_section_config("VirtualBox", vbox_section)
+
+    vbox_section = config.get_section_config("VPCS")
+    vbox_section["vpcs_path"] = tmppath
+    config.set_section_config("VPCS", vbox_section)
 
     monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: tmppath)
 
