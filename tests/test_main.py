@@ -29,7 +29,7 @@ def test_locale_check():
 
     try:
         locale.setlocale(locale.LC_ALL, ("fr_FR"))
-    except: # Locale is not available on the server
+    except:  # Locale is not available on the server
         return
     main.locale_check()
     assert locale.getlocale() == ('fr_FR', 'UTF-8')
