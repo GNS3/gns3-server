@@ -79,6 +79,12 @@ def test_start(loop, vm):
 
 def test_stop(loop, vm):
     process = MagicMock()
+
+    # Wait process kill success
+    future = asyncio.Future()
+    future.set_result(True)
+    process.wait.return_value = future
+
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
@@ -92,6 +98,12 @@ def test_stop(loop, vm):
 
 def test_reload(loop, vm):
     process = MagicMock()
+
+    # Wait process kill success
+    future = asyncio.Future()
+    future.set_result(True)
+    process.wait.return_value = future
+
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
