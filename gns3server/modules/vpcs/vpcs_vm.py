@@ -254,10 +254,10 @@ class VPCSVM(BaseVM):
         if self.is_running():
             self._terminate_process()
             try:
-                yield from asyncio.wait_for(self._process.wait(), timeout=10)
+                yield from asyncio.wait_for(self._process.wait(), timeout=3)
             except asyncio.TimeoutError:
                 self._process.kill()
-                if self._process.poll() is None:
+                if self._process.returncode is None:
                     log.warn("VPCS process {} is still running".format(self._process.pid))
 
         self._process = None

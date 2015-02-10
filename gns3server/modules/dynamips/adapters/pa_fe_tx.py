@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2013 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .vpcs import VPCS
-from .virtualbox import VirtualBox
-from .dynamips import Dynamips
+from .adapter import Adapter
 
-MODULES = [VPCS, VirtualBox, Dynamips]
+
+class PA_FE_TX(Adapter):
+    """
+    PA-FE-TX FastEthernet port adapter.
+    """
+
+    def __init__(self):
+        Adapter.__init__(self, interfaces=1)
+
+    def __str__(self):
+
+        return "PA-FE-TX"
