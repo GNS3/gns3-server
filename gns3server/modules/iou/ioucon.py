@@ -55,7 +55,7 @@ EXIT_ABORT = 2
 
 # Mostly from:
 # https://code.google.com/p/miniboa/source/browse/trunk/miniboa/telnet.py
-#--[ Telnet Commands ]---------------------------------------------------------
+# --[ Telnet Commands ]---------------------------------------------------------
 SE = 240  # End of sub-negotiation parameters
 NOP = 241  # No operation
 DATMK = 242  # Data stream portion of a sync.
@@ -74,7 +74,7 @@ DONT = 254  # Don't = Demand or confirm option halt
 IAC = 255  # Interpret as Command
 SEND = 1   # Sub-process negotiation SEND command
 IS = 0   # Sub-process negotiation IS command
-#--[ Telnet Options ]----------------------------------------------------------
+# --[ Telnet Options ]----------------------------------------------------------
 BINARY = 0   # Transmit Binary
 ECHO = 1   # Echo characters back to sender
 RECON = 2   # Reconnection

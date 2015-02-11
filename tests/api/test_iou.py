@@ -32,6 +32,7 @@ def fake_iou_bin(tmpdir):
     os.chmod(path, stat.S_IREAD | stat.S_IEXEC)
     return path
 
+
 @pytest.fixture
 def base_params(tmpdir, fake_iou_bin):
     """Return standard parameters"""
@@ -91,7 +92,7 @@ def test_iou_delete(server, vm):
 
 def test_iou_update(server, vm, tmpdir, free_console_port):
     response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
-                                                                                                                             "console": free_console_port})
+                                                                                                                            "console": free_console_port})
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port

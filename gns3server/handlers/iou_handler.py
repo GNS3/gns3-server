@@ -46,10 +46,10 @@ class IOUHandler:
 
         iou = IOU.instance()
         vm = yield from iou.create_vm(request.json["name"],
-                                       request.match_info["project_id"],
-                                       request.json.get("vm_id"),
-                                       console=request.json.get("console"),
-                                       )
+                                      request.match_info["project_id"],
+                                      request.json.get("vm_id"),
+                                      console=request.json.get("console"),
+                                      )
         vm.iou_path = request.json.get("iou_path", vm.iou_path)
         vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
         response.set_status(201)

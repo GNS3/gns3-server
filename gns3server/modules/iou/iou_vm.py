@@ -27,12 +27,15 @@ import signal
 import re
 import asyncio
 import shutil
+import argparse
+import threading
 
 from pkg_resources import parse_version
 from .iou_error import IOUError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..adapters.serial_adapter import SerialAdapter
 from ..base_vm import BaseVM
+from .ioucon import start_ioucon
 
 
 import logging
@@ -50,9 +53,12 @@ class IOUVM(BaseVM):
     :param project: Project instance
     :param manager: parent VM Manager
     :param console: TCP console port
+    :params console_host: TCP console host IP
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None):
+    def __init__(self, name, vm_id, project, manager,
+                 console=None,
+                 console_host="0.0.0.0"):
 
         super().__init__(name, vm_id, project, manager)
 
@@ -65,6 +71,7 @@ class IOUVM(BaseVM):
         self._iou_path = None
         self._iourc_path = None
         self._ioucon_thread = None
+        self._console_host = console_host
 
         # IOU settings
         self._ethernet_adapters = [EthernetAdapter(), EthernetAdapter()]  # one adapter = 4 interfaces
@@ -292,7 +299,7 @@ class IOUVM(BaseVM):
                 raise IOUError("could not start IOU {}: {}\n{}".format(self._iou_path, e, iou_stdout))
 
             # start console support
-            # self._start_ioucon()
+            self._start_ioucon()
             # connections support
             # self._start_iouyap()
 
