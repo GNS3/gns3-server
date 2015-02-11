@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 GNS3 Technologies Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+IOU server module.
+"""
+
+import asyncio
+
+from ..base_manager import BaseManager
+from .iou_error import IOUError
+from .iou_vm import IOUVM
+
+
+class IOU(BaseManager):
+    _VM_CLASS = IOUVM
+
+    def __init__(self):
+        super().__init__()
+        self._free_application_ids = list(range(1, 512))
+        self._used_application_ids = {}
+
+    @asyncio.coroutine
+    def create_vm(self, *args, **kwargs):
+
+        vm = yield from super().create_vm(*args, **kwargs)
+        try:
+            self._used_application_ids[vm.id] = self._free_application_ids.pop(0)
+        except IndexError:
+            raise IOUError("No mac address available")
+        return vm
+
+    @asyncio.coroutine
+    def delete_vm(self, vm_id, *args, **kwargs):
+
+        vm = self.get_vm(vm_id)
+        i = self._used_application_ids[vm_id]
+        self._free_application_ids.insert(0, i)
+        del self._used_application_ids[vm_id]
+        yield from super().delete_vm(vm_id, *args, **kwargs)
+
+    def get_application_id(self, vm_id):
+        """
+        Get an unique IOU mac id
+
+        :param vm_id: ID of the IOU VM
+        :returns: IOU MAC id
+        """
+
+        return self._used_application_ids.get(vm_id, 1)

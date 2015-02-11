@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2014 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,11 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Custom exceptions for Dynamips module.
-"""
+from .adapter import Adapter
 
 
-class DynamipsError(Exception):
+class SerialAdapter(Adapter):
 
-    pass
+    """
+    VPCS Ethernet adapter.
+    """
+
+    def __init__(self):
+        Adapter.__init__(self, interfaces=1)
+
+    def __str__(self):
+
+        return "Serial adapter"
