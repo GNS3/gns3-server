@@ -44,10 +44,10 @@ class VPCSVM(BaseVM):
     """
     VPCS vm implementation.
 
-    :param name: name of this VPCS vm
+    :param name: The name of this VM
     :param vm_id: VPCS instance identifier
     :param project: Project instance
-    :param manager: parent VM Manager
+    :param manager: Parent VM Manager
     :param console: TCP console port
     :param startup_script: Content of vpcs startup script file
     """

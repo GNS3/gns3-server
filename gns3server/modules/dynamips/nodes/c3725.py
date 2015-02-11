@@ -20,6 +20,7 @@ Interface for Dynamips virtual Cisco 3725 instances module ("c3725")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L346
 """
 
+import asyncio
 from .router import Router
 from ..adapters.gt96100_fe import GT96100_FE
 
@@ -31,13 +32,14 @@ class C3725(Router):
     """
     Dynamips c3725 router.
 
-    :param hypervisor: Dynamips hypervisor instance
-    :param name: name for this router
-    :param router_id: router instance ID
+    :param name: The name of this router
+    :param vm_id: Router instance identifier
+    :param project: Project instance
+    :param manager: Parent VM Manager
     """
 
-    def __init__(self, hypervisor, name, router_id=None):
-        Router.__init__(self, hypervisor, name, router_id, platform="c3725")
+    def __init__(self, name, vm_id, project, manager):
+        Router.__init__(self, name, vm_id, project, manager, platform="c3725")
 
         # Set default values for this platform
         self._ram = 128
@@ -50,34 +52,13 @@ class C3725(Router):
         self._create_slots(3)
         self._slots[0] = GT96100_FE()
 
-    def defaults(self):
-        """
-        Returns all the default attribute values for this platform.
+    def __json__(self):
 
-        :returns: default values (dictionary)
-        """
+        c3725_router_info = {"iomem": self._iomem}
 
-        router_defaults = Router.defaults(self)
-
-        platform_defaults = {"ram": self._ram,
-                             "nvram": self._nvram,
-                             "disk0": self._disk0,
-                             "disk1": self._disk1,
-                             "iomem": self._iomem,
-                             "clock_divisor": self._clock_divisor}
-
-        # update the router defaults with the platform specific defaults
-        router_defaults.update(platform_defaults)
-        return router_defaults
-
-    def list(self):
-        """
-        Returns all c3725 instances.
-
-        :returns: c3725 instance list
-        """
-
-        return self._hypervisor.send("c3725 list")
+        router_info = Router.__json__(self)
+        router_info.update(c3725_router_info)
+        return router_info
 
     @property
     def iomem(self):
@@ -89,19 +70,18 @@ class C3725(Router):
 
         return self._iomem
 
-    @iomem.setter
-    def iomem(self, iomem):
+    @asyncio.coroutine
+    def set_iomem(self, iomem):
         """
         Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
-        self._hypervisor.send("c3725 set_iomem {name} {size}".format(name=self._name,
-                                                                     size=iomem))
+        yield from self._hypervisor.send('c3725 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
 
-        log.info("router {name} [id={id}]: I/O memory updated from {old_iomem}% to {new_iomem}%".format(name=self._name,
-                                                                                                        id=self._id,
-                                                                                                        old_iomem=self._iomem,
-                                                                                                        new_iomem=iomem))
+        log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       old_iomem=self._iomem,
+                                                                                                       new_iomem=iomem))
         self._iomem = iomem

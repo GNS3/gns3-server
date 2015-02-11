@@ -37,8 +37,15 @@ class Router(BaseVM):
 
     """
     Dynamips router implementation.
+
+    :param name: The name of this router
+    :param vm_id: Router instance identifier
+    :param project: Project instance
+    :param manager: Parent VM Manager
+    :param platform: Platform of this router
     """
 
+    _instances = []
     _status = {0: "inactive",
                1: "shutting down",
                2: "running",
@@ -136,21 +143,22 @@ class Router(BaseVM):
 
         self._hypervisor = yield from self.manager.start_new_hypervisor()
 
-        yield from self._hypervisor.send("vm create '{name}' {id} {platform}".format(name=self._name,
-                                                                                     id=self._id,
+        print("{} {} {}".format(self._name, self._id, self._platform))
+        yield from self._hypervisor.send('vm create "{name}" {id} {platform}'.format(name=self._name,
+                                                                                     id=1,  #FIXME: instance ID!
                                                                                      platform=self._platform))
 
         if not self._ghost_flag:
 
-            log.info("Router {platform} '{name}' [{id}] has been created".format(name=self._name,
+            log.info('Router {platform} "{name}" [{id}] has been created'.format(name=self._name,
                                                                                  platform=self._platform,
                                                                                  id=self._id))
 
-            yield from self._hypervisor.send("vm set_con_tcp_port '{name}' {console}".format(name=self._name, console=self._console))
-            yield from self._hypervisor.send("vm set_aux_tcp_port '{name}' {aux}".format(name=self._name, aux=self._aux))
+            yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
+            yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self._aux))
 
             # get the default base MAC address
-            mac_addr = yield from self._hypervisor.send("{platform} get_mac_addr '{name}'".format(platform=self._platform,
+            mac_addr = yield from self._hypervisor.send('{platform} get_mac_addr "{name}"'.format(platform=self._platform,
                                                                                                   name=self._name))
             self._mac_addr = mac_addr[0]
 
@@ -164,7 +172,7 @@ class Router(BaseVM):
         :returns: inactive, shutting down, running or suspended.
         """
 
-        status = yield from self._hypervisor.send("vm get_status '{name}'".format(name=self._name))
+        status = yield from self._hypervisor.send('vm get_status "{name}"'.format(name=self._name))
         return self._status[int(status[0])]
 
     @asyncio.coroutine
@@ -181,23 +189,23 @@ class Router(BaseVM):
 
             if not os.path.isfile(self._image) or not os.path.exists(self._image):
                 if os.path.islink(self._image):
-                    raise DynamipsError("IOS image '{}' linked to '{}' is not accessible".format(self._image, os.path.realpath(self._image)))
+                    raise DynamipsError('IOS image "{}" linked to "{}" is not accessible'.format(self._image, os.path.realpath(self._image)))
                 else:
-                    raise DynamipsError("IOS image '{}' is not accessible".format(self._image))
+                    raise DynamipsError('IOS image "{}" is not accessible'.format(self._image))
 
             try:
                 with open(self._image, "rb") as f:
                     # read the first 7 bytes of the file.
                     elf_header_start = f.read(7)
             except OSError as e:
-                raise DynamipsError("Cannot read ELF header for IOS image {}: {}".format(self._image, e))
+                raise DynamipsError('Cannot read ELF header for IOS image "{}": {}'.format(self._image, e))
 
             # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
             if elf_header_start != b'\x7fELF\x01\x02\x01':
-                raise DynamipsError("'{}' is not a valid IOS image".format(self._image))
+                raise DynamipsError('"{}" is not a valid IOS image'.format(self._image))
 
-            yield from self._hypervisor.send("vm start '{}'".format(self._name))
-            log.info("router '{name}' [{id}] has been started".format(name=self._name, id=self._id))
+            yield from self._hypervisor.send('vm start "{}"'.format(self._name))
+            log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
     def stop(self):
@@ -207,8 +215,8 @@ class Router(BaseVM):
 
         status = yield from self.get_status()
         if status != "inactive":
-            yield from self._hypervisor.send("vm stop '{name}'".format(self._name))
-            log.info("Router '{name}' [{id}] has been stopped".format(name=self._name, id=self._id))
+            yield from self._hypervisor.send('vm stop "{name}"'.format(self._name))
+            log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
     def suspend(self):
@@ -218,8 +226,8 @@ class Router(BaseVM):
 
         status = yield from self.get_status()
         if status == "running":
-            yield from self._hypervisor.send("vm suspend '{}'".format(self._name))
-            log.info("Router '{name}' [{id}] has been suspended".format(name=self._name, id=self._id))
+            yield from self._hypervisor.send('vm suspend "{}"'.format(self._name))
+            log.info('Router "{name}" [{id}] has been suspended'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
     def resume(self):
@@ -227,8 +235,8 @@ class Router(BaseVM):
         Resumes this suspended router
         """
 
-        yield from self._hypervisor.send("vm resume '{}'".format(self._name))
-        log.info("Router '{name}' [{id}] has been resumed".format(name=self._name, id=self._id))
+        yield from self._hypervisor.send('vm resume "{}"'.format(self._name))
+        log.info('Router "{name}" [{id}] has been resumed'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
     def is_running(self):
@@ -271,9 +279,9 @@ class Router(BaseVM):
         """
 
         yield from self.close()
-        yield from self._hypervisor.send("vm delete '{}'".format(self._name))
+        yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
         self._hypervisor.devices.remove(self)
-        log.info("router '{name}' [{id}] has been deleted".format(name=self._name, id=self._id))
+        log.info('Router "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
 
     @property
     def platform(self):
@@ -326,7 +334,7 @@ class Router(BaseVM):
         :param level: level number
         """
 
-        yield from self._hypervisor.send("vm set_debug_level '{name}' {level}".format(name=self._name, level=level))
+        yield from self._hypervisor.send('vm set_debug_level "{name}" {level}'.format(name=self._name, level=level))
 
     @property
     def image(self):
@@ -348,11 +356,11 @@ class Router(BaseVM):
         """
 
         # encase image in quotes to protect spaces in the path
-        yield from self._hypervisor.send("vm set_ios {name} {image}".format(name=self._name, image='"' + image + '"'))
+        yield from self._hypervisor.send('vm set_ios "{name}" "{image}"'.format(name=self._name, image=image))
 
-        log.info("Router '{name}' [{id}]: has a new IOS image set: {image}".format(name=self._name,
-                                                                                   id=self._id,
-                                                                                   image='"' + image + '"'))
+        log.info('Router "{name}" [{id}]: has a new IOS image set: "{image}"'.format(name=self._name,
+                                                                                     id=self._id,
+                                                                                     image=image))
 
         self._image = image
 
@@ -377,8 +385,8 @@ class Router(BaseVM):
         if self._ram == ram:
             return
 
-        yield from self._hypervisor.send("vm set_ram '{name}' {ram}".format(name=self._name, ram=ram))
-        log.info("Router '{name}' [{id}]: RAM updated from {old_ram}MB to {new_ram}MB".format(name=self._name,
+        yield from self._hypervisor.send('vm set_ram "{name}" {ram}'.format(name=self._name, ram=ram))
+        log.info('Router "{name}" [{id}]: RAM updated from {old_ram}MB to {new_ram}MB'.format(name=self._name,
                                                                                               id=self._id,
                                                                                               old_ram=self._ram,
                                                                                               new_ram=ram))
@@ -405,8 +413,8 @@ class Router(BaseVM):
         if self._nvram == nvram:
             return
 
-        yield from self._hypervisor.send("vm set_nvram '{name}' {nvram}".format(name=self._name, nvram=nvram))
-        log.info("Router '{name}' [{id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB".format(name=self._name,
+        yield from self._hypervisor.send('vm set_nvram "{name}" {nvram}'.format(name=self._name, nvram=nvram))
+        log.info('Router "{name}" [{id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB'.format(name=self._name,
                                                                                                     id=self._id,
                                                                                                     old_nvram=self._nvram,
                                                                                                     new_nvram=nvram))
@@ -436,12 +444,12 @@ class Router(BaseVM):
         else:
             flag = 0
 
-        yield from self._hypervisor.send("vm set_ram_mmap '{name}' {mmap}".format(name=self._name, mmap=flag))
+        yield from self._hypervisor.send('vm set_ram_mmap "{name}" {mmap}'.format(name=self._name, mmap=flag))
 
         if mmap:
-            log.info("Router '{name}' [{id}]: mmap enabled".format(name=self._name, id=self._id))
+            log.info('Router "{name}" [{id}]: mmap enabled'.format(name=self._name, id=self._id))
         else:
-            log.info("Router '{name}' [{id}]: mmap disabled".format(name=self._name, id=self._id))
+            log.info('Router "{name}" [{id}]: mmap disabled'.format(name=self._name, id=self._id))
         self._mmap = mmap
 
     @property
@@ -466,12 +474,12 @@ class Router(BaseVM):
             flag = 1
         else:
             flag = 0
-        yield from self._hypervisor.send("vm set_sparse_mem '{name}' {sparsemem}".format(name=self._name, sparsemem=flag))
+        yield from self._hypervisor.send('vm set_sparse_mem "{name}" {sparsemem}'.format(name=self._name, sparsemem=flag))
 
         if sparsemem:
-            log.info("Router '{name}' [{id}]: sparse memory enabled".format(name=self._name, id=self._id))
+            log.info('Router "{name}" [{id}]: sparse memory enabled'.format(name=self._name, id=self._id))
         else:
-            log.info("Router '{name}' [{id}]: sparse memory disabled".format(name=self._name, id=self._id))
+            log.info('Router "{name}" [{id}]: sparse memory disabled'.format(name=self._name, id=self._id))
         self._sparsemem = sparsemem
 
     @property
@@ -493,8 +501,8 @@ class Router(BaseVM):
         :param clock_divisor: clock divisor value (integer)
         """
 
-        yield from self._hypervisor.send("vm set_clock_divisor '{name}' {clock}".format(name=self._name, clock=clock_divisor))
-        log.info("Router '{name}' [{id}]: clock divisor updated from {old_clock} to {new_clock}".format(name=self._name,
+        yield from self._hypervisor.send('vm set_clock_divisor "{name}" {clock}'.format(name=self._name, clock=clock_divisor))
+        log.info('Router "{name}" [{id}]: clock divisor updated from {old_clock} to {new_clock}'.format(name=self._name,
                                                                                                         id=self._id,
                                                                                                         old_clock=self._clock_divisor,
                                                                                                         new_clock=clock_divisor))
@@ -524,11 +532,11 @@ class Router(BaseVM):
         is_running = yield from self.is_running()
         if not is_running:
             # router is not running
-            yield from self._hypervisor.send("vm set_idle_pc '{name}' {idlepc}".format(name=self._name, idlepc=idlepc))
+            yield from self._hypervisor.send('vm set_idle_pc "{name}" {idlepc}'.format(name=self._name, idlepc=idlepc))
         else:
-            yield from self._hypervisor.send("vm set_idle_pc_online '{name}' 0 {idlepc}".format(name=self._name, idlepc=idlepc))
+            yield from self._hypervisor.send('vm set_idle_pc_online "{name}" 0 {idlepc}'.format(name=self._name, idlepc=idlepc))
 
-        log.info("Router '{name}' [{id}]: idle-PC set to {idlepc}".format(name=self._name, id=self._id, idlepc=idlepc))
+        log.info('Router "{name}" [{id}]: idle-PC set to {idlepc}'.format(name=self._name, id=self._id, idlepc=idlepc))
         self._idlepc = idlepc
 
     @asyncio.coroutine
@@ -544,12 +552,12 @@ class Router(BaseVM):
         is_running = yield from self.is_running()
         if not is_running:
             # router is not running
-            raise DynamipsError("Router '{name}' is not running".format(name=self._name))
+            raise DynamipsError('Router "{name}" is not running'.format(name=self._name))
 
-        log.info("Router '{name}' [{id}] has started calculating Idle-PC values".format(name=self._name, id=self._id))
+        log.info('Router "{name}" [{id}] has started calculating Idle-PC values'.format(name=self._name, id=self._id))
         begin = time.time()
-        idlepcs = yield from self._hypervisor.send("vm get_idle_pc_prop '{}' 0".format(self._name))
-        log.info("Router '{name}' [{id}] has finished calculating Idle-PC values after {time:.4f} seconds".format(name=self._name,
+        idlepcs = yield from self._hypervisor.send('vm get_idle_pc_prop "{}" 0'.format(self._name))
+        log.info('Router "{name}" [{id}] has finished calculating Idle-PC values after {time:.4f} seconds'.format(name=self._name,
                                                                                                                   id=self._id,
                                                                                                                   time=time.time() - begin))
         return idlepcs
@@ -565,9 +573,9 @@ class Router(BaseVM):
         is_running = yield from self.is_running()
         if not is_running:
             # router is not running
-            raise DynamipsError("Router '{name}' is not running".format(name=self._name))
+            raise DynamipsError('Router "{name}" is not running'.format(name=self._name))
 
-        proposals = yield from self._hypervisor.send("vm show_idle_pc_prop '{}' 0".format(self._name))
+        proposals = yield from self._hypervisor.send('vm show_idle_pc_prop "{}" 0'.format(self._name))
         return proposals
 
     @property
@@ -590,9 +598,9 @@ class Router(BaseVM):
 
         is_running = yield from self.is_running()
         if is_running:  # router is running
-            yield from self._hypervisor.send("vm set_idle_max '{name}' 0 {idlemax}".format(name=self._name, idlemax=idlemax))
+            yield from self._hypervisor.send('vm set_idle_max "{name}" 0 {idlemax}'.format(name=self._name, idlemax=idlemax))
 
-        log.info("Router '{name}' [{id}]: idlemax updated from {old_idlemax} to {new_idlemax}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: idlemax updated from {old_idlemax} to {new_idlemax}'.format(name=self._name,
                                                                                                       id=self._id,
                                                                                                       old_idlemax=self._idlemax,
                                                                                                       new_idlemax=idlemax))
@@ -619,10 +627,10 @@ class Router(BaseVM):
 
         is_running = yield from self.is_running()
         if is_running:  # router is running
-            yield from self._hypervisor.send("vm set_idle_sleep_time '{name}' 0 {idlesleep}".format(name=self._name,
+            yield from self._hypervisor.send('vm set_idle_sleep_time "{name}" 0 {idlesleep}'.format(name=self._name,
                                                                                                     idlesleep=idlesleep))
 
-        log.info("Router '{name}' [{id}]: idlesleep updated from {old_idlesleep} to {new_idlesleep}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: idlesleep updated from {old_idlesleep} to {new_idlesleep}'.format(name=self._name,
                                                                                                             id=self._id,
                                                                                                             old_idlesleep=self._idlesleep,
                                                                                                             new_idlesleep=idlesleep))
@@ -647,10 +655,10 @@ class Router(BaseVM):
         :ghost_file: path to ghost file
         """
 
-        yield from self._hypervisor.send("vm set_ghost_file '{name}' {ghost_file}".format(name=self._name,
+        yield from self._hypervisor.send('vm set_ghost_file "{name}" {ghost_file}'.format(name=self._name,
                                                                                           ghost_file=ghost_file))
 
-        log.info("Router '{name}' [{id}]: ghost file set to {ghost_file}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: ghost file set to {ghost_file}'.format(name=self._name,
                                                                                  id=self._id,
                                                                                  ghost_file=ghost_file))
 
@@ -692,10 +700,10 @@ class Router(BaseVM):
         2 => Use an existing ghost instance
         """
 
-        yield from self._hypervisor.send("vm set_ghost_status '{name}' {ghost_status}".format(name=self._name,
+        yield from self._hypervisor.send('vm set_ghost_status "{name}" {ghost_status}'.format(name=self._name,
                                                                                               ghost_status=ghost_status))
 
-        log.info("Router '{name}' [{id}]: ghost status set to {ghost_status}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: ghost status set to {ghost_status}'.format(name=self._name,
                                                                                      id=self._id,
                                                                                      ghost_status=ghost_status))
         self._ghost_status = ghost_status
@@ -721,10 +729,10 @@ class Router(BaseVM):
         :param exec_area: exec area value (integer)
         """
 
-        yield from self._hypervisor.send("vm set_exec_area '{name}' {exec_area}".format(name=self._name,
+        yield from self._hypervisor.send('vm set_exec_area "{name}" {exec_area}'.format(name=self._name,
                                                                                         exec_area=exec_area))
 
-        log.info("Router '{name}' [{id}]: exec area updated from {old_exec}MB to {new_exec}MB".format(name=self._name,
+        log.info('Router "{name}" [{id}]: exec area updated from {old_exec}MB to {new_exec}MB'.format(name=self._name,
                                                                                                       id=self._id,
                                                                                                       old_exec=self._exec_area,
                                                                                                       new_exec=exec_area))
@@ -748,12 +756,12 @@ class Router(BaseVM):
         :param disk0: disk0 size (integer)
         """
 
-        yield from self._hypervisor.send("vm set_disk0 '{name}' {disk0}".format(name=self._name, disk0=disk0))
+        yield from self._hypervisor.send('vm set_disk0 "{name}" {disk0}'.format(name=self._name, disk0=disk0))
 
-        log.info("Router {name} [{id}]: disk0 updated from {old_disk0}MB to {new_disk0}MB".format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  old_disk0=self._disk0,
-                                                                                                  new_disk0=disk0))
+        log.info('Router "{name}" [{id}]: disk0 updated from {old_disk0}MB to {new_disk0}MB'.format(name=self._name,
+                                                                                                    id=self._id,
+                                                                                                    old_disk0=self._disk0,
+                                                                                                    new_disk0=disk0))
         self._disk0 = disk0
 
     @property
@@ -774,9 +782,9 @@ class Router(BaseVM):
         :param disk1: disk1 size (integer)
         """
 
-        yield from self._hypervisor.send("vm set_disk1 '{name}' {disk1}".format(name=self._name, disk1=disk1))
+        yield from self._hypervisor.send('vm set_disk1 "{name}" {disk1}'.format(name=self._name, disk1=disk1))
 
-        log.info("Router '{name}' [{id}]: disk1 updated from {old_disk1}MB to {new_disk1}MB".format(name=self._name,
+        log.info('Router "{name}" [{id}]: disk1 updated from {old_disk1}MB to {new_disk1}MB'.format(name=self._name,
                                                                                                     id=self._id,
                                                                                                     old_disk1=self._disk1,
                                                                                                     new_disk1=disk1))
@@ -801,9 +809,9 @@ class Router(BaseVM):
         :param confreg: configuration register value (string)
         """
 
-        yield from self._hypervisor.send("vm set_conf_reg '{name}' {confreg}".format(name=self._name, confreg=confreg))
+        yield from self._hypervisor.send('vm set_conf_reg "{name}" {confreg}'.format(name=self._name, confreg=confreg))
 
-        log.info("Router '{name}' [{id}]: confreg updated from {old_confreg} to {new_confreg}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: confreg updated from {old_confreg} to {new_confreg}'.format(name=self._name,
                                                                                                       id=self._id,
                                                                                                       old_confreg=self._confreg,
                                                                                                       new_confreg=confreg))
@@ -827,9 +835,9 @@ class Router(BaseVM):
         :param console: console port (integer)
         """
 
-        yield from self._hypervisor.send("vm set_con_tcp_port '{name}' {console}".format(name=self._name, console=console))
+        yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=console))
 
-        log.info("Router '{name}' [{id}]: console port updated from {old_console} to {new_console}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: console port updated from {old_console} to {new_console}'.format(name=self._name,
                                                                                                            id=self._id,
                                                                                                            old_console=self._console,
                                                                                                            new_console=console))
@@ -855,9 +863,9 @@ class Router(BaseVM):
         :param aux: console auxiliary port (integer)
         """
 
-        yield from self._hypervisor.send("vm set_aux_tcp_port '{name}' {aux}".format(name=self._name, aux=aux))
+        yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=aux))
 
-        log.info("Router '{name}' [{id}]: aux port updated from {old_aux} to {new_aux}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: aux port updated from {old_aux} to {new_aux}'.format(name=self._name,
                                                                                                id=self._id,
                                                                                                old_aux=self._aux,
                                                                                                new_aux=aux))
@@ -873,7 +881,7 @@ class Router(BaseVM):
         :returns: cpu usage in seconds
         """
 
-        cpu_usage = yield from self._hypervisor.send("vm cpu_usage '{name}' {cpu_id}".format(name=self._name, cpu_id=cpu_id))
+        cpu_usage = yield from self._hypervisor.send('vm cpu_usage "{name}" {cpu_id}'.format(name=self._name, cpu_id=cpu_id))
         return int(cpu_usage[0])
 
     @property
@@ -894,11 +902,11 @@ class Router(BaseVM):
         :param mac_addr: a MAC address (hexadecimal format: hh:hh:hh:hh:hh:hh)
         """
 
-        yield from self._hypervisor.send("{platform} set_mac_addr '{name}' {mac_addr}".format(platform=self._platform,
+        yield from self._hypervisor.send('{platform} set_mac_addr "{name}" {mac_addr}'.format(platform=self._platform,
                                                                                               name=self._name,
                                                                                               mac_addr=mac_addr))
 
-        log.info("Router '{name}' [{id}]: MAC address updated from {old_mac} to {new_mac}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: MAC address updated from {old_mac} to {new_mac}'.format(name=self._name,
                                                                                                   id=self._id,
                                                                                                   old_mac=self._mac_addr,
                                                                                                   new_mac=mac_addr))
@@ -922,11 +930,11 @@ class Router(BaseVM):
         :param system_id: a system ID (also called board processor ID)
         """
 
-        yield from self._hypervisor.send("{platform} set_system_id '{name}' {system_id}".format(platform=self._platform,
+        yield from self._hypervisor.send('{platform} set_system_id "{name}" {system_id}'.format(platform=self._platform,
                                                                                                 name=self._name,
                                                                                                 system_id=system_id))
 
-        log.info("Router '{name'} [{id}]: system ID updated from {old_id} to {new_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: system ID updated from {old_id} to {new_id}'.format(name=self._name,
                                                                                               id=self._id,
                                                                                               old_id=self._system_id,
                                                                                               new_id=system_id))
@@ -940,7 +948,7 @@ class Router(BaseVM):
         :returns: slot bindings (adapter names) list
         """
 
-        slot_bindings = yield from self._hypervisor.send("vm slot_bindings '{}'".format(self._name))
+        slot_bindings = yield from self._hypervisor.send('vm slot_bindings "{}"'.format(self._name))
         return slot_bindings
 
     @asyncio.coroutine
@@ -955,11 +963,11 @@ class Router(BaseVM):
         try:
             slot = self._slots[slot_id]
         except IndexError:
-            raise DynamipsError("Slot {slot_id} doesn't exist on router '{name}'".format(name=self._name, slot_id=slot_id))
+            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
 
         if slot is not None:
             current_adapter = slot
-            raise DynamipsError("Slot {slot_id} is already occupied by adapter {adapter} on router '{name}'".format(name=self._name,
+            raise DynamipsError('Slot {slot_id} is already occupied by adapter {adapter} on router "{name}"'.format(name=self._name,
                                                                                                                     slot_id=slot_id,
                                                                                                                     adapter=current_adapter))
 
@@ -969,14 +977,14 @@ class Router(BaseVM):
         if is_running and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
                                 and not (self._platform == 'c3600' and self.chassis == '3660')
                                 and not (self._platform == 'c3745' and adapter == 'NM-4T')):
-            raise DynamipsError("Adapter {adapter} cannot be added while router '{name} 'is running".format(adapter=adapter,
+            raise DynamipsError('Adapter {adapter} cannot be added while router "{name}" is running'.format(adapter=adapter,
                                                                                                             name=self._name))
 
-        yield from self._hypervisor.send("vm slot_add_binding '{name}' {slot_id} 0 {adapter}".format(name=self._name,
+        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_id} 0 {adapter}'.format(name=self._name,
                                                                                                      slot_id=slot_id,
                                                                                                      adapter=adapter))
 
-        log.info("Router '{name}' [{id}]: adapter {adapter} inserted into slot {slot_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: adapter {adapter} inserted into slot {slot_id}'.format(name=self._name,
                                                                                                  id=self._id,
                                                                                                  adapter=adapter,
                                                                                                  slot_id=slot_id))
@@ -986,9 +994,9 @@ class Router(BaseVM):
         # Generate an OIR event if the router is running
         if is_running:
 
-            yield from self._hypervisor.send("vm slot_oir_start '{name}' {slot_id} 0".format(name=self._name, slot_id=slot_id))
+            yield from self._hypervisor.send('vm slot_oir_start "{name}" {slot_id} 0'.format(name=self._name, slot_id=slot_id))
 
-            log.info("Router '{name}' [{id}]: OIR start event sent to slot {slot_id}".format(name=self._name,
+            log.info('Router "{name}" [{id}]: OIR start event sent to slot {slot_id}'.format(name=self._name,
                                                                                              id=self._id,
                                                                                              slot_id=slot_id))
 
@@ -1003,10 +1011,10 @@ class Router(BaseVM):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise DynamipsError("Slot {slot_id} doesn't exist on router '{name}'".format(name=self._name, slot_id=slot_id))
+            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
 
         if adapter is None:
-            raise DynamipsError("No adapter in slot {slot_id} on router '{name}'".format(name=self._name,
+            raise DynamipsError('No adapter in slot {slot_id} on router "{name}"'.format(name=self._name,
                                                                                          slot_id=slot_id))
 
         is_running = yield from self.is_running()
@@ -1015,21 +1023,21 @@ class Router(BaseVM):
         if is_running and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
                                 and not (self._platform == 'c3600' and self.chassis == '3660')
                                 and not (self._platform == 'c3745' and adapter == 'NM-4T')):
-            raise DynamipsError("Adapter {adapter} cannot be removed while router '{name}' is running".format(adapter=adapter,
+            raise DynamipsError('Adapter {adapter} cannot be removed while router "{name}" is running'.format(adapter=adapter,
                                                                                                               name=self._name))
 
         # Generate an OIR event if the router is running
         if is_running:
 
-            yield from self._hypervisor.send("vm slot_oir_stop '{name}' {slot_id} 0".format(name=self._name, slot_id=slot_id))
+            yield from self._hypervisor.send('vm slot_oir_stop "{name}" {slot_id} 0'.format(name=self._name, slot_id=slot_id))
 
-            log.info("router '{name}' [{id}]: OIR stop event sent to slot {slot_id}".format(name=self._name,
+            log.info('Router "{name}" [{id}]: OIR stop event sent to slot {slot_id}'.format(name=self._name,
                                                                                             id=self._id,
                                                                                             slot_id=slot_id))
 
-        yield from self._hypervisor.send("vm slot_remove_binding '{name}' {slot_id} 0".format(name=self._name, slot_id=slot_id))
+        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_id} 0'.format(name=self._name, slot_id=slot_id))
 
-        log.info("Router '{name}' [{id}]: adapter {adapter} removed from slot {slot_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: adapter {adapter} removed from slot {slot_id}'.format(name=self._name,
                                                                                                 id=self._id,
                                                                                                 adapter=adapter,
                                                                                                 slot_id=slot_id))
@@ -1060,12 +1068,12 @@ class Router(BaseVM):
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_id = 16 * (wic_slot_id + 1)
-        yield from self._hypervisor.send("vm slot_add_binding '{name}' {slot_id} {wic_slot_id} {wic}".format(name=self._name,
+        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_id} {wic_slot_id} {wic}'.format(name=self._name,
                                                                                                              slot_id=slot_id,
                                                                                                              wic_slot_id=internal_wic_slot_id,
                                                                                                              wic=wic))
 
-        log.info("Router '{name}' [{id}]: {wic} inserted into WIC slot {wic_slot_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: {wic} inserted into WIC slot {wic_slot_id}'.format(name=self._name,
                                                                                              id=self._id,
                                                                                              wic=wic,
                                                                                              wic_slot_id=wic_slot_id))
@@ -1096,11 +1104,11 @@ class Router(BaseVM):
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_id = 16 * (wic_slot_id + 1)
-        yield from self._hypervisor.send("vm slot_remove_binding '{name}' {slot_id} {wic_slot_id}".format(name=self._name,
+        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_id} {wic_slot_id}'.format(name=self._name,
                                                                                                           slot_id=slot_id,
                                                                                                           wic_slot_id=internal_wic_slot_id))
 
-        log.info("Router '{name}' [{id}]: {wic} removed from WIC slot {wic_slot_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: {wic} removed from WIC slot {wic_slot_id}'.format(name=self._name,
                                                                                             id=self._id,
                                                                                             wic=adapter.wics[wic_slot_id],
                                                                                             wic_slot_id=wic_slot_id))
@@ -1116,7 +1124,7 @@ class Router(BaseVM):
         :returns: list of NIO bindings
         """
 
-        nio_bindings = yield from self._hypervisor.send("vm slot_nio_bindings '{name}' {slot_id}".format(name=self._name,
+        nio_bindings = yield from self._hypervisor.send('vm slot_nio_bindings "{name}" {slot_id}'.format(name=self._name,
                                                                                                          slot_id=slot_id))
         return nio_bindings
 
@@ -1133,18 +1141,18 @@ class Router(BaseVM):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise DynamipsError("Slot {slot_id} doesn't exist on router '{name}'".format(name=self._name,
-                                                                                         slot_id=slot_id))
+            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name,
+                                                                                        slot_id=slot_id))
         if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                           port_id=port_id))
+            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                            port_id=port_id))
 
-        yield from self._hypervisor.send("vm slot_add_nio_binding '{name}' {slot_id} {port_id} {nio}".format(name=self._name,
+        yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_id} {port_id} {nio}'.format(name=self._name,
                                                                                                              slot_id=slot_id,
                                                                                                              port_id=port_id,
                                                                                                              nio=nio))
 
-        log.info("Router '{name}' [{id}]: NIO {nio_name} bound to port {slot_id}/{port_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: NIO {nio_name} bound to port {slot_id}/{port_id}'.format(name=self._name,
                                                                                                    id=self._id,
                                                                                                    nio_name=nio.name,
                                                                                                    slot_id=slot_id,
@@ -1167,19 +1175,19 @@ class Router(BaseVM):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise DynamipsError("Slot {slot_id} doesn't exist on router '{name}'".format(name=self._name, slot_id=slot_id))
+            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
         if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
+            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
 
         yield from self.slot_disable_nio(slot_id, port_id)
-        yield from self._hypervisor.send("vm slot_remove_nio_binding '{name}' {slot_id} {port_id}".format(name=self._name,
+        yield from self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_id} {port_id}'.format(name=self._name,
                                                                                                           slot_id=slot_id,
                                                                                                           port_id=port_id))
 
         nio = adapter.get_nio(port_id)
         adapter.remove_nio(port_id)
 
-        log.info("Router '{name}' [{id}]: NIO {nio_name} removed from port {slot_id}/{port_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_id}/{port_id}'.format(name=self._name,
                                                                                                        id=self._id,
                                                                                                        nio_name=nio.name,
                                                                                                        slot_id=slot_id,
@@ -1198,11 +1206,11 @@ class Router(BaseVM):
 
         is_running = yield from self.is_running()
         if is_running:  # running router
-            yield from self._hypervisor.send("vm slot_enable_nio '{name}' {slot_id} {port_id}".format(name=self._name,
+            yield from self._hypervisor.send('vm slot_enable_nio "{name}" {slot_id} {port_id}'.format(name=self._name,
                                                                                                      slot_id=slot_id,
                                                                                                      port_id=port_id))
 
-            log.info("Router '{name}' [{id}]: NIO enabled on port {slot_id}/{port_id}".format(name=self._name,
+            log.info('Router "{name}" [{id}]: NIO enabled on port {slot_id}/{port_id}'.format(name=self._name,
                                                                                               id=self._id,
                                                                                               slot_id=slot_id,
                                                                                               port_id=port_id))
@@ -1217,11 +1225,11 @@ class Router(BaseVM):
 
         is_running = yield from self.is_running()
         if is_running:  # running router
-            yield from self._hypervisor.send("vm slot_disable_nio '{name}' {slot_id} {port_id}".format(name=self._name,
+            yield from self._hypervisor.send('vm slot_disable_nio "{name}" {slot_id} {port_id}'.format(name=self._name,
                                                                                                        slot_id=slot_id,
                                                                                                        port_id=port_id))
 
-            log.info("Router '{name}' [{id}]: NIO disabled on port {slot_id}/{port_id}".format(name=self._name,
+            log.info('Router "{name}" [{id}]: NIO disabled on port {slot_id}/{port_id}'.format(name=self._name,
                                                                                                id=self._id,
                                                                                                slot_id=slot_id,
                                                                                                port_id=port_id))
@@ -1240,9 +1248,9 @@ class Router(BaseVM):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise DynamipsError("Slot {slot_id} doesn't exist on router '{name}'".format(name=self._name, slot_id=slot_id))
+            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
         if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
+            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
 
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
@@ -1264,7 +1272,7 @@ class Router(BaseVM):
         yield from nio.bind_filter("both", "capture")
         yield from nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
 
-        log.info("Router '{name}' [{id}]: starting packet capture on port {slot_id}/{port_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: starting packet capture on port {slot_id}/{port_id}'.format(name=self._name,
                                                                                                       id=self._id,
                                                                                                       nio_name=nio.name,
                                                                                                       slot_id=slot_id,
@@ -1281,14 +1289,14 @@ class Router(BaseVM):
         try:
             adapter = self._slots[slot_id]
         except IndexError:
-            raise DynamipsError("Slot {slot_id} doesn't exist on router '{name}'".format(name=self._name, slot_id=slot_id))
+            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
         if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
+            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
 
         nio = adapter.get_nio(port_id)
         yield from nio.unbind_filter("both")
 
-        log.info("Router '{name}' [{id}]: stopping packet capture on port {slot_id}/{port_id}".format(name=self._name,
+        log.info('Router "{name}" [{id}]: stopping packet capture on port {slot_id}/{port_id}'.format(name=self._name,
                                                                                                       id=self._id,
                                                                                                       nio_name=nio.name,
                                                                                                       slot_id=slot_id,

@@ -48,7 +48,8 @@ class DynamipsHandler:
         dynamips_manager = Dynamips.instance()
         vm = yield from dynamips_manager.create_vm(request.json.pop("name"),
                                                    request.match_info["project_id"],
-                                                   request.json.get("vm_id"))
+                                                   request.json.get("vm_id"),
+                                                   request.json.pop("platform"))
 
         #for name, value in request.json.items():
         #    if hasattr(vm, name) and getattr(vm, name) != value:

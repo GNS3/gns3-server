@@ -99,11 +99,12 @@ from ..base_manager import BaseManager
 from .dynamips_error import DynamipsError
 from .hypervisor import Hypervisor
 from .nodes.router import Router
+from .dynamips_vm import DynamipsVM
 
 
 class Dynamips(BaseManager):
 
-    _VM_CLASS = Router
+    _VM_CLASS = DynamipsVM
 
     def __init__(self):
 
@@ -112,7 +113,7 @@ class Dynamips(BaseManager):
 
         # FIXME: temporary
         self._working_dir = "/tmp"
-        self._dynamips_path = "/usr/local/bin/dynamips"
+        self._dynamips_path = "/usr/bin/dynamips"
 
     def find_dynamips(self):
 
