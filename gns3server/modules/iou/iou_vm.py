@@ -29,6 +29,7 @@ import asyncio
 import shutil
 import argparse
 import threading
+import configparser
 
 from pkg_resources import parse_version
 from .iou_error import IOUError
@@ -301,7 +302,91 @@ class IOUVM(BaseVM):
             # start console support
             self._start_ioucon()
             # connections support
-            # self._start_iouyap()
+            self._start_iouyap()
+
+    def _start_iouyap(self):
+        """
+        Starts iouyap (handles connections to and from this IOU device).
+        """
+
+        try:
+            self._update_iouyap_config()
+            command = [self.iouyap_path, "-q", str(self.application_id + 512)]  # iouyap has always IOU ID + 512
+            log.info("starting iouyap: {}".format(command))
+            self._iouyap_stdout_file = os.path.join(self.working_dir, "iouyap.log")
+            log.info("logging to {}".format(self._iouyap_stdout_file))
+            with open(self._iouyap_stdout_file, "w") as fd:
+                self._iouyap_process = subprocess.Popen(command,
+                                                        stdout=fd,
+                                                        stderr=subprocess.STDOUT,
+                                                        cwd=self.working_dir)
+
+            log.info("iouyap started PID={}".format(self._iouyap_process.pid))
+        except (OSError, subprocess.SubprocessError) as e:
+            iouyap_stdout = self.read_iouyap_stdout()
+            log.error("could not start iouyap: {}\n{}".format(e, iouyap_stdout))
+            raise IOUError("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
+
+    def _update_iouyap_config(self):
+        """
+        Updates the iouyap.ini file.
+        """
+
+        iouyap_ini = os.path.join(self.working_dir, "iouyap.ini")
+
+        config = configparser.ConfigParser()
+        config["default"] = {"netmap": "NETMAP",
+                             "base_port": "49000"}
+
+        bay_id = 0
+        for adapter in self._slots:
+            unit_id = 0
+            for unit in adapter.ports.keys():
+                nio = adapter.get_nio(unit)
+                if nio:
+                    connection = None
+                    if isinstance(nio, NIO_UDP):
+                        # UDP tunnel
+                        connection = {"tunnel_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
+                                                                                     rhost=nio.rhost,
+                                                                                     rport=nio.rport)}
+                    elif isinstance(nio, NIO_TAP):
+                        # TAP interface
+                        connection = {"tap_dev": "{tap_device}".format(tap_device=nio.tap_device)}
+
+                    elif isinstance(nio, NIO_GenericEthernet):
+                        # Ethernet interface
+                        connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
+
+                    if connection:
+                        interface = "{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self.application_id + 512), bay=bay_id, unit=unit_id)
+                        config[interface] = connection
+
+                        if nio.capturing:
+                            pcap_data_link_type = nio.pcap_data_link_type.upper()
+                            if pcap_data_link_type == "DLT_PPP_SERIAL":
+                                pcap_protocol = "ppp"
+                            elif pcap_data_link_type == "DLT_C_HDLC":
+                                pcap_protocol = "hdlc"
+                            elif pcap_data_link_type == "DLT_FRELAY":
+                                pcap_protocol = "fr"
+                            else:
+                                pcap_protocol = "ethernet"
+                            capture_info = {"pcap_file": "{pcap_file}".format(pcap_file=nio.pcap_output_file),
+                                            "pcap_protocol": pcap_protocol,
+                                            "pcap_overwrite": "y"}
+                            config[interface].update(capture_info)
+
+                unit_id += 1
+            bay_id += 1
+
+        try:
+            with open(iouyap_ini, "w") as config_file:
+                config.write(config_file)
+            log.info("IOU {name} [id={id}]: iouyap.ini updated".format(name=self._name,
+                                                                       id=self._id))
+        except OSError as e:
+            raise IOUError("Could not create {}: {}".format(iouyap_ini, e))
 
     @asyncio.coroutine
     def stop(self):
@@ -317,7 +402,7 @@ class IOUVM(BaseVM):
             self._ioucon_thread = None
 
         if self.is_running():
-            self._terminate_process()
+            self._terminate_process_iou()
             try:
                 yield from asyncio.wait_for(self._iou_process.wait(), timeout=3)
             except asyncio.TimeoutError:
@@ -326,9 +411,29 @@ class IOUVM(BaseVM):
                     log.warn("IOU process {} is still running".format(self._iou_process.pid))
 
             self._iou_process = None
+
+            self._terminate_process_iouyap()
+            try:
+                yield from asyncio.wait_for(self._iouyap_process.wait(), timeout=3)
+            except asyncio.TimeoutError:
+                self._iou_process.kill()
+                if self._iouyap_process.returncode is None:
+                    log.warn("IOUYAP process {} is still running".format(self._iou_process.pid))
+
             self._started = False
 
-    def _terminate_process(self):
+    def _terminate_process_iouyap(self):
+        """Terminate the process if running"""
+
+        if self._iou_process:
+            log.info("Stopping IOUYAP instance {} PID={}".format(self.name, self._iouyap_process.pid))
+            try:
+                self._iouyap_process.terminate()
+            # Sometime the process can already be dead when we garbage collect
+            except ProcessLookupError:
+                pass
+
+    def _terminate_process_iou(self):
         """Terminate the process if running"""
 
         if self._iou_process:
