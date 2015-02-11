@@ -63,7 +63,7 @@ class IOUVM(BaseVM):
         self._iou_stdout_file = ""
         self._started = False
         self._iou_path = None
-        self._iourc = None
+        self._iourc_path = None
         self._ioucon_thread = None
 
         # IOU settings
@@ -124,13 +124,24 @@ class IOUVM(BaseVM):
             raise IOUError("IOU image '{}' is not executable".format(self._iou_path))
 
     @property
-    def iourc(self):
+    def iourc_path(self):
         """
         Returns the path to the iourc file.
         :returns: path to the iourc file
         """
 
-        return self._iourc
+        return self._iourc_path
+
+    @iourc_path.setter
+    def iourc_path(self, path):
+        """
+        Set path to IOURC file
+        """
+
+        self._iourc_path = path
+        log.info("IOU {name} [id={id}]: iourc file path set to {path}".format(name=self._name,
+                                                                              id=self._id,
+                                                                              path=self._iourc_path))
 
     @property
     def use_default_iou_values(self):
@@ -154,18 +165,6 @@ class IOUVM(BaseVM):
         else:
             log.info("IOU {name} [id={id}]: does not use the default IOU image values".format(name=self._name, id=self._id))
 
-    @iourc.setter
-    def iourc(self, iourc):
-        """
-        Sets the path to the iourc file.
-        :param iourc: path to the iourc file.
-        """
-
-        self._iourc = iourc
-        log.info("IOU {name} [id={id}]: iourc file path set to {path}".format(name=self._name,
-                                                                              id=self._id,
-                                                                              path=self._iourc))
-
     def _check_requirements(self):
         """
         Check if IOUYAP is available
@@ -186,6 +185,8 @@ class IOUVM(BaseVM):
                 "vm_id": self.id,
                 "console": self._console,
                 "project_id": self.project.id,
+                "iourc_path": self._iourc_path,
+                "iou_path": self.iou_path
                 }
 
     @property
@@ -229,7 +230,7 @@ class IOUVM(BaseVM):
     def application_id(self):
         return self._manager.get_application_id(self.id)
 
-    #TODO: ASYNCIO
+    # TODO: ASYNCIO
     def _library_check(self):
         """
         Checks for missing shared library dependencies in the IOU image.
@@ -257,9 +258,9 @@ class IOUVM(BaseVM):
         if not self.is_running():
 
             # TODO: ASYNC
-            #self._library_check()
+            # self._library_check()
 
-            if not self._iourc or not os.path.isfile(self._iourc):
+            if not self._iourc_path or not os.path.isfile(self._iourc_path):
                 raise IOUError("A valid iourc file is necessary to start IOU")
 
             iouyap_path = self.iouyap_path
@@ -269,18 +270,18 @@ class IOUVM(BaseVM):
             self._create_netmap_config()
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
-            env["IOURC"] = self._iourc
+            env["IOURC"] = self._iourc_path
             self._command = self._build_command()
             try:
                 log.info("Starting IOU: {}".format(self._command))
                 self._iou_stdout_file = os.path.join(self.working_dir, "iou.log")
                 log.info("Logging to {}".format(self._iou_stdout_file))
                 with open(self._iou_stdout_file, "w") as fd:
-                    self._iou_process = yield from asyncio.create_subprocess_exec(self._command,
-                                                                              stdout=fd,
-                                                                              stderr=subprocess.STDOUT,
-                                                                              cwd=self.working_dir,
-                                                                             env=env)
+                    self._iou_process = yield from asyncio.create_subprocess_exec(*self._command,
+                                                                                  stdout=fd,
+                                                                                  stderr=subprocess.STDOUT,
+                                                                                  cwd=self.working_dir,
+                                                                                  env=env)
                 log.info("IOU instance {} started PID={}".format(self._id, self._iou_process.pid))
                 self._started = True
             except FileNotFoundError as e:
@@ -291,10 +292,9 @@ class IOUVM(BaseVM):
                 raise IOUError("could not start IOU {}: {}\n{}".format(self._iou_path, e, iou_stdout))
 
             # start console support
-            #self._start_ioucon()
+            # self._start_ioucon()
             # connections support
-            #self._start_iouyap()
-
+            # self._start_iouyap()
 
     @asyncio.coroutine
     def stop(self):
