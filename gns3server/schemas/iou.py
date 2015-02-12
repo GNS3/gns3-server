@@ -50,6 +50,22 @@ IOU_CREATE_SCHEMA = {
             "description": "Path of iourc",
             "type": "string"
         },
+        "serial_adapters": {
+            "description": "How many serial adapters are connected to the IOU",
+            "type": "integer"
+        },
+        "ethernet_adapters": {
+            "description": "How many ethernet adapters are connected to the IOU",
+            "type": "integer"
+        },
+        "ram": {
+            "description": "Allocated RAM MB",
+            "type": ["integer", "null"]
+        },
+        "nvram": {
+            "description": "Allocated NVRAM KB",
+            "type": ["integer", "null"]
+        }
     },
     "additionalProperties": False,
     "required": ["name", "path"]
@@ -90,6 +106,14 @@ IOU_UPDATE_SCHEMA = {
         "ethernet_adapters": {
             "description": "How many ethernet adapters are connected to the IOU",
             "type": ["integer", "null"]
+        },
+        "ram": {
+            "description": "Allocated RAM MB",
+            "type": ["integer", "null"]
+        },
+        "nvram": {
+            "description": "Allocated NVRAM KB",
+            "type": ["integer", "null"]
         }
     },
     "additionalProperties": False,
@@ -129,7 +153,23 @@ IOU_OBJECT_SCHEMA = {
             "description": "Path of iou binary",
             "type": "string"
         },
+        "serial_adapters": {
+            "description": "How many serial adapters are connected to the IOU",
+            "type": "integer"
+        },
+        "ethernet_adapters": {
+            "description": "How many ethernet adapters are connected to the IOU",
+            "type": "integer"
+        },
+        "ram": {
+            "description": "Allocated RAM MB",
+            "type": "integer"
+        },
+        "nvram": {
+            "description": "Allocated NVRAM KB",
+            "type": "integer"
+        }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "path"]
+    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters", "ram", "nvram"]
 }

@@ -55,11 +55,19 @@ class IOUVM(BaseVM):
     :param manager: parent VM Manager
     :param console: TCP console port
     :params console_host: TCP console host IP
+    :params ethernet_adapters: Number of ethernet adapters
+    :params serial_adapters: Number of serial adapters
+    :params ram: Ram MB
+    :params nvram: Nvram KB
     """
 
     def __init__(self, name, vm_id, project, manager,
                  console=None,
-                 console_host="0.0.0.0"):
+                 console_host="0.0.0.0",
+                 ram=None,
+                 nvram=None,
+                 ethernet_adapters=None,
+                 serial_adapters=None):
 
         super().__init__(name, vm_id, project, manager)
 
@@ -75,13 +83,14 @@ class IOUVM(BaseVM):
         self._console_host = console_host
 
         # IOU settings
-        self._ethernet_adapters = [EthernetAdapter(), EthernetAdapter()]  # one adapter = 4 interfaces
-        self._serial_adapters = [SerialAdapter(), SerialAdapter()]  # one adapter = 4 interfaces
-        self._slots = self._ethernet_adapters + self._serial_adapters
+        self._ethernet_adapters = []
+        self._serial_adapters = []
+        self.ethernet_adapters = 2 if ethernet_adapters is None else ethernet_adapters  # one adapter = 4 interfaces
+        self.serial_adapters = 2 if serial_adapters is None else serial_adapters # one adapter = 4 interfaces
         self._use_default_iou_values = True  # for RAM & NVRAM values
-        self._nvram = 128  # Kilobytes
+        self._nvram = 128 if nvram is None else nvram  # Kilobytes
         self._initial_config = ""
-        self._ram = 256  # Megabytes
+        self._ram = 256 if ram is None else ram  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
         if self._console is not None:
@@ -193,7 +202,11 @@ class IOUVM(BaseVM):
                 "vm_id": self.id,
                 "console": self._console,
                 "project_id": self.project.id,
-                "path": self.path
+                "path": self.path,
+                "ethernet_adapters": len(self._ethernet_adapters),
+                "serial_adapters": len(self._serial_adapters),
+                "ram": self._ram,
+                "nvram": self._nvram
                 }
 
     @property
@@ -232,6 +245,57 @@ class IOUVM(BaseVM):
         if self._console:
             self._manager.port_manager.release_console_port(self._console)
         self._console = self._manager.port_manager.reserve_console_port(console)
+
+    @property
+    def ram(self):
+        """
+        Returns the amount of RAM allocated to this IOU instance.
+        :returns: amount of RAM in Mbytes (integer)
+        """
+
+        return self._ram
+
+    @ram.setter
+    def ram(self, ram):
+        """
+        Sets amount of RAM allocated to this IOU instance.
+        :param ram: amount of RAM in Mbytes (integer)
+        """
+
+        if self._ram == ram:
+            return
+
+        log.info("IOU {name} [id={id}]: RAM updated from {old_ram}MB to {new_ram}MB".format(name=self._name,
+                                                                                            id=self._id,
+                                                                                            old_ram=self._ram,
+                                                                                            new_ram=ram))
+
+        self._ram = ram
+
+    @property
+    def nvram(self):
+        """
+        Returns the mount of NVRAM allocated to this IOU instance.
+        :returns: amount of NVRAM in Kbytes (integer)
+        """
+
+        return self._nvram
+
+    @nvram.setter
+    def nvram(self, nvram):
+        """
+        Sets amount of NVRAM allocated to this IOU instance.
+        :param nvram: amount of NVRAM in Kbytes (integer)
+        """
+
+        if self._nvram == nvram:
+            return
+
+        log.info("IOU {name} [id={id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB".format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  old_nvram=self._nvram,
+                                                                                                  new_nvram=nvram))
+        self._nvram = nvram
 
     @property
     def application_id(self):
@@ -571,3 +635,55 @@ class IOUVM(BaseVM):
             self._ioucon_thread_stop_event = threading.Event()
             self._ioucon_thread = threading.Thread(target=start_ioucon, args=(args, self._ioucon_thread_stop_event))
             self._ioucon_thread.start()
+
+    @property
+    def ethernet_adapters(self):
+        """
+        Returns the number of Ethernet adapters for this IOU instance.
+        :returns: number of adapters
+        """
+
+        return len(self._ethernet_adapters)
+
+    @ethernet_adapters.setter
+    def ethernet_adapters(self, ethernet_adapters):
+        """
+        Sets the number of Ethernet adapters for this IOU instance.
+        :param ethernet_adapters: number of adapters
+        """
+
+        self._ethernet_adapters.clear()
+        for _ in range(0, ethernet_adapters):
+            self._ethernet_adapters.append(EthernetAdapter())
+
+        log.info("IOU {name} [id={id}]: number of Ethernet adapters changed to {adapters}".format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  adapters=len(self._ethernet_adapters)))
+
+        self._slots = self._ethernet_adapters + self._serial_adapters
+
+    @property
+    def serial_adapters(self):
+        """
+        Returns the number of Serial adapters for this IOU instance.
+        :returns: number of adapters
+        """
+
+        return len(self._serial_adapters)
+
+    @serial_adapters.setter
+    def serial_adapters(self, serial_adapters):
+        """
+        Sets the number of Serial adapters for this IOU instance.
+        :param serial_adapters: number of adapters
+        """
+
+        self._serial_adapters.clear()
+        for _ in range(0, serial_adapters):
+            self._serial_adapters.append(SerialAdapter())
+
+        log.info("IOU {name} [id={id}]: number of Serial adapters changed to {adapters}".format(name=self._name,
+                                                                                                id=self._id,
+                                                                                                adapters=len(self._serial_adapters)))
+
+        self._slots = self._ethernet_adapters + self._serial_adapters

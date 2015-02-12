@@ -47,11 +47,33 @@ def vm(server, project, base_params):
 
 
 def test_iou_create(server, project, base_params):
-    response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), base_params, example=True)
+    response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), base_params)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
+    assert response.json["serial_adapters"] == 2
+    assert response.json["ethernet_adapters"] == 2
+    assert response.json["ram"] == 256
+    assert response.json["nvram"] == 128
+
+
+def test_iou_create_with_params(server, project, base_params):
+    params = base_params
+    params["ram"] = 1024
+    params["nvram"] = 512
+    params["serial_adapters"] = 4
+    params["ethernet_adapters"] = 0
+
+    response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
+    assert response.status == 201
+    assert response.route == "/projects/{project_id}/iou/vms"
+    assert response.json["name"] == "PC TEST 1"
+    assert response.json["project_id"] == project.id
+    assert response.json["serial_adapters"] == 4
+    assert response.json["ethernet_adapters"] == 0
+    assert response.json["ram"] == 1024
+    assert response.json["nvram"] == 512
 
 
 def test_iou_get(server, project, vm):
@@ -60,6 +82,10 @@ def test_iou_get(server, project, vm):
     assert response.route == "/projects/{project_id}/iou/vms/{vm_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
+    assert response.json["serial_adapters"] == 2
+    assert response.json["ethernet_adapters"] == 2
+    assert response.json["ram"] == 256
+    assert response.json["nvram"] == 128
 
 
 def test_iou_start(server, vm):
@@ -91,8 +117,19 @@ def test_iou_delete(server, vm):
 
 
 def test_iou_update(server, vm, tmpdir, free_console_port):
-    response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
-                                                                                                                            "console": free_console_port})
+    params = {
+        "name": "test",
+        "console": free_console_port,
+        "ram": 512,
+        "nvram": 2048,
+        "ethernet_adapters": 4,
+        "serial_adapters": 0
+    }
+    response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
+    assert response.json["ethernet_adapters"] == 4
+    assert response.json["serial_adapters"] == 0
+    assert response.json["ram"] == 512
+    assert response.json["nvram"] == 2048

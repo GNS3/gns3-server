@@ -49,6 +49,10 @@ class IOUHandler:
                                       request.match_info["project_id"],
                                       request.json.get("vm_id"),
                                       console=request.json.get("console"),
+                                      serial_adapters=request.json.get("serial_adapters"),
+                                      ethernet_adapters=request.json.get("ethernet_adapters"),
+                                      ram=request.json.get("ram"),
+                                      nvram=request.json.get("nvram")
                                       )
         vm.path = request.json.get("path", vm.path)
         vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
@@ -99,6 +103,11 @@ class IOUHandler:
         vm.console = request.json.get("console", vm.console)
         vm.path = request.json.get("path", vm.path)
         vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
+        vm.ethernet_adapters = request.json.get("ethernet_adapters", vm.ethernet_adapters)
+        vm.serial_adapters = request.json.get("serial_adapters", vm.serial_adapters)
+        vm.ram = request.json.get("ram", vm.ram)
+        vm.nvram = request.json.get("nvram", vm.nvram)
+
         response.json(vm)
 
     @classmethod
