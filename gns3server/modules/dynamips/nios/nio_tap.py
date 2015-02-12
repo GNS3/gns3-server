@@ -26,7 +26,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_TAP(NIO):
+class NIOTAP(NIO):
     """
     Dynamips TAP NIO.
 
@@ -41,8 +41,8 @@ class NIO_TAP(NIO):
         NIO.__init__(self, hypervisor)
 
         # create an unique ID
-        self._id = NIO_TAP._instance_count
-        NIO_TAP._instance_count += 1
+        self._id = NIOTAP._instance_count
+        NIOTAP._instance_count += 1
         self._name = 'nio_tap' + str(self._id)
         self._tap_device = tap_device
 

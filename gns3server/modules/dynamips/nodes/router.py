@@ -42,20 +42,22 @@ class Router(BaseVM):
     :param vm_id: Router instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
+    :param dynamips_id: ID to use with Dynamips
     :param platform: Platform of this router
     """
 
-    _instances = []
+    _dynamips_ids = {}
     _status = {0: "inactive",
                1: "shutting down",
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, vm_id, project, manager, platform="c7200", ghost_flag=False):
+    def __init__(self, name, vm_id, project, manager, dynamips_id=None, platform="c7200", ghost_flag=False):
 
         super().__init__(name, vm_id, project, manager)
 
         self._hypervisor = None
+        self._dynamips_id = dynamips_id
         self._closed = False
         self._name = name
         self._platform = platform
@@ -81,12 +83,26 @@ class Router(BaseVM):
         self._confreg = "0x2102"
         self._console = None
         self._aux = None
-        self._mac_addr = None
+        self._mac_addr = ""
         self._system_id = "FTX0945W0MY"  # processor board ID in IOS
         self._slots = []
         self._ghost_flag = ghost_flag
 
         if not ghost_flag:
+            self._dynamips_ids.setdefault(project.id, list())
+            if not dynamips_id:
+                # find a Dynamips ID if none is provided (0 < id <= 4096)
+                self._dynamips_id = 0
+                for identifier in range(1, 4097):
+                    if identifier not in self._dynamips_ids[project.id]:
+                        self._dynamips_id = identifier
+                        break
+                if self._dynamips_id == 0:
+                    raise DynamipsError("Maximum number of Dynamips instances reached")
+            else:
+                if dynamips_id in self._dynamips_ids[project.id]:
+                    raise DynamipsError("Dynamips identifier {} is already used by another router".format(dynamips_id))
+            self._dynamips_ids[project.id].append(self._dynamips_id)
 
             if self._console is not None:
                 self._console = self._manager.port_manager.reserve_console_port(self._console)
@@ -97,12 +113,17 @@ class Router(BaseVM):
                 self._aux = self._manager.port_manager.reserve_console_port(self._aux)
             else:
                 self._aux = self._manager.port_manager.get_free_console_port()
+        else:
+            log.info("creating a new ghost IOS file")
+            self._dynamips_id = 0
+            self._name = "Ghost"
 
     def __json__(self):
 
         router_info = {"name": self.name,
                        "vm_id": self.id,
                        "project_id": self.project.id,
+                       "dynamips_id": self._dynamips_id,
                        "platform": self._platform,
                        "image": self._image,
                        "startup_config": self._startup_config,
@@ -138,14 +159,21 @@ class Router(BaseVM):
 
         return router_info
 
+    @classmethod
+    def reset(cls):
+        """
+        Resets the instance count and the allocated instances list.
+        """
+
+        cls._dynamips_ids.clear()
+
     @asyncio.coroutine
     def create(self):
 
         self._hypervisor = yield from self.manager.start_new_hypervisor()
 
-        print("{} {} {}".format(self._name, self._id, self._platform))
         yield from self._hypervisor.send('vm create "{name}" {id} {platform}'.format(name=self._name,
-                                                                                     id=1,  #FIXME: instance ID!
+                                                                                     id=self._dynamips_id,
                                                                                      platform=self._platform))
 
         if not self._ghost_flag:
@@ -269,6 +297,9 @@ class Router(BaseVM):
         if self._aux:
             self._manager.port_manager.release_console_port(self._aux)
             self._aux = None
+
+        if self._dynamips_id in self._dynamips_ids[self._project.id]:
+            self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
         self._closed = True
 

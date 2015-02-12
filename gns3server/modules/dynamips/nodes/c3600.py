@@ -36,12 +36,13 @@ class C3600(Router):
     :param vm_id: Router instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
+    :param dynamips_id: ID to use with Dynamips
     :param chassis: chassis for this router:
     3620, 3640 or 3660 (default = 3640).
     """
 
-    def __init__(self, name, vm_id, project, manager, chassis="3640"):
-        Router.__init__(self, name, vm_id, project, manager, platform="c3600")
+    def __init__(self, name, vm_id, project, manager, dynamips_id, chassis="3640"):
+        Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c3600")
 
         # Set default values for this platform
         self._ram = 192

@@ -26,7 +26,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_UDP_auto(NIO):
+class NIOUDPAuto(NIO):
     """
     Dynamips auto UDP NIO.
 
@@ -43,8 +43,8 @@ class NIO_UDP_auto(NIO):
         NIO.__init__(self, hypervisor)
 
         # create an unique ID
-        self._id = NIO_UDP_auto._instance_count
-        NIO_UDP_auto._instance_count += 1
+        self._id = NIOUDPAuto._instance_count
+        NIOUDPAuto._instance_count += 1
         self._name = 'nio_udp_auto' + str(self._id)
 
         self._laddr = laddr

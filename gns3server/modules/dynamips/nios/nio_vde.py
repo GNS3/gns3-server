@@ -25,7 +25,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_VDE(NIO):
+class NIOVDE(NIO):
     """
     Dynamips VDE NIO.
 
@@ -41,8 +41,8 @@ class NIO_VDE(NIO):
         NIO.__init__(self, hypervisor)
 
         # create an unique ID
-        self._id = NIO_VDE._instance_count
-        NIO_VDE._instance_count += 1
+        self._id = NIOVDE._instance_count
+        NIOVDE._instance_count += 1
         self._name = 'nio_vde' + str(self._id)
         self._control_file = control_file
         self._local_file = local_file

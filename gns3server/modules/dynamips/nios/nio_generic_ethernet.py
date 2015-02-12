@@ -26,7 +26,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_GenericEthernet(NIO):
+class NIOGenericEthernet(NIO):
     """
     Dynamips generic Ethernet NIO.
 
@@ -41,8 +41,8 @@ class NIO_GenericEthernet(NIO):
         NIO.__init__(self, hypervisor)
 
         # create an unique ID
-        self._id = NIO_GenericEthernet._instance_count
-        NIO_GenericEthernet._instance_count += 1
+        self._id = NIOGenericEthernet._instance_count
+        NIOGenericEthernet._instance_count += 1
         self._name = 'nio_gen_eth' + str(self._id)
         self._ethernet_device = ethernet_device
 

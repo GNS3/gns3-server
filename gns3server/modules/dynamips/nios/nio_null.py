@@ -26,7 +26,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_Null(NIO):
+class NIONull(NIO):
     """
     Dynamips NULL NIO.
 
@@ -40,8 +40,8 @@ class NIO_Null(NIO):
         NIO.__init__(self, hypervisor)
 
         # create an unique ID
-        self._id = NIO_Null._instance_count
-        NIO_Null._instance_count += 1
+        self._id = NIONull._instance_count
+        NIONull._instance_count += 1
         self._name = 'nio_null' + str(self._id)
 
     @classmethod

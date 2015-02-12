@@ -16,40 +16,101 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-ROUTER_CREATE_SCHEMA = {
+VM_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to create a new Dynamips router instance",
+    "description": "Request validation to create a new Dynamips VM instance",
     "type": "object",
     "properties": {
+        "vm_id": {
+            "description": "Dynamips VM instance identifier",
+            "oneOf": [
+                {"type": "string",
+                 "minLength": 36,
+                 "maxLength": 36,
+                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"},
+                {"type": "integer"}  # for legacy projects
+            ]
+        },
+        "dynamips_id": {
+            "description": "ID to use with Dynamips",
+            "type": "integer"
+        },
         "name": {
-            "description": "Router name",
+            "description": "Dynamips VM instance name",
             "type": "string",
             "minLength": 1,
         },
-        "router_id": {
-            "description": "VM/router instance ID",
-            "type": "integer"
-        },
         "platform": {
-            "description": "router platform",
+            "description": "platform",
             "type": "string",
             "minLength": 1,
             "pattern": "^c[0-9]{4}$"
         },
-        "chassis": {
-            "description": "router chassis model",
+        "image": {
+            "description": "path to the IOS image",
             "type": "string",
             "minLength": 1,
-            "pattern": "^[0-9]{4}(XM)?$"
         },
-        "image": {
-            "description": "path to the IOS image file",
+        "startup_config": {
+            "description": "path to the IOS startup configuration file",
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+        },
+        "private_config": {
+            "description": "path to the IOS private configuration file",
+            "type": "string",
+            "minLength": 1,
         },
         "ram": {
             "description": "amount of RAM in MB",
             "type": "integer"
+        },
+        "nvram": {
+            "description": "amount of NVRAM in KB",
+            "type": "integer"
+        },
+        "mmap": {
+            "description": "MMAP feature",
+            "type": "boolean"
+        },
+        "sparsemem": {
+            "description": "sparse memory feature",
+            "type": "boolean"
+        },
+        "clock_divisor": {
+            "description": "clock divisor",
+            "type": "integer"
+        },
+        "idlepc": {
+            "description": "Idle-PC value",
+            "type": "string",
+            "pattern": "^(0x[0-9a-fA-F]+)?$"
+        },
+        "idlemax": {
+            "description": "idlemax value",
+            "type": "integer",
+        },
+        "idlesleep": {
+            "description": "idlesleep value",
+            "type": "integer",
+        },
+        "exec_area": {
+            "description": "exec area value",
+            "type": "integer",
+        },
+        "disk0": {
+            "description": "disk0 size in MB",
+            "type": "integer"
+        },
+        "disk1": {
+            "description": "disk1 size in MB",
+            "type": "integer"
+        },
+        "confreg": {
+            "description": "configuration register",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^0x[0-9a-fA-F]{4}$"
         },
         "console": {
             "description": "console TCP port",
@@ -69,24 +130,351 @@ ROUTER_CREATE_SCHEMA = {
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
-        "cloud_path": {
-            "description": "Path to the image in the cloud object store",
+        "system_id": {
+            "description": "system ID",
             "type": "string",
-        }
+            "minLength": 1,
+        },
+        "slot0": {
+            "description": "Network module slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot1": {
+            "description": "Network module slot 1",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot2": {
+            "description": "Network module slot 2",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot3": {
+            "description": "Network module slot 3",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot4": {
+            "description": "Network module slot 4",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot5": {
+            "description": "Network module slot 5",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot6": {
+            "description": "Network module slot 6",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic0": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic1": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic2": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "startup_config_base64": {
+            "description": "startup configuration base64 encoded",
+            "type": "string"
+        },
+        "private_config_base64": {
+            "description": "private configuration base64 encoded",
+            "type": "string"
+        },
+        # C7200 properties
+        "npe": {
+            "description": "NPE model",
+            "enum": ["npe-100",
+                     "npe-150",
+                     "npe-175",
+                     "npe-200",
+                     "npe-225",
+                     "npe-300",
+                     "npe-400",
+                     "npe-g2"]
+        },
+        "midplane": {
+            "description": "Midplane model",
+            "enum": ["std", "vxr"]
+        },
+        "sensors": {
+            "description": "Temperature sensors",
+            "type": "array"
+        },
+        "power_supplies": {
+            "description": "Power supplies status",
+            "type": "array"
+        },
+        # I/O memory property for all platforms but C7200
+        "iomem": {
+            "description": "I/O memory percentage",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+        },
     },
     "additionalProperties": False,
     "required": ["name", "platform", "image", "ram"]
 }
 
-ROUTER_OBJECT_SCHEMA = {
+VM_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Dynamips router instance",
+    "description": "Request validation to update a Dynamips VM instance",
     "type": "object",
     "properties": {
         "name": {
-            "description": "Dynamips router instance name",
+            "description": "Dynamips VM instance name",
             "type": "string",
             "minLength": 1,
+        },
+        "platform": {
+            "description": "platform",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^c[0-9]{4}$"
+        },
+        "image": {
+            "description": "path to the IOS image",
+            "type": "string",
+            "minLength": 1,
+        },
+        "startup_config": {
+            "description": "path to the IOS startup configuration file",
+            "type": "string",
+            "minLength": 1,
+        },
+        "private_config": {
+            "description": "path to the IOS private configuration file",
+            "type": "string",
+            "minLength": 1,
+        },
+        "ram": {
+            "description": "amount of RAM in MB",
+            "type": "integer"
+        },
+        "nvram": {
+            "description": "amount of NVRAM in KB",
+            "type": "integer"
+        },
+        "mmap": {
+            "description": "MMAP feature",
+            "type": "boolean"
+        },
+        "sparsemem": {
+            "description": "sparse memory feature",
+            "type": "boolean"
+        },
+        "clock_divisor": {
+            "description": "clock divisor",
+            "type": "integer"
+        },
+        "idlepc": {
+            "description": "Idle-PC value",
+            "type": "string",
+            "pattern": "^(0x[0-9a-fA-F]+)?$"
+        },
+        "idlemax": {
+            "description": "idlemax value",
+            "type": "integer",
+        },
+        "idlesleep": {
+            "description": "idlesleep value",
+            "type": "integer",
+        },
+        "exec_area": {
+            "description": "exec area value",
+            "type": "integer",
+        },
+        "disk0": {
+            "description": "disk0 size in MB",
+            "type": "integer"
+        },
+        "disk1": {
+            "description": "disk1 size in MB",
+            "type": "integer"
+        },
+        "confreg": {
+            "description": "configuration register",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^0x[0-9a-fA-F]{4}$"
+        },
+        "console": {
+            "description": "console TCP port",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+        },
+        "aux": {
+            "description": "auxiliary console TCP port",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+        },
+        "mac_addr": {
+            "description": "base MAC address",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
+        },
+        "system_id": {
+            "description": "system ID",
+            "type": "string",
+            "minLength": 1,
+        },
+        "slot0": {
+            "description": "Network module slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot1": {
+            "description": "Network module slot 1",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot2": {
+            "description": "Network module slot 2",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot3": {
+            "description": "Network module slot 3",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot4": {
+            "description": "Network module slot 4",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot5": {
+            "description": "Network module slot 5",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot6": {
+            "description": "Network module slot 6",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic0": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic1": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic2": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "startup_config_base64": {
+            "description": "startup configuration base64 encoded",
+            "type": "string"
+        },
+        "private_config_base64": {
+            "description": "private configuration base64 encoded",
+            "type": "string"
+        },
+        # C7200 properties
+        "npe": {
+            "description": "NPE model",
+            "enum": ["npe-100",
+                     "npe-150",
+                     "npe-175",
+                     "npe-200",
+                     "npe-225",
+                     "npe-300",
+                     "npe-400",
+                     "npe-g2"]
+        },
+        "midplane": {
+            "description": "Midplane model",
+            "enum": ["std", "vxr"]
+        },
+        "sensors": {
+            "description": "Temperature sensors",
+            "type": "array"
+        },
+        "power_supplies": {
+            "description": "Power supplies status",
+            "type": "array"
+        },
+        # I/O memory property for all platforms but C7200
+        "iomem": {
+            "description": "I/O memory percentage",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+        },
+    },
+    "additionalProperties": False,
+}
+
+VM_OBJECT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Dynamips VM instance",
+    "type": "object",
+    "properties": {
+        "dynamips_id": {
+            "description": "ID to use with Dynamips",
+            "type": "integer"
         },
         "vm_id": {
             "description": "Dynamips router instance UUID",
@@ -102,7 +490,214 @@ ROUTER_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "name": {
+            "description": "Dynamips VM instance name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "platform": {
+            "description": "platform",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^c[0-9]{4}$"
+        },
+        "image": {
+            "description": "path to the IOS image",
+            "type": "string",
+            "minLength": 1,
+        },
+        "startup_config": {
+            "description": "path to the IOS startup configuration file",
+            "type": "string",
+        },
+        "private_config": {
+            "description": "path to the IOS private configuration file",
+            "type": "string",
+        },
+        "ram": {
+            "description": "amount of RAM in MB",
+            "type": "integer"
+        },
+        "nvram": {
+            "description": "amount of NVRAM in KB",
+            "type": "integer"
+        },
+        "mmap": {
+            "description": "MMAP feature",
+            "type": "boolean"
+        },
+        "sparsemem": {
+            "description": "sparse memory feature",
+            "type": "boolean"
+        },
+        "clock_divisor": {
+            "description": "clock divisor",
+            "type": "integer"
+        },
+        "idlepc": {
+            "description": "Idle-PC value",
+            "type": "string",
+            "pattern": "^(0x[0-9a-fA-F]+)?$"
+        },
+        "idlemax": {
+            "description": "idlemax value",
+            "type": "integer",
+        },
+        "idlesleep": {
+            "description": "idlesleep value",
+            "type": "integer",
+        },
+        "exec_area": {
+            "description": "exec area value",
+            "type": "integer",
+        },
+        "disk0": {
+            "description": "disk0 size in MB",
+            "type": "integer"
+        },
+        "disk1": {
+            "description": "disk1 size in MB",
+            "type": "integer"
+        },
+        "confreg": {
+            "description": "configuration register",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^0x[0-9a-fA-F]{4}$"
+        },
+        "console": {
+            "description": "console TCP port",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+        },
+        "aux": {
+            "description": "auxiliary console TCP port",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+        },
+        "mac_addr": {
+            "description": "base MAC address",
+            "type": "string",
+            #"minLength": 1,
+            #"pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
+        },
+        "system_id": {
+            "description": "system ID",
+            "type": "string",
+            "minLength": 1,
+        },
+        "slot0": {
+            "description": "Network module slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot1": {
+            "description": "Network module slot 1",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot2": {
+            "description": "Network module slot 2",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot3": {
+            "description": "Network module slot 3",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot4": {
+            "description": "Network module slot 4",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot5": {
+            "description": "Network module slot 5",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "slot6": {
+            "description": "Network module slot 6",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic0": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic1": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "wic2": {
+            "description": "Network module WIC slot 0",
+            "oneOf": [
+                {"type": "string"},
+                {"type": "null"}
+            ]
+        },
+        "startup_config_base64": {
+            "description": "startup configuration base64 encoded",
+            "type": "string"
+        },
+        "private_config_base64": {
+            "description": "private configuration base64 encoded",
+            "type": "string"
+        },
+        # C7200 properties
+        "npe": {
+            "description": "NPE model",
+            "enum": ["npe-100",
+                     "npe-150",
+                     "npe-175",
+                     "npe-200",
+                     "npe-225",
+                     "npe-300",
+                     "npe-400",
+                     "npe-g2"]
+        },
+        "midplane": {
+            "description": "Midplane model",
+            "enum": ["std", "vxr"]
+        },
+        "sensors": {
+            "description": "Temperature sensors",
+            "type": "array"
+        },
+        "power_supplies": {
+            "description": "Power supplies status",
+            "type": "array"
+        },
+        # I/O memory property for all platforms but C7200
+        "iomem": {
+            "description": "I/O memory percentage",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+        },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "project_id"]
+    "required": ["name", "vm_id", "project_id", "dynamips_id"]
 }

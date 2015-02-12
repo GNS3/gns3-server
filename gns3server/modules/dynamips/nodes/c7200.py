@@ -39,11 +39,12 @@ class C7200(Router):
     :param vm_id: Router instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
+    :param dynamips_id: ID to use with Dynamips
     :param npe: Default NPE
     """
 
-    def __init__(self, name, vm_id, project, manager, npe="npe-400"):
-        Router.__init__(self, name, vm_id, project, manager, platform="c7200")
+    def __init__(self, name, vm_id, project, manager, dynamips_id, npe="npe-400"):
+        Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c7200")
 
         # Set default values for this platform
         self._ram = 512

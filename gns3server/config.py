@@ -186,7 +186,7 @@ class Config(object):
         """
         Singleton to return only on instance of Config.
 
-        :params files: Array of configuration files (optionnal)
+        :params files: Array of configuration files (optional)
         :returns: instance of Config
         """
 

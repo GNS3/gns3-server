@@ -42,9 +42,9 @@ class DynamipsVM:
     Factory to create an Router object based on the correct platform.
     """
 
-    def __new__(cls, name, vm_id, project, manager, platform, **kwargs):
+    def __new__(cls, name, vm_id, project, manager, dynamips_id, platform, **kwargs):
 
         if platform not in PLATFORMS:
             raise DynamipsError("Unknown router platform: {}".format(platform))
 
-        return PLATFORMS[platform](name, vm_id, project, manager, **kwargs)
+        return PLATFORMS[platform](name, vm_id, project, manager, dynamips_id, **kwargs)

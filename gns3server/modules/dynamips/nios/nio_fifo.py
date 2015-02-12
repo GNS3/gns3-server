@@ -26,7 +26,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_FIFO(NIO):
+class NIOFIFO(NIO):
     """
     Dynamips FIFO NIO.
 
@@ -40,8 +40,8 @@ class NIO_FIFO(NIO):
         NIO.__init__(self, hypervisor)
 
         # create an unique ID
-        self._id = NIO_FIFO._instance_count
-        NIO_FIFO._instance_count += 1
+        self._id = NIOFIFO._instance_count
+        NIOFIFO._instance_count += 1
         self._name = 'nio_fifo' + str(self._id)
 
     @classmethod

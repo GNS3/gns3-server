@@ -26,7 +26,7 @@ import logging
 import asyncio
 
 from .dynamips_error import DynamipsError
-from .nios.nio_udp_auto import NIO_UDP_auto
+from .nios.nio_udp_auto import NIOUDPAuto
 
 log = logging.getLogger(__name__)
 
@@ -415,7 +415,7 @@ class DynamipsHypervisor:
         """
 
         # use Dynamips's NIO UDP auto back-end.
-        nio = NIO_UDP_auto(self, self._host, self._udp_start_port_range, self._udp_end_port_range)
+        nio = NIOUDPAuto(self, self._host, self._udp_start_port_range, self._udp_end_port_range)
         self._nio_udp_auto_instances[nio.lport] = nio
         allocated_port = nio.lport
         return allocated_port

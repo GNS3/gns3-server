@@ -26,7 +26,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_Mcast(NIO):
+class NIOMcast(NIO):
     """
     Dynamips Linux Ethernet NIO.
 
@@ -42,8 +42,8 @@ class NIO_Mcast(NIO):
         NIO.__init__(self, hypervisor)
 
         # create an unique ID
-        self._id = NIO_Mcast._instance_count
-        NIO_Mcast._instance_count += 1
+        self._id = NIOMcast._instance_count
+        NIOMcast._instance_count += 1
         self._name = 'nio_mcast' + str(self._id)
         self._group = group
         self._port = port

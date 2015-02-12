@@ -36,10 +36,11 @@ class C3745(Router):
     :param vm_id: Router instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
+    :param dynamips_id: ID to use with Dynamips
     """
 
-    def __init__(self, name, vm_id, project, manager):
-        Router.__init__(self, name, vm_id, project, manager, platform="c3745")
+    def __init__(self, name, vm_id, project, manager, dynamips_id):
+        Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c3745")
 
         # Set default values for this platform
         self._ram = 256

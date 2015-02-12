@@ -19,26 +19,26 @@
 import pytest
 import tempfile
 
-from gns3server.modules.virtualbox import VirtualBox
-from gns3server.modules.virtualbox.virtualbox_error import VirtualBoxError
+from gns3server.modules.dynamips import Dynamips
+from gns3server.modules.dynamips.dynamips_error import DynamipsError
 from unittest.mock import patch
 
 
 @pytest.fixture(scope="module")
 def manager(port_manager):
-    m = VirtualBox.instance()
+    m = Dynamips.instance()
     m.port_manager = port_manager
     return m
 
 
-def test_vm_invalid_vboxmanage_path(manager):
-    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": "/bin/test_fake"}):
-        with pytest.raises(VirtualBoxError):
-            manager.find_vboxmanage()
+def test_vm_invalid_dynamips_path(manager):
+    with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": "/bin/test_fake"}):
+        with pytest.raises(DynamipsError):
+            manager.find_dynamips()
 
 
-def test_vm_non_executable_vboxmanage_path(manager):
+def test_vm_non_executable_dynamips_path(manager):
     tmpfile = tempfile.NamedTemporaryFile()
-    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": tmpfile.name}):
-        with pytest.raises(VirtualBoxError):
-            manager.find_vboxmanage()
+    with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": tmpfile.name}):
+        with pytest.raises(DynamipsError):
+            manager.find_dynamips()

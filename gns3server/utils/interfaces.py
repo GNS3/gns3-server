@@ -49,7 +49,7 @@ def _get_windows_interfaces_from_registry():
     return interfaces
 
 
-def _get_windows_interfaces():
+def get_windows_interfaces():
     """
     Get Windows interfaces.
 
@@ -94,7 +94,7 @@ def interfaces():
             return
     else:
         try:
-            results = _get_windows_interfaces()
+            results = get_windows_interfaces()
         except ImportError:
             message = "pywin32 module is not installed, please install it on the server to get the available interface names"
             raise aiohttp.web.HTTPInternalServerError(text=message)
