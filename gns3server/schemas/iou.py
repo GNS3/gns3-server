@@ -42,7 +42,7 @@ IOU_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
-        "iou_path": {
+        "path": {
             "description": "Path of iou binary",
             "type": "string"
         },
@@ -52,7 +52,7 @@ IOU_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "iou_path", "iourc_path"]
+    "required": ["name", "path", "iourc_path"]
 }
 
 IOU_UPDATE_SCHEMA = {
@@ -71,7 +71,7 @@ IOU_UPDATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
-        "iou_path": {
+        "path": {
             "description": "Path of iou binary",
             "type": "string"
         },
@@ -113,7 +113,7 @@ IOU_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "iou_path": {
+        "path": {
             "description": "Path of iou binary",
             "type": "string"
         },
@@ -123,5 +123,5 @@ IOU_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "iou_path", "iourc_path"]
+    "required": ["name", "vm_id", "console", "project_id", "path", "iourc_path"]
 }

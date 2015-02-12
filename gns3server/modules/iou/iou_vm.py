@@ -69,7 +69,7 @@ class IOUVM(BaseVM):
         self._iou_process = None
         self._iou_stdout_file = ""
         self._started = False
-        self._iou_path = None
+        self._path = None
         self._iourc_path = None
         self._ioucon_thread = None
         self._console_host = console_host
@@ -96,40 +96,40 @@ class IOUVM(BaseVM):
             self._console = None
 
     @property
-    def iou_path(self):
+    def path(self):
         """Path of the iou binary"""
 
-        return self._iou_path
+        return self._path
 
-    @iou_path.setter
-    def iou_path(self, path):
+    @path.setter
+    def path(self, path):
         """
         Path of the iou binary
 
         :params path: Path to the binary
         """
 
-        self._iou_path = path
-        if not os.path.isfile(self._iou_path) or not os.path.exists(self._iou_path):
-            if os.path.islink(self._iou_path):
-                raise IOUError("IOU image '{}' linked to '{}' is not accessible".format(self._iou_path, os.path.realpath(self._iou_path)))
+        self._path = path
+        if not os.path.isfile(self._path) or not os.path.exists(self._path):
+            if os.path.islink(self._path):
+                raise IOUError("IOU image '{}' linked to '{}' is not accessible".format(self._path, os.path.realpath(self._path)))
             else:
-                raise IOUError("IOU image '{}' is not accessible".format(self._iou_path))
+                raise IOUError("IOU image '{}' is not accessible".format(self._path))
 
         try:
-            with open(self._iou_path, "rb") as f:
+            with open(self._path, "rb") as f:
                 # read the first 7 bytes of the file.
                 elf_header_start = f.read(7)
         except OSError as e:
-            raise IOUError("Cannot read ELF header for IOU image '{}': {}".format(self._iou_path, e))
+            raise IOUError("Cannot read ELF header for IOU image '{}': {}".format(self._path, e))
 
         # IOU images must start with the ELF magic number, be 32-bit, little endian
         # and have an ELF version of 1 normal IOS image are big endian!
         if elf_header_start != b'\x7fELF\x01\x01\x01':
-            raise IOUError("'{}' is not a valid IOU image".format(self._iou_path))
+            raise IOUError("'{}' is not a valid IOU image".format(self._path))
 
-        if not os.access(self._iou_path, os.X_OK):
-            raise IOUError("IOU image '{}' is not executable".format(self._iou_path))
+        if not os.access(self._path, os.X_OK):
+            raise IOUError("IOU image '{}' is not executable".format(self._path))
 
     @property
     def iourc_path(self):
@@ -194,7 +194,7 @@ class IOUVM(BaseVM):
                 "console": self._console,
                 "project_id": self.project.id,
                 "iourc_path": self._iourc_path,
-                "iou_path": self.iou_path
+                "path": self.path
                 }
 
     @property
@@ -245,7 +245,7 @@ class IOUVM(BaseVM):
         """
 
         try:
-            output = subprocess.check_output(["ldd", self._iou_path])
+            output = subprocess.check_output(["ldd", self._path])
         except (FileNotFoundError, subprocess.SubprocessError) as e:
             log.warn("could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
@@ -296,8 +296,8 @@ class IOUVM(BaseVM):
                 raise IOUError("could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
             except (OSError, subprocess.SubprocessError) as e:
                 iou_stdout = self.read_iou_stdout()
-                log.error("could not start IOU {}: {}\n{}".format(self._iou_path, e, iou_stdout))
-                raise IOUError("could not start IOU {}: {}\n{}".format(self._iou_path, e, iou_stdout))
+                log.error("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
+                raise IOUError("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
 
             # start console support
             self._start_ioucon()
@@ -412,13 +412,14 @@ class IOUVM(BaseVM):
 
             self._iou_process = None
 
-            self._terminate_process_iouyap()
-            try:
-                yield from asyncio.wait_for(self._iouyap_process.wait(), timeout=3)
-            except asyncio.TimeoutError:
-                self._iou_process.kill()
-                if self._iouyap_process.returncode is None:
-                    log.warn("IOUYAP process {} is still running".format(self._iou_process.pid))
+            if self._iouyap_process is not None:
+                self._terminate_process_iouyap()
+                try:
+                    yield from asyncio.wait_for(self._iouyap_process.wait(), timeout=3)
+                except asyncio.TimeoutError:
+                    self._iou_process.kill()
+                    if self._iouyap_process.returncode is None:
+                        log.warn("IOUYAP process {} is still running".format(self._iou_process.pid))
 
             self._started = False
 
@@ -512,7 +513,7 @@ class IOUVM(BaseVM):
         -N            Ignore the NETMAP file
         """
 
-        command = [self._iou_path]
+        command = [self._path]
         if len(self._ethernet_adapters) != 2:
             command.extend(["-e", str(len(self._ethernet_adapters))])
         if len(self._serial_adapters) != 2:

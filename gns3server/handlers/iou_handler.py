@@ -50,7 +50,7 @@ class IOUHandler:
                                       request.json.get("vm_id"),
                                       console=request.json.get("console"),
                                       )
-        vm.iou_path = request.json.get("iou_path", vm.iou_path)
+        vm.path = request.json.get("path", vm.path)
         vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
         response.set_status(201)
         response.json(vm)
@@ -97,7 +97,7 @@ class IOUHandler:
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
-        vm.iou_path = request.json.get("iou_path", vm.iou_path)
+        vm.path = request.json.get("path", vm.path)
         vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
         response.json(vm)
 

@@ -47,8 +47,8 @@ def vm(project, manager, tmpdir, fake_iou_bin):
     config["iouyap_path"] = fake_file
     manager.config.set_section_config("IOU", config)
 
-    vm.iou_path = fake_iou_bin
-    vm.iourc = fake_file
+    vm.path = fake_iou_bin
+    vm.iourc_path = fake_file
     return vm
 
 
@@ -76,11 +76,13 @@ def test_vm_invalid_iouyap_path(project, manager, loop):
         loop.run_until_complete(asyncio.async(vm.start()))
 
 
-def test_start(loop, vm):
+def test_start(loop, vm, monkeypatch):
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-            loop.run_until_complete(asyncio.async(vm.start()))
-            assert vm.is_running()
+        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+                with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+                    loop.run_until_complete(asyncio.async(vm.start()))
+                    assert vm.is_running()
 
 
 def test_stop(loop, vm):
@@ -92,12 +94,14 @@ def test_stop(loop, vm):
     process.wait.return_value = future
 
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            loop.run_until_complete(asyncio.async(vm.start()))
-            assert vm.is_running()
-            loop.run_until_complete(asyncio.async(vm.stop()))
-            assert vm.is_running() is False
-            process.terminate.assert_called_with()
+        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+                with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+                    loop.run_until_complete(asyncio.async(vm.start()))
+                    assert vm.is_running()
+                    loop.run_until_complete(asyncio.async(vm.stop()))
+                    assert vm.is_running() is False
+                    process.terminate.assert_called_with()
 
 
 def test_reload(loop, vm, fake_iou_bin):
@@ -109,12 +113,14 @@ def test_reload(loop, vm, fake_iou_bin):
     process.wait.return_value = future
 
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            loop.run_until_complete(asyncio.async(vm.start()))
-            assert vm.is_running()
-            loop.run_until_complete(asyncio.async(vm.reload()))
-            assert vm.is_running() is True
-            process.terminate.assert_called_with()
+        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+                with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+                    loop.run_until_complete(asyncio.async(vm.start()))
+                    assert vm.is_running()
+                    loop.run_until_complete(asyncio.async(vm.reload()))
+                    assert vm.is_running() is True
+                    process.terminate.assert_called_with()
 
 
 def test_close(vm, port_manager):
@@ -128,23 +134,23 @@ def test_close(vm, port_manager):
             assert vm.is_running() is False
 
 
-def test_iou_path(vm, fake_iou_bin):
+def test_path(vm, fake_iou_bin):
 
-    vm.iou_path = fake_iou_bin
-    assert vm.iou_path == fake_iou_bin
+    vm.path = fake_iou_bin
+    assert vm.path == fake_iou_bin
 
 
 def test_path_invalid_bin(vm, tmpdir):
 
-    iou_path = str(tmpdir / "test.bin")
+    path = str(tmpdir / "test.bin")
     with pytest.raises(IOUError):
-        vm.iou_path = iou_path
+        vm.path = path
 
-    with open(iou_path, "w+") as f:
+    with open(path, "w+") as f:
         f.write("BUG")
 
     with pytest.raises(IOUError):
-        vm.iou_path = iou_path
+        vm.path = path
 
 
 def test_create_netmap_config(vm):
@@ -161,4 +167,4 @@ def test_create_netmap_config(vm):
 
 def test_build_command(vm):
 
-    assert vm._build_command() == [vm.iou_path, '-L', str(vm.application_id)]
+    assert vm._build_command() == [vm.path, '-L', str(vm.application_id)]
