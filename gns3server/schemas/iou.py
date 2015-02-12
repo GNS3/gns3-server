@@ -52,7 +52,7 @@ IOU_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "path", "iourc_path"]
+    "required": ["name", "path"]
 }
 
 IOU_UPDATE_SCHEMA = {
@@ -73,12 +73,24 @@ IOU_UPDATE_SCHEMA = {
         },
         "path": {
             "description": "Path of iou binary",
-            "type": "string"
+            "type": ["string", "null"]
         },
         "iourc_path": {
             "description": "Path of iourc",
-            "type": "string"
+            "type": ["string", "null"]
         },
+        "initial_config": {
+            "description": "Initial configuration path",
+            "type": ["string", "null"]
+        },
+        "serial_adapters": {
+            "description": "How many serial adapters are connected to the IOU",
+            "type": ["integer", "null"]
+        },
+        "ethernet_adapters": {
+            "description": "How many ethernet adapters are connected to the IOU",
+            "type": ["integer", "null"]
+        }
     },
     "additionalProperties": False,
 }
@@ -117,11 +129,7 @@ IOU_OBJECT_SCHEMA = {
             "description": "Path of iou binary",
             "type": "string"
         },
-        "iourc_path": {
-            "description": "Path of iourc",
-            "type": "string"
-        },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "path", "iourc_path"]
+    "required": ["name", "vm_id", "console", "project_id", "path"]
 }

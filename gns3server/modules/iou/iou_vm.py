@@ -193,7 +193,6 @@ class IOUVM(BaseVM):
                 "vm_id": self.id,
                 "console": self._console,
                 "project_id": self.project.id,
-                "iourc_path": self._iourc_path,
                 "path": self.path
                 }
 
@@ -268,7 +267,7 @@ class IOUVM(BaseVM):
             # TODO: ASYNC
             # self._library_check()
 
-            if not self._iourc_path or not os.path.isfile(self._iourc_path):
+            if self._iourc_path and not os.path.isfile(self._iourc_path):
                 raise IOUError("A valid iourc file is necessary to start IOU")
 
             iouyap_path = self.iouyap_path
@@ -278,7 +277,8 @@ class IOUVM(BaseVM):
             self._create_netmap_config()
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
-            env["IOURC"] = self._iourc_path
+            if self._iourc_path:
+                env["IOURC"] = self._iourc_path
             self._command = self._build_command()
             try:
                 log.info("Starting IOU: {}".format(self._command))

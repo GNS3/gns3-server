@@ -108,7 +108,6 @@ def parse_arguments(argv, config):
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
     parser.add_argument("--live", action="store_true", help="enable code live reload")
 
-
     return parser.parse_args(argv)
 
 
