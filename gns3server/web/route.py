@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 from ..modules.vm_error import VMError
 from .response import Response
 
+
 @asyncio.coroutine
 def parse_request(request, input_schema):
     """Parse body of request and raise HTTP errors in case of problems"""
@@ -42,9 +43,8 @@ def parse_request(request, input_schema):
         jsonschema.validate(request.json, input_schema)
     except jsonschema.ValidationError as e:
         log.error("Invalid input query. JSON schema error: {}".format(e.message))
-        raise aiohttp.web.HTTPBadRequest(text="Request is not {} '{}' in schema: {}".format(
-            e.validator,
-            e.validator_value,
+        raise aiohttp.web.HTTPBadRequest(text="Invalid JSON: {} in schema: {}".format(
+            e.message,
             json.dumps(e.schema)))
     return request
 

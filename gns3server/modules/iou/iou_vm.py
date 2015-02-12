@@ -35,6 +35,8 @@ from pkg_resources import parse_version
 from .iou_error import IOUError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..adapters.serial_adapter import SerialAdapter
+from ..nios.nio_udp import NIO_UDP
+from ..nios.nio_tap import NIO_TAP
 from ..base_vm import BaseVM
 from .ioucon import start_ioucon
 
@@ -86,7 +88,7 @@ class IOUVM(BaseVM):
         self._ethernet_adapters = []
         self._serial_adapters = []
         self.ethernet_adapters = 2 if ethernet_adapters is None else ethernet_adapters  # one adapter = 4 interfaces
-        self.serial_adapters = 2 if serial_adapters is None else serial_adapters # one adapter = 4 interfaces
+        self.serial_adapters = 2 if serial_adapters is None else serial_adapters  # one adapter = 4 interfaces
         self._use_default_iou_values = True  # for RAM & NVRAM values
         self._nvram = 128 if nvram is None else nvram  # Kilobytes
         self._initial_config = ""
@@ -529,6 +531,17 @@ class IOUVM(BaseVM):
             return True
         return False
 
+    def is_iouyap_running(self):
+        """
+        Checks if the IOUYAP process is running
+
+        :returns: True or False
+        """
+
+        if self._iouyap_process:
+            return True
+        return False
+
     def _create_netmap_config(self):
         """
         Creates the NETMAP file.
@@ -687,3 +700,62 @@ class IOUVM(BaseVM):
                                                                                                 adapters=len(self._serial_adapters)))
 
         self._slots = self._ethernet_adapters + self._serial_adapters
+
+    def slot_add_nio_binding(self, slot_id, port_id, nio):
+        """
+        Adds a slot NIO binding.
+        :param slot_id: slot ID
+        :param port_id: port ID
+        :param nio: NIO instance to add to the slot/port
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise IOUError("Slot {slot_id} doesn't exist on IOU {name}".format(name=self._name,
+                                                                               slot_id=slot_id))
+
+        if not adapter.port_exists(port_id):
+            raise IOUError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                      port_id=port_id))
+
+        adapter.add_nio(port_id, nio)
+        log.info("IOU {name} [id={id}]: {nio} added to {slot_id}/{port_id}".format(name=self._name,
+                                                                                   id=self._id,
+                                                                                   nio=nio,
+                                                                                   slot_id=slot_id,
+                                                                                   port_id=port_id))
+        if self.is_iouyap_running():
+            self._update_iouyap_config()
+            os.kill(self._iouyap_process.pid, signal.SIGHUP)
+
+    def slot_remove_nio_binding(self, slot_id, port_id):
+        """
+        Removes a slot NIO binding.
+        :param slot_id: slot ID
+        :param port_id: port ID
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self._slots[slot_id]
+        except IndexError:
+            raise IOUError("Slot {slot_id} doesn't exist on IOU {name}".format(name=self._name,
+                                                                               slot_id=slot_id))
+
+        if not adapter.port_exists(port_id):
+            raise IOUError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                      port_id=port_id))
+
+        nio = adapter.get_nio(port_id)
+        adapter.remove_nio(port_id)
+        log.info("IOU {name} [id={id}]: {nio} removed from {slot_id}/{port_id}".format(name=self._name,
+                                                                                       id=self._id,
+                                                                                       nio=nio,
+                                                                                       slot_id=slot_id,
+                                                                                       port_id=port_id))
+        if self.is_iouyap_running():
+            self._update_iouyap_config()
+            os.kill(self._iouyap_process.pid, signal.SIGHUP)
+
+        return nio

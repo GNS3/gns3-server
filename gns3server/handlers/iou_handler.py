@@ -19,6 +19,7 @@ from ..web.route import Route
 from ..schemas.iou import IOU_CREATE_SCHEMA
 from ..schemas.iou import IOU_UPDATE_SCHEMA
 from ..schemas.iou import IOU_OBJECT_SCHEMA
+from ..schemas.iou import IOU_NIO_SCHEMA
 from ..modules.iou import IOU
 
 
@@ -186,4 +187,49 @@ class IOUHandler:
         iou_manager = IOU.instance()
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.reload()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/iou/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "port_number": "Port where the nio should be added"
+        },
+        status_codes={
+            201: "NIO created",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Add a NIO to a IOU instance",
+        input=IOU_NIO_SCHEMA,
+        output=IOU_NIO_SCHEMA)
+    def create_nio(request, response):
+
+        iou_manager = IOU.instance()
+        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        nio = iou_manager.create_nio(vm.iouyap_path, request.json)
+        vm.slot_add_nio_binding(0, int(request.match_info["port_number"]), nio)
+        response.set_status(201)
+        response.json(nio)
+
+    @classmethod
+    @Route.delete(
+        r"/projects/{project_id}/iou/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "port_number": "Port from where the nio should be removed"
+        },
+        status_codes={
+            204: "NIO deleted",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Remove a NIO from a IOU instance")
+    def delete_nio(request, response):
+
+        iou_manager = IOU.instance()
+        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm.slot_remove_nio_binding(0, int(request.match_info["port_number"]))
         response.set_status(204)
