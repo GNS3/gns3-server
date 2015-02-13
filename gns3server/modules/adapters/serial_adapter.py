@@ -24,8 +24,8 @@ class SerialAdapter(Adapter):
     VPCS Ethernet adapter.
     """
 
-    def __init__(self):
-        Adapter.__init__(self, interfaces=1)
+    def __init__(self, interfaces=1):
+        Adapter.__init__(self, interfaces=interfaces)
 
     def __str__(self):
 

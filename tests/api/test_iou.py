@@ -163,6 +163,17 @@ def test_iou_nio_create_ethernet(server, vm):
     assert response.json["ethernet_device"] == "eth0"
 
 
+def test_iou_nio_create_ethernet_different_port(server, vm):
+    response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
+                                                                                                                                                    "ethernet_device": "eth0",
+                                                                                                                                                    },
+                           example=False)
+    assert response.status == 201
+    assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.json["type"] == "nio_generic_ethernet"
+    assert response.json["ethernet_device"] == "eth0"
+
+
 def test_iou_nio_create_tap(server, vm):
     with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
         response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
