@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class Leopard_2FE(Adapter):
+
     """
     Integrated 2 port FastEthernet adapter for c3660 router.
     """

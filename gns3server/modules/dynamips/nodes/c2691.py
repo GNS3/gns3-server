@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 
 class C2691(Router):
+
     """
     Dynamips c2691 router.
 

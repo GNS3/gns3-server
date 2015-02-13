@@ -215,7 +215,7 @@ class Dynamips(BaseManager):
             rhost = nio_settings["rhost"]
             rport = nio_settings["rport"]
             try:
-                #TODO: handle IPv6
+                # TODO: handle IPv6
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                     sock.connect((rhost, rport))
             except OSError as e:

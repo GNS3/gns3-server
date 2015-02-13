@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class PA_A1(Adapter):
+
     """
     PA-A1 ATM port adapter.
     """

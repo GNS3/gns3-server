@@ -145,14 +145,14 @@ class Router(BaseVM):
                        "system_id": self._system_id}
 
         # FIXME: add default slots/wics
-        #slot_id = 0
-        #for slot in self._slots:
+        # slot_id = 0
+        # for slot in self._slots:
         #    if slot:
         #        slot = str(slot)
         #    router_defaults["slot" + str(slot_id)] = slot
         #    slot_id += 1
 
-        #if self._slots[0] and self._slots[0].wics:
+        # if self._slots[0] and self._slots[0].wics:
         #    for wic_slot_id in range(0, len(self._slots[0].wics)):
         #        router_defaults["wic" + str(wic_slot_id)] = None
 
@@ -1014,8 +1014,8 @@ class Router(BaseVM):
 
         # Only c7200, c3600 and c3745 (NM-4T only) support new adapter while running
         if is_running and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
-                                and not (self._platform == 'c3600' and self.chassis == '3660')
-                                and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+                               and not (self._platform == 'c3600' and self.chassis == '3660')
+                               and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError('Adapter {adapter} cannot be added while router "{name}" is running'.format(adapter=adapter,
                                                                                                             name=self._name))
 
@@ -1060,8 +1060,8 @@ class Router(BaseVM):
 
         # Only c7200, c3600 and c3745 (NM-4T only) support to remove adapter while running
         if is_running and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
-                                and not (self._platform == 'c3600' and self.chassis == '3660')
-                                and not (self._platform == 'c3745' and adapter == 'NM-4T')):
+                               and not (self._platform == 'c3600' and self.chassis == '3660')
+                               and not (self._platform == 'c3745' and adapter == 'NM-4T')):
             raise DynamipsError('Adapter {adapter} cannot be removed while router "{name}" is running'.format(adapter=adapter,
                                                                                                               name=self._name))
 
@@ -1181,7 +1181,7 @@ class Router(BaseVM):
             adapter = self._slots[slot_id]
         except IndexError:
             raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name,
-                                                                                        slot_id=slot_id))
+                                                                                          slot_id=slot_id))
         if not adapter.port_exists(port_id):
             raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter,
                                                                                             port_id=port_id))
@@ -1246,13 +1246,14 @@ class Router(BaseVM):
         is_running = yield from self.is_running()
         if is_running:  # running router
             yield from self._hypervisor.send('vm slot_enable_nio "{name}" {slot_id} {port_id}'.format(name=self._name,
-                                                                                                     slot_id=slot_id,
-                                                                                                     port_id=port_id))
+                                                                                                      slot_id=slot_id,
+                                                                                                      port_id=port_id))
 
             log.info('Router "{name}" [{id}]: NIO enabled on port {slot_id}/{port_id}'.format(name=self._name,
                                                                                               id=self._id,
                                                                                               slot_id=slot_id,
                                                                                               port_id=port_id))
+
     @asyncio.coroutine
     def slot_disable_nio(self, slot_id, port_id):
         """
@@ -1301,11 +1302,10 @@ class Router(BaseVM):
             raise DynamipsError("Port {port_id} has already a filter applied on {adapter}".format(adapter=adapter,
                                                                                                   port_id=port_id))
 
-
         # FIXME: capture
-        #try:
+        # try:
         #    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        #except OSError as e:
+        # except OSError as e:
         #    raise DynamipsError("Could not create captures directory {}".format(e))
 
         yield from nio.bind_filter("both", "capture")
@@ -1316,6 +1316,7 @@ class Router(BaseVM):
                                                                                                       nio_name=nio.name,
                                                                                                       slot_id=slot_id,
                                                                                                       port_id=port_id))
+
     @asyncio.coroutine
     def stop_capture(self, slot_id, port_id):
         """

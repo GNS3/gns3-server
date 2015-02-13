@@ -44,7 +44,7 @@ def test_router(project, manager):
 
 def test_router_invalid_dynamips_path(project, manager, loop):
     with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": "/bin/test_fake"}):
-         with pytest.raises(DynamipsError):
+        with pytest.raises(DynamipsError):
             router = Router("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
             loop.run_until_complete(asyncio.async(router.create()))
             assert router.name == "test"

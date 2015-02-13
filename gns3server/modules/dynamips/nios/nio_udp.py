@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 
 class NIOUDP(NIO):
+
     """
     Dynamips UDP NIO.
 

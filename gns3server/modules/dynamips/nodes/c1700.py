@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 
 
 class C1700(Router):
+
     """
     Dynamips c1700 router.
 

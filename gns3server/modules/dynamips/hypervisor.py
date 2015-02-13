@@ -32,6 +32,7 @@ log = logging.getLogger(__name__)
 
 
 class Hypervisor(DynamipsHypervisor):
+
     """
     Hypervisor.
 

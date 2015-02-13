@@ -32,6 +32,7 @@ log = logging.getLogger(__name__)
 
 
 class C7200(Router):
+
     """
     Dynamips c7200 router (model is 7206).
 

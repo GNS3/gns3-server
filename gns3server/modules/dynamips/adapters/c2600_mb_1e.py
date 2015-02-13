@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class C2600_MB_1E(Adapter):
+
     """
     Integrated 1 port Ethernet adapter for the c2600 platform.
     """

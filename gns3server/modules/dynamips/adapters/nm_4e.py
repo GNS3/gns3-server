@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class NM_4E(Adapter):
+
     """
     NM-4E Ethernet network module.
     """

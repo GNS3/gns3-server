@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 
 class NIOMcast(NIO):
+
     """
     Dynamips Linux Ethernet NIO.
 

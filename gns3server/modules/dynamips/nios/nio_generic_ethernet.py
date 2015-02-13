@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 
 class NIOGenericEthernet(NIO):
+
     """
     Dynamips generic Ethernet NIO.
 
@@ -45,8 +46,6 @@ class NIOGenericEthernet(NIO):
         NIOGenericEthernet._instance_count += 1
         self._name = 'nio_gen_eth' + str(self._id)
         self._ethernet_device = ethernet_device
-
-
 
     @classmethod
     def reset(cls):

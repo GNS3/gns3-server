@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 
 class NIOFIFO(NIO):
+
     """
     Dynamips FIFO NIO.
 
