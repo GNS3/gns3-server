@@ -212,12 +212,12 @@ class VirtualBoxVM(BaseVM):
             except VirtualBoxError as e:
                 log.warn("Could not deactivate the first serial port: {}".format(e))
 
-            for adapter_id in range(0, len(self._ethernet_adapters)):
-                nio = self._ethernet_adapters[adapter_id].get_nio(0)
+            for adapter_number in range(0, len(self._ethernet_adapters)):
+                nio = self._ethernet_adapters[adapter_number].get_nio(0)
                 if nio:
-                    yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
-                    yield from self._modify_vm("--cableconnected{} off".format(adapter_id + 1))
-                    yield from self._modify_vm("--nic{} null".format(adapter_id + 1))
+                    yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
+                    yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                    yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
 
     @asyncio.coroutine
     def suspend(self):
@@ -483,7 +483,7 @@ class VirtualBoxVM(BaseVM):
             raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(self._maximum_adapters))
 
         self._ethernet_adapters.clear()
-        for adapter_id in range(0, adapters):
+        for adapter_number in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
 
         self._adapters = len(self._ethernet_adapters)
@@ -623,8 +623,8 @@ class VirtualBoxVM(BaseVM):
 
         nics = []
         vm_info = yield from self._get_vm_info()
-        for adapter_id in range(0, maximum_adapters):
-            entry = "nic{}".format(adapter_id + 1)
+        for adapter_number in range(0, maximum_adapters):
+            entry = "nic{}".format(adapter_number + 1)
             if entry in vm_info:
                 value = vm_info[entry]
                 nics.append(value)
@@ -639,15 +639,15 @@ class VirtualBoxVM(BaseVM):
         """
 
         nic_attachments = yield from self._get_nic_attachements(self._maximum_adapters)
-        for adapter_id in range(0, len(self._ethernet_adapters)):
-            nio = self._ethernet_adapters[adapter_id].get_nio(0)
+        for adapter_number in range(0, len(self._ethernet_adapters)):
+            nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
-                attachment = nic_attachments[adapter_id]
+                attachment = nic_attachments[adapter_number]
                 if not self._use_any_adapter and attachment not in ("none", "null"):
                     raise VirtualBoxError("Attachment ({}) already configured on adapter {}. "
                                           "Please set it to 'Not attached' to allow GNS3 to use it.".format(attachment,
-                                                                                                            adapter_id + 1))
-                yield from self._modify_vm("--nictrace{} off".format(adapter_id + 1))
+                                                                                                            adapter_number + 1))
+                yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
 
                 vbox_adapter_type = "82540EM"
                 if self._adapter_type == "PCnet-PCI II (Am79C970A)":
@@ -662,24 +662,24 @@ class VirtualBoxVM(BaseVM):
                     vbox_adapter_type = "82545EM"
                 if self._adapter_type == "Paravirtualized Network (virtio-net)":
                     vbox_adapter_type = "virtio"
-                args = [self._vmname, "--nictype{}".format(adapter_id + 1), vbox_adapter_type]
+                args = [self._vmname, "--nictype{}".format(adapter_number + 1), vbox_adapter_type]
                 yield from self.manager.execute("modifyvm", args)
 
-                log.debug("setting UDP params on adapter {}".format(adapter_id))
-                yield from self._modify_vm("--nic{} generic".format(adapter_id + 1))
-                yield from self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_id + 1))
-                yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
-                yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
-                yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
-                yield from self._modify_vm("--cableconnected{} on".format(adapter_id + 1))
+                log.debug("setting UDP params on adapter {}".format(adapter_number))
+                yield from self._modify_vm("--nic{} generic".format(adapter_number + 1))
+                yield from self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_number + 1))
+                yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
+                yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
+                yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
+                yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
 
                 if nio.capturing:
-                    yield from self._modify_vm("--nictrace{} on".format(adapter_id + 1))
-                    yield from self._modify_vm("--nictracefile{} {}".format(adapter_id + 1, nio.pcap_output_file))
+                    yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
+                    yield from self._modify_vm("--nictracefile{} {}".format(adapter_number + 1, nio.pcap_output_file))
 
-        for adapter_id in range(len(self._ethernet_adapters), self._maximum_adapters):
-            log.debug("disabling remaining adapter {}".format(adapter_id))
-            yield from self._modify_vm("--nic{} none".format(adapter_id + 1))
+        for adapter_number in range(len(self._ethernet_adapters), self._maximum_adapters):
+            log.debug("disabling remaining adapter {}".format(adapter_number))
+            yield from self._modify_vm("--nic{} none".format(adapter_number + 1))
 
     @asyncio.coroutine
     def _create_linked_clone(self):
@@ -761,107 +761,107 @@ class VirtualBoxVM(BaseVM):
             self._serial_pipe = None
 
     @asyncio.coroutine
-    def adapter_add_nio_binding(self, adapter_id, nio):
+    def adapter_add_nio_binding(self, adapter_number, nio):
         """
         Adds an adapter NIO binding.
 
-        :param adapter_id: adapter ID
+        :param adapter_number: adapter number
         :param nio: NIO instance to add to the slot/port
         """
 
         try:
-            adapter = self._ethernet_adapters[adapter_id]
+            adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                        adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                            adapter_number=adapter_number))
 
         vm_state = yield from self._get_vm_state()
         if vm_state == "running":
             # dynamically configure an UDP tunnel on the VirtualBox adapter
-            yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_id + 1))
-            yield from self._control_vm("nicproperty{} sport={}".format(adapter_id + 1, nio.lport))
-            yield from self._control_vm("nicproperty{} dest={}".format(adapter_id + 1, nio.rhost))
-            yield from self._control_vm("nicproperty{} dport={}".format(adapter_id + 1, nio.rport))
-            yield from self._control_vm("setlinkstate{} on".format(adapter_id + 1))
+            yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_number + 1))
+            yield from self._control_vm("nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
+            yield from self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
+            yield from self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
+            yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
-        log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_id}".format(name=self.name,
-                                                                                             id=self.id,
-                                                                                             nio=nio,
-                                                                                             adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
+                                                                                                 id=self.id,
+                                                                                                 nio=nio,
+                                                                                                 adapter_number=adapter_number))
 
     @asyncio.coroutine
-    def adapter_remove_nio_binding(self, adapter_id):
+    def adapter_remove_nio_binding(self, adapter_number):
         """
         Removes an adapter NIO binding.
 
-        :param adapter_id: adapter ID
+        :param adapter_number: adapter number
 
         :returns: NIO instance
         """
 
         try:
-            adapter = self._ethernet_adapters[adapter_id]
+            adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                        adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                            adapter_number=adapter_number))
 
         vm_state = yield from self._get_vm_state()
         if vm_state == "running":
             # dynamically disable the VirtualBox adapter
-            yield from self._control_vm("setlinkstate{} off".format(adapter_id + 1))
-            yield from self._control_vm("nic{} null".format(adapter_id + 1))
+            yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
+            yield from self._control_vm("nic{} null".format(adapter_number + 1))
 
         nio = adapter.get_nio(0)
         if str(nio) == "NIO UDP":
             self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(0)
 
-        log.info("VirtualBox VM '{name}' [{id}]: {nio} removed from adapter {adapter_id}".format(name=self.name,
-                                                                                                 id=self.id,
-                                                                                                 nio=nio,
-                                                                                                 adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
+                                                                                                     id=self.id,
+                                                                                                     nio=nio,
+                                                                                                     adapter_number=adapter_number))
         return nio
 
-    def start_capture(self, adapter_id, output_file):
+    def start_capture(self, adapter_number, output_file):
         """
         Starts a packet capture.
 
-        :param adapter_id: adapter ID
+        :param adapter_number: adapter number
         :param output_file: PCAP destination file for the capture
         """
 
         try:
-            adapter = self._ethernet_adapters[adapter_id]
+            adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                        adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                            adapter_number=adapter_number))
 
         nio = adapter.get_nio(0)
         if nio.capturing:
-            raise VirtualBoxError("Packet capture is already activated on adapter {adapter_id}".format(adapter_id=adapter_id))
+            raise VirtualBoxError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
         nio.startPacketCapture(output_file)
-        log.info("VirtualBox VM '{name}' [{id}]: starting packet capture on adapter {adapter_id}".format(name=self.name,
-                                                                                                         id=self.id,
-                                                                                                         adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                             id=self.id,
+                                                                                                             adapter_number=adapter_number))
 
-    def stop_capture(self, adapter_id):
+    def stop_capture(self, adapter_number):
         """
         Stops a packet capture.
 
-        :param adapter_id: adapter ID
+        :param adapter_number: adapter number
         """
 
         try:
-            adapter = self._ethernet_adapters[adapter_id]
+            adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise VirtualBoxError("Adapter {adapter_id} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                        adapter_id=adapter_id))
+            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                            adapter_number=adapter_number))
 
         nio = adapter.get_nio(0)
         nio.stopPacketCapture()
 
-        log.info("VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_id}".format(name=self.name,
-                                                                                                         id=self.id,
-                                                                                                         adapter_id=adapter_id))
+        log.info("VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                             id=self.id,
+                                                                                                             adapter_number=adapter_number))
