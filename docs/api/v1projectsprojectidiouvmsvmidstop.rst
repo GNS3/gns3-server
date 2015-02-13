@@ -1,18 +1,20 @@
-/v1/projects/{project_id}/commit
+/v1/projects/{project_id}/iou/vms/{vm_id}/stop
 -----------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v1/projects/**{project_id}**/commit
+POST /v1/projects/**{project_id}**/iou/vms/**{vm_id}**/stop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Write changes on disk
+Stop a IOU instance
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
-- **404**: The project doesn't exist
-- **204**: Changes have been written on disk
+- **400**: Invalid request
+- **404**: Instance doesn't exist
+- **204**: Instance stopped
 

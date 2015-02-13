@@ -94,10 +94,10 @@ def test_vbox_nio_create_udp(server, vm):
 
     with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
         response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"],
-                                                                                                     vm_id=vm["vm_id"]), {"type": "nio_udp",
-                                                                                                                          "lport": 4242,
-                                                                                                                          "rport": 4343,
-                                                                                                                          "rhost": "127.0.0.1"},
+                                                                                                             vm_id=vm["vm_id"]), {"type": "nio_udp",
+                                                                                                                                  "lport": 4242,
+                                                                                                                                  "rport": 4343,
+                                                                                                                                  "rhost": "127.0.0.1"},
                                example=True)
 
         assert mock.called

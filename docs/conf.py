@@ -103,6 +103,10 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = 'default'
+
+html_sidebars = {
+   '**': ['sourcelink.html', 'searchbox.html'],
+}
 # html_theme = 'nature'
 
 # If uncommented it's turn off the default read the doc style

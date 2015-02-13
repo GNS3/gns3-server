@@ -1,20 +1,20 @@
-curl -i -X PUT 'http://localhost:8000/projects/{project_id}' -d '{"path": "/tmp/pytest-48/test_update_path_project_non_l0"}'
+curl -i -X PUT 'http://localhost:8000/projects/{project_id}' -d '{"path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2249/test_update_path_project_non_l0"}'
 
 PUT /projects/{project_id} HTTP/1.1
 {
-    "path": "/tmp/pytest-48/test_update_path_project_non_l0"
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2249/test_update_path_project_non_l0"
 }
 
 
 HTTP/1.1 403
-CONNECTION: close
-CONTENT-LENGTH: 101
+CONNECTION: keep-alive
+CONTENT-LENGTH: 100
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 aiohttp/0.13.1
+SERVER: Python/3.4 GNS3/1.3.dev1
 X-ROUTE: /v1/projects/{project_id}
 
 {
-    "message": "You are not allowed to modifiy the project directory location",
+    "message": "You are not allowed to modify the project directory location",
     "status": 403
 }

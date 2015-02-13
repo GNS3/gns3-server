@@ -1,10 +1,10 @@
-/v1/{project_id}/vpcs/vms
------------------------------------------------------------
+/v1/projects/{project_id}/vpcs/vms
+-----------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v1/**{project_id}**/vpcs/vms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+POST /v1/projects/**{project_id}**/vpcs/vms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Create a new VPCS instance
 
 Parameters
@@ -26,7 +26,7 @@ Input
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS VM name</td>                     </tr>
     <tr><td>startup_script</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the VPCS startup script</td>                     </tr>
-    <tr><td>vm_id</td>                    <td> </td>                     <td>string</td>                     <td>VPCS VM identifier</td>                     </tr>
+    <tr><td>vm_id</td>                    <td> </td>                     <td></td>                     <td>VPCS VM identifier</td>                     </tr>
     </table>
 
 Output
@@ -38,7 +38,6 @@ Output
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS VM name</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
-    <tr><td>script_file</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>VPCS startup script</td>                     </tr>
     <tr><td>startup_script</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the VPCS startup script</td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS VM UUID</td>                     </tr>
     </table>
