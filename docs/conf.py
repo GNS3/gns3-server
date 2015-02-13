@@ -105,7 +105,7 @@ pygments_style = 'sphinx'
 html_theme = 'default'
 
 html_sidebars = {
-   '**': ['sourcelink.html', 'searchbox.html'],
+    '**': ['sourcelink.html', 'searchbox.html'],
 }
 # html_theme = 'nature'
 

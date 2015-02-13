@@ -11,8 +11,8 @@ Parameters
 **********
 - **port_id**: Port in the adapter (always 0 for virtualbox)
 - **vm_id**: UUID for the instance
-- **adapter_id**: Adapter where the nio should be added
 - **project_id**: UUID for the project
+- **adapter_id**: Adapter where the nio should be added
 
 Response status codes
 **********************
@@ -29,8 +29,8 @@ Parameters
 **********
 - **port_id**: Port in the adapter (always 0 for virtualbox)
 - **vm_id**: UUID for the instance
-- **adapter_id**: Adapter from where the nio should be removed
 - **project_id**: UUID for the project
+- **adapter_id**: Adapter from where the nio should be removed
 
 Response status codes
 **********************
