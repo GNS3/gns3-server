@@ -56,6 +56,7 @@ def test_iou_create(server, project, base_params):
     assert response.json["ethernet_adapters"] == 2
     assert response.json["ram"] == 256
     assert response.json["nvram"] == 128
+    assert response.json["l1_keepalives"] == False
 
 
 def test_iou_create_with_params(server, project, base_params):
@@ -64,6 +65,7 @@ def test_iou_create_with_params(server, project, base_params):
     params["nvram"] = 512
     params["serial_adapters"] = 4
     params["ethernet_adapters"] = 0
+    params["l1_keepalives"] = True
 
     response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -74,6 +76,7 @@ def test_iou_create_with_params(server, project, base_params):
     assert response.json["ethernet_adapters"] == 0
     assert response.json["ram"] == 1024
     assert response.json["nvram"] == 512
+    assert response.json["l1_keepalives"] == True
 
 
 def test_iou_get(server, project, vm):
@@ -86,6 +89,7 @@ def test_iou_get(server, project, vm):
     assert response.json["ethernet_adapters"] == 2
     assert response.json["ram"] == 256
     assert response.json["nvram"] == 128
+    assert response.json["l1_keepalives"] == False
 
 
 def test_iou_start(server, vm):
@@ -123,7 +127,8 @@ def test_iou_update(server, vm, tmpdir, free_console_port):
         "ram": 512,
         "nvram": 2048,
         "ethernet_adapters": 4,
-        "serial_adapters": 0
+        "serial_adapters": 0,
+        "l1_keepalives": True
     }
     response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params)
     assert response.status == 200
@@ -133,6 +138,7 @@ def test_iou_update(server, vm, tmpdir, free_console_port):
     assert response.json["serial_adapters"] == 0
     assert response.json["ram"] == 512
     assert response.json["nvram"] == 2048
+    assert response.json["l1_keepalives"] == True
 
 
 def test_iou_nio_create_udp(server, vm):

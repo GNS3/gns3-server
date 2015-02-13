@@ -65,6 +65,10 @@ IOU_CREATE_SCHEMA = {
         "nvram": {
             "description": "Allocated NVRAM KB",
             "type": ["integer", "null"]
+        },
+        "l1_keepalives": {
+            "description": "Always up ethernet interface",
+            "type": ["boolean", "null"]
         }
     },
     "additionalProperties": False,
@@ -114,6 +118,10 @@ IOU_UPDATE_SCHEMA = {
         "nvram": {
             "description": "Allocated NVRAM KB",
             "type": ["integer", "null"]
+        },
+        "l1_keepalives": {
+            "description": "Always up ethernet interface",
+            "type": ["boolean", "null"]
         }
     },
     "additionalProperties": False,
@@ -168,10 +176,14 @@ IOU_OBJECT_SCHEMA = {
         "nvram": {
             "description": "Allocated NVRAM KB",
             "type": "integer"
+        },
+        "l1_keepalives": {
+            "description": "Always up ethernet interface",
+            "type": "boolean"
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters", "ram", "nvram"]
+    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters", "ram", "nvram", "l1_keepalives"]
 }
 
 IOU_NIO_SCHEMA = {

@@ -61,6 +61,7 @@ class IOUVM(BaseVM):
     :params serial_adapters: Number of serial adapters
     :params ram: Ram MB
     :params nvram: Nvram KB
+    :params l1_keepalives: Always up ethernet interface
     """
 
     def __init__(self, name, vm_id, project, manager,
@@ -69,7 +70,8 @@ class IOUVM(BaseVM):
                  ram=None,
                  nvram=None,
                  ethernet_adapters=None,
-                 serial_adapters=None):
+                 serial_adapters=None,
+                 l1_keepalives=None):
 
         super().__init__(name, vm_id, project, manager)
 
@@ -93,7 +95,7 @@ class IOUVM(BaseVM):
         self._nvram = 128 if nvram is None else nvram  # Kilobytes
         self._initial_config = ""
         self._ram = 256 if ram is None else ram  # Megabytes
-        self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
+        self._l1_keepalives = False if l1_keepalives is None else l1_keepalives  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
         if self._console is not None:
             self._console = self._manager.port_manager.reserve_console_port(self._console)
@@ -208,7 +210,8 @@ class IOUVM(BaseVM):
                 "ethernet_adapters": len(self._ethernet_adapters),
                 "serial_adapters": len(self._serial_adapters),
                 "ram": self._ram,
-                "nvram": self._nvram
+                "nvram": self._nvram,
+                "l1_keepalives": self._l1_keepalives
                 }
 
     @property
@@ -759,3 +762,42 @@ class IOUVM(BaseVM):
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
 
         return nio
+
+    @property
+    def l1_keepalives(self):
+        """
+        Returns either layer 1 keepalive messages option is enabled or disabled.
+        :returns: boolean
+        """
+
+        return self._l1_keepalives
+
+    @l1_keepalives.setter
+    def l1_keepalives(self, state):
+        """
+        Enables or disables layer 1 keepalive messages.
+        :param state: boolean
+        """
+
+        self._l1_keepalives = state
+        if state:
+            log.info("IOU {name} [id={id}]: has activated layer 1 keepalive messages".format(name=self._name, id=self._id))
+        else:
+            log.info("IOU {name} [id={id}]: has deactivated layer 1 keepalive messages".format(name=self._name, id=self._id))
+
+    def _enable_l1_keepalives(self, command):
+        """
+        Enables L1 keepalive messages if supported.
+        :param command: command line
+        """
+
+        env = os.environ.copy()
+        env["IOURC"] = self._iourc
+        try:
+            output = subprocess.check_output([self._path, "-h"], stderr=subprocess.STDOUT, cwd=self._working_dir, env=env)
+            if re.search("-l\s+Enable Layer 1 keepalive messages", output.decode("utf-8")):
+                command.extend(["-l"])
+            else:
+                raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
+        except (OSError, subprocess.SubprocessError) as e:
+            log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))

@@ -55,7 +55,8 @@ class IOUHandler:
                                       serial_adapters=request.json.get("serial_adapters"),
                                       ethernet_adapters=request.json.get("ethernet_adapters"),
                                       ram=request.json.get("ram"),
-                                      nvram=request.json.get("nvram")
+                                      nvram=request.json.get("nvram"),
+                                      l1_keepalives=request.json.get("l1_keepalives")
                                       )
         vm.path = request.json.get("path", vm.path)
         vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
@@ -110,6 +111,7 @@ class IOUHandler:
         vm.serial_adapters = request.json.get("serial_adapters", vm.serial_adapters)
         vm.ram = request.json.get("ram", vm.ram)
         vm.nvram = request.json.get("nvram", vm.nvram)
+        vm.l1_keepalives = request.json.get("l1_keepalives", vm.l1_keepalives)
 
         response.json(vm)
 
