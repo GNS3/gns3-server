@@ -39,13 +39,12 @@ class NIOGenericEthernet(NIO):
 
     def __init__(self, hypervisor, ethernet_device):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOGenericEthernet._instance_count
+        # create an unique ID and name
+        nio_id = NIOGenericEthernet._instance_count
         NIOGenericEthernet._instance_count += 1
-        self._name = 'nio_gen_eth' + str(self._id)
+        name = 'nio_gen_eth' + str(nio_id)
         self._ethernet_device = ethernet_device
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -73,3 +72,8 @@ class NIOGenericEthernet(NIO):
         """
 
         return self._ethernet_device
+
+    def __json__(self):
+
+        return {"type": "nio_generic_ethernet",
+                "ethernet_device": self._ethernet_device}

@@ -252,12 +252,12 @@ class VirtualBoxHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/ports/{port_id:\d+}/nio",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
-            "adapter_id": "Adapter where the nio should be added",
-            "port_id": "Port in the adapter (always 0 for virtualbox)"
+            "adapter_number": "Adapter where the nio should be added",
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             201: "NIO created",
@@ -272,18 +272,18 @@ class VirtualBoxHandler:
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         nio = vbox_manager.create_nio(vbox_manager.vboxmanage_path, request.json)
-        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_id"]), nio)
+        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/ports/{port_id:\d+}/nio",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
-            "adapter_id": "Adapter from where the nio should be removed",
-            "port_id": "Port in the adapter (always 0 for virtualbox)"
+            "adapter_number": "Adapter from where the nio should be removed",
+            "port_number": "Port on the adapter (always)"
         },
         status_codes={
             204: "NIO deleted",
@@ -295,15 +295,16 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_id"]))
+        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/start_capture",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
-            "adapter_id": "Adapter to start a packet capture"
+            "adapter_number": "Adapter to start a packet capture",
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             200: "Capture started",
@@ -316,17 +317,18 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        adapter_id = int(request.match_info["adapter_id"])
+        adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        vm.start_capture(adapter_id, pcap_file_path)
+        vm.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/stop_capture",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
-            "adapter_id": "Adapter to stop a packet capture"
+            "adapter_number": "Adapter to stop a packet capture",
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             204: "Capture stopped",
@@ -338,5 +340,5 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        vm.stop_capture(int(request.match_info["adapter_id"]))
+        vm.stop_capture(int(request.match_info["adapter_number"]))
         response.set_status(204)

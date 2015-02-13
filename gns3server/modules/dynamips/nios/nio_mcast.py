@@ -40,15 +40,14 @@ class NIOMcast(NIO):
 
     def __init__(self, hypervisor, group, port):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOMcast._instance_count
+        # create an unique ID and name
+        nio_id = NIOMcast._instance_count
         NIOMcast._instance_count += 1
-        self._name = 'nio_mcast' + str(self._id)
+        name = 'nio_mcast' + str(nio_id)
         self._group = group
         self._port = port
         self._ttl = 1  # default TTL
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -109,3 +108,9 @@ class NIOMcast(NIO):
         yield from self._hypervisor.send("nio set_mcast_ttl {name} {ttl}".format(name=self._name,
                                                                                  ttl=ttl))
         self._ttl = ttl
+
+    def __json__(self):
+
+        return {"type": "nio_mcast",
+                "mgroup": self._mgroup,
+                "mport": self._mport}

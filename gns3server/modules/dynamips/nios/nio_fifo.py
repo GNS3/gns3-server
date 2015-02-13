@@ -38,12 +38,11 @@ class NIOFIFO(NIO):
 
     def __init__(self, hypervisor):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOFIFO._instance_count
+        # create an unique ID and name
+        nio_id = NIOFIFO._instance_count
         NIOFIFO._instance_count += 1
-        self._name = 'nio_fifo' + str(self._id)
+        name = 'nio_fifo' + str(nio_id)
+        NIO.__init__(name, self, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -71,3 +70,7 @@ class NIOFIFO(NIO):
                                                                                      nio=nio))
 
         log.info("NIO FIFO {name} crossconnected with {nio_name}.".format(name=self._name, nio_name=nio.name))
+
+    def __json__(self):
+
+        return {"type": "nio_fifo"}

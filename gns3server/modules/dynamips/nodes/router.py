@@ -145,16 +145,16 @@ class Router(BaseVM):
                        "system_id": self._system_id}
 
         # FIXME: add default slots/wics
-        # slot_id = 0
+        # slot_number = 0
         # for slot in self._slots:
         #    if slot:
         #        slot = str(slot)
-        #    router_defaults["slot" + str(slot_id)] = slot
-        #    slot_id += 1
+        #    router_defaults["slot" + str(slot_number)] = slot
+        #    slot_number += 1
 
         # if self._slots[0] and self._slots[0].wics:
-        #    for wic_slot_id in range(0, len(self._slots[0].wics)):
-        #        router_defaults["wic" + str(wic_slot_id)] = None
+        #    for wic_slot_number in range(0, len(self._slots[0].wics)):
+        #        router_defaults["wic" + str(wic_slot_number)] = None
 
         return router_info
 
@@ -991,23 +991,23 @@ class Router(BaseVM):
         return slot_bindings
 
     @asyncio.coroutine
-    def slot_add_binding(self, slot_id, adapter):
+    def slot_add_binding(self, slot_number, adapter):
         """
         Adds a slot binding (a module into a slot).
 
-        :param slot_id: slot ID
+        :param slot_number: slot number
         :param adapter: device to add in the corresponding slot
         """
 
         try:
-            slot = self._slots[slot_id]
+            slot = self._slots[slot_number]
         except IndexError:
-            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name, slot_number=slot_number))
 
         if slot is not None:
             current_adapter = slot
-            raise DynamipsError('Slot {slot_id} is already occupied by adapter {adapter} on router "{name}"'.format(name=self._name,
-                                                                                                                    slot_id=slot_id,
+            raise DynamipsError('Slot {slot_number} is already occupied by adapter {adapter} on router "{name}"'.format(name=self._name,
+                                                                                                                    slot_number=slot_number,
                                                                                                                     adapter=current_adapter))
 
         is_running = yield from self.is_running()
@@ -1019,42 +1019,44 @@ class Router(BaseVM):
             raise DynamipsError('Adapter {adapter} cannot be added while router "{name}" is running'.format(adapter=adapter,
                                                                                                             name=self._name))
 
-        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_id} 0 {adapter}'.format(name=self._name,
-                                                                                                     slot_id=slot_id,
-                                                                                                     adapter=adapter))
+        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} 0 {adapter}'.format(name=self._name,
+                                                                                                         slot_number=slot_number,
+                                                                                                         adapter=adapter))
 
-        log.info('Router "{name}" [{id}]: adapter {adapter} inserted into slot {slot_id}'.format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 adapter=adapter,
-                                                                                                 slot_id=slot_id))
+        log.info('Router "{name}" [{id}]: adapter {adapter} inserted into slot {slot_number}'.format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     adapter=adapter,
+                                                                                                     slot_number=slot_number))
 
-        self._slots[slot_id] = adapter
+        self._slots[slot_number] = adapter
 
         # Generate an OIR event if the router is running
         if is_running:
 
-            yield from self._hypervisor.send('vm slot_oir_start "{name}" {slot_id} 0'.format(name=self._name, slot_id=slot_id))
+            yield from self._hypervisor.send('vm slot_oir_start "{name}" {slot_number} 0'.format(name=self._name,
+                                                                                                 slot_number=slot_number))
 
-            log.info('Router "{name}" [{id}]: OIR start event sent to slot {slot_id}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             slot_id=slot_id))
+            log.info('Router "{name}" [{id}]: OIR start event sent to slot {slot_number}'.format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 slot_number=slot_number))
 
     @asyncio.coroutine
-    def slot_remove_binding(self, slot_id):
+    def slot_remove_binding(self, slot_number):
         """
         Removes a slot binding (a module from a slot).
 
-        :param slot_id: slot ID
+        :param slot_number: slot number
         """
 
         try:
-            adapter = self._slots[slot_id]
+            adapter = self._slots[slot_number]
         except IndexError:
-            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
+                                                                                              slot_number=slot_number))
 
         if adapter is None:
-            raise DynamipsError('No adapter in slot {slot_id} on router "{name}"'.format(name=self._name,
-                                                                                         slot_id=slot_id))
+            raise DynamipsError('No adapter in slot {slot_number} on router "{name}"'.format(name=self._name,
+                                                                                             slot_number=slot_number))
 
         is_running = yield from self.is_running()
 
@@ -1068,239 +1070,245 @@ class Router(BaseVM):
         # Generate an OIR event if the router is running
         if is_running:
 
-            yield from self._hypervisor.send('vm slot_oir_stop "{name}" {slot_id} 0'.format(name=self._name, slot_id=slot_id))
+            yield from self._hypervisor.send('vm slot_oir_stop "{name}" {slot_number} 0'.format(name=self._name,
+                                                                                                slot_number=slot_number))
 
-            log.info('Router "{name}" [{id}]: OIR stop event sent to slot {slot_id}'.format(name=self._name,
+            log.info('Router "{name}" [{id}]: OIR stop event sent to slot {slot_number}'.format(name=self._name,
                                                                                             id=self._id,
-                                                                                            slot_id=slot_id))
+                                                                                            slot_number=slot_number))
 
-        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_id} 0'.format(name=self._name, slot_id=slot_id))
+        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} 0'.format(name=self._name,
+                                                                                                  slot_number=slot_number))
 
-        log.info('Router "{name}" [{id}]: adapter {adapter} removed from slot {slot_id}'.format(name=self._name,
+        log.info('Router "{name}" [{id}]: adapter {adapter} removed from slot {slot_number}'.format(name=self._name,
                                                                                                 id=self._id,
                                                                                                 adapter=adapter,
-                                                                                                slot_id=slot_id))
-        self._slots[slot_id] = None
+                                                                                                slot_number=slot_number))
+        self._slots[slot_number] = None
 
     @asyncio.coroutine
-    def install_wic(self, wic_slot_id, wic):
+    def install_wic(self, wic_slot_number, wic):
         """
         Installs a WIC adapter into this router.
 
-        :param wic_slot_id: WIC slot ID
+        :param wic_slot_number: WIC slot number
         :param wic: WIC to be installed
         """
 
         # WICs are always installed on adapters in slot 0
-        slot_id = 0
+        slot_number = 0
 
         # Do not check if slot has an adapter because adapters with WICs interfaces
         # must be inserted by default in the router and cannot be removed.
-        adapter = self._slots[slot_id]
+        adapter = self._slots[slot_number]
 
-        if wic_slot_id > len(adapter.wics) - 1:
-            raise DynamipsError("WIC slot {wic_slot_id} doesn't exist".format(wic_slot_id=wic_slot_id))
+        if wic_slot_number > len(adapter.wics) - 1:
+            raise DynamipsError("WIC slot {wic_slot_number} doesn't exist".format(wic_slot_number=wic_slot_number))
 
-        if not adapter.wic_slot_available(wic_slot_id):
-            raise DynamipsError("WIC slot {wic_slot_id} is already occupied by another WIC".format(wic_slot_id=wic_slot_id))
+        if not adapter.wic_slot_available(wic_slot_number):
+            raise DynamipsError("WIC slot {wic_slot_number} is already occupied by another WIC".format(wic_slot_number=wic_slot_number))
 
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
-        internal_wic_slot_id = 16 * (wic_slot_id + 1)
-        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_id} {wic_slot_id} {wic}'.format(name=self._name,
-                                                                                                             slot_id=slot_id,
-                                                                                                             wic_slot_id=internal_wic_slot_id,
+        internal_wic_slot_number = 16 * (wic_slot_number + 1)
+        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} {wic_slot_number} {wic}'.format(name=self._name,
+                                                                                                             slot_number=slot_number,
+                                                                                                             wic_slot_number=internal_wic_slot_number,
                                                                                                              wic=wic))
 
-        log.info('Router "{name}" [{id}]: {wic} inserted into WIC slot {wic_slot_id}'.format(name=self._name,
+        log.info('Router "{name}" [{id}]: {wic} inserted into WIC slot {wic_slot_number}'.format(name=self._name,
                                                                                              id=self._id,
                                                                                              wic=wic,
-                                                                                             wic_slot_id=wic_slot_id))
+                                                                                             wic_slot_number=wic_slot_number))
 
-        adapter.install_wic(wic_slot_id, wic)
+        adapter.install_wic(wic_slot_number, wic)
 
     @asyncio.coroutine
-    def uninstall_wic(self, wic_slot_id):
+    def uninstall_wic(self, wic_slot_number):
         """
         Uninstalls a WIC adapter from this router.
 
-        :param wic_slot_id: WIC slot ID
+        :param wic_slot_number: WIC slot number
         """
 
         # WICs are always installed on adapters in slot 0
-        slot_id = 0
+        slot_number = 0
 
         # Do not check if slot has an adapter because adapters with WICs interfaces
         # must be inserted by default in the router and cannot be removed.
-        adapter = self._slots[slot_id]
+        adapter = self._slots[slot_number]
 
-        if wic_slot_id > len(adapter.wics) - 1:
-            raise DynamipsError("WIC slot {wic_slot_id} doesn't exist".format(wic_slot_id=wic_slot_id))
+        if wic_slot_number > len(adapter.wics) - 1:
+            raise DynamipsError("WIC slot {wic_slot_number} doesn't exist".format(wic_slot_number=wic_slot_number))
 
-        if adapter.wic_slot_available(wic_slot_id):
-            raise DynamipsError("No WIC is installed in WIC slot {wic_slot_id}".format(wic_slot_id=wic_slot_id))
+        if adapter.wic_slot_available(wic_slot_number):
+            raise DynamipsError("No WIC is installed in WIC slot {wic_slot_number}".format(wic_slot_number=wic_slot_number))
 
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
-        internal_wic_slot_id = 16 * (wic_slot_id + 1)
-        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_id} {wic_slot_id}'.format(name=self._name,
-                                                                                                          slot_id=slot_id,
-                                                                                                          wic_slot_id=internal_wic_slot_id))
+        internal_wic_slot_number = 16 * (wic_slot_number + 1)
+        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} {wic_slot_number}'.format(name=self._name,
+                                                                                                                  slot_number=slot_number,
+                                                                                                                  wic_slot_number=internal_wic_slot_number))
 
-        log.info('Router "{name}" [{id}]: {wic} removed from WIC slot {wic_slot_id}'.format(name=self._name,
-                                                                                            id=self._id,
-                                                                                            wic=adapter.wics[wic_slot_id],
-                                                                                            wic_slot_id=wic_slot_id))
-        adapter.uninstall_wic(wic_slot_id)
+        log.info('Router "{name}" [{id}]: {wic} removed from WIC slot {wic_slot_number}'.format(name=self._name,
+                                                                                                id=self._id,
+                                                                                                wic=adapter.wics[wic_slot_number],
+                                                                                                wic_slot_number=wic_slot_number))
+        adapter.uninstall_wic(wic_slot_number)
 
     @asyncio.coroutine
-    def get_slot_nio_bindings(self, slot_id):
+    def get_slot_nio_bindings(self, slot_number):
         """
         Returns slot NIO bindings.
 
-        :param slot_id: slot ID
+        :param slot_number: slot number
 
         :returns: list of NIO bindings
         """
 
-        nio_bindings = yield from self._hypervisor.send('vm slot_nio_bindings "{name}" {slot_id}'.format(name=self._name,
-                                                                                                         slot_id=slot_id))
+        nio_bindings = yield from self._hypervisor.send('vm slot_nio_bindings "{name}" {slot_number}'.format(name=self._name,
+                                                                                                             slot_number=slot_number))
         return nio_bindings
 
     @asyncio.coroutine
-    def slot_add_nio_binding(self, slot_id, port_id, nio):
+    def slot_add_nio_binding(self, slot_number, port_number, nio):
         """
         Adds a slot NIO binding.
 
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param slot_number: slot number
+        :param port_number: port number
         :param nio: NIO instance to add to the slot/port
         """
 
         try:
-            adapter = self._slots[slot_id]
+            adapter = self._slots[slot_number]
         except IndexError:
-            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name,
-                                                                                          slot_id=slot_id))
-        if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter,
-                                                                                            port_id=port_id))
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
+                                                                                              slot_number=slot_number))
+        if not adapter.port_exists(port_number):
+            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                                port_number=port_number))
 
-        yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_id} {port_id} {nio}'.format(name=self._name,
-                                                                                                             slot_id=slot_id,
-                                                                                                             port_id=port_id,
-                                                                                                             nio=nio))
+        yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
+                                                                                                                     slot_number=slot_number,
+                                                                                                                     port_number=port_number,
+                                                                                                                     nio=nio))
 
-        log.info('Router "{name}" [{id}]: NIO {nio_name} bound to port {slot_id}/{port_id}'.format(name=self._name,
-                                                                                                   id=self._id,
-                                                                                                   nio_name=nio.name,
-                                                                                                   slot_id=slot_id,
-                                                                                                   port_id=port_id))
+        log.info('Router "{name}" [{id}]: NIO {nio_name} bound to port {slot_number}/{port_number}'.format(name=self._name,
+                                                                                                           id=self._id,
+                                                                                                           nio_name=nio.name,
+                                                                                                           slot_number=slot_number,
+                                                                                                           port_number=port_number))
 
-        yield from self.slot_enable_nio(slot_id, port_id)
-        adapter.add_nio(port_id, nio)
+        yield from self.slot_enable_nio(slot_number, port_number)
+        adapter.add_nio(port_number, nio)
 
     @asyncio.coroutine
-    def slot_remove_nio_binding(self, slot_id, port_id):
+    def slot_remove_nio_binding(self, slot_number, port_number):
         """
         Removes a slot NIO binding.
 
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param slot_number: slot number
+        :param port_number: port number
 
         :returns: removed NIO instance
         """
 
         try:
-            adapter = self._slots[slot_id]
+            adapter = self._slots[slot_number]
         except IndexError:
-            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
-        if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
+                                                                                              slot_number=slot_number))
+        if not adapter.port_exists(port_number):
+            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                                port_number=port_number))
 
-        yield from self.slot_disable_nio(slot_id, port_id)
-        yield from self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_id} {port_id}'.format(name=self._name,
-                                                                                                          slot_id=slot_id,
-                                                                                                          port_id=port_id))
+        yield from self.slot_disable_nio(slot_number, port_number)
+        yield from self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(name=self._name,
+                                                                                                                  slot_number=slot_number,
+                                                                                                                  port_number=port_number))
 
-        nio = adapter.get_nio(port_id)
-        adapter.remove_nio(port_id)
+        nio = adapter.get_nio(port_number)
+        adapter.remove_nio(port_number)
 
-        log.info('Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_id}/{port_id}'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       nio_name=nio.name,
-                                                                                                       slot_id=slot_id,
-                                                                                                       port_id=port_id))
+        log.info('Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_number}/{port_number}'.format(name=self._name,
+                                                                                                               id=self._id,
+                                                                                                               nio_name=nio.name,
+                                                                                                               slot_number=slot_number,
+                                                                                                               port_number=port_number))
 
         return nio
 
     @asyncio.coroutine
-    def slot_enable_nio(self, slot_id, port_id):
+    def slot_enable_nio(self, slot_number, port_number):
         """
         Enables a slot NIO binding.
 
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param slot_number: slot number
+        :param port_number: port number
         """
 
         is_running = yield from self.is_running()
         if is_running:  # running router
-            yield from self._hypervisor.send('vm slot_enable_nio "{name}" {slot_id} {port_id}'.format(name=self._name,
-                                                                                                      slot_id=slot_id,
-                                                                                                      port_id=port_id))
+            yield from self._hypervisor.send('vm slot_enable_nio "{name}" {slot_number} {port_number}'.format(name=self._name,
+                                                                                                              slot_number=slot_number,
+                                                                                                              port_number=port_number))
 
-            log.info('Router "{name}" [{id}]: NIO enabled on port {slot_id}/{port_id}'.format(name=self._name,
-                                                                                              id=self._id,
-                                                                                              slot_id=slot_id,
-                                                                                              port_id=port_id))
+            log.info('Router "{name}" [{id}]: NIO enabled on port {slot_number}/{port_number}'.format(name=self._name,
+                                                                                                      id=self._id,
+                                                                                                      slot_number=slot_number,
+                                                                                                      port_number=port_number))
 
     @asyncio.coroutine
-    def slot_disable_nio(self, slot_id, port_id):
+    def slot_disable_nio(self, slot_number, port_number):
         """
         Disables a slot NIO binding.
 
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param slot_number: slot number
+        :param port_number: port number
         """
 
         is_running = yield from self.is_running()
         if is_running:  # running router
-            yield from self._hypervisor.send('vm slot_disable_nio "{name}" {slot_id} {port_id}'.format(name=self._name,
-                                                                                                       slot_id=slot_id,
-                                                                                                       port_id=port_id))
+            yield from self._hypervisor.send('vm slot_disable_nio "{name}" {slot_number} {port_number}'.format(name=self._name,
+                                                                                                               slot_number=slot_number,
+                                                                                                               port_number=port_number))
 
-            log.info('Router "{name}" [{id}]: NIO disabled on port {slot_id}/{port_id}'.format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               slot_id=slot_id,
-                                                                                               port_id=port_id))
+            log.info('Router "{name}" [{id}]: NIO disabled on port {slot_number}/{port_number}'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       slot_number=slot_number,
+                                                                                                       port_number=port_number))
 
     @asyncio.coroutine
-    def start_capture(self, slot_id, port_id, output_file, data_link_type="DLT_EN10MB"):
+    def start_capture(self, slot_number, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
 
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param slot_number: slot number
+        :param port_number: port number
         :param output_file: PCAP destination file for the capture
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
         try:
-            adapter = self._slots[slot_id]
+            adapter = self._slots[slot_number]
         except IndexError:
-            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
-        if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
+                                                                                              slot_number=slot_number))
+        if not adapter.port_exists(port_number):
+            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                                port_number=port_number))
 
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
             data_link_type = data_link_type[4:]
 
-        nio = adapter.get_nio(port_id)
+        nio = adapter.get_nio(port_number)
 
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
-            raise DynamipsError("Port {port_id} has already a filter applied on {adapter}".format(adapter=adapter,
-                                                                                                  port_id=port_id))
+            raise DynamipsError("Port {port_number} has already a filter applied on {adapter}".format(adapter=adapter,
+                                                                                                      port_number=port_number))
 
         # FIXME: capture
         # try:
@@ -1311,36 +1319,38 @@ class Router(BaseVM):
         yield from nio.bind_filter("both", "capture")
         yield from nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
 
-        log.info('Router "{name}" [{id}]: starting packet capture on port {slot_id}/{port_id}'.format(name=self._name,
-                                                                                                      id=self._id,
-                                                                                                      nio_name=nio.name,
-                                                                                                      slot_id=slot_id,
-                                                                                                      port_id=port_id))
+        log.info('Router "{name}" [{id}]: starting packet capture on port {slot_number}/{port_number}'.format(name=self._name,
+                                                                                                              id=self._id,
+                                                                                                              nio_name=nio.name,
+                                                                                                              slot_number=slot_number,
+                                                                                                              port_number=port_number))
 
     @asyncio.coroutine
-    def stop_capture(self, slot_id, port_id):
+    def stop_capture(self, slot_number, port_number):
         """
         Stops a packet capture.
 
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param slot_number: slot number
+        :param port_number: port number
         """
 
         try:
-            adapter = self._slots[slot_id]
+            adapter = self._slots[slot_number]
         except IndexError:
-            raise DynamipsError('Slot {slot_id} does not exist on router "{name}"'.format(name=self._name, slot_id=slot_id))
-        if not adapter.port_exists(port_id):
-            raise DynamipsError("Port {port_id} does not exist in adapter {adapter}".format(adapter=adapter, port_id=port_id))
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
+                                                                                              slot_number=slot_number))
+        if not adapter.port_exists(port_number):
+            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                                port_number=port_number))
 
-        nio = adapter.get_nio(port_id)
+        nio = adapter.get_nio(port_number)
         yield from nio.unbind_filter("both")
 
-        log.info('Router "{name}" [{id}]: stopping packet capture on port {slot_id}/{port_id}'.format(name=self._name,
-                                                                                                      id=self._id,
-                                                                                                      nio_name=nio.name,
-                                                                                                      slot_id=slot_id,
-                                                                                                      port_id=port_id))
+        log.info('Router "{name}" [{id}]: stopping packet capture on port {slot_number}/{port_number}'.format(name=self._name,
+                                                                                                              id=self._id,
+                                                                                                              nio_name=nio.name,
+                                                                                                              slot_number=slot_number,
+                                                                                                              port_number=port_number))
 
     def _create_slots(self, numslots):
         """

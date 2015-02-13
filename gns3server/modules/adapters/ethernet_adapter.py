@@ -21,7 +21,7 @@ from .adapter import Adapter
 class EthernetAdapter(Adapter):
 
     """
-    VPCS Ethernet adapter.
+    Ethernet adapter.
     """
 
     def __init__(self, interfaces=1):

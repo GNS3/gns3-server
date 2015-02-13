@@ -39,13 +39,12 @@ class NIOTAP(NIO):
 
     def __init__(self, hypervisor, tap_device):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOTAP._instance_count
+        # create an unique ID and name
+        nio_id = NIOTAP._instance_count
         NIOTAP._instance_count += 1
-        self._name = 'nio_tap' + str(self._id)
+        name = 'nio_tap' + str(nio_id)
         self._tap_device = tap_device
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -70,3 +69,8 @@ class NIOTAP(NIO):
         """
 
         return self._tap_device
+
+    def __json__(self):
+
+        return {"type": "nio_tap",
+                "tap_device": self._tap_device}

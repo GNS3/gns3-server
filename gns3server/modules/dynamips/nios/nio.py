@@ -38,7 +38,7 @@ class NIO:
     def __init__(self, name, hypervisor):
 
         self._hypervisor = hypervisor
-        self._name = None
+        self._name = name
         self._bandwidth = None  # no bandwidth constraint by default
         self._input_filter = None  # no input filter applied by default
         self._output_filter = None  # no output filter applied by default

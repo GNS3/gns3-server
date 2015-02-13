@@ -38,12 +38,11 @@ class NIONull(NIO):
 
     def __init__(self, hypervisor):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIONull._instance_count
+        # create an unique ID and name
+        nio_id = NIONull._instance_count
         NIONull._instance_count += 1
-        self._name = 'nio_null' + str(self._id)
+        name = 'nio_null' + str(nio_id)
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -58,3 +57,7 @@ class NIONull(NIO):
 
         yield from self._hypervisor.send("nio create_null {}".format(self._name))
         log.info("NIO NULL {name} created.".format(name=self._name))
+
+    def __json__(self):
+
+        return {"type": "nio_null"}

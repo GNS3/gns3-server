@@ -20,6 +20,7 @@ import asyncio
 from ..web.route import Route
 from ..schemas.dynamips import VM_CREATE_SCHEMA
 from ..schemas.dynamips import VM_UPDATE_SCHEMA
+from ..schemas.dynamips import VM_NIO_SCHEMA
 from ..schemas.dynamips import VM_OBJECT_SCHEMA
 from ..modules.dynamips import Dynamips
 from ..modules.project_manager import ProjectManager
@@ -237,4 +238,55 @@ class DynamipsHandler:
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.reload()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/dynamips/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "adapter_number": "Adapter where the nio should be added",
+            "port_number": "Port on the adapter"
+        },
+        status_codes={
+            201: "NIO created",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Add a NIO to a Dynamips VM instance",
+        input=VM_NIO_SCHEMA,
+        output=VM_NIO_SCHEMA)
+    def create_nio(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        nio = yield from dynamips_manager.create_nio(vm, request.json)
+        slot_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        yield from vm.slot_add_nio_binding(slot_number, port_number, nio)
+        response.set_status(201)
+        response.json(nio)
+
+    @classmethod
+    @Route.delete(
+        r"/projects/{project_id}/dynamips/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "adapter_number": "Adapter from where the nio should be removed",
+            "port_number": "Port on the adapter"
+        },
+        status_codes={
+            204: "NIO deleted",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Remove a NIO from a Dynamips VM instance")
+    def delete_nio(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        slot_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        yield from vm.slot_remove_nio_binding(slot_number, port_number)
         response.set_status(204)

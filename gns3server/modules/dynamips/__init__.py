@@ -170,35 +170,7 @@ class Dynamips(BaseManager):
 
         return hypervisor
 
-    def create_nio(self, executable, nio_settings):
-        """
-        Creates a new NIO.
-
-        :param nio_settings: information to create the NIO
-
-        :returns: a NIO object
-        """
-
-        nio = None
-        if nio_settings["type"] == "nio_udp":
-            lport = nio_settings["lport"]
-            rhost = nio_settings["rhost"]
-            rport = nio_settings["rport"]
-            try:
-                # TODO: handle IPv6
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                    sock.connect((rhost, rport))
-            except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
-            nio = NIOUDP(lport, rhost, rport)
-        elif nio_settings["type"] == "nio_tap":
-            tap_device = nio_settings["tap_device"]
-            if not self._has_privileged_access(executable):
-                raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
-            nio = NIOTAP(tap_device)
-        assert nio is not None
-        return nio
-
+    @asyncio.coroutine
     def create_nio(self, node, nio_settings):
         """
         Creates a new NIO.
@@ -221,12 +193,12 @@ class Dynamips(BaseManager):
             except OSError as e:
                 raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             # check if we have an allocated NIO UDP auto
-            nio = node.hypervisor.get_nio_udp_auto(lport)
-            if not nio:
-                # otherwise create an NIO UDP
-                nio = NIOUDP(node.hypervisor, lport, rhost, rport)
-            else:
-                nio.connect(rhost, rport)
+            #nio = node.hypervisor.get_nio_udp_auto(lport)
+            #if not nio:
+            # otherwise create an NIO UDP
+            nio = NIOUDP(node.hypervisor, lport, rhost, rport)
+            #else:
+            #    nio.connect(rhost, rport)
         elif nio_settings["type"] == "nio_generic_ethernet":
             ethernet_device = nio_settings["ethernet_device"]
             if sys.platform.startswith("win"):
@@ -259,6 +231,8 @@ class Dynamips(BaseManager):
             nio = NIOVDE(node.hypervisor, control_file, local_file)
         elif nio_settings["type"] == "nio_null":
             nio = NIONull(node.hypervisor)
+
+        yield from nio.create()
         return nio
 
 #     def set_ghost_ios(self, router):

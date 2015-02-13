@@ -41,15 +41,14 @@ class NIOUDP(NIO):
 
     def __init__(self, hypervisor, lport, rhost, rport):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOUDP._instance_count
+        # create an unique ID and name
+        nio_id = NIOUDP._instance_count
         NIOUDP._instance_count += 1
-        self._name = 'nio_udp' + str(self._id)
+        name = 'nio_udp' + str(nio_id)
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -101,3 +100,10 @@ class NIOUDP(NIO):
         """
 
         return self._rport
+
+    def __json__(self):
+
+        return {"type": "nio_udp",
+                "lport": self._lport,
+                "rport": self._rport,
+                "rhost": self._rhost}

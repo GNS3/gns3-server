@@ -41,17 +41,15 @@ class NIOUDPAuto(NIO):
 
     def __init__(self, hypervisor, laddr, lport_start, lport_end):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOUDPAuto._instance_count
+        # create an unique ID and name
+        nio_id = NIOUDPAuto._instance_count
         NIOUDPAuto._instance_count += 1
-        self._name = 'nio_udp_auto' + str(self._id)
-
+        name = 'nio_udp_auto' + str(nio_id)
         self._laddr = laddr
         self._lport = None
         self._raddr = None
         self._rport = None
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -133,3 +131,10 @@ class NIOUDPAuto(NIO):
         log.info("NIO UDP AUTO {name} connected to {raddr}:{rport}".format(name=self._name,
                                                                            raddr=raddr,
                                                                            rport=rport))
+
+    def __json__(self):
+
+        return {"type": "nio_udp_auto",
+                "lport": self._lport,
+                "rport": self._rport,
+                "raddr": self._raddr}

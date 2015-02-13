@@ -19,6 +19,7 @@
 Interface for VDE (Virtual Distributed Ethernet) NIOs (Unix based OSes only).
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
@@ -39,22 +40,13 @@ class NIOVDE(NIO):
 
     def __init__(self, hypervisor, control_file, local_file):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOVDE._instance_count
+        # create an unique ID and name
+        nio_id = NIOVDE._instance_count
         NIOVDE._instance_count += 1
-        self._name = 'nio_vde' + str(self._id)
+        name = 'nio_vde' + str(nio_id)
         self._control_file = control_file
         self._local_file = local_file
-
-        self._hypervisor.send("nio create_vde {name} {control} {local}".format(name=self._name,
-                                                                               control=control_file,
-                                                                               local=local_file))
-
-        log.info("NIO VDE {name} created with control={control}, local={local}".format(name=self._name,
-                                                                                       control=control_file,
-                                                                                       local=local_file))
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -63,6 +55,17 @@ class NIOVDE(NIO):
         """
 
         cls._instance_count = 0
+
+    @asyncio.coroutine
+    def create(self):
+
+        self._hypervisor.send("nio create_vde {name} {control} {local}".format(name=self._name,
+                                                                               control=self._control_file,
+                                                                               local=self._local_file))
+
+        log.info("NIO VDE {name} created with control={control}, local={local}".format(name=self._name,
+                                                                                       control=self._control_file,
+                                                                                       local=self._local_file))
 
     @property
     def control_file(self):
@@ -83,3 +86,9 @@ class NIOVDE(NIO):
         """
 
         return self._local_file
+
+    def __json__(self):
+
+        return {"type": "nio_vde",
+                "local_file": self._local_file,
+                "control_file": self._control_file}

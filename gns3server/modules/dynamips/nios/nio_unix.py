@@ -40,14 +40,13 @@ class NIOUNIX(NIO):
 
     def __init__(self, hypervisor, local_file, remote_file):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIOUNIX._instance_count
+        # create an unique ID and name
+        nio_id = NIOUNIX._instance_count
         NIOUNIX._instance_count += 1
-        self._name = 'nio_unix' + str(self._id)
+        name = 'nio_unix' + str(nio_id)
         self._local_file = local_file
         self._remote_file = remote_file
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -87,3 +86,9 @@ class NIOUNIX(NIO):
         """
 
         return self._remote_file
+
+    def __json__(self):
+
+        return {"type": "nio_unix",
+                "local_file": self._local_file,
+                "remote_file": self._remote_file}
