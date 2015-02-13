@@ -74,7 +74,9 @@ class Query:
         asyncio.async(go(future, response))
         self._loop.run_until_complete(future)
         response.body = future.result()
-        response.route = response.headers.get('X-Route', None).replace("/v1", "")
+        x_route = response.headers.get('X-Route', None)
+        if x_route is not None:
+            response.route = x_route.replace("/v1", "")
 
         if response.body is not None:
             try:

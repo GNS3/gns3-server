@@ -178,10 +178,11 @@ class VPCSHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
+            "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port where the nio should be added"
         },
         status_codes={
@@ -203,10 +204,11 @@ class VPCSHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
+            "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port from where the nio should be removed"
         },
         status_codes={

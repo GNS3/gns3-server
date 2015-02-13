@@ -93,7 +93,7 @@ def test_vbox_reload(server, vm):
 def test_vbox_nio_create_udp(server, vm):
 
     with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
-        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"],
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"],
                                                                                                      vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                           "lport": 4242,
                                                                                                                           "rport": 4343,
@@ -105,21 +105,21 @@ def test_vbox_nio_create_udp(server, vm):
         assert args[0] == 0
 
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio"
+    assert response.route == "/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/ports/{port_id:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_vbox_delete_nio(server, vm):
 
     with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
-        response = server.delete("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = server.delete("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
 
         assert mock.called
         args, kwgars = mock.call_args
         assert args[0] == 0
 
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio"
+    assert response.route == "/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/ports/{port_id:\d+}/nio"
 
 
 def test_vbox_update(server, vm, free_console_port):

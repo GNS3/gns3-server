@@ -194,10 +194,11 @@ class IOUHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/iou/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
+            "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port where the nio should be added"
         },
         status_codes={
@@ -213,16 +214,17 @@ class IOUHandler:
         iou_manager = IOU.instance()
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         nio = iou_manager.create_nio(vm.iouyap_path, request.json)
-        vm.slot_add_nio_binding(0, int(request.match_info["port_number"]), nio)
+        vm.slot_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/iou/vms/{vm_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
+            "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port from where the nio should be removed"
         },
         status_codes={
@@ -235,5 +237,5 @@ class IOUHandler:
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        vm.slot_remove_nio_binding(0, int(request.match_info["port_number"]))
+        vm.slot_remove_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]))
         response.set_status(204)

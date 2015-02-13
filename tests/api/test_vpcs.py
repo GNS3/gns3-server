@@ -63,33 +63,33 @@ def test_vpcs_create_port(server, project, free_console_port):
 
 
 def test_vpcs_nio_create_udp(server, vm):
-    response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
+    response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                                           "lport": 4242,
                                                                                                                                           "rport": 4343,
                                                                                                                                           "rhost": "127.0.0.1"},
                            example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_vpcs_nio_create_tap(server, vm):
     with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
-        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
                                                                                                                                               "tap_device": "test"})
         assert response.status == 201
-        assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
+        assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
         assert response.json["type"] == "nio_tap"
 
 
 def test_vpcs_delete_nio(server, vm):
-    server.post("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
+    server.post("/projects/{project_id}/vpcs/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                                "lport": 4242,
                                                                                                                                "rport": 4343,
                                                                                                                                "rhost": "127.0.0.1"})
-    response = server.delete("/projects/{project_id}/vpcs/vms/{vm_id}/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = server.delete("/projects/{project_id}/vpcs/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_vpcs_start(server, vm):

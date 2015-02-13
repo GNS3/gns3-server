@@ -252,11 +252,12 @@ class VirtualBoxHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/ports/{port_id:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
-            "adapter_id": "Adapter where the nio should be added"
+            "adapter_id": "Adapter where the nio should be added",
+            "port_id": "Port in the adapter (always 0 for virtualbox)"
         },
         status_codes={
             201: "NIO created",
@@ -277,11 +278,12 @@ class VirtualBoxHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/nio",
+        r"/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_id:\d+}/ports/{port_id:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
-            "adapter_id": "Adapter from where the nio should be removed"
+            "adapter_id": "Adapter from where the nio should be removed",
+            "port_id": "Port in the adapter (always 0 for virtualbox)"
         },
         status_codes={
             204: "NIO deleted",
