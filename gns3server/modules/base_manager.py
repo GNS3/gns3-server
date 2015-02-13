@@ -34,6 +34,7 @@ from .project_manager import ProjectManager
 
 from .nios.nio_udp import NIO_UDP
 from .nios.nio_tap import NIO_TAP
+from .nios.nio_generic_ethernet import NIO_GenericEthernet
 
 
 class BaseManager:
@@ -280,5 +281,7 @@ class BaseManager:
             if not self._has_privileged_access(executable):
                 raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
             nio = NIO_TAP(tap_device)
+        elif nio_settings["type"] == "nio_generic_ethernet":
+            nio = NIO_GenericEthernet(nio_settings["ethernet_device"])
         assert nio is not None
         return nio
