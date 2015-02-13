@@ -69,6 +69,12 @@ def test_vm(project, manager):
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
+def test_vm_initial_config(project, manager):
+     vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager, initial_config="hostname %h")
+     assert vm.name == "test"
+     assert vm.initial_config == "hostname test"
+     assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"
+
 @patch("gns3server.config.Config.get_section_config", return_value={"iouyap_path": "/bin/test_fake"})
 def test_vm_invalid_iouyap_path(project, manager, loop):
     with pytest.raises(IOUError):
@@ -179,4 +185,48 @@ def test_create_netmap_config(vm):
 
 def test_build_command(vm):
 
-    assert vm._build_command() == [vm.path, '-L', str(vm.application_id)]
+    assert vm._build_command() == [vm.path, "-L", str(vm.application_id)]
+
+
+def test_build_command_initial_config(vm):
+
+    filepath = os.path.join(vm.working_dir, "initial-config.cfg")
+    with open(filepath, "w+") as f:
+        f.write("service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption")
+
+    assert vm._build_command() == [vm.path, "-L", "-c", vm.initial_config_file, str(vm.application_id)]
+
+
+def test_get_initial_config(vm):
+
+    content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    vm.initial_config = content
+    assert vm.initial_config == content
+
+
+def test_update_initial_config(vm):
+    content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    vm.initial_config = content
+    filepath = os.path.join(vm.working_dir, "initial-config.cfg")
+    assert os.path.exists(filepath)
+    with open(filepath) as f:
+        assert f.read() == content
+
+
+def test_update_initial_config_h(vm):
+    content = "hostname %h\n"
+    vm.name = "pc1"
+    vm.initial_config = content
+    with open(vm.initial_config_file) as f:
+        assert f.read() == "hostname pc1\n"
+
+
+def test_change_name(vm, tmpdir):
+    path = os.path.join(vm.working_dir, "initial-config.cfg")
+    vm.name = "world"
+    with open(path, 'w+') as f:
+        f.write("hostname world")
+    vm.name = "hello"
+    assert vm.name == "hello"
+    with open(path) as f:
+        assert f.read() == "hostname hello"

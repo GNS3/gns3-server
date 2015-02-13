@@ -46,6 +46,9 @@ def vm(server, project, base_params):
     return response.json
 
 
+def initial_config_file(project, vm):
+    return os.path.join(project.path, "project-files", "iou", vm["vm_id"], "initial-config.cfg")
+
 def test_iou_create(server, project, base_params):
     response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), base_params)
     assert response.status == 201
@@ -66,6 +69,7 @@ def test_iou_create_with_params(server, project, base_params):
     params["serial_adapters"] = 4
     params["ethernet_adapters"] = 0
     params["l1_keepalives"] = True
+    params["initial_config"] = "hostname test"
 
     response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -77,6 +81,8 @@ def test_iou_create_with_params(server, project, base_params):
     assert response.json["ram"] == 1024
     assert response.json["nvram"] == 512
     assert response.json["l1_keepalives"] == True
+    with open(initial_config_file(project, response.json)) as f:
+        assert f.read() == params["initial_config"]
 
 
 def test_iou_get(server, project, vm):
@@ -120,7 +126,7 @@ def test_iou_delete(server, vm):
         assert response.status == 204
 
 
-def test_iou_update(server, vm, tmpdir, free_console_port):
+def test_iou_update(server, vm, tmpdir, free_console_port, project):
     params = {
         "name": "test",
         "console": free_console_port,
@@ -128,7 +134,8 @@ def test_iou_update(server, vm, tmpdir, free_console_port):
         "nvram": 2048,
         "ethernet_adapters": 4,
         "serial_adapters": 0,
-        "l1_keepalives": True
+        "l1_keepalives": True,
+        "initial_config": "hostname test"
     }
     response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params)
     assert response.status == 200
@@ -139,7 +146,8 @@ def test_iou_update(server, vm, tmpdir, free_console_port):
     assert response.json["ram"] == 512
     assert response.json["nvram"] == 2048
     assert response.json["l1_keepalives"] == True
-
+    with open(initial_config_file(project, response.json)) as f:
+        assert f.read() == "hostname test"
 
 def test_iou_nio_create_udp(server, vm):
     response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",

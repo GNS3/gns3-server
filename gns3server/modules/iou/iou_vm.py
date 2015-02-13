@@ -62,7 +62,8 @@ class IOUVM(BaseVM):
     :params serial_adapters: Number of serial adapters
     :params ram: Ram MB
     :params nvram: Nvram KB
-    :params l1_keepalives: Always up ethernet interface
+    :params l1_keepalives: Always up ethernet interface:
+    :params initial_config: Content of the initial configuration file
     """
 
     def __init__(self, name, vm_id, project, manager,
@@ -72,7 +73,8 @@ class IOUVM(BaseVM):
                  nvram=None,
                  ethernet_adapters=None,
                  serial_adapters=None,
-                 l1_keepalives=None):
+                 l1_keepalives=None,
+                 initial_config=None):
 
         super().__init__(name, vm_id, project, manager)
 
@@ -97,6 +99,9 @@ class IOUVM(BaseVM):
         self._initial_config = ""
         self._ram = 256 if ram is None else ram  # Megabytes
         self._l1_keepalives = False if l1_keepalives is None else l1_keepalives  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
+
+        if initial_config is not None:
+            self.initial_config = initial_config
 
         if self._console is not None:
             self._console = self._manager.port_manager.reserve_console_port(self._console)
@@ -212,7 +217,7 @@ class IOUVM(BaseVM):
                 "serial_adapters": len(self._serial_adapters),
                 "ram": self._ram,
                 "nvram": self._nvram,
-                "l1_keepalives": self._l1_keepalives
+                "l1_keepalives": self._l1_keepalives,
                 }
 
     @property
@@ -302,6 +307,21 @@ class IOUVM(BaseVM):
                                                                                                   old_nvram=self._nvram,
                                                                                                   new_nvram=nvram))
         self._nvram = nvram
+
+    @BaseVM.name.setter
+    def name(self, new_name):
+        """
+        Sets the name of this IOU vm.
+
+        :param new_name: name
+        """
+
+        if self.initial_config_file:
+            content = self.initial_config
+            content = content.replace(self._name, new_name)
+            self.initial_config = content
+
+        super(IOUVM, IOUVM).name.__set__(self, new_name)
 
     @property
     def application_id(self):
@@ -614,8 +634,10 @@ class IOUVM(BaseVM):
             command.extend(["-n", str(self._nvram)])
             command.extend(["-m", str(self._ram)])
         command.extend(["-L"])  # disable local console, use remote console
-        if self._initial_config:
-            command.extend(["-c", self._initial_config])
+
+        initial_config_file = self.initial_config_file
+        if initial_config_file:
+            command.extend(["-c", initial_config_file])
         if self._l1_keepalives:
             self._enable_l1_keepalives(command)
         command.extend([str(self.application_id)])
@@ -813,3 +835,50 @@ class IOUVM(BaseVM):
                 raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
         except (OSError, subprocess.SubprocessError) as e:
             log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
+
+    @property
+    def initial_config(self):
+        """Return the content of the current initial-config file"""
+
+        config_file = self.initial_config_file
+        if config_file is None:
+            return None
+
+        try:
+            with open(config_file) as f:
+                return f.read()
+        except OSError as e:
+            raise VPCSError("Can't read configuration file '{}'".format(config_file))
+
+    @initial_config.setter
+    def initial_config(self, initial_config):
+        """
+        Update the initial config
+
+        :param initial_config: The content of the initial configuration file
+        """
+
+        try:
+            script_file = os.path.join(self.working_dir, "initial-config.cfg")
+            with open(script_file, 'w+') as f:
+                if initial_config is None:
+                    f.write('')
+                else:
+                    initial_config = initial_config.replace("%h", self._name)
+                    f.write(initial_config)
+        except OSError as e:
+            raise VPCSError("Can't write initial configuration file '{}'".format(self.script_file))
+
+    @property
+    def initial_config_file(self):
+        """
+        Returns the initial config file for this IOU instance.
+
+        :returns: path to config file. None if the file doesn't exist
+        """
+
+        path = os.path.join(self.working_dir, 'initial-config.cfg')
+        if os.path.exists(path):
+            return path
+        else:
+            return None
