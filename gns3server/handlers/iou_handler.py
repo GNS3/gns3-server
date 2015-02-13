@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ..web.route import Route
+from ..modules.port_manager import PortManager
 from ..schemas.iou import IOU_CREATE_SCHEMA
 from ..schemas.iou import IOU_UPDATE_SCHEMA
 from ..schemas.iou import IOU_OBJECT_SCHEMA
@@ -50,6 +51,7 @@ class IOUHandler:
                                       request.match_info["project_id"],
                                       request.json.get("vm_id"),
                                       console=request.json.get("console"),
+                                      console_host=PortManager.instance().console_host,
                                       serial_adapters=request.json.get("serial_adapters"),
                                       ethernet_adapters=request.json.get("ethernet_adapters"),
                                       ram=request.json.get("ram"),
