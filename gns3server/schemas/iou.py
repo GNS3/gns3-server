@@ -69,6 +69,10 @@ IOU_CREATE_SCHEMA = {
         "l1_keepalives": {
             "description": "Always up ethernet interface",
             "type": ["boolean", "null"]
+        },
+        "initial_config": {
+            "description": "Initial configuration of the IOU",
+            "type": ["string", "null"]
         }
     },
     "additionalProperties": False,
@@ -122,6 +126,10 @@ IOU_UPDATE_SCHEMA = {
         "l1_keepalives": {
             "description": "Always up ethernet interface",
             "type": ["boolean", "null"]
+        },
+        "initial_config": {
+            "description": "Initial configuration of the IOU",
+            "type": ["string", "null"]
         }
     },
     "additionalProperties": False,
@@ -180,7 +188,7 @@ IOU_OBJECT_SCHEMA = {
         "l1_keepalives": {
             "description": "Always up ethernet interface",
             "type": "boolean"
-        }
+        },
     },
     "additionalProperties": False,
     "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters", "ram", "nvram", "l1_keepalives"]
