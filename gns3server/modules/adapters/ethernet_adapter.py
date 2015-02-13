@@ -29,4 +29,4 @@ class EthernetAdapter(Adapter):
 
     def __str__(self):
 
-        return "VPCS Ethernet adapter"
+        return "Ethernet adapter"

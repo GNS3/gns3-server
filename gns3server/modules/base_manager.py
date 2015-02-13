@@ -32,8 +32,8 @@ from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from .project_manager import ProjectManager
 
-from .nios.nio_udp import NIOUDP
-from .nios.nio_tap import NIOTAP
+from .nios.nio_udp import NIO_UDP
+from .nios.nio_tap import NIO_TAP
 
 
 class BaseManager:
@@ -274,11 +274,11 @@ class BaseManager:
                     sock.connect((rhost, rport))
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
-            nio = NIOUDP(lport, rhost, rport)
+            nio = NIO_UDP(lport, rhost, rport)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
             if not self._has_privileged_access(executable):
                 raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
-            nio = NIOTAP(tap_device)
+            nio = NIO_TAP(tap_device)
         assert nio is not None
         return nio

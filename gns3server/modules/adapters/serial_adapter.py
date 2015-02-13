@@ -18,10 +18,10 @@
 from .adapter import Adapter
 
 
-class EthernetAdapter(Adapter):
+class SerialAdapter(Adapter):
 
     """
-    QEMU Ethernet adapter.
+    VPCS Ethernet adapter.
     """
 
     def __init__(self):
@@ -29,4 +29,4 @@ class EthernetAdapter(Adapter):
 
     def __str__(self):
 
-        return "QEMU Ethernet adapter"
+        return "Serial adapter"

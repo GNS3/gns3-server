@@ -24,18 +24,4 @@ from ..vm_error import VMError
 
 class VPCSError(VMError):
 
-    def __init__(self, message, original_exception=None):
-
-        Exception.__init__(self, message)
-        if isinstance(message, Exception):
-            message = str(message)
-        self._message = message
-        self._original_exception = original_exception
-
-    def __repr__(self):
-
-        return self._message
-
-    def __str__(self):
-
-        return self._message
+    pass

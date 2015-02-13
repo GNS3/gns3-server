@@ -62,8 +62,6 @@ class Response(aiohttp.web.Response):
             try:
                 jsonschema.validate(answer, self._output_schema)
             except jsonschema.ValidationError as e:
-                log.error("Invalid output schema {} '{}' in schema: {}".format(e.validator,
-                                                                               e.validator_value,
-                                                                               json.dumps(e.schema)))
+                log.error("Invalid output query. JSON schema error: {}".format(e.message))
                 raise aiohttp.web.HTTPBadRequest(text="{}".format(e))
         self.body = json.dumps(answer, indent=4, sort_keys=True).encode('utf-8')

@@ -42,12 +42,9 @@ def parse_request(request, input_schema):
     try:
         jsonschema.validate(request.json, input_schema)
     except jsonschema.ValidationError as e:
-        log.error("Invalid input schema {} '{}' in schema: {}".format(e.validator,
-                                                                      e.validator_value,
-                                                                      json.dumps(e.schema)))
-        raise aiohttp.web.HTTPBadRequest(text="Request is not {} '{}' in schema: {}".format(
-            e.validator,
-            e.validator_value,
+        log.error("Invalid input query. JSON schema error: {}".format(e.message))
+        raise aiohttp.web.HTTPBadRequest(text="Invalid JSON: {} in schema: {}".format(
+            e.message,
             json.dumps(e.schema)))
     return request
 

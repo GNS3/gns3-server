@@ -91,6 +91,7 @@ def parse_arguments(argv, config):
         "allow": config.getboolean("allow_remote_console", False),
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
+        "live": config.getboolean("live", False),
     }
 
     parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
@@ -104,7 +105,8 @@ def parse_arguments(argv, config):
     parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
     parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
-    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs and enable code live reload")
+    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
+    parser.add_argument("--live", action="store_true", help="enable code live reload")
 
     return parser.parse_args(argv)
 
