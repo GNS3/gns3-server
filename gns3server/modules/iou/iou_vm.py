@@ -30,6 +30,7 @@ import shutil
 import argparse
 import threading
 import configparser
+import glob
 
 from pkg_resources import parse_version
 from .iou_error import IOUError
@@ -333,6 +334,8 @@ class IOUVM(BaseVM):
         self._check_requirements()
         if not self.is_running():
 
+            self._rename_nvram_file()
+
             # TODO: ASYNC
             # self._library_check()
 
@@ -372,6 +375,15 @@ class IOUVM(BaseVM):
             self._start_ioucon()
             # connections support
             self._start_iouyap()
+
+    def _rename_nvram_file(self):
+        """
+        Before start the VM rename the nvram file to the correct application id
+        """
+
+        destination = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+        for file_path in glob.glob(os.path.join(self.working_dir, "nvram_*")):
+            shutil.move(file_path, destination)
 
     def _start_iouyap(self):
         """
@@ -670,7 +682,7 @@ class IOUVM(BaseVM):
 
         self._ethernet_adapters.clear()
         for _ in range(0, ethernet_adapters):
-            self._ethernet_adapters.append(EthernetAdapter())
+            self._ethernet_adapters.append(EthernetAdapter(interfaces=4))
 
         log.info("IOU {name} [id={id}]: number of Ethernet adapters changed to {adapters}".format(name=self._name,
                                                                                                   id=self._id,
@@ -696,7 +708,7 @@ class IOUVM(BaseVM):
 
         self._serial_adapters.clear()
         for _ in range(0, serial_adapters):
-            self._serial_adapters.append(SerialAdapter())
+            self._serial_adapters.append(SerialAdapter(interfaces=4))
 
         log.info("IOU {name} [id={id}]: number of Serial adapters changed to {adapters}".format(name=self._name,
                                                                                                 id=self._id,
