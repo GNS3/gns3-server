@@ -182,7 +182,7 @@ class Config(object):
         self._override_config[section] = content
 
     @staticmethod
-    def instance(files=[]):
+    def instance(files=None):
         """
         Singleton to return only on instance of Config.
 
