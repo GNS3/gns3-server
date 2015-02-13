@@ -128,8 +128,9 @@ class DynamipsHypervisor:
         """
 
         yield from self.send("hypervisor stop")
+        yield from self._writer.drain()
         self._writer.close()
-        self._reader, self._writer = None
+        self._reader = self._writer = None
         self._nio_udp_auto_instances.clear()
 
     @asyncio.coroutine

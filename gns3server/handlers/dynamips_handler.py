@@ -54,14 +54,15 @@ class DynamipsHandler:
                                                    request.json.get("dynamips_id"),
                                                    request.json.pop("platform"))
 
-        # set VM options
+        # set VM settings
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
-                setter = getattr(vm, "set_{}".format(name))
-                if asyncio.iscoroutinefunction(vm.close):
-                    yield from setter(value)
-                else:
-                    setter(value)
+                if hasattr(vm, "set_{}".format(name)):
+                    setter = getattr(vm, "set_{}".format(name))
+                    if asyncio.iscoroutinefunction(vm.close):
+                        yield from setter(value)
+                    else:
+                        setter(value)
 
         response.set_status(201)
         response.json(vm)
@@ -107,10 +108,14 @@ class DynamipsHandler:
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
-        # FIXME: set options
-        #for name, value in request.json.items():
-        #    if hasattr(vm, name) and getattr(vm, name) != value:
-        #        setattr(vm, name, value)
+        # set VM settings
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setter = getattr(vm, "set_{}".format(name))
+                if asyncio.iscoroutinefunction(vm.close):
+                    yield from setter(value)
+                else:
+                    setter(value)
         response.json(vm)
 
     @classmethod

@@ -19,8 +19,10 @@
 Custom exceptions for Dynamips module.
 """
 
+from ..vm_error import VMError
 
-class DynamipsError(Exception):
+
+class DynamipsError(VMError):
 
     def __init__(self, message, original_exception=None):
 

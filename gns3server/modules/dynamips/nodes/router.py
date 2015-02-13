@@ -27,7 +27,6 @@ import asyncio
 import time
 import sys
 import os
-import base64
 
 import logging
 log = logging.getLogger(__name__)
@@ -232,7 +231,7 @@ class Router(BaseVM):
             if elf_header_start != b'\x7fELF\x01\x02\x01':
                 raise DynamipsError('"{}" is not a valid IOS image'.format(self._image))
 
-            yield from self._hypervisor.send('vm start "{}"'.format(self._name))
+            yield from self._hypervisor.send('vm start "{name}"'.format(name=self._name))
             log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
@@ -243,8 +242,17 @@ class Router(BaseVM):
 
         status = yield from self.get_status()
         if status != "inactive":
-            yield from self._hypervisor.send('vm stop "{name}"'.format(self._name))
+            yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
+
+    @asyncio.coroutine
+    def reload(self):
+        """
+        Reload this router.
+        """
+
+        yield from self.stop()
+        yield from self.start()
 
     @asyncio.coroutine
     def suspend(self):
@@ -254,7 +262,7 @@ class Router(BaseVM):
 
         status = yield from self.get_status()
         if status == "running":
-            yield from self._hypervisor.send('vm suspend "{}"'.format(self._name))
+            yield from self._hypervisor.send('vm suspend "{name}"'.format(name=self._name))
             log.info('Router "{name}" [{id}] has been suspended'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
@@ -263,7 +271,7 @@ class Router(BaseVM):
         Resumes this suspended router
         """
 
-        yield from self._hypervisor.send('vm resume "{}"'.format(self._name))
+        yield from self._hypervisor.send('vm resume "{name}"'.format(name=self._name))
         log.info('Router "{name}" [{id}] has been resumed'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine

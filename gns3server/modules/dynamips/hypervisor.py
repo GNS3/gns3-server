@@ -128,7 +128,7 @@ class Hypervisor(DynamipsHypervisor):
 
         if self.is_running():
             log.info("Stopping Dynamips process PID={}".format(self._process.pid))
-            DynamipsHypervisor.stop(self)
+            yield from DynamipsHypervisor.stop(self)
             # give some time for the hypervisor to properly stop.
             # time to delete UNIX NIOs for instance.
             yield from asyncio.sleep(0.01)
