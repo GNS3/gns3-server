@@ -35,9 +35,10 @@ def test_locale_check():
     assert locale.getlocale() == ('fr_FR', 'UTF-8')
 
 
-def test_parse_arguments(capsys):
+def test_parse_arguments(capsys, tmpdir):
 
-    config = Config.instance()
+    Config.reset()
+    config = Config.instance(str(tmpdir / "test.cfg"))
     server_config = config.get_section_config("Server")
 
     with pytest.raises(SystemExit):
@@ -70,7 +71,7 @@ def test_parse_arguments(capsys):
     assert "optional arguments" in out
 
     assert main.parse_arguments(["--host", "192.168.1.1"], server_config).host == "192.168.1.1"
-    assert main.parse_arguments([], server_config).host == "127.0.0.1"
+    assert main.parse_arguments([], server_config).host == "0.0.0.0"
     server_config["host"] = "192.168.1.2"
     assert main.parse_arguments(["--host", "192.168.1.1"], server_config).host == "192.168.1.1"
     assert main.parse_arguments([], server_config).host == "192.168.1.2"

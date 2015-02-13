@@ -190,6 +190,14 @@ class Config(object):
         :returns: instance of Config
         """
 
-        if not hasattr(Config, "_instance"):
-            Config._instance = Config()
+        if not hasattr(Config, "_instance") or Config._instance is None:
+            Config._instance = Config(files)
         return Config._instance
+
+    @staticmethod
+    def reset():
+        """
+        Reset singleton
+        """
+
+        Config._instance = None
