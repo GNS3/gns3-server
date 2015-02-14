@@ -1310,12 +1310,6 @@ class Router(BaseVM):
             raise DynamipsError("Port {port_number} has already a filter applied on {adapter}".format(adapter=adapter,
                                                                                                       port_number=port_number))
 
-        # FIXME: capture
-        # try:
-        #    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        # except OSError as e:
-        #    raise DynamipsError("Could not create captures directory {}".format(e))
-
         yield from nio.bind_filter("both", "capture")
         yield from nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
 
@@ -1411,6 +1405,7 @@ class Router(BaseVM):
 
         self._private_config = private_config
 
+    # TODO: rename
     # def rename(self, new_name):
     #     """
     #     Renames this router.
