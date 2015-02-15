@@ -35,17 +35,32 @@ class EthernetSwitch(Device):
     Dynamips Ethernet switch.
 
     :param name: name for this switch
-    :param node_id: Node instance identifier
+    :param device_id: Device instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, node_id, project, manager, hypervisor=None):
+    def __init__(self, name, device_id, project, manager, hypervisor=None):
 
-        super().__init__(name, node_id, project, manager, hypervisor)
+        super().__init__(name, device_id, project, manager, hypervisor)
         self._nios = {}
-        self._mapping = {}
+        self._mappings = {}
+
+    def __json__(self):
+
+        ethernet_switch_info = {"name": self.name,
+                                "device_id": self.id,
+                                "project_id": self.project.id}
+
+        ports = []
+        for port_number, settings in self._mappings.items():
+            ports.append({"port": port_number,
+                          "type": settings[0],
+                          "vlan": settings[1]})
+
+        ethernet_switch_info["ports"] = ports
+        return ethernet_switch_info
 
     @asyncio.coroutine
     def create(self):
@@ -82,14 +97,14 @@ class EthernetSwitch(Device):
         return self._nios
 
     @property
-    def mapping(self):
+    def mappings(self):
         """
-        Returns port mapping
+        Returns port mappings
 
-        :returns: mapping list
+        :returns: mappings list
         """
 
-        return self._mapping
+        return self._mappings
 
     @asyncio.coroutine
     def delete(self):
@@ -97,10 +112,14 @@ class EthernetSwitch(Device):
         Deletes this Ethernet switch.
         """
 
-        yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
-        log.info('Ethernet switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+        try:
+            yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
+            log.info('Ethernet switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+        except DynamipsError:
+            log.debug("Could not properly delete Ethernet switch {}".format(self._name))
         self._hypervisor.devices.remove(self)
-        self._instances.remove(self._id)
+        if self._hypervisor and not self._hypervisor.devices:
+            yield from self.hypervisor.stop()
 
     @asyncio.coroutine
     def add_nio(self, nio, port_number):
@@ -144,10 +163,26 @@ class EthernetSwitch(Device):
                                                                                               port=port_number))
 
         del self._nios[port_number]
-        if port_number in self._mapping:
-            del self._mapping[port_number]
+        if port_number in self._mappings:
+            del self._mappings[port_number]
 
         return nio
+
+    @asyncio.coroutine
+    def set_port_settings(self, port_number, settings):
+        """
+        Applies port settings to a specific port.
+
+        :param port_number: port number to set the settings
+        :param settings: port settings
+        """
+
+        if settings["type"] == "access":
+            yield from self.set_access_port(port_number, settings["vlan"])
+        elif settings["type"] == "dot1q":
+            yield from self.set_dot1q_port(port_number, settings["vlan"])
+        elif settings["type"] == "qinq":
+            yield from self.set_qinq_port(port_number, settings["vlan"])
 
     @asyncio.coroutine
     def set_access_port(self, port_number, vlan_id):
@@ -170,7 +205,7 @@ class EthernetSwitch(Device):
                                                                                                                id=self._id,
                                                                                                                port=port_number,
                                                                                                                vlan_id=vlan_id))
-        self._mapping[port_number] = ("access", vlan_id)
+        self._mappings[port_number] = ("access", vlan_id)
 
     @asyncio.coroutine
     def set_dot1q_port(self, port_number, native_vlan):
@@ -194,7 +229,7 @@ class EthernetSwitch(Device):
                                                                                                                        port=port_number,
                                                                                                                        vlan_id=native_vlan))
 
-        self._mapping[port_number] = ("dot1q", native_vlan)
+        self._mappings[port_number] = ("dot1q", native_vlan)
 
     @asyncio.coroutine
     def set_qinq_port(self, port_number, outer_vlan):
@@ -217,7 +252,7 @@ class EthernetSwitch(Device):
                                                                                                                     id=self._id,
                                                                                                                     port=port_number,
                                                                                                                     vlan_id=outer_vlan))
-        self._mapping[port_number] = ("qinq", outer_vlan)
+        self._mappings[port_number] = ("qinq", outer_vlan)
 
     @asyncio.coroutine
     def get_mac_addr_table(self):

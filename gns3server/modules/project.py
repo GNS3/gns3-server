@@ -59,6 +59,7 @@ class Project:
 
         self._vms = set()
         self._vms_to_destroy = set()
+        self._devices = set()
 
         self.temporary = temporary
 
@@ -127,6 +128,11 @@ class Project:
     def vms(self):
 
         return self._vms
+
+    @property
+    def devices(self):
+
+        return self._devices
 
     @property
     def temporary(self):
@@ -213,7 +219,7 @@ class Project:
         Add a VM to the project.
         In theory this should be called by the VM manager.
 
-        :param vm: A VM instance
+        :param vm: VM instance
         """
 
         self._vms.add(vm)
@@ -223,11 +229,32 @@ class Project:
         Remove a VM from the project.
         In theory this should be called by the VM manager.
 
-        :param vm: A VM instance
+        :param vm: VM instance
         """
 
         if vm in self._vms:
             self._vms.remove(vm)
+
+    def add_device(self, device):
+        """
+        Add a device to the project.
+        In theory this should be called by the VM manager.
+
+        :param device: Device instance
+        """
+
+        self._devices.add(device)
+
+    def remove_device(self, device):
+        """
+        Remove a device from the project.
+        In theory this should be called by the VM manager.
+
+        :param device: Device instance
+        """
+
+        if device in self._devices:
+            self._devices.remove(device)
 
     @asyncio.coroutine
     def close(self):
@@ -250,13 +277,16 @@ class Project:
             else:
                 vm.close()
 
+        for device in self._devices:
+            tasks.append(asyncio.async(device.delete()))
+
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
             for future in done:
                 try:
                     future.result()
                 except Exception as e:
-                    log.error("Could not close VM {}".format(e), exc_info=1)
+                    log.error("Could not close VM or device {}".format(e), exc_info=1)
 
         if cleanup and os.path.exists(self.path):
             try:

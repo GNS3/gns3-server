@@ -33,32 +33,38 @@ class EthernetHub(Bridge):
     Dynamips Ethernet hub (based on Bridge)
 
     :param name: name for this hub
-    :param node_id: Node instance identifier
+    :param device_id: Device instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, node_id, project, manager, hypervisor=None):
+    def __init__(self, name, device_id, project, manager, hypervisor=None):
 
-        Bridge.__init__(self, name, node_id, project, manager, hypervisor)
-        self._mapping = {}
+        Bridge.__init__(self, name, device_id, project, manager, hypervisor)
+        self._mappings = {}
+
+    def __json__(self):
+
+        return {"name": self.name,
+                "device_id": self.id,
+                "project_id": self.project.id}
 
     @asyncio.coroutine
     def create(self):
 
-        yield from Bridge.create()
+        yield from Bridge.create(self)
         log.info('Ethernet hub "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
     @property
-    def mapping(self):
+    def mappings(self):
         """
-        Returns port mapping
+        Returns port mappings
 
-        :returns: mapping list
+        :returns: mappings list
         """
 
-        return self._mapping
+        return self._mappings
 
     @asyncio.coroutine
     def delete(self):
@@ -66,9 +72,13 @@ class EthernetHub(Bridge):
         Deletes this hub.
         """
 
-        yield from Bridge.delete(self)
-        log.info('Ethernet hub "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
-        self._instances.remove(self._id)
+        try:
+            yield from Bridge.delete(self)
+            log.info('Ethernet hub "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+        except DynamipsError:
+            log.debug("Could not properly delete Ethernet hub {}".format(self._name))
+        if self._hypervisor and not self._hypervisor.devices:
+            yield from self.hypervisor.stop()
 
     @asyncio.coroutine
     def add_nio(self, nio, port_number):
@@ -79,7 +89,7 @@ class EthernetHub(Bridge):
         :param port_number: port to allocate for the NIO
         """
 
-        if port_number in self._mapping:
+        if port_number in self._mappings:
             raise DynamipsError("Port {} isn't free".format(port_number))
 
         yield from Bridge.add_nio(self, nio)
@@ -88,7 +98,7 @@ class EthernetHub(Bridge):
                                                                                        id=self._id,
                                                                                        nio=nio,
                                                                                        port=port_number))
-        self._mapping[port_number] = nio
+        self._mappings[port_number] = nio
 
     @asyncio.coroutine
     def remove_nio(self, port_number):
@@ -100,10 +110,10 @@ class EthernetHub(Bridge):
         :returns: the NIO that was bound to the allocated port
         """
 
-        if port_number not in self._mapping:
+        if port_number not in self._mappings:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._mapping[port_number]
+        nio = self._mappings[port_number]
         yield from Bridge.remove_nio(self, nio)
 
         log.info('Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
@@ -111,7 +121,7 @@ class EthernetHub(Bridge):
                                                                                               nio=nio,
                                                                                               port=port_number))
 
-        del self._mapping[port_number]
+        del self._mappings[port_number]
         return nio
 
     @asyncio.coroutine
@@ -124,10 +134,10 @@ class EthernetHub(Bridge):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        if port_number not in self._mapping:
+        if port_number not in self._mappings:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._mapping[port_number]
+        nio = self._mappings[port_number]
 
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
@@ -151,10 +161,10 @@ class EthernetHub(Bridge):
         :param port_number: allocated port number
         """
 
-        if port_number not in self._mapping:
+        if port_number not in self._mappings:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._mapping[port_number]
+        nio = self._mappings[port_number]
         yield from nio.unbind_filter("both")
         log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on {port}'.format(name=self._name,
                                                                                           id=self._id,

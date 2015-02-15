@@ -16,23 +16,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ...base_vm import BaseVM
-
-
-class Device(BaseVM):
+class Device:
     """
     Base device for switches and hubs
 
-    :param name: name for this bridge
-    :param vm_id: Node instance identifier
+    :param name: name for this device
+    :param device_id: Device instance identifier
     :param project: Project instance
-    :param manager: Parent VM Manager
+    :param manager: Parent manager
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, node_id, project, manager, hypervisor=None):
+    def __init__(self, name, device_id, project, manager, hypervisor=None):
 
-        super().__init__(name, node_id, project, manager)
+        self._name = name
+        self._id = device_id
+        self._project = project
+        self._manager = manager
         self._hypervisor = hypervisor
 
     @property
@@ -45,10 +45,59 @@ class Device(BaseVM):
 
         return self._hypervisor
 
-    def start(self):
+    @property
+    def project(self):
+        """
+        Returns the device current project.
 
-        pass  # Dynamips switches and hubs are always on
+        :returns: Project instance.
+        """
 
-    def stop(self):
+        return self._project
 
-        pass  # Dynamips switches and hubs are always on
+    @property
+    def name(self):
+        """
+        Returns the name for this device.
+
+        :returns: name
+        """
+
+        return self._name
+
+    @name.setter
+    def name(self, new_name):
+        """
+        Sets the name of this VM.
+
+        :param new_name: name
+        """
+
+        self._name = new_name
+
+    @property
+    def id(self):
+        """
+        Returns the ID for this device.
+
+        :returns: device identifier (string)
+        """
+
+        return self._id
+
+    @property
+    def manager(self):
+        """
+        Returns the manager for this device.
+
+        :returns: instance of manager
+        """
+
+        return self._manager
+
+    def create(self):
+        """
+        Creates the device.
+        """
+
+        raise NotImplementedError

@@ -128,9 +128,16 @@ class DynamipsHypervisor:
         Stops this hypervisor (will no longer run).
         """
 
-        yield from self.send("hypervisor stop")
-        yield from self._writer.drain()
-        self._writer.close()
+        try:
+            # try to properly stop the hypervisor
+            yield from self.send("hypervisor stop")
+        except DynamipsError:
+            pass
+        try:
+            yield from self._writer.drain()
+            self._writer.close()
+        except OSError as e:
+            log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
         self._reader = self._writer = None
         self._nio_udp_auto_instances.clear()
 
@@ -186,137 +193,6 @@ class DynamipsHypervisor:
 
         return self._devices
 
-    # @devices.setter
-    # def devices(self, devices):
-    #     """
-    #     Sets the list of devices managed by this hypervisor instance.
-    #     This method is for internal use.
-    #
-    #     :param devices: a list of device objects
-    #     """
-    #
-    #     self._devices = devices
-
-    # @property
-    # def console_start_port_range(self):
-    #     """
-    #     Returns the console start port range value
-    #
-    #     :returns: console start port range value (integer)
-    #     """
-    #
-    #     return self._console_start_port_range
-
-    # @console_start_port_range.setter
-    # def console_start_port_range(self, console_start_port_range):
-    #     """
-    #     Set a new console start port range value
-    #
-    #     :param console_start_port_range: console start port range value (integer)
-    #     """
-    #
-    #     self._console_start_port_range = console_start_port_range
-    #
-    # @property
-    # def console_end_port_range(self):
-    #     """
-    #     Returns the console end port range value
-    #
-    #     :returns: console end port range value (integer)
-    #     """
-    #
-    #     return self._console_end_port_range
-    #
-    # @console_end_port_range.setter
-    # def console_end_port_range(self, console_end_port_range):
-    #     """
-    #     Set a new console end port range value
-    #
-    #     :param console_end_port_range: console end port range value (integer)
-    #     """
-    #
-    #     self._console_end_port_range = console_end_port_range
-
-    # @property
-    # def aux_start_port_range(self):
-    #     """
-    #     Returns the auxiliary console start port range value
-    #
-    #     :returns: auxiliary console  start port range value (integer)
-    #     """
-    #
-    #     return self._aux_start_port_range
-    #
-    # @aux_start_port_range.setter
-    # def aux_start_port_range(self, aux_start_port_range):
-    #     """
-    #     Sets a new auxiliary console start port range value
-    #
-    #     :param aux_start_port_range: auxiliary console start port range value (integer)
-    #     """
-    #
-    #     self._aux_start_port_range = aux_start_port_range
-    #
-    # @property
-    # def aux_end_port_range(self):
-    #     """
-    #     Returns the auxiliary console end port range value
-    #
-    #     :returns: auxiliary console end port range value (integer)
-    #     """
-    #
-    #     return self._aux_end_port_range
-    #
-    # @aux_end_port_range.setter
-    # def aux_end_port_range(self, aux_end_port_range):
-    #     """
-    #     Sets a new auxiliary console end port range value
-    #
-    #     :param aux_end_port_range: auxiliary console end port range value (integer)
-    #     """
-    #
-    #     self._aux_end_port_range = aux_end_port_range
-
-    # @property
-    # def udp_start_port_range(self):
-    #     """
-    #     Returns the UDP start port range value
-    #
-    #     :returns: UDP start port range value (integer)
-    #     """
-    #
-    #     return self._udp_start_port_range
-    #
-    # @udp_start_port_range.setter
-    # def udp_start_port_range(self, udp_start_port_range):
-    #     """
-    #     Sets a new UDP start port range value
-    #
-    #     :param udp_start_port_range: UDP start port range value (integer)
-    #     """
-    #
-    #     self._udp_start_port_range = udp_start_port_range
-    #
-    # @property
-    # def udp_end_port_range(self):
-    #     """
-    #     Returns the UDP end port range value
-    #
-    #     :returns: UDP end port range value (integer)
-    #     """
-    #
-    #     return self._udp_end_port_range
-    #
-    # @udp_end_port_range.setter
-    # def udp_end_port_range(self, udp_end_port_range):
-    #     """
-    #     Sets an new UDP end port range value
-    #
-    #     :param udp_end_port_range: UDP end port range value (integer)
-    #     """
-    #
-    #     self._udp_end_port_range = udp_end_port_range
-
     @property
     def ghosts(self):
         """
@@ -336,26 +212,6 @@ class DynamipsHypervisor:
         """
 
         self._ghosts[image_name] = router
-
-    @property
-    def jitsharing_groups(self):
-        """
-        Returns a list of the JIT sharing groups hosted by this hypervisor.
-
-        :returns: JIT sharing groups dict (image_name -> group number)
-        """
-
-        return self._jitsharing_groups
-
-    def add_jitsharing_group(self, image_name, group_number):
-        """
-        Adds a JIT blocks sharing group name to the list of groups created on this hypervisor.
-
-        :param image_name: name of the ghost image
-        :param group_number: group (integer)
-        """
-
-        self._jitsharing_groups[image_name] = group_number
 
     @property
     def port(self):
@@ -462,6 +318,9 @@ class DynamipsHypervisor:
         while True:
             try:
                 chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
+                if not chunk:
+                    raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
+                                        .format(host=self._host, port=self._port, run=self.is_running()))
                 buf += chunk.decode()
             except OSError as e:
                 raise DynamipsError("Communication timed out with {host}:{port} :{error}, Dynamips process running: {run}"
@@ -479,10 +338,6 @@ class DynamipsHypervisor:
             if data[-1] == '':
                 data.pop()
             buf = ''
-
-            if len(data) == 0:
-                raise DynamipsError("no data returned from {host}:{port}, Dynamips process running: {run}"
-                                    .format(host=self._host, port=self._port, run=self.is_running()))
 
             # Does it contain an error code?
             if self.error_re.search(data[-1]):

@@ -140,12 +140,11 @@ class BaseManager:
             raise aiohttp.web.HTTPNotFound(text="VM ID {} doesn't exist".format(vm_id))
 
         vm = self._vms[vm_id]
-
         if project_id:
             if vm.project.id != project.id:
                 raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't belong to VM {}".format(project_id, vm.name))
 
-        return self._vms[vm_id]
+        return vm
 
     @asyncio.coroutine
     def create_vm(self, name, project_id, vm_id, *args, **kwargs):

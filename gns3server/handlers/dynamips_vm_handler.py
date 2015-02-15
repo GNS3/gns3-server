@@ -19,19 +19,19 @@
 import os
 import asyncio
 from ..web.route import Route
-from ..schemas.dynamips import VM_CREATE_SCHEMA
-from ..schemas.dynamips import VM_UPDATE_SCHEMA
-from ..schemas.dynamips import VM_NIO_SCHEMA
-from ..schemas.dynamips import VM_CAPTURE_SCHEMA
-from ..schemas.dynamips import VM_OBJECT_SCHEMA
+from ..schemas.dynamips_vm import VM_CREATE_SCHEMA
+from ..schemas.dynamips_vm import VM_UPDATE_SCHEMA
+from ..schemas.dynamips_vm import VM_CAPTURE_SCHEMA
+from ..schemas.dynamips_vm import VM_OBJECT_SCHEMA
+from ..schemas.dynamips_vm import VM_NIO_SCHEMA
 from ..modules.dynamips import Dynamips
 from ..modules.project_manager import ProjectManager
 
 
-class DynamipsHandler:
+class DynamipsVMHandler:
 
     """
-    API entry points for Dynamips.
+    API entry points for Dynamips VMs.
     """
 
     @classmethod
@@ -340,3 +340,4 @@ class DynamipsHandler:
         port_number = int(request.match_info["port_number"])
         yield from vm.stop_capture(slot_number, port_number)
         response.set_status(204)
+

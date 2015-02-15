@@ -32,11 +32,14 @@ log = logging.getLogger(__name__)
 
 from gns3server.utils.interfaces import get_windows_interfaces
 from pkg_resources import parse_version
+from uuid import UUID, uuid4
 from ..base_manager import BaseManager
+from ..project_manager import ProjectManager
 from .dynamips_error import DynamipsError
 from .hypervisor import Hypervisor
 from .nodes.router import Router
 from .dynamips_vm import DynamipsVM
+from .dynamips_device import DynamipsDevice
 
 # NIOs
 from .nios.nio_udp import NIOUDP
@@ -54,10 +57,12 @@ from .nios.nio_null import NIONull
 class Dynamips(BaseManager):
 
     _VM_CLASS = DynamipsVM
+    _DEVICE_CLASS = DynamipsDevice
 
     def __init__(self):
 
         super().__init__()
+        self._devices = {}
         self._dynamips_path = None
 
         # FIXME: temporary
@@ -67,7 +72,19 @@ class Dynamips(BaseManager):
     def unload(self):
 
         yield from BaseManager.unload(self)
-        Router.reset()
+
+        tasks = []
+        for device in self._devices.values():
+            tasks.append(asyncio.async(device.hypervisor.stop()))
+
+        if tasks:
+            done, _ = yield from asyncio.wait(tasks)
+            for future in done:
+                try:
+                    future.result()
+                except Exception as e:
+                    log.error("Could not stop device hypervisor {}".format(e), exc_info=1)
+                    continue
 
 #         files = glob.glob(os.path.join(self._working_dir, "dynamips", "*.ghost"))
 #         files += glob.glob(os.path.join(self._working_dir, "dynamips", "*_lock"))
@@ -91,6 +108,71 @@ class Dynamips(BaseManager):
         """
 
         return self._dynamips_path
+
+    @asyncio.coroutine
+    def create_device(self, name, project_id, device_id, device_type, *args, **kwargs):
+        """
+        Create a new Dynamips device.
+
+        :param name: Device name
+        :param project_id: Project identifier
+        :param vm_id: restore a VM identifier
+        """
+
+        project = ProjectManager.instance().get_project(project_id)
+        if not device_id:
+            device_id = str(uuid4())
+
+        device = self._DEVICE_CLASS(name, device_id, project, self, device_type, *args, **kwargs)
+        yield from device.create()
+        self._devices[device.id] = device
+        project.add_device(device)
+        return device
+
+    def get_device(self, device_id, project_id=None):
+        """
+        Returns a device instance.
+
+        :param device_id: Device identifier
+        :param project_id: Project identifier
+
+        :returns: Device instance
+        """
+
+        if project_id:
+            # check the project_id exists
+            project = ProjectManager.instance().get_project(project_id)
+
+        try:
+            UUID(device_id, version=4)
+        except ValueError:
+            raise aiohttp.web.HTTPBadRequest(text="Device ID} is not a valid UUID".format(device_id))
+
+        if device_id not in self._devices:
+            raise aiohttp.web.HTTPNotFound(text="Device ID {} doesn't exist".format(device_id))
+
+        device = self._devices[device_id]
+        if project_id:
+            if device.project.id != project.id:
+                raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't belong to device {}".format(project_id, device.name))
+
+        return device
+
+    @asyncio.coroutine
+    def delete_device(self, device_id):
+        """
+        Delete a device
+
+        :param device_id: Device identifier
+
+        :returns: Device instance
+        """
+
+        device = self.get_device(device_id)
+        yield from device.delete()
+        device.project.remove_device(device)
+        del self._devices[device.id]
+        return device
 
     def find_dynamips(self):
 

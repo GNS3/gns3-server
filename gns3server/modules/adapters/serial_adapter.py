@@ -21,7 +21,7 @@ from .adapter import Adapter
 class SerialAdapter(Adapter):
 
     """
-    Ethernet adapter.
+    Serial adapter.
     """
 
     def __init__(self, interfaces=1):

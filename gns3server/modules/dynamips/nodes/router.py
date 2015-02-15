@@ -294,8 +294,12 @@ class Router(BaseVM):
             # router is already closed
             return
 
-        if self._hypervisor:
-            yield from self.stop()
+        self._hypervisor.devices.remove(self)
+        if self._hypervisor and not self._hypervisor.devices:
+            try:
+                yield from self.stop()
+            except DynamipsError:
+                pass
             yield from self.hypervisor.stop()
 
         if self._console:

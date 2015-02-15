@@ -25,10 +25,10 @@ from .nodes.frame_relay_switch import FrameRelaySwitch
 import logging
 log = logging.getLogger(__name__)
 
-DEVICES = {'atmsw': ATMSwitch,
-           'frsw': FrameRelaySwitch,
-           'ethsw': EthernetSwitch,
-           'ethhub': EthernetHub}
+DEVICES = {'atm_switch': ATMSwitch,
+           'frame_relay_switch': FrameRelaySwitch,
+           'ethernet_switch': EthernetSwitch,
+           'ethernet_hub': EthernetHub}
 
 
 class DynamipsDevice:
@@ -37,9 +37,9 @@ class DynamipsDevice:
     Factory to create an Device object based on the type
     """
 
-    def __new__(cls, name, vm_id, project, manager, device_type, **kwargs):
+    def __new__(cls, name, device_id, project, manager, device_type, **kwargs):
 
-        if type not in DEVICES:
+        if device_type not in DEVICES:
             raise DynamipsError("Unknown device type: {}".format(device_type))
 
-        return DEVICES[device_type](name, vm_id, project, manager, **kwargs)
+        return DEVICES[device_type](name, device_id, project, manager, **kwargs)

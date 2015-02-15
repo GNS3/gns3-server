@@ -3,5 +3,6 @@ __all__ = ["version_handler",
            "vpcs_handler",
            "project_handler",
            "virtualbox_handler",
-           "dynamips_handler",
+           "dynamips_vm_handler",
+           "dynamips_device_handler",
            "iou_handler"]
