@@ -738,59 +738,59 @@ class IOUVM(BaseVM):
 
         self._slots = self._ethernet_adapters + self._serial_adapters
 
-    def slot_add_nio_binding(self, slot_id, port_id, nio):
+    def slot_add_nio_binding(self, adapter_number, port_number, nio):
         """
         Adds a slot NIO binding.
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param adapter_number: slot ID
+        :param port_number: port ID
         :param nio: NIO instance to add to the slot/port
         """
 
         try:
-            adapter = self._slots[slot_id]
+            adapter = self._slots[adapter_number]
         except IndexError:
-            raise IOUError("Slot {slot_id} doesn't exist on IOU {name}".format(name=self._name,
-                                                                               slot_id=slot_id))
+            raise IOUError("Slot {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
+                                                                                      adapter_number=adapter_number))
 
-        if not adapter.port_exists(port_id):
-            raise IOUError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                      port_id=port_id))
+        if not adapter.port_exists(port_number):
+            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
 
-        adapter.add_nio(port_id, nio)
-        log.info("IOU {name} [id={id}]: {nio} added to {slot_id}/{port_id}".format(name=self._name,
-                                                                                   id=self._id,
-                                                                                   nio=nio,
-                                                                                   slot_id=slot_id,
-                                                                                   port_id=port_id))
+        adapter.add_nio(port_number, nio)
+        log.info("IOU {name} [id={id}]: {nio} added to {adapter_number}/{port_number}".format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              nio=nio,
+                                                                                              adapter_number=adapter_number,
+                                                                                              port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
 
-    def slot_remove_nio_binding(self, slot_id, port_id):
+    def slot_remove_nio_binding(self, adapter_number, port_number):
         """
         Removes a slot NIO binding.
-        :param slot_id: slot ID
-        :param port_id: port ID
+        :param adapter_number: slot ID
+        :param port_number: port ID
         :returns: NIO instance
         """
 
         try:
-            adapter = self._slots[slot_id]
+            adapter = self._slots[adapter_number]
         except IndexError:
-            raise IOUError("Slot {slot_id} doesn't exist on IOU {name}".format(name=self._name,
-                                                                               slot_id=slot_id))
+            raise IOUError("Slot {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
+                                                                                      adapter_number=adapter_number))
 
-        if not adapter.port_exists(port_id):
-            raise IOUError("Port {port_id} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                      port_id=port_id))
+        if not adapter.port_exists(port_number):
+            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
 
-        nio = adapter.get_nio(port_id)
-        adapter.remove_nio(port_id)
-        log.info("IOU {name} [id={id}]: {nio} removed from {slot_id}/{port_id}".format(name=self._name,
-                                                                                       id=self._id,
-                                                                                       nio=nio,
-                                                                                       slot_id=slot_id,
-                                                                                       port_id=port_id))
+        nio = adapter.get_nio(port_number)
+        adapter.remove_nio(port_number)
+        log.info("IOU {name} [id={id}]: {nio} removed from {adapter_number}/{port_number}".format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  nio=nio,
+                                                                                                  adapter_number=adapter_number,
+                                                                                                  port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
