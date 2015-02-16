@@ -357,6 +357,7 @@ class TelnetServer(Console):
         sock_fd.listen(socket.SOMAXCONN)
         self.sock_fd = sock_fd
         log.info("Telnet server ready for connections on {}:{}".format(self.addr, self.port))
+        log.info(self.stop_event.is_set())
 
         return self
 

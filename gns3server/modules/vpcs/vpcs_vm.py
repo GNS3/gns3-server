@@ -73,6 +73,7 @@ class VPCSVM(BaseVM):
         else:
             self._console = self._manager.port_manager.get_free_console_port()
 
+    @asyncio.coroutine
     def close(self):
 
         self._terminate_process()

@@ -110,8 +110,10 @@ class IOUVM(BaseVM):
         else:
             self._console = self._manager.port_manager.get_free_console_port()
 
+    @asyncio.coroutine
     def close(self):
 
+        yield from self.stop()
         if self._console:
             self._manager.port_manager.release_console_port(self._console)
             self._console = None
@@ -498,14 +500,14 @@ class IOUVM(BaseVM):
         Stops the IOU process.
         """
 
-        # stop console support
-        if self._ioucon_thread:
-            self._ioucon_thread_stop_event.set()
-            if self._ioucon_thread.is_alive():
-                self._ioucon_thread.join(timeout=3.0)  # wait for the thread to free the console port
-            self._ioucon_thread = None
-
         if self.is_running():
+            # stop console support
+            if self._ioucon_thread:
+                self._ioucon_thread_stop_event.set()
+                if self._ioucon_thread.is_alive():
+                    self._ioucon_thread.join(timeout=3.0)  # wait for the thread to free the console port
+                self._ioucon_thread = None
+
             self._terminate_process_iou()
             try:
                 yield from asyncio.wait_for(self._iou_process.wait(), timeout=3)
