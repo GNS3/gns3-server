@@ -149,9 +149,9 @@ class EthernetHub(Bridge):
         yield from nio.bind_filter("both", "capture")
         yield from nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
 
-        log.info('Ethernet hub "{name}" [{id}]: starting packet capture on {port}'.format(name=self._name,
-                                                                                          id=self._id,
-                                                                                          port=port_number))
+        log.info('Ethernet hub "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               port=port_number))
 
     @asyncio.coroutine
     def stop_capture(self, port_number):
@@ -166,6 +166,6 @@ class EthernetHub(Bridge):
 
         nio = self._mappings[port_number]
         yield from nio.unbind_filter("both")
-        log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on {port}'.format(name=self._name,
-                                                                                          id=self._id,
-                                                                                          port=port_number))
+        log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               port=port_number))

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import os
 import asyncio
 from ..web.route import Route
 from ..schemas.dynamips_device import DEVICE_CREATE_SCHEMA
@@ -184,51 +184,46 @@ class DynamipsDeviceHandler:
         yield from device.remove_nio(port_number)
         response.set_status(204)
 
-    # @Route.post(
-    #     r"/projects/{project_id}/dynamips/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
-    #     parameters={
-    #         "project_id": "UUID for the project",
-    #         "vm_id": "UUID for the instance",
-    #         "adapter_number": "Adapter to start a packet capture",
-    #         "port_number": "Port on the adapter"
-    #     },
-    #     status_codes={
-    #         200: "Capture started",
-    #         400: "Invalid request",
-    #         404: "Instance doesn't exist"
-    #     },
-    #     description="Start a packet capture on a Dynamips VM instance",
-    #     input=VM_CAPTURE_SCHEMA)
-    # def start_capture(request, response):
-    #
-    #     dynamips_manager = Dynamips.instance()
-    #     vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-    #     slot_number = int(request.match_info["adapter_number"])
-    #     port_number = int(request.match_info["port_number"])
-    #     pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-    #     yield from vm.start_capture(slot_number, port_number, pcap_file_path, request.json["data_link_type"])
-    #     response.json({"pcap_file_path": pcap_file_path})
-    #
-    # @Route.post(
-    #     r"/projects/{project_id}/dynamips/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
-    #     parameters={
-    #         "project_id": "UUID for the project",
-    #         "vm_id": "UUID for the instance",
-    #         "adapter_number": "Adapter to stop a packet capture",
-    #         "port_number": "Port on the adapter (always 0)"
-    #     },
-    #     status_codes={
-    #         204: "Capture stopped",
-    #         400: "Invalid request",
-    #         404: "Instance doesn't exist"
-    #     },
-    #     description="Stop a packet capture on a Dynamips VM instance")
-    # def start_capture(request, response):
-    #
-    #     dynamips_manager = Dynamips.instance()
-    #     vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-    #     slot_number = int(request.match_info["adapter_number"])
-    #     port_number = int(request.match_info["port_number"])
-    #     yield from vm.stop_capture(slot_number, port_number)
-    #     response.set_status(204)
+    @Route.post(
+        r"/projects/{project_id}/dynamips/devices/{device_id}/ports/{port_number:\d+}/start_capture",
+        parameters={
+            "project_id": "UUID for the project",
+            "device_id": "UUID for the instance",
+            "port_number": "Port on the device"
+        },
+        status_codes={
+            200: "Capture started",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Start a packet capture on a Dynamips device instance",
+        input=DEVICE_CAPTURE_SCHEMA)
+    def start_capture(request, response):
 
+        dynamips_manager = Dynamips.instance()
+        device = dynamips_manager.get_device(request.match_info["device_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        pcap_file_path = os.path.join(device.project.capture_working_directory(), request.json["capture_file_name"])
+        yield from device.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
+        response.json({"pcap_file_path": pcap_file_path})
+
+    @Route.post(
+        r"/projects/{project_id}/dynamips/devices/{device_id}/ports/{port_number:\d+}/stop_capture",
+        parameters={
+            "project_id": "UUID for the project",
+            "device_id": "UUID for the instance",
+            "port_number": "Port on the device"
+        },
+        status_codes={
+            204: "Capture stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Stop a packet capture on a Dynamips device instance")
+    def start_capture(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        device = dynamips_manager.get_device(request.match_info["device_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        yield from device.stop_capture(port_number)
+        response.set_status(204)

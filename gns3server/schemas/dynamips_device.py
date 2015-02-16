@@ -337,5 +337,5 @@ DEVICE_CAPTURE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["capture_file_name"]
+    "required": ["capture_file_name", "data_link_type"]
 }
