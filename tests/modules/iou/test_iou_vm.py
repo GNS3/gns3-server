@@ -258,3 +258,23 @@ def test_enable_l1_keepalives(loop, vm):
         with pytest.raises(IOUError):
             loop.run_until_complete(asyncio.async(vm._enable_l1_keepalives(command)))
             assert command == ["test"]
+
+
+def test_start_capture(vm, tmpdir, manager, free_console_port):
+
+    output_file = str(tmpdir / "test.pcap")
+    nio = manager.create_nio(vm.iouyap_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "192.168.1.2"})
+    vm.adapter_add_nio_binding(0, 0, nio)
+    vm.start_capture(0, 0, output_file)
+    assert vm._adapters[0].get_nio(0).capturing
+
+
+def test_stop_capture(vm, tmpdir, manager, free_console_port):
+
+    output_file = str(tmpdir / "test.pcap")
+    nio = manager.create_nio(vm.iouyap_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "192.168.1.2"})
+    vm.adapter_add_nio_binding(0, 0, nio)
+    vm.start_capture(0, 0, output_file)
+    assert vm._adapters[0].get_nio(0).capturing
+    vm.stop_capture(0, 0)
+    assert vm._adapters[0].get_nio(0).capturing == False

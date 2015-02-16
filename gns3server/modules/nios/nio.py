@@ -23,33 +23,35 @@ Base interface for NIOs.
 class NIO(object):
 
     """
-    Network Input/Output.
+    IOU NIO.
     """
 
     def __init__(self):
 
         self._capturing = False
         self._pcap_output_file = ""
+        self._pcap_data_link_type = ""
 
-    def startPacketCapture(self, pcap_output_file):
+    def startPacketCapture(self, pcap_output_file, pcap_data_link_type="DLT_EN10MB"):
         """
-
         :param pcap_output_file: PCAP destination file for the capture
+        :param pcap_data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
         self._capturing = True
         self._pcap_output_file = pcap_output_file
+        self._pcap_data_link_type = pcap_data_link_type
 
     def stopPacketCapture(self):
 
         self._capturing = False
         self._pcap_output_file = ""
+        self._pcap_data_link_type = ""
 
     @property
     def capturing(self):
         """
         Returns either a capture is configured on this NIO.
-
         :returns: boolean
         """
 
@@ -59,8 +61,16 @@ class NIO(object):
     def pcap_output_file(self):
         """
         Returns the path to the PCAP output file.
-
         :returns: path to the PCAP output file
         """
 
         return self._pcap_output_file
+
+    @property
+    def pcap_data_link_type(self):
+        """
+        Returns the PCAP data link type
+        :returns: PCAP data link type (DLT_* value)
+        """
+
+        return self._pcap_data_link_type

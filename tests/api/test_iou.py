@@ -201,3 +201,25 @@ def test_iou_delete_nio(server, vm):
     response = server.delete("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 204
     assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+
+
+def test_iou_start_capture(server, vm, tmpdir):
+
+    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start_capture", return_value=True) as mock:
+
+        params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
+        response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params)
+
+        assert mock.called
+        assert response.status == 200
+        assert "test.pcap" in response.json["pcap_file_path"]
+
+
+def test_iou_stop_capture(server, vm, tmpdir):
+
+    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.stop_capture", return_value=True) as mock:
+
+        response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+
+        assert mock.called
+        assert response.status == 204
