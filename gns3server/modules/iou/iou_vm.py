@@ -848,7 +848,7 @@ class IOUVM(BaseVM):
             with open(config_file) as f:
                 return f.read()
         except OSError as e:
-            raise VPCSError("Can't read configuration file '{}'".format(config_file))
+            raise IOUError("Can't read configuration file '{}'".format(config_file))
 
     @initial_config.setter
     def initial_config(self, initial_config):
@@ -867,7 +867,7 @@ class IOUVM(BaseVM):
                     initial_config = initial_config.replace("%h", self._name)
                     f.write(initial_config)
         except OSError as e:
-            raise VPCSError("Can't write initial configuration file '{}'".format(self.script_file))
+            raise IOUError("Can't write initial configuration file '{}'".format(self.script_file))
 
     @property
     def initial_config_file(self):

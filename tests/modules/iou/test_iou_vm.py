@@ -70,10 +70,11 @@ def test_vm(project, manager):
 
 
 def test_vm_initial_config(project, manager):
-     vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager, initial_config="hostname %h")
-     assert vm.name == "test"
-     assert vm.initial_config == "hostname test"
-     assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"
+    vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager, initial_config="hostname %h")
+    assert vm.name == "test"
+    assert vm.initial_config == "hostname test"
+    assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"
+
 
 @patch("gns3server.config.Config.get_section_config", return_value={"iouyap_path": "/bin/test_fake"})
 def test_vm_invalid_iouyap_path(project, manager, loop):
