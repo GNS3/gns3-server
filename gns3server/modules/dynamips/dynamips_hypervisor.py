@@ -20,7 +20,6 @@ Interface for Dynamips hypervisor management module ("hypervisor")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L46
 """
 
-import socket
 import re
 import logging
 import asyncio
@@ -53,15 +52,7 @@ class DynamipsHypervisor:
         self._port = port
 
         self._devices = []
-        self._ghosts = {}
-        self._jitsharing_groups = {}
         self._working_dir = working_dir
-        # self._console_start_port_range = 2001
-        # self._console_end_port_range = 2500
-        # self._aux_start_port_range = 2501
-        # self._aux_end_port_range = 3000
-        # self._udp_start_port_range = 10001
-        # self._udp_end_port_range = 20000
         self._nio_udp_auto_instances = {}
         self._version = "N/A"
         self._timeout = timeout
@@ -192,26 +183,6 @@ class DynamipsHypervisor:
         """
 
         return self._devices
-
-    @property
-    def ghosts(self):
-        """
-        Returns a list of the ghosts hosted by this hypervisor.
-
-        :returns: Ghosts dict (image_name -> device)
-        """
-
-        return self._ghosts
-
-    def add_ghost(self, image_name, router):
-        """
-        Adds a ghost name to the list of ghosts created on this hypervisor.
-
-        :param image_name: name of the ghost image
-        :param router: Router instance
-        """
-
-        self._ghosts[image_name] = router
 
     @property
     def port(self):

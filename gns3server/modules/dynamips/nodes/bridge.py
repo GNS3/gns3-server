@@ -44,7 +44,8 @@ class Bridge(Device):
     def create(self):
 
         if self._hypervisor is None:
-            self._hypervisor = yield from self.manager.start_new_hypervisor()
+            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
+            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=module_workdir)
 
         yield from self._hypervisor.send('nio_bridge create "{}"'.format(self._name))
         self._hypervisor.devices.append(self)

@@ -26,11 +26,14 @@ import shutil
 import socket
 import time
 import asyncio
+import tempfile
+import glob
 import logging
 
 log = logging.getLogger(__name__)
 
 from gns3server.utils.interfaces import get_windows_interfaces
+from gns3server.utils.asyncio import wait_run_in_executor
 from pkg_resources import parse_version
 from uuid import UUID, uuid4
 from ..base_manager import BaseManager
@@ -63,10 +66,8 @@ class Dynamips(BaseManager):
 
         super().__init__()
         self._devices = {}
+        self._ghost_files = set()
         self._dynamips_path = None
-
-        # FIXME: temporary
-        self._working_dir = "/tmp"
 
     @asyncio.coroutine
     def unload(self):
@@ -86,18 +87,43 @@ class Dynamips(BaseManager):
                     log.error("Could not stop device hypervisor {}".format(e), exc_info=1)
                     continue
 
-#         files = glob.glob(os.path.join(self._working_dir, "dynamips", "*.ghost"))
-#         files += glob.glob(os.path.join(self._working_dir, "dynamips", "*_lock"))
-#         files += glob.glob(os.path.join(self._working_dir, "dynamips", "ilt_*"))
-#         files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_rommon_vars"))
-#         files += glob.glob(os.path.join(self._working_dir, "dynamips", "c[0-9][0-9][0-9][0-9]_*_ssa"))
-#         for file in files:
-#             try:
-#                 log.debug("deleting file {}".format(file))
-#                 os.remove(file)
-#             except OSError as e:
-#                 log.warn("could not delete file {}: {}".format(file, e))
-#                 continue
+    @asyncio.coroutine
+    def project_closed(self, project_dir):
+        """
+        Called when a project is closed.
+
+        :param project_dir: project directory
+        """
+
+        # delete the Dynamips devices
+        tasks = []
+        for device in self._devices.values():
+            tasks.append(asyncio.async(device.delete()))
+
+        if tasks:
+            done, _ = yield from asyncio.wait(tasks)
+            for future in done:
+                try:
+                    future.result()
+                except Exception as e:
+                    log.error("Could not delete device {}".format(e), exc_info=1)
+
+        # delete useless files
+        project_dir = os.path.join(project_dir, 'project-files', self.module_name.lower())
+        files = glob.glob(os.path.join(project_dir, "*.ghost"))
+        files += glob.glob(os.path.join(project_dir, "*_lock"))
+        files += glob.glob(os.path.join(project_dir, "ilt_*"))
+        files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_*_rommon_vars"))
+        files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_*_ssa"))
+        for file in files:
+            try:
+                log.debug("Deleting file {}".format(file))
+                if file in self._ghost_files:
+                    self._ghost_files.remove(file)
+                yield from wait_run_in_executor(os.remove, file)
+            except OSError as e:
+                log.warn("Could not delete file {}: {}".format(file, e))
+                continue
 
     @property
     def dynamips_path(self):
@@ -126,7 +152,6 @@ class Dynamips(BaseManager):
         device = self._DEVICE_CLASS(name, device_id, project, self, device_type, *args, **kwargs)
         yield from device.create()
         self._devices[device.id] = device
-        project.add_device(device)
         return device
 
     def get_device(self, device_id, project_id=None):
@@ -170,7 +195,6 @@ class Dynamips(BaseManager):
 
         device = self.get_device(device_id)
         yield from device.delete()
-        device.project.remove_device(device)
         del self._devices[device.id]
         return device
 
@@ -220,15 +244,20 @@ class Dynamips(BaseManager):
             log.info("Dynamips server ready after {:.4f} seconds".format(time.time() - begin))
 
     @asyncio.coroutine
-    def start_new_hypervisor(self):
+    def start_new_hypervisor(self, working_dir=None):
         """
         Creates a new Dynamips process and start it.
+
+        :param working_dir: working directory
 
         :returns: the new hypervisor instance
         """
 
         if not self._dynamips_path:
             self.find_dynamips()
+
+        if not working_dir:
+            working_dir = tempfile.gettempdir()
 
         try:
             # let the OS find an unused port for the Dynamips hypervisor
@@ -238,9 +267,9 @@ class Dynamips(BaseManager):
         except OSError as e:
             raise DynamipsError("Could not find free port for the Dynamips hypervisor: {}".format(e))
 
-        hypervisor = Hypervisor(self._dynamips_path, self._working_dir, "127.0.0.1", port)
+        hypervisor = Hypervisor(self._dynamips_path, working_dir, "127.0.0.1", port)
 
-        log.info("Ceating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, self._working_dir))
+        log.info("Ceating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, working_dir))
         yield from hypervisor.start()
 
         yield from self._wait_for_hypervisor("127.0.0.1", port)
@@ -251,6 +280,13 @@ class Dynamips(BaseManager):
             raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(hypervisor.version))
 
         return hypervisor
+
+    @asyncio.coroutine
+    def ghost_ios_support(self, vm):
+
+        ghost_ios_support = self.config.get_section_config("Dynamips").get("ghost_ios_support", True)
+        if ghost_ios_support:
+            yield from self._set_ghost_ios(vm)
 
     @asyncio.coroutine
     def create_nio(self, node, nio_settings):
@@ -317,45 +353,44 @@ class Dynamips(BaseManager):
         yield from nio.create()
         return nio
 
-#     def set_ghost_ios(self, router):
-#         """
-#         Manages Ghost IOS support.
-#
-#         :param router: Router instance
-#         """
-#
-#         if not router.mmap:
-#             raise DynamipsError("mmap support is required to enable ghost IOS support")
-#
-#         ghost_instance = router.formatted_ghost_file()
-#         all_ghosts = []
-#
-#         # search of an existing ghost instance across all hypervisors
-#         for hypervisor in self._hypervisor_manager.hypervisors:
-#             all_ghosts.extend(hypervisor.ghosts)
-#
-#         if ghost_instance not in all_ghosts:
-#             # create a new ghost IOS instance
-#             ghost = Router(router.hypervisor, "ghost-" + ghost_instance, router.platform, ghost_flag=True)
-#             ghost.image = router.image
-#             # for 7200s, the NPE must be set when using an NPE-G2.
-#             if router.platform == "c7200":
-#                 ghost.npe = router.npe
-#             ghost.ghost_status = 1
-#             ghost.ghost_file = ghost_instance
-#             ghost.ram = router.ram
-#             try:
-#                 ghost.start()
-#                 ghost.stop()
-#             except DynamipsError:
-#                 raise
-#             finally:
-#                 ghost.clean_delete()
-#
-#         if router.ghost_file != ghost_instance:
-#             # set the ghost file to the router
-#             router.ghost_status = 2
-#             router.ghost_file = ghost_instance
+    @asyncio.coroutine
+    def _set_ghost_ios(self, vm):
+        """
+        Manages Ghost IOS support.
+
+        :param vm: VM instance
+        """
+
+        if not vm.mmap:
+            raise DynamipsError("mmap support is required to enable ghost IOS support")
+
+        ghost_file = vm.formatted_ghost_file()
+        ghost_file_path = os.path.join(vm.hypervisor.working_dir, ghost_file)
+        if ghost_file_path not in self._ghost_files:
+            # create a new ghost IOS instance
+            ghost_id = str(uuid4())
+            ghost = Router("ghost-" + ghost_file, ghost_id, vm.project, vm.manager, platform=vm.platform, hypervisor=vm.hypervisor, ghost_flag=True)
+            yield from ghost.create()
+            yield from ghost.set_image(vm.image)
+            # for 7200s, the NPE must be set when using an NPE-G2.
+            if vm.platform == "c7200":
+                yield from ghost.set_npe(vm.npe)
+            yield from ghost.set_ghost_status(1)
+            yield from ghost.set_ghost_file(ghost_file)
+            yield from ghost.set_ram(vm.ram)
+            try:
+                yield from ghost.start()
+                yield from ghost.stop()
+                self._ghost_files.add(ghost_file_path)
+            except DynamipsError:
+                raise
+            finally:
+                yield from ghost.clean_delete()
+
+        if vm.ghost_file != ghost_file:
+            # set the ghost file to the router
+            yield from vm.set_ghost_status(2)
+            yield from vm.set_ghost_file(ghost_file)
 #
 #     def create_config_from_file(self, local_base_config, router, destination_config_path):
 #         """

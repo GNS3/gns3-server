@@ -15,7 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
+import aiohttp
+import shutil
+import asyncio
+
+from ..utils.asyncio import wait_run_in_executor
+
 log = logging.getLogger(__name__)
 
 
@@ -106,6 +113,19 @@ class BaseVM:
         log.info("{module}: {name} [{id}] created".format(module=self.manager.module_name,
                                                           name=self.name,
                                                           id=self.id))
+
+    @asyncio.coroutine
+    def delete(self):
+        """
+        Delete the VM (including all its files).
+        """
+
+        directory = self.project.vm_working_dir(self)
+        if os.path.exists(directory):
+            try:
+                yield from wait_run_in_executor(shutil.rmtree, directory)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not delete the VM working directory: {}".format(e))
 
     def start(self):
         """

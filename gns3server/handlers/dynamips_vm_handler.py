@@ -67,6 +67,7 @@ class DynamipsVMHandler:
                     else:
                         setter(value)
 
+        yield from dynamips_manager.ghost_ios_support(vm)
         response.set_status(201)
         response.json(vm)
 

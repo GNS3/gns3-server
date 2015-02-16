@@ -19,8 +19,8 @@ import aiohttp
 import os
 import shutil
 import asyncio
-from uuid import UUID, uuid4
 
+from uuid import UUID, uuid4
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 
@@ -59,8 +59,6 @@ class Project:
 
         self._vms = set()
         self._vms_to_destroy = set()
-        self._devices = set()
-
         self.temporary = temporary
 
         if path is None:
@@ -72,6 +70,15 @@ class Project:
         self.path = path
 
         log.debug("Create project {id} in directory {path}".format(path=self._path, id=self._id))
+
+    def __json__(self):
+
+        return {
+            "project_id": self._id,
+            "location": self._location,
+            "temporary": self._temporary,
+            "path": self._path,
+        }
 
     def _config(self):
 
@@ -130,11 +137,6 @@ class Project:
         return self._vms
 
     @property
-    def devices(self):
-
-        return self._devices
-
-    @property
     def temporary(self):
 
         return self._temporary
@@ -167,13 +169,29 @@ class Project:
             if os.path.exists(os.path.join(self._path, ".gns3_temporary")):
                 os.remove(os.path.join(self._path, ".gns3_temporary"))
 
+    def module_working_directory(self, module_name):
+        """
+        Return a working directory for the module
+        If the directory doesn't exist, the directory is created.
+
+        :param module_name: name for the module
+        :returns: working directory
+        """
+
+        workdir = os.path.join(self._path, 'project-files', module_name)
+        try:
+            os.makedirs(workdir, exist_ok=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create module working directory: {}".format(e))
+        return workdir
+
     def vm_working_directory(self, vm):
         """
         Return a working directory for a specific VM.
         If the directory doesn't exist, the directory is created.
 
-        :param vm: An instance of VM
-        :returns: A string with a VM working directory
+        :param vm: VM instance
+        :returns: VM working directory
         """
 
         workdir = os.path.join(self._path, 'project-files', vm.manager.module_name.lower(), vm.id)
@@ -205,15 +223,6 @@ class Project:
         self.remove_vm(vm)
         self._vms_to_destroy.add(vm)
 
-    def __json__(self):
-
-        return {
-            "project_id": self._id,
-            "location": self._location,
-            "temporary": self._temporary,
-            "path": self._path,
-        }
-
     def add_vm(self, vm):
         """
         Add a VM to the project.
@@ -234,27 +243,6 @@ class Project:
 
         if vm in self._vms:
             self._vms.remove(vm)
-
-    def add_device(self, device):
-        """
-        Add a device to the project.
-        In theory this should be called by the VM manager.
-
-        :param device: Device instance
-        """
-
-        self._devices.add(device)
-
-    def remove_device(self, device):
-        """
-        Remove a device from the project.
-        In theory this should be called by the VM manager.
-
-        :param device: Device instance
-        """
-
-        if device in self._devices:
-            self._devices.remove(device)
 
     @asyncio.coroutine
     def close(self):
@@ -277,9 +265,6 @@ class Project:
             else:
                 vm.close()
 
-        for device in self._devices:
-            tasks.append(asyncio.async(device.delete()))
-
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
             for future in done:
@@ -300,12 +285,7 @@ class Project:
 
         while self._vms_to_destroy:
             vm = self._vms_to_destroy.pop()
-            directory = self.vm_working_directory(vm)
-            if os.path.exists(directory):
-                try:
-                    yield from wait_run_in_executor(shutil.rmtree, directory)
-                except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
+            yield from vm.delete()
             self.remove_vm(vm)
 
     @asyncio.coroutine

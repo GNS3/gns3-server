@@ -66,7 +66,8 @@ class EthernetSwitch(Device):
     def create(self):
 
         if self._hypervisor is None:
-            self._hypervisor = yield from self.manager.start_new_hypervisor()
+            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
+            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=module_workdir)
 
         yield from self._hypervisor.send('ethsw create "{}"'.format(self._name))
         log.info('Ethernet switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))

@@ -20,16 +20,18 @@ Interface for Dynamips virtual Machine module ("vm")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L77
 """
 
-from ...base_vm import BaseVM
-from ..dynamips_error import DynamipsError
-
 import asyncio
 import time
 import sys
 import os
+import glob
 
 import logging
 log = logging.getLogger(__name__)
+
+from ...base_vm import BaseVM
+from ..dynamips_error import DynamipsError
+from gns3server.utils.asyncio import wait_run_in_executor
 
 
 class Router(BaseVM):
@@ -51,11 +53,11 @@ class Router(BaseVM):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id=None, platform="c7200", ghost_flag=False):
+    def __init__(self, name, vm_id, project, manager, dynamips_id=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
         super().__init__(name, vm_id, project, manager)
 
-        self._hypervisor = None
+        self._hypervisor = hypervisor
         self._dynamips_id = dynamips_id
         self._closed = False
         self._name = name
@@ -113,7 +115,7 @@ class Router(BaseVM):
             else:
                 self._aux = self._manager.port_manager.get_free_console_port()
         else:
-            log.info("creating a new ghost IOS file")
+            log.info("Creating a new ghost IOS instance")
             self._dynamips_id = 0
             self._name = "Ghost"
 
@@ -166,10 +168,22 @@ class Router(BaseVM):
 
         cls._dynamips_ids.clear()
 
+    @property
+    def dynamips_id(self):
+        """
+        Returns the Dynamips VM ID.
+
+        :return: Dynamips VM identifier
+        """
+
+        return self._dynamips_id
+
     @asyncio.coroutine
     def create(self):
 
-        self._hypervisor = yield from self.manager.start_new_hypervisor()
+        if not self._hypervisor:
+            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
+            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=module_workdir)
 
         yield from self._hypervisor.send('vm create "{name}" {id} {platform}'.format(name=self._name,
                                                                                      id=self._dynamips_id,
@@ -300,6 +314,7 @@ class Router(BaseVM):
                 yield from self.stop()
             except DynamipsError:
                 pass
+            yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
             yield from self.hypervisor.stop()
 
         if self._console:
@@ -314,17 +329,6 @@ class Router(BaseVM):
             self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
         self._closed = True
-
-    @asyncio.coroutine
-    def delete(self):
-        """
-        Deletes this router.
-        """
-
-        yield from self.close()
-        yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
-        self._hypervisor.devices.remove(self)
-        log.info('Router "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
 
     @property
     def platform(self):
@@ -398,7 +402,6 @@ class Router(BaseVM):
         :param image: path to IOS image file
         """
 
-        # encase image in quotes to protect spaces in the path
         yield from self._hypervisor.send('vm set_ios "{name}" "{image}"'.format(name=self._name, image=image))
 
         log.info('Router "{name}" [{id}]: has a new IOS image set: "{image}"'.format(name=self._name,
@@ -706,10 +709,6 @@ class Router(BaseVM):
                                                                                  ghost_file=ghost_file))
 
         self._ghost_file = ghost_file
-
-        # this is a ghost instance, track this as a hosted ghost instance by this hypervisor
-        if self.ghost_status == 1:
-            self._hypervisor.add_ghost(ghost_file, self)
 
     def formatted_ghost_file(self):
         """
@@ -1548,24 +1547,41 @@ class Router(BaseVM):
     #             except OSError as e:
     #                 raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
 
-    # def clean_delete(self):
-    #     """
-    #     Deletes this router & associated files (nvram, disks etc.)
-    #     """
-    #
-    #     self._hypervisor.send("vm clean_delete {}".format(self._name))
-    #     self._hypervisor.devices.remove(self)
-    #
-    #     if self._startup_config:
-    #         # delete the startup-config
-    #         startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
-    #         if os.path.isfile(startup_config_path):
-    #             os.remove(startup_config_path)
-    #
-    #     if self._private_config:
-    #         # delete the private-config
-    #         private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}-private.cfg".format(self.name))
-    #         if os.path.isfile(private_config_path):
-    #             os.remove(private_config_path)
-    #
-    #     log.info("router {name} [id={id}] has been deleted (including associated files)".format(name=self._name, id=self._id))
+    def delete(self):
+        """
+        Delete the VM (including all its files).
+        """
+
+        # delete the VM files
+        project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
+        files = glob.glob(os.path.join(project_dir, "{}_i{}*".format(self._platform, self._dynamips_id)))
+        for file in files:
+            try:
+                log.debug("Deleting file {}".format(file))
+                yield from wait_run_in_executor(os.remove, file)
+            except OSError as e:
+                log.warn("Could not delete file {}: {}".format(file, e))
+                continue
+
+    @asyncio.coroutine
+    def clean_delete(self, stop_hypervisor=False):
+        """
+        Deletes this router & associated files (nvram, disks etc.)
+        """
+
+        yield from self._hypervisor.send('vm clean_delete "{}"'.format(self._name))
+        self._hypervisor.devices.remove(self)
+
+        # if self._startup_config:
+        #     # delete the startup-config
+        #     startup_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}.cfg".format(self.name))
+        #     if os.path.isfile(startup_config_path):
+        #         os.remove(startup_config_path)
+        #
+        # if self._private_config:
+        #     # delete the private-config
+        #     private_config_path = os.path.join(self.hypervisor.working_dir, "configs", "{}-private.cfg".format(self.name))
+        #     if os.path.isfile(private_config_path):
+        #         os.remove(private_config_path)
+
+        log.info('Router "{name}" [{id}] has been deleted (including associated files)'.format(name=self._name, id=self._id))

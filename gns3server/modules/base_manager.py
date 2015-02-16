@@ -206,6 +206,16 @@ class BaseManager:
         return vm
 
     @asyncio.coroutine
+    def project_closed(self, project_dir):
+        """
+        Called when a project is closed.
+
+        :param project_dir: project directory
+        """
+
+        pass
+
+    @asyncio.coroutine
     def delete_vm(self, vm_id):
         """
         Delete a VM. VM working directory will be destroy when

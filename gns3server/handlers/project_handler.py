@@ -18,6 +18,7 @@
 from ..web.route import Route
 from ..schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA
 from ..modules.project_manager import ProjectManager
+from ..modules import MODULES
 
 
 class ProjectHandler:
@@ -112,6 +113,8 @@ class ProjectHandler:
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
         yield from project.close()
+        for module in MODULES:
+            yield from module.instance().project_closed(project.path)
         response.set_status(204)
 
     @classmethod
