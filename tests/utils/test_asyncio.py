@@ -19,7 +19,7 @@
 import asyncio
 import pytest
 
-from gns3server.utils.asyncio import wait_run_in_executor
+from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output
 
 
 def test_wait_run_in_executor(loop):
@@ -40,3 +40,13 @@ def test_exception_wait_run_in_executor(loop):
     exec = wait_run_in_executor(raise_exception)
     with pytest.raises(Exception):
         result = loop.run_until_complete(asyncio.async(exec))
+
+
+def test_subprocess_check_output(loop, tmpdir, restore_original_path):
+
+    path = str(tmpdir / "test")
+    with open(path, "w+") as f:
+        f.write("TEST")
+    exec = subprocess_check_output("cat", path)
+    result = loop.run_until_complete(asyncio.async(exec))
+    assert result == "TEST"

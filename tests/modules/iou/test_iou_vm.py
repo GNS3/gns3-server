@@ -184,18 +184,18 @@ def test_create_netmap_config(vm):
     assert "513:15/3    1:15/3" in content
 
 
-def test_build_command(vm):
+def test_build_command(vm, loop):
 
-    assert vm._build_command() == [vm.path, "-L", str(vm.application_id)]
+    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", str(vm.application_id)]
 
 
-def test_build_command_initial_config(vm):
+def test_build_command_initial_config(vm, loop):
 
     filepath = os.path.join(vm.working_dir, "initial-config.cfg")
     with open(filepath, "w+") as f:
         f.write("service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption")
 
-    assert vm._build_command() == [vm.path, "-L", "-c", vm.initial_config_file, str(vm.application_id)]
+    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", "-c", vm.initial_config_file, str(vm.application_id)]
 
 
 def test_get_initial_config(vm):
@@ -231,3 +231,30 @@ def test_change_name(vm, tmpdir):
     assert vm.name == "hello"
     with open(path) as f:
         assert f.read() == "hostname hello"
+
+
+def test_library_check(loop, vm):
+
+    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="") as mock:
+
+        loop.run_until_complete(asyncio.async(vm._library_check()))
+
+    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="libssl => not found") as mock:
+        with pytest.raises(IOUError):
+            loop.run_until_complete(asyncio.async(vm._library_check()))
+
+
+def test_enable_l1_keepalives(loop, vm):
+
+    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="***************************************************************\n\n-l		Enable Layer 1 keepalive messages\n-u <n>		UDP port base for distributed networks\n") as mock:
+
+        command = ["test"]
+        loop.run_until_complete(asyncio.async(vm._enable_l1_keepalives(command)))
+        assert command == ["test", "-l"]
+
+    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="***************************************************************\n\n-u <n>		UDP port base for distributed networks\n") as mock:
+
+        command = ["test"]
+        with pytest.raises(IOUError):
+            loop.run_until_complete(asyncio.async(vm._enable_l1_keepalives(command)))
+            assert command == ["test"]

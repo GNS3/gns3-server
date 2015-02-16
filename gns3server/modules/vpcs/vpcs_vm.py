@@ -32,6 +32,7 @@ from pkg_resources import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_vm import BaseVM
+from ...utils.asyncio import subprocess_check_output
 
 
 import logging
@@ -195,7 +196,7 @@ class VPCSVM(BaseVM):
         Checks if the VPCS executable version is >= 0.5b1.
         """
         try:
-            output = yield from self._get_vpcs_welcome()
+            output = yield from subprocess_check_output(self.vpcs_path, "-v", cwd=self.working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
@@ -205,12 +206,6 @@ class VPCSVM(BaseVM):
                 raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
         except (OSError, subprocess.SubprocessError) as e:
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
-
-    @asyncio.coroutine
-    def _get_vpcs_welcome(self):
-        proc = yield from asyncio.create_subprocess_exec(self.vpcs_path, "-v", stdout=asyncio.subprocess.PIPE, cwd=self.working_dir)
-        out = yield from proc.stdout.read()
-        return out.decode("utf-8")
 
     @asyncio.coroutine
     def start(self):

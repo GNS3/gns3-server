@@ -17,6 +17,7 @@
 
 
 import asyncio
+import shutil
 
 
 @asyncio.coroutine
@@ -34,3 +35,21 @@ def wait_run_in_executor(func, *args):
     future = loop.run_in_executor(None, func, *args)
     yield from asyncio.wait([future])
     return future.result()
+
+
+@asyncio.coroutine
+def subprocess_check_output(*args, working_dir=None, env=None):
+    """
+    Run a command and capture output
+
+    :param *args: List of command arguments
+    :param working_dir: Working directory
+    :param env: Command environment
+    :returns: Command output
+    """
+
+    proc = yield from asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, cwd=working_dir, env=env)
+    output = yield from proc.stdout.read()
+    if output is None:
+        return ""
+    return output.decode("utf-8")

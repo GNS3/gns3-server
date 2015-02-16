@@ -47,7 +47,7 @@ def test_vm(project, manager):
 
 
 def test_vm_invalid_vpcs_version(loop, project, manager):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._get_vpcs_welcome", return_value="Welcome to Virtual PC Simulator, version 0.1"):
+    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
         with pytest.raises(VPCSError):
             vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
             nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})

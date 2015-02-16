@@ -22,10 +22,10 @@ order to run an IOU instance.
 
 import os
 import sys
-import subprocess
 import signal
 import re
 import asyncio
+import subprocess
 import shutil
 import argparse
 import threading
@@ -40,6 +40,7 @@ from ..nios.nio_udp import NIO_UDP
 from ..nios.nio_tap import NIO_TAP
 from ..base_vm import BaseVM
 from .ioucon import start_ioucon
+import gns3server.utils.asyncio
 
 
 import logging
@@ -90,6 +91,7 @@ class IOUVM(BaseVM):
         self._console_host = console_host
 
         # IOU settings
+        self._iourc = None
         self._ethernet_adapters = []
         self._serial_adapters = []
         self.ethernet_adapters = 2 if ethernet_adapters is None else ethernet_adapters  # one adapter = 4 interfaces
@@ -327,20 +329,21 @@ class IOUVM(BaseVM):
     def application_id(self):
         return self._manager.get_application_id(self.id)
 
-    # TODO: ASYNCIO
+    @asyncio.coroutine
     def _library_check(self):
         """
         Checks for missing shared library dependencies in the IOU image.
         """
 
         try:
-            output = subprocess.check_output(["ldd", self._path])
+            output = yield from gns3server.utils.asyncio.subprocess_check_output("ldd", self._path)
         except (FileNotFoundError, subprocess.SubprocessError) as e:
-            log.warn("could not determine the shared library dependencies for {}: {}".format(self._path, e))
+            log.warn("Could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
+        print(output)
         p = re.compile("([\.\w]+)\s=>\s+not found")
-        missing_libs = p.findall(output.decode("utf-8"))
+        missing_libs = p.findall(output)
         if missing_libs:
             raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
                                                                                                                    ", ".join(missing_libs)))
@@ -354,10 +357,9 @@ class IOUVM(BaseVM):
         self._check_requirements()
         if not self.is_running():
 
-            self._rename_nvram_file()
+            yield from self._library_check()
 
-            # TODO: ASYNC
-            # self._library_check()
+            self._rename_nvram_file()
 
             if self._iourc_path and not os.path.isfile(self._iourc_path):
                 raise IOUError("A valid iourc file is necessary to start IOU")
@@ -371,7 +373,7 @@ class IOUVM(BaseVM):
             env = os.environ.copy()
             if self._iourc_path:
                 env["IOURC"] = self._iourc_path
-            self._command = self._build_command()
+            self._command = yield from self._build_command()
             try:
                 log.info("Starting IOU: {}".format(self._command))
                 self._iou_stdout_file = os.path.join(self.working_dir, "iou.log")
@@ -394,7 +396,7 @@ class IOUVM(BaseVM):
             # start console support
             self._start_ioucon()
             # connections support
-            self._start_iouyap()
+            yield from self._start_iouyap()
 
     def _rename_nvram_file(self):
         """
@@ -405,6 +407,7 @@ class IOUVM(BaseVM):
         for file_path in glob.glob(os.path.join(self.working_dir, "nvram_*")):
             shutil.move(file_path, destination)
 
+    @asyncio.coroutine
     def _start_iouyap(self):
         """
         Starts iouyap (handles connections to and from this IOU device).
@@ -417,10 +420,10 @@ class IOUVM(BaseVM):
             self._iouyap_stdout_file = os.path.join(self.working_dir, "iouyap.log")
             log.info("logging to {}".format(self._iouyap_stdout_file))
             with open(self._iouyap_stdout_file, "w") as fd:
-                self._iouyap_process = subprocess.Popen(command,
-                                                        stdout=fd,
-                                                        stderr=subprocess.STDOUT,
-                                                        cwd=self.working_dir)
+                self._iouyap_process = yield from asyncio.create_subprocess_exec(*command,
+                                                                                 stdout=fd,
+                                                                                 stderr=subprocess.STDOUT,
+                                                                                 cwd=self.working_dir)
 
             log.info("iouyap started PID={}".format(self._iouyap_process.pid))
         except (OSError, subprocess.SubprocessError) as e:
@@ -596,6 +599,7 @@ class IOUVM(BaseVM):
         except OSError as e:
             raise IOUError("Could not create {}: {}".format(netmap_path, e))
 
+    @asyncio.coroutine
     def _build_command(self):
         """
         Command to start the IOU process.
@@ -639,7 +643,7 @@ class IOUVM(BaseVM):
         if initial_config_file:
             command.extend(["-c", initial_config_file])
         if self._l1_keepalives:
-            self._enable_l1_keepalives(command)
+            yield from self._enable_l1_keepalives(command)
         command.extend([str(self.application_id)])
         return command
 
@@ -819,6 +823,7 @@ class IOUVM(BaseVM):
         else:
             log.info("IOU {name} [id={id}]: has deactivated layer 1 keepalive messages".format(name=self._name, id=self._id))
 
+    @asyncio.coroutine
     def _enable_l1_keepalives(self, command):
         """
         Enables L1 keepalive messages if supported.
@@ -828,8 +833,8 @@ class IOUVM(BaseVM):
         env = os.environ.copy()
         env["IOURC"] = self._iourc
         try:
-            output = subprocess.check_output([self._path, "-h"], stderr=subprocess.STDOUT, cwd=self._working_dir, env=env)
-            if re.search("-l\s+Enable Layer 1 keepalive messages", output.decode("utf-8")):
+            output = yield from gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, env=env)
+            if re.search("-l\s+Enable Layer 1 keepalive messages", output):
                 command.extend(["-l"])
             else:
                 raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))

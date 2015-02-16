@@ -37,6 +37,17 @@ from tests.api.base import Query
 os.environ["PATH"] = tempfile.mkdtemp()
 
 
+@pytest.yield_fixture
+def restore_original_path():
+    """
+    Temporary restore a standard path environnement. This allow
+    to run external binaries.
+    """
+    os.environ["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    yield
+    os.environ["PATH"] = tempfile.mkdtemp()
+
+
 @pytest.fixture(scope="session")
 def loop(request):
     """Return an event loop and destroy it at the end of test"""
