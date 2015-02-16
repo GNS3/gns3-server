@@ -142,12 +142,12 @@ def test_reload(loop, vm, fake_iou_bin):
                     process.terminate.assert_called_with()
 
 
-def test_close(vm, port_manager):
+def test_close(vm, port_manager, loop):
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
             port = vm.console
-            vm.close()
+            loop.run_until_complete(asyncio.async(vm.close()))
             # Raise an exception if the port is not free
             port_manager.reserve_console_port(port)
             assert vm.is_running() is False
