@@ -212,12 +212,12 @@ def test_change_name(vm, tmpdir):
         assert f.read() == "name hello"
 
 
-def test_close(vm, port_manager):
+def test_close(vm, port_manager, loop):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
             port = vm.console
-            vm.close()
+            loop.run_until_complete(asyncio.async(vm.close()))
             # Raise an exception if the port is not free
             port_manager.reserve_console_port(port)
             assert vm.is_running() is False

@@ -142,12 +142,12 @@ def test_reload(loop, vm, fake_iou_bin):
                     process.terminate.assert_called_with()
 
 
-def test_close(vm, port_manager):
+def test_close(vm, port_manager, loop):
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
             port = vm.console
-            vm.close()
+            loop.run_until_complete(asyncio.async(vm.close()))
             # Raise an exception if the port is not free
             port_manager.reserve_console_port(port)
             assert vm.is_running() is False
@@ -258,3 +258,23 @@ def test_enable_l1_keepalives(loop, vm):
         with pytest.raises(IOUError):
             loop.run_until_complete(asyncio.async(vm._enable_l1_keepalives(command)))
             assert command == ["test"]
+
+
+def test_start_capture(vm, tmpdir, manager, free_console_port):
+
+    output_file = str(tmpdir / "test.pcap")
+    nio = manager.create_nio(vm.iouyap_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "192.168.1.2"})
+    vm.adapter_add_nio_binding(0, 0, nio)
+    vm.start_capture(0, 0, output_file)
+    assert vm._adapters[0].get_nio(0).capturing
+
+
+def test_stop_capture(vm, tmpdir, manager, free_console_port):
+
+    output_file = str(tmpdir / "test.pcap")
+    nio = manager.create_nio(vm.iouyap_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "192.168.1.2"})
+    vm.adapter_add_nio_binding(0, 0, nio)
+    vm.start_capture(0, 0, output_file)
+    assert vm._adapters[0].get_nio(0).capturing
+    vm.stop_capture(0, 0)
+    assert vm._adapters[0].get_nio(0).capturing == False

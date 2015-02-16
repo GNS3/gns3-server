@@ -445,7 +445,7 @@ class IOUVM(BaseVM):
                              "base_port": "49000"}
 
         bay_id = 0
-        for adapter in self._slots:
+        for adapter in self._adapters:
             unit_id = 0
             for unit in adapter.ports.keys():
                 nio = adapter.get_nio(unit)
@@ -716,7 +716,7 @@ class IOUVM(BaseVM):
                                                                                                   id=self._id,
                                                                                                   adapters=len(self._ethernet_adapters)))
 
-        self._slots = self._ethernet_adapters + self._serial_adapters
+        self._adapters = self._ethernet_adapters + self._serial_adapters
 
     @property
     def serial_adapters(self):
@@ -742,21 +742,21 @@ class IOUVM(BaseVM):
                                                                                                 id=self._id,
                                                                                                 adapters=len(self._serial_adapters)))
 
-        self._slots = self._ethernet_adapters + self._serial_adapters
+        self._adapters = self._ethernet_adapters + self._serial_adapters
 
-    def slot_add_nio_binding(self, adapter_number, port_number, nio):
+    def adapter_add_nio_binding(self, adapter_number, port_number, nio):
         """
-        Adds a slot NIO binding.
-        :param adapter_number: slot ID
+        Adds a adapter NIO binding.
+        :param adapter_number: adapter ID
         :param port_number: port ID
-        :param nio: NIO instance to add to the slot/port
+        :param nio: NIO instance to add to the adapter/port
         """
 
         try:
-            adapter = self._slots[adapter_number]
+            adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError("Slot {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
-                                                                                      adapter_number=adapter_number))
+            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
+                                                                                         adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
             raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
@@ -772,19 +772,19 @@ class IOUVM(BaseVM):
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
 
-    def slot_remove_nio_binding(self, adapter_number, port_number):
+    def adapter_remove_nio_binding(self, adapter_number, port_number):
         """
-        Removes a slot NIO binding.
-        :param adapter_number: slot ID
+        Removes a adapter NIO binding.
+        :param adapter_number: adapter ID
         :param port_number: port ID
         :returns: NIO instance
         """
 
         try:
-            adapter = self._slots[adapter_number]
+            adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError("Slot {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
-                                                                                      adapter_number=adapter_number))
+            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
+                                                                                         adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
             raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
@@ -889,3 +889,73 @@ class IOUVM(BaseVM):
             return path
         else:
             return None
+
+    def start_capture(self, adapter_number, port_number, output_file, data_link_type="DLT_EN10MB"):
+        """
+        Starts a packet capture.
+        :param adapter_number: adapter ID
+        :param port_number: port ID
+        :param port: allocated port
+        :param output_file: PCAP destination file for the capture
+        :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        """
+
+        try:
+            adapter = self._adapters[adapter_number]
+        except IndexError:
+            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
+                                                                                         adapter_number=adapter_number))
+
+        if not adapter.port_exists(port_number):
+            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
+
+        nio = adapter.get_nio(port_number)
+        if nio.capturing:
+            raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
+                                                                                                          port_number=port_number))
+
+        try:
+            os.makedirs(os.path.dirname(output_file))
+        except FileExistsError:
+            pass
+        except OSError as e:
+            raise IOUError("Could not create captures directory {}".format(e))
+
+        nio.startPacketCapture(output_file, data_link_type)
+
+        log.info("IOU {name} [id={id}]: starting packet capture on {adapter_number}/{port_number}".format(name=self._name,
+                                                                                                          id=self._id,
+                                                                                                          adapter_number=adapter_number,
+                                                                                                          port_number=port_number))
+
+        if self.is_iouyap_running():
+            self._update_iouyap_config()
+            os.kill(self._iouyap_process.pid, signal.SIGHUP)
+
+    def stop_capture(self, adapter_number, port_number):
+        """
+        Stops a packet capture.
+        :param adapter_number: adapter ID
+        :param port_number: port ID
+        """
+
+        try:
+            adapter = self._adapters[adapter_number]
+        except IndexError:
+            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
+                                                                                         adapter_number=adapter_number))
+
+        if not adapter.port_exists(port_number):
+            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
+
+        nio = adapter.get_nio(port_number)
+        nio.stopPacketCapture()
+        log.info("IOU {name} [id={id}]: stopping packet capture on {adapter_number}/{port_number}".format(name=self._name,
+                                                                                                          id=self._id,
+                                                                                                          adapter_number=adapter_number,
+                                                                                                          port_number=port_number))
+        if self.is_iouyap_running():
+            self._update_iouyap_config()
+            os.kill(self._iouyap_process.pid, signal.SIGHUP)
