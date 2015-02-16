@@ -57,17 +57,11 @@ class DynamipsVMHandler:
                                                    request.json.get("dynamips_id"),
                                                    request.json.pop("platform"))
 
-        # set VM settings
-        for name, value in request.json.items():
-            if hasattr(vm, name) and getattr(vm, name) != value:
-                if hasattr(vm, "set_{}".format(name)):
-                    setter = getattr(vm, "set_{}".format(name))
-                    if asyncio.iscoroutinefunction(vm.close):
-                        yield from setter(value)
-                    else:
-                        setter(value)
-
+        yield from dynamips_manager.update_vm_settings(vm, request.json)
         yield from dynamips_manager.ghost_ios_support(vm)
+        yield from dynamips_manager.create_vm_configs(vm,
+                                                      request.json.get("startup_config_content"),
+                                                      request.json.get("private_config_content"))
         response.set_status(201)
         response.json(vm)
 
@@ -112,14 +106,7 @@ class DynamipsVMHandler:
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
-        # set VM settings
-        for name, value in request.json.items():
-            if hasattr(vm, name) and getattr(vm, name) != value:
-                setter = getattr(vm, "set_{}".format(name))
-                if asyncio.iscoroutinefunction(vm.close):
-                    yield from setter(value)
-                else:
-                    setter(value)
+        yield from dynamips_manager.update_vm_settings(vm, request.json)
         response.json(vm)
 
     @classmethod
@@ -333,7 +320,7 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on a Dynamips VM instance")
-    def start_capture(request, response):
+    def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])

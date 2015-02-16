@@ -220,7 +220,7 @@ class DynamipsDeviceHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on a Dynamips device instance")
-    def start_capture(request, response):
+    def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
         device = dynamips_manager.get_device(request.match_info["device_id"], project_id=request.match_info["project_id"])

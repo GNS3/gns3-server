@@ -62,10 +62,18 @@ VM_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "startup_config_content": {
+            "description": "Content of IOS startup configuration file",
+            "type": "string",
+        },
         "private_config": {
             "description": "path to the IOS private configuration file",
             "type": "string",
             "minLength": 1,
+        },
+        "private_config_content": {
+            "description": "Content of IOS private configuration file",
+            "type": "string",
         },
         "ram": {
             "description": "amount of RAM in MB",

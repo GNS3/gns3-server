@@ -336,7 +336,7 @@ class VirtualBoxHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on a VirtualBox VM instance")
-    def start_capture(request, response):
+    def stop_capture(request, response):
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])

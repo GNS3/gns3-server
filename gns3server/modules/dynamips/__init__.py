@@ -56,6 +56,51 @@ from .nios.nio_fifo import NIOFIFO
 from .nios.nio_mcast import NIOMcast
 from .nios.nio_null import NIONull
 
+# Adapters
+from .adapters.c7200_io_2fe import C7200_IO_2FE
+from .adapters.c7200_io_fe import C7200_IO_FE
+from .adapters.c7200_io_ge_e import C7200_IO_GE_E
+from .adapters.nm_16esw import NM_16ESW
+from .adapters.nm_1e import NM_1E
+from .adapters.nm_1fe_tx import NM_1FE_TX
+from .adapters.nm_4e import NM_4E
+from .adapters.nm_4t import NM_4T
+from .adapters.pa_2fe_tx import PA_2FE_TX
+from .adapters.pa_4e import PA_4E
+from .adapters.pa_4t import PA_4T
+from .adapters.pa_8e import PA_8E
+from .adapters.pa_8t import PA_8T
+from .adapters.pa_a1 import PA_A1
+from .adapters.pa_fe_tx import PA_FE_TX
+from .adapters.pa_ge import PA_GE
+from .adapters.pa_pos_oc3 import PA_POS_OC3
+from .adapters.wic_1enet import WIC_1ENET
+from .adapters.wic_1t import WIC_1T
+from .adapters.wic_2t import WIC_2T
+
+
+ADAPTER_MATRIX = {"C7200-IO-2FE": C7200_IO_2FE,
+                  "C7200-IO-FE": C7200_IO_FE,
+                  "C7200-IO-GE-E": C7200_IO_GE_E,
+                  "NM-16ESW": NM_16ESW,
+                  "NM-1E": NM_1E,
+                  "NM-1FE-TX": NM_1FE_TX,
+                  "NM-4E": NM_4E,
+                  "NM-4T": NM_4T,
+                  "PA-2FE-TX": PA_2FE_TX,
+                  "PA-4E": PA_4E,
+                  "PA-4T+": PA_4T,
+                  "PA-8E": PA_8E,
+                  "PA-8T": PA_8T,
+                  "PA-A1": PA_A1,
+                  "PA-FE-TX": PA_FE_TX,
+                  "PA-GE": PA_GE,
+                  "PA-POS-OC3": PA_POS_OC3}
+
+WIC_MATRIX = {"WIC-1ENET": WIC_1ENET,
+              "WIC-1T": WIC_1T,
+              "WIC-2T": WIC_2T}
+
 
 class Dynamips(BaseManager):
 
@@ -391,67 +436,93 @@ class Dynamips(BaseManager):
             # set the ghost file to the router
             yield from vm.set_ghost_status(2)
             yield from vm.set_ghost_file(ghost_file)
-#
-#     def create_config_from_file(self, local_base_config, router, destination_config_path):
-#         """
-#         Creates a config file from a local base config
-#
-#         :param local_base_config: path the a local base config
-#         :param router: router instance
-#         :param destination_config_path: path to the destination config file
-#
-#         :returns: relative path to the created config file
-#         """
-#
-#         log.info("creating config file {} from {}".format(destination_config_path, local_base_config))
-#         config_path = destination_config_path
-#         config_dir = os.path.dirname(destination_config_path)
-#         try:
-#             os.makedirs(config_dir)
-#         except FileExistsError:
-#             pass
-#         except OSError as e:
-#             raise DynamipsError("Could not create configs directory: {}".format(e))
-#
-#         try:
-#             with open(local_base_config, "r", errors="replace") as f:
-#                 config = f.read()
-#             with open(config_path, "w") as f:
-#                 config = "!\n" + config.replace("\r", "")
-#                 config = config.replace('%h', router.name)
-#                 f.write(config)
-#         except OSError as e:
-#             raise DynamipsError("Could not save the configuration from {} to {}: {}".format(local_base_config, config_path, e))
-#         return "configs" + os.sep + os.path.basename(config_path)
-#
-#     def create_config_from_base64(self, config_base64, router, destination_config_path):
-#         """
-#         Creates a config file from a base64 encoded config.
-#
-#         :param config_base64: base64 encoded config
-#         :param router: router instance
-#         :param destination_config_path: path to the destination config file
-#
-#         :returns: relative path to the created config file
-#         """
-#
-#         log.info("creating config file {} from base64".format(destination_config_path))
-#         config = base64.decodebytes(config_base64.encode("utf-8")).decode("utf-8")
-#         config = "!\n" + config.replace("\r", "")
-#         config = config.replace('%h', router.name)
-#         config_dir = os.path.dirname(destination_config_path)
-#         try:
-#             os.makedirs(config_dir)
-#         except FileExistsError:
-#             pass
-#         except OSError as e:
-#             raise DynamipsError("Could not create configs directory: {}".format(e))
-#
-#         config_path = destination_config_path
-#         try:
-#             with open(config_path, "w") as f:
-#                 log.info("saving startup-config to {}".format(config_path))
-#                 f.write(config)
-#         except OSError as e:
-#             raise DynamipsError("Could not save the configuration {}: {}".format(config_path, e))
-#         return "configs" + os.sep + os.path.basename(config_path)
+
+    @asyncio.coroutine
+    def update_vm_settings(self, vm, settings):
+        """
+        Updates the VM settings.
+
+        :param vm: VM instance
+        :param settings: settings to update (dict)
+        """
+
+        for name, value in settings.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                if hasattr(vm, "set_{}".format(name)):
+                    setter = getattr(vm, "set_{}".format(name))
+                    if asyncio.iscoroutinefunction(vm.close):
+                        yield from setter(value)
+                    else:
+                        setter(value)
+            elif name.startswith("slot") and value in ADAPTER_MATRIX:
+                slot_id = int(name[-1])
+                adapter_name = value
+                adapter = ADAPTER_MATRIX[adapter_name]()
+                if vm.slots[slot_id] and type(vm.slots[slot_id]) != type(adapter):
+                    yield from vm.slot_remove_binding(slot_id)
+                yield from vm.slot_add_binding(slot_id, adapter)
+            elif name.startswith("slot") and value is None:
+                slot_id = int(name[-1])
+                if vm.slots[slot_id]:
+                    yield from vm.slot_remove_binding(slot_id)
+            elif name.startswith("wic") and value in WIC_MATRIX:
+                wic_slot_id = int(name[-1])
+                wic_name = value
+                wic = WIC_MATRIX[wic_name]()
+                if vm.slots[0].wics[wic_slot_id] and type(vm.slots[0].wics[wic_slot_id]) != type(wic):
+                    yield from vm.uninstall_wic(wic_slot_id)
+                yield from vm.install_wic(wic_slot_id, wic)
+            elif name.startswith("wic") and value is None:
+                wic_slot_id = int(name[-1])
+                if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
+                    yield from vm.uninstall_wic(wic_slot_id)
+
+    @asyncio.coroutine
+    def create_vm_configs(self, vm, startup_config_content, private_config_content):
+        """
+        Creates VM configs from pushed content.
+
+        :param vm: VM instance
+        :param startup_config_content: content of the startup-config
+        :param private_config_content: content of the private-config
+        """
+
+        default_startup_config_path = os.path.join(vm.project.vm_working_directory(vm), "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
+        default_private_config_path = os.path.join(vm.project.vm_working_directory(vm), "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
+
+        if startup_config_content:
+            startup_config_path = self._create_config(vm, startup_config_content, default_startup_config_path)
+            yield from vm.set_config(startup_config_path)
+
+        if private_config_content:
+            private_config_path = self._create_config(vm, private_config_content, default_private_config_path)
+            yield from vm.set_config(vm.startup_config, private_config_path)
+
+    def _create_config(self, vm, content, path):
+        """
+        Creates a config file.
+
+        :param vm: VM instance
+        :param content: config content
+        :param path: path to the destination config file
+
+        :returns: relative path to the created config file
+        """
+
+        log.info("Creating config file {}".format(path))
+        content = "!\n" + content.replace("\r", "")
+        content = content.replace('%h', vm.name)
+        config_dir = os.path.dirname(path)
+        try:
+            os.makedirs(config_dir, exist_ok=True)
+        except OSError as e:
+            raise DynamipsError("Could not create Dynamips configs directory: {}".format(e))
+
+        try:
+            with open(path, "w") as f:
+                log.info("Creating config file {}".format(path))
+                f.write(content)
+        except OSError as e:
+            raise DynamipsError("Could not create config file {}: {}".format(path, e))
+
+        return os.path.join("configs", os.path.basename(path))
