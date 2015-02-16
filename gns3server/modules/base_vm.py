@@ -120,7 +120,7 @@ class BaseVM:
         Delete the VM (including all its files).
         """
 
-        directory = self.project.vm_working_dir(self)
+        directory = self.project.vm_working_directory(self)
         if os.path.exists(directory):
             try:
                 yield from wait_run_in_executor(shutil.rmtree, directory)
