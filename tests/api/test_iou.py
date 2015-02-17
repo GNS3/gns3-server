@@ -72,7 +72,7 @@ def test_iou_create_with_params(server, project, base_params):
     params["serial_adapters"] = 4
     params["ethernet_adapters"] = 0
     params["l1_keepalives"] = True
-    params["initial_config"] = "hostname test"
+    params["initial_config_content"] = "hostname test"
 
     response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -84,8 +84,9 @@ def test_iou_create_with_params(server, project, base_params):
     assert response.json["ram"] == 1024
     assert response.json["nvram"] == 512
     assert response.json["l1_keepalives"] is True
+    assert "initial-config.cfg" in response.json["initial_config"]
     with open(initial_config_file(project, response.json)) as f:
-        assert f.read() == params["initial_config"]
+        assert f.read() == params["initial_config_content"]
 
 
 def test_iou_get(server, project, vm):
@@ -138,7 +139,7 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
         "ethernet_adapters": 4,
         "serial_adapters": 0,
         "l1_keepalives": True,
-        "initial_config": "hostname test"
+        "initial_config_content": "hostname test"
     }
     response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params)
     assert response.status == 200
@@ -149,6 +150,7 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
     assert response.json["ram"] == 512
     assert response.json["nvram"] == 2048
     assert response.json["l1_keepalives"] is True
+    assert "initial-config.cfg" in response.json["initial_config"]
     with open(initial_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
 
@@ -244,4 +246,4 @@ def test_get_initial_config_with_config_file(server, project, vm):
     response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
     assert response.json["content"] == "TEST"
-    assert response.json["path"] == "project-files/iou/{vm_id}/initial-config.cfg".format(vm_id=vm["vm_id"])
+    assert response.json["path"] == "initial-config.cfg"

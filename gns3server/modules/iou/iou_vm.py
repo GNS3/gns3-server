@@ -200,6 +200,7 @@ class IOUVM(BaseVM):
                 "ram": self._ram,
                 "nvram": self._nvram,
                 "l1_keepalives": self._l1_keepalives,
+                "initial_config": self.relative_initial_config_file
                 }
 
     @property
@@ -890,7 +891,7 @@ class IOUVM(BaseVM):
 
         path = os.path.join(self.working_dir, 'initial-config.cfg')
         if os.path.exists(path):
-            return path.replace(self.project.path, "")[1:]
+            return 'initial-config.cfg'
         else:
             return None
 
