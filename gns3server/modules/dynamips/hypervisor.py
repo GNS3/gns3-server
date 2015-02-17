@@ -42,7 +42,7 @@ class Hypervisor(DynamipsHypervisor):
     :param host: host/address for this hypervisor
     """
 
-    _instance_count = 0
+    _instance_count = 1
 
     def __init__(self, path, working_dir, host, port):
 
@@ -181,7 +181,7 @@ class Hypervisor(DynamipsHypervisor):
 
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
-        command.extend(["-l", "dynamips_log_{}.txt".format(self._port)])  # log file
+        command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
         if self._host != "0.0.0.0" and self._host != "::":
             command.extend(["-H", "{}:{}".format(self._host, self._port)])
         else:

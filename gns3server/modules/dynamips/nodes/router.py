@@ -1494,7 +1494,8 @@ class Router(BaseVM):
         """
 
         try:
-            reply = yield from self._hypervisor.send("vm extract_config {}".format(self._name))[0].rsplit(' ', 2)[-2:]
+            reply = yield from self._hypervisor.send("vm extract_config {}".format(self._name))
+            reply = reply[0].rsplit(' ', 2)[-2:]
         except IOError:
             #for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
             return None, None

@@ -160,8 +160,6 @@ class Dynamips(BaseManager):
         files += glob.glob(os.path.join(project_dir, "ilt_*"))
         files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_*_rommon_vars"))
         files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_*_ssa"))
-        files += glob.glob(os.path.join(project_dir, "dynamips_log*"))
-        files += glob.glob(os.path.join(project_dir, "*_log.txt"))
         for file in files:
             try:
                 log.debug("Deleting file {}".format(file))
