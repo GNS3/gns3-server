@@ -83,18 +83,21 @@ class Route(object):
         input_schema = kw.get("input", {})
         api_version = kw.get("version", 1)
         cls._path = "/v{version}{path}".format(path=path, version=api_version)
-        cls._documentation.setdefault(cls._path, {"methods": []})
 
         def register(func):
             route = cls._path
 
-            cls._documentation[route]["methods"].append({
+            handler = func.__module__.replace("_handler", "").replace("gns3server.handlers.", "")
+            cls._documentation.setdefault(handler, {})
+            cls._documentation[handler].setdefault(route, {"methods": []})
+
+            cls._documentation[handler][route]["methods"].append({
                 "method": method,
                 "status_codes": kw.get("status_codes", {200: "OK"}),
                 "parameters": kw.get("parameters", {}),
                 "output_schema": output_schema,
                 "input_schema": input_schema,
-                "description": kw.get("description", "")
+                "description": kw.get("description", ""),
             })
             func = asyncio.coroutine(func)
 

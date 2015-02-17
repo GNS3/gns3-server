@@ -17,6 +17,7 @@
 
 import re
 import os.path
+import os
 
 from gns3server.handlers import *
 from gns3server.web.route import Route
@@ -30,40 +31,55 @@ class Documentation(object):
         self._documentation = route.get_documentation()
 
     def write(self):
-        for path in sorted(self._documentation):
-            filename = self._file_path(path)
-            handler_doc = self._documentation[path]
-            with open("docs/api/{}.rst".format(filename), 'w+') as f:
-                f.write('{}\n-----------------------------------------------------------------------------------------------------------------\n\n'.format(path))
-                f.write('.. contents::\n')
-                for method in handler_doc["methods"]:
-                    f.write('\n{} {}\n'.format(method["method"], path.replace("{", '**{').replace("}", "}**")))
-                    f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
-                    f.write('{}\n\n'.format(method["description"]))
+        for handler_name in sorted(self._documentation):
 
-                    if len(method["parameters"]) > 0:
-                        f.write("Parameters\n**********\n")
-                        for parameter in method["parameters"]:
-                            desc = method["parameters"][parameter]
-                            f.write("- **{}**: {}\n".format(parameter, desc))
+            self._create_handler_directory(handler_name)
+
+            for path in sorted(self._documentation[handler_name]):
+                filename = self._file_path(path)
+                handler_doc = self._documentation[handler_name][path]
+                with open("docs/api/{}/{}.rst".format(handler_name, filename), 'w+') as f:
+                    f.write('{}\n----------------------------------------------------------------------------------------------------------------------\n\n'.format(path))
+                    f.write('.. contents::\n')
+                    for method in handler_doc["methods"]:
+                        f.write('\n{} {}\n'.format(method["method"], path.replace("{", '**{').replace("}", "}**")))
+                        f.write('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
+                        f.write('{}\n\n'.format(method["description"]))
+
+                        if len(method["parameters"]) > 0:
+                            f.write("Parameters\n**********\n")
+                            for parameter in method["parameters"]:
+                                desc = method["parameters"][parameter]
+                                f.write("- **{}**: {}\n".format(parameter, desc))
+                            f.write("\n")
+
+                        f.write("Response status codes\n**********************\n")
+                        for code in method["status_codes"]:
+                            desc = method["status_codes"][code]
+                            f.write("- **{}**: {}\n".format(code, desc))
                         f.write("\n")
 
-                    f.write("Response status codes\n**********************\n")
-                    for code in method["status_codes"]:
-                        desc = method["status_codes"][code]
-                        f.write("- **{}**: {}\n".format(code, desc))
-                    f.write("\n")
+                        if "properties" in method["input_schema"]:
+                            f.write("Input\n*******\n")
+                            self._write_definitions(f, method["input_schema"])
+                            self._write_json_schema(f, method["input_schema"])
 
-                    if "properties" in method["input_schema"]:
-                        f.write("Input\n*******\n")
-                        self._write_definitions(f, method["input_schema"])
-                        self._write_json_schema(f, method["input_schema"])
+                        if "properties" in method["output_schema"]:
+                            f.write("Output\n*******\n")
+                            self._write_json_schema(f, method["output_schema"])
 
-                    if "properties" in method["output_schema"]:
-                        f.write("Output\n*******\n")
-                        self._write_json_schema(f, method["output_schema"])
+                        self._include_query_example(f, method, path)
 
-                    self._include_query_example(f, method, path)
+    def _create_handler_directory(self, handler_name):
+        """Create a directory for the handler and add an index inside"""
+
+        directory = "docs/api/{}".format(handler_name)
+        os.makedirs(directory, exist_ok=True)
+
+        with open("docs/api/{}.rst".format(handler_name), "w+") as f:
+            f.write(handler_name.replace("_", " ", ).capitalize())
+            f.write("\n---------------------\n\n")
+            f.write(".. toctree::\n   :glob:\n   :maxdepth: 2\n\n   {}/*\n".format(handler_name))
 
     def _include_query_example(self, f, method, path):
         """If a sample session is available we include it in documentation"""
@@ -81,7 +97,7 @@ class Documentation(object):
             f.write("Types\n+++++++++\n")
             for definition in sorted(schema['definitions']):
                 desc = schema['definitions'][definition].get("description")
-                f.write("{}\n^^^^^^^^^^^^^^^^\n{}\n\n".format(definition, desc))
+                f.write("{}\n^^^^^^^^^^^^^^^^^^^^^^\n{}\n\n".format(definition, desc))
                 self._write_json_schema(f, schema['definitions'][definition])
             f.write("Body\n+++++++++\n")
 
