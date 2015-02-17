@@ -1,13 +1,14 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/iou/vms' -d '{"ethernet_adapters": 0, "iourc_path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2262/test_iou_create_with_params0/iourc", "l1_keepalives": true, "name": "PC TEST 1", "nvram": 512, "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2262/test_iou_create_with_params0/iou.bin", "ram": 1024, "serial_adapters": 4}'
+curl -i -X POST 'http://localhost:8000/projects/{project_id}/iou/vms' -d '{"ethernet_adapters": 0, "initial_config": "hostname test", "iourc_path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2628/test_iou_create_with_params0/iourc", "l1_keepalives": true, "name": "PC TEST 1", "nvram": 512, "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2628/test_iou_create_with_params0/iou.bin", "ram": 1024, "serial_adapters": 4}'
 
 POST /projects/{project_id}/iou/vms HTTP/1.1
 {
     "ethernet_adapters": 0,
-    "iourc_path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2262/test_iou_create_with_params0/iourc",
+    "initial_config": "hostname test",
+    "iourc_path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2628/test_iou_create_with_params0/iourc",
     "l1_keepalives": true,
     "name": "PC TEST 1",
     "nvram": 512,
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2262/test_iou_create_with_params0/iou.bin",
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2628/test_iou_create_with_params0/iou.bin",
     "ram": 1024,
     "serial_adapters": 4
 }
@@ -27,9 +28,9 @@ X-ROUTE: /v1/projects/{project_id}/iou/vms
     "l1_keepalives": true,
     "name": "PC TEST 1",
     "nvram": 512,
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2262/test_iou_create_with_params0/iou.bin",
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-2628/test_iou_create_with_params0/iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 1024,
     "serial_adapters": 4,
-    "vm_id": "12acb1c1-304e-4c3e-81c4-23c52e6c01ba"
+    "vm_id": "f1bafbbe-96ba-4088-83e2-391cf9477e89"
 }

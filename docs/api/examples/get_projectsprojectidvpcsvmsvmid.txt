@@ -17,5 +17,5 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
     "name": "PC TEST 1",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": null,
-    "vm_id": "ed3e4572-df65-4581-9332-324e749d480a"
+    "vm_id": "37726103-1521-42c3-8925-fd4fabea9caf"
 }

@@ -25,6 +25,6 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms
     "name": "VM1",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "use_any_adapter": false,
-    "vm_id": "ad5dba5d-0219-41a0-9bd3-eaca69649f6c",
+    "vm_id": "be653307-d7d6-4884-932f-0d87c7e2c06b",
     "vmname": "VM1"
 }

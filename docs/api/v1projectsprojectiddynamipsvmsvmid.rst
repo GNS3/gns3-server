@@ -25,6 +25,7 @@ Output
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>auxiliary console TCP port</td>                     </tr>
+    <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
     <tr><td>confreg</td>                    <td> </td>                     <td>string</td>                     <td>configuration register</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
@@ -91,6 +92,7 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>auxiliary console TCP port</td>                     </tr>
+    <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
     <tr><td>confreg</td>                    <td> </td>                     <td>string</td>                     <td>configuration register</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
@@ -137,6 +139,7 @@ Output
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>auxiliary console TCP port</td>                     </tr>
+    <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
     <tr><td>confreg</td>                    <td> </td>                     <td>string</td>                     <td>configuration register</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
