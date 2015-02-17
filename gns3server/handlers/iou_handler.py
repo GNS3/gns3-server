@@ -25,6 +25,7 @@ from ..schemas.iou import IOU_UPDATE_SCHEMA
 from ..schemas.iou import IOU_OBJECT_SCHEMA
 from ..schemas.iou import IOU_NIO_SCHEMA
 from ..schemas.iou import IOU_CAPTURE_SCHEMA
+from ..schemas.iou import IOU_INITIAL_CONFIG_SCHEMA
 from ..modules.iou import IOU
 
 
@@ -293,3 +294,21 @@ class IOUHandler:
         port_number = int(request.match_info["port_number"])
         yield from vm.stop_capture(adapter_number, port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/iou/vms/{vm_id}/initial_config",
+        status_codes={
+            200: "Initial config retrieved",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        output=IOU_INITIAL_CONFIG_SCHEMA,
+        description="Retrieve the initial config content")
+    def show_initial_config(request, response):
+
+        iou_manager = IOU.instance()
+        vm = iou_manager.get_vm(request.match_info["vm_id"],
+                                project_id=request.match_info["project_id"])
+        response.set_status(200)
+        response.json({"content": vm.initial_config,
+                       "path": vm.relative_initial_config_file})

@@ -281,3 +281,23 @@ IOU_CAPTURE_SCHEMA = {
     "additionalProperties": False,
     "required": ["capture_file_name", "data_link_type"]
 }
+
+IOU_INITIAL_CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to get the initial configuration file",
+    "type": "object",
+    "properties": {
+        "content": {
+            "description": "Content of the initial configuration file",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
+        "path": {
+            "description": "Relative path on the server of the initial configuration file",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["content", "path"]
+}

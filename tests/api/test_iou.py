@@ -47,7 +47,9 @@ def vm(server, project, base_params):
 
 
 def initial_config_file(project, vm):
-    return os.path.join(project.path, "project-files", "iou", vm["vm_id"], "initial-config.cfg")
+    directory = os.path.join(project.path, "project-files", "iou", vm["vm_id"])
+    os.makedirs(directory, exist_ok=True)
+    return os.path.join(directory, "initial-config.cfg")
 
 
 def test_iou_create(server, project, base_params):
@@ -208,18 +210,38 @@ def test_iou_start_capture(server, vm, tmpdir):
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start_capture", return_value=True) as mock:
 
         params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
-        response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params)
+        response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params, example=True)
 
         assert mock.called
         assert response.status == 200
         assert "test.pcap" in response.json["pcap_file_path"]
 
 
-def test_iou_stop_capture(server, vm, tmpdir):
+def test_iou_stop_capture(server, vm):
 
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.stop_capture", return_value=True) as mock:
 
-        response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
 
         assert mock.called
         assert response.status == 204
+
+
+def test_get_initial_config_without_config_file(server, vm):
+
+    response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    assert response.status == 200
+    assert response.json["content"] == None
+    assert response.json["path"] == None
+
+
+def test_get_initial_config_with_config_file(server, project, vm):
+
+    path = initial_config_file(project, vm)
+    with open(path, "w+") as f:
+        f.write("TEST")
+
+    response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    assert response.status == 200
+    assert response.json["content"] == "TEST"
+    assert response.json["path"] == "project-files/iou/{vm_id}/initial-config.cfg".format(vm_id=vm["vm_id"])

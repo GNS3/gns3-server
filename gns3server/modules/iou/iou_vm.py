@@ -889,6 +889,21 @@ class IOUVM(BaseVM):
         else:
             return None
 
+    @property
+    def relative_initial_config_file(self):
+        """
+        Returns the initial config file relative to the project directory.
+        It's compatible with pre 1.3 topologies.
+
+        :returns: path to config file. None if the file doesn't exist
+        """
+
+        path = os.path.join(self.working_dir, 'initial-config.cfg')
+        if os.path.exists(path):
+            return path.replace(self.project.path, "")[1:]
+        else:
+            return None
+
     @asyncio.coroutine
     def start_capture(self, adapter_number, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
