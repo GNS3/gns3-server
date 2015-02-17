@@ -343,7 +343,6 @@ class IOUVM(BaseVM):
             log.warn("Could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
-        print(output)
         p = re.compile("([\.\w]+)\s=>\s+not found")
         missing_libs = p.findall(output)
         if missing_libs:
@@ -890,6 +889,7 @@ class IOUVM(BaseVM):
         else:
             return None
 
+    @asyncio.coroutine
     def start_capture(self, adapter_number, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
@@ -933,6 +933,7 @@ class IOUVM(BaseVM):
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
 
+    @asyncio.coroutine
     def stop_capture(self, adapter_number, port_number):
         """
         Stops a packet capture.
