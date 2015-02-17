@@ -315,6 +315,7 @@ class Router(BaseVM):
         if self._hypervisor and not self._hypervisor.devices:
             try:
                 yield from self.stop()
+                yield from self.save_configs()
                 yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
             except DynamipsError:
                 pass
@@ -1563,7 +1564,7 @@ class Router(BaseVM):
                 continue
 
     @asyncio.coroutine
-    def clean_delete(self, stop_hypervisor=False):
+    def clean_delete(self):
         """
         Deletes this router & associated files (nvram, disks etc.)
         """

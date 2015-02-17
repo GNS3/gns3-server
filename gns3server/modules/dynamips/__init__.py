@@ -160,6 +160,8 @@ class Dynamips(BaseManager):
         files += glob.glob(os.path.join(project_dir, "ilt_*"))
         files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_*_rommon_vars"))
         files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_*_ssa"))
+        files += glob.glob(os.path.join(project_dir, "dynamips_log*"))
+        files += glob.glob(os.path.join(project_dir, "*_log.txt"))
         for file in files:
             try:
                 log.debug("Deleting file {}".format(file))
@@ -415,24 +417,27 @@ class Dynamips(BaseManager):
             # create a new ghost IOS instance
             ghost_id = str(uuid4())
             ghost = Router("ghost-" + ghost_file, ghost_id, vm.project, vm.manager, platform=vm.platform, hypervisor=vm.hypervisor, ghost_flag=True)
-            yield from ghost.create()
-            yield from ghost.set_image(vm.image)
-            # for 7200s, the NPE must be set when using an NPE-G2.
-            if vm.platform == "c7200":
-                yield from ghost.set_npe(vm.npe)
-            yield from ghost.set_ghost_status(1)
-            yield from ghost.set_ghost_file(ghost_file)
-            yield from ghost.set_ram(vm.ram)
             try:
-                yield from ghost.start()
-                yield from ghost.stop()
-                self._ghost_files.add(ghost_file_path)
-            except DynamipsError:
-                raise
-            finally:
-                yield from ghost.clean_delete()
+                yield from ghost.create()
+                yield from ghost.set_image(vm.image)
+                # for 7200s, the NPE must be set when using an NPE-G2.
+                if vm.platform == "c7200":
+                    yield from ghost.set_npe(vm.npe)
+                yield from ghost.set_ghost_status(1)
+                yield from ghost.set_ghost_file(ghost_file)
+                yield from ghost.set_ram(vm.ram)
+                try:
+                    yield from ghost.start()
+                    yield from ghost.stop()
+                    self._ghost_files.add(ghost_file_path)
+                except DynamipsError:
+                    raise
+                finally:
+                    yield from ghost.clean_delete()
+            except DynamipsError as e:
+                log.warn("Could not create ghost instance: {}".format(e))
 
-        if vm.ghost_file != ghost_file:
+        if vm.ghost_file != ghost_file and os.path.isfile(ghost_file):
             # set the ghost file to the router
             yield from vm.set_ghost_status(2)
             yield from vm.set_ghost_file(ghost_file)
@@ -487,8 +492,9 @@ class Dynamips(BaseManager):
         :param private_config_content: content of the private-config
         """
 
-        default_startup_config_path = os.path.join(vm.project.vm_working_directory(vm), "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
-        default_private_config_path = os.path.join(vm.project.vm_working_directory(vm), "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
+        module_workdir = vm.project.module_working_directory(self.module_name.lower())
+        default_startup_config_path = os.path.join(module_workdir, "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
+        default_private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
 
         if startup_config_content:
             startup_config_path = self._create_config(vm, startup_config_content, default_startup_config_path)
