@@ -36,7 +36,7 @@ def fake_iou_bin(tmpdir):
 @pytest.fixture
 def base_params(tmpdir, fake_iou_bin):
     """Return standard parameters"""
-    return {"name": "PC TEST 1", "path": fake_iou_bin, "iourc_path": str(tmpdir / "iourc")}
+    return {"name": "PC TEST 1", "path": fake_iou_bin}
 
 
 @pytest.fixture

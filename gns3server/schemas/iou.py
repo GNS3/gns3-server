@@ -46,10 +46,6 @@ IOU_CREATE_SCHEMA = {
             "description": "Path of iou binary",
             "type": "string"
         },
-        "iourc_path": {
-            "description": "Path of iourc",
-            "type": "string"
-        },
         "serial_adapters": {
             "description": "How many serial adapters are connected to the IOU",
             "type": "integer"
@@ -97,10 +93,6 @@ IOU_UPDATE_SCHEMA = {
         },
         "path": {
             "description": "Path of iou binary",
-            "type": ["string", "null"]
-        },
-        "iourc_path": {
-            "description": "Path of iourc",
             "type": ["string", "null"]
         },
         "serial_adapters": {

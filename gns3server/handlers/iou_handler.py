@@ -65,7 +65,6 @@ class IOUHandler:
                                       initial_config=request.json.get("initial_config")
                                       )
         vm.path = request.json.get("path", vm.path)
-        vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
         response.set_status(201)
         response.json(vm)
 
@@ -112,7 +111,6 @@ class IOUHandler:
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
         vm.path = request.json.get("path", vm.path)
-        vm.iourc_path = request.json.get("iourc_path", vm.iourc_path)
         vm.ethernet_adapters = request.json.get("ethernet_adapters", vm.ethernet_adapters)
         vm.serial_adapters = request.json.get("serial_adapters", vm.serial_adapters)
         vm.ram = request.json.get("ram", vm.ram)

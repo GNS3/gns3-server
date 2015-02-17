@@ -38,7 +38,7 @@ def manager(port_manager):
 
 @pytest.fixture(scope="function")
 def vm(project, manager, tmpdir, fake_iou_bin):
-    fake_file = str(tmpdir / "iourc")
+    fake_file = str(tmpdir / "iouyap")
     with open(fake_file, "w+") as f:
         f.write("1")
 
@@ -48,7 +48,6 @@ def vm(project, manager, tmpdir, fake_iou_bin):
     manager.config.set_section_config("IOU", config)
 
     vm.path = fake_iou_bin
-    vm.iourc_path = fake_file
     return vm
 
 
@@ -90,6 +89,23 @@ def test_start(loop, vm, monkeypatch):
                 with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
                     loop.run_until_complete(asyncio.async(vm.start()))
                     assert vm.is_running()
+
+
+def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
+
+    fake_file = str(tmpdir / "iourc")
+    with open(fake_file, "w+") as f:
+        f.write("1")
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file, "iouyap_path": vm.iouyap_path}):
+        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
+            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+                with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as exec_mock:
+                        loop.run_until_complete(asyncio.async(vm.start()))
+                        assert vm.is_running()
+                        arsgs, kwargs = exec_mock.call_args
+                        assert kwargs["env"]["IOURC"] == fake_file
 
 
 def test_rename_nvram_file(loop, vm, monkeypatch):
@@ -277,4 +293,4 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
     loop.run_until_complete(vm.start_capture(0, 0, output_file))
     assert vm._adapters[0].get_nio(0).capturing
     loop.run_until_complete(asyncio.async(vm.stop_capture(0, 0)))
-    assert vm._adapters[0].get_nio(0).capturing == False
+    assert vm._adapters[0].get_nio(0).capturing is False

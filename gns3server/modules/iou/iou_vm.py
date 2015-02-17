@@ -86,12 +86,10 @@ class IOUVM(BaseVM):
         self._iou_stdout_file = ""
         self._started = False
         self._path = None
-        self._iourc_path = None
         self._ioucon_thread = None
         self._console_host = console_host
 
         # IOU settings
-        self._iourc = None
         self._ethernet_adapters = []
         self._serial_adapters = []
         self.ethernet_adapters = 2 if ethernet_adapters is None else ethernet_adapters  # one adapter = 4 interfaces
@@ -155,26 +153,6 @@ class IOUVM(BaseVM):
             raise IOUError("IOU image '{}' is not executable".format(self._path))
 
     @property
-    def iourc_path(self):
-        """
-        Returns the path to the iourc file.
-        :returns: path to the iourc file
-        """
-
-        return self._iourc_path
-
-    @iourc_path.setter
-    def iourc_path(self, path):
-        """
-        Set path to IOURC file
-        """
-
-        self._iourc_path = path
-        log.info("IOU {name} [id={id}]: iourc file path set to {path}".format(name=self._name,
-                                                                              id=self._id,
-                                                                              path=self._iourc_path))
-
-    @property
     def use_default_iou_values(self):
         """
         Returns if this device uses the default IOU image values.
@@ -236,6 +214,16 @@ class IOUVM(BaseVM):
         if path == "iouyap":
             path = shutil.which("iouyap")
         return path
+
+    @property
+    def iourc_path(self):
+        """
+        Returns the IOURC path.
+
+        :returns: path to IOURC
+        """
+
+        return self._manager.config.get_section_config("IOU").get("iourc_path")
 
     @property
     def console(self):
@@ -362,7 +350,8 @@ class IOUVM(BaseVM):
 
             self._rename_nvram_file()
 
-            if self._iourc_path and not os.path.isfile(self._iourc_path):
+            iourc_path = self.iourc_path
+            if iourc_path and not os.path.isfile(iourc_path):
                 raise IOUError("A valid iourc file is necessary to start IOU")
 
             iouyap_path = self.iouyap_path
@@ -372,8 +361,9 @@ class IOUVM(BaseVM):
             self._create_netmap_config()
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
-            if self._iourc_path:
-                env["IOURC"] = self._iourc_path
+
+            if iourc_path:
+                env["IOURC"] = iourc_path
             self._command = yield from self._build_command()
             try:
                 log.info("Starting IOU: {}".format(self._command))
@@ -832,7 +822,7 @@ class IOUVM(BaseVM):
         """
 
         env = os.environ.copy()
-        env["IOURC"] = self._iourc
+        env["IOURC"] = self.iourc_path
         try:
             output = yield from gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, env=env)
             if re.search("-l\s+Enable Layer 1 keepalive messages", output):
