@@ -9,9 +9,9 @@ Add a NIO to a IOU instance
 
 Parameters
 **********
-- **adapter_number**: Network adapter where the nio is located
 - **vm_id**: UUID for the instance
 - **port_number**: Port where the nio should be added
+- **adapter_number**: Network adapter where the nio is located
 - **project_id**: UUID for the project
 
 Response status codes
@@ -27,9 +27,9 @@ Remove a NIO from a IOU instance
 
 Parameters
 **********
-- **adapter_number**: Network adapter where the nio is located
 - **vm_id**: UUID for the instance
 - **port_number**: Port from where the nio should be removed
+- **adapter_number**: Network adapter where the nio is located
 - **project_id**: UUID for the project
 
 Response status codes

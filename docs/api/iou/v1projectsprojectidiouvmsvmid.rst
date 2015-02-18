@@ -26,6 +26,7 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>
+    <tr><td>initial_config</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Path of the initial config content relative to project directory</td>                     </tr>
     <tr><td>l1_keepalives</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Always up ethernet interface</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>IOU VM name</td>                     </tr>
     <tr><td>nvram</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Allocated NVRAM KB</td>                     </tr>
@@ -61,8 +62,7 @@ Input
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>
-    <tr><td>initial_config</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Initial configuration of the IOU</td>                     </tr>
-    <tr><td>iourc_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path of iourc</td>                     </tr>
+    <tr><td>initial_config_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Initial configuration of the IOU</td>                     </tr>
     <tr><td>l1_keepalives</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Always up ethernet interface</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>IOU VM name</td>                     </tr>
     <tr><td>nvram</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Allocated NVRAM KB</td>                     </tr>
@@ -79,6 +79,7 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>
+    <tr><td>initial_config</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Path of the initial config content relative to project directory</td>                     </tr>
     <tr><td>l1_keepalives</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Always up ethernet interface</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>IOU VM name</td>                     </tr>
     <tr><td>nvram</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Allocated NVRAM KB</td>                     </tr>

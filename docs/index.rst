@@ -4,6 +4,7 @@ Welcome to API documentation!
 
 .. toctree::
     general
+    glossary
     development
 
 
