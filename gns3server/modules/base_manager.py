@@ -158,23 +158,22 @@ class BaseManager:
 
         project = ProjectManager.instance().get_project(project_id)
 
-        try:
-            if vm_id and hasattr(self, "get_legacy_vm_workdir_name"):
+        # If it's not an UUID
+        if vm_id and (isinstance(vm_id, int) or len(vm_id) != 36):
+            legacy_id = int(vm_id)
+            vm_id = str(uuid4())
+            if hasattr(self, "get_legacy_vm_workdir_name"):
                 # move old project VM files to a new location
-                legacy_id = int(vm_id)
-                project_dir = os.path.dirname(project.path)
-                project_name = os.path.basename(project_dir)
-                project_files_dir = os.path.join(project_dir, "{}-files".format(project_name))
+
+                project_name = os.path.basename(project.path)
+                project_files_dir = os.path.join(project.path, "{}-files".format(project_name))
                 module_path = os.path.join(project_files_dir, self.module_name.lower())
                 vm_working_dir = os.path.join(module_path, self.get_legacy_vm_workdir_name(legacy_id))
-                vm_id = str(uuid4())
-                new_vm_working_dir = os.path.join(project.path, self.module_name.lower(), vm_id)
+                new_vm_working_dir = os.path.join(project.path, "project-files", self.module_name.lower(), vm_id)
                 try:
                     yield from wait_run_in_executor(shutil.move, vm_working_dir, new_vm_working_dir)
                 except OSError as e:
                     raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {}".format(e))
-        except ValueError:
-            pass
 
         if not vm_id:
             vm_id = str(uuid4())
