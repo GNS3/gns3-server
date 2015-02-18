@@ -38,17 +38,17 @@ def wait_run_in_executor(func, *args):
 
 
 @asyncio.coroutine
-def subprocess_check_output(*args, working_dir=None, env=None):
+def subprocess_check_output(*args, cwd=None, env=None):
     """
     Run a command and capture output
 
     :param *args: List of command arguments
-    :param working_dir: Working directory
+    :param cwd: Current working directory
     :param env: Command environment
     :returns: Command output
     """
 
-    proc = yield from asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, cwd=working_dir, env=env)
+    proc = yield from asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, cwd=cwd, env=env)
     output = yield from proc.stdout.read()
     if output is None:
         return ""
