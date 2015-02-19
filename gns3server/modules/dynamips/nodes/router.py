@@ -1495,10 +1495,10 @@ class Router(BaseVM):
 
         try:
             reply = yield from self._hypervisor.send("vm extract_config {}".format(self._name))
-            reply = reply[0].rsplit(' ', 2)[-2:]
-        except IOError:
+        except DynamipsError:
             #for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
             return None, None
+        reply = reply[0].rsplit(' ', 2)[-2:]
         startup_config = reply[0][1:-1]  # get statup-config and remove single quotes
         private_config = reply[1][1:-1]  # get private-config and remove single quotes
         return startup_config, private_config
