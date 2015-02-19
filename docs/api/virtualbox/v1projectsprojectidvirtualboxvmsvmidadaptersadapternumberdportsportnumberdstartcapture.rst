@@ -9,10 +9,10 @@ Start a packet capture on a VirtualBox VM instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
-- **port_number**: Port on the adapter (always 0)
-- **adapter_number**: Adapter to start a packet capture
 - **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
+- **adapter_number**: Adapter to start a packet capture
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************

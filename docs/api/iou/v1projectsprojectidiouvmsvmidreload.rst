@@ -9,8 +9,8 @@ Reload a IOU instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
 - **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 
 Response status codes
 **********************
