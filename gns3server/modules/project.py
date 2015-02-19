@@ -178,7 +178,7 @@ class Project:
         :returns: working directory
         """
 
-        workdir = os.path.join(self._path, 'project-files', module_name)
+        workdir = os.path.join(self._path, "project-files", module_name)
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
@@ -194,7 +194,7 @@ class Project:
         :returns: VM working directory
         """
 
-        workdir = os.path.join(self._path, 'project-files', vm.manager.module_name.lower(), vm.id)
+        workdir = os.path.join(self._path, "project-files", vm.manager.module_name.lower(), vm.id)
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
@@ -208,7 +208,7 @@ class Project:
         :returns: path to the directory
         """
 
-        workdir = os.path.join(self._path, "captures")
+        workdir = os.path.join(self._path, "project-files", "captures")
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
