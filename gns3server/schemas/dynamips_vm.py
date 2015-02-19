@@ -295,10 +295,18 @@ VM_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "startup_config_content": {
+            "description": "Content of IOS startup configuration file",
+            "type": "string",
+        },
         "private_config": {
             "description": "path to the IOS private configuration file",
             "type": "string",
             "minLength": 1,
+        },
+        "private_config_content": {
+            "description": "Content of IOS private configuration file",
+            "type": "string",
         },
         "ram": {
             "description": "amount of RAM in MB",
@@ -887,4 +895,24 @@ VM_OBJECT_SCHEMA = {
     },
     "additionalProperties": False,
     "required": ["name", "vm_id", "project_id", "dynamips_id"]
+}
+
+VM_CONFIGS_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to get the startup and private configuration file",
+    "type": "object",
+    "properties": {
+        "startup_config_content": {
+            "description": "Content of the startup configuration file",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
+        "private_config_content": {
+            "description": "Content of the private configuration file",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["startup_config_content", "private_config_content"]
 }

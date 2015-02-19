@@ -17,13 +17,14 @@
 
 
 import os
-import asyncio
+import base64
 from ..web.route import Route
 from ..schemas.dynamips_vm import VM_CREATE_SCHEMA
 from ..schemas.dynamips_vm import VM_UPDATE_SCHEMA
 from ..schemas.dynamips_vm import VM_CAPTURE_SCHEMA
 from ..schemas.dynamips_vm import VM_OBJECT_SCHEMA
 from ..schemas.dynamips_vm import VM_NIO_SCHEMA
+from ..schemas.dynamips_vm import VM_CONFIGS_SCHEMA
 from ..modules.dynamips import Dynamips
 from ..modules.project_manager import ProjectManager
 
@@ -59,9 +60,6 @@ class DynamipsVMHandler:
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
         yield from dynamips_manager.ghost_ios_support(vm)
-        yield from dynamips_manager.create_vm_configs(vm,
-                                                      request.json.get("startup_config_content"),
-                                                      request.json.get("private_config_content"))
         response.set_status(201)
         response.json(vm)
 
@@ -329,3 +327,25 @@ class DynamipsVMHandler:
         yield from vm.stop_capture(slot_number, port_number)
         response.set_status(204)
 
+    @Route.get(
+        r"/projects/{project_id}/dynamips/vms/{vm_id}/configs",
+        status_codes={
+            200: "Configs retrieved",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        output=VM_CONFIGS_SCHEMA,
+        description="Retrieve the startup and private configs content")
+    def show_initial_config(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_vm(request.match_info["vm_id"],
+                                     project_id=request.match_info["project_id"])
+
+        startup_config, private_config = yield from vm.extract_config()
+        startup_config_content = base64.decodebytes(startup_config.encode("utf-8")).decode("utf-8")
+        private_config_content = base64.decodebytes(private_config.encode("utf-8")).decode("utf-8")
+
+        response.set_status(200)
+        response.json({"startup_config_content": startup_config_content,
+                       "private_config_content": private_config_content})

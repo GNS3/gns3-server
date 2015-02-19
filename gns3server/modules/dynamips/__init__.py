@@ -480,6 +480,9 @@ class Dynamips(BaseManager):
                 if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
                     yield from vm.uninstall_wic(wic_slot_id)
 
+        # update the configs if needed
+        yield from self.create_vm_configs(vm, settings.get("startup_config_content"), settings.get("private_config_content"))
+
     @asyncio.coroutine
     def create_vm_configs(self, vm, startup_config_content, private_config_content):
         """

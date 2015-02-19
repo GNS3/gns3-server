@@ -21,7 +21,6 @@ order to run an IOU instance.
 """
 
 import os
-import sys
 import signal
 import re
 import asyncio
@@ -32,12 +31,12 @@ import threading
 import configparser
 import glob
 
-from pkg_resources import parse_version
 from .iou_error import IOUError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..adapters.serial_adapter import SerialAdapter
 from ..nios.nio_udp import NIO_UDP
 from ..nios.nio_tap import NIO_TAP
+from ..nios.nio_generic_ethernet import NIO_GenericEthernet
 from ..base_vm import BaseVM
 from .ioucon import start_ioucon
 import gns3server.utils.asyncio
