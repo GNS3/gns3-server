@@ -435,7 +435,7 @@ class Dynamips(BaseManager):
             except DynamipsError as e:
                 log.warn("Could not create ghost instance: {}".format(e))
 
-        if vm.ghost_file != ghost_file and os.path.isfile(ghost_file):
+        if vm.ghost_file != ghost_file and os.path.isfile(ghost_file_path):
             # set the ghost file to the router
             yield from vm.set_ghost_status(2)
             yield from vm.set_ghost_file(ghost_file)
