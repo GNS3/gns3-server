@@ -77,9 +77,8 @@ class IOUVM(BaseVM):
                  l1_keepalives=None,
                  initial_config=None):
 
-        super().__init__(name, vm_id, project, manager)
+        super().__init__(name, vm_id, project, manager, console=console)
 
-        self._console = console
         self._command = []
         self._iouyap_process = None
         self._iou_process = None
@@ -102,11 +101,6 @@ class IOUVM(BaseVM):
 
         if initial_config is not None:
             self.initial_config = initial_config
-
-        if self._console is not None:
-            self._console = self._manager.port_manager.reserve_console_port(self._console)
-        else:
-            self._console = self._manager.port_manager.get_free_console_port()
 
     @asyncio.coroutine
     def close(self):
@@ -225,30 +219,6 @@ class IOUVM(BaseVM):
         """
 
         return self._manager.config.get_section_config("IOU").get("iourc_path")
-
-    @property
-    def console(self):
-        """
-        Returns the console port of this IOU vm.
-
-        :returns: console port
-        """
-
-        return self._console
-
-    @console.setter
-    def console(self, console):
-        """
-        Change console port
-
-        :params console: Console port (integer)
-        """
-
-        if console == self._console:
-            return
-        if self._console:
-            self._manager.port_manager.release_console_port(self._console)
-        self._console = self._manager.port_manager.reserve_console_port(console)
 
     @property
     def ram(self):

@@ -28,12 +28,28 @@ log = logging.getLogger(__name__)
 
 class BaseVM:
 
-    def __init__(self, name, vm_id, project, manager):
+    """
+    Base vm implementation.
+
+    :param name: name of this IOU vm
+    :param vm_id: IOU instance identifier
+    :param project: Project instance
+    :param manager: parent VM Manager
+    :param console: TCP console port
+    """
+
+    def __init__(self, name, vm_id, project, manager, console=None):
 
         self._name = name
         self._id = vm_id
         self._project = project
         self._manager = manager
+        self._console = console
+
+        if self._console is not None:
+            self._console = self._manager.port_manager.reserve_console_port(self._console)
+        else:
+            self._console = self._manager.port_manager.get_free_console_port()
 
         log.debug("{module}: {name} [{id}] initialized".format(module=self.manager.module_name,
                                                                name=self.name,
@@ -147,3 +163,32 @@ class BaseVM:
         """
 
         raise NotImplementedError
+
+    @property
+    def console(self):
+        """
+        Returns the console port of this VPCS vm.
+
+        :returns: console port
+        """
+
+        return self._console
+
+    @console.setter
+    def console(self, console):
+        """
+        Change console port
+
+        :params console: Console port (integer)
+        """
+
+        if console == self._console:
+            return
+        if self._console:
+            self._manager.port_manager.release_console_port(self._console)
+        self._console = self._manager.port_manager.reserve_console_port(console)
+        log.info("{module}: '{name}' [{id}]: console port set to {port}".format(
+            module=self.manager.module_name,
+            name=self.name,
+            id=self.id,
+            port=console))

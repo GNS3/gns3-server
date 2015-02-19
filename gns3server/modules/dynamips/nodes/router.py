@@ -83,7 +83,6 @@ class Router(BaseVM):
         self._disk0 = 0  # Megabytes
         self._disk1 = 0  # Megabytes
         self._confreg = "0x2102"
-        self._console = None
         self._aux = None
         self._mac_addr = ""
         self._system_id = "FTX0945W0MY"  # processor board ID in IOS
@@ -105,11 +104,6 @@ class Router(BaseVM):
                 if dynamips_id in self._dynamips_ids[project.id]:
                     raise DynamipsError("Dynamips identifier {} is already used by another router".format(dynamips_id))
             self._dynamips_ids[project.id].append(self._dynamips_id)
-
-            if self._console is not None:
-                self._console = self._manager.port_manager.reserve_console_port(self._console)
-            else:
-                self._console = self._manager.port_manager.get_free_console_port()
 
             if self._aux is not None:
                 self._aux = self._manager.port_manager.reserve_console_port(self._aux)
@@ -863,16 +857,6 @@ class Router(BaseVM):
                                                                                                       new_confreg=confreg))
         self._confreg = confreg
 
-    @property
-    def console(self):
-        """
-        Returns the TCP console port.
-
-        :returns: console port (integer)
-        """
-
-        return self._console
-
     @asyncio.coroutine
     def set_console(self, console):
         """
@@ -1014,8 +998,8 @@ class Router(BaseVM):
         if slot is not None:
             current_adapter = slot
             raise DynamipsError('Slot {slot_number} is already occupied by adapter {adapter} on router "{name}"'.format(name=self._name,
-                                                                                                                    slot_number=slot_number,
-                                                                                                                    adapter=current_adapter))
+                                                                                                                        slot_number=slot_number,
+                                                                                                                        adapter=current_adapter))
 
         is_running = yield from self.is_running()
 
@@ -1081,16 +1065,16 @@ class Router(BaseVM):
                                                                                                 slot_number=slot_number))
 
             log.info('Router "{name}" [{id}]: OIR stop event sent to slot {slot_number}'.format(name=self._name,
-                                                                                            id=self._id,
-                                                                                            slot_number=slot_number))
+                                                                                                id=self._id,
+                                                                                                slot_number=slot_number))
 
         yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} 0'.format(name=self._name,
                                                                                                   slot_number=slot_number))
 
         log.info('Router "{name}" [{id}]: adapter {adapter} removed from slot {slot_number}'.format(name=self._name,
-                                                                                                id=self._id,
-                                                                                                adapter=adapter,
-                                                                                                slot_number=slot_number))
+                                                                                                    id=self._id,
+                                                                                                    adapter=adapter,
+                                                                                                    slot_number=slot_number))
         self._slots[slot_number] = None
 
     @asyncio.coroutine
@@ -1119,14 +1103,14 @@ class Router(BaseVM):
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_number = 16 * (wic_slot_number + 1)
         yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} {wic_slot_number} {wic}'.format(name=self._name,
-                                                                                                             slot_number=slot_number,
-                                                                                                             wic_slot_number=internal_wic_slot_number,
-                                                                                                             wic=wic))
+                                                                                                                     slot_number=slot_number,
+                                                                                                                     wic_slot_number=internal_wic_slot_number,
+                                                                                                                     wic=wic))
 
         log.info('Router "{name}" [{id}]: {wic} inserted into WIC slot {wic_slot_number}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             wic=wic,
-                                                                                             wic_slot_number=wic_slot_number))
+                                                                                                 id=self._id,
+                                                                                                 wic=wic,
+                                                                                                 wic_slot_number=wic_slot_number))
 
         adapter.install_wic(wic_slot_number, wic)
 
@@ -1496,7 +1480,7 @@ class Router(BaseVM):
         try:
             reply = yield from self._hypervisor.send("vm extract_config {}".format(self._name))
         except DynamipsError:
-            #for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
+            # for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
             return None, None
         reply = reply[0].rsplit(' ', 2)[-2:]
         startup_config = reply[0][1:-1]  # get statup-config and remove single quotes

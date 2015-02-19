@@ -55,9 +55,8 @@ class VPCSVM(BaseVM):
 
     def __init__(self, name, vm_id, project, manager, console=None, startup_script=None):
 
-        super().__init__(name, vm_id, project, manager)
+        super().__init__(name, vm_id, project, manager, console=console)
 
-        self._console = console
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
@@ -67,11 +66,6 @@ class VPCSVM(BaseVM):
         if startup_script is not None:
             self.startup_script = startup_script
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
-
-        if self._console is not None:
-            self._console = self._manager.port_manager.reserve_console_port(self._console)
-        else:
-            self._console = self._manager.port_manager.get_free_console_port()
 
     @asyncio.coroutine
     def close(self):
@@ -118,30 +112,6 @@ class VPCSVM(BaseVM):
         if path == "vpcs":
             path = shutil.which("vpcs")
         return path
-
-    @property
-    def console(self):
-        """
-        Returns the console port of this VPCS vm.
-
-        :returns: console port
-        """
-
-        return self._console
-
-    @console.setter
-    def console(self, console):
-        """
-        Change console port
-
-        :params console: Console port (integer)
-        """
-
-        if console == self._console:
-            return
-        if self._console:
-            self._manager.port_manager.release_console_port(self._console)
-        self._console = self._manager.port_manager.reserve_console_port(console)
 
     @BaseVM.name.setter
     def name(self, new_name):

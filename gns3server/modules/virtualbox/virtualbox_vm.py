@@ -60,7 +60,6 @@ class VirtualBoxVM(BaseVM):
         self._closed = False
 
         # VirtualBox settings
-        self._console = None
         self._adapters = adapters
         self._ethernet_adapters = []
         self._headless = False
@@ -68,11 +67,6 @@ class VirtualBoxVM(BaseVM):
         self._vmname = vmname
         self._use_any_adapter = False
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
-
-        if self._console is not None:
-            self._console = self._manager.port_manager.reserve_console_port(self._console)
-        else:
-            self._console = self._manager.port_manager.get_free_console_port()
 
     def __json__(self):
 
@@ -252,32 +246,6 @@ class VirtualBoxVM(BaseVM):
         result = yield from self._control_vm("reset")
         log.info("VirtualBox VM '{name}' [{id}] reloaded".format(name=self.name, id=self.id))
         log.debug("Reload result: {}".format(result))
-
-    @property
-    def console(self):
-        """
-        Returns the TCP console port.
-
-        :returns: console port (integer)
-        """
-
-        return self._console
-
-    @console.setter
-    def console(self, console):
-        """
-        Sets the TCP console port.
-
-        :param console: console port (integer)
-        """
-
-        if self._console:
-            self._manager.port_manager.release_console_port(self._console)
-
-        self._console = self._manager.port_manager.reserve_console_port(console)
-        log.info("VirtualBox VM '{name}' [{id}]: console port set to {port}".format(name=self.name,
-                                                                                    id=self.id,
-                                                                                    port=console))
 
     @asyncio.coroutine
     def _get_all_hdd_files(self):
