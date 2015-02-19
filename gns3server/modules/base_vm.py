@@ -51,9 +51,12 @@ class BaseVM:
         else:
             self._console = self._manager.port_manager.get_free_console_port()
 
-        log.debug("{module}: {name} [{id}] initialized".format(module=self.manager.module_name,
-                                                               name=self.name,
-                                                               id=self.id))
+        log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(
+            module=self.manager.module_name,
+            name=self.name,
+            id=self.id,
+            console=self._console
+        ))
 
     def __del__(self):
 

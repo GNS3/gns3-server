@@ -19,5 +19,6 @@ from .vpcs import VPCS
 from .virtualbox import VirtualBox
 from .dynamips import Dynamips
 from .iou import IOU
+from .qemu import Qemu
 
-MODULES = [VPCS, VirtualBox, Dynamips, IOU]
+MODULES = [VPCS, VirtualBox, Dynamips, IOU, Qemu]

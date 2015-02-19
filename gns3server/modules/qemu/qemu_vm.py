@@ -59,12 +59,8 @@ class QemuVM(BaseVM):
     :param qemu_id: QEMU VM instance ID
     :param console: TCP console port
     :param console_host: IP address to bind for console connections
-    :param console_start_port_range: TCP console port range start
-    :param console_end_port_range: TCP console port range end
     :param monitor: TCP monitor port
     :param monitor_host: IP address to bind for monitor connections
-    :param monitor_start_port_range: TCP monitor port range start
-    :param monitor_end_port_range: TCP monitor port range end
     """
 
     def __init__(self,
@@ -76,27 +72,19 @@ class QemuVM(BaseVM):
                  host="127.0.0.1",
                  console=None,
                  console_host="0.0.0.0",
-                 console_start_port_range=5001,
-                 console_end_port_range=5500,
                  monitor=None,
-                 monitor_host="0.0.0.0",
-                 monitor_start_port_range=5501,
-                 monitor_end_port_range=6000):
+                 monitor_host="0.0.0.0"):
 
         super().__init__(name, vm_id, project, manager, console=console)
 
         self._host = host
+        self._console_host = console_host
         self._command = []
         self._started = False
         self._process = None
         self._cpulimit_process = None
         self._stdout_file = ""
-        self._console_host = console_host
-        self._console_start_port_range = console_start_port_range
-        self._console_end_port_range = console_end_port_range
         self._monitor_host = monitor_host
-        self._monitor_start_port_range = monitor_start_port_range
-        self._monitor_end_port_range = monitor_end_port_range
 
         # QEMU settings
         self.qemu_path = qemu_path
@@ -104,7 +92,6 @@ class QemuVM(BaseVM):
         self._hdb_disk_image = ""
         self._options = ""
         self._ram = 256
-        self._console = console
         self._monitor = monitor
         self._ethernet_adapters = []
         self._adapter_type = "e1000"
@@ -629,6 +616,7 @@ class QemuVM(BaseVM):
         Executes a command with QEMU monitor when this VM is running.
 
         :param command: QEMU monitor command (e.g. info status, stop etc.)
+        :params expected: An array with the string attended (Default None)
         :param timeout: how long to wait for QEMU monitor
 
         :returns: result of the command (Match object or None)
@@ -721,11 +709,12 @@ class QemuVM(BaseVM):
             log.info("QEMU VM is not paused to be resumed, current status is {}".format(vm_status))
 
     @asyncio.coroutine
-    def port_add_nio_binding(self, adapter_id, nio):
+    def adapter_add_nio_binding(self, adapter_id, port_id, nio):
         """
         Adds a port NIO binding.
 
         :param adapter_id: adapter ID
+        :param port_id: port ID
         :param nio: NIO instance to add to the slot/port
         """
 
@@ -761,11 +750,12 @@ class QemuVM(BaseVM):
                                                                                         adapter_id=adapter_id))
 
     @asyncio.coroutine
-    def port_remove_nio_binding(self, adapter_id):
+    def adapter_remove_nio_binding(self, adapter_id, port_id):
         """
         Removes a port NIO binding.
 
         :param adapter_id: adapter ID
+        :param port_id: port ID
 
         :returns: NIO instance
         """
@@ -981,3 +971,12 @@ class QemuVM(BaseVM):
             command.extend(shlex.split(additional_options))
         command.extend(self._network_options())
         return command
+
+    def __json__(self):
+        return {
+            "vm_id": self.id,
+            "project_id": self.project.id,
+            "name": self.name,
+            "console": self.console,
+            "monitor": self.monitor
+        }
