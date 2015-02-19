@@ -115,8 +115,8 @@ class Route(object):
                 except VMError as e:
                     log.error("VM error detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(route=route)
-                    response.set_status(500)
-                    response.json({"message": str(e), "status": 500})
+                    response.set_status(409)
+                    response.json({"message": str(e), "status": 409})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(route=route)
