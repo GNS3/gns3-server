@@ -474,7 +474,6 @@ class IOUVM(BaseVM):
                 self._iou_process.kill()
                 if self._iou_process.returncode is None:
                     log.warn("IOU process {} is still running".format(self._iou_process.pid))
-
             self._iou_process = None
 
             if self._iouyap_process is not None:
@@ -482,9 +481,10 @@ class IOUVM(BaseVM):
                 try:
                     yield from asyncio.wait_for(self._iouyap_process.wait(), timeout=3)
                 except asyncio.TimeoutError:
-                    self._iou_process.kill()
+                    self._iouyap_process.kill()
                     if self._iouyap_process.returncode is None:
-                        log.warn("IOUYAP process {} is still running".format(self._iou_process.pid))
+                        log.warn("IOUYAP process {} is still running".format(self._iouyap_process.pid))
+            self._iouyap_process = None
 
             self._started = False
 
