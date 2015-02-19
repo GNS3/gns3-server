@@ -59,6 +59,13 @@ class QEMUHandler:
                                        console_host=PortManager.instance().console_host,
                                        monitor_host=PortManager.instance().console_host,
                                        )
+        # Clear already used keys
+        map(request.json.__delitem__, ["name", "project_id", "vm_id",
+                                       "qemu_path", "console", "monitor"])
+
+        for field in request.json:
+            setattr(vm, field, request.json[field])
+
         response.set_status(201)
         response.json(vm)
 
@@ -102,9 +109,8 @@ class QEMUHandler:
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        vm.name = request.json.get("name", vm.name)
-        vm.console = request.json.get("console", vm.console)
-        vm.qemu_path = request.json.get("qemu_path", vm.qemu_path)
+        for field in request.json:
+            setattr(vm, field, request.json[field])
 
         response.json(vm)
 

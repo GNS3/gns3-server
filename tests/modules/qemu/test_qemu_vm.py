@@ -196,3 +196,10 @@ def test_set_process_priority(vm, loop, fake_qemu_img_binary):
         assert process.called
         args, kwargs = process.call_args
         assert args == ("renice", "-n", "5", "-p", "42")
+
+
+def test_json(vm, project):
+
+    json = vm.__json__()
+    assert json["name"] == vm.name
+    assert json["project_id"] == project.id

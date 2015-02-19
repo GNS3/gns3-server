@@ -21,6 +21,11 @@ QEMU_CREATE_SCHEMA = {
     "description": "Request validation to create a new QEMU VM instance",
     "type": "object",
     "properties": {
+        "vm_id": {
+            "description": "QEMU VM UUID",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
         "name": {
             "description": "QEMU VM instance name",
             "type": "string",
@@ -35,13 +40,72 @@ QEMU_CREATE_SCHEMA = {
             "description": "console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "monitor": {
             "description": "monitor TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
+        },
+        "hda_disk_image": {
+            "description": "QEMU hda disk image path",
+            "type": ["string", "null"],
+        },
+        "hdb_disk_image": {
+            "description": "QEMU hdb disk image path",
+            "type": ["string", "null"],
+        },
+        "ram": {
+            "description": "amount of RAM in MB",
+            "type": ["integer", "null"]
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 32,
+        },
+        "adapter_type": {
+            "description": "QEMU adapter type",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
+        "initrd": {
+            "description": "QEMU initrd path",
+            "type": ["string", "null"],
+        },
+        "kernel_image": {
+            "description": "QEMU kernel image path",
+            "type": ["string", "null"],
+        },
+        "kernel_command_line": {
+            "description": "QEMU kernel command line",
+            "type": ["string", "null"],
+        },
+        "legacy_networking": {
+            "description": "Use QEMU legagy networking commands (-net syntax)",
+            "type": ["boolean", "null"],
+        },
+        "cpu_throttling": {
+            "description": "Percentage of CPU allowed for QEMU",
+            "minimum": 0,
+            "maximum": 800,
+            "type": ["integer", "null"],
+        },
+        "process_priority": {
+            "description": "Process priority for QEMU",
+            "enum": ["realtime",
+                     "very high",
+                     "high",
+                     "normal",
+                     "low",
+                     "very low",
+                     "null"]
+        },
+        "options": {
+            "description": "Additional QEMU options",
+            "type": ["string", "null"],
         },
     },
     "additionalProperties": False,
@@ -55,74 +119,70 @@ QEMU_UPDATE_SCHEMA = {
     "properties": {
         "name": {
             "description": "QEMU VM instance name",
-            "type": "string",
+            "type": ["string", "null"],
             "minLength": 1,
         },
         "qemu_path": {
-            "description": "path to QEMU",
-            "type": "string",
-            "minLength": 1,
-        },
-        "hda_disk_image": {
-            "description": "QEMU hda disk image path",
-            "type": "string",
-        },
-        "hdb_disk_image": {
-            "description": "QEMU hdb disk image path",
-            "type": "string",
-        },
-        "ram": {
-            "description": "amount of RAM in MB",
-            "type": "integer"
-        },
-        "adapters": {
-            "description": "number of adapters",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 32,
-        },
-        "adapter_type": {
-            "description": "QEMU adapter type",
-            "type": "string",
+            "description": "Path to QEMU",
+            "type": ["string", "null"],
             "minLength": 1,
         },
         "console": {
             "description": "console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "monitor": {
             "description": "monitor TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
+        },
+        "hda_disk_image": {
+            "description": "QEMU hda disk image path",
+            "type": ["string", "null"],
+        },
+        "hdb_disk_image": {
+            "description": "QEMU hdb disk image path",
+            "type": ["string", "null"],
+        },
+        "ram": {
+            "description": "amount of RAM in MB",
+            "type": ["integer", "null"]
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 32,
+        },
+        "adapter_type": {
+            "description": "QEMU adapter type",
+            "type": ["string", "null"],
+            "minLength": 1,
         },
         "initrd": {
             "description": "QEMU initrd path",
-            "type": "string",
+            "type": ["string", "null"],
         },
         "kernel_image": {
             "description": "QEMU kernel image path",
-            "type": "string",
+            "type": ["string", "null"],
         },
         "kernel_command_line": {
             "description": "QEMU kernel command line",
-            "type": "string",
-        },
-        "cloud_path": {
-            "description": "Path to the image in the cloud object store",
-            "type": "string",
+            "type": ["string", "null"],
         },
         "legacy_networking": {
             "description": "Use QEMU legagy networking commands (-net syntax)",
-            "type": "boolean",
+            "type": ["boolean", "null"],
         },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
             "minimum": 0,
             "maximum": 800,
-            "type": "integer",
+            "type": ["integer", "null"],
         },
         "process_priority": {
             "description": "Process priority for QEMU",
@@ -131,28 +191,15 @@ QEMU_UPDATE_SCHEMA = {
                      "high",
                      "normal",
                      "low",
-                     "very low"]
+                     "very low",
+                     "null"]
         },
         "options": {
             "description": "Additional QEMU options",
-            "type": "string",
+            "type": ["string", "null"],
         },
     },
     "additionalProperties": False,
-}
-
-QEMU_START_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start a QEMU VM instance",
-    "type": "object",
-    "properties": {
-        "id": {
-            "description": "QEMU VM instance ID",
-            "type": "integer"
-        },
-    },
-    "additionalProperties": False,
-    "required": ["id"]
 }
 
 QEMU_NIO_SCHEMA = {
@@ -202,26 +249,10 @@ QEMU_NIO_SCHEMA = {
             "required": ["type", "ethernet_device"],
             "additionalProperties": False
         },
-        "TAP": {
-            "description": "TAP Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_tap"]
-                },
-                "tap_device": {
-                    "description": "TAP device name e.g. tap0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["type", "tap_device"],
-            "additionalProperties": False
-        },
     },
     "oneOf": [
         {"$ref": "#/definitions/UDP"},
         {"$ref": "#/definitions/Ethernet"},
-        {"$ref": "#/definitions/TAP"},
     ],
     "additionalProperties": True,
     "required": ["type"]
@@ -299,10 +330,6 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU kernel command line",
             "type": "string",
         },
-        "cloud_path": {
-            "description": "Path to the image in the cloud object store",
-            "type": "string",
-        },
         "legacy_networking": {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": "boolean",
@@ -328,5 +355,9 @@ QEMU_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["vm_id"]
+    "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image",
+                 "hdb_disk_image", "ram", "adapters", "adapter_type", "console",
+                 "monitor", "initrd", "kernel_image", "kernel_command_line",
+                 "legacy_networking", "cpu_throttling", "process_priority", "options"
+                 ]
 }

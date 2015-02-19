@@ -55,12 +55,16 @@ def test_qemu_create(server, project, base_params):
 
 def test_qemu_create_with_params(server, project, base_params):
     params = base_params
+    params["ram"] = 1024
+    params["hda_disk_image"] = "hda"
 
     response = server.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/qemu/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
+    assert response.json["ram"] == 1024
+    assert response.json["hda_disk_image"] == "hda"
 
 
 def test_qemu_get(server, project, vm):
@@ -110,11 +114,15 @@ def test_qemu_update(server, vm, tmpdir, free_console_port, project):
     params = {
         "name": "test",
         "console": free_console_port,
+        "ram": 1024,
+        "hdb_disk_image": "hdb"
     }
     response = server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
+    assert response.json["hdb_disk_image"] == "hdb"
+    assert response.json["ram"] == 1024
 
 
 def test_qemu_nio_create_udp(server, vm):
@@ -137,26 +145,6 @@ def test_qemu_nio_create_ethernet(server, vm):
     assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_generic_ethernet"
     assert response.json["ethernet_device"] == "eth0"
-
-
-def test_qemu_nio_create_ethernet_different_port(server, vm):
-    response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
-                                                                                                                                                     "ethernet_device": "eth0",
-                                                                                                                                                     },
-                           example=False)
-    assert response.status == 201
-    assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
-    assert response.json["type"] == "nio_generic_ethernet"
-    assert response.json["ethernet_device"] == "eth0"
-
-
-def test_qemu_nio_create_tap(server, vm):
-    with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
-        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
-                                                                                                                                                         "tap_device": "test"})
-        assert response.status == 201
-        assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
-        assert response.json["type"] == "nio_tap"
 
 
 def test_qemu_delete_nio(server, vm):

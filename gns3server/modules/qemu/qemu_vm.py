@@ -38,6 +38,7 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIO_UDP
 from ..base_vm import BaseVM
 from ...utils.asyncio import subprocess_check_output
+from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 
 import logging
 log = logging.getLogger(__name__)
@@ -973,10 +974,12 @@ class QemuVM(BaseVM):
         return command
 
     def __json__(self):
-        return {
-            "vm_id": self.id,
+        answer = {
             "project_id": self.project.id,
-            "name": self.name,
-            "console": self.console,
-            "monitor": self.monitor
+            "vm_id": self.id
         }
+        # Qemu has a long list of options. The JSON schema is the single source of informations
+        for field in QEMU_OBJECT_SCHEMA["required"]:
+            if field not in answer:
+                answer[field] = getattr(self, field)
+        return answer
