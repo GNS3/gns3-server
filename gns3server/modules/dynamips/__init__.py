@@ -536,3 +536,53 @@ class Dynamips(BaseManager):
             raise DynamipsError("Could not create config file {}: {}".format(path, e))
 
         return os.path.join("configs", os.path.basename(path))
+
+    @asyncio.coroutine
+    def auto_idlepc(self, vm):
+        """
+        Try to find the best possible idle-pc value.
+
+        :param vm: VM instance
+        """
+
+        yield from vm.set_idlepc("0x0")
+        was_auto_started = False
+        try:
+            status = yield from vm.get_status()
+            if status != "running":
+                yield from vm.start()
+                was_auto_started = True
+                yield from asyncio.sleep(20)  # leave time to the router to boot
+            validated_idlepc = None
+            idlepcs = yield from vm.get_idle_pc_prop()
+            if not idlepcs:
+                raise DynamipsError("No Idle-PC values found")
+
+            for idlepc in idlepcs:
+                yield from vm.set_idlepc(idlepc.split()[0])
+                log.debug("Auto Idle-PC: trying idle-PC value {}".format(vm.idlepc))
+                start_time = time.time()
+                initial_cpu_usage = yield from vm.get_cpu_usage()
+                log.debug("Auto Idle-PC: initial CPU usage is {}%".format(initial_cpu_usage))
+                yield from asyncio.sleep(3)  # wait 3 seconds to probe the cpu again
+                elapsed_time = time.time() - start_time
+                cpu_usage = yield from vm.get_cpu_usage()
+                cpu_elapsed_usage = cpu_usage - initial_cpu_usage
+                cpu_usage = abs(cpu_elapsed_usage * 100.0 / elapsed_time)
+                if cpu_usage > 100:
+                    cpu_usage = 100
+                log.debug("Auto Idle-PC: CPU usage is {}% after {:.2} seconds".format(cpu_usage, elapsed_time))
+                if cpu_usage < 70:
+                    validated_idlepc = vm.idlepc
+                    log.debug("Auto Idle-PC: idle-PC value {} has been validated".format(validated_idlepc))
+                    break
+
+            if validated_idlepc is None:
+                raise DynamipsError("Sorry, no idle-pc value was suitable")
+
+        except DynamipsError:
+            raise
+        finally:
+            if was_auto_started:
+                yield from vm.stop()
+        return validated_idlepc

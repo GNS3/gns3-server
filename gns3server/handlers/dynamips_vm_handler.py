@@ -18,6 +18,7 @@
 
 import os
 import base64
+import asyncio
 from ..web.route import Route
 from ..schemas.dynamips_vm import VM_CREATE_SCHEMA
 from ..schemas.dynamips_vm import VM_UPDATE_SCHEMA
@@ -366,7 +367,23 @@ class DynamipsVMHandler:
 
         yield from vm.set_idlepc("0x0")
         idlepcs = yield from vm.get_idle_pc_prop()
-
-        #idlepcs = yield from vm.show_idle_pc_prop()
         response.set_status(200)
-        response.json({"idlepcs": idlepcs})
+        response.json(idlepcs)
+
+    @Route.get(
+        r"/projects/{project_id}/dynamips/vms/{vm_id}/auto_idlepc",
+        status_codes={
+            200: "Best Idle-pc value found",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Retrieve the idlepc proposals")
+    def get_auto_idlepc(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_vm(request.match_info["vm_id"],
+                                     project_id=request.match_info["project_id"])
+        idlepc = yield from dynamips_manager.auto_idlepc(vm)
+        response.set_status(200)
+        response.json({"idlepc": idlepc})
+
