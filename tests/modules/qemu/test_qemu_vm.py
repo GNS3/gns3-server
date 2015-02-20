@@ -203,3 +203,33 @@ def test_json(vm, project):
     json = vm.__json__()
     assert json["name"] == vm.name
     assert json["project_id"] == project.id
+
+
+def test_control_vm(vm, loop):
+
+    vm._process = MagicMock()
+    vm._monitor = 4242
+    reader = MagicMock()
+    writer = MagicMock()
+    with asyncio_patch("asyncio.open_connection", return_value=(reader, writer)) as open_connect:
+        res = loop.run_until_complete(asyncio.async(vm._control_vm("test")))
+        assert writer.write.called_with("test")
+    assert res is None
+
+
+def test_control_vm_expect_text(vm, loop):
+
+    vm._process = MagicMock()
+    vm._monitor = 4242
+    reader = MagicMock()
+    writer = MagicMock()
+    with asyncio_patch("asyncio.open_connection", return_value=(reader, writer)) as open_connect:
+
+        future = asyncio.Future()
+        future.set_result("epic product")
+        reader.readline.return_value = future
+
+        res = loop.run_until_complete(asyncio.async(vm._control_vm("test", ["epic"])))
+        assert writer.write.called_with("test")
+
+    assert res == "epic product"

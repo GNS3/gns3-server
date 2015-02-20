@@ -612,13 +612,12 @@ class QemuVM(BaseVM):
         self._stop_cpulimit()
 
     @asyncio.coroutine
-    def _control_vm(self, command, expected=None, timeout=30):
+    def _control_vm(self, command, expected=None):
         """
         Executes a command with QEMU monitor when this VM is running.
 
         :param command: QEMU monitor command (e.g. info status, stop etc.)
         :params expected: An array with the string attended (Default None)
-        :param timeout: how long to wait for QEMU monitor
 
         :returns: result of the command (Match object or None)
         """
@@ -627,25 +626,29 @@ class QemuVM(BaseVM):
         if self.is_running() and self._monitor:
             log.debug("Execute QEMU monitor command: {}".format(command))
             try:
-                tn = telnetlib.Telnet(self._monitor_host, self._monitor, timeout=timeout)
+                reader, writer = yield from asyncio.open_connection("127.0.0.1", self._monitor)
             except OSError as e:
                 log.warn("Could not connect to QEMU monitor: {}".format(e))
                 return result
             try:
-                tn.write(command.encode('ascii') + b"\n")
-                time.sleep(0.1)
+                writer.write(command.encode('ascii') + b"\n")
             except OSError as e:
                 log.warn("Could not write to QEMU monitor: {}".format(e))
-                tn.close()
+                writer.close()
                 return result
             if expected:
                 try:
-                    ind, match, dat = tn.expect(list=expected, timeout=timeout)
-                    if match:
-                        result = match
+                    while result is None:
+                        line = yield from reader.readline()
+                        if not line:
+                            break
+                        for expect in expected:
+                            if expect in line:
+                                result = line
+                                break
                 except EOFError as e:
                     log.warn("Could not read from QEMU monitor: {}".format(e))
-            tn.close()
+            writer.close()
         return result
 
     @asyncio.coroutine
@@ -667,11 +670,7 @@ class QemuVM(BaseVM):
         :returns: status (string)
         """
 
-        result = None
-
-        match = yield from self._control_vm("info status", [b"running", b"paused"])
-        if match:
-            result = match.group(0).decode('ascii')
+        result = yield from self._control_vm("info status", [b"running", b"paused"])
         return result
 
     @asyncio.coroutine
