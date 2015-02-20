@@ -262,10 +262,7 @@ class QEMUHandler:
 
     @classmethod
     @Route.get(
-        r"/projects/{project_id}/qemu/binaries",
-        parameters={
-            "project_id": "UUID for the project"
-        },
+        r"/qemu/binaries",
         status_codes={
             200: "Success",
             400: "Invalid request",

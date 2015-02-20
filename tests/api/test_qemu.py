@@ -161,7 +161,7 @@ def test_qemu_list_binaries(server, vm):
     ret = [{"path": "/tmp/1", "version": "2.2.0"},
            {"path": "/tmp/2", "version": "2.1.0"}]
     with asyncio_patch("gns3server.modules.qemu.Qemu.binary_list", return_value=ret) as mock:
-        response = server.get("/projects/{project_id}/qemu/binaries".format(project_id=vm["project_id"]))
+        response = server.get("/qemu/binaries".format(project_id=vm["project_id"]))
         assert mock.called
         assert response.status == 200
         assert response.json == ret
