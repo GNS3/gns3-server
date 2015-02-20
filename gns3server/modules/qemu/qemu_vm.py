@@ -601,7 +601,7 @@ class QemuVM(BaseVM):
             log.info("stopping QEMU VM instance {} PID={}".format(self._id, self._process.pid))
             try:
                 self._process.terminate()
-                self._process.wait(1)
+                self._process.wait()
             except subprocess.TimeoutExpired:
                 self._process.kill()
                 if self._process.poll() is None:

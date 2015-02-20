@@ -100,7 +100,7 @@ class Qemu(BaseManager):
             return ""
         try:
             output = yield from subprocess_check_output(qemu_path, "-version")
-            match = re.search("version\s+([0-9a-z\-\.]+)", output.decode("utf-8"))
+            match = re.search("version\s+([0-9a-z\-\.]+)", output)
             if match:
                 version = match.group(1)
                 return version
