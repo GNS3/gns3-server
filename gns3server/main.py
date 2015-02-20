@@ -107,6 +107,7 @@ def parse_arguments(argv, config):
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
     parser.add_argument("--live", action="store_true", help="enable code live reload")
+    parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
 
     return parser.parse_args(argv)
 
@@ -124,6 +125,7 @@ def set_config(args):
     server_config["certkey"] = args.certkey
     server_config["debug"] = str(args.debug)
     server_config["live"] = str(args.live)
+    server_config["shell"] = str(args.shell)
     config.set_section_config("Server", server_config)
 
 

@@ -139,6 +139,11 @@ class Server:
             raise SystemExit
         return ssl_context
 
+    @asyncio.coroutine
+    def start_shell(self):
+        from ptpython.repl import embed
+        yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True)
+
     def run(self):
         """
         Starts the server.
@@ -176,4 +181,8 @@ class Server:
         if server_config.getboolean("live"):
             log.info("Code live reload is enabled, watching for file changes")
             self._loop.call_later(1, self._reload_hook)
+
+        if server_config.getboolean("shell"):
+            asyncio.async(self.start_shell())
+
         self._loop.run_forever()
