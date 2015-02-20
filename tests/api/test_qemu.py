@@ -155,3 +155,13 @@ def test_qemu_delete_nio(server, vm):
     response = server.delete("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 204
     assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+
+
+def test_qemu_list_binaries(server, vm):
+    ret = [{"path": "/tmp/1", "version": "2.2.0"},
+           {"path": "/tmp/2", "version": "2.1.0"}]
+    with asyncio_patch("gns3server.modules.qemu.Qemu.binary_list", return_value=ret) as mock:
+        response = server.get("/projects/{project_id}/qemu/binaries".format(project_id=vm["project_id"]))
+        assert mock.called
+        assert response.status == 200
+        assert response.json == ret

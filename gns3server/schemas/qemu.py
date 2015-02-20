@@ -361,3 +361,28 @@ QEMU_OBJECT_SCHEMA = {
                  "legacy_networking", "cpu_throttling", "process_priority", "options"
                  ]
 }
+
+QEMU_BINARY_LIST_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation for a list of qemu binaries",
+    "type": "array",
+    "items": {
+        "$ref": "#/definitions/QemuPath"
+    },
+    "definitions": {
+        "QemuPath": {
+            "description": "Qemu path object",
+            "properties": {
+                "path": {
+                    "description": "Qemu path",
+                    "type": "string",
+                },
+                "version": {
+                    "description": "Qemu version",
+                    "type": "string",
+                },
+            },
+        }
+    },
+    "additionalProperties": False,
+}

@@ -24,6 +24,7 @@ from ..schemas.qemu import QEMU_CREATE_SCHEMA
 from ..schemas.qemu import QEMU_UPDATE_SCHEMA
 from ..schemas.qemu import QEMU_OBJECT_SCHEMA
 from ..schemas.qemu import QEMU_NIO_SCHEMA
+from ..schemas.qemu import QEMU_BINARY_LIST_SCHEMA
 from ..modules.qemu import Qemu
 
 
@@ -258,3 +259,22 @@ class QEMUHandler:
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]))
         response.set_status(204)
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}/qemu/binaries",
+        parameters={
+            "project_id": "UUID for the project"
+        },
+        status_codes={
+            200: "Success",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Get a list of available Qemu binaries",
+        output=QEMU_BINARY_LIST_SCHEMA)
+    def list_binaries(request, response):
+
+        qemu_manager = Qemu.instance()
+        binaries = yield from Qemu.binary_list()
+        response.json(binaries)
