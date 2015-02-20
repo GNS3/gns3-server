@@ -103,6 +103,13 @@ def test_qemu_suspend(server, vm):
         assert response.status == 204
 
 
+def test_qemu_resume(server, vm):
+    with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.resume", return_value=True) as mock:
+        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        assert mock.called
+        assert response.status == 204
+
+
 def test_qemu_delete(server, vm):
     with asyncio_patch("gns3server.modules.qemu.Qemu.delete_vm", return_value=True) as mock:
         response = server.delete("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))

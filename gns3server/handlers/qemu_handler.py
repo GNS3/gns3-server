@@ -205,12 +205,32 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Reload a Qemu.instance")
+        description="Suspend a Qemu.instance")
     def suspend(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.suspend()
+        response.set_status(204)
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/qemu/vms/{vm_id}/resume",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+        },
+        status_codes={
+            204: "Instance resumed",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Resume a Qemu.instance")
+    def resume(request, response):
+
+        qemu_manager = Qemu.instance()
+        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        yield from vm.resume()
         response.set_status(204)
 
     @Route.post(

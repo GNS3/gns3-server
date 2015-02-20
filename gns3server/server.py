@@ -142,6 +142,8 @@ class Server:
     @asyncio.coroutine
     def start_shell(self):
         from ptpython.repl import embed
+        from gns3server.modules import Qemu
+
         yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True)
 
     def run(self):
