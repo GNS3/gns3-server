@@ -305,6 +305,9 @@ class Router(BaseVM):
             # router is already closed
             return
 
+        if self._dynamips_id in self._dynamips_ids[self._project.id]:
+            self._dynamips_ids[self._project.id].remove(self._dynamips_id)
+
         self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
             try:
@@ -322,9 +325,6 @@ class Router(BaseVM):
         if self._aux:
             self._manager.port_manager.release_console_port(self._aux)
             self._aux = None
-
-        if self._dynamips_id in self._dynamips_ids[self._project.id]:
-            self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
         self._closed = True
 

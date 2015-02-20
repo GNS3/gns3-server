@@ -349,3 +349,24 @@ class DynamipsVMHandler:
         response.set_status(200)
         response.json({"startup_config_content": startup_config_content,
                        "private_config_content": private_config_content})
+
+    @Route.get(
+        r"/projects/{project_id}/dynamips/vms/{vm_id}/idlepc_proposals",
+        status_codes={
+            200: "Idle-PCs retrieved",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Retrieve the idlepc proposals")
+    def get_idlepcs(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_vm(request.match_info["vm_id"],
+                                     project_id=request.match_info["project_id"])
+
+        yield from vm.set_idlepc("0x0")
+        idlepcs = yield from vm.get_idle_pc_prop()
+
+        #idlepcs = yield from vm.show_idle_pc_prop()
+        response.set_status(200)
+        response.json({"idlepcs": idlepcs})

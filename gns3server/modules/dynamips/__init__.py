@@ -409,6 +409,10 @@ class Dynamips(BaseManager):
         if not vm.mmap:
             raise DynamipsError("mmap support is required to enable ghost IOS support")
 
+        if vm.platform == "c7200" and vm.npe == "npe-g2":
+            log.warning("Ghost IOS is not support for c7200 with NPE-G2")
+            return
+
         ghost_file = vm.formatted_ghost_file()
         ghost_file_path = os.path.join(vm.hypervisor.working_dir, ghost_file)
         if ghost_file_path not in self._ghost_files:
@@ -418,9 +422,6 @@ class Dynamips(BaseManager):
             try:
                 yield from ghost.create()
                 yield from ghost.set_image(vm.image)
-                # for 7200s, the NPE must be set when using an NPE-G2.
-                if vm.platform == "c7200":
-                    yield from ghost.set_npe(vm.npe)
                 yield from ghost.set_ghost_status(1)
                 yield from ghost.set_ghost_file(ghost_file)
                 yield from ghost.set_ram(vm.ram)
@@ -463,7 +464,8 @@ class Dynamips(BaseManager):
                 adapter = ADAPTER_MATRIX[adapter_name]()
                 if vm.slots[slot_id] and type(vm.slots[slot_id]) != type(adapter):
                     yield from vm.slot_remove_binding(slot_id)
-                yield from vm.slot_add_binding(slot_id, adapter)
+                if type(vm.slots[slot_id]) != type(adapter):
+                    yield from vm.slot_add_binding(slot_id, adapter)
             elif name.startswith("slot") and value is None:
                 slot_id = int(name[-1])
                 if vm.slots[slot_id]:
@@ -474,7 +476,8 @@ class Dynamips(BaseManager):
                 wic = WIC_MATRIX[wic_name]()
                 if vm.slots[0].wics[wic_slot_id] and type(vm.slots[0].wics[wic_slot_id]) != type(wic):
                     yield from vm.uninstall_wic(wic_slot_id)
-                yield from vm.install_wic(wic_slot_id, wic)
+                if type(vm.slots[0].wics[wic_slot_id]) != type(wic):
+                    yield from vm.install_wic(wic_slot_id, wic)
             elif name.startswith("wic") and value is None:
                 wic_slot_id = int(name[-1])
                 if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
