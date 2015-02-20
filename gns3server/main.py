@@ -123,6 +123,7 @@ def set_config(args):
     server_config["certfile"] = args.certfile
     server_config["certkey"] = args.certkey
     server_config["debug"] = str(args.debug)
+    server_config["live"] = str(args.live)
     config.set_section_config("Server", server_config)
 
 
