@@ -25,7 +25,7 @@ from tests.utils import asyncio_patch
 
 def test_get_qemu_version(loop):
 
-    with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value=b"QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
+    with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
         version = loop.run_until_complete(asyncio.async(Qemu._get_qemu_version("/tmp/qemu-test")))
         assert version == "2.2.0"
 
@@ -40,7 +40,7 @@ def test_binary_list(loop):
             f.write("1")
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
-    with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value=b"QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
+    with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
         qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list()))
 
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": "2.2.0"} in qemus
