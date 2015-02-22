@@ -52,10 +52,10 @@ class Server:
         self._port_manager = PortManager(host)
 
     @asyncio.coroutine
-    def _run_application(self, app, ssl_context=None):
+    def _run_application(self, handler, ssl_context=None):
 
         try:
-            server = yield from self._loop.create_server(app.make_handler(handler=RequestHandler), self._host, self._port, ssl=ssl_context)
+            server = yield from self._loop.create_server(handler, self._host, self._port, ssl=ssl_context)
         except OSError as e:
             log.critical("Could not start the server: {}".format(e))
             self._loop.stop()
@@ -74,11 +74,12 @@ class Server:
             yield from m.unload()
         self._loop.stop()
 
-    def _signal_handling(self):
+    def _signal_handling(self, handler):
 
         @asyncio.coroutine
         def signal_handler(signame):
             log.warning("Server has got signal {}, exiting...".format(signame))
+            yield from handler.finish_connections()
             yield from self._stop_application()
 
         signals = ["SIGTERM", "SIGINT"]
@@ -177,8 +178,9 @@ class Server:
             m.port_manager = self._port_manager
 
         log.info("Starting server on {}:{}".format(self._host, self._port))
-        self._loop.run_until_complete(self._run_application(app, ssl_context))
-        self._signal_handling()
+        handler = app.make_handler(handler=RequestHandler)
+        self._loop.run_until_complete(self._run_application(handler, ssl_context))
+        self._signal_handling(handler)
 
         if server_config.getboolean("live"):
             log.info("Code live reload is enabled, watching for file changes")
