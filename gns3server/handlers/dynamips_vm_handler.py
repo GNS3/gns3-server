@@ -106,6 +106,7 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
+        yield from dynamips_manager.ghost_ios_support(vm)
         response.json(vm)
 
     @classmethod

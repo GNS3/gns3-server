@@ -43,8 +43,8 @@ class C3745(Router):
     def __init__(self, name, vm_id, project, manager, dynamips_id):
         Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c3745")
 
-        # Set default values for this platform
-        self._ram = 256
+        # Set default values for this platform (must be the same as Dynamips)
+        self._ram = 128
         self._nvram = 304
         self._disk0 = 16
         self._disk1 = 0

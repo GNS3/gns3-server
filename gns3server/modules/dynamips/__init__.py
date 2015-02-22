@@ -410,7 +410,7 @@ class Dynamips(BaseManager):
             raise DynamipsError("mmap support is required to enable ghost IOS support")
 
         if vm.platform == "c7200" and vm.npe == "npe-g2":
-            log.warning("Ghost IOS is not support for c7200 with NPE-G2")
+            log.warning("Ghost IOS is not supported for c7200 with NPE-G2")
             return
 
         ghost_file = vm.formatted_ghost_file()
@@ -530,7 +530,6 @@ class Dynamips(BaseManager):
 
         try:
             with open(path, "w") as f:
-                log.info("Creating config file {}".format(path))
                 f.write(content)
         except OSError as e:
             raise DynamipsError("Could not create config file {}: {}".format(path, e))

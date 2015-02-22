@@ -308,7 +308,8 @@ class Router(BaseVM):
         if self._dynamips_id in self._dynamips_ids[self._project.id]:
             self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
-        self._hypervisor.devices.remove(self)
+        if self in self._hypervisor.devices:
+            self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
             try:
                 yield from self.stop()
@@ -1478,7 +1479,7 @@ class Router(BaseVM):
         """
 
         try:
-            reply = yield from self._hypervisor.send("vm extract_config {}".format(self._name))
+            reply = yield from self._hypervisor.send('vm extract_config "{}"'.format(self._name))
         except DynamipsError:
             # for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
             return None, None

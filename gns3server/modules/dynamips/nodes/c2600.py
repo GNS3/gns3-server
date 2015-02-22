@@ -62,8 +62,8 @@ class C2600(Router):
     def __init__(self, name, vm_id, project, manager, dynamips_id, chassis="2610"):
         Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c2600")
 
-        # Set default values for this platform
-        self._ram = 128
+        # Set default values for this platform (must be the same as Dynamips)
+        self._ram = 64
         self._nvram = 128
         self._disk0 = 0
         self._disk1 = 0

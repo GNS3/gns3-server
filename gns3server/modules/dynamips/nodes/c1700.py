@@ -47,8 +47,8 @@ class C1700(Router):
     def __init__(self, name, vm_id, project, manager, dynamips_id, chassis="1720"):
         Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c1700")
 
-        # Set default values for this platform
-        self._ram = 128
+        # Set default values for this platform (must be the same as Dynamips)
+        self._ram = 64
         self._nvram = 32
         self._disk0 = 0
         self._disk1 = 0
