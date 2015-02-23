@@ -20,9 +20,6 @@ import stat
 
 from ..config import Config
 from ..web.route import Route
-from ..schemas.version import VERSION_SCHEMA
-from ..version import __version__
-from aiohttp.web import HTTPConflict
 
 
 class UploadHandler:
@@ -34,15 +31,14 @@ class UploadHandler:
         api_version=None
     )
     def index(request, response):
-        files = []
+        image_files = []
         try:
-            for filename in os.listdir(UploadHandler.image_directory()):
-                if os.path.isfile(os.path.join(UploadHandler.image_directory(), filename)):
-                    if filename[0] != ".":
-                        files.append(filename)
-        except OSError as e:
+            for root, _, files in os.walk(UploadHandler.image_directory()):
+                for filename in files:
+                    image_files.append(os.path.join(root, filename))
+        except OSError:
             pass
-        response.template("upload.html", files=files, image_path=UploadHandler.image_directory())
+        response.template("upload.html", files=image_files)
 
     @classmethod
     @Route.post(
@@ -53,8 +49,11 @@ class UploadHandler:
     def upload(request, response):
         data = yield from request.post()
 
-        destination_path = os.path.join(UploadHandler.image_directory(), data["file"].filename)
+        if not data["file"]:
+            response.redirect("/upload")
+            return
 
+        destination_path = os.path.join(UploadHandler.image_directory(), data["file"].filename)
         try:
             os.makedirs(UploadHandler.image_directory(), exist_ok=True)
             with open(destination_path, "wb+") as f:
