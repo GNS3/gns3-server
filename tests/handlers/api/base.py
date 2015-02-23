@@ -49,7 +49,7 @@ class Query:
             return "http://{}:{}{}".format(self._host, self._port, path)
         return "http://{}:{}/v{}{}".format(self._host, self._port, version, path)
 
-    def _fetch(self, method, path, body=None, api_version = 1, **kwargs):
+    def _fetch(self, method, path, body=None, api_version=1, **kwargs):
         """Fetch an url, parse the JSON and return response
 
         Options:

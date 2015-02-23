@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import stat
+
+from ..config import Config
 from ..web.route import Route
 from ..schemas.version import VERSION_SCHEMA
 from ..version import __version__
@@ -30,5 +34,38 @@ class UploadHandler:
         api_version=None
     )
     def index(request, response):
-        response.template("upload.html")
+        files = []
+        for filename in os.listdir(UploadHandler.image_directory()):
+            if os.path.isfile(os.path.join(UploadHandler.image_directory(), filename)):
+                if filename[0] != ".":
+                    files.append(filename)
+        response.template("upload.html", files=files, image_path=UploadHandler.image_directory())
 
+    @classmethod
+    @Route.post(
+        r"/upload",
+        description="Manage upload of GNS3 images",
+        api_version=None
+    )
+    def upload(request, response):
+        data = yield from request.post()
+
+        destination_path = os.path.join(UploadHandler.image_directory(), data["file"].filename)
+
+        try:
+            os.makedirs(UploadHandler.image_directory(), exist_ok=True)
+            with open(destination_path, "wb+") as f:
+                f.write(data["file"].file.read())
+            print(destination_path)
+            st = os.stat(destination_path)
+            os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
+        except OSError as e:
+            response.html("Could not upload file: {}".format(e))
+            response.set_status(500)
+            return
+        response.redirect("/upload")
+
+    @staticmethod
+    def image_directory():
+        server_config = Config.instance().get_section_config("Server")
+        return os.path.expanduser(server_config.get("image_directory", "~/GNS3/images"))

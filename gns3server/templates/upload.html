@@ -7,10 +7,10 @@
     <br />
     <input type="submit" value="Upload" />
     </form>
-    {%if items%}
-        <h3>Files on {{host}}</h3>
-        {%for item in items%}
-            <p>{{path}}/{{item}}</a></p>
+    {%if files%}
+        <h2>Files on {{gns3_host}}</h2>
+        {%for file in files%}
+            <p>{{image_path}}/{{file}}</a></p>
         {%endfor%}
     {%endif%}
 {% endblock %}

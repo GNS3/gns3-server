@@ -46,7 +46,7 @@ class Response(aiohttp.web.Response):
                 log.debug("%s", request.json)
             log.info("Response: %d %s", self.status, self.reason)
             log.debug(dict(self.headers))
-            if hasattr(self, 'body') and self.body is not None:
+            if hasattr(self, 'body') and self.body is not None and self.headers["CONTENT-TYPE"] == "application/json":
                 log.debug(json.loads(self.body.decode('utf-8')))
         return super().start(request)
 
@@ -90,3 +90,11 @@ class Response(aiohttp.web.Response):
                 log.error("Invalid output query. JSON schema error: {}".format(e.message))
                 raise aiohttp.web.HTTPBadRequest(text="{}".format(e))
         self.body = json.dumps(answer, indent=4, sort_keys=True).encode('utf-8')
+
+    def redirect(self, url):
+        """
+        Redirect to url
+
+        :params url: Redirection URL
+        """
+        raise aiohttp.web.HTTPFound(url)

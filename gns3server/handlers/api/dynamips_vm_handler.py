@@ -30,6 +30,7 @@ from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
 from ...modules.dynamips import Dynamips
 from ...modules.project_manager import ProjectManager
 
+
 class DynamipsVMHandler:
 
     """
@@ -387,4 +388,3 @@ class DynamipsVMHandler:
         idlepc = yield from dynamips_manager.auto_idlepc(vm)
         response.set_status(200)
         response.json({"idlepc": idlepc})
-

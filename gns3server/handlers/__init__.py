@@ -16,4 +16,3 @@
 
 from gns3server.handlers.api import *
 from gns3server.handlers.upload_handler import UploadHandler
-

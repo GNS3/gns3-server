@@ -63,7 +63,7 @@ DEVICE_UPDATE_SCHEMA = {
                 "vlan": {"description": "VLAN number",
                          "type": "integer",
                          "minimum": 1
-                },
+                         },
             },
             "required": ["port", "type", "vlan"],
             "additionalProperties": False
@@ -108,7 +108,7 @@ DEVICE_OBJECT_SCHEMA = {
                 "vlan": {"description": "VLAN number",
                          "type": "integer",
                          "minimum": 1
-                },
+                         },
             },
             "required": ["port", "type", "vlan"],
             "additionalProperties": False
@@ -306,7 +306,7 @@ DEVICE_NIO_SCHEMA = {
                 "vlan": {"description": "VLAN number",
                          "type": "integer",
                          "minimum": 1
-                },
+                         },
             },
             "required": ["type", "vlan"],
             "additionalProperties": False

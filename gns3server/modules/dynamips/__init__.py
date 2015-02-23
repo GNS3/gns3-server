@@ -357,10 +357,10 @@ class Dynamips(BaseManager):
                 raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             # check if we have an allocated NIO UDP auto
             #nio = node.hypervisor.get_nio_udp_auto(lport)
-            #if not nio:
+            # if not nio:
             # otherwise create an NIO UDP
             nio = NIOUDP(node.hypervisor, lport, rhost, rport)
-            #else:
+            # else:
             #    nio.connect(rhost, rport)
         elif nio_settings["type"] == "nio_generic_ethernet":
             ethernet_device = nio_settings["ethernet_device"]
@@ -462,9 +462,9 @@ class Dynamips(BaseManager):
                 slot_id = int(name[-1])
                 adapter_name = value
                 adapter = ADAPTER_MATRIX[adapter_name]()
-                if vm.slots[slot_id] and type(vm.slots[slot_id]) != type(adapter):
+                if vm.slots[slot_id] and not isinstance(vm.slots[slot_id], type(adapter)):
                     yield from vm.slot_remove_binding(slot_id)
-                if type(vm.slots[slot_id]) != type(adapter):
+                if not isinstance(vm.slots[slot_id], type(adapter)):
                     yield from vm.slot_add_binding(slot_id, adapter)
             elif name.startswith("slot") and value is None:
                 slot_id = int(name[-1])
@@ -474,9 +474,9 @@ class Dynamips(BaseManager):
                 wic_slot_id = int(name[-1])
                 wic_name = value
                 wic = WIC_MATRIX[wic_name]()
-                if vm.slots[0].wics[wic_slot_id] and type(vm.slots[0].wics[wic_slot_id]) != type(wic):
+                if vm.slots[0].wics[wic_slot_id] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
                     yield from vm.uninstall_wic(wic_slot_id)
-                if type(vm.slots[0].wics[wic_slot_id]) != type(wic):
+                if not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
                     yield from vm.install_wic(wic_slot_id, wic)
             elif name.startswith("wic") and value is None:
                 wic_slot_id = int(name[-1])

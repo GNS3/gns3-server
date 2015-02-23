@@ -31,6 +31,7 @@ log = logging.getLogger(__name__)
 
 
 class ATMSwitch(Device):
+
     """
     Dynamips ATM switch.
 
@@ -78,7 +79,6 @@ class ATMSwitch(Device):
                                                                               id=self._id,
                                                                               new_name=new_name))
         self._name = new_name
-
 
     @property
     def nios(self):

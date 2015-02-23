@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 
 class EthernetHub(Bridge):
+
     """
     Dynamips Ethernet hub (based on Bridge)
 
