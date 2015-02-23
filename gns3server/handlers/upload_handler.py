@@ -35,10 +35,13 @@ class UploadHandler:
     )
     def index(request, response):
         files = []
-        for filename in os.listdir(UploadHandler.image_directory()):
-            if os.path.isfile(os.path.join(UploadHandler.image_directory(), filename)):
-                if filename[0] != ".":
-                    files.append(filename)
+        try:
+            for filename in os.listdir(UploadHandler.image_directory()):
+                if os.path.isfile(os.path.join(UploadHandler.image_directory(), filename)):
+                    if filename[0] != ".":
+                        files.append(filename)
+        except OSError as e:
+            pass
         response.template("upload.html", files=files, image_path=UploadHandler.image_directory())
 
     @classmethod
