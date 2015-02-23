@@ -234,7 +234,6 @@ def test_get_initial_config_without_config_file(server, vm):
     response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
     assert response.json["content"] == None
-    assert response.json["path"] == None
 
 
 def test_get_initial_config_with_config_file(server, project, vm):
@@ -246,4 +245,3 @@ def test_get_initial_config_with_config_file(server, project, vm):
     response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
     assert response.json["content"] == "TEST"
-    assert response.json["path"] == "initial-config.cfg"

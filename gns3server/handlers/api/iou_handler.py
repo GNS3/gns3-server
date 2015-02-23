@@ -308,5 +308,4 @@ class IOUHandler:
         vm = iou_manager.get_vm(request.match_info["vm_id"],
                                 project_id=request.match_info["project_id"])
         response.set_status(200)
-        response.json({"content": vm.initial_config,
-                       "path": vm.relative_initial_config_file})
+        response.json({"content": vm.initial_config})
