@@ -25,19 +25,12 @@ import shutil
 import random
 import subprocess
 import shlex
-import ntpath
-import telnetlib
-import time
-import re
 import asyncio
-
-from gns3server.config import Config
 
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIO_UDP
 from ..base_vm import BaseVM
-from ...utils.asyncio import subprocess_check_output
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 
 import logging

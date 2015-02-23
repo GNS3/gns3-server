@@ -292,6 +292,5 @@ class QEMUHandler:
         output=QEMU_BINARY_LIST_SCHEMA)
     def list_binaries(request, response):
 
-        qemu_manager = Qemu.instance()
         binaries = yield from Qemu.binary_list()
         response.json(binaries)

@@ -288,12 +288,7 @@ IOU_INITIAL_CONFIG_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1,
         },
-        "path": {
-            "description": "Relative path on the server of the initial configuration file",
-            "type": ["string", "null"],
-            "minLength": 1,
-        },
     },
     "additionalProperties": False,
-    "required": ["content", "path"]
+    "required": ["content"]
 }
