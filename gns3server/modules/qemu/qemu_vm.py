@@ -915,13 +915,17 @@ class QemuVM(BaseVM):
 
         return options
 
+    def _get_random_mac(self, adapter_id):
+        # TODO: let users specify a base mac address
+        return "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_id)
+
     def _network_options(self):
 
         network_options = []
         adapter_id = 0
         for adapter in self._ethernet_adapters:
             # TODO: let users specify a base mac address
-            mac = "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_id)
+            mac = self._get_random_mac(adapter_id)
             network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIO_UDP):
@@ -944,6 +948,16 @@ class QemuVM(BaseVM):
 
         return network_options
 
+    def _graphic(self):
+        """
+        Add the correct graphic options depending of the OS
+        """
+        if sys.platform.startswith("win"):
+            return []
+        if len(os.environ.get("DISPLAY", "")) > 0:
+            return []
+        return ["-nographic"]
+
     @asyncio.coroutine
     def _build_command(self):
         """
@@ -963,6 +977,7 @@ class QemuVM(BaseVM):
         if additional_options:
             command.extend(shlex.split(additional_options))
         command.extend(self._network_options())
+        command.extend(self._graphic())
         return command
 
     def __json__(self):

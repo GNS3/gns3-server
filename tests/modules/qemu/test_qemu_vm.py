@@ -233,3 +233,36 @@ def test_control_vm_expect_text(vm, loop):
         assert writer.write.called_with("test")
 
     assert res == "epic product"
+
+
+def test_build_command(vm, loop, fake_qemu_binary):
+
+    os.environ["DISPLAY"] = "0:0"
+    with patch("gns3server.modules.qemu.qemu_vm.QemuVM._get_random_mac", return_value="00:00:ab:7e:b5:00"):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+            cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+            assert cmd == [
+                fake_qemu_binary,
+                "-name",
+                "test",
+                "-m",
+                "256",
+                "-hda",
+                os.path.join(vm.working_dir, "flash.qcow2"),
+                "-serial",
+                "telnet:0.0.0.0:{},server,nowait".format(vm.console),
+                "-monitor",
+                "telnet:0.0.0.0:{},server,nowait".format(vm.monitor),
+                "-net",
+                "nic,vlan=0,macaddr=00:00:ab:7e:b5:00,model=e1000",
+                "-net",
+                "user,vlan=0,name=gns3-0"
+            ]
+
+
+def test_build_command_without_display(vm, loop, fake_qemu_binary):
+
+    os.environ["DISPLAY"] = ""
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert "-nographic" in cmd
