@@ -55,8 +55,8 @@ class UploadHandler:
         try:
             os.makedirs(UploadHandler.image_directory(), exist_ok=True)
             with open(destination_path, "wb+") as f:
-                f.write(data["file"].file.read())
-            print(destination_path)
+                chunk = data["file"].file.read()
+                f.write(chunk)
             st = os.stat(destination_path)
             os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         except OSError as e:
