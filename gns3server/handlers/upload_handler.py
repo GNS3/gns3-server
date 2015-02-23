@@ -35,7 +35,9 @@ class UploadHandler:
         try:
             for root, _, files in os.walk(UploadHandler.image_directory()):
                 for filename in files:
-                    image_files.append(os.path.join(root, filename))
+                    image_file = os.path.join(root, filename)
+                    if os.access(image_file, os.X_OK):
+                        image_files.append(os.path.join(root, filename))
         except OSError:
             pass
         response.template("upload.html", files=image_files)
