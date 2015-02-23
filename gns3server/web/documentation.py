@@ -77,7 +77,7 @@ class Documentation(object):
         os.makedirs(directory, exist_ok=True)
 
         with open("docs/api/{}.rst".format(handler_name), "w+") as f:
-            f.write(handler_name.replace("_", " ", ).capitalize())
+            f.write(handler_name.replace("api.", "").replace("_", " ", ).capitalize())
             f.write("\n---------------------\n\n")
             f.write(".. toctree::\n   :glob:\n   :maxdepth: 2\n\n   {}/*\n".format(handler_name))
 
