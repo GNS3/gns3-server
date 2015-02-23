@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ..web.route import Route
-from ..schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA
-from ..modules.project_manager import ProjectManager
-from ..modules import MODULES
+from ...web.route import Route
+from ...schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA
+from ...modules.project_manager import ProjectManager
+from ...modules import MODULES
 
 
 class ProjectHandler:

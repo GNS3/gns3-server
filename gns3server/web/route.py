@@ -81,8 +81,11 @@ class Route(object):
         # This block is executed only the first time
         output_schema = kw.get("output", {})
         input_schema = kw.get("input", {})
-        api_version = kw.get("version", 1)
-        cls._path = "/v{version}{path}".format(path=path, version=api_version)
+        api_version = kw.get("api_version", 1)
+        if api_version is None:
+            cls._path = path
+        else:
+            cls._path = "/v{version}{path}".format(path=path, version=api_version)
 
         def register(func):
             route = cls._path
@@ -123,8 +126,13 @@ class Route(object):
                     response.set_status(500)
                     exc_type, exc_value, exc_tb = sys.exc_info()
                     lines = traceback.format_exception(exc_type, exc_value, exc_tb)
-                    tb = "".join(lines)
-                    response.json({"message": tb, "status": 500})
+                    if api_version is not None:
+                        tb = "".join(lines)
+                        response.json({"message": tb, "status": 500})
+                    else:
+                        tb = "\n".join(lines)
+                        response.html("<h1>Internal error</h1><pre>{}</pre>".format(tb))
+
                 return response
 
             cls._routes.append((method, cls._path, control_schema))

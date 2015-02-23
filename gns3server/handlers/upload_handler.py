@@ -21,28 +21,14 @@ from ..version import __version__
 from aiohttp.web import HTTPConflict
 
 
-class VersionHandler:
+class UploadHandler:
 
     @classmethod
     @Route.get(
-        r"/version",
-        description="Retrieve the server version number",
-        output=VERSION_SCHEMA)
-    def version(request, response):
-        response.json({"version": __version__})
+        r"/upload",
+        description="Manage upload of GNS3 images",
+        api_version=None
+    )
+    def index(request, response):
+        response.template("upload.html")
 
-    @classmethod
-    @Route.post(
-        r"/version",
-        description="Check if version is the same as the server",
-        output=VERSION_SCHEMA,
-        input=VERSION_SCHEMA,
-        status_codes={
-            200: "Same version",
-            409: "Invalid version"
-        })
-    def check_version(request, response):
-        if request.json["version"] != __version__:
-            raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"],
-                                                                                              __version__))
-        response.json({"version": __version__})

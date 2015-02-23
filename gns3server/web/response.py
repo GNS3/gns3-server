@@ -20,9 +20,12 @@ import jsonschema
 import aiohttp.web
 import logging
 import sys
+import jinja2
+
 from ..version import __version__
 
 log = logging.getLogger(__name__)
+renderer = jinja2.Environment(loader=jinja2.PackageLoader('gns3server', 'templates'))
 
 
 class Response(aiohttp.web.Response):
@@ -46,6 +49,28 @@ class Response(aiohttp.web.Response):
             if hasattr(self, 'body') and self.body is not None:
                 log.debug(json.loads(self.body.decode('utf-8')))
         return super().start(request)
+
+    def html(self, answer):
+        """
+        Set the response content type to text/html and serialize
+        the content.
+
+        :param anwser The response as a Python object
+        """
+
+        self.content_type = "text/html"
+        self.body = answer.encode('utf-8')
+
+    def template(self, template_filename, **kwargs):
+        """
+        Render a template
+
+        :params template: Template name
+        :params kwargs: Template parameters
+        """
+        template = renderer.get_template(template_filename)
+        kwargs["gns3_version"] = __version__
+        self.html(template.render(**kwargs))
 
     def json(self, answer):
         """

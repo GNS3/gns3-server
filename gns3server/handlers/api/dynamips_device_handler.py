@@ -17,13 +17,13 @@
 
 import os
 import asyncio
-from ..web.route import Route
-from ..schemas.dynamips_device import DEVICE_CREATE_SCHEMA
-from ..schemas.dynamips_device import DEVICE_UPDATE_SCHEMA
-from ..schemas.dynamips_device import DEVICE_CAPTURE_SCHEMA
-from ..schemas.dynamips_device import DEVICE_OBJECT_SCHEMA
-from ..schemas.dynamips_device import DEVICE_NIO_SCHEMA
-from ..modules.dynamips import Dynamips
+from ...web.route import Route
+from ...schemas.dynamips_device import DEVICE_CREATE_SCHEMA
+from ...schemas.dynamips_device import DEVICE_UPDATE_SCHEMA
+from ...schemas.dynamips_device import DEVICE_CAPTURE_SCHEMA
+from ...schemas.dynamips_device import DEVICE_OBJECT_SCHEMA
+from ...schemas.dynamips_device import DEVICE_NIO_SCHEMA
+from ...modules.dynamips import Dynamips
 
 
 class DynamipsDeviceHandler:

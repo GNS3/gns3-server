@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ..web.route import Route
-from ..schemas.vpcs import VPCS_CREATE_SCHEMA
-from ..schemas.vpcs import VPCS_UPDATE_SCHEMA
-from ..schemas.vpcs import VPCS_OBJECT_SCHEMA
-from ..schemas.vpcs import VPCS_NIO_SCHEMA
-from ..modules.vpcs import VPCS
+from ...web.route import Route
+from ...schemas.vpcs import VPCS_CREATE_SCHEMA
+from ...schemas.vpcs import VPCS_UPDATE_SCHEMA
+from ...schemas.vpcs import VPCS_OBJECT_SCHEMA
+from ...schemas.vpcs import VPCS_NIO_SCHEMA
+from ...modules.vpcs import VPCS
 
 
 class VPCSHandler:

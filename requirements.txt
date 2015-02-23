@@ -4,3 +4,4 @@ python-dateutil==2.3
 apache-libcloud==0.16.0
 requests==2.5.0
 aiohttp==0.14.4
+Jinja2==2.7.3

@@ -44,22 +44,25 @@ class Query:
     def delete(self, path, **kwargs):
         return self._fetch("DELETE", path, **kwargs)
 
-    def _get_url(self, path):
-        return "http://{}:{}/v1{}".format(self._host, self._port, path)
+    def _get_url(self, path, version):
+        if version is None:
+            return "http://{}:{}{}".format(self._host, self._port, path)
+        return "http://{}:{}/v{}{}".format(self._host, self._port, version, path)
 
-    def _fetch(self, method, path, body=None, **kwargs):
+    def _fetch(self, method, path, body=None, api_version = 1, **kwargs):
         """Fetch an url, parse the JSON and return response
 
         Options:
             - example if True the session is included inside documentation
             - raw do not JSON encode the query
+            - api_version Version of API, None if no version
         """
         if body is not None and not kwargs.get("raw", False):
             body = json.dumps(body)
 
         @asyncio.coroutine
         def go(future):
-            response = yield from aiohttp.request(method, self._get_url(path), data=body)
+            response = yield from aiohttp.request(method, self._get_url(path, api_version), data=body)
             future.set_result(response)
         future = asyncio.Future()
         asyncio.async(go(future))
@@ -79,12 +82,16 @@ class Query:
             response.route = x_route.replace("/v1", "")
 
         if response.body is not None:
-            try:
-                response.json = json.loads(response.body.decode("utf-8"))
-            except ValueError:
-                response.json = None
+            if response.headers.get("CONTENT-TYPE", "") == "application/json":
+                try:
+                    response.json = json.loads(response.body.decode("utf-8"))
+                except ValueError:
+                    response.json = None
+            else:
+                response.html = response.body.decode("utf-8")
         else:
             response.json = {}
+            response.html = ""
         if kwargs.get('example') and os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
             self._dump_example(method, response.route, body, response)
         return response

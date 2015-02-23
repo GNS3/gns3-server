@@ -16,14 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from ..web.route import Route
-from ..schemas.virtualbox import VBOX_CREATE_SCHEMA
-from ..schemas.virtualbox import VBOX_UPDATE_SCHEMA
-from ..schemas.virtualbox import VBOX_NIO_SCHEMA
-from ..schemas.virtualbox import VBOX_CAPTURE_SCHEMA
-from ..schemas.virtualbox import VBOX_OBJECT_SCHEMA
-from ..modules.virtualbox import VirtualBox
-from ..modules.project_manager import ProjectManager
+from ...web.route import Route
+from ...schemas.virtualbox import VBOX_CREATE_SCHEMA
+from ...schemas.virtualbox import VBOX_UPDATE_SCHEMA
+from ...schemas.virtualbox import VBOX_NIO_SCHEMA
+from ...schemas.virtualbox import VBOX_CAPTURE_SCHEMA
+from ...schemas.virtualbox import VBOX_OBJECT_SCHEMA
+from ...modules.virtualbox import VirtualBox
+from ...modules.project_manager import ProjectManager
 
 
 class VirtualBoxHandler:

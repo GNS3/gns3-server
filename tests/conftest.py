@@ -30,7 +30,7 @@ from gns3server.handlers import *
 from gns3server.modules import MODULES
 from gns3server.modules.port_manager import PortManager
 from gns3server.modules.project_manager import ProjectManager
-from tests.api.base import Query
+from tests.handlers.api.base import Query
 
 
 # Prevent execution of external binaries

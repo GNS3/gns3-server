@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -14,6 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gns3server.handlers.api import *
-from gns3server.handlers.upload_handler import UploadHandler
+"""
+This test suite check /version endpoint
+It's also used for unittest the HTTP implementation.
+"""
 
+from gns3server.version import __version__
+
+
+def test_version_index_upload(server):
+    response = server.get('/upload', api_version=None)
+    assert response.status == 200
+    html = response.html
+    assert "GNS3 Server" in html
+    assert "Select & Upload" in html
