@@ -286,7 +286,7 @@ class Project:
             log.debug("TCP ports still in use: {}".format(port_manager.tcp_ports))
 
         if port_manager.udp_ports:
-            log.warning("UDP ports still in use: {}".format(port_manager.udp_ports))
+            log.debug("UDP ports still in use: {}".format(port_manager.udp_ports))
 
     @asyncio.coroutine
     def commit(self):
