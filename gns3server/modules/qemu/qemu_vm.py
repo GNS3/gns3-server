@@ -97,9 +97,9 @@ class QemuVM(BaseVM):
         self._process_priority = "low"
 
         if self._monitor is not None:
-            self._monitor = self._manager.port_manager.reserve_console_port(self._monitor)
+            self._monitor = self._manager.port_manager.reserve_tcp_port(self._monitor)
         else:
-            self._monitor = self._manager.port_manager.get_free_console_port()
+            self._monitor = self._manager.port_manager.get_free_tcp_port()
 
         self.adapters = 1  # creates 1 adapter by default
         log.info("QEMU VM {name} [id={id}] has been created".format(name=self._name,
@@ -649,10 +649,10 @@ class QemuVM(BaseVM):
 
         yield from self.stop()
         if self._console:
-            self._manager.port_manager.release_console_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
         if self._monitor:
-            self._manager.port_manager.release_console_port(self._monitor)
+            self._manager.port_manager.release_tcp_port(self._monitor)
             self._monitor = None
 
     @asyncio.coroutine

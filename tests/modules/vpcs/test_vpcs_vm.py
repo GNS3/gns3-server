@@ -191,14 +191,14 @@ def test_get_startup_script_using_default_script(vm):
 
 
 def test_change_console_port(vm, port_manager):
-    port1 = port_manager.get_free_console_port()
-    port2 = port_manager.get_free_console_port()
-    port_manager.release_console_port(port1)
-    port_manager.release_console_port(port2)
+    port1 = port_manager.get_free_tcp_port()
+    port2 = port_manager.get_free_tcp_port()
+    port_manager.release_tcp_port(port1)
+    port_manager.release_tcp_port(port2)
     vm.console = port1
     vm.console = port2
     assert vm.console == port2
-    port_manager.reserve_console_port(port1)
+    port_manager.reserve_tcp_port(port1)
 
 
 def test_change_name(vm, tmpdir):
@@ -219,5 +219,5 @@ def test_close(vm, port_manager, loop):
             port = vm.console
             loop.run_until_complete(asyncio.async(vm.close()))
             # Raise an exception if the port is not free
-            port_manager.reserve_console_port(port)
+            port_manager.reserve_tcp_port(port)
             assert vm.is_running() is False

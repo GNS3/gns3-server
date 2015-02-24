@@ -72,6 +72,13 @@ class Server:
             log.debug("Unloading module {}".format(module.__name__))
             m = module.instance()
             yield from m.unload()
+
+        if self._port_manager.tcp_ports:
+            log.warning("TCP ports are still used {}".format(self._port_manager.tcp_ports))
+
+        if self._port_manager.udp_ports:
+            log.warning("UDP ports are still used {}".format(self._port_manager.udp_ports))
+
         self._loop.stop()
 
     def _signal_handling(self, handler):

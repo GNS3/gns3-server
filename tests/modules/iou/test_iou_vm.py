@@ -165,7 +165,7 @@ def test_close(vm, port_manager, loop):
             port = vm.console
             loop.run_until_complete(asyncio.async(vm.close()))
             # Raise an exception if the port is not free
-            port_manager.reserve_console_port(port)
+            port_manager.reserve_tcp_port(port)
             assert vm.is_running() is False
 
 

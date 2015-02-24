@@ -299,7 +299,7 @@ class VirtualBoxVM(BaseVM):
         yield from self.stop()
 
         if self._console:
-            self._manager.port_manager.release_console_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
 
         if self._linked_clone:

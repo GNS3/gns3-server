@@ -116,10 +116,10 @@ def free_console_port(request, port_manager):
     """Get a free TCP port"""
 
     # In case of already use ports we will raise an exception
-    port = port_manager.get_free_console_port()
+    port = port_manager.get_free_tcp_port()
     # We release the port immediately in order to allow
     # the test do whatever the test want
-    port_manager.release_console_port(port)
+    port_manager.release_tcp_port(port)
     return port
 
 

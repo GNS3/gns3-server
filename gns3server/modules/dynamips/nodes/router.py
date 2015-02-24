@@ -106,11 +106,15 @@ class Router(BaseVM):
             self._dynamips_ids[project.id].append(self._dynamips_id)
 
             if self._aux is not None:
-                self._aux = self._manager.port_manager.reserve_console_port(self._aux)
+                self._aux = self._manager.port_manager.reserve_tcp_port(self._aux)
             else:
-                self._aux = self._manager.port_manager.get_free_console_port()
+                self._aux = self._manager.port_manager.get_free_tcp_port()
         else:
             log.info("Creating a new ghost IOS instance")
+            if self._console:
+                # Ghost VMs do not need a console port.
+                self._manager.port_manager.release_tcp_port(self._console)
+                self._console = None
             self._dynamips_id = 0
             self._name = "Ghost"
 
@@ -320,11 +324,11 @@ class Router(BaseVM):
             yield from self.hypervisor.stop()
 
         if self._console:
-            self._manager.port_manager.release_console_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
 
         if self._aux:
-            self._manager.port_manager.release_console_port(self._aux)
+            self._manager.port_manager.release_tcp_port(self._aux)
             self._aux = None
 
         self._closed = True
@@ -873,8 +877,8 @@ class Router(BaseVM):
                                                                                                            old_console=self._console,
                                                                                                            new_console=console))
 
-        self._manager.port_manager.release_console_port(self._console)
-        self._console = self._manager.port_manager.reserve_console_port(console)
+        self._manager.port_manager.release_tcp_port(self._console)
+        self._console = self._manager.port_manager.reserve_tcp_port(console)
 
     @property
     def aux(self):
@@ -901,8 +905,8 @@ class Router(BaseVM):
                                                                                                old_aux=self._aux,
                                                                                                new_aux=aux))
 
-        self._manager.port_manager.release_console_port(self._aux)
-        self._aux = self._manager.port_manager.reserve_console_port(aux)
+        self._manager.port_manager.release_tcp_port(self._aux)
+        self._aux = self._manager.port_manager.reserve_tcp_port(aux)
 
     @asyncio.coroutine
     def get_cpu_usage(self, cpu_id=0):

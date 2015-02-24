@@ -72,7 +72,7 @@ class VPCSVM(BaseVM):
 
         self._terminate_process()
         if self._console:
-            self._manager.port_manager.release_console_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
 
     @asyncio.coroutine
