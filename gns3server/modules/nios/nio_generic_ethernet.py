@@ -22,7 +22,7 @@ Interface for generic Ethernet NIOs (PCAP library).
 from .nio import NIO
 
 
-class NIO_GenericEthernet(NIO):
+class NIOGenericEthernet(NIO):
 
     """
     Generic Ethernet NIO.

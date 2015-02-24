@@ -29,7 +29,7 @@ import asyncio
 
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
-from ..nios.nio_udp import NIO_UDP
+from ..nios.nio_udp import NIOUDP
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 
@@ -719,7 +719,7 @@ class QemuVM(BaseVM):
 
         if self.is_running():
             # dynamically configure an UDP tunnel on the QEMU VM adapter
-            if nio and isinstance(nio, NIO_UDP):
+            if nio and isinstance(nio, NIOUDP):
                 if self._legacy_networking:
                     yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
                     yield from self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
@@ -928,7 +928,7 @@ class QemuVM(BaseVM):
             mac = self._get_random_mac(adapter_id)
             network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
             nio = adapter.get_nio(0)
-            if nio and isinstance(nio, NIO_UDP):
+            if nio and isinstance(nio, NIOUDP):
                 if self._legacy_networking:
                     network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
                                                                                                                  adapter_id,

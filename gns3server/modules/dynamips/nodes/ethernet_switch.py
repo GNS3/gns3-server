@@ -23,6 +23,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 import asyncio
 
 from .device import Device
+from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
 
 
@@ -114,6 +115,10 @@ class EthernetSwitch(Device):
         Deletes this Ethernet switch.
         """
 
+        for nio in self._nios.values():
+            if nio and isinstance(nio, NIOUDP):
+                self.manager.port_manager.release_udp_port(nio.lport)
+
         try:
             yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
             log.info('Ethernet switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
@@ -157,6 +162,8 @@ class EthernetSwitch(Device):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         nio = self._nios[port_number]
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
         yield from self._hypervisor.send('ethsw remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
 
         log.info('Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,

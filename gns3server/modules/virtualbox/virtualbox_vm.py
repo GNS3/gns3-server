@@ -30,6 +30,7 @@ import asyncio
 
 from pkg_resources import parse_version
 from .virtualbox_error import VirtualBoxError
+from ..nios.nio_udp import NIOUDP
 from ..adapters.ethernet_adapter import EthernetAdapter
 from .telnet_server import TelnetServer  # TODO: port TelnetServer to asyncio
 from ..base_vm import BaseVM
@@ -296,11 +297,17 @@ class VirtualBoxVM(BaseVM):
             # VM is already closed
             return
 
-        yield from self.stop()
-
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
+
+        for adapter in self._ethernet_adapters:
+            if adapter is not None:
+                for nio in adapter.ports.values():
+                    if nio and isinstance(nio, NIOUDP):
+                        self.manager.port_manager.release_udp_port(nio.lport)
+
+        yield from self.stop()
 
         if self._linked_clone:
             hdd_table = []
@@ -781,7 +788,7 @@ class VirtualBoxVM(BaseVM):
             yield from self._control_vm("nic{} null".format(adapter_number + 1))
 
         nio = adapter.get_nio(0)
-        if str(nio) == "NIO UDP":
+        if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(0)
 

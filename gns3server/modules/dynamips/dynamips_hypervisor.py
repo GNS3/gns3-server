@@ -25,7 +25,6 @@ import logging
 import asyncio
 
 from .dynamips_error import DynamipsError
-from .nios.nio_udp_auto import NIOUDPAuto
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +52,6 @@ class DynamipsHypervisor:
 
         self._devices = []
         self._working_dir = working_dir
-        self._nio_udp_auto_instances = {}
         self._version = "N/A"
         self._timeout = timeout
         self._uuid = None
@@ -130,7 +128,6 @@ class DynamipsHypervisor:
         except OSError as e:
             log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
         self._reader = self._writer = None
-        self._nio_udp_auto_instances.clear()
 
     @asyncio.coroutine
     def reset(self):
@@ -139,7 +136,6 @@ class DynamipsHypervisor:
         """
 
         yield from self.send("hypervisor reset")
-        self._nio_udp_auto_instances.clear()
 
     @asyncio.coroutine
     def set_working_dir(self, working_dir):
@@ -223,31 +219,6 @@ class DynamipsHypervisor:
         """
 
         self._host = host
-
-    def get_nio_udp_auto(self, port):
-        """
-        Returns an allocated NIO UDP auto instance.
-
-        :returns: NIO UDP auto instance
-        """
-
-        if port in self._nio_udp_auto_instances:
-            return self._nio_udp_auto_instances.pop(port)
-        else:
-            return None
-
-    def allocate_udp_port(self):
-        """
-        Allocates a new UDP port for creating an UDP NIO Auto.
-
-        :returns: port number (integer)
-        """
-
-        # use Dynamips's NIO UDP auto back-end.
-        nio = NIOUDPAuto(self, self._host, self._udp_start_port_range, self._udp_end_port_range)
-        self._nio_udp_auto_instances[nio.lport] = nio
-        allocated_port = nio.lport
-        return allocated_port
 
     @asyncio.coroutine
     def send(self, command):

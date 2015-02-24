@@ -46,7 +46,6 @@ from .dynamips_device import DynamipsDevice
 
 # NIOs
 from .nios.nio_udp import NIOUDP
-from .nios.nio_udp_auto import NIOUDPAuto
 from .nios.nio_unix import NIOUNIX
 from .nios.nio_vde import NIOVDE
 from .nios.nio_tap import NIOTAP
@@ -355,13 +354,7 @@ class Dynamips(BaseManager):
                     sock.connect((rhost, rport))
             except OSError as e:
                 raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
-            # check if we have an allocated NIO UDP auto
-            #nio = node.hypervisor.get_nio_udp_auto(lport)
-            # if not nio:
-            # otherwise create an NIO UDP
             nio = NIOUDP(node.hypervisor, lport, rhost, rport)
-            # else:
-            #    nio.connect(rhost, rport)
         elif nio_settings["type"] == "nio_generic_ethernet":
             ethernet_device = nio_settings["ethernet_device"]
             if sys.platform.startswith("win"):

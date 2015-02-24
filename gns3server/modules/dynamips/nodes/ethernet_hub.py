@@ -22,6 +22,7 @@ Hub object that uses the Bridge interface to create a hub with ports.
 import asyncio
 
 from .bridge import Bridge
+from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
 
 import logging
@@ -73,6 +74,10 @@ class EthernetHub(Bridge):
         Deletes this hub.
         """
 
+        for nio in self._nios.values():
+            if nio and isinstance(nio, NIOUDP):
+                self.manager.port_manager.release_udp_port(nio.lport)
+
         try:
             yield from Bridge.delete(self)
             log.info('Ethernet hub "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
@@ -115,6 +120,8 @@ class EthernetHub(Bridge):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         nio = self._mappings[port_number]
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
         yield from Bridge.remove_nio(self, nio)
 
         log.info('Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,

@@ -34,9 +34,9 @@ import glob
 from .iou_error import IOUError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..adapters.serial_adapter import SerialAdapter
-from ..nios.nio_udp import NIO_UDP
-from ..nios.nio_tap import NIO_TAP
-from ..nios.nio_generic_ethernet import NIO_GenericEthernet
+from ..nios.nio_udp import NIOUDP
+from ..nios.nio_tap import NIOTAP
+from ..nios.nio_generic_ethernet import NIOGenericEthernet
 from ..base_vm import BaseVM
 from .ioucon import start_ioucon
 import gns3server.utils.asyncio
@@ -104,10 +104,18 @@ class IOUVM(BaseVM):
     @asyncio.coroutine
     def close(self):
 
-        yield from self.stop()
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
+
+        adapters = self._ethernet_adapters + self._serial_adapters
+        for adapter in adapters:
+            if adapter is not None:
+                for nio in adapter.ports.values():
+                    if nio and isinstance(nio, NIOUDP):
+                        self.manager.port_manager.release_udp_port(nio.lport)
+
+        yield from self.stop()
 
     @property
     def path(self):
@@ -410,16 +418,16 @@ class IOUVM(BaseVM):
                 nio = adapter.get_nio(unit)
                 if nio:
                     connection = None
-                    if isinstance(nio, NIO_UDP):
+                    if isinstance(nio, NIOUDP):
                         # UDP tunnel
                         connection = {"tunnel_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
                                                                                      rhost=nio.rhost,
                                                                                      rport=nio.rport)}
-                    elif isinstance(nio, NIO_TAP):
+                    elif isinstance(nio, NIOTAP):
                         # TAP interface
                         connection = {"tap_dev": "{tap_device}".format(tap_device=nio.tap_device)}
 
-                    elif isinstance(nio, NIO_GenericEthernet):
+                    elif isinstance(nio, NIOGenericEthernet):
                         # Ethernet interface
                         connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
 
@@ -750,6 +758,8 @@ class IOUVM(BaseVM):
                                                                                           port_number=port_number))
 
         nio = adapter.get_nio(port_number)
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(port_number)
         log.info("IOU {name} [id={id}]: {nio} removed from {adapter_number}/{port_number}".format(name=self._name,
                                                                                                   id=self._id,

@@ -22,7 +22,7 @@ Interface for UDP NIOs.
 from .nio import NIO
 
 
-class NIO_UDP(NIO):
+class NIOUDP(NIO):
 
     """
     UDP NIO.

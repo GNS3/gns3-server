@@ -32,6 +32,7 @@ log = logging.getLogger(__name__)
 
 from ...base_vm import BaseVM
 from ..dynamips_error import DynamipsError
+from ..nios.nio_udp import NIOUDP
 from gns3server.utils.asyncio import wait_run_in_executor
 
 
@@ -312,6 +313,20 @@ class Router(BaseVM):
         if self._dynamips_id in self._dynamips_ids[self._project.id]:
             self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
+        if self._console:
+            self._manager.port_manager.release_tcp_port(self._console)
+            self._console = None
+
+        if self._aux:
+            self._manager.port_manager.release_tcp_port(self._aux)
+            self._aux = None
+
+        for adapter in self._slots:
+            if adapter is not None:
+                for nio in adapter.ports.values():
+                    if nio and isinstance(nio, NIOUDP):
+                        self.manager.port_manager.release_udp_port(nio.lport)
+
         if self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
@@ -322,14 +337,6 @@ class Router(BaseVM):
             except DynamipsError:
                 pass
             yield from self.hypervisor.stop()
-
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console)
-            self._console = None
-
-        if self._aux:
-            self._manager.port_manager.release_tcp_port(self._aux)
-            self._aux = None
 
         self._closed = True
 
@@ -1226,6 +1233,8 @@ class Router(BaseVM):
                                                                                                                   port_number=port_number))
 
         nio = adapter.get_nio(port_number)
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(port_number)
 
         log.info('Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_number}/{port_number}'.format(name=self._name,

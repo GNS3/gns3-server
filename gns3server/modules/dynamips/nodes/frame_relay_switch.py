@@ -23,6 +23,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L642
 import asyncio
 
 from .device import Device
+from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
 
 import logging
@@ -105,6 +106,10 @@ class FrameRelaySwitch(Device):
         Deletes this Frame Relay switch.
         """
 
+        for nio in self._nios.values():
+            if nio and isinstance(nio, NIOUDP):
+                self.manager.port_manager.release_udp_port(nio.lport)
+
         try:
             yield from self._hypervisor.send('frsw delete "{}"'.format(self._name))
             log.info('Frame Relay switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
@@ -156,6 +161,9 @@ class FrameRelaySwitch(Device):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         nio = self._nios[port_number]
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
+
         log.info('Frame Relay switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
                                                                                                  id=self._id,
                                                                                                  nio=nio,

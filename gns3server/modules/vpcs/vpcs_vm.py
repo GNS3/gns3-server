@@ -31,6 +31,8 @@ import shutil
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
+from ..nios.nio_udp import NIOUDP
+from ..nios.nio_tap import NIOTAP
 from ..base_vm import BaseVM
 from ...utils.asyncio import subprocess_check_output
 
@@ -70,10 +72,15 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def close(self):
 
-        self._terminate_process()
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
+
+        nio = self._ethernet_adapter.get_nio(0)
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
+
+        self._terminate_process()
 
     @asyncio.coroutine
     def _check_requirements(self):
@@ -310,7 +317,7 @@ class VPCSVM(BaseVM):
                                                                                            port_number=port_number))
 
         nio = self._ethernet_adapter.get_nio(port_number)
-        if str(nio) == "NIO UDP":
+        if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport)
         self._ethernet_adapter.remove_nio(port_number)
 
@@ -361,13 +368,13 @@ class VPCSVM(BaseVM):
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:
-            if str(nio) == "NIO UDP":
+            if isinstance(nio, NIOUDP):
                 # UDP tunnel
                 command.extend(["-s", str(nio.lport)])  # source UDP port
                 command.extend(["-c", str(nio.rport)])  # destination UDP port
                 command.extend(["-t", nio.rhost])  # destination host
 
-            elif str(nio) == "NIO TAP":
+            elif isinstance(nio, NIOTAP):
                 # TAP interface
                 command.extend(["-e"])
                 command.extend(["-d", nio.tap_vm])

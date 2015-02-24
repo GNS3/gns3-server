@@ -22,7 +22,7 @@ Interface for TAP NIOs (UNIX based OSes only).
 from .nio import NIO
 
 
-class NIO_TAP(NIO):
+class NIOTAP(NIO):
 
     """
     TAP NIO.
