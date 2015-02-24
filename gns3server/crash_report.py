@@ -34,6 +34,9 @@ class CrashReport:
     DSN = "aiohttp+https://50af75d8641d4ea7a4ea6b38c7df6cf9:41d54936f8f14e558066262e2ec8bbeb@app.getsentry.com/38482"
     _instance = None
 
+    def __init__(self):
+        self._client = None
+
     def capture_exception(self, request):
         server_config = Config.instance().get_section_config("Server")
         if server_config.getboolean("report_errors"):
