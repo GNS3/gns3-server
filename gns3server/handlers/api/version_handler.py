@@ -20,6 +20,8 @@ from ...schemas.version import VERSION_SCHEMA
 from ...version import __version__
 from aiohttp.web import HTTPConflict
 
+import asyncio
+
 
 class VersionHandler:
 
@@ -44,4 +46,13 @@ class VersionHandler:
     def check_version(request, response):
         if request.json["version"] != __version__:
             raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"], __version__))
+        response.json({"version": __version__})
+
+    @staticmethod
+    @Route.get(
+        r"/sleep/{vm_id}",
+        description="Retrieve the server version number",
+        output=VERSION_SCHEMA)
+    def sleep(request, response):
+        yield from asyncio.sleep(1)
         response.json({"version": __version__})

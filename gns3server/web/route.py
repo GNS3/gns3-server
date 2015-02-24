@@ -63,6 +63,8 @@ class Route(object):
     _routes = []
     _documentation = {}
 
+    _vms_lock = {}
+
     @classmethod
     def get(cls, path, *args, **kw):
         return cls._route('GET', path, *args, **kw)
@@ -150,9 +152,22 @@ class Route(object):
 
                 return response
 
-            cls._routes.append((method, cls._path, control_schema))
+            @asyncio.coroutine
+            def vm_concurrency(request):
+                """
+                To avoid strange effect we prevent concurrency
+                between the same instance of the vm
+                """
 
-            return control_schema
+                if "vm_id" in request.match_info:
+                    cls._vms_lock.setdefault(request.match_info["vm_id"], asyncio.Lock())
+                    with (yield from cls._vms_lock[request.match_info["vm_id"]]):
+                        response = yield from control_schema(request)
+                return response
+
+            cls._routes.append((method, cls._path, vm_concurrency))
+
+            return vm_concurrency
         return register
 
     @classmethod
