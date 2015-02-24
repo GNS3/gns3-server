@@ -33,7 +33,7 @@ def test_create_project_with_path(server, tmpdir):
 
 def test_create_project_without_dir(server):
     query = {}
-    response = server.post("/projects", query)
+    response = server.post("/projects", query, example=True)
     assert response.status == 200
     assert response.json["project_id"] is not None
     assert response.json["temporary"] is False

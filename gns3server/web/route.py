@@ -92,9 +92,10 @@ class Route(object):
         def register(func):
             route = cls._path
 
-            handler = func.__module__.replace("_handler", "").replace("gns3server.handlers.", "")
+            handler = func.__module__.replace("_handler", "").replace("gns3server.handlers.api.", "")
             cls._documentation.setdefault(handler, {})
-            cls._documentation[handler].setdefault(route, {"methods": []})
+            cls._documentation[handler].setdefault(route, {"api_version": api_version,
+                                                           "methods": []})
 
             cls._documentation[handler][route]["methods"].append({
                 "method": method,

@@ -27,18 +27,28 @@ class Documentation(object):
 
     """Extract API documentation as Sphinx compatible files"""
 
-    def __init__(self, route):
+    def __init__(self, route, directory):
+        """
+        :param route: Route instance
+        :param directory: Output directory
+        """
         self._documentation = route.get_documentation()
+        self._directory = directory
 
     def write(self):
         for handler_name in sorted(self._documentation):
 
-            self._create_handler_directory(handler_name)
-
             for path in sorted(self._documentation[handler_name]):
+
+                api_version = self._documentation[handler_name][path]["api_version"]
+                if api_version is None:
+                    continue
+
+                self._create_handler_directory(handler_name, api_version)
+
                 filename = self._file_path(path)
                 handler_doc = self._documentation[handler_name][path]
-                with open("docs/api/{}/{}.rst".format(handler_name, filename), 'w+') as f:
+                with open("{}/api/v{}/{}/{}.rst".format(self._directory, api_version, handler_name, filename), 'w+') as f:
                     f.write('{}\n----------------------------------------------------------------------------------------------------------------------\n\n'.format(path))
                     f.write('.. contents::\n')
                     for method in handler_doc["methods"]:
@@ -68,29 +78,29 @@ class Documentation(object):
                             f.write("Output\n*******\n")
                             self._write_json_schema(f, method["output_schema"])
 
-                        self._include_query_example(f, method, path)
+                        self._include_query_example(f, method, path, api_version)
 
-    def _create_handler_directory(self, handler_name):
+    def _create_handler_directory(self, handler_name, api_version):
         """Create a directory for the handler and add an index inside"""
 
-        directory = "docs/api/{}".format(handler_name)
+        directory = "{}/api/v{}/{}".format(self._directory, api_version, handler_name)
         os.makedirs(directory, exist_ok=True)
 
-        with open("docs/api/{}.rst".format(handler_name), "w+") as f:
+        with open("{}/api/v{}/{}.rst".format(self._directory, api_version, handler_name), "w+") as f:
             f.write(handler_name.replace("api.", "").replace("_", " ", ).capitalize())
             f.write("\n---------------------\n\n")
             f.write(".. toctree::\n   :glob:\n   :maxdepth: 2\n\n   {}/*\n".format(handler_name))
 
-    def _include_query_example(self, f, method, path):
+    def _include_query_example(self, f, method, path, api_version):
         """If a sample session is available we include it in documentation"""
         m = method["method"].lower()
-        query_path = "examples/{}_{}.txt".format(m, self._file_path(path))
-        if os.path.isfile("docs/api/{}".format(query_path)):
+        query_path = "{}_{}.txt".format(m, self._file_path(path))
+        if os.path.isfile(os.path.join(self._directory, "api", "examples", query_path)):
             f.write("Sample session\n***************\n")
-            f.write("\n\n.. literalinclude:: {}\n\n".format(query_path))
+            f.write("\n\n.. literalinclude:: ../../examples/{}\n\n".format(query_path))
 
     def _file_path(self, path):
-        return re.sub('[^a-z0-9]', '', path)
+        return re.sub("^v1", "", re.sub("[^a-z0-9]", "", path))
 
     def _write_definitions(self, f, schema):
         if "definitions" in schema:
@@ -148,4 +158,4 @@ class Documentation(object):
 
 if __name__ == '__main__':
     print("Generate API documentation")
-    Documentation(Route).write()
+    Documentation(Route, "docs").write()

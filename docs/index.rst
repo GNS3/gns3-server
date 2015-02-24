@@ -18,5 +18,5 @@ API Endpoints
    :glob:
    :maxdepth: 2
    
-   api/*
+   api/v1/*
 

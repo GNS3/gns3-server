@@ -57,35 +57,35 @@ def test_vbox_get(server, project, vm):
 
 def test_vbox_start(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_stop(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.stop", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_suspend(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.suspend", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_resume(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.resume", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_reload(server, vm):
     with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.reload", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
@@ -124,7 +124,8 @@ def test_vbox_delete_nio(server, vm):
 
 def test_vbox_update(server, vm, free_console_port):
     response = server.put("/projects/{project_id}/virtualbox/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
-                                                                                                                                   "console": free_console_port})
+                                                                                                                                   "console": free_console_port},
+                          example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port

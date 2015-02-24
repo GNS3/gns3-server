@@ -94,28 +94,28 @@ def test_vpcs_delete_nio(server, vm):
 
 def test_vpcs_start(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_stop(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.stop", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_reload(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.reload", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_delete(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.VPCS.delete_vm", return_value=True) as mock:
-        response = server.delete("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.delete("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
@@ -123,7 +123,8 @@ def test_vpcs_delete(server, vm):
 def test_vpcs_update(server, vm, tmpdir, free_console_port):
     response = server.put("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
                                                                                                                              "console": free_console_port,
-                                                                                                                             "startup_script": "ip 192.168.1.1"})
+                                                                                                                             "startup_script": "ip 192.168.1.1"},
+                          example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port

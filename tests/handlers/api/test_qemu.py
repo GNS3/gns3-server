@@ -77,42 +77,42 @@ def test_qemu_get(server, project, vm):
 
 def test_qemu_start(server, vm):
     with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.start", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_stop(server, vm):
     with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.stop", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_reload(server, vm):
     with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.reload", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_suspend(server, vm):
     with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.suspend", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_resume(server, vm):
     with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.resume", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_delete(server, vm):
     with asyncio_patch("gns3server.modules.qemu.Qemu.delete_vm", return_value=True) as mock:
-        response = server.delete("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = server.delete("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
@@ -124,7 +124,7 @@ def test_qemu_update(server, vm, tmpdir, free_console_port, project):
         "ram": 1024,
         "hdb_disk_image": "hdb"
     }
-    response = server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params)
+    response = server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
@@ -168,7 +168,7 @@ def test_qemu_list_binaries(server, vm):
     ret = [{"path": "/tmp/1", "version": "2.2.0"},
            {"path": "/tmp/2", "version": "2.1.0"}]
     with asyncio_patch("gns3server.modules.qemu.Qemu.binary_list", return_value=ret) as mock:
-        response = server.get("/qemu/binaries".format(project_id=vm["project_id"]))
+        response = server.get("/qemu/binaries".format(project_id=vm["project_id"]), example=True)
         assert mock.called
         assert response.status == 200
         assert response.json == ret
