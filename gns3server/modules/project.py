@@ -21,6 +21,7 @@ import shutil
 import asyncio
 
 from uuid import UUID, uuid4
+from .port_manager import PortManager
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 
@@ -279,6 +280,13 @@ class Project:
                 yield from wait_run_in_executor(shutil.rmtree, self.path)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
+
+        port_manager = PortManager.instance()
+        if port_manager.tcp_ports:
+            log.debug("TCP ports still in use: {}".format(port_manager.tcp_ports))
+
+        if port_manager.udp_ports:
+            log.warning("UDP ports still in use: {}".format(port_manager.udp_ports))
 
     @asyncio.coroutine
     def commit(self):
