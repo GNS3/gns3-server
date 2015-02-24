@@ -204,7 +204,7 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Resume a suspended Dynamips VM instance")
-    def suspend(request, response):
+    def resume(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
