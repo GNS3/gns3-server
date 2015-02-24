@@ -159,10 +159,15 @@ class Route(object):
                 between the same instance of the vm
                 """
 
-                if "vm_id" in request.match_info:
-                    cls._vms_lock.setdefault(request.match_info["vm_id"], asyncio.Lock())
-                    with (yield from cls._vms_lock[request.match_info["vm_id"]]):
+                if "vm_id" in request.match_info or "device_id" in request.match_info:
+                    vm_id = request.match_info.get("vm_id")
+                    if vm_id is None:
+                        vm_id = request.match_info["device_id"]
+                    cls._vms_lock.setdefault(vm_id, asyncio.Lock())
+                    with (yield from cls._vms_lock[vm_id]):
                         response = yield from control_schema(request)
+                else:
+                    response = yield from control_schema(request)
                 return response
 
             cls._routes.append((method, cls._path, vm_concurrency))
