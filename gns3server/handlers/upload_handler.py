@@ -72,4 +72,4 @@ class UploadHandler:
     @staticmethod
     def image_directory():
         server_config = Config.instance().get_section_config("Server")
-        return os.path.expanduser(server_config.get("image_directory", "~/GNS3/images"))
+        return os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))

@@ -142,9 +142,11 @@ class Server:
 
     @asyncio.coroutine
     def start_shell(self):
-        from ptpython.repl import embed
-        from gns3server.modules import Qemu
-
+        try:
+            from ptpython.repl import embed
+        except ImportError:
+            log.error("Unable to start a shell: the ptpython module must be installed!")
+            return
         yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True)
 
     def run(self):

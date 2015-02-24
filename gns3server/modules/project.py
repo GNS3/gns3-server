@@ -91,7 +91,8 @@ class Project:
         depending of the operating system
         """
 
-        path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
+        server_config = Config.instance().get_section_config("Server")
+        path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
