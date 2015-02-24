@@ -43,6 +43,5 @@ class VersionHandler:
         })
     def check_version(request, response):
         if request.json["version"] != __version__:
-            raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"],
-                                                                                              __version__))
+            raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"], __version__))
         response.json({"version": __version__})

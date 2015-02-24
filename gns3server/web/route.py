@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 from ..modules.vm_error import VMError
 from .response import Response
+from ..crash_report import CrashReport
 
 
 @asyncio.coroutine
@@ -39,6 +40,8 @@ def parse_request(request, input_schema):
             request.json = json.loads(body.decode('utf-8'))
         except ValueError as e:
             raise aiohttp.web.HTTPBadRequest(text="Invalid JSON {}".format(e))
+    else:
+        request.json = {}
     try:
         jsonschema.validate(request.json, input_schema)
     except jsonschema.ValidationError as e:
@@ -135,6 +138,7 @@ class Route(object):
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(route=route)
                     response.set_status(500)
+                    CrashReport.instance().capture_exception(request)
                     exc_type, exc_value, exc_tb = sys.exc_info()
                     lines = traceback.format_exception(exc_type, exc_value, exc_tb)
                     if api_version is not None:

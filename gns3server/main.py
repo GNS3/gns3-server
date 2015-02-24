@@ -28,7 +28,7 @@ from gns3server.web.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.modules.project import Project
-
+from gns3server.crash_report import CrashReport
 
 import logging
 log = logging.getLogger(__name__)
@@ -168,6 +168,7 @@ def main():
 
     Project.clean_project_directory()
 
+    CrashReport.instance()
     host = server_config["host"]
     port = int(server_config["port"])
     server = Server(host, port)
