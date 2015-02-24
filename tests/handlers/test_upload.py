@@ -38,7 +38,7 @@ def test_upload(server, tmpdir):
     body = aiohttp.FormData()
     body.add_field("file", open(str(tmpdir / "test"), "rb"), content_type="application/iou", filename="test2")
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"image_directory": str(tmpdir)}):
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
         response = server.post('/upload', api_version=None, body=body, raw=True)
 
     with open(str(tmpdir / "test2")) as f:
