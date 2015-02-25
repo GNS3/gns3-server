@@ -175,7 +175,6 @@ def test_path(vm, fake_iou_bin):
     assert vm.path == fake_iou_bin
 
 
-
 def test_path_relative(vm, fake_iou_bin, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
@@ -302,3 +301,8 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
     assert vm._adapters[0].get_nio(0).capturing
     loop.run_until_complete(asyncio.async(vm.stop_capture(0, 0)))
     assert vm._adapters[0].get_nio(0).capturing is False
+
+
+def test_get_legacy_vm_workdir_name():
+
+    assert IOU.get_legacy_vm_workdir_name(42) == "device-42"

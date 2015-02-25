@@ -62,3 +62,13 @@ class IOU(BaseManager):
         """
 
         return self._used_application_ids.get(vm_id, 1)
+
+    def get_legacy_vm_workdir_name(legacy_vm_id):
+        """
+        Returns the name of the legacy working directory (pre 1.3) name for a VM.
+
+        :param legacy_vm_id: legacy VM identifier (integer)
+        :returns: working directory name
+        """
+
+        return "device-{}".format(legacy_vm_id)
