@@ -80,8 +80,10 @@ class Bridge(Device):
         Deletes this bridge.
         """
 
-        self._hypervisor.devices.remove(self)
-        yield from self._hypervisor.send('nio_bridge delete "{}"'.format(self._name))
+        if self._hypervisor and self in self._hypervisor.devices:
+            self._hypervisor.devices.remove(self)
+        if self._hypervisor and not self._hypervisor.devices:
+            yield from self._hypervisor.send('nio_bridge delete "{}"'.format(self._name))
 
     @asyncio.coroutine
     def add_nio(self, nio):

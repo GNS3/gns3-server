@@ -74,7 +74,7 @@ class EthernetHub(Bridge):
         Deletes this hub.
         """
 
-        for nio in self._nios.values():
+        for nio in self._nios:
             if nio and isinstance(nio, NIOUDP):
                 self.manager.port_manager.release_udp_port(nio.lport)
 

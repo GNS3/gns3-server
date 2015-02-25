@@ -116,7 +116,8 @@ class ATMSwitch(Device):
             log.info('ATM switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
         except DynamipsError:
             log.debug("Could not properly delete ATM switch {}".format(self._name))
-        self._hypervisor.devices.remove(self)
+        if self._hypervisor and self in self._hypervisor.devices:
+            self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
             yield from self.hypervisor.stop()
 
