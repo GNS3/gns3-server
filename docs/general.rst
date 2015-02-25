@@ -33,3 +33,12 @@ complexity for the client due to the fact only some command on some VM can be
 concurrent.
 
 
+Authentification
+-----------------
+
+In this version of the API you have no authentification system. If you
+listen on your network interface instead of localhost be carefull. Due
+to the nature of the multiple supported VM it's easy for an user to
+upload and run code on your machine.
+
+
