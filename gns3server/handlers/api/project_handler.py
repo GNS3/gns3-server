@@ -27,6 +27,10 @@ class ProjectHandler:
     @Route.post(
         r"/projects",
         description="Create a new project on the server",
+        status_codes={
+            201: "Project created",
+            409: "Project already created"
+        },
         output=PROJECT_OBJECT_SCHEMA,
         input=PROJECT_CREATE_SCHEMA)
     def create_project(request, response):
@@ -37,6 +41,7 @@ class ProjectHandler:
             project_id=request.json.get("project_id"),
             temporary=request.json.get("temporary", False)
         )
+        response.set_status(201)
         response.json(p)
 
     @classmethod
@@ -115,6 +120,7 @@ class ProjectHandler:
         yield from project.close()
         for module in MODULES:
             yield from module.instance().project_closed(project.path)
+        pm.remove_project(project.id)
         response.set_status(204)
 
     @classmethod
@@ -133,4 +139,5 @@ class ProjectHandler:
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
         yield from project.delete()
+        pm.remove_project(project.id)
         response.set_status(204)

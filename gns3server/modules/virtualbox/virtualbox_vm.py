@@ -297,6 +297,7 @@ class VirtualBoxVM(BaseVM):
             # VM is already closed
             return
 
+        log.debug("VirtualBox VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console)
             self._console = None

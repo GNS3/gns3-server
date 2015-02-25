@@ -72,6 +72,7 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def close(self):
 
+        log.debug("VPCS {name} [{id}] is closing".format(name=self._name, id=self._id))
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
@@ -297,10 +298,10 @@ class VPCSVM(BaseVM):
                                                                                            port_number=port_number))
 
         self._ethernet_adapter.add_nio(port_number, nio)
-        log.info("VPCS {name} {id}]: {nio} added to port {port_number}".format(name=self._name,
-                                                                               id=self.id,
-                                                                               nio=nio,
-                                                                               port_number=port_number))
+        log.info("VPCS {name} [{id}]: {nio} added to port {port_number}".format(name=self._name,
+                                                                                id=self.id,
+                                                                                nio=nio,
+                                                                                port_number=port_number))
         return nio
 
     def port_remove_nio_binding(self, port_number):

@@ -310,6 +310,7 @@ class Router(BaseVM):
             # router is already closed
             return
 
+        log.debug('Router "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
         if self._dynamips_id in self._dynamips_ids[self._project.id]:
             self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 

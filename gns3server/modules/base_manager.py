@@ -165,6 +165,7 @@ class BaseManager:
             if hasattr(self, "get_legacy_vm_workdir_name"):
                 # move old project VM files to a new location
 
+                log.info("Converting old project...")
                 project_name = os.path.basename(project.path)
                 project_files_dir = os.path.join(project.path, "{}-files".format(project_name))
                 module_path = os.path.join(project_files_dir, self.module_name.lower())
@@ -175,17 +176,21 @@ class BaseManager:
                 except OSError as e:
                     raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(vm_working_dir, new_vm_working_dir, e))
 
-                if os.listdir(module_path) == []:
-                    try:
+                try:
+                    if not os.listdir(module_path):
                         os.rmdir(module_path)
-                    except OSError as e:
-                        raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(module_path, e))
+                except OSError as e:
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(module_path, e))
+                except FileNotFoundError as e:
+                    log.warning(e)
 
-                if os.listdir(project_files_dir) == []:
-                    try:
+                try:
+                    if not os.listdir(project_files_dir):
                         os.rmdir(project_files_dir)
-                    except OSError as e:
-                        raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(project_files_dir, e))
+                except OSError as e:
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(project_files_dir, e))
+                except FileNotFoundError as e:
+                    log.warning(e)
 
         if not vm_id:
             vm_id = str(uuid4())

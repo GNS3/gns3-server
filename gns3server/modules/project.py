@@ -70,7 +70,7 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         self.path = path
 
-        log.debug("Create project {id} in directory {path}".format(path=self._path, id=self._id))
+        log.info("Project {id} with path '{path}' created".format(path=self._path, id=self._id))
 
     def __json__(self):
 
@@ -278,8 +278,11 @@ class Project:
         if cleanup and os.path.exists(self.path):
             try:
                 yield from wait_run_in_executor(shutil.rmtree, self.path)
+                log.info("Project {id} with path '{path}' deleted".format(path=self._path, id=self._id))
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
+        else:
+            log.info("Project {id} with path '{path}' closed".format(path=self._path, id=self._id))
 
         port_manager = PortManager.instance()
         if port_manager.tcp_ports:

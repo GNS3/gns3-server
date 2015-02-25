@@ -60,13 +60,26 @@ class ProjectManager:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
         return self._projects[project_id]
 
-    def create_project(self, **kwargs):
+    def create_project(self, project_id=None, path=None, temporary=False):
         """
         Create a project and keep a references to it in project manager.
 
         See documentation of Project for arguments
         """
 
-        project = Project(**kwargs)
+        if project_id is not None and project_id in self._projects:
+            raise aiohttp.web.HTTPConflict(text="Project ID {} is already in use on this server".format(project_id))
+        project = Project(project_id=project_id, path=path, temporary=temporary)
         self._projects[project.id] = project
         return project
+
+    def remove_project(self, project_id):
+        """
+        Removes a Project instance from the list of projects in use.
+
+        :param project_id: Project identifier
+        """
+
+        if project_id not in self._projects:
+            raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
+        del self._projects[project_id]

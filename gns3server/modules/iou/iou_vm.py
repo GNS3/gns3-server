@@ -105,6 +105,8 @@ class IOUVM(BaseVM):
     @asyncio.coroutine
     def close(self):
 
+        log.debug('IOU "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
+
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console)
             self._console = None
