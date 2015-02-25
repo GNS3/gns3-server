@@ -63,7 +63,7 @@ class Route(object):
     _routes = []
     _documentation = {}
 
-    _vms_lock = {}
+    _vm_locks = {}
 
     @classmethod
     def get(cls, path, *args, **kw):
@@ -163,8 +163,8 @@ class Route(object):
                     vm_id = request.match_info.get("vm_id")
                     if vm_id is None:
                         vm_id = request.match_info["device_id"]
-                    cls._vms_lock.setdefault(vm_id, asyncio.Lock())
-                    with (yield from cls._vms_lock[vm_id]):
+                    cls._vm_locks.setdefault(vm_id, asyncio.Lock())
+                    with (yield from cls._vm_locks[vm_id]):
                         response = yield from control_schema(request)
                 else:
                     response = yield from control_schema(request)
