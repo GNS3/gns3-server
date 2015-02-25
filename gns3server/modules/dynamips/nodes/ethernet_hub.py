@@ -155,7 +155,7 @@ class EthernetHub(Bridge):
             raise DynamipsError("Port {} has already a filter applied".format(port_number))
 
         yield from nio.bind_filter("both", "capture")
-        yield from nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
+        yield from nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
 
         log.info('Ethernet hub "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
                                                                                                id=self._id,
