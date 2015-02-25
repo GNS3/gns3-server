@@ -175,6 +175,14 @@ def test_path(vm, fake_iou_bin):
     assert vm.path == fake_iou_bin
 
 
+
+def test_path_relative(vm, fake_iou_bin, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        vm.path = "iou.bin"
+    assert vm.path == fake_iou_bin
+
+
 def test_path_invalid_bin(vm, tmpdir):
 
     path = str(tmpdir / "test.bin")

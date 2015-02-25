@@ -39,6 +39,7 @@ from ..nios.nio_tap import NIOTAP
 from ..nios.nio_generic_ethernet import NIOGenericEthernet
 from ..base_vm import BaseVM
 from .ioucon import start_ioucon
+from ...config import Config
 import gns3server.utils.asyncio
 
 
@@ -130,6 +131,10 @@ class IOUVM(BaseVM):
 
         :params path: Path to the binary
         """
+
+        if path[0] != "/":
+            server_config = Config.instance().get_section_config("Server")
+            path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), path)
 
         self._path = path
         if not os.path.isfile(self._path) or not os.path.exists(self._path):
