@@ -805,7 +805,6 @@ class QemuVM(BaseVM):
         """
 
         if self._process:
-            print(self._process.returncode)
             if self._process.returncode is None:
                 return True
             else:
