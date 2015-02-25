@@ -136,6 +136,11 @@ class Route(object):
                     response = Response(route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409})
+                except asyncio.futures.CancelledError as e:
+                    log.error("Request canceled")
+                    response = Response(route=route)
+                    response.set_status(408)
+                    response.json({"message": "Request canceled", "status": 408})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(route=route)

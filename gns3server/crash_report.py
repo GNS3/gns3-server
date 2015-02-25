@@ -17,6 +17,7 @@
 
 import raven
 import json
+import asyncio.futures
 
 from .version import __version__
 from .config import Config
@@ -47,7 +48,10 @@ class CrashReport:
                 "url": request.path,
                 "data": request.json,
             })
-            self._client.captureException()
+            try:
+                self._client.captureException()
+            except asyncio.futures.TimeoutError:
+                pass  # We don't care if we can send the bug report
 
     @classmethod
     def instance(cls):
