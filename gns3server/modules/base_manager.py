@@ -158,7 +158,7 @@ class BaseManager:
 
         project = ProjectManager.instance().get_project(project_id)
 
-        # If it's not an UUID
+        # If it's not an UUID, old topology
         if vm_id and (isinstance(vm_id, int) or len(vm_id) != 36):
             legacy_id = int(vm_id)
             vm_id = str(uuid4())
@@ -173,7 +173,19 @@ class BaseManager:
                 try:
                     yield from wait_run_in_executor(shutil.move, vm_working_dir, new_vm_working_dir)
                 except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {}".format(e))
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(vm_working_dir, new_vm_working_dir, e))
+
+                if os.listdir(module_path) == []:
+                    try:
+                        os.rmdir(module_path)
+                    except OSError as e:
+                        raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(module_path, e))
+
+                if os.listdir(project_files_dir) == []:
+                    try:
+                        os.rmdir(project_files_dir)
+                    except OSError as e:
+                        raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(project_files_dir, e))
 
         if not vm_id:
             vm_id = str(uuid4())
