@@ -62,20 +62,37 @@ def vm(project, manager, fake_qemu_binary, fake_qemu_img_binary):
     return QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
 
 
+@pytest.fixture(scope="function")
+def running_subprocess_mock():
+    mm = MagicMock()
+    mm.returncode = None
+    return mm
+
+
 def test_vm(project, manager, fake_qemu_binary):
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
     assert vm.name == "test"
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_start(loop, vm):
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+def test_is_running(vm, running_subprocess_mock):
+
+    vm._process = None
+    assert vm.is_running() is False
+    vm._process = running_subprocess_mock
+    assert vm.is_running()
+    vm._process.returncode = -1
+    assert vm.is_running() is False
+
+
+def test_start(loop, vm, running_subprocess_mock):
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock):
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.is_running()
 
 
-def test_stop(loop, vm):
-    process = MagicMock()
+def test_stop(loop, vm, running_subprocess_mock):
+    process = running_subprocess_mock
 
     # Wait process kill success
     future = asyncio.Future()
@@ -217,9 +234,9 @@ def test_control_vm(vm, loop):
     assert res is None
 
 
-def test_control_vm_expect_text(vm, loop):
+def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
 
-    vm._process = MagicMock()
+    vm._process = running_subprocess_mock
     vm._monitor = 4242
     reader = MagicMock()
     writer = MagicMock()
