@@ -68,7 +68,9 @@ class ProjectManager:
         """
 
         if project_id is not None and project_id in self._projects:
-            raise aiohttp.web.HTTPConflict(text="Project ID {} is already in use on this server".format(project_id))
+            return self._projects[project_id]
+            # FIXME: should we have an error?
+            #raise aiohttp.web.HTTPConflict(text="Project ID {} is already in use on this server".format(project_id))
         project = Project(project_id=project_id, path=path, temporary=temporary)
         self._projects[project.id] = project
         return project
