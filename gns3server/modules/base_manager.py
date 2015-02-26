@@ -44,6 +44,8 @@ class BaseManager:
     Responsible of management of a VM pool
     """
 
+    _convert_lock = asyncio.Lock()
+
     def __init__(self):
 
         self._vms = {}
@@ -147,6 +149,45 @@ class BaseManager:
         return vm
 
     @asyncio.coroutine
+    def _convert_old_project(self, project, legacy_id, name):
+        """
+        Convert project made before version 1.3
+
+        :param project: Project instance
+        :param legacy_id: old identifier
+        :param name: VM name
+
+        :returns: new VM identifier
+        """
+
+        vm_id = str(uuid4())
+        if hasattr(self, "get_legacy_vm_workdir"):
+            # move old project VM files to a new location
+            log.info("Converting old project...")
+            project_name = os.path.basename(project.path)
+            project_files_dir = os.path.join(project.path, "{}-files".format(project_name))
+            legacy_vm_dir = self.get_legacy_vm_workdir(legacy_id, name)
+            vm_working_dir = os.path.join(project_files_dir, legacy_vm_dir)
+            new_vm_working_dir = os.path.join(project.path, "project-files", self.module_name.lower(), vm_id)
+            try:
+                log.info('Moving "{}" to "{}"'.format(vm_working_dir, new_vm_working_dir))
+                yield from wait_run_in_executor(shutil.move, vm_working_dir, new_vm_working_dir)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(vm_working_dir, new_vm_working_dir, e))
+
+            try:
+                os.rmdir(os.path.dirname(vm_working_dir))
+            except OSError:
+                pass
+
+            try:
+                os.rmdir(project_files_dir)
+            except OSError:
+                pass
+
+        return vm_id
+
+    @asyncio.coroutine
     def create_vm(self, name, project_id, vm_id, *args, **kwargs):
         """
         Create a new VM
@@ -157,34 +198,10 @@ class BaseManager:
         """
 
         project = ProjectManager.instance().get_project(project_id)
-
         # If it's not an UUID, old topology
-        if vm_id and (isinstance(vm_id, int) or len(vm_id) != 36):
-            legacy_id = int(vm_id)
-            vm_id = str(uuid4())
-            if hasattr(self, "get_legacy_vm_workdir_name"):
-                # move old project VM files to a new location
-
-                log.info("Converting old project...")
-                project_name = os.path.basename(project.path)
-                project_files_dir = os.path.join(project.path, "{}-files".format(project_name))
-                module_path = os.path.join(project_files_dir, self.module_name.lower())
-                vm_working_dir = os.path.join(module_path, self.get_legacy_vm_workdir_name(legacy_id))
-                new_vm_working_dir = os.path.join(project.path, "project-files", self.module_name.lower(), vm_id)
-                try:
-                    yield from wait_run_in_executor(shutil.move, vm_working_dir, new_vm_working_dir)
-                except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(vm_working_dir, new_vm_working_dir, e))
-
-                try:
-                    os.rmdir(module_path)
-                except OSError:
-                    pass
-
-                try:
-                    os.rmdir(project_files_dir)
-                except OSError:
-                    pass
+        if vm_id and isinstance(vm_id, int):
+            with (yield from BaseManager._convert_lock):
+                vm_id = yield from self._convert_old_project(project, vm_id, name)
 
         if not vm_id:
             vm_id = str(uuid4())

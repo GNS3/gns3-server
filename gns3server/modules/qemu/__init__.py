@@ -35,17 +35,6 @@ class Qemu(BaseManager):
     _VM_CLASS = QemuVM
 
     @staticmethod
-    def get_legacy_vm_workdir_name(legacy_vm_id):
-        """
-        Returns the name of the legacy working directory name for a VM.
-
-        :param legacy_vm_id: legacy VM identifier (integer)
-        :returns: working directory name
-        """
-
-        return "vm-{}".format(legacy_vm_id)
-
-    @staticmethod
     def binary_list():
         """
         Gets QEMU binaries list available on the matchine
@@ -108,3 +97,16 @@ class Qemu(BaseManager):
                 raise QemuError("Could not determine the Qemu version for {}".format(qemu_path))
         except subprocess.SubprocessError as e:
             raise QemuError("Error while looking for the Qemu version: {}".format(e))
+
+    @staticmethod
+    def get_legacy_vm_workdir(legacy_vm_id, name):
+        """
+        Returns the name of the legacy working directory name for a VM.
+
+        :param legacy_vm_id: legacy VM identifier (integer)
+        :param: VM name (not used)
+
+        :returns: working directory name
+        """
+
+        return os.path.join("qemu", "vm-{}".format(legacy_vm_id))

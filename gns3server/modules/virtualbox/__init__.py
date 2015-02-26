@@ -129,12 +129,14 @@ class VirtualBox(BaseManager):
         return vms
 
     @staticmethod
-    def get_legacy_vm_workdir_name(legacy_vm_id):
+    def get_legacy_vm_workdir(legacy_vm_id, name):
         """
         Returns the name of the legacy working directory name for a VM.
 
-        :param legacy_vm_id: legacy VM identifier (integer)
+        :param legacy_vm_id: legacy VM identifier (not used)
+        :param name: VM name
+
         :returns: working directory name
         """
 
-        return "vm-{}".format(legacy_vm_id)
+        return os.path.join("vbox", "{}".format(name))

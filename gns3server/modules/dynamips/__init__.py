@@ -105,7 +105,7 @@ class Dynamips(BaseManager):
 
     _VM_CLASS = DynamipsVM
     _DEVICE_CLASS = DynamipsDevice
-    ghost_ios_lock = asyncio.Lock()
+    _ghost_ios_lock = asyncio.Lock()
 
     def __init__(self):
 
@@ -331,7 +331,7 @@ class Dynamips(BaseManager):
 
         ghost_ios_support = self.config.get_section_config("Dynamips").get("ghost_ios_support", True)
         if ghost_ios_support:
-            with (yield from Dynamips.ghost_ios_lock):
+            with (yield from Dynamips._ghost_ios_lock):
                 yield from self._set_ghost_ios(vm)
 
     @asyncio.coroutine

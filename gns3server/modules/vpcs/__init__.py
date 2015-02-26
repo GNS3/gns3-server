@@ -19,6 +19,7 @@
 VPCS server module.
 """
 
+import os
 import asyncio
 
 from ..base_manager import BaseManager
@@ -65,12 +66,14 @@ class VPCS(BaseManager):
         return self._used_mac_ids.get(vm_id, 1)
 
     @staticmethod
-    def get_legacy_vm_workdir_name(legacy_vm_id):
+    def get_legacy_vm_workdir(legacy_vm_id, name):
         """
         Returns the name of the legacy working directory name for a VM.
 
         :param legacy_vm_id: legacy VM identifier (integer)
+        :param name: VM name (not used)
+
         :returns: working directory name
         """
 
-        return "pc-{}".format(legacy_vm_id)
+        return os.path.join("vpcs", "pc-{}".format(legacy_vm_id))

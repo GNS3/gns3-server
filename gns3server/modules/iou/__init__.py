@@ -19,6 +19,7 @@
 IOU server module.
 """
 
+import os
 import asyncio
 
 from ..base_manager import BaseManager
@@ -63,12 +64,15 @@ class IOU(BaseManager):
 
         return self._used_application_ids.get(vm_id, 1)
 
-    def get_legacy_vm_workdir_name(legacy_vm_id):
+    @staticmethod
+    def get_legacy_vm_workdir(legacy_vm_id, name):
         """
         Returns the name of the legacy working directory (pre 1.3) name for a VM.
 
         :param legacy_vm_id: legacy VM identifier (integer)
+        :param name: VM name (not used)
+
         :returns: working directory name
         """
 
-        return "device-{}".format(legacy_vm_id)
+        return os.path.join("iou", "device-{}".format(legacy_vm_id))

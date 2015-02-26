@@ -48,6 +48,6 @@ def test_binary_list(loop):
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": "2.2.0"} not in qemus
 
 
-def test_get_legacy_vm_workdir_name():
+def test_get_legacy_vm_workdir():
 
-    assert Qemu.get_legacy_vm_workdir_name(42) == "vm-42"
+    assert Qemu.get_legacy_vm_workdir(42) == "qemu/vm-42"

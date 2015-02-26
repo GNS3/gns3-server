@@ -303,6 +303,6 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
     assert vm._adapters[0].get_nio(0).capturing is False
 
 
-def test_get_legacy_vm_workdir_name():
+def test_get_legacy_vm_workdir():
 
-    assert IOU.get_legacy_vm_workdir_name(42) == "device-42"
+    assert IOU.get_legacy_vm_workdir(42) == "iou/device-42"
