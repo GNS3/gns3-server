@@ -33,6 +33,8 @@ log = logging.getLogger(__name__)
 from ...base_vm import BaseVM
 from ..dynamips_error import DynamipsError
 from ..nios.nio_udp import NIOUDP
+
+from gns3server.config import Config
 from gns3server.utils.asyncio import wait_run_in_executor
 
 
@@ -412,6 +414,14 @@ class Router(BaseVM):
 
         :param image: path to IOS image file
         """
+
+        if not os.path.dirname(image):
+            # this must be a relative path
+            server_config = Config.instance().get_section_config("Server")
+            image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), image)
+
+        if not os.path.isfile(image):
+            raise DynamipsError("IOS image '{}' is not accessible".format(image))
 
         yield from self._hypervisor.send('vm set_ios "{name}" "{image}"'.format(name=self._name, image=image))
 
