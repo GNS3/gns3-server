@@ -38,10 +38,12 @@ class C3725(Router):
     :param project: Project instance
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
+    :param console: console port
+    :param aux: auxiliary console port
     """
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id):
-        Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c3725")
+    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None):
+        Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c3725")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128

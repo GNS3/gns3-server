@@ -314,7 +314,7 @@ class Dynamips(BaseManager):
 
         hypervisor = Hypervisor(self._dynamips_path, working_dir, "127.0.0.1", port)
 
-        log.info("Ceating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, working_dir))
+        log.info("Creating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, working_dir))
         yield from hypervisor.start()
 
         yield from self._wait_for_hypervisor("127.0.0.1", port)

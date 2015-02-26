@@ -48,6 +48,8 @@ class Router(BaseVM):
     :param project: Project instance
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
+    :param console: console port
+    :param aux: auxiliary console port
     :param platform: Platform of this router
     """
 
@@ -57,9 +59,9 @@ class Router(BaseVM):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id=None, platform="c7200", hypervisor=None, ghost_flag=False):
+    def __init__(self, name, vm_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        super().__init__(name, vm_id, project, manager)
+        super().__init__(name, vm_id, project, manager, console=console)
 
         self._hypervisor = hypervisor
         self._dynamips_id = dynamips_id
@@ -86,7 +88,7 @@ class Router(BaseVM):
         self._disk0 = 0  # Megabytes
         self._disk1 = 0  # Megabytes
         self._confreg = "0x2102"
-        self._aux = None
+        self._aux = aux
         self._mac_addr = ""
         self._system_id = "FTX0945W0MY"  # processor board ID in IOS
         self._slots = []
@@ -200,7 +202,9 @@ class Router(BaseVM):
                                                                                  id=self._id))
 
             yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
-            yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self._aux))
+
+            if self._aux is not None:
+                yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self._aux))
 
             # get the default base MAC address
             mac_addr = yield from self._hypervisor.send('{platform} get_mac_addr "{name}"'.format(platform=self._platform,

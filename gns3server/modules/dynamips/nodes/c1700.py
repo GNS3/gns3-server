@@ -39,13 +39,15 @@ class C1700(Router):
     :param project: Project instance
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
+    :param console: console port
+    :param aux: auxiliary console port
     :param chassis: chassis for this router:
     1720, 1721, 1750, 1751 or 1760 (default = 1720).
     1710 is not supported.
     """
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id, chassis="1720"):
-        Router.__init__(self, name, vm_id, project, manager, dynamips_id, platform="c1700")
+    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, chassis="1720"):
+        Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c1700")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 64
