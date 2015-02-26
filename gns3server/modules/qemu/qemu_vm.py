@@ -522,7 +522,7 @@ class QemuVM(BaseVM):
         Stops the cpulimit process.
         """
 
-        if self._cpulimit_process and self._cpulimit_process.poll() is None:
+        if self._cpulimit_process and self._cpulimit_process.returncode is None:
             self._cpulimit_process.kill()
             try:
                 self._process.wait(3)
@@ -597,7 +597,7 @@ class QemuVM(BaseVM):
                 self._process.wait()
             except subprocess.TimeoutExpired:
                 self._process.kill()
-                if self._process.poll() is None:
+                if self._process.returncode is None:
                     log.warn("QEMU VM instance {} PID={} is still running".format(self._id,
                                                                                   self._process.pid))
         self._process = None
