@@ -50,4 +50,4 @@ def test_binary_list(loop):
 
 def test_get_legacy_vm_workdir():
 
-    assert Qemu.get_legacy_vm_workdir(42) == "qemu/vm-42"
+    assert Qemu.get_legacy_vm_workdir(42, "bla") == "qemu/vm-42"

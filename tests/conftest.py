@@ -97,7 +97,7 @@ def server(request, loop, port_manager, monkeypatch):
     return Query(loop, host=host, port=port)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def project():
     """A GNS3 lab"""
 

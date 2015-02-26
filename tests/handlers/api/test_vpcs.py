@@ -21,7 +21,7 @@ from tests.utils import asyncio_patch
 from unittest.mock import patch
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def vm(server, project):
     response = server.post("/projects/{project_id}/vpcs/vms".format(project_id=project.id), {"name": "PC TEST 1"})
     assert response.status == 201

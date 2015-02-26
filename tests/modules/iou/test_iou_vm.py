@@ -305,4 +305,4 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
 
 def test_get_legacy_vm_workdir():
 
-    assert IOU.get_legacy_vm_workdir(42) == "iou/device-42"
+    assert IOU.get_legacy_vm_workdir(42, "bla") == "iou/device-42"

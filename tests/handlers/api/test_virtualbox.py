@@ -19,7 +19,7 @@ import pytest
 from tests.utils import asyncio_patch
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.yield_fixture(scope="function")
 def vm(server, project, monkeypatch):
 
     vboxmanage_path = "/fake/VboxManage"
