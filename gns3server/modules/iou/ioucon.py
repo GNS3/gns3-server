@@ -302,9 +302,12 @@ class TelnetServer(Console):
                     buf.extend(self._read_block(1))
                     iac_cmd.append(buf[iac_loc + 2])
                 # We do ECHO, SGA, and BINARY. Period.
-                if iac_cmd[1] == DO and iac_cmd[2] not in [ECHO, SGA, BINARY]:
-                    self._write_cur(bytes([IAC, WONT, iac_cmd[2]]))
-                    log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                if iac_cmd[1] == DO:
+                    if iac_cmd[2] not in [ECHO, SGA, BINARY]:
+                        self._write_cur(bytes([IAC, WONT, iac_cmd[2]]))
+                        log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                elif iac_cmd[1] == WILL and iac_cmd[2] == BINARY:
+                    pass  # It's standard negociation we can ignore it
                 else:
                     log.debug("Unhandled telnet command: "
                               "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
@@ -357,7 +360,6 @@ class TelnetServer(Console):
         sock_fd.listen(socket.SOMAXCONN)
         self.sock_fd = sock_fd
         log.info("Telnet server ready for connections on {}:{}".format(self.addr, self.port))
-        log.info(self.stop_event.is_set())
 
         return self
 
