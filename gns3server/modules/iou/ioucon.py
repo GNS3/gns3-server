@@ -159,10 +159,6 @@ class Console:
         raise NotImplementedError("Only routers have fileno()")
 
 
-class Router:
-    pass
-
-
 class TTY(Console):
 
     def read(self, fileno, bufsize):
@@ -370,7 +366,7 @@ class TelnetServer(Console):
         return False
 
 
-class IOU(Router):
+class IOU:
 
     def __init__(self, ttyC, ttyS, stop_event):
         self.ttyC = ttyC
@@ -616,8 +612,13 @@ def start_ioucon(cmdline_args, stop_event):
                 try:
                     if args.telnet_server:
                         with TelnetServer(addr, nport, stop_event) as console:
-                            with IOU(ttyC, ttyS, stop_event) as router:
-                                send_recv_loop(console, router, b'', stop_event)
+                            # We loop inside the Telnet server otherwise the client is disconnected when user use the reload command inside a terminal
+                            while not stop_event.is_set():
+                                try:
+                                    with IOU(ttyC, ttyS, stop_event) as router:
+                                        send_recv_loop(console, router, b'', stop_event)
+                                except ConnectionRefusedError:
+                                    pass
                     else:
                         with IOU(ttyC, ttyS, stop_event) as router, TTY() as console:
                             send_recv_loop(console, router, esc_char, stop_event)
