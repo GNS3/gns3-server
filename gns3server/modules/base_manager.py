@@ -177,20 +177,14 @@ class BaseManager:
                     raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(vm_working_dir, new_vm_working_dir, e))
 
                 try:
-                    if not os.listdir(module_path):
-                        os.rmdir(module_path)
-                except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(module_path, e))
-                except FileNotFoundError as e:
-                    log.warning(e)
+                    os.rmdir(module_path)
+                except OSError:
+                    pass
 
                 try:
-                    if not os.listdir(project_files_dir):
-                        os.rmdir(project_files_dir)
-                except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not delete {}: {}".format(project_files_dir, e))
-                except FileNotFoundError as e:
-                    log.warning(e)
+                    os.rmdir(project_files_dir)
+                except OSError:
+                    pass
 
         if not vm_id:
             vm_id = str(uuid4())
