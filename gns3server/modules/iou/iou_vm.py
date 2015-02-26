@@ -483,18 +483,19 @@ class IOUVM(BaseVM):
                 self._ioucon_thread = None
 
             self._terminate_process_iou()
-            try:
-                yield from asyncio.wait_for(self._iou_process.wait(), timeout=3)
-            except asyncio.TimeoutError:
-                self._iou_process.kill()
-                if self._iou_process.returncode is None:
-                    log.warn("IOU process {} is still running".format(self._iou_process.pid))
+            if self._iou_process.returncode is None:
+                try:
+                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._iou_process, timeout=3)
+                except asyncio.TimeoutError:
+                    self._iou_process.kill()
+                    if self._iou_process.returncode is None:
+                        log.warn("IOU process {} is still running".format(self._iou_process.pid))
             self._iou_process = None
 
             if self._iouyap_process is not None:
                 self._terminate_process_iouyap()
                 try:
-                    yield from asyncio.wait_for(self._iouyap_process.wait(), timeout=3)
+                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._iouyap_process, timeout=3)
                 except asyncio.TimeoutError:
                     self._iouyap_process.kill()
                     if self._iouyap_process.returncode is None:

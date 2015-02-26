@@ -18,8 +18,9 @@
 
 import asyncio
 import pytest
+from unittest.mock import MagicMock
 
-from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output
+from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination
 
 
 def test_wait_run_in_executor(loop):
@@ -50,3 +51,17 @@ def test_subprocess_check_output(loop, tmpdir, restore_original_path):
     exec = subprocess_check_output("cat", path)
     result = loop.run_until_complete(asyncio.async(exec))
     assert result == "TEST"
+
+
+def test_wait_for_process_termination(loop):
+
+    process = MagicMock()
+    process.returncode = 0
+    exec = wait_for_process_termination(process)
+    loop.run_until_complete(asyncio.async(exec))
+
+    process = MagicMock()
+    process.returncode = None
+    exec = wait_for_process_termination(process, timeout=0.5)
+    with pytest.raises(asyncio.TimeoutError):
+        loop.run_until_complete(asyncio.async(exec))

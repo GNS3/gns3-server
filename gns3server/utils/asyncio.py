@@ -53,3 +53,27 @@ def subprocess_check_output(*args, cwd=None, env=None):
     if output is None:
         return ""
     return output.decode("utf-8")
+
+
+@asyncio.coroutine
+def wait_for_process_termination(process, timeout=10):
+    """
+    Wait for a process terminate, and raise asyncio.TimeoutError in case of
+    timeout.
+
+    In theory this can be implemented by just:
+    yield from asyncio.wait_for(self._iou_process.wait(), timeout=100)
+
+    But it's broken before Python 3.4:
+    http://bugs.python.org/issue23140
+
+    :param process: An asyncio subprocess
+    :param timeout: Timeout in seconds
+    """
+
+    while timeout > 0:
+        if process.returncode is not None:
+            return
+        yield from asyncio.sleep(0.1)
+        timeout -= 0.1
+    raise asyncio.TimeoutError()
