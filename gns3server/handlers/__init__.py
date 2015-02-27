@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import os
+
 from gns3server.handlers.api.version_handler import VersionHandler
 from gns3server.handlers.api.network_handler import NetworkHandler
 from gns3server.handlers.api.project_handler import ProjectHandler
@@ -25,5 +27,6 @@ from gns3server.handlers.api.virtualbox_handler import VirtualBoxHandler
 from gns3server.handlers.api.vpcs_handler import VPCSHandler
 from gns3server.handlers.upload_handler import UploadHandler
 
-if sys.platform.startswith("linux"):
+print(os.environ)
+if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
     from gns3server.handlers.api.iou_handler import IOUHandler

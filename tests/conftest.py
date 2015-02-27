@@ -15,13 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 import pytest
 import socket
 import asyncio
 import tempfile
 import shutil
 import os
+import sys
 from aiohttp import web
+
+sys._called_from_test = True
+# Prevent execution of external binaries
+os.environ["PATH"] = tempfile.mkdtemp()
 
 from gns3server.config import Config
 from gns3server.web.route import Route
@@ -31,10 +37,6 @@ from gns3server.modules import MODULES
 from gns3server.modules.port_manager import PortManager
 from gns3server.modules.project_manager import ProjectManager
 from tests.handlers.api.base import Query
-
-
-# Prevent execution of external binaries
-os.environ["PATH"] = tempfile.mkdtemp()
 
 
 @pytest.yield_fixture

@@ -23,7 +23,7 @@ from .qemu import Qemu
 
 MODULES = [VPCS, VirtualBox, Dynamips, Qemu]
 
-if sys.platform.startswith("linux"):
+if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
     # IOU runs only on Linux
     from .iou import IOU
     MODULES.append(IOU)
