@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/vpcs/vms' -d '{"name": "PC TEST 1"}'
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms' -d '{"name": "PC TEST 1"}'
 
-POST /projects/{project_id}/vpcs/vms HTTP/1.1
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms HTTP/1.1
 {
     "name": "PC TEST 1"
 }
@@ -20,5 +20,5 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": null,
     "startup_script_path": null,
-    "vm_id": "4bec08c2-b54b-4040-90a3-2add2fd82f32"
+    "vm_id": "b0d1df2e-ebd1-4783-bb62-871e24f01543"
 }

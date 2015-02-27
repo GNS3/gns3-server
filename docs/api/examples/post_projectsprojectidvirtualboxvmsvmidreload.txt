@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/virtualbox/vms/{vm_id}/reload' -d '{}'
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/4c9fdef4-8990-44a1-8a98-1b7c510821ee/reload' -d '{}'
 
-POST /projects/{project_id}/virtualbox/vms/{vm_id}/reload HTTP/1.1
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/4c9fdef4-8990-44a1-8a98-1b7c510821ee/reload HTTP/1.1
 {}
 
 

@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/qemu/vms/{vm_id}/stop' -d '{}'
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/1cb28121-2b13-4c53-a0fc-ab8c6d028d0f/stop' -d '{}'
 
-POST /projects/{project_id}/qemu/vms/{vm_id}/stop HTTP/1.1
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/1cb28121-2b13-4c53-a0fc-ab8c6d028d0f/stop HTTP/1.1
 {}
 
 

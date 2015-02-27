@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/projects/{project_id}/vpcs/vms/{vm_id}' -d '{"console": 2011, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/39951883-cbfb-4aff-9cbc-06895749e571' -d '{"console": 2011, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /projects/{project_id}/vpcs/vms/{vm_id} HTTP/1.1
+PUT /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/39951883-cbfb-4aff-9cbc-06895749e571 HTTP/1.1
 {
     "console": 2011,
     "name": "test",
@@ -22,5 +22,5 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",
-    "vm_id": "a239c325-d437-4209-a583-9eee28905802"
+    "vm_id": "39951883-cbfb-4aff-9cbc-06895749e571"
 }

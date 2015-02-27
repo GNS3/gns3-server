@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/projects/{project_id}/vpcs/vms/{vm_id}'
+curl -i -X GET 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f3c227f-86f5-4f54-bc4b-74597744b904'
 
-GET /projects/{project_id}/vpcs/vms/{vm_id} HTTP/1.1
+GET /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f3c227f-86f5-4f54-bc4b-74597744b904 HTTP/1.1
 
 
 
@@ -18,5 +18,5 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": null,
     "startup_script_path": null,
-    "vm_id": "ca159ab0-42d5-4c9a-bfb0-c2290ac90556"
+    "vm_id": "6f3c227f-86f5-4f54-bc4b-74597744b904"
 }

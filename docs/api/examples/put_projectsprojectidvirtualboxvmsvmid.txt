@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/projects/{project_id}/virtualbox/vms/{vm_id}' -d '{"console": 2010, "name": "test"}'
+curl -i -X PUT 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/4a6375b9-14b8-406c-ae8e-df6d242088f9' -d '{"console": 2010, "name": "test"}'
 
-PUT /projects/{project_id}/virtualbox/vms/{vm_id} HTTP/1.1
+PUT /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/4a6375b9-14b8-406c-ae8e-df6d242088f9 HTTP/1.1
 {
     "console": 2010,
     "name": "test"
@@ -24,6 +24,6 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms/{vm_id}
     "name": "test",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "use_any_adapter": false,
-    "vm_id": "15c34b6c-63bb-48a6-b4b0-e772fdb74925",
+    "vm_id": "4a6375b9-14b8-406c-ae8e-df6d242088f9",
     "vmname": "VMTEST"
 }

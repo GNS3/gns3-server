@@ -9,8 +9,8 @@ Get a VirtualBox VM instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
 - **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 
 Response status codes
 **********************
@@ -49,8 +49,8 @@ Update a VirtualBox VM instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
 - **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 
 Response status codes
 **********************
@@ -106,8 +106,8 @@ Delete a VirtualBox VM instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
 - **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 
 Response status codes
 **********************

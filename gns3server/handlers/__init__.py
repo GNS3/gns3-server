@@ -27,6 +27,5 @@ from gns3server.handlers.api.virtualbox_handler import VirtualBoxHandler
 from gns3server.handlers.api.vpcs_handler import VPCSHandler
 from gns3server.handlers.upload_handler import UploadHandler
 
-print(os.environ)
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
     from gns3server.handlers.api.iou_handler import IOUHandler

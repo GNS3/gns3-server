@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/projects/{project_id}/iou/vms/{vm_id}/initial_config'
+curl -i -X GET 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/f7220f9c-3334-43e3-9ef4-37f09ba6fcab/initial_config'
 
-GET /projects/{project_id}/iou/vms/{vm_id}/initial_config HTTP/1.1
+GET /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/f7220f9c-3334-43e3-9ef4-37f09ba6fcab/initial_config HTTP/1.1
 
 
 

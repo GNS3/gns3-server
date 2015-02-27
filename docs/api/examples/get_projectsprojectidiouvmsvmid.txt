@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/projects/{project_id}/iou/vms/{vm_id}'
+curl -i -X GET 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/c5c0075d-0b10-4401-8bed-d9897814237c'
 
-GET /projects/{project_id}/iou/vms/{vm_id} HTTP/1.1
+GET /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/c5c0075d-0b10-4401-8bed-d9897814237c HTTP/1.1
 
 
 
@@ -19,9 +19,9 @@ X-ROUTE: /v1/projects/{project_id}/iou/vms/{vm_id}
     "l1_keepalives": false,
     "name": "PC TEST 1",
     "nvram": 128,
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-3782/test_iou_get0/iou.bin",
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-3783/test_iou_get0/iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 256,
     "serial_adapters": 2,
-    "vm_id": "b9022212-4b9e-48fd-b910-85f0d896f951"
+    "vm_id": "c5c0075d-0b10-4401-8bed-d9897814237c"
 }

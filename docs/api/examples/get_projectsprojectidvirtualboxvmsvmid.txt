@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/projects/{project_id}/virtualbox/vms/{vm_id}'
+curl -i -X GET 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/f526503a-8d24-4513-a5e3-1ebf4159aa70'
 
-GET /projects/{project_id}/virtualbox/vms/{vm_id} HTTP/1.1
+GET /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/f526503a-8d24-4513-a5e3-1ebf4159aa70 HTTP/1.1
 
 
 
@@ -21,6 +21,6 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms/{vm_id}
     "name": "VMTEST",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "use_any_adapter": false,
-    "vm_id": "4d4c9e18-0bad-4345-9338-17b98f2f6680",
+    "vm_id": "f526503a-8d24-4513-a5e3-1ebf4159aa70",
     "vmname": "VMTEST"
 }

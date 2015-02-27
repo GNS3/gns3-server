@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/qemu/vms/{vm_id}/reload' -d '{}'
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/2a143130-2445-4a4b-9ba2-f49071eed5f4/reload' -d '{}'
 
-POST /projects/{project_id}/qemu/vms/{vm_id}/reload HTTP/1.1
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/2a143130-2445-4a4b-9ba2-f49071eed5f4/reload HTTP/1.1
 {}
 
 

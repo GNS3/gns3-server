@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/virtualbox/vms/{vm_id}/stop' -d '{}'
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/a1960146-9be9-4f54-b594-67a6ab40f436/stop' -d '{}'
 
-POST /projects/{project_id}/virtualbox/vms/{vm_id}/stop HTTP/1.1
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/a1960146-9be9-4f54-b594-67a6ab40f436/stop HTTP/1.1
 {}
 
 

@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/vpcs/vms/{vm_id}/reload' -d '{}'
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/b12c5612-147d-4229-86ca-103174ba8fd1/reload' -d '{}'
 
-POST /projects/{project_id}/vpcs/vms/{vm_id}/reload HTTP/1.1
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/b12c5612-147d-4229-86ca-103174ba8fd1/reload HTTP/1.1
 {}
 
 

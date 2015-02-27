@@ -10,8 +10,8 @@ Stop a packet capture on a Dynamips device instance
 Parameters
 **********
 - **project_id**: UUID for the project
-- **port_number**: Port on the device
 - **device_id**: UUID for the instance
+- **port_number**: Port on the device
 
 Response status codes
 **********************
