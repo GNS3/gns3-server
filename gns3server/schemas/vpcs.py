@@ -165,7 +165,11 @@ VPCS_OBJECT_SCHEMA = {
             "description": "Content of the VPCS startup script",
             "type": ["string", "null"]
         },
+        "startup_script_path": {
+            "description": "Path of the VPCS startup script relative to project directory",
+            "type": ["string", "null"]
+        },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id"]
+    "required": ["name", "vm_id", "console", "project_id", "startup_script_path"]
 }

@@ -106,7 +106,22 @@ class VPCSVM(BaseVM):
                 "vm_id": self.id,
                 "console": self._console,
                 "project_id": self.project.id,
-                "startup_script": self.startup_script}
+                "startup_script": self.startup_script,
+                "startup_script_path": self.relative_startup_script}
+
+    @property
+    def relative_startup_script(self):
+        """
+        Returns the startup config file relative to the project directory.
+
+        :returns: path to config file. None if the file doesn't exist
+        """
+
+        path = os.path.join(self.working_dir, 'startup.vpc')
+        if os.path.exists(path):
+            return 'startup.vpc'
+        else:
+            return None
 
     @property
     def vpcs_path(self):
