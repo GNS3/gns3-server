@@ -79,9 +79,12 @@ class ColouredStreamHandler(logging.StreamHandler):
 
 
 def init_logger(level, quiet=False):
-
-    stream_handler = ColouredStreamHandler(sys.stdout)
-    stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno}#RESET# {message}", "%Y-%m-%d %H:%M:%S", "{")
+    if sys.platform.startswith("win"):
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{")
+    else:
+        stream_handler = ColouredStreamHandler(sys.stdout)
+        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno}#RESET# {message}", "%Y-%m-%d %H:%M:%S", "{")
     if quiet:
         stream_handler.addFilter(logging.Filter(name="user_facing"))
         logging.getLogger('user_facing').propagate = False
