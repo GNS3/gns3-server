@@ -10,8 +10,8 @@ Stop a packet capture on a Dynamips VM instance
 Parameters
 **********
 - **project_id**: UUID for the project
-- **adapter_number**: Adapter to stop a packet capture
 - **vm_id**: UUID for the instance
+- **adapter_number**: Adapter to stop a packet capture
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes

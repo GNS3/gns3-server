@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/projects/{project_id}/virtualbox/vms/{vm_id}/resume' -d '{}'
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/f6487814-a3a9-4e82-867c-83662c7bed48/resume' -d '{}'
 
-POST /projects/{project_id}/virtualbox/vms/{vm_id}/resume HTTP/1.1
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/f6487814-a3a9-4e82-867c-83662c7bed48/resume HTTP/1.1
 {}
 
 

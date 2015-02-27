@@ -93,14 +93,14 @@ class Query:
             response.json = {}
             response.html = ""
         if kwargs.get('example') and os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
-            self._dump_example(method, response.route, body, response)
+            self._dump_example(method, response.route, path, body, response)
         return response
 
-    def _dump_example(self, method, path, body, response):
+    def _dump_example(self, method, route, path, body, response):
         """Dump the request for the documentation"""
         if path is None:
             return
-        with open(self._example_file_path(method, path), 'w+') as f:
+        with open(self._example_file_path(method, route), 'w+') as f:
             f.write("curl -i -X {} 'http://localhost:8000{}'".format(method, path))
             if body:
                 f.write(" -d '{}'".format(re.sub(r"\n", "", json.dumps(json.loads(body), sort_keys=True))))
