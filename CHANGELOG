@@ -1,0 +1,49 @@
+# Change Log
+
+## Unreleased
+
+* HTTP Rest API instead of WebSocket
+* API documentation
+* Create a dedicated configuration file for the server: server.conf
+* Temporary projects are real project
+* Use UUID instead of id
+
+## 1.2.3 2015/01/17
+* Fixed broken -netdev + legacy virtio in Qemu support.
+* Ping and traceroute added to the IOU VM.
+
+## 1.2.2 2015/01/16
+
+### Small improvements / new features
+
+* Auxiliary console support for IOS routers.
+* Suspend / resume support for Qemu.
+* Dynamically configure network connections of running Qemu VMs (only with recent Qemu versions).
+* VPCS multi-host support (useful for old .net labs).
+* Possibility to run VirtualBox as another user (Linux/OSX only).
+* Support for IOURC file on the server side.
+* Bumped the maximum network adapters to 32 for Qemu (depending on Qemu version you cannot go above 8 or even 28, Qemu will just not start).
+* Added snapshot named 'reset' to linked cloned VirtualBox VMs.
+* More network interface options to the Qemu VM configuration interface as well as descriptions for all NICs.
+* More checks on minimum RAM for IOS routers and updates default values to match the latest IOS image requirements.
+* Fixed bug when importing Host node with UDP NIOs.
+
+## 1.2.1 2014/12/04
+* Early support for IOSv and IOSv-L2 (with Qemu for now, which is slow on Windows/Mac OS X).
+* Support for CPU throttling and process priority for Qemu.
+* Fixed C7200 IO cards insert/remove issues and makes C7200-IO-FE the default.
+* Updated the IOU VM with iouyap version 0.95 (packet capture).
+
+
+## 1.2 2014/11/20
+* New VirtualBox support
+* New Telnet server for VirtualBox.
+* Add detection of qemu and qemu.exe binaries.
+* New host node (cloud with all available Ethernet & TAP interfaces added).
+* Option to allow console connections to any local IP address when using the local server.
+* VirtualBox linked clones support (experimental, still some problems with temporary projects).
+
+
+## 1.1 2014/10/23
+* Serial console for local VirtualBox.
+
