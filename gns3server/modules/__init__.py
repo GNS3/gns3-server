@@ -15,10 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 from .vpcs import VPCS
 from .virtualbox import VirtualBox
 from .dynamips import Dynamips
-from .iou import IOU
 from .qemu import Qemu
 
-MODULES = [VPCS, VirtualBox, Dynamips, IOU, Qemu]
+MODULES = [VPCS, VirtualBox, Dynamips, Qemu]
+
+if sys.platform.startswith("linux"):
+    # IOU runs only on Linux
+    from .iou import IOU
+    MODULES.append(IOU)

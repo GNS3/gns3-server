@@ -34,8 +34,8 @@ from .config import Config
 from .modules import MODULES
 from .modules.port_manager import PortManager
 
-# TODO: get rid of * have something generic to automatically import handlers so the routes can be found
-from gns3server.handlers import *
+# do not delete this import
+import gns3server.handlers
 
 import logging
 log = logging.getLogger(__name__)

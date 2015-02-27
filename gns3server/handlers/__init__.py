@@ -14,5 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gns3server.handlers.api import *
+import sys
+from gns3server.handlers.api.version_handler import VersionHandler
+from gns3server.handlers.api.network_handler import NetworkHandler
+from gns3server.handlers.api.project_handler import ProjectHandler
+from gns3server.handlers.api.dynamips_device_handler import DynamipsDeviceHandler
+from gns3server.handlers.api.dynamips_vm_handler import DynamipsVMHandler
+from gns3server.handlers.api.qemu_handler import QEMUHandler
+from gns3server.handlers.api.virtualbox_handler import VirtualBoxHandler
+from gns3server.handlers.api.vpcs_handler import VPCSHandler
 from gns3server.handlers.upload_handler import UploadHandler
+
+if sys.platform.startswith("linux"):
+    from gns3server.handlers.api.iou_handler import IOUHandler
