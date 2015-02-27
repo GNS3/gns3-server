@@ -167,7 +167,15 @@ class Server:
         server_config = Config.instance().get_section_config("Server")
         if sys.platform.startswith("win"):
             # use the Proactor event loop on Windows
-            asyncio.set_event_loop(asyncio.ProactorEventLoop())
+            loop = asyncio.ProactorEventLoop()
+
+            # Add a periodic callback to give a chance to process signals on Windows
+            # because asyncio.add_signal_handler() is not supported yet on that platform
+            # otherwise the loop runs outside of signal module's ability to trap signals.
+            def wakeup():
+                loop.call_later(0.1, wakeup)
+            loop.call_later(0.1, wakeup)
+            asyncio.set_event_loop(loop)
 
         ssl_context = None
         if server_config.getboolean("ssl"):

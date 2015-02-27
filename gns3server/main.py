@@ -21,7 +21,6 @@ import datetime
 import sys
 import locale
 import argparse
-import configparser
 
 from gns3server.server import Server
 from gns3server.web.logger import init_logger
