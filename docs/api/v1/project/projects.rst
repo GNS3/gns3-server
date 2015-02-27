@@ -9,7 +9,8 @@ Create a new project on the server
 
 Response status codes
 **********************
-- **200**: OK
+- **201**: Project created
+- **409**: Project already created
 
 Input
 *******

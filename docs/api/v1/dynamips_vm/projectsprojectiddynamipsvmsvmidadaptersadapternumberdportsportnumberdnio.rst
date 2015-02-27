@@ -9,10 +9,10 @@ Add a NIO to a Dynamips VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
-- **adapter_number**: Adapter where the nio should be added
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 - **port_number**: Port on the adapter
+- **adapter_number**: Adapter where the nio should be added
 
 Response status codes
 **********************
@@ -27,10 +27,10 @@ Remove a NIO from a Dynamips VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
-- **adapter_number**: Adapter from where the nio should be removed
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 - **port_number**: Port on the adapter
+- **adapter_number**: Adapter from where the nio should be removed
 
 Response status codes
 **********************
