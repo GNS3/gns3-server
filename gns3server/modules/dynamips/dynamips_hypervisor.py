@@ -146,7 +146,7 @@ class DynamipsHypervisor:
         """
 
         # encase working_dir in quotes to protect spaces in the path
-        yield from self.send("hypervisor working_dir {}".format('"' + working_dir + '"'))
+        yield from self.send('hypervisor working_dir "{}"'.format(working_dir))
         self._working_dir = working_dir
         log.debug("Working directory set to {}".format(self._working_dir))
 

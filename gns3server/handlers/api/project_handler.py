@@ -81,7 +81,11 @@ class ProjectHandler:
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
         project.temporary = request.json.get("temporary", project.temporary)
-        project.path = request.json.get("path", project.path)
+        project_path = request.json.get("path", project.path)
+        if project_path != project.path:
+            project.path = project_path
+            for module in MODULES:
+                yield from module.instance().project_moved(project)
         response.json(project)
 
     @classmethod
@@ -119,7 +123,7 @@ class ProjectHandler:
         project = pm.get_project(request.match_info["project_id"])
         yield from project.close()
         for module in MODULES:
-            yield from module.instance().project_closed(project.path)
+            yield from module.instance().project_closed(project)
         pm.remove_project(project.id)
         response.set_status(204)
 

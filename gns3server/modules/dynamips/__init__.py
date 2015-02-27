@@ -133,17 +133,18 @@ class Dynamips(BaseManager):
                     continue
 
     @asyncio.coroutine
-    def project_closed(self, project_dir):
+    def project_closed(self, project):
         """
         Called when a project is closed.
 
-        :param project_dir: project directory
+        :param project: Project instance
         """
 
-        # delete the Dynamips devices
+        # delete the Dynamips devices corresponding to the project
         tasks = []
         for device in self._devices.values():
-            tasks.append(asyncio.async(device.delete()))
+            if device.project.id == project.id:
+                tasks.append(asyncio.async(device.delete()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -154,7 +155,7 @@ class Dynamips(BaseManager):
                     log.error("Could not delete device {}".format(e), exc_info=1)
 
         # delete useless files
-        project_dir = os.path.join(project_dir, 'project-files', self.module_name.lower())
+        project_dir = project.module_working_directory(self.module_name.lower())
         files = glob.glob(os.path.join(project_dir, "*.ghost"))
         files += glob.glob(os.path.join(project_dir, "*_lock"))
         files += glob.glob(os.path.join(project_dir, "ilt_*"))
@@ -169,6 +170,21 @@ class Dynamips(BaseManager):
             except OSError as e:
                 log.warn("Could not delete file {}: {}".format(file, e))
                 continue
+
+    @asyncio.coroutine
+    def project_moved(self, project):
+        """
+        Called when a project is moved.
+
+        :param project: Project instance
+        """
+
+        for vm in project.vms:
+            yield from vm.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
+
+        for device in self._devices.values():
+            if device.project.id == project.id:
+                yield from device.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
 
     @property
     def dynamips_path(self):
