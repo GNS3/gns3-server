@@ -496,6 +496,14 @@ class Dynamips(BaseManager):
                 if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
                     yield from vm.uninstall_wic(wic_slot_id)
 
+        mmap_support = self.config.get_section_config("Dynamips").getboolean("mmap_support", True)
+        if mmap_support is False:
+            yield from vm.set_mmap(False)
+
+        sparse_memory_support = self.config.get_section_config("Dynamips").getboolean("sparse_memory_support", True)
+        if sparse_memory_support is False:
+            yield from vm.set_sparsemem(False)
+
         # update the configs if needed
         yield from self.create_vm_configs(vm, settings.get("startup_config_content"), settings.get("private_config_content"))
 
