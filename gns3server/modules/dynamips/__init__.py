@@ -179,8 +179,9 @@ class Dynamips(BaseManager):
         :param project: Project instance
         """
 
-        for vm in project.vms:
-            yield from vm.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
+        for vm in self._vms:
+            if vm.project.id == project.id:
+                yield from vm.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
 
         for device in self._devices.values():
             if device.project.id == project.id:

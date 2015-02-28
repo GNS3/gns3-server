@@ -171,7 +171,12 @@ def main():
     host = server_config["host"]
     port = int(server_config["port"])
     server = Server(host, port)
-    server.run()
+    try:
+        server.run()
+    except Exception as e:
+        log.critical("Critical error while running the server: {}".format(e), exc_info=1)
+        # TODO: send exception to Sentry
+        return
 
 if __name__ == '__main__':
     main()
