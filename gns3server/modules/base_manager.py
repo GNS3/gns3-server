@@ -44,10 +44,11 @@ class BaseManager:
     Responsible of management of a VM pool
     """
 
-    _convert_lock = asyncio.Lock()
+    _convert_lock = None
 
     def __init__(self):
 
+        BaseManager._convert_lock = asyncio.Lock()
         self._vms = {}
         self._port_manager = None
         self._config = Config.instance()

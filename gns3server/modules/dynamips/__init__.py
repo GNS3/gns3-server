@@ -105,11 +105,12 @@ class Dynamips(BaseManager):
 
     _VM_CLASS = DynamipsVM
     _DEVICE_CLASS = DynamipsDevice
-    _ghost_ios_lock = asyncio.Lock()
+    _ghost_ios_lock = None
 
     def __init__(self):
 
         super().__init__()
+        Dynamips._ghost_ios_lock = asyncio.Lock()
         self._devices = {}
         self._ghost_files = set()
         self._dynamips_path = None
