@@ -124,6 +124,9 @@ class Config(object):
     def list_cloud_config_file(self):
         return self._cloud_file
 
+    def get_config_files(self):
+        return self._watched_files
+
     def read_cloud_config(self):
         parsed_file = self._cloud_config.read(self._cloud_file)
         if not self._cloud_config.has_section(CLOUD_SERVER):

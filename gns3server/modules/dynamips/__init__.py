@@ -346,7 +346,7 @@ class Dynamips(BaseManager):
     @asyncio.coroutine
     def ghost_ios_support(self, vm):
 
-        ghost_ios_support = self.config.get_section_config("Dynamips").get("ghost_ios_support", True)
+        ghost_ios_support = self.config.get_section_config("Dynamips").getboolean("ghost_ios_support", True)
         if ghost_ios_support:
             with (yield from Dynamips._ghost_ios_lock):
                 yield from self._set_ghost_ios(vm)
