@@ -180,7 +180,7 @@ class Dynamips(BaseManager):
         :param project: Project instance
         """
 
-        for vm in self._vms:
+        for vm in self._vms.values():
             if vm.project.id == project.id:
                 yield from vm.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
 
