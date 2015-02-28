@@ -768,7 +768,7 @@ VM_OBJECT_SCHEMA = {
         },
         "aux": {
             "description": "auxiliary console TCP port",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },

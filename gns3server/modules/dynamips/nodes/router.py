@@ -113,7 +113,9 @@ class Router(BaseVM):
             if self._aux is not None:
                 self._aux = self._manager.port_manager.reserve_tcp_port(self._aux)
             else:
-                self._aux = self._manager.port_manager.get_free_tcp_port()
+                allocate_aux = self.manager.config.get_section_config("Dynamips").getboolean("allocate_aux_console_ports", False)
+                if allocate_aux:
+                    self._aux = self._manager.port_manager.get_free_tcp_port()
         else:
             log.info("Creating a new ghost IOS instance")
             if self._console:
