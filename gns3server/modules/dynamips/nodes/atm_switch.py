@@ -188,7 +188,7 @@ class ATMSwitch(Device):
                 source_port, source_vpi, source_vci = map(int, match_source_pvc.group(1, 2, 3))
                 destination_port, destination_vpi, destination_vci = map(int, match_destination_pvc.group(1, 2, 3))
                 if self.has_port(destination_port):
-                    if (source_port, source_vpi, source_vci) not in self.mapping and \
+                    if (source_port, source_vpi, source_vci) not in self.mappings and \
                        (destination_port, destination_vpi, destination_vci) not in self.mappings:
                         yield from self.map_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
                         yield from self.map_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
