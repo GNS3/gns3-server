@@ -150,47 +150,45 @@ class BaseManager:
         return vm
 
     @asyncio.coroutine
-    def _convert_old_project(self, project, legacy_id, name):
+    def convert_old_project(self, project, legacy_id, name):
         """
-        Convert project made before version 1.3
+        Convert projects made before version 1.3
 
         :param project: Project instance
         :param legacy_id: old identifier
-        :param name: VM name
+        :param name: node name
 
-        :returns: new VM identifier
+        :returns: new identifier
         """
 
-        vm_id = str(uuid4())
-        log.info("Converting old project...")
+        new_id = str(uuid4())
         project_name = os.path.basename(project.path)
         legacy_project_files_path = os.path.join(project.path, "{}-files".format(project_name))
         new_project_files_path = os.path.join(project.path, "project-files")
         if os.path.exists(legacy_project_files_path) and not os.path.exists(new_project_files_path):
             # move the project files
-            new_project_files_path = os.path.join(project.path, "project-files")
+            log.info("Converting old project...")
             try:
                 log.info('Moving "{}" to "{}"'.format(legacy_project_files_path, new_project_files_path))
                 yield from wait_run_in_executor(shutil.move, legacy_project_files_path, new_project_files_path)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not move project files directory: {} to {} {}".format(legacy_project_files_path,
-                                                                                                                            new_project_files_path,
-                                                                                                                            e))
+                                                                                                                            new_project_files_path, e))
 
         if hasattr(self, "get_legacy_vm_workdir"):
             # rename old project VM working dir
+            log.info("Converting old VM working directory...")
             legacy_vm_dir = self.get_legacy_vm_workdir(legacy_id, name)
             legacy_vm_working_path = os.path.join(new_project_files_path, legacy_vm_dir)
-            new_vm_working_path = os.path.join(new_project_files_path, self.module_name.lower(), vm_id)
+            new_vm_working_path = os.path.join(new_project_files_path, self.module_name.lower(), new_id)
             try:
                 log.info('Moving "{}" to "{}"'.format(legacy_vm_working_path, new_vm_working_path))
                 yield from wait_run_in_executor(shutil.move, legacy_vm_working_path, new_vm_working_path)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(legacy_vm_working_path,
-                                                                                                                         new_vm_working_path,
-                                                                                                                         e))
+                                                                                                                         new_vm_working_path, e))
 
-        return vm_id
+        return new_id
 
     @asyncio.coroutine
     def create_vm(self, name, project_id, vm_id, *args, **kwargs):
@@ -203,10 +201,9 @@ class BaseManager:
         """
 
         project = ProjectManager.instance().get_project(project_id)
-        # If it's not an UUID, old topology
         if vm_id and isinstance(vm_id, int):
             with (yield from BaseManager._convert_lock):
-                vm_id = yield from self._convert_old_project(project, vm_id, name)
+                vm_id = yield from self.convert_old_project(project, vm_id, name)
 
         if not vm_id:
             vm_id = str(uuid4())

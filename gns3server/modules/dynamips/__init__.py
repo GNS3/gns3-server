@@ -209,6 +209,10 @@ class Dynamips(BaseManager):
         """
 
         project = ProjectManager.instance().get_project(project_id)
+        if device_id and isinstance(device_id, int):
+            with (yield from BaseManager._convert_lock):
+                device_id = yield from self.convert_old_project(project, device_id, name)
+
         if not device_id:
             device_id = str(uuid4())
 
