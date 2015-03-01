@@ -162,14 +162,25 @@ class BaseManager:
         """
 
         vm_id = str(uuid4())
-        if hasattr(self, "get_legacy_vm_workdir"):
-            # move old project VM files to a new location
-            log.info("Converting old project...")
-            project_name = os.path.basename(project.path)
-            legacy_project_files_path = os.path.join(project.path, "{}-files".format(project_name))
-            legacy_vm_dir = self.get_legacy_vm_workdir(legacy_id, name)
-            legacy_vm_working_path = os.path.join(legacy_project_files_path, legacy_vm_dir)
+        log.info("Converting old project...")
+        project_name = os.path.basename(project.path)
+        legacy_project_files_path = os.path.join(project.path, "{}-files".format(project_name))
+        new_project_files_path = os.path.join(project.path, "project-files")
+        if os.path.exists(legacy_project_files_path) and not os.path.exists(new_project_files_path):
+            # move the project files
             new_project_files_path = os.path.join(project.path, "project-files")
+            try:
+                log.info('Moving "{}" to "{}"'.format(legacy_project_files_path, new_project_files_path))
+                yield from wait_run_in_executor(shutil.move, legacy_project_files_path, new_project_files_path)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not move project files directory: {} to {} {}".format(legacy_project_files_path,
+                                                                                                                            new_project_files_path,
+                                                                                                                            e))
+
+        if hasattr(self, "get_legacy_vm_workdir"):
+            # rename old project VM working dir
+            legacy_vm_dir = self.get_legacy_vm_workdir(legacy_id, name)
+            legacy_vm_working_path = os.path.join(new_project_files_path, legacy_vm_dir)
             new_vm_working_path = os.path.join(new_project_files_path, self.module_name.lower(), vm_id)
             try:
                 log.info('Moving "{}" to "{}"'.format(legacy_vm_working_path, new_vm_working_path))
@@ -178,27 +189,6 @@ class BaseManager:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(legacy_vm_working_path,
                                                                                                                          new_vm_working_path,
                                                                                                                          e))
-
-            old_images_dir = os.path.join(legacy_project_files_path, "images")
-            new_images_dir = os.path.join(new_project_files_path, "images")
-            if os.path.isdir(old_images_dir):
-                try:
-                    log.info('Moving "{}" to "{}"'.format(old_images_dir, new_images_dir))
-                    yield from wait_run_in_executor(shutil.move, old_images_dir, new_images_dir)
-                except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not move images directory: {} to {} {}".format(old_images_dir,
-                                                                                                                         new_images_dir,
-                                                                                                                         e))
-
-            try:
-                os.rmdir(os.path.dirname(legacy_vm_working_path))
-            except OSError:
-                pass
-
-            try:
-                os.rmdir(legacy_project_files_path)
-            except OSError:
-                pass
 
         return vm_id
 
