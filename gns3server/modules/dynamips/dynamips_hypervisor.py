@@ -73,12 +73,20 @@ class DynamipsHypervisor:
         else:
             host = self._host
 
-        try:
-            self._reader, self._writer = yield from asyncio.wait_for(asyncio.open_connection(host, self._port), timeout=self._timeout)
-        except OSError as e:
-            raise DynamipsError("Could not connect to hypervisor {}:{} {}".format(host, self._port, e))
-        except asyncio.TimeoutError:
-            raise DynamipsError("Timeout error while connecting to hypervisor {}:{}".format(host, self._port))
+        tries = 3
+        while tries > 0:
+            try:
+                self._reader, self._writer = yield from asyncio.wait_for(asyncio.open_connection(host, self._port), timeout=self._timeout)
+                break
+            except OSError as e:
+                if tries:
+                    tries -= 1
+                    log.warn("Could not connect to hypervisor {}:{} {}, retrying...".format(host, self._port, e))
+                    yield from asyncio.sleep(0.1)
+                    continue
+                raise DynamipsError("Could not connect to hypervisor {}:{} {}".format(host, self._port, e))
+            except asyncio.TimeoutError:
+                raise DynamipsError("Timeout error while connecting to hypervisor {}:{}".format(host, self._port))
 
         try:
             version = yield from self.send("hypervisor version")
