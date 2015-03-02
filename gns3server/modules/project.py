@@ -180,12 +180,20 @@ class Project:
         :returns: working directory
         """
 
-        workdir = os.path.join(self._path, "project-files", module_name)
+        workdir = self.module_working_path(module_name)
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create module working directory: {}".format(e))
         return workdir
+
+    def module_working_path(self, module_name):
+        """
+        Return the working direcotory for the module. If you want
+        to be sure to have the directory on disk take a look on:
+            module_working_directory
+        """
+        return os.path.join(self._path, "project-files", module_name)
 
     def vm_working_directory(self, vm):
         """
@@ -250,7 +258,11 @@ class Project:
     def close(self):
         """Close the project, but keep information on disk"""
 
+        for module in self.modules():
+            yield from module.instance().project_closing(self)
         yield from self._close_and_clean(self._temporary)
+        for module in self.modules():
+            yield from module.instance().project_closed(self)
 
     @asyncio.coroutine
     def _close_and_clean(self, cleanup):
@@ -304,7 +316,11 @@ class Project:
     def delete(self):
         """Remove project from disk"""
 
+        for module in self.modules():
+            yield from module.instance().project_closing(self)
         yield from self._close_and_clean(True)
+        for module in self.modules():
+            yield from module.instance().project_closed(self)
 
     @classmethod
     def clean_project_directory(cls):
@@ -318,3 +334,10 @@ class Project:
                 if os.path.exists(os.path.join(path, ".gns3_temporary")):
                     log.warning("Purge old temporary project {}".format(project))
                     shutil.rmtree(path)
+
+    def modules(self):
+        """Return VM modules loaded"""
+
+        # We import it at the last time to avoid circular dependencies
+        from ..modules import MODULES
+        return MODULES

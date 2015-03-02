@@ -184,9 +184,11 @@ def test_project_close(loop, manager):
     project = Project()
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
+    vm.manager._vms = {vm.id: vm}
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.close") as mock:
         loop.run_until_complete(asyncio.async(project.close()))
         assert mock.called
+    assert vm.id not in vm.manager._vms
 
 
 def test_project_close_temporary_project(loop, manager):

@@ -255,7 +255,9 @@ class BaseManager:
         :param project: Project instance
         """
 
-        pass
+        for vm in project.vms:
+            if vm.id in self._vms:
+                del self._vms[vm.id]
 
     @asyncio.coroutine
     def project_moved(self, project):

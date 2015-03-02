@@ -121,11 +121,7 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        for module in MODULES:
-            yield from module.instance().project_closing(project)
         yield from project.close()
-        for module in MODULES:
-            yield from module.instance().project_closed(project)
         pm.remove_project(project.id)
         response.set_status(204)
 

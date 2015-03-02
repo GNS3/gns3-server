@@ -143,6 +143,7 @@ class Dynamips(BaseManager):
         :param project: Project instance
         """
 
+        yield from super().project_closing(project)
         # delete the Dynamips devices corresponding to the project
         tasks = []
         for device in self._devices.values():
@@ -165,8 +166,9 @@ class Dynamips(BaseManager):
         :param project: Project instance
         """
 
+        yield from super().project_closed(project)
         # delete useless Dynamips files
-        project_dir = project.module_working_directory(self.module_name.lower())
+        project_dir = project.module_working_path(self.module_name.lower())
         files = glob.glob(os.path.join(project_dir, "*.ghost"))
         files += glob.glob(os.path.join(project_dir, "*_lock"))
         files += glob.glob(os.path.join(project_dir, "ilt_*"))
