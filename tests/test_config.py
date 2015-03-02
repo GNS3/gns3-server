@@ -77,7 +77,7 @@ def test_set_section_config(tmpdir):
     assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1"}
 
 
-def test_check_config_file_change(tmpdir):
+def test_reload(tmpdir):
 
     config = load_config(tmpdir, {
         "Server": {
@@ -91,13 +91,12 @@ def test_check_config_file_change(tmpdir):
             "host": "192.168.1.1"
         }
     })
-    os.utime(path, (time.time() + 1, time.time() + 1))
 
-    config._check_config_file_change()
+    config.reload()
     assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1"}
 
 
-def test_check_config_file_change_override_cmdline(tmpdir):
+def test_reload(tmpdir):
 
     config = load_config(tmpdir, {
         "Server": {
@@ -114,7 +113,6 @@ def test_check_config_file_change_override_cmdline(tmpdir):
             "host": "192.168.1.2"
         }
     })
-    os.utime(path, (time.time() + 1, time.time() + 1))
 
-    config._check_config_file_change()
+    config.reload()
     assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1"}
