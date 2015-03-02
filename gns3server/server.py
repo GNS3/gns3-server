@@ -103,12 +103,13 @@ class Server:
             else:
                 self._loop.add_signal_handler(getattr(signal, signal_name), callback)
 
-    def _reload_hook(self):
+    def _reload_hook(self, handler):
 
         @asyncio.coroutine
         def reload():
 
             log.info("Reloading")
+            yield from handler.finish_connections()
             yield from self._stop_application()
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
@@ -201,7 +202,7 @@ class Server:
 
         if server_config.getboolean("live"):
             log.info("Code live reload is enabled, watching for file changes")
-            self._loop.call_later(1, self._reload_hook)
+            self._loop.call_later(1, self._reload_hook, handler)
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
