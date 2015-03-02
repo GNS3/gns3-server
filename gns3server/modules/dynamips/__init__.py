@@ -136,9 +136,9 @@ class Dynamips(BaseManager):
                     continue
 
     @asyncio.coroutine
-    def project_closed(self, project):
+    def project_closing(self, project):
         """
-        Called when a project is closed.
+        Called when a project is about to be closed.
 
         :param project: Project instance
         """
@@ -157,7 +157,15 @@ class Dynamips(BaseManager):
                 except Exception as e:
                     log.error("Could not delete device {}".format(e), exc_info=1)
 
-        # delete useless files
+    @asyncio.coroutine
+    def project_closed(self, project):
+        """
+        Called when a project is closed.
+
+        :param project: Project instance
+        """
+
+        # delete useless Dynamips files
         project_dir = project.module_working_directory(self.module_name.lower())
         files = glob.glob(os.path.join(project_dir, "*.ghost"))
         files += glob.glob(os.path.join(project_dir, "*_lock"))

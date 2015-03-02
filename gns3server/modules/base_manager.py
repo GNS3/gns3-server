@@ -235,6 +235,16 @@ class BaseManager:
         return vm
 
     @asyncio.coroutine
+    def project_closing(self, project):
+        """
+        Called when a project is about to be closed.
+
+        :param project: Project instance
+        """
+
+        pass
+
+    @asyncio.coroutine
     def project_closed(self, project):
         """
         Called when a project is closed.
