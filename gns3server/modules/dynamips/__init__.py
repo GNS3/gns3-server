@@ -38,11 +38,13 @@ from pkg_resources import parse_version
 from uuid import UUID, uuid4
 from ..base_manager import BaseManager
 from ..project_manager import ProjectManager
+from ..port_manager import PortManager
 from .dynamips_error import DynamipsError
 from .hypervisor import Hypervisor
 from .nodes.router import Router
 from .dynamips_vm import DynamipsVM
 from .dynamips_device import DynamipsDevice
+from gns3server.config import Config
 
 # NIOs
 from .nios.nio_udp import NIOUDP
@@ -326,20 +328,26 @@ class Dynamips(BaseManager):
         if not working_dir:
             working_dir = tempfile.gettempdir()
 
+        # FIXME: hypervisor should always listen to 127.0.0.1
+        # See https://github.com/GNS3/dynamips/issues/62
+        server_config = Config.instance().get_section_config("Server")
+        server_host = server_config.get("host")
+
         try:
             # let the OS find an unused port for the Dynamips hypervisor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.bind(("127.0.0.1", 0))
+                sock.bind((server_host, 0))
                 port = sock.getsockname()[1]
         except OSError as e:
             raise DynamipsError("Could not find free port for the Dynamips hypervisor: {}".format(e))
 
-        hypervisor = Hypervisor(self._dynamips_path, working_dir, "127.0.0.1", port)
+        port_manager = PortManager.instance()
+        hypervisor = Hypervisor(self._dynamips_path, working_dir, server_host, port, port_manager.console_host)
 
         log.info("Creating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, working_dir))
         yield from hypervisor.start()
 
-        yield from self._wait_for_hypervisor("127.0.0.1", port)
+        yield from self._wait_for_hypervisor(server_host, port)
         log.info("Hypervisor {}:{} has successfully started".format(hypervisor.host, hypervisor.port))
 
         yield from hypervisor.connect()

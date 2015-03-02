@@ -38,13 +38,14 @@ class Hypervisor(DynamipsHypervisor):
 
     :param path: path to Dynamips executable
     :param working_dir: working directory
-    :param port: port for this hypervisor
     :param host: host/address for this hypervisor
+    :param port: port for this hypervisor
+    :param console_host: host/address for console connections
     """
 
     _instance_count = 1
 
-    def __init__(self, path, working_dir, host, port):
+    def __init__(self, path, working_dir, host, port, console_host):
 
         DynamipsHypervisor.__init__(self, working_dir, host, port)
 
@@ -52,6 +53,7 @@ class Hypervisor(DynamipsHypervisor):
         self._id = Hypervisor._instance_count
         Hypervisor._instance_count += 1
 
+        self._console_host = console_host
         self._path = path
         self._command = []
         self._process = None
@@ -182,7 +184,10 @@ class Hypervisor(DynamipsHypervisor):
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
         command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
-        if self._host != "0.0.0.0" and self._host != "::":
+        # Dynamips cannot listen for hypervisor commands and for console connections on
+        # 2 different IP addresses.
+        # See https://github.com/GNS3/dynamips/issues/62
+        if self._console_host != "0.0.0.0" and self._console_host != "::":
             command.extend(["-H", "{}:{}".format(self._host, self._port)])
         else:
             command.extend(["-H", str(self._port)])
