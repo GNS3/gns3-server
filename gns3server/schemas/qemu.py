@@ -22,9 +22,14 @@ QEMU_CREATE_SCHEMA = {
     "type": "object",
     "properties": {
         "vm_id": {
-            "description": "QEMU VM UUID",
-            "type": ["string", "null"],
-            "minLength": 1,
+            "description": "QEMU VM identifier",
+            "oneOf": [
+                {"type": "string",
+                 "minLength": 36,
+                 "maxLength": 36,
+                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"},
+                {"type": "integer"}  # for legacy projects
+            ]
         },
         "name": {
             "description": "QEMU VM instance name",
