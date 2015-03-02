@@ -38,16 +38,17 @@ class CrashReport:
     def __init__(self):
         self._client = None
 
-    def capture_exception(self, request):
+    def capture_exception(self, request=None):
         server_config = Config.instance().get_section_config("Server")
         if server_config.getboolean("report_errors"):
             if self._client is None:
                 self._client = raven.Client(CrashReport.DSN, release=__version__)
-            self._client.http_context({
-                "method": request.method,
-                "url": request.path,
-                "data": request.json,
-            })
+            if request is not None:
+                self._client.http_context({
+                    "method": request.method,
+                    "url": request.path,
+                    "data": request.json,
+                })
             try:
                 self._client.captureException()
             except asyncio.futures.TimeoutError:

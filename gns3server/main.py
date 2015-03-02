@@ -178,7 +178,7 @@ def main():
         server.run()
     except Exception as e:
         log.critical("Critical error while running the server: {}".format(e), exc_info=1)
-        # TODO: send exception to Sentry
+        CrashReport.instance().capture_exception()
         return
 
 if __name__ == '__main__':
