@@ -69,28 +69,28 @@ def test_create_vm_old_topology(loop, project, tmpdir, port_manager):
             assert f.read() == "1"
 
 
-def test_create_vm_old_topology_with_garbage_in_project_dir(loop, project, tmpdir, port_manager):
-
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        # Create an old topology directory
-        project_dir = str(tmpdir / "testold")
-        vm_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
-        project.path = project_dir
-        os.makedirs(vm_dir, exist_ok=True)
-        with open(os.path.join(vm_dir, "startup.vpc"), "w+") as f:
-            f.write("1")
-        with open(os.path.join(os.path.join(project_dir, "testold-files"), "crash.log"), "w+") as f:
-            f.write("1")
-
-        VPCS._instance = None
-        vpcs = VPCS.instance()
-        vpcs.port_manager = port_manager
-        vm_id = 1
-        vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id))
-        assert len(vm.id) == 36
-
-        assert os.path.exists(os.path.join(project_dir, "testold-files")) is True
-
-        vm_dir = os.path.join(project_dir, "project-files", "vpcs", vm.id)
-        with open(os.path.join(vm_dir, "startup.vpc")) as f:
-            assert f.read() == "1"
+# def test_create_vm_old_topology_with_garbage_in_project_dir(loop, project, tmpdir, port_manager):
+#
+#     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+#         # Create an old topology directory
+#         project_dir = str(tmpdir / "testold")
+#         vm_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
+#         project.path = project_dir
+#         os.makedirs(vm_dir, exist_ok=True)
+#         with open(os.path.join(vm_dir, "startup.vpc"), "w+") as f:
+#             f.write("1")
+#         with open(os.path.join(os.path.join(project_dir, "testold-files"), "crash.log"), "w+") as f:
+#             f.write("1")
+#
+#         VPCS._instance = None
+#         vpcs = VPCS.instance()
+#         vpcs.port_manager = port_manager
+#         vm_id = 1
+#         vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id))
+#         assert len(vm.id) == 36
+#
+#         assert os.path.exists(os.path.join(project_dir, "testold-files")) is True
+#
+#         vm_dir = os.path.join(project_dir, "project-files", "vpcs", vm.id)
+#         with open(os.path.join(vm_dir, "startup.vpc")) as f:
+#             assert f.read() == "1"
