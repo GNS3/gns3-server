@@ -34,6 +34,20 @@ def test_create_vm_new_topology(loop, project, port_manager):
     assert vm in project.vms
 
 
+def test_create_twice_same_vm_new_topology(loop, project, port_manager):
+
+    project._vms = set()
+    VPCS._instance = None
+    vpcs = VPCS.instance()
+    vpcs.port_manager = port_manager
+    vm_id = str(uuid.uuid4())
+    vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id, console=2222))
+    assert vm in project.vms
+    assert len(project.vms) == 1
+    vm = loop.run_until_complete(vpcs.create_vm("PC 2", project.id, vm_id, console=2222))
+    assert len(project.vms) == 1
+
+
 def test_create_vm_new_topology_without_uuid(loop, project, port_manager):
 
     VPCS._instance = None

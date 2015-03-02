@@ -200,6 +200,9 @@ class BaseManager:
         :param vm_id: restore a VM identifier
         """
 
+        if vm_id in self._vms:
+            return self._vms[vm_id]
+
         project = ProjectManager.instance().get_project(project_id)
         if vm_id and isinstance(vm_id, int):
             with (yield from BaseManager._convert_lock):
