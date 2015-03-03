@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 1.3alpha 1 03/03/2015
 
 * HTTP Rest API instead of WebSocket
 * API documentation
