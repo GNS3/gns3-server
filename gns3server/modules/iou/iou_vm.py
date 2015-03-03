@@ -58,7 +58,6 @@ class IOUVM(BaseVM):
     :param project: Project instance
     :param manager: parent VM Manager
     :param console: TCP console port
-    :params console_host: TCP console host IP
     :params ethernet_adapters: Number of ethernet adapters
     :params serial_adapters: Number of serial adapters
     :params ram: Ram MB
@@ -69,7 +68,6 @@ class IOUVM(BaseVM):
 
     def __init__(self, name, vm_id, project, manager,
                  console=None,
-                 console_host="0.0.0.0",
                  ram=None,
                  nvram=None,
                  ethernet_adapters=None,
@@ -86,7 +84,6 @@ class IOUVM(BaseVM):
         self._started = False
         self._path = None
         self._ioucon_thread = None
-        self._console_host = console_host
 
         # IOU settings
         self._ethernet_adapters = []
@@ -660,7 +657,7 @@ class IOUVM(BaseVM):
         """
 
         if not self._ioucon_thread:
-            telnet_server = "{}:{}".format(self._console_host, self.console)
+            telnet_server = "{}:{}".format(self._manager.port_manager.console_host, self.console)
             log.info("Starting ioucon for IOU instance {} to accept Telnet connections on {}".format(self._name, telnet_server))
             args = argparse.Namespace(appl_id=str(self.application_id), debug=False, escape='^^', telnet_limit=0, telnet_server=telnet_server)
             self._ioucon_thread_stop_event = threading.Event()

@@ -52,7 +52,6 @@ class QemuVM(BaseVM):
     :param host: host/address to bind for console and UDP connections
     :param qemu_id: QEMU VM instance ID
     :param console: TCP console port
-    :param console_host: IP address to bind for console connections
     :param monitor: TCP monitor port
     :param monitor_host: IP address to bind for monitor connections
     """
@@ -65,14 +64,12 @@ class QemuVM(BaseVM):
                  qemu_path=None,
                  host="127.0.0.1",
                  console=None,
-                 console_host="0.0.0.0",
                  monitor=None,
-                 monitor_host="0.0.0.0"):
+                 monitor_host="127.0.0.1"):
 
         super().__init__(name, vm_id, project, manager, console=console)
 
         self._host = host
-        self._console_host = console_host
         self._command = []
         self._started = False
         self._process = None
@@ -81,7 +78,7 @@ class QemuVM(BaseVM):
         self._monitor_host = monitor_host
 
         # QEMU settings
-        self.qemu_path = qemu_path
+        self._qemu_path = qemu_path
         self._hda_disk_image = ""
         self._hdb_disk_image = ""
         self._options = ""
@@ -824,7 +821,7 @@ class QemuVM(BaseVM):
     def _serial_options(self):
 
         if self._console:
-            return ["-serial", "telnet:{}:{},server,nowait".format(self._console_host, self._console)]
+            return ["-serial", "telnet:{}:{},server,nowait".format(self._manager.port_manager.console_host, self._console)]
         else:
             return []
 
