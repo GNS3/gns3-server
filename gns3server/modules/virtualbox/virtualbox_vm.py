@@ -49,9 +49,9 @@ class VirtualBoxVM(BaseVM):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, vm_id, project, manager, vmname, linked_clone, adapters=0):
+    def __init__(self, name, vm_id, project, manager, vmname, linked_clone, console=None, adapters=0):
 
-        super().__init__(name, vm_id, project, manager)
+        super().__init__(name, vm_id, project, manager, console=console)
 
         self._maximum_adapters = 8
         self._linked_clone = linked_clone
@@ -389,8 +389,8 @@ class VirtualBoxVM(BaseVM):
 
         return self._enable_remote_console
 
-    @enable_remote_console.setter
-    def enable_remote_console(self, enable_remote_console):
+    @asyncio.coroutine
+    def set_enable_remote_console(self, enable_remote_console):
         """
         Sets either the console is enabled or not
 
@@ -399,7 +399,9 @@ class VirtualBoxVM(BaseVM):
 
         if enable_remote_console:
             log.info("VirtualBox VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
-            self._start_remote_console()
+            vm_state = yield from self._get_vm_state()
+            if vm_state == "running":
+                self._start_remote_console()
         else:
             log.info("VirtualBox VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
             self._stop_remote_console()
