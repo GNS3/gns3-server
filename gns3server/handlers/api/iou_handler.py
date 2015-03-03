@@ -56,7 +56,6 @@ class IOUHandler:
                                       request.match_info["project_id"],
                                       request.json.get("vm_id"),
                                       console=request.json.get("console"),
-                                      console_host=PortManager.instance().console_host,
                                       serial_adapters=request.json.get("serial_adapters"),
                                       ethernet_adapters=request.json.get("ethernet_adapters"),
                                       ram=request.json.get("ram"),

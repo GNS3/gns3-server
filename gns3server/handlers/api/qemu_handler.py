@@ -19,7 +19,6 @@ import os
 
 
 from ...web.route import Route
-from ...modules.port_manager import PortManager
 from ...schemas.qemu import QEMU_CREATE_SCHEMA
 from ...schemas.qemu import QEMU_UPDATE_SCHEMA
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
@@ -57,8 +56,6 @@ class QEMUHandler:
                                        qemu_path=request.json.get("qemu_path"),
                                        console=request.json.get("console"),
                                        monitor=request.json.get("monitor"),
-                                       console_host=PortManager.instance().console_host,
-                                       monitor_host=PortManager.instance().console_host,
                                        )
         # Clear already used keys
         map(request.json.__delitem__, ["name", "project_id", "vm_id",
