@@ -43,14 +43,17 @@ class CrashReport:
         server_config = Config.instance().get_section_config("Server")
         if server_config.getboolean("report_errors"):
             if self._client is None:
-                self._client = raven.Client(CrashReport.DSN, release=__version__)
+                self._client = raven.Client(CrashReport.DSN, release=__version__, raise_send_errors=True)
             if request is not None:
                 self._client.http_context({
                     "method": request.method,
                     "url": request.path,
                     "data": request.json,
                 })
-            self._client.captureException()
+            try:
+                self._client.captureException()
+            except Exception as e:
+                log.error("Can't send crash report to Sentry: %s", e)
 
     @classmethod
     def instance(cls):
