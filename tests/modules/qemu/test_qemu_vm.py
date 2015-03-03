@@ -59,6 +59,7 @@ def fake_qemu_binary():
 
 @pytest.fixture(scope="function")
 def vm(project, manager, fake_qemu_binary, fake_qemu_img_binary):
+    manager.port_manager.console_host = "127.0.0.1"
     return QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
 
 
@@ -252,7 +253,7 @@ def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
     assert res == "epic product"
 
 
-def test_build_command(vm, loop, fake_qemu_binary):
+def test_build_command(vm, loop, fake_qemu_binary, port_manager):
 
     os.environ["DISPLAY"] = "0:0"
     with patch("gns3server.modules.qemu.qemu_vm.QemuVM._get_random_mac", return_value="00:00:ab:7e:b5:00"):
@@ -267,13 +268,13 @@ def test_build_command(vm, loop, fake_qemu_binary):
                 "-hda",
                 os.path.join(vm.working_dir, "flash.qcow2"),
                 "-serial",
-                "telnet:0.0.0.0:{},server,nowait".format(vm.console),
+                "telnet:127.0.0.1:{},server,nowait".format(vm.console),
                 "-monitor",
-                "telnet:0.0.0.0:{},server,nowait".format(vm.monitor),
-                "-net",
-                "nic,vlan=0,macaddr=00:00:ab:7e:b5:00,model=e1000",
-                "-net",
-                "user,vlan=0,name=gns3-0"
+                "telnet:127.0.0.1:{},server,nowait".format(vm.monitor),
+                "-device",
+                "e1000,mac=00:00:ab:7e:b5:00,netdev=gns3-0",
+                "-netdev",
+                "user,id=gns3-0"
             ]
 
 

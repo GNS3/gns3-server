@@ -80,7 +80,7 @@ class PortManager:
         return self._console_host
 
     @console_host.setter
-    def host(self, new_host):
+    def console_host(self, new_host):
 
         self._console_host = new_host
 

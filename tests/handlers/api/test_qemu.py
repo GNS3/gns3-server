@@ -133,6 +133,7 @@ def test_qemu_update(server, vm, tmpdir, free_console_port, project):
 
 
 def test_qemu_nio_create_udp(server, vm):
+    server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"adapters": 2})
     response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                                                      "lport": 4242,
                                                                                                                                                      "rport": 4343,
@@ -144,6 +145,7 @@ def test_qemu_nio_create_udp(server, vm):
 
 
 def test_qemu_nio_create_ethernet(server, vm):
+    server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"adapters": 2})
     response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
                                                                                                                                                      "ethernet_device": "eth0",
                                                                                                                                                      },
@@ -155,6 +157,7 @@ def test_qemu_nio_create_ethernet(server, vm):
 
 
 def test_qemu_delete_nio(server, vm):
+    server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"adapters": 2})
     server.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                                           "lport": 4242,
                                                                                                                                           "rport": 4343,
