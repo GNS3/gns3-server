@@ -130,7 +130,7 @@ class Server:
             if modified > self._start_time:
                 log.debug("File {} has been modified".format(path))
                 asyncio.async(reload())
-        self._loop.call_later(1, self._reload_hook)
+        self._loop.call_later(1, self._reload_hook, handler)
 
     def _create_ssl_context(self, server_config):
 

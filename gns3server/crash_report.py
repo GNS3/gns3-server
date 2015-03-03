@@ -18,6 +18,7 @@
 import raven
 import json
 import asyncio.futures
+import asyncio
 
 from .version import __version__
 from .config import Config
@@ -32,7 +33,7 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "aiohttp+https://50af75d8641d4ea7a4ea6b38c7df6cf9:41d54936f8f14e558066262e2ec8bbeb@app.getsentry.com/38482"
+    DSN = "sync+https://50af75d8641d4ea7a4ea6b38c7df6cf9:41d54936f8f14e558066262e2ec8bbeb@app.getsentry.com/38482"
     _instance = None
 
     def __init__(self):
@@ -49,10 +50,7 @@ class CrashReport:
                     "url": request.path,
                     "data": request.json,
                 })
-            try:
-                self._client.captureException()
-            except asyncio.futures.TimeoutError:
-                pass  # We don't care if we can send the bug report
+            self._client.captureException()
 
     @classmethod
     def instance(cls):
