@@ -131,24 +131,6 @@ class QemuVM(BaseVM):
             id=self.id,
             port=monitor))
 
-    def delete(self):
-        """
-        Deletes this QEMU VM.
-        """
-
-        self.stop()
-        if self._id in self._instances:
-            self._instances.remove(self._id)
-
-        if self._console and self._console in self._allocated_console_ports:
-            self._allocated_console_ports.remove(self._console)
-
-        if self._monitor and self._monitor in self._allocated_monitor_ports:
-            self._allocated_monitor_ports.remove(self._monitor)
-
-        log.info("QEMU VM {name} [id={id}] has been deleted".format(name=self._name,
-                                                                    id=self._id))
-
     @property
     def qemu_path(self):
         """
@@ -925,9 +907,11 @@ class QemuVM(BaseVM):
         network_options = []
         adapter_id = 0
         for adapter in self._ethernet_adapters:
-            # TODO: let users specify a base mac address
             mac = self._get_random_mac(adapter_id)
-            network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
+            if self._legacy_networking:
+                network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
+            else:
+                network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_id)])
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIOUDP):
                 if self._legacy_networking:
@@ -937,14 +921,16 @@ class QemuVM(BaseVM):
                                                                                                                  nio.rport,
                                                                                                                  nio.rhost)])
                 else:
-                    network_options.extend(["-net", "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                                   adapter_id,
-                                                                                                                   nio.rhost,
-                                                                                                                   nio.rport,
-                                                                                                                   self._host,
-                                                                                                                   nio.lport)])
+                    network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                                                                                                            nio.rhost,
+                                                                                                            nio.rport,
+                                                                                                            self._host,
+                                                                                                            nio.lport)])
             else:
-                network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_id, adapter_id)])
+                if self._legacy_networking:
+                    network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_id, adapter_id)])
+                else:
+                    network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
             adapter_id += 1
 
         return network_options
