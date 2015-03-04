@@ -33,6 +33,8 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
+from ...utils.asyncio import monitor_process
+from ...config import Config
 
 import logging
 log = logging.getLogger(__name__)
@@ -68,7 +70,6 @@ class QemuVM(BaseVM):
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
         self._command = []
-        self._started = False
         self._process = None
         self._cpulimit_process = None
         self._monitor = None
@@ -606,7 +607,8 @@ class QemuVM(BaseVM):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir)
                 log.info("QEMU VM instance {} started PID={}".format(self._id, self._process.pid))
-                self._started = True
+                self.status = "started"
+                monitor_process(self._process, self._termination_callback)
             except (OSError, subprocess.SubprocessError) as e:
                 stdout = self.read_stdout()
                 log.error("could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
@@ -615,6 +617,17 @@ class QemuVM(BaseVM):
             self._set_process_priority()
             if self._cpu_throttling:
                 self._set_cpu_throttling()
+
+    def _termination_callback(self, returncode):
+        """
+        Called when the process is killed
+
+        :param returncode: Process returncode
+        """
+        if self.started:
+            log.info("Process Qemu is dead. Return code: %d", returncode)
+            self.status = "stopped"
+            self._process = None
 
     @asyncio.coroutine
     def stop(self):
@@ -634,7 +647,7 @@ class QemuVM(BaseVM):
                     log.warn("QEMU VM instance {} PID={} is still running".format(self._id,
                                                                                   self._process.pid))
         self._process = None
-        self._started = False
+        self.status = "stopped"
         self._stop_cpulimit()
 
     @asyncio.coroutine
@@ -830,7 +843,7 @@ class QemuVM(BaseVM):
         :returns: boolean
         """
 
-        return self._started
+        return self.status == "started"
 
     def read_stdout(self):
         """

@@ -20,8 +20,12 @@ This test suite check /project endpoint
 """
 
 import uuid
+import asyncio
+import aiohttp
 from unittest.mock import patch
 from tests.utils import asyncio_patch
+
+from gns3server.handlers.api.project_handler import ProjectHandler
 
 
 def test_create_project_with_path(server, tmpdir):
@@ -139,6 +143,38 @@ def test_close_project(server, project):
         assert mock.called
 
 
+def test_close_project_two_client_connected(server, project):
+
+    ProjectHandler._notifications_listening = 2
+
+    with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
+        response = server.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
+        assert response.status == 204
+        assert not mock.called
+
+
 def test_close_project_invalid_uuid(server):
     response = server.post("/projects/{project_id}/close".format(project_id=uuid.uuid4()))
+    assert response.status == 404
+
+
+def test_notification(server, project, loop):
+    @asyncio.coroutine
+    def go(future):
+        response = yield from aiohttp.request("GET", server.get_url("/projects/{project_id}/notifications".format(project_id=project.id), 1))
+        response.body = yield from response.content.read(19)
+        project.emit("vm.created", {"a": "b"})
+        response.body += yield from response.content.read(47)
+        response.close()
+        future.set_result(response)
+
+    future = asyncio.Future()
+    asyncio.async(go(future))
+    response = loop.run_until_complete(future)
+    assert response.status == 200
+    assert response.body == b'{"action": "ping"}\n{"action": "vm.created", "event": {"a": "b"}}\n'
+
+
+def test_notification_invalid_id(server, project):
+    response = server.get("/projects/{project_id}/notifications".format(project_id=uuid.uuid4()))
     assert response.status == 404

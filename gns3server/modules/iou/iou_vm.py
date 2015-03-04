@@ -467,6 +467,8 @@ class IOUVM(BaseVM):
                                                                                   env=env)
                 log.info("IOU instance {} started PID={}".format(self._id, self._iou_process.pid))
                 self._started = True
+                self.status = "started"
+                gns3server.utils.asyncio.monitor_process(self._iou_process, self._termination_callback)
             except FileNotFoundError as e:
                 raise IOUError("could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
             except (OSError, subprocess.SubprocessError) as e:
@@ -478,6 +480,17 @@ class IOUVM(BaseVM):
             self._start_ioucon()
             # connections support
             yield from self._start_iouyap()
+
+    def _termination_callback(self, returncode):
+        """
+        Called when the process is killed
+
+        :param returncode: Process returncode
+        """
+        log.info("IOU process crash return code: %d", returncode)
+        self._terminate_process_iou()
+        self._terminate_process_iouyap()
+        self._ioucon_thread_stop_event.set()
 
     def _rename_nvram_file(self):
         """
@@ -509,6 +522,7 @@ class IOUVM(BaseVM):
                                                                                  stderr=subprocess.STDOUT,
                                                                                  cwd=self.working_dir)
 
+                gns3server.utils.asyncio.monitor_process(self._iouyap_process, self._termination_callback)
             log.info("iouyap started PID={}".format(self._iouyap_process.pid))
         except (OSError, subprocess.SubprocessError) as e:
             iouyap_stdout = self.read_iouyap_stdout()
@@ -616,22 +630,26 @@ class IOUVM(BaseVM):
     def _terminate_process_iouyap(self):
         """Terminate the process if running"""
 
-        log.info("Stopping IOUYAP instance {} PID={}".format(self.name, self._iouyap_process.pid))
-        try:
-            self._iouyap_process.terminate()
-        # Sometime the process can already be dead when we garbage collect
-        except ProcessLookupError:
-            pass
+        if self._iouyap_process:
+            log.info("Stopping IOUYAP instance {} PID={}".format(self.name, self._iouyap_process.pid))
+            try:
+                self._iouyap_process.terminate()
+            # Sometime the process can already be dead when we garbage collect
+            except ProcessLookupError:
+                pass
 
     def _terminate_process_iou(self):
         """Terminate the process if running"""
 
-        log.info("Stopping IOU instance {} PID={}".format(self.name, self._iou_process.pid))
-        try:
-            self._iou_process.terminate()
-        # Sometime the process can already be dead when we garbage collect
-        except ProcessLookupError:
-            pass
+        if self._iou_process:
+            log.info("Stopping IOU instance {} PID={}".format(self.name, self._iou_process.pid))
+            try:
+                self._iou_process.terminate()
+            # Sometime the process can already be dead when we garbage collect
+            except ProcessLookupError:
+                pass
+        self._started = False
+        self.status = "stopped"
 
     @asyncio.coroutine
     def reload(self):

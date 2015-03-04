@@ -34,7 +34,8 @@ from ...base_vm import BaseVM
 from ..dynamips_error import DynamipsError
 from ..nios.nio_udp import NIOUDP
 
-from gns3server.utils.asyncio import wait_run_in_executor
+from gns3server.config import Config
+from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
 
 
 class Router(BaseVM):
@@ -164,7 +165,7 @@ class Router(BaseVM):
             slot_number += 1
 
         # add the wics
-        if self._slots[0] and self._slots[0].wics:
+        if len(self._slots) > 0 and self._slots[0] and self._slots[0].wics:
             for wic_slot_number in range(0, len(self._slots[0].wics)):
                 if self._slots[0].wics[wic_slot_number]:
                     router_info["wic" + str(wic_slot_number)] = str(self._slots[0].wics[wic_slot_number])
@@ -259,7 +260,18 @@ class Router(BaseVM):
                 raise DynamipsError('"{}" is not a valid IOS image'.format(self._image))
 
             yield from self._hypervisor.send('vm start "{name}"'.format(name=self._name))
+            self.status = "started"
             log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))
+            monitor_process(self._hypervisor.process, self._termination_callback)
+
+    @asyncio.coroutine
+    def _termination_callback(self, returncode):
+        """
+        Called when the process is killed
+
+        :param returncode: Process returncode
+        """
+        self.status = "stopped"
 
     @asyncio.coroutine
     def stop(self):
@@ -270,6 +282,7 @@ class Router(BaseVM):
         status = yield from self.get_status()
         if status != "inactive":
             yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
+            self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
