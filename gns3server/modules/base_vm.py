@@ -48,6 +48,7 @@ class BaseVM:
         self._manager = manager
         self._console = console
         self._temporary_directory = None
+        self._vm_status = "stopped"
 
         if self._console is not None:
             self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
@@ -65,6 +66,18 @@ class BaseVM:
         if self._temporary_directory is not None:
             if os.path.exists(self._temporary_directory):
                 shutil.rmtree(self._temporary_directory, ignore_errors=True)
+
+    @property
+    def status(self):
+        """Return current VM status"""
+
+        return self._vm_status
+
+    @status.setter
+    def status(self, status):
+
+        self._vm_status = status
+        self._project.emit("vm.{}".format(status), self)
 
     @property
     def project(self):

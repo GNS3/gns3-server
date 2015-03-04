@@ -35,7 +35,7 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..base_vm import BaseVM
-from ...utils.asyncio import subprocess_check_output
+from ...utils.asyncio import subprocess_check_output, monitor_process
 
 
 import logging
@@ -109,6 +109,7 @@ class VPCSVM(BaseVM):
 
         return {"name": self.name,
                 "vm_id": self.id,
+                "status": self.status,
                 "console": self._console,
                 "project_id": self.project.id,
                 "startup_script": self.startup_script,
@@ -233,12 +234,26 @@ class VPCSVM(BaseVM):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir,
                                                                               creationflags=flags)
+                    monitor_process(self._process, self._termination_callback)
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
+                self.status = "started"
             except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
                 log.error("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
                 raise VPCSError("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
+
+    def _termination_callback(self, returncode):
+        """
+        Called when the process is killed
+
+        :param returncode: Process returncode
+        """
+        if self._started:
+            log.info("Process VPCS is dead. Return code: %d", returncode)
+            self._started = False
+            self.status = "stopped"
+            self._process = None
 
     @asyncio.coroutine
     def stop(self):
@@ -258,6 +273,7 @@ class VPCSVM(BaseVM):
 
         self._process = None
         self._started = False
+        self.status = "stopped"
 
     @asyncio.coroutine
     def reload(self):
