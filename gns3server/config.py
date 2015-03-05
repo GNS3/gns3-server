@@ -61,15 +61,13 @@ class Config(object):
 
             appdata = os.path.expandvars("%APPDATA%")
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
-            self._cloud_file = os.path.join(appdata, appname, "cloud.ini")
             filename = "server.ini"
             if self._files is None:
                 self._files = [os.path.join(appdata, appname, filename),
                                os.path.join(appdata, appname + ".ini"),
                                os.path.join(common_appdata, appname, filename),
                                os.path.join(common_appdata, appname + ".ini"),
-                               filename,
-                               self._cloud_file]
+                               filename]
         else:
 
             # On UNIX-like platforms, the configuration file location can be one of the following:
@@ -84,20 +82,16 @@ class Config(object):
             else:
                 appname = "GNS3"
             home = os.path.expanduser("~")
-            self._cloud_file = os.path.join(home, ".config", appname, "cloud.conf")
             filename = "server.conf"
             if self._files is None:
                 self._files = [os.path.join(home, ".config", appname, filename),
                                os.path.join(home, ".config", appname + ".conf"),
                                os.path.join("/etc/xdg", appname, filename),
                                os.path.join("/etc/xdg", appname + ".conf"),
-                               filename,
-                               self._cloud_file]
+                               filename]
 
         self._config = configparser.ConfigParser()
         self.read_config()
-        self._cloud_config = configparser.ConfigParser()
-        self.read_cloud_config()
 
     def reload(self):
         """
@@ -108,19 +102,8 @@ class Config(object):
         for section in self._override_config:
             self.set_section_config(section, self._override_config[section])
 
-    def list_cloud_config_file(self):
-        return self._cloud_file
-
     def get_config_files(self):
         return self._watched_files
-
-    def read_cloud_config(self):
-        parsed_file = self._cloud_config.read(self._cloud_file)
-        if not self._cloud_config.has_section(CLOUD_SERVER):
-            self._cloud_config.add_section(CLOUD_SERVER)
-
-    def cloud_settings(self):
-        return self._cloud_config[CLOUD_SERVER]
 
     def read_config(self):
         """
