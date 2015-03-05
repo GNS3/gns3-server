@@ -17,8 +17,10 @@
 
 import raven
 import json
-import asyncio.futures
-import asyncio
+
+import sys
+import struct
+import platform
 
 from .version import __version__
 from .config import Config
@@ -50,6 +52,15 @@ class CrashReport:
                     "url": request.path,
                     "data": request.json,
                 })
+            self._client.tags_context({
+                "os:name": platform.system(),
+                "os:release": platform.release(),
+                "python:version": "{}.{}.{}".format(sys.version_info[0],
+                                                    sys.version_info[1],
+                                                    sys.version_info[2]),
+                "python:bit": struct.calcsize("P") * 8,
+                "python:encoding": sys.getdefaultencoding()
+            })
             try:
                 self._client.captureException()
             except Exception as e:
