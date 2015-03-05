@@ -116,8 +116,12 @@ def test_rename_nvram_file(loop, vm, monkeypatch):
     with open(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id + 1)), 'w+') as f:
         f.write("1")
 
+    with open(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id + 1)), 'w+') as f:
+        f.write("1")
+
     vm._rename_nvram_file()
     assert os.path.exists(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id)))
+    assert os.path.exists(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id)))
 
 
 def test_stop(loop, vm):

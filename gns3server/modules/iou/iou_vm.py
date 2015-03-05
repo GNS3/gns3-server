@@ -379,6 +379,9 @@ class IOUVM(BaseVM):
         destination = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
         for file_path in glob.glob(os.path.join(self.working_dir, "nvram_*")):
             shutil.move(file_path, destination)
+        destination = os.path.join(self.working_dir, "vlan.dat-{:05d}".format(self.application_id))
+        for file_path in glob.glob(os.path.join(self.working_dir, "vlan.dat-*")):
+            shutil.move(file_path, destination)
 
     @asyncio.coroutine
     def _start_iouyap(self):
