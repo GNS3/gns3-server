@@ -124,16 +124,16 @@ class VirtualBoxHandler:
         if "enable_remote_console" in request.json:
             yield from vm.set_enable_remote_console(request.json.pop("enable_remote_console"))
 
+        if "adapters" in request.json:
+            adapters = int(request.json.pop("adapters"))
+            if adapters != vm.adapters:
+                yield from vm.set_adapters(adapters)
+
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
                 if name == "vmname":
                     yield from vm.rename_in_virtualbox()
-
-        if "adapters" in request.json:
-            adapters = int(request.json["adapters"])
-            if adapters != vm.adapters:
-                yield from vm.set_adapters(adapters)
 
         response.json(vm)
 
