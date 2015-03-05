@@ -16,8 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import raven
-import json
-
+import os
 import sys
 import struct
 import platform
@@ -36,6 +35,9 @@ class CrashReport:
     """
 
     DSN = "sync+https://50af75d8641d4ea7a4ea6b38c7df6cf9:41d54936f8f14e558066262e2ec8bbeb@app.getsentry.com/38482"
+    if hasattr(sys, "frozen"):
+        cacert = os.path.join(os.getcwd(), "cacert.pem")
+        DSN += "?ca_certs={}".format(cacert)
     _instance = None
 
     def __init__(self):
@@ -62,12 +64,14 @@ class CrashReport:
                                                     sys.version_info[1],
                                                     sys.version_info[2]),
                 "python:bit": struct.calcsize("P") * 8,
-                "python:encoding": sys.getdefaultencoding()
+                "python:encoding": sys.getdefaultencoding(),
+                "python:frozen": "{}".format(hasattr(sys, "frozen"))
             })
             try:
-                self._client.captureException()
+                report = self._client.captureException()
             except Exception as e:
-                log.error("Can't send crash report to Sentry: %s", e)
+                log.error("Can't send crash report to Sentry: {}".format(e))
+            log.info("Crash report sent with event ID: {}".format(self._client.get_ident(report)))
 
     @classmethod
     def instance(cls):
