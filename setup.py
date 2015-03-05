@@ -36,8 +36,6 @@ class PyTest(TestCommand):
 
 dependencies = ["aiohttp==0.14.4",
                 "jsonschema==2.4.0",
-                "apache-libcloud==0.16.0",
-                "requests==2.5.0",
                 "Jinja2==2.7.3",
                 "raven==5.2.0"]
 
