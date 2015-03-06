@@ -537,7 +537,7 @@ class QemuVM(BaseVM):
         if self.is_running():
 
             # resume the VM if it is paused
-            self.resume()
+            yield from self.resume()
             return
 
         else:
@@ -598,7 +598,7 @@ class QemuVM(BaseVM):
         if self.is_running() and self._monitor:
             log.debug("Execute QEMU monitor command: {}".format(command))
             try:
-                reader, writer = yield from asyncio.open_connection("127.0.0.1", self._monitor)
+                reader, writer = yield from asyncio.open_connection(self._monitor_host, self._monitor)
             except OSError as e:
                 log.warn("Could not connect to QEMU monitor: {}".format(e))
                 return result
@@ -616,7 +616,7 @@ class QemuVM(BaseVM):
                             break
                         for expect in expected:
                             if expect in line:
-                                result = line
+                                result = line.decode().strip()
                                 break
                 except EOFError as e:
                     log.warn("Could not read from QEMU monitor: {}".format(e))
@@ -644,7 +644,7 @@ class QemuVM(BaseVM):
         """
 
         result = yield from self._control_vm("info status", [b"running", b"paused"])
-        return result
+        return result.rsplit(' ', 1)[1]
 
     @asyncio.coroutine
     def suspend(self):
