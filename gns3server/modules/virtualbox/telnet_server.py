@@ -43,6 +43,7 @@ class TelnetServer(threading.Thread):
 
     def __init__(self, vm_name, pipe_path, host, port):
 
+        threading.Thread.__init__(self)
         self._vm_name = vm_name
         self._pipe = pipe_path
         self._host = host
@@ -58,20 +59,15 @@ class TelnetServer(threading.Thread):
             # we must a thread for reading the pipe on Windows because it is a Named Pipe and it cannot be monitored by select()
             self._use_thread = True
 
-        try:
-            if ":" in self._host:
-                # IPv6 address support
-                self._server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-            else:
-                self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self._server_socket.bind((self._host, self._port))
-                self._server_socket.listen(socket.SOMAXCONN)
-        except OSError as e:
-            log.critical("unable to create a server socket: {}".format(e))
-            return
+        if ":" in self._host:
+            # IPv6 address support
+            self._server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        else:
+            self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self._server_socket.bind((self._host, self._port))
+            self._server_socket.listen(socket.SOMAXCONN)
 
-        threading.Thread.__init__(self)
         log.info("Telnet server initialized, waiting for clients on {}:{}".format(self._host, self._port))
 
     def run(self):

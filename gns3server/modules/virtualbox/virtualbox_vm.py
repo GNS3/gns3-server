@@ -711,7 +711,10 @@ class VirtualBoxVM(BaseVM):
                 self._serial_pipe = open(pipe_name, "a+b")
             except OSError as e:
                 raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
-            self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._manager.port_manager.console_host, self._console)
+            try:
+                self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._manager.port_manager.console_host, self._console)
+            except OSError as e:
+                raise VirtualBoxError("Unable to create Telnet server: {}".format(e))
             self._telnet_server_thread.start()
         else:
             try:
@@ -719,7 +722,10 @@ class VirtualBoxVM(BaseVM):
                 self._serial_pipe.connect(pipe_name)
             except OSError as e:
                 raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-            self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._manager.port_manager.console_host, self._console)
+            try:
+                self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._manager.port_manager.console_host, self._console)
+            except OSError as e:
+                raise VirtualBoxError("Unable to create Telnet server: {}".format(e))
             self._telnet_server_thread.start()
 
     def _stop_remote_console(self):
@@ -728,14 +734,15 @@ class VirtualBoxVM(BaseVM):
         """
 
         if self._telnet_server_thread:
-            self._telnet_server_thread.stop()
-            self._telnet_server_thread.join(timeout=3)
-            if self._telnet_server_thread.isAlive():
+            if self._telnet_server_thread.is_alive():
+                self._telnet_server_thread.stop()
+                self._telnet_server_thread.join(timeout=3)
+            if self._telnet_server_thread.is_alive():
                 log.warn("Serial pipe thread is still alive!")
             self._telnet_server_thread = None
 
         if self._serial_pipe:
-            if sys.platform.startswith('win'):
+            if sys.platform.startswith("win"):
                 win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
             else:
                 self._serial_pipe.close()
