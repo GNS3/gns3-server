@@ -295,34 +295,6 @@ class Dynamips(BaseManager):
         return dynamips_path
 
     @asyncio.coroutine
-    def _wait_for_hypervisor(self, host, port, timeout=10.0):
-        """
-        Waits for an hypervisor to be started (accepting a socket connection)
-
-        :param host: host/address to connect to the hypervisor
-        :param port: port to connect to the hypervisor
-        """
-
-        begin = time.time()
-        connection_success = False
-        last_exception = None
-        while time.time() - begin < timeout:
-            yield from asyncio.sleep(0.01)
-            try:
-                _, writer = yield from asyncio.open_connection(host, port)
-                writer.close()
-            except OSError as e:
-                last_exception = e
-                continue
-            connection_success = True
-            break
-
-        if not connection_success:
-            raise DynamipsError("Couldn't connect to hypervisor on {}:{} :{}".format(host, port, last_exception))
-        else:
-            log.info("Dynamips server ready after {:.4f} seconds".format(time.time() - begin))
-
-    @asyncio.coroutine
     def start_new_hypervisor(self, working_dir=None):
         """
         Creates a new Dynamips process and start it.
@@ -356,10 +328,7 @@ class Dynamips(BaseManager):
 
         log.info("Creating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, working_dir))
         yield from hypervisor.start()
-
-        yield from self._wait_for_hypervisor(server_host, port)
         log.info("Hypervisor {}:{} has successfully started".format(hypervisor.host, hypervisor.port))
-
         yield from hypervisor.connect()
         if parse_version(hypervisor.version) < parse_version('0.2.11'):
             raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(hypervisor.version))

@@ -21,6 +21,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L46
 """
 
 import re
+import time
 import logging
 import asyncio
 
@@ -59,7 +60,7 @@ class DynamipsHypervisor:
         self._writer = None
 
     @asyncio.coroutine
-    def connect(self):
+    def connect(self, timeout=10):
         """
         Connects to the hypervisor.
         """
@@ -73,20 +74,23 @@ class DynamipsHypervisor:
         else:
             host = self._host
 
-        tries = 3
-        while tries > 0:
+        begin = time.time()
+        connection_success = False
+        last_exception = None
+        while time.time() - begin < timeout:
+            yield from asyncio.sleep(0.01)
             try:
-                self._reader, self._writer = yield from asyncio.wait_for(asyncio.open_connection(host, self._port), timeout=self._timeout)
-                break
+                self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
             except OSError as e:
-                if tries:
-                    tries -= 1
-                    log.warn("Could not connect to hypervisor {}:{} {}, retrying...".format(host, self._port, e))
-                    yield from asyncio.sleep(0.1)
-                    continue
-                raise DynamipsError("Could not connect to hypervisor {}:{} {}".format(host, self._port, e))
-            except asyncio.TimeoutError:
-                raise DynamipsError("Timeout error while connecting to hypervisor {}:{}".format(host, self._port))
+                last_exception = e
+                continue
+            connection_success = True
+            break
+
+        if not connection_success:
+            raise DynamipsError("Couldn't connect to hypervisor on {}:{} :{}".format(host, self._port, last_exception))
+        else:
+            log.info("Connected to Dynamips hypervisor after {:.4f} seconds".format(time.time() - begin))
 
         try:
             version = yield from self.send("hypervisor version")
