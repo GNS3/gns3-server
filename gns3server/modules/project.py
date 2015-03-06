@@ -274,10 +274,7 @@ class Project:
 
         tasks = []
         for vm in self._vms:
-            if asyncio.iscoroutinefunction(vm.close):
-                tasks.append(asyncio.async(vm.close()))
-            else:
-                vm.close()
+            tasks.append(asyncio.async(vm.manager.close_vm(vm.id)))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)

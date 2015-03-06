@@ -46,13 +46,14 @@ class IOU(BaseManager):
         return vm
 
     @asyncio.coroutine
-    def delete_vm(self, vm_id, *args, **kwargs):
+    def close_vm(self, vm_id, *args, **kwargs):
 
         vm = self.get_vm(vm_id)
         i = self._used_application_ids[vm_id]
         self._free_application_ids.insert(0, i)
         del self._used_application_ids[vm_id]
-        yield from super().delete_vm(vm_id, *args, **kwargs)
+        yield from super().close_vm(vm_id, *args, **kwargs)
+        return vm
 
     def get_application_id(self, vm_id):
         """
