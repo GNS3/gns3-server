@@ -618,9 +618,12 @@ class VirtualBoxVM(BaseVM):
 
         nic_attachments = yield from self._get_nic_attachements(self._maximum_adapters)
         for adapter_number in range(0, len(self._ethernet_adapters)):
+            attachment = nic_attachments[adapter_number]
+            if attachment == "null":
+                # disconnect the cable if no backend is attached.
+                self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
-                attachment = nic_attachments[adapter_number]
                 if not self._use_any_adapter and attachment not in ("none", "null"):
                     raise VirtualBoxError("Attachment ({}) already configured on adapter {}. "
                                           "Please set it to 'Not attached' to allow GNS3 to use it.".format(attachment,
