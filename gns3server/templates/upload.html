@@ -2,7 +2,12 @@
 {% block body %}
     <h1>Select & Upload an image for GNS3</h1>
     <form enctype="multipart/form-data" action="/upload" method="post">
-    File: <input type="file" name="file" />
+    File: <input type="file" name="file" /><br>
+    Image type: <select name="type" />
+        <option value="IOU">IOU</option>
+        <option value="IOS">IOS</option>
+        <option value="QEMU">Qemu</option>
+    </select>
     <br />
     <br />
     <input type="submit" value="Upload" />

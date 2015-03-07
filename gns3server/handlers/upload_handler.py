@@ -55,9 +55,13 @@ class UploadHandler:
             response.redirect("/upload")
             return
 
-        destination_path = os.path.join(UploadHandler.image_directory(), data["file"].filename)
+        if data["type"] not in ["IOU", "QEMU", "IOS"]:
+            raise HTTPForbidden("You are not authorized to upload this kind of image {}".format(data["type"]))
+
+        destination_dir = os.path.join(UploadHandler.image_directory(), data["type"])
+        destination_path = os.path.join(destination_dir, data["file"].filename)
         try:
-            os.makedirs(UploadHandler.image_directory(), exist_ok=True)
+            os.makedirs(destination_dir, exist_ok=True)
             with open(destination_path, "wb+") as f:
                 chunk = data["file"].file.read()
                 f.write(chunk)
