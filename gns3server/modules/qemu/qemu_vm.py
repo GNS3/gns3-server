@@ -32,6 +32,7 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
+from ...config import Config
 
 import logging
 log = logging.getLogger(__name__)
@@ -182,6 +183,10 @@ class QemuVM(BaseVM):
         :param hda_disk_image: QEMU hda disk image path
         """
 
+        if hda_disk_image[0] != "/":
+            server_config = Config.instance().get_section_config("Server")
+            hda_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), hda_disk_image)
+
         log.info("QEMU VM {name} [id={id}] has set the QEMU hda disk image path to {disk_image}".format(name=self._name,
                                                                                                         id=self._id,
                                                                                                         disk_image=hda_disk_image))
@@ -204,6 +209,10 @@ class QemuVM(BaseVM):
 
         :param hdb_disk_image: QEMU hdb disk image path
         """
+
+        if hdb_disk_image[0] != "/":
+            server_config = Config.instance().get_section_config("Server")
+            hdb_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), hdb_disk_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU hdb disk image path to {disk_image}".format(name=self._name,
                                                                                                         id=self._id,

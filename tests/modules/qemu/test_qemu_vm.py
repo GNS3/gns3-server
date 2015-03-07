@@ -284,3 +284,21 @@ def test_build_command_without_display(vm, loop, fake_qemu_binary):
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
         assert "-nographic" in cmd
+
+
+def test_hda_disk_image(vm, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        vm.hda_disk_image = "/tmp/test"
+        assert vm.hda_disk_image == "/tmp/test"
+        vm.hda_disk_image = "test"
+        assert vm.hda_disk_image == str(tmpdir / "test")
+
+
+def test_hdb_disk_image(vm, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        vm.hdb_disk_image = "/tmp/test"
+        assert vm.hdb_disk_image == "/tmp/test"
+        vm.hdb_disk_image = "test"
+        assert vm.hdb_disk_image == str(tmpdir / "test")
