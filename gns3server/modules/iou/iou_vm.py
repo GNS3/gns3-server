@@ -205,7 +205,8 @@ class IOUVM(BaseVM):
                 "ram": self._ram,
                 "nvram": self._nvram,
                 "l1_keepalives": self._l1_keepalives,
-                "initial_config": self.relative_initial_config_file
+                "initial_config": self.relative_initial_config_file,
+                "use_default_iou_values": self._use_default_iou_values
                 }
 
     @property

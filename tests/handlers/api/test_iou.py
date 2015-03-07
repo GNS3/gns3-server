@@ -74,6 +74,7 @@ def test_iou_create_with_params(server, project, base_params):
     params["ethernet_adapters"] = 0
     params["l1_keepalives"] = True
     params["initial_config_content"] = "hostname test"
+    params["use_default_iou_values"] = True
 
     response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -85,6 +86,8 @@ def test_iou_create_with_params(server, project, base_params):
     assert response.json["ram"] == 1024
     assert response.json["nvram"] == 512
     assert response.json["l1_keepalives"] is True
+    assert response.json["use_default_iou_values"] is True
+
     assert "initial-config.cfg" in response.json["initial_config"]
     with open(initial_config_file(project, response.json)) as f:
         assert f.read() == params["initial_config_content"]
@@ -140,7 +143,8 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
         "ethernet_adapters": 4,
         "serial_adapters": 0,
         "l1_keepalives": True,
-        "initial_config_content": "hostname test"
+        "initial_config_content": "hostname test",
+        "use_default_iou_values": True
     }
     response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
     assert response.status == 200
@@ -151,6 +155,7 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
     assert response.json["ram"] == 512
     assert response.json["nvram"] == 2048
     assert response.json["l1_keepalives"] is True
+    assert response.json["use_default_iou_values"] is True
     assert "initial-config.cfg" in response.json["initial_config"]
     with open(initial_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"

@@ -66,6 +66,10 @@ IOU_CREATE_SCHEMA = {
             "description": "Always up ethernet interface",
             "type": ["boolean", "null"]
         },
+        "use_default_iou_values": {
+            "description": "Use default IOU values",
+            "type": ["boolean", "null"]
+        },
         "initial_config_content": {
             "description": "Initial configuration of the IOU",
             "type": ["string", "null"]
@@ -118,6 +122,10 @@ IOU_UPDATE_SCHEMA = {
         "initial_config_content": {
             "description": "Initial configuration of the IOU",
             "type": ["string", "null"]
+        },
+        "use_default_iou_values": {
+            "description": "Use default IOU values",
+            "type": ["boolean", "null"]
         }
     },
     "additionalProperties": False,
@@ -180,10 +188,14 @@ IOU_OBJECT_SCHEMA = {
         "initial_config": {
             "description": "Path of the initial config content relative to project directory",
             "type": ["string", "null"]
+        },
+        "use_default_iou_values": {
+            "description": "Use default IOU values",
+            "type": ["boolean", "null"]
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters", "ram", "nvram", "l1_keepalives", "initial_config"]
+    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters", "ram", "nvram", "l1_keepalives", "initial_config", "use_default_iou_values"]
 }
 
 IOU_NIO_SCHEMA = {
