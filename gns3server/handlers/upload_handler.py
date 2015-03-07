@@ -55,11 +55,15 @@ class UploadHandler:
             response.redirect("/upload")
             return
 
-        if data["type"] not in ["IOU", "QEMU", "IOS"]:
+        if data["type"] not in ["IOU", "IOURC", "QEMU", "IOS"]:
             raise HTTPForbidden("You are not authorized to upload this kind of image {}".format(data["type"]))
 
-        destination_dir = os.path.join(UploadHandler.image_directory(), data["type"])
-        destination_path = os.path.join(destination_dir, data["file"].filename)
+        if data["type"] == "IOURC":
+            destination_dir = os.path.expanduser("~/")
+            destination_path = os.path.join(destination_dir, ".iourc")
+        else:
+            destination_dir = os.path.join(UploadHandler.image_directory(), data["type"])
+            destination_path = os.path.join(destination_dir, data["file"].filename)
         try:
             os.makedirs(destination_dir, exist_ok=True)
             with open(destination_path, "wb+") as f:
