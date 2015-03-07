@@ -102,7 +102,7 @@ def test_stop(loop, vm, running_subprocess_mock):
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
         nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-        vm.adapter_add_nio_binding(0, 0, nio)
+        vm.adapter_add_nio_binding(0, nio)
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.is_running()
         loop.run_until_complete(asyncio.async(vm.stop()))
@@ -128,21 +128,21 @@ def test_suspend(loop, vm):
 
 def test_add_nio_binding_udp(vm, loop):
     nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, 0, nio)))
+    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     assert nio.lport == 4242
 
 
 def test_add_nio_binding_ethernet(vm, loop):
     with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
         nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_generic_ethernet", "ethernet_device": "eth0"})
-        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, 0, nio)))
+        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
         assert nio.ethernet_device == "eth0"
 
 
 def test_port_remove_nio_binding(vm, loop):
     nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, 0, nio)))
-    loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(0, 0)))
+    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(0)))
     assert vm._ethernet_adapters[0].ports[0] is None
 
 
@@ -244,10 +244,10 @@ def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
     with asyncio_patch("asyncio.open_connection", return_value=(reader, writer)) as open_connect:
 
         future = asyncio.Future()
-        future.set_result("epic product")
+        future.set_result(b"epic product")
         reader.readline.return_value = future
 
-        res = loop.run_until_complete(asyncio.async(vm._control_vm("test", ["epic"])))
+        res = loop.run_until_complete(asyncio.async(vm._control_vm("test", [b"epic"])))
         assert writer.write.called_with("test")
 
     assert res == "epic product"

@@ -598,6 +598,7 @@ class QemuVM(BaseVM):
         if self.is_running() and self._monitor:
             log.debug("Execute QEMU monitor command: {}".format(command))
             try:
+                log.info("Connecting to Qemu monitor on {}:{}".format(self._monitor_host, self._monitor))
                 reader, writer = yield from asyncio.open_connection(self._monitor_host, self._monitor)
             except OSError as e:
                 log.warn("Could not connect to QEMU monitor: {}".format(e))
@@ -682,13 +683,12 @@ class QemuVM(BaseVM):
             log.info("QEMU VM is not paused to be resumed, current status is {}".format(vm_status))
 
     @asyncio.coroutine
-    def adapter_add_nio_binding(self, adapter_id, port_id, nio):
+    def adapter_add_nio_binding(self, adapter_id, nio):
         """
         Adds a port NIO binding.
 
         :param adapter_id: adapter ID
-        :param port_id: port ID
-        :param nio: NIO instance to add to the slot/port
+        :param nio: NIO instance to add to the adapter
         """
 
         try:
@@ -708,13 +708,16 @@ class QemuVM(BaseVM):
                                                                                                                           nio.rport,
                                                                                                                           nio.rhost))
                 else:
-                    yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
-                    yield from self._control_vm("host_net_add socket vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
-                                                                                                                            adapter_id,
-                                                                                                                            nio.rhost,
-                                                                                                                            nio.rport,
-                                                                                                                            self._host,
-                                                                                                                            nio.lport))
+                    # FIXME: does it work? very undocumented feature...
+                    # Apparently there is a bug in Qemu...
+                    # netdev_add [user|tap|socket|hubport|netmap],id=str[,prop=value][,...] -- add host network device
+                    # netdev_del id -- remove host network device
+                    yield from self._control_vm("netdev_del gns3-{}".format(adapter_id))
+                    yield from self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                                                                                                                nio.rhost,
+                                                                                                                nio.rport,
+                                                                                                                self._host,
+                                                                                                                nio.lport))
 
         adapter.add_nio(0, nio)
         log.info("QEMU VM {name} [id={id}]: {nio} added to adapter {adapter_id}".format(name=self._name,
@@ -723,12 +726,11 @@ class QemuVM(BaseVM):
                                                                                         adapter_id=adapter_id))
 
     @asyncio.coroutine
-    def adapter_remove_nio_binding(self, adapter_id, port_id):
+    def adapter_remove_nio_binding(self, adapter_id):
         """
         Removes a port NIO binding.
 
         :param adapter_id: adapter ID
-        :param port_id: port ID
 
         :returns: NIO instance
         """
@@ -745,6 +747,8 @@ class QemuVM(BaseVM):
             yield from self._control_vm("host_net_add user vlan={},name=gns3-{}".format(adapter_id, adapter_id))
 
         nio = adapter.get_nio(0)
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(0)
         log.info("QEMU VM {name} [id={id}]: {nio} removed from adapter {adapter_id}".format(name=self._name,
                                                                                             id=self._id,

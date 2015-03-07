@@ -290,7 +290,7 @@ class VirtualBoxHandler:
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
             "adapter_number": "Adapter from where the nio should be removed",
-            "port_number": "Port on the adapter (always)"
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             204: "NIO deleted",

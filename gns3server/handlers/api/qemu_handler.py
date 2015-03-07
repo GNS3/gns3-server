@@ -236,7 +236,7 @@ class QEMUHandler:
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
             "adapter_number": "Network adapter where the nio is located",
-            "port_number": "Port where the nio should be added"
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             201: "NIO created",
@@ -251,7 +251,7 @@ class QEMUHandler:
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         nio = qemu_manager.create_nio(vm.qemu_path, request.json)
-        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
+        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -262,7 +262,7 @@ class QEMUHandler:
             "project_id": "UUID for the project",
             "vm_id": "UUID for the instance",
             "adapter_number": "Network adapter where the nio is located",
-            "port_number": "Port from where the nio should be removed"
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             204: "NIO deleted",
@@ -274,7 +274,7 @@ class QEMUHandler:
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]))
+        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
 
     @classmethod
