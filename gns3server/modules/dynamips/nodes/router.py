@@ -1396,16 +1396,6 @@ class Router(BaseVM):
 
         return self._startup_config
 
-    @startup_config.setter
-    def startup_config(self, startup_config):
-        """
-        Sets the startup-config for this router.
-
-        :param startup_config: path to startup-config file
-        """
-
-        self._startup_config = startup_config
-
     @property
     def private_config(self):
         """
@@ -1415,16 +1405,6 @@ class Router(BaseVM):
         """
 
         return self._private_config
-
-    @private_config.setter
-    def private_config(self, private_config):
-        """
-        Sets the private-config for this router.
-
-        :param private_config: path to private-config file
-        """
-
-        self._private_config = private_config
 
     @asyncio.coroutine
     def set_name(self, new_name):
@@ -1466,7 +1446,7 @@ class Router(BaseVM):
         self._name = new_name
 
     @asyncio.coroutine
-    def set_config(self, startup_config, private_config=''):
+    def set_configs(self, startup_config, private_config=''):
         """
         Sets the config files that are pushed to startup-config and
         private-config in NVRAM when the instance is started.

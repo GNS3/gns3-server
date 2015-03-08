@@ -458,10 +458,8 @@ class Dynamips(BaseManager):
             if hasattr(vm, name) and getattr(vm, name) != value:
                 if hasattr(vm, "set_{}".format(name)):
                     setter = getattr(vm, "set_{}".format(name))
-                    if asyncio.iscoroutinefunction(vm.close):
-                        yield from setter(value)
-                    else:
-                        setter(value)
+                    yield from setter(value)
+
             elif name.startswith("slot") and value in ADAPTER_MATRIX:
                 slot_id = int(name[-1])
                 adapter_name = value
@@ -496,29 +494,36 @@ class Dynamips(BaseManager):
             yield from vm.set_sparsemem(False)
 
         # update the configs if needed
-        yield from self.create_vm_configs(vm, settings.get("startup_config_content"), settings.get("private_config_content"))
+        yield from self.create_vm_configs(vm, settings)
 
     @asyncio.coroutine
-    def create_vm_configs(self, vm, startup_config_content, private_config_content):
+    def create_vm_configs(self, vm, settings):
         """
         Creates VM configs from pushed content.
 
         :param vm: VM instance
-        :param startup_config_content: content of the startup-config
-        :param private_config_content: content of the private-config
+        :param settings: VM settings
         """
 
         module_workdir = vm.project.module_working_directory(self.module_name.lower())
         default_startup_config_path = os.path.join(module_workdir, "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
         default_private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
 
+        startup_config_content = settings.get("startup_config_content")
         if startup_config_content:
             startup_config_path = self._create_config(vm, startup_config_content, default_startup_config_path)
-            yield from vm.set_config(startup_config_path)
+            yield from vm.set_configs(startup_config_path)
+        else:
+            startup_config_path = settings.get("startup_config", "")
+            yield from vm.set_configs(startup_config_path)
 
+        private_config_content = settings.get("private_config_content")
         if private_config_content:
             private_config_path = self._create_config(vm, private_config_content, default_private_config_path)
-            yield from vm.set_config(vm.startup_config, private_config_path)
+            yield from vm.set_configs(vm.startup_config, private_config_path)
+        else:
+            private_config_path = settings.get("private_config", "")
+            yield from vm.set_configs(vm.startup_config, private_config_path)
 
     def _create_config(self, vm, content, path):
         """
