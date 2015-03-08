@@ -183,7 +183,7 @@ class QemuVM(BaseVM):
         :param hda_disk_image: QEMU hda disk image path
         """
 
-        if hda_disk_image[0] != "/":
+        if os.path.isabs(hda_disk_image):
             server_config = Config.instance().get_section_config("Server")
             hda_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), hda_disk_image)
 
@@ -210,7 +210,7 @@ class QemuVM(BaseVM):
         :param hdb_disk_image: QEMU hdb disk image path
         """
 
-        if hdb_disk_image[0] != "/":
+        if not os.path.isabs(hdb_disk_image):
             server_config = Config.instance().get_section_config("Server")
             hdb_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), hdb_disk_image)
 

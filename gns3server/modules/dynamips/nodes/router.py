@@ -421,8 +421,7 @@ class Router(BaseVM):
         :param image: path to IOS image file
         """
 
-        if not os.path.dirname(image):
-            # this must be a relative path
+        if not os.path.isabs(image):
             server_config = Config.instance().get_section_config("Server")
             image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), image)
 

@@ -131,7 +131,7 @@ class IOUVM(BaseVM):
         :params path: Path to the binary
         """
 
-        if path[0] != "/":
+        if not os.path.isabs(path):
             server_config = Config.instance().get_section_config("Server")
             path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), path)
 
