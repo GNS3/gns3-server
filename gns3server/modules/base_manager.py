@@ -175,6 +175,17 @@ class BaseManager:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not move project files directory: {} to {} {}".format(legacy_project_files_path,
                                                                                                                             new_project_files_path, e))
 
+        legacy_iou_dir = os.path.join(project.path, "iou")
+        new_iou_dir = os.path.join(project.path, "project-files", "iou")
+        if os.path.exists(legacy_iou_dir) and not os.path.exists(new_iou_dir):
+            # move the iou dir on remote server
+            try:
+                log.info('Moving "{}" to "{}"'.format(legacy_iou_dir, new_iou_dir))
+                yield from wait_run_in_executor(shutil.move, legacy_iou_dir, new_iou_dir)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not move IOU directory: {} to {} {}".format(legacy_iou_dir,
+                                                                                                                  new_iou_dir, e))
+
         if hasattr(self, "get_legacy_vm_workdir"):
             # rename old project VM working dir
             log.info("Converting old VM working directory...")
