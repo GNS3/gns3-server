@@ -19,8 +19,6 @@ from ...web.route import Route
 from ...config import Config
 from aiohttp.web import HTTPForbidden
 
-import asyncio
-
 
 class ConfigHandler:
 

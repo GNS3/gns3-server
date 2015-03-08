@@ -410,32 +410,26 @@ class VirtualBoxVM(BaseVM):
     @property
     def vmname(self):
         """
-        Returns the VM name associated with this VirtualBox VM.
+        Returns the VirtualBox VM name.
 
         :returns: VirtualBox VM name
         """
 
         return self._vmname
 
-    @vmname.setter
-    def vmname(self, vmname):
+    @asyncio.coroutine
+    def set_vmname(self, vmname):
         """
-        Sets the VM name associated with this VirtualBox VM.
+        Renames the VirtualBox VM.
 
         :param vmname: VirtualBox VM name
         """
 
+        if self._linked_clone:
+            yield from self._modify_vm('--name "{}"'.format(vmname))
+
         log.info("VirtualBox VM '{name}' [{id}] has set the VM name to '{vmname}'".format(name=self.name, id=self.id, vmname=vmname))
         self._vmname = vmname
-
-    @asyncio.coroutine
-    def rename_in_virtualbox(self):
-        """
-        Renames the VirtualBox VM.
-        """
-
-        if self._linked_clone:
-            yield from self._modify_vm('--name "{}"'.format(self._vmname))
 
     @property
     def adapters(self):

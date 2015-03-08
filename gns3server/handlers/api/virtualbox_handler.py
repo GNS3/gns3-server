@@ -121,6 +121,11 @@ class VirtualBoxHandler:
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
+        if "vmname" in request.json:
+            vmname = request.json.pop("vmname")
+            if vmname != vm.vmname:
+                yield from vm.set_vmname(vmname)
+
         if "enable_remote_console" in request.json:
             yield from vm.set_enable_remote_console(request.json.pop("enable_remote_console"))
 
@@ -132,8 +137,6 @@ class VirtualBoxHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
-                if name == "vmname":
-                    yield from vm.rename_in_virtualbox()
 
         response.json(vm)
 
