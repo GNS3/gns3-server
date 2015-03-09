@@ -89,7 +89,7 @@ class Project:
 
     def is_local(self):
 
-        return self._config().get("local", False)
+        return self._config().getboolean("local", False)
 
     @classmethod
     def _get_default_project_directory(cls):
