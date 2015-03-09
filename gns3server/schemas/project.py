@@ -21,6 +21,11 @@ PROJECT_CREATE_SCHEMA = {
     "description": "Request validation to create a new Project instance",
     "type": "object",
     "properties": {
+        "name": {
+            "description": "Project name",
+            "type": ["string", "null"],
+            "minLength": 1
+        },
         "path": {
             "description": "Project directory",
             "type": ["string", "null"],
@@ -46,6 +51,11 @@ PROJECT_UPDATE_SCHEMA = {
     "description": "Request validation to update a Project instance",
     "type": "object",
     "properties": {
+        "name": {
+            "description": "Project name",
+            "type": "string",
+            "minLength": 1
+        },
         "temporary": {
             "description": "If project is a temporary project",
             "type": "boolean"
@@ -63,6 +73,11 @@ PROJECT_OBJECT_SCHEMA = {
     "description": "Project instance",
     "type": "object",
     "properties": {
+        "name": {
+            "description": "Project name",
+            "type": "string",
+            "minLength": 1
+        },
         "location": {
             "description": "Base directory where the project should be created on remote server",
             "type": "string",

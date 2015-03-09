@@ -41,8 +41,9 @@ class Project:
     :param temporary: Boolean the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, project_id=None, path=None, location=None, temporary=False):
+    def __init__(self, name=None, project_id=None, path=None, location=None, temporary=False):
 
+        self._name = name
         if project_id is None:
             self._id = str(uuid4())
         else:
@@ -75,6 +76,7 @@ class Project:
     def __json__(self):
 
         return {
+            "name": self._name,
             "project_id": self._id,
             "location": self._location,
             "temporary": self._temporary,
@@ -84,6 +86,10 @@ class Project:
     def _config(self):
 
         return Config.instance().get_section_config("Server")
+
+    def is_local(self):
+
+        return self._config().get("local", False)
 
     @classmethod
     def _get_default_project_directory(cls):
@@ -113,7 +119,7 @@ class Project:
     @location.setter
     def location(self, location):
 
-        if location != self._location and self._config().get("local", False) is False:
+        if location != self._location and self.is_local() is False:
             raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
 
         self._location = location
@@ -127,11 +133,21 @@ class Project:
     def path(self, path):
 
         if hasattr(self, "_path"):
-            if path != self._path and self._config().get("local", False) is False:
+            if path != self._path and self.is_local() is False:
                 raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
 
         self._path = path
         self._update_temporary_file()
+
+    @property
+    def name(self):
+
+        return self._name
+
+    @name.setter
+    def name(self, name):
+
+        self._name = name
 
     @property
     def vms(self):

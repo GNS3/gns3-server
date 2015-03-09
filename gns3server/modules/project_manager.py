@@ -60,7 +60,7 @@ class ProjectManager:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
         return self._projects[project_id]
 
-    def create_project(self, project_id=None, path=None, temporary=False):
+    def create_project(self, name=None, project_id=None, path=None, temporary=False):
         """
         Create a project and keep a references to it in project manager.
 
@@ -71,7 +71,7 @@ class ProjectManager:
             return self._projects[project_id]
             # FIXME: should we have an error?
             #raise aiohttp.web.HTTPConflict(text="Project ID {} is already in use on this server".format(project_id))
-        project = Project(project_id=project_id, path=path, temporary=temporary)
+        project = Project(name=name, project_id=project_id, path=path, temporary=temporary)
         self._projects[project.id] = project
         return project
 

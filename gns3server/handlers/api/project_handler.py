@@ -37,6 +37,7 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         p = pm.create_project(
+            name=request.json.get("name"),
             path=request.json.get("path"),
             project_id=request.json.get("project_id"),
             temporary=request.json.get("temporary", False)
@@ -81,6 +82,7 @@ class ProjectHandler:
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
         project.temporary = request.json.get("temporary", project.temporary)
+        project.name = request.json.get("name", project.name)
         project_path = request.json.get("path", project.path)
         if project_path != project.path:
             project.path = project_path
