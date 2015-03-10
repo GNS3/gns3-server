@@ -831,7 +831,7 @@ class QemuVM(BaseVM):
     def _monitor_options(self):
 
         if self._monitor:
-            return ["-monitor", "telnet:{}:{},server,nowait".format(self._monitor_host, self._monitor)]
+            return ["-monitor", "tcp:{}:{},server,nowait".format(self._monitor_host, self._monitor)]
         else:
             return []
 
