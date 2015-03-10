@@ -175,17 +175,17 @@ class BaseManager:
                                                                                                                             new_project_files_path, e))
 
         if project.is_local() is False:
-            legacy_remote_iou_project = os.path.join(project.location, project.name, "iou")
-            new_iou_project_path = os.path.join(project.path, "project-files", "iou")
-            if os.path.exists(legacy_remote_iou_project) and not os.path.exists(new_iou_project_path):
-                # move the legacy remote IOU project (remote servers only)
-                log.info("Converting old remote IOU project...")
+            legacy_remote_project_path = os.path.join(project.location, project.name, self.module_name.lower())
+            new_remote_project_path = os.path.join(project.path, "project-files", self.module_name.lower())
+            if os.path.exists(legacy_remote_project_path) and not os.path.exists(new_remote_project_path):
+                # move the legacy remote project (remote servers only)
+                log.info("Converting old remote project...")
                 try:
-                    log.info('Moving "{}" to "{}"'.format(legacy_remote_iou_project, new_iou_project_path))
-                    yield from wait_run_in_executor(shutil.move, legacy_remote_iou_project, new_iou_project_path)
+                    log.info('Moving "{}" to "{}"'.format(legacy_remote_project_path, new_remote_project_path))
+                    yield from wait_run_in_executor(shutil.move, legacy_remote_project_path, new_remote_project_path)
                 except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not move IOU directory: {} to {} {}".format(legacy_remote_iou_project,
-                                                                                                                      new_iou_project_path, e))
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not move directory: {} to {} {}".format(legacy_remote_project_path,
+                                                                                                                  new_remote_project_path, e))
 
         if hasattr(self, "get_legacy_vm_workdir"):
             # rename old project VM working dir

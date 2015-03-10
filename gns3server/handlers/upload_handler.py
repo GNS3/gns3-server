@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import aiohttp
 import stat
 
 from ..config import Config
@@ -56,7 +57,7 @@ class UploadHandler:
             return
 
         if data["type"] not in ["IOU", "IOURC", "QEMU", "IOS"]:
-            raise HTTPForbidden("You are not authorized to upload this kind of image {}".format(data["type"]))
+            raise aiohttp.web.HTTPForbidden("You are not authorized to upload this kind of image {}".format(data["type"]))
 
         if data["type"] == "IOURC":
             destination_dir = os.path.expanduser("~/")
