@@ -53,15 +53,15 @@ class Config(object):
             appname = "GNS3"
 
             # On windows, the configuration file location can be one of the following:
-            # 1: %APPDATA%/GNS3/server.ini
+            # 1: %APPDATA%/GNS3/gns3_server.ini
             # 2: %APPDATA%/GNS3.ini
-            # 3: %COMMON_APPDATA%/GNS3/server.ini
+            # 3: %COMMON_APPDATA%/GNS3/gns3_server.ini
             # 4: %COMMON_APPDATA%/GNS3.ini
             # 5: server.ini in the current working directory
 
             appdata = os.path.expandvars("%APPDATA%")
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
-            filename = "server.ini"
+            filename = "gns3_server.ini"
             if self._files is None:
                 self._files = [os.path.join(appdata, appname, filename),
                                os.path.join(appdata, appname + ".ini"),
@@ -71,9 +71,9 @@ class Config(object):
         else:
 
             # On UNIX-like platforms, the configuration file location can be one of the following:
-            # 1: $HOME/.config/GNS3/server.conf
+            # 1: $HOME/.config/GNS3/gns3_server.conf
             # 2: $HOME/.config/GNS3.conf
-            # 3: /etc/xdg/GNS3/server.conf
+            # 3: /etc/xdg/GNS3/gns3_server.conf
             # 4: /etc/xdg/GNS3.conf
             # 5: server.conf in the current working directory
 
@@ -82,7 +82,7 @@ class Config(object):
             else:
                 appname = "GNS3"
             home = os.path.expanduser("~")
-            filename = "server.conf"
+            filename = "gns3_server.conf"
             if self._files is None:
                 self._files = [os.path.join(home, ".config", appname, filename),
                                os.path.join(home, ".config", appname + ".conf"),
