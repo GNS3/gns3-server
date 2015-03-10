@@ -650,7 +650,7 @@ class VirtualBoxVM(BaseVM):
 
                 if nio.capturing:
                     yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
-                    yield from self._modify_vm("--nictracefile{} {}".format(adapter_number + 1, nio.pcap_output_file))
+                    yield from self._modify_vm('--nictracefile{} "{}"'.format(adapter_number + 1, nio.pcap_output_file))
 
         for adapter_number in range(len(self._ethernet_adapters), self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_number))
