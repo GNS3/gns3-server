@@ -133,7 +133,7 @@ class IOUVM(BaseVM):
 
         if not os.path.isabs(path):
             server_config = Config.instance().get_section_config("Server")
-            path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), path)
+            path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", path)
 
         self._path = path
         if not os.path.isfile(self._path) or not os.path.exists(self._path):

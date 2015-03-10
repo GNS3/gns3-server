@@ -423,7 +423,7 @@ class Router(BaseVM):
 
         if not os.path.isabs(image):
             server_config = Config.instance().get_section_config("Server")
-            image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), image)
+            image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOS", image)
 
         if not os.path.isfile(image):
             raise DynamipsError("IOS image '{}' is not accessible".format(image))

@@ -185,7 +185,7 @@ class QemuVM(BaseVM):
 
         if os.path.isabs(hda_disk_image):
             server_config = Config.instance().get_section_config("Server")
-            hda_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), hda_disk_image)
+            hda_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hda_disk_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU hda disk image path to {disk_image}".format(name=self._name,
                                                                                                         id=self._id,
@@ -212,7 +212,7 @@ class QemuVM(BaseVM):
 
         if not os.path.isabs(hdb_disk_image):
             server_config = Config.instance().get_section_config("Server")
-            hdb_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), hdb_disk_image)
+            hdb_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdb_disk_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU hdb disk image path to {disk_image}".format(name=self._name,
                                                                                                         id=self._id,
@@ -406,6 +406,10 @@ class QemuVM(BaseVM):
         :param initrd: QEMU initrd path
         """
 
+        if os.path.isabs(initrd):
+            server_config = Config.instance().get_section_config("Server")
+            initrd = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", initrd)
+
         log.info("QEMU VM {name} [id={id}] has set the QEMU initrd path to {initrd}".format(name=self._name,
                                                                                             id=self._id,
                                                                                             initrd=initrd))
@@ -428,6 +432,10 @@ class QemuVM(BaseVM):
 
         :param kernel_image: QEMU kernel image path
         """
+
+        if os.path.isabs(kernel_image):
+            server_config = Config.instance().get_section_config("Server")
+            kernel_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", kernel_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU kernel image path to {kernel_image}".format(name=self._name,
                                                                                                         id=self._id,
