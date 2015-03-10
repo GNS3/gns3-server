@@ -82,6 +82,8 @@ class QemuVM(BaseVM):
         self._qemu_path = qemu_path
         self._hda_disk_image = ""
         self._hdb_disk_image = ""
+        self._hdc_disk_image = ""
+        self._hdd_disk_image = ""
         self._options = ""
         self._ram = 256
         self._monitor = monitor
@@ -218,6 +220,59 @@ class QemuVM(BaseVM):
                                                                                                         id=self._id,
                                                                                                         disk_image=hdb_disk_image))
         self._hdb_disk_image = hdb_disk_image
+
+    @property
+    def hdc_disk_image(self):
+        """
+        Returns the hdc disk image path for this QEMU VM.
+
+        :returns: QEMU hdc disk image path
+        """
+
+        return self._hdc_disk_image
+
+    @hdc_disk_image.setter
+    def hdc_disk_image(self, hdc_disk_image):
+        """
+        Sets the hdc disk image for this QEMU VM.
+
+        :param hdc_disk_image: QEMU hdc disk image path
+        """
+
+        if os.path.isabs(hdc_disk_image):
+            server_config = Config.instance().get_section_config("Server")
+            hdc_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdc_disk_image)
+
+        log.info("QEMU VM {name} [id={id}] has set the QEMU hdc disk image path to {disk_image}".format(name=self._name,
+                                                                                                        id=self._id,
+                                                                                                        disk_image=hdc_disk_image))
+        self._hdc_disk_image = hdc_disk_image
+
+    @property
+    def hdd_disk_image(self):
+        """
+        Returns the hdd disk image path for this QEMU VM.
+
+        :returns: QEMU hdd disk image path
+        """
+
+        return self._hdd_disk_image
+
+    @hdd_disk_image.setter
+    def hdd_disk_image(self, hdd_disk_image):
+        """
+        Sets the hdd disk image for this QEMU VM.
+
+        :param hdd_disk_image: QEMU hdd disk image path
+        """
+
+        if os.path.isabs(hdd_disk_image):
+            server_config = Config.instance().get_section_config("Server")
+            hdd_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdd_disk_image)
+
+        log.info("QEMU VM {name} [id={id}] has set the QEMU hdd disk image path to {disk_image}".format(name=self._name,
+                                                                                                        id=self._id,
+                                                                                                        disk_image=hdd_disk_image))
 
     @property
     def adapters(self):
@@ -869,14 +924,14 @@ class QemuVM(BaseVM):
                 # create a "FLASH" with 256MB if no disk image has been specified
                 hda_disk = os.path.join(self.working_dir, "flash.qcow2")
                 if not os.path.exists(hda_disk):
-                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-f", "qcow2", hda_disk, "128M")
+                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-f", "qcow2", hda_disk, "256M")
                     retcode = yield from process.wait()
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
 
         except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError("Could not create disk image {}".format(e))
-
+            raise QemuError("Could not create hda disk image {}".format(e))
         options.extend(["-hda", hda_disk])
+
         if self._hdb_disk_image:
             if not os.path.isfile(self._hdb_disk_image) or not os.path.exists(self._hdb_disk_image):
                 if os.path.islink(self._hdb_disk_image):
@@ -892,8 +947,44 @@ class QemuVM(BaseVM):
                     retcode = yield from process.wait()
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
                 except (OSError, subprocess.SubprocessError) as e:
-                    raise QemuError("Could not create disk image {}".format(e))
+                    raise QemuError("Could not create hdb disk image {}".format(e))
             options.extend(["-hdb", hdb_disk])
+
+        if self._hdc_disk_image:
+            if not os.path.isfile(self._hdc_disk_image) or not os.path.exists(self._hdc_disk_image):
+                if os.path.islink(self._hdc_disk_image):
+                    raise QemuError("hdc disk image '{}' linked to '{}' is not accessible".format(self._hdc_disk_image, os.path.realpath(self._hdc_disk_image)))
+                else:
+                    raise QemuError("hdc disk image '{}' is not accessible".format(self._hdc_disk_image))
+            hdc_disk = os.path.join(self.working_dir, "hdc_disk.qcow2")
+            if not os.path.exists(hdc_disk):
+                try:
+                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
+                                                                        "backing_file={}".format(self._hdc_disk_image),
+                                                                        "-f", "qcow2", hdc_disk)
+                    retcode = yield from process.wait()
+                    log.info("{} returned with {}".format(qemu_img_path, retcode))
+                except (OSError, subprocess.SubprocessError) as e:
+                    raise QemuError("Could not create hdc disk image {}".format(e))
+            options.extend(["-hdc", hdc_disk])
+
+        if self._hdd_disk_image:
+            if not os.path.isfile(self._hdd_disk_image) or not os.path.exists(self._hdd_disk_image):
+                if os.path.islink(self._hdd_disk_image):
+                    raise QemuError("hdd disk image '{}' linked to '{}' is not accessible".format(self._hdd_disk_image, os.path.realpath(self._hdd_disk_image)))
+                else:
+                    raise QemuError("hdd disk image '{}' is not accessible".format(self._hdd_disk_image))
+            hdd_disk = os.path.join(self.working_dir, "hdd_disk.qcow2")
+            if not os.path.exists(hdd_disk):
+                try:
+                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
+                                                                        "backing_file={}".format(self._hdd_disk_image),
+                                                                        "-f", "qcow2", hdd_disk)
+                    retcode = yield from process.wait()
+                    log.info("{} returned with {}".format(qemu_img_path, retcode))
+                except (OSError, subprocess.SubprocessError) as e:
+                    raise QemuError("Could not create hdd disk image {}".format(e))
+            options.extend(["-hdd", hdd_disk])
 
         return options
 
@@ -993,7 +1084,7 @@ class QemuVM(BaseVM):
             "project_id": self.project.id,
             "vm_id": self.id
         }
-        # Qemu has a long list of options. The JSON schema is the single source of informations
+        # Qemu has a long list of options. The JSON schema is the single source of information
         for field in QEMU_OBJECT_SCHEMA["required"]:
             if field not in answer:
                 answer[field] = getattr(self, field)

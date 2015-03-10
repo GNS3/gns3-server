@@ -61,6 +61,14 @@ QEMU_CREATE_SCHEMA = {
             "description": "QEMU hdb disk image path",
             "type": ["string", "null"],
         },
+        "hdc_disk_image": {
+            "description": "QEMU hdc disk image path",
+            "type": ["string", "null"],
+        },
+        "hdd_disk_image": {
+            "description": "QEMU hdd disk image path",
+            "type": ["string", "null"],
+        },
         "ram": {
             "description": "amount of RAM in MB",
             "type": ["integer", "null"]
@@ -150,6 +158,14 @@ QEMU_UPDATE_SCHEMA = {
         },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
+            "type": ["string", "null"],
+        },
+        "hdc_disk_image": {
+            "description": "QEMU hdc disk image path",
+            "type": ["string", "null"],
+        },
+        "hdd_disk_image": {
+            "description": "QEMU hdd disk image path",
             "type": ["string", "null"],
         },
         "ram": {
@@ -296,6 +312,14 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU hdb disk image path",
             "type": "string",
         },
+        "hdc_disk_image": {
+            "description": "QEMU hdc disk image path",
+            "type": "string",
+        },
+        "hdd_disk_image": {
+            "description": "QEMU hdd disk image path",
+            "type": "string",
+        },
         "ram": {
             "description": "amount of RAM in MB",
             "type": "integer"
@@ -360,8 +384,8 @@ QEMU_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image",
-                 "hdb_disk_image", "ram", "adapters", "adapter_type", "console",
+    "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image", "hdb_disk_image",
+                 "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "console",
                  "monitor", "initrd", "kernel_image", "kernel_command_line",
                  "legacy_networking", "cpu_throttling", "process_priority", "options"
                  ]
