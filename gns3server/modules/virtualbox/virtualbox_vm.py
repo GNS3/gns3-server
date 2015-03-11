@@ -599,7 +599,7 @@ class VirtualBoxVM(BaseVM):
             entry = "nic{}".format(adapter_number + 1)
             if entry in vm_info:
                 value = vm_info[entry]
-                nics.append(value)
+                nics.append(value.lower())
             else:
                 nics.append(None)
         return nics
@@ -618,7 +618,7 @@ class VirtualBoxVM(BaseVM):
                 self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
-                if not self._use_any_adapter and attachment not in ("none", "null"):
+                if not self._use_any_adapter and attachment not in ("none", "null", "generic"):
                     raise VirtualBoxError("Attachment ({}) already configured on adapter {}. "
                                           "Please set it to 'Not attached' to allow GNS3 to use it.".format(attachment,
                                                                                                             adapter_number + 1))
