@@ -138,9 +138,9 @@ class Hypervisor(DynamipsHypervisor):
             try:
                 yield from asyncio.wait_for(self._process.wait(), timeout=3)
             except asyncio.TimeoutError:
-                self._process.kill()
                 if self._process.returncode is None:
-                    log.warn("Dynamips process {} is still running".format(self._process.pid))
+                    log.warn("Dynamips process {} is still running... killing it".format(self._process.pid))
+                    self._process.kill()
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:

@@ -1249,6 +1249,8 @@ class Router(BaseVM):
                                                                                                                   port_number=port_number))
 
         nio = adapter.get_nio(port_number)
+        if nio is None:
+            return
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport)
         adapter.remove_nio(port_number)

@@ -494,12 +494,12 @@ class Dynamips(BaseManager):
             yield from vm.set_sparsemem(False)
 
         # update the configs if needed
-        yield from self.create_vm_configs(vm, settings)
+        yield from self.set_vm_configs(vm, settings)
 
     @asyncio.coroutine
-    def create_vm_configs(self, vm, settings):
+    def set_vm_configs(self, vm, settings):
         """
-        Creates VM configs from pushed content.
+        Set VM configs from pushed content or existing config files.
 
         :param vm: VM instance
         :param settings: VM settings
@@ -514,16 +514,18 @@ class Dynamips(BaseManager):
             startup_config_path = self._create_config(vm, startup_config_content, default_startup_config_path)
             yield from vm.set_configs(startup_config_path)
         else:
-            startup_config_path = settings.get("startup_config", "")
-            yield from vm.set_configs(startup_config_path)
+            startup_config_path = settings.get("startup_config")
+            if startup_config_path:
+                yield from vm.set_configs(startup_config_path)
 
         private_config_content = settings.get("private_config_content")
         if private_config_content:
             private_config_path = self._create_config(vm, private_config_content, default_private_config_path)
             yield from vm.set_configs(vm.startup_config, private_config_path)
         else:
-            private_config_path = settings.get("private_config", "")
-            yield from vm.set_configs(vm.startup_config, private_config_path)
+            private_config_path = settings.get("private_config")
+            if private_config_path:
+                yield from vm.set_configs(vm.startup_config, private_config_path)
 
     def _create_config(self, vm, content, path):
         """
