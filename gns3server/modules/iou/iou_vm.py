@@ -39,7 +39,6 @@ from ..nios.nio_tap import NIOTAP
 from ..nios.nio_generic_ethernet import NIOGenericEthernet
 from ..base_vm import BaseVM
 from .ioucon import start_ioucon
-from ...config import Config
 import gns3server.utils.asyncio
 
 
@@ -132,7 +131,7 @@ class IOUVM(BaseVM):
         """
 
         if not os.path.isabs(path):
-            server_config = Config.instance().get_section_config("Server")
+            server_config = self.manager.config.get_section_config("Server")
             path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", path)
 
         self._path = path
@@ -195,19 +194,26 @@ class IOUVM(BaseVM):
 
     def __json__(self):
 
-        return {"name": self.name,
-                "vm_id": self.id,
-                "console": self._console,
-                "project_id": self.project.id,
-                "path": self.path,
-                "ethernet_adapters": len(self._ethernet_adapters),
-                "serial_adapters": len(self._serial_adapters),
-                "ram": self._ram,
-                "nvram": self._nvram,
-                "l1_keepalives": self._l1_keepalives,
-                "initial_config": self.relative_initial_config_file,
-                "use_default_iou_values": self._use_default_iou_values
-                }
+        iou_vm_info = {"name": self.name,
+                       "vm_id": self.id,
+                       "console": self._console,
+                       "project_id": self.project.id,
+                       "path": self.path,
+                       "ethernet_adapters": len(self._ethernet_adapters),
+                       "serial_adapters": len(self._serial_adapters),
+                       "ram": self._ram,
+                       "nvram": self._nvram,
+                       "l1_keepalives": self._l1_keepalives,
+                       "initial_config": self.relative_initial_config_file,
+                       "use_default_iou_values": self._use_default_iou_values}
+
+        # return the relative path if the IOU image is in the images_path directory
+        server_config = self.manager.config.get_section_config("Server")
+        relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", self.path)
+        if os.path.exists(relative_image):
+            iou_vm_info["path"] = os.path.basename(self.path)
+
+        return iou_vm_info
 
     @property
     def iouyap_path(self):

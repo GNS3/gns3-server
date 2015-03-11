@@ -34,7 +34,6 @@ from ...base_vm import BaseVM
 from ..dynamips_error import DynamipsError
 from ..nios.nio_udp import NIOUDP
 
-from gns3server.config import Config
 from gns3server.utils.asyncio import wait_run_in_executor
 
 
@@ -151,6 +150,12 @@ class Router(BaseVM):
                        "aux": self._aux,
                        "mac_addr": self._mac_addr,
                        "system_id": self._system_id}
+
+        # return the relative path if the IOS image is in the images_path directory
+        server_config = self.manager.config.get_section_config("Server")
+        relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOS", self._image)
+        if os.path.exists(relative_image):
+            router_info["image"] = os.path.basename(self._image)
 
         # add the slots
         slot_number = 0
@@ -422,7 +427,7 @@ class Router(BaseVM):
         """
 
         if not os.path.isabs(image):
-            server_config = Config.instance().get_section_config("Server")
+            server_config = self.manager.config.get_section_config("Server")
             image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOS", image)
 
         if not os.path.isfile(image):

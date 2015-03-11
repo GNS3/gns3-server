@@ -44,7 +44,6 @@ from .hypervisor import Hypervisor
 from .nodes.router import Router
 from .dynamips_vm import DynamipsVM
 from .dynamips_device import DynamipsDevice
-from gns3server.config import Config
 
 # NIOs
 from .nios.nio_udp import NIOUDP
@@ -312,7 +311,7 @@ class Dynamips(BaseManager):
 
         # FIXME: hypervisor should always listen to 127.0.0.1
         # See https://github.com/GNS3/dynamips/issues/62
-        server_config = Config.instance().get_section_config("Server")
+        server_config = self.config.get_section_config("Server")
         server_host = server_config.get("host")
 
         try:

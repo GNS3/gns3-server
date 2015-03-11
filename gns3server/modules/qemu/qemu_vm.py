@@ -32,7 +32,6 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
-from ...config import Config
 
 import logging
 log = logging.getLogger(__name__)
@@ -185,8 +184,8 @@ class QemuVM(BaseVM):
         :param hda_disk_image: QEMU hda disk image path
         """
 
-        if os.path.isabs(hda_disk_image):
-            server_config = Config.instance().get_section_config("Server")
+        if not os.path.isabs(hda_disk_image):
+            server_config = self.manager.config.get_section_config("Server")
             hda_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hda_disk_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU hda disk image path to {disk_image}".format(name=self._name,
@@ -213,7 +212,7 @@ class QemuVM(BaseVM):
         """
 
         if not os.path.isabs(hdb_disk_image):
-            server_config = Config.instance().get_section_config("Server")
+            server_config = self.manager.config.get_section_config("Server")
             hdb_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdb_disk_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU hdb disk image path to {disk_image}".format(name=self._name,
@@ -239,8 +238,8 @@ class QemuVM(BaseVM):
         :param hdc_disk_image: QEMU hdc disk image path
         """
 
-        if os.path.isabs(hdc_disk_image):
-            server_config = Config.instance().get_section_config("Server")
+        if not os.path.isabs(hdc_disk_image):
+            server_config = self.manager.config.get_section_config("Server")
             hdc_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdc_disk_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU hdc disk image path to {disk_image}".format(name=self._name,
@@ -266,8 +265,8 @@ class QemuVM(BaseVM):
         :param hdd_disk_image: QEMU hdd disk image path
         """
 
-        if os.path.isabs(hdd_disk_image):
-            server_config = Config.instance().get_section_config("Server")
+        if not os.path.isabs(hdd_disk_image):
+            server_config = self.manager.config.get_section_config("Server")
             hdd_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdd_disk_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU hdd disk image path to {disk_image}".format(name=self._name,
@@ -461,8 +460,8 @@ class QemuVM(BaseVM):
         :param initrd: QEMU initrd path
         """
 
-        if os.path.isabs(initrd):
-            server_config = Config.instance().get_section_config("Server")
+        if not os.path.isabs(initrd):
+            server_config = self.manager.config.get_section_config("Server")
             initrd = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", initrd)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU initrd path to {initrd}".format(name=self._name,
@@ -488,8 +487,8 @@ class QemuVM(BaseVM):
         :param kernel_image: QEMU kernel image path
         """
 
-        if os.path.isabs(kernel_image):
-            server_config = Config.instance().get_section_config("Server")
+        if not os.path.isabs(kernel_image):
+            server_config = self.manager.config.get_section_config("Server")
             kernel_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", kernel_image)
 
         log.info("QEMU VM {name} [id={id}] has set the QEMU kernel image path to {kernel_image}".format(name=self._name,
@@ -1079,6 +1078,23 @@ class QemuVM(BaseVM):
         command.extend(self._graphic())
         return command
 
+    def _get_relative_disk_image_path(self, disk_image):
+        """
+        Returns a relative image path if the disk image is in the images directory.
+
+        :param disk_image: path to the disk image
+
+        :returns: relative or full path
+        """
+
+        if disk_image:
+            # return the relative path if disks images are in the images_path directory
+            server_config = self.manager.config.get_section_config("Server")
+            relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", disk_image)
+            if os.path.exists(relative_image):
+                return os.path.basename(disk_image)
+        return disk_image
+
     def __json__(self):
         answer = {
             "project_id": self.project.id,
@@ -1088,4 +1104,12 @@ class QemuVM(BaseVM):
         for field in QEMU_OBJECT_SCHEMA["required"]:
             if field not in answer:
                 answer[field] = getattr(self, field)
+
+        answer["hda_disk_image"] = self._get_relative_disk_image_path(self._hda_disk_image)
+        answer["hdb_disk_image"] = self._get_relative_disk_image_path(self._hdb_disk_image)
+        answer["hdc_disk_image"] = self._get_relative_disk_image_path(self._hdc_disk_image)
+        answer["hdd_disk_image"] = self._get_relative_disk_image_path(self._hdd_disk_image)
+        answer["initrd"] = self._get_relative_disk_image_path(self._initrd)
+        answer["kernel_image"] = self._get_relative_disk_image_path(self._kernel_image)
+
         return answer
