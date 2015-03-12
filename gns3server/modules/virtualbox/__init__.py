@@ -105,8 +105,7 @@ class VirtualBox(BaseManager):
         if process.returncode:
             # only the first line of the output is useful
             vboxmanage_error = stderr_data.decode("utf-8", errors="ignore")
-            log.warn("VBoxManage has returned an error: {}".format(vboxmanage_error))
-            raise VirtualBoxError(vboxmanage_error.splitlines()[0])
+            raise VirtualBoxError("VirtualBox has returned an error: {}".format(vboxmanage_error))
 
         return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
