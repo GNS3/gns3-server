@@ -22,6 +22,7 @@ order to run an IOU instance.
 
 import os
 import signal
+import socket
 import re
 import asyncio
 import subprocess
@@ -29,6 +30,8 @@ import shutil
 import argparse
 import threading
 import configparser
+import struct
+import hashlib
 import glob
 
 from .iou_error import IOUError
@@ -236,7 +239,17 @@ class IOUVM(BaseVM):
         :returns: path to IOURC
         """
 
-        return self._manager.config.get_section_config("IOU").get("iourc_path")
+        iourc_path = self._manager.config.get_section_config("IOU").get("iourc_path")
+        if not iourc_path:
+            # look for the iourc file in the user home dir.
+            path = os.path.join(os.path.expanduser("~/"), ".iourc")
+            if os.path.exists(path):
+                return path
+            # look for the iourc file in the current working dir.
+            path = os.path.join(self.working_dir, "iourc")
+            if os.path.exists(path):
+                return path
+        return iourc_path
 
     @property
     def ram(self):
@@ -326,6 +339,49 @@ class IOUVM(BaseVM):
             raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
                                                                                                                    ", ".join(missing_libs)))
 
+    def _check_iou_licence(self):
+        """
+        Checks for a valid IOU key in the iourc file (paranoid mode).
+        """
+
+        config = configparser.ConfigParser()
+        try:
+            with open(self.iourc_path) as f:
+                config.read_file(f)
+        except OSError as e:
+            raise IOUError("Could not open iourc file {}: {}".format(self.iourc_path, e))
+        except configparser.Error as e:
+            raise IOUError("Could not parse iourc file {}: {}".format(self.iourc_path, e))
+        if "license" not in config:
+            raise IOUError("License section not found in iourc file {}".format(self.iourc_path))
+        hostname = socket.gethostname()
+        if hostname not in config["license"]:
+            raise IOUError("Hostname key not found in iourc file {}".format(self.iourc_path))
+        user_ioukey = config["license"][hostname]
+        print(user_ioukey[-1:])
+        if user_ioukey[-1:] != ';':
+            raise IOUError("IOU key not ending with ; in iourc file".format(self.iourc_path))
+        if len(user_ioukey) != 17:
+            raise IOUError("IOU key length is not 16 characters in iourc file".format(self.iourc_path))
+        user_ioukey = user_ioukey[:16]
+        try:
+            hostid = os.popen("hostid").read().strip()
+        except OSError as e:
+            raise IOUError("Could not read the hostid: {}".format(e))
+        try:
+            ioukey = int(hostid, 16)
+        except ValueError:
+            raise IOUError("Invalid hostid detected: {}".format(hostid))
+        for x in hostname:
+            ioukey += ord(x)
+        pad1 = b'\x4B\x58\x21\x81\x56\x7B\x0D\xF3\x21\x43\x9B\x7E\xAC\x1D\xE6\x8A'
+        pad2 = b'\x80' + 39 * b'\0'
+        ioukey = hashlib.md5(pad1 + pad2 + struct.pack('!i', ioukey) + pad1).hexdigest()[:16]
+        if ioukey != user_ioukey:
+            raise IOUError("Invalid IOU license key {} detected in iourc file {} for host {}".format(user_ioukey,
+                                                                                                     self.iourc_path,
+                                                                                                     hostname))
+
     @asyncio.coroutine
     def start(self):
         """
@@ -343,6 +399,10 @@ class IOUVM(BaseVM):
             if iourc_path and not os.path.isfile(iourc_path):
                 raise IOUError("A valid iourc file is necessary to start IOU")
 
+            license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", True)
+            if license_check:
+                self._check_iou_licence()
+
             iouyap_path = self.iouyap_path
             if not iouyap_path or not os.path.isfile(iouyap_path):
                 raise IOUError("iouyap is necessary to start IOU")
@@ -351,7 +411,7 @@ class IOUVM(BaseVM):
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
 
-            if iourc_path:
+            if "IOURC" not in os.environ:
                 env["IOURC"] = iourc_path
             self._command = yield from self._build_command()
             try:
@@ -515,7 +575,7 @@ class IOUVM(BaseVM):
     def _terminate_process_iouyap(self):
         """Terminate the process if running"""
 
-        if self._iou_process:
+        if self._iouyap_process:
             log.info("Stopping IOUYAP instance {} PID={}".format(self.name, self._iouyap_process.pid))
             try:
                 self._iouyap_process.terminate()
@@ -818,7 +878,8 @@ class IOUVM(BaseVM):
         """
 
         env = os.environ.copy()
-        env["IOURC"] = self.iourc_path
+        if "IOURC" not in os.environ:
+            env["IOURC"] = self.iourc_path
         try:
             output = yield from gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, env=env)
             if re.search("-l\s+Enable Layer 1 keepalive messages", output):
