@@ -202,7 +202,7 @@ def test_disk_options(vm, loop, fake_qemu_img_binary):
         loop.run_until_complete(asyncio.async(vm._disk_options()))
         assert process.called
         args, kwargs = process.call_args
-        assert args == (fake_qemu_img_binary, "create", "-f", "qcow2", os.path.join(vm.working_dir, "flash.qcow2"), "128M")
+        assert args == (fake_qemu_img_binary, "create", "-f", "qcow2", os.path.join(vm.working_dir, "flash.qcow2"), "256M")
 
 
 def test_set_process_priority(vm, loop, fake_qemu_img_binary):
@@ -270,7 +270,7 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
                 "-serial",
                 "telnet:127.0.0.1:{},server,nowait".format(vm.console),
                 "-monitor",
-                "telnet:127.0.0.1:{},server,nowait".format(vm.monitor),
+                "tcp:127.0.0.1:{},server,nowait".format(vm.monitor),
                 "-device",
                 "e1000,mac=00:00:ab:7e:b5:00,netdev=gns3-0",
                 "-netdev",
@@ -292,7 +292,7 @@ def test_hda_disk_image(vm, tmpdir):
         vm.hda_disk_image = "/tmp/test"
         assert vm.hda_disk_image == "/tmp/test"
         vm.hda_disk_image = "test"
-        assert vm.hda_disk_image == str(tmpdir / "test")
+        assert vm.hda_disk_image == str(tmpdir / "QEMU" / "test")
 
 
 def test_hdb_disk_image(vm, tmpdir):
@@ -301,4 +301,20 @@ def test_hdb_disk_image(vm, tmpdir):
         vm.hdb_disk_image = "/tmp/test"
         assert vm.hdb_disk_image == "/tmp/test"
         vm.hdb_disk_image = "test"
-        assert vm.hdb_disk_image == str(tmpdir / "test")
+        assert vm.hdb_disk_image == str(tmpdir / "QEMU" / "test")
+
+def test_hdc_disk_image(vm, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        vm.hdc_disk_image = "/tmp/test"
+        assert vm.hdc_disk_image == "/tmp/test"
+        vm.hdc_disk_image = "test"
+        assert vm.hdc_disk_image == str(tmpdir / "QEMU" / "test")
+
+def test_hdd_disk_image(vm, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        vm.hdd_disk_image = "/tmp/test"
+        assert vm.hdd_disk_image == "/tmp/test"
+        vm.hdd_disk_image = "test"
+        assert vm.hdd_disk_image == str(tmpdir / "QEMU" / "test")

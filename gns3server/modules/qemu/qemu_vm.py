@@ -272,6 +272,7 @@ class QemuVM(BaseVM):
         log.info("QEMU VM {name} [id={id}] has set the QEMU hdd disk image path to {disk_image}".format(name=self._name,
                                                                                                         id=self._id,
                                                                                                         disk_image=hdd_disk_image))
+        self._hdd_disk_image = hdd_disk_image
 
     @property
     def adapters(self):

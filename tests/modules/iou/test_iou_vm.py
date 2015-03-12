@@ -83,7 +83,8 @@ def test_vm_invalid_iouyap_path(project, manager, loop):
 
 
 def test_start(loop, vm, monkeypatch):
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
+
+    with patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
         with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
             with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
                 with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):

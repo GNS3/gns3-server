@@ -102,7 +102,7 @@ def test_changing_location_not_allowed(tmpdir):
 
 
 def test_changing_path_not_allowed(tmpdir):
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
+    with patch("gns3server.config.Config.getboolean", return_value=False):
         with pytest.raises(aiohttp.web.HTTPForbidden):
             p = Project()
             p.path = str(tmpdir)
