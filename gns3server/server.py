@@ -61,6 +61,8 @@ class Server:
         """
 
         if not hasattr(Server, "_instance") or Server._instance is None:
+            assert host is not None
+            assert port is not None
             Server._instance = Server(host, port)
         return Server._instance
 
@@ -225,6 +227,6 @@ class Server:
             self._loop.run_forever()
         except TypeError as e:
             # This is to ignore an asyncio.windows_events exception
-            # on Windows when the process get the SIGBREAK signal
+            # on Windows when the process gets the SIGBREAK signal
             # TypeError: async() takes 1 positional argument but 3 were given
             log.warning("TypeError exception in the loop {}".format(e))
