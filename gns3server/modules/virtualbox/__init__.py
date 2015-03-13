@@ -124,7 +124,17 @@ class VirtualBox(BaseManager):
                 continue  # ignore inaccessible VMs
             extra_data = yield from self.execute("getextradata", [vmname, "GNS3/Clone"])
             if not extra_data[0].strip() == "Value: yes":
-                vms.append(vmname)
+                # get the amount of RAM
+                info_results = yield from self.execute("showvminfo", [vmname, "--machinereadable"])
+                for info in info_results:
+                    try:
+                        name, value = info.split('=', 1)
+                        if name.strip() == "memory":
+                            ram = int(value.strip())
+                            break
+                    except ValueError:
+                        continue
+                vms.append({"vmname": vmname, "ram": ram})
         return vms
 
     @staticmethod

@@ -70,6 +70,12 @@ VBOX_CREATE_SCHEMA = {
             "description": "enable the remote console",
             "type": "boolean"
         },
+        "ram": {
+            "description": "Amount of RAM",
+            "minimum": 0,
+            "maximum": 65535,
+            "type": "integer"
+        },
         "headless": {
             "description": "headless mode",
             "type": "boolean"
@@ -118,6 +124,12 @@ VBOX_UPDATE_SCHEMA = {
         "enable_remote_console": {
             "description": "enable the remote console",
             "type": "boolean"
+        },
+        "ram": {
+            "description": "Amount of RAM",
+            "minimum": 0,
+            "maximum": 65535,
+            "type": "integer"
         },
         "headless": {
             "description": "headless mode",
@@ -237,6 +249,12 @@ VBOX_OBJECT_SCHEMA = {
         "console": {
             "description": "console TCP port",
             "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "ram": {
+            "description": "Amount of RAM",
+            "minimum": 0,
             "maximum": 65535,
             "type": "integer"
         },

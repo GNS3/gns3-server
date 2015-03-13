@@ -73,6 +73,11 @@ class VirtualBoxHandler:
         if "enable_remote_console" in request.json:
             yield from vm.set_enable_remote_console(request.json.pop("enable_remote_console"))
 
+        if "ram" in request.json:
+            ram = request.json.pop("ram")
+            if ram != vm.ram:
+                yield from vm.set_ram(ram)
+
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
@@ -133,6 +138,11 @@ class VirtualBoxHandler:
             adapters = int(request.json.pop("adapters"))
             if adapters != vm.adapters:
                 yield from vm.set_adapters(adapters)
+
+        if "ram" in request.json:
+            ram = request.json.pop("ram")
+            if ram != vm.ram:
+                yield from vm.set_ram(ram)
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:

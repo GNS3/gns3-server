@@ -67,6 +67,7 @@ class VirtualBoxVM(BaseVM):
         self._enable_remote_console = False
         self._vmname = vmname
         self._use_any_adapter = False
+        self._ram = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
     def __json__(self):
@@ -80,6 +81,7 @@ class VirtualBoxVM(BaseVM):
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
+                "ram": self.ram,
                 "use_any_adapter": self.use_any_adapter}
 
     @asyncio.coroutine
@@ -151,6 +153,9 @@ class VirtualBoxVM(BaseVM):
 
         if self._adapters:
             yield from self.set_adapters(self._adapters)
+
+        vm_info = yield from self._get_vm_info()
+        self._ram = int(vm_info["memory"])
 
     @asyncio.coroutine
     def start(self):
@@ -406,6 +411,32 @@ class VirtualBoxVM(BaseVM):
             log.info("VirtualBox VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
             self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
+
+    @property
+    def ram(self):
+        """
+        Returns the amount of RAM allocated to this VirtualBox VM.
+
+        :returns: amount RAM in MB (integer)
+        """
+
+        return self._ram
+
+    @asyncio.coroutine
+    def set_ram(self, ram):
+        """
+        Set the amount of RAM allocated to this VirtualBox VM.
+
+        :param ram: amount RAM in MB (integer)
+        """
+
+        if ram == 0:
+            return
+
+        yield from self._modify_vm('--memory {}'.format(ram))
+
+        log.info("VirtualBox VM '{name}' [{id}] has set amount of RAM to {ram}".format(name=self.name, id=self.id, ram=ram))
+        self._ram = ram
 
     @property
     def vmname(self):
