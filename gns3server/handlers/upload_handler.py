@@ -32,16 +32,19 @@ class UploadHandler:
         api_version=None
     )
     def index(request, response):
-        image_files = []
+        uploaded_files = []
         try:
             for root, _, files in os.walk(UploadHandler.image_directory()):
                 for filename in files:
                     image_file = os.path.join(root, filename)
                     if os.access(image_file, os.X_OK):
-                        image_files.append(image_file)
+                        uploaded_files.append(image_file)
         except OSError:
             pass
-        response.template("upload.html", files=image_files)
+        iourc_path = os.path.join(os.path.expanduser("~/"), ".iourc")
+        if os.path.exists(iourc_path):
+            uploaded_files.append(iourc_path)
+        response.template("upload.html", files=uploaded_files)
 
     @classmethod
     @Route.post(
