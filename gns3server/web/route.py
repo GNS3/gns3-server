@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 from ..modules.vm_error import VMError
 from .response import Response
 from ..crash_report import CrashReport
+from ..config import Config
 
 
 @asyncio.coroutine
@@ -125,6 +126,15 @@ class Route(object):
                 # API call
                 try:
                     request = yield from parse_request(request, input_schema)
+                    server_config = Config.instance().get_section_config("Server")
+                    record_file = server_config.get("record")
+                    if record_file:
+                        try:
+                            with open(record_file, "a") as f:
+                                f.write("curl -X {} 'http://{}{}' -d '{}'".format(request.method, request.host, request.path_qs, json.dumps(request.json)))
+                                f.write("\n")
+                        except OSError as e:
+                            log.warn("Could not write to the record file {}: {}".format(record_file, e))
                     response = Response(route=route, output_schema=output_schema)
                     yield from func(request, response)
                 except aiohttp.web.HTTPException as e:

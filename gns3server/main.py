@@ -86,6 +86,7 @@ def parse_arguments(argv, config):
         "ssl": config.getboolean("ssl", False),
         "certfile": config.get("certfile", ""),
         "certkey": config.get("certkey", ""),
+        "record": config.get("record", ""),
         "local": config.getboolean("local", False),
         "allow": config.getboolean("allow_remote_console", False),
         "quiet": config.getboolean("quiet", False),
@@ -101,6 +102,7 @@ def parse_arguments(argv, config):
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
     parser.add_argument("--certfile", help="SSL cert file")
     parser.add_argument("--certkey", help="SSL key file")
+    parser.add_argument("--record", help="save curl requests into a file")
     parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
     parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
@@ -122,6 +124,7 @@ def set_config(args):
     server_config["ssl"] = str(args.ssl)
     server_config["certfile"] = args.certfile
     server_config["certkey"] = args.certkey
+    server_config["record"] = args.record
     server_config["debug"] = str(args.debug)
     server_config["live"] = str(args.live)
     server_config["shell"] = str(args.shell)
