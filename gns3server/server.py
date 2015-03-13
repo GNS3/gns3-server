@@ -221,4 +221,10 @@ class Server:
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
 
-        self._loop.run_forever()
+        try:
+            self._loop.run_forever()
+        except TypeError as e:
+            # This is to ignore an asyncio.windows_events exception
+            # on Windows when the process get the SIGBREAK signal
+            # TypeError: async() takes 1 positional argument but 3 were given
+            log.warning("TypeError exception in the loop {}".format(e))
