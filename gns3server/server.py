@@ -48,8 +48,21 @@ class Server:
         self._host = host
         self._port = port
         self._loop = None
+        self._handler = None
         self._start_time = time.time()
         self._port_manager = PortManager(host)
+
+    @staticmethod
+    def instance(host=None, port=None):
+        """
+        Singleton to return only one instance of Server.
+
+        :returns: instance of Server
+        """
+
+        if not hasattr(Server, "_instance") or Server._instance is None:
+            Server._instance = Server(host, port)
+        return Server._instance
 
     @asyncio.coroutine
     def _run_application(self, handler, ssl_context=None):
@@ -63,10 +76,13 @@ class Server:
         return server
 
     @asyncio.coroutine
-    def _stop_application(self):
+    def shutdown_server(self):
         """
-        Cleanup the modules (shutdown running emulators etc.)
+        Cleanly shutdown the server.
         """
+
+        if self._handler:
+            yield from self._handler.finish_connections()
 
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
@@ -81,13 +97,12 @@ class Server:
 
         self._loop.stop()
 
-    def _signal_handling(self, handler):
+    def _signal_handling(self):
 
         @asyncio.coroutine
         def signal_handler(signame):
             log.warning("Server has got signal {}, exiting...".format(signame))
-            yield from handler.finish_connections()
-            yield from self._stop_application()
+            yield from self.shutdown_server()
 
         signals = ["SIGTERM", "SIGINT"]
         if sys.platform.startswith("win"):
@@ -103,14 +118,13 @@ class Server:
             else:
                 self._loop.add_signal_handler(getattr(signal, signal_name), callback)
 
-    def _reload_hook(self, handler):
+    def _reload_hook(self):
 
         @asyncio.coroutine
         def reload():
 
             log.info("Reloading")
-            yield from handler.finish_connections()
-            yield from self._stop_application()
+            yield from self.shutdown_server()
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
         # code extracted from tornado
@@ -130,7 +144,7 @@ class Server:
             if modified > self._start_time:
                 log.debug("File {} has been modified".format(path))
                 asyncio.async(reload())
-        self._loop.call_later(1, self._reload_hook, handler)
+        self._loop.call_later(1, self._reload_hook)
 
     def _create_ssl_context(self, server_config):
 
@@ -196,13 +210,13 @@ class Server:
             m.port_manager = self._port_manager
 
         log.info("Starting server on {}:{}".format(self._host, self._port))
-        handler = app.make_handler(handler=RequestHandler)
-        self._loop.run_until_complete(self._run_application(handler, ssl_context))
-        self._signal_handling(handler)
+        self._handler = app.make_handler(handler=RequestHandler)
+        self._loop.run_until_complete(self._run_application(self._handler, ssl_context))
+        self._signal_handling()
 
         if server_config.getboolean("live"):
             log.info("Code live reload is enabled, watching for file changes")
-            self._loop.call_later(1, self._reload_hook, handler)
+            self._loop.call_later(1, self._reload_hook)
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())

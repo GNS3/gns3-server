@@ -173,7 +173,7 @@ def main():
     CrashReport.instance()
     host = server_config["host"]
     port = int(server_config["port"])
-    server = Server(host, port)
+    server = Server.instance(host, port)
     try:
         server.run()
     except Exception as e:

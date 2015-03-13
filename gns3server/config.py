@@ -157,7 +157,7 @@ class Config(object):
     @staticmethod
     def instance(files=None):
         """
-        Singleton to return only on instance of Config.
+        Singleton to return only one instance of Config.
 
         :params files: Array of configuration files (optional)
         :returns: instance of Config
