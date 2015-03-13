@@ -339,6 +339,7 @@ class IOUVM(BaseVM):
             raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
                                                                                                                    ", ".join(missing_libs)))
 
+    @asyncio.coroutine
     def _check_iou_licence(self):
         """
         Checks for a valid IOU key in the iourc file (paranoid mode).
@@ -358,16 +359,17 @@ class IOUVM(BaseVM):
         if hostname not in config["license"]:
             raise IOUError("Hostname key not found in iourc file {}".format(self.iourc_path))
         user_ioukey = config["license"][hostname]
-        print(user_ioukey[-1:])
         if user_ioukey[-1:] != ';':
             raise IOUError("IOU key not ending with ; in iourc file".format(self.iourc_path))
         if len(user_ioukey) != 17:
             raise IOUError("IOU key length is not 16 characters in iourc file".format(self.iourc_path))
         user_ioukey = user_ioukey[:16]
         try:
-            hostid = os.popen("hostid").read().strip()
-        except OSError as e:
-            raise IOUError("Could not read the hostid: {}".format(e))
+            hostid = (yield from gns3server.utils.asyncio.subprocess_check_output("hostid")).strip()
+        except FileNotFoundError as e:
+            raise IOUError("Could not find hostid: {}".format(e))
+        except subprocess.SubprocessError as e:
+            raise IOUError("Could not execute hostid: {}".format(e))
         try:
             ioukey = int(hostid, 16)
         except ValueError:
@@ -401,7 +403,7 @@ class IOUVM(BaseVM):
 
             license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", True)
             if license_check:
-                self._check_iou_licence()
+                yield from self._check_iou_licence()
 
             iouyap_path = self.iouyap_path
             if not iouyap_path or not os.path.isfile(iouyap_path):
