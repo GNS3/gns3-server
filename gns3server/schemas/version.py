@@ -24,6 +24,10 @@ VERSION_SCHEMA = {
         "version": {
             "description": "Version number human readable",
             "type": "string",
+        },
+        "local": {
+            "description": "Either this is a local server",
+            "type": "boolean",
         }
     }
 }

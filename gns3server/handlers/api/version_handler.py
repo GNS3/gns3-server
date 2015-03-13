@@ -16,11 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ...web.route import Route
+from ...config import Config
 from ...schemas.version import VERSION_SCHEMA
 from ...version import __version__
 from aiohttp.web import HTTPConflict
-
-import asyncio
 
 
 class VersionHandler:
@@ -31,7 +30,10 @@ class VersionHandler:
         description="Retrieve the server version number",
         output=VERSION_SCHEMA)
     def version(request, response):
-        response.json({"version": __version__})
+
+        config = Config.instance()
+        local_server =config.get_section_config("Server").getboolean("local", False)
+        response.json({"version": __version__, "local": local_server})
 
     @classmethod
     @Route.post(
