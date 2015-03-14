@@ -120,12 +120,6 @@ VM_CREATE_SCHEMA = {
             "description": "disk1 size in MB",
             "type": "integer"
         },
-        "confreg": {
-            "description": "configuration register",
-            "type": "string",
-            "minLength": 1,
-            "pattern": "^0x[0-9a-fA-F]{4}$"
-        },
         "console": {
             "description": "console TCP port",
             "type": "integer",
@@ -352,12 +346,6 @@ VM_UPDATE_SCHEMA = {
         "disk1": {
             "description": "disk1 size in MB",
             "type": "integer"
-        },
-        "confreg": {
-            "description": "configuration register",
-            "type": "string",
-            "minLength": 1,
-            "pattern": "^0x[0-9a-fA-F]{4}$"
         },
         "console": {
             "description": "console TCP port",
@@ -753,12 +741,6 @@ VM_OBJECT_SCHEMA = {
         "disk1": {
             "description": "disk1 size in MB",
             "type": "integer"
-        },
-        "confreg": {
-            "description": "configuration register",
-            "type": "string",
-            "minLength": 1,
-            "pattern": "^0x[0-9a-fA-F]{4}$"
         },
         "console": {
             "description": "console TCP port",

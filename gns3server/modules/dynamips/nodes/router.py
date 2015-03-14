@@ -86,7 +86,6 @@ class Router(BaseVM):
             self._exec_area = 64  # 64 MB on other systems
         self._disk0 = 0  # Megabytes
         self._disk1 = 0  # Megabytes
-        self._confreg = "0x2102"
         self._aux = aux
         self._mac_addr = ""
         self._system_id = "FTX0945W0MY"  # processor board ID in IOS
@@ -145,7 +144,6 @@ class Router(BaseVM):
                        "exec_area": self._exec_area,
                        "disk0": self._disk0,
                        "disk1": self._disk1,
-                       "confreg": self._confreg,
                        "console": self._console,
                        "aux": self._aux,
                        "mac_addr": self._mac_addr,
@@ -862,33 +860,6 @@ class Router(BaseVM):
                                                                                                     old_disk1=self._disk1,
                                                                                                     new_disk1=disk1))
         self._disk1 = disk1
-
-    @property
-    def confreg(self):
-        """
-        Returns the configuration register.
-        The default is 0x2102.
-
-        :returns: configuration register value (string)
-        """
-
-        return self._confreg
-
-    @asyncio.coroutine
-    def set_confreg(self, confreg):
-        """
-        Sets the configuration register.
-
-        :param confreg: configuration register value (string)
-        """
-
-        yield from self._hypervisor.send('vm set_conf_reg "{name}" {confreg}'.format(name=self._name, confreg=confreg))
-
-        log.info('Router "{name}" [{id}]: confreg updated from {old_confreg} to {new_confreg}'.format(name=self._name,
-                                                                                                      id=self._id,
-                                                                                                      old_confreg=self._confreg,
-                                                                                                      new_confreg=confreg))
-        self._confreg = confreg
 
     @asyncio.coroutine
     def set_console(self, console):
