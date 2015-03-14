@@ -401,7 +401,7 @@ class IOUVM(BaseVM):
             if iourc_path and not os.path.isfile(iourc_path):
                 raise IOUError("A valid iourc file is necessary to start IOU")
 
-            license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", True)
+            license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", False)
             if license_check:
                 yield from self._check_iou_licence()
 

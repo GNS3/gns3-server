@@ -190,8 +190,8 @@ class Server:
             # because asyncio.add_signal_handler() is not supported yet on that platform
             # otherwise the loop runs outside of signal module's ability to trap signals.
             def wakeup():
-                loop.call_later(0.1, wakeup)
-            loop.call_later(0.1, wakeup)
+                loop.call_later(0.5, wakeup)
+            loop.call_later(0.5, wakeup)
             asyncio.set_event_loop(loop)
 
         ssl_context = None

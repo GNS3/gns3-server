@@ -17,8 +17,14 @@
 
 from ...web.route import Route
 from ...config import Config
+from ...modules.project_manager import ProjectManager
 from aiohttp.web import HTTPForbidden
+
 import asyncio
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class ServerHandler:
 
@@ -36,6 +42,24 @@ class ServerHandler:
         if config.get_section_config("Server").getboolean("local", False) is False:
             raise HTTPForbidden(text="You can only stop a local server")
 
+        # close all the projects first
+        pm = ProjectManager.instance()
+        projects = pm.projects
+
+        tasks = []
+        for project in projects:
+            tasks.append(asyncio.async(project.close()))
+
+        if tasks:
+            done, _ = yield from asyncio.wait(tasks)
+            for future in done:
+                try:
+                    future.result()
+                except Exception as e:
+                    log.error("Could not close project {}".format(e), exc_info=1)
+                    continue
+
+        # then shutdown the server itself
         from gns3server.server import Server
         server = Server.instance()
         asyncio.async(server.shutdown_server())

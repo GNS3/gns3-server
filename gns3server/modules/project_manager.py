@@ -42,6 +42,16 @@ class ProjectManager:
             cls._instance = cls()
         return cls._instance
 
+    @property
+    def projects(self):
+        """
+        Returns all projects.
+
+        :returns: Project instances
+        """
+
+        return self._projects.values()
+
     def get_project(self, project_id):
         """
         Returns a Project instance.
