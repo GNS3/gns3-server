@@ -20,7 +20,6 @@ import os
 import asyncio
 import pytest
 import aiohttp
-import shutil
 from uuid import uuid4
 from unittest.mock import patch
 
@@ -51,7 +50,7 @@ def test_affect_uuid():
 
 
 def test_path(tmpdir):
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+    with patch("gns3server.modules.project.Project.is_local", return_value=True):
         p = Project(location=str(tmpdir))
         assert p.path == os.path.join(str(tmpdir), p.id)
         assert os.path.exists(os.path.join(str(tmpdir), p.id))
@@ -60,14 +59,14 @@ def test_path(tmpdir):
 
 def test_init_path(tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+    with patch("gns3server.modules.project.Project.is_local", return_value=True):
         p = Project(path=str(tmpdir))
         assert p.path == str(tmpdir)
 
 
 def test_changing_path_temporary_flag(tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+    with patch("gns3server.modules.project.Project.is_local", return_value=True):
         p = Project(temporary=True)
         assert os.path.exists(p.path)
         assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
@@ -96,13 +95,13 @@ def test_remove_temporary_flag():
 
 
 def test_changing_location_not_allowed(tmpdir):
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
+    with patch("gns3server.modules.project.Project.is_local", return_value=False):
         with pytest.raises(aiohttp.web.HTTPForbidden):
             p = Project(location=str(tmpdir))
 
 
 def test_changing_path_not_allowed(tmpdir):
-    with patch("gns3server.config.Config.getboolean", return_value=False):
+    with patch("gns3server.modules.project.Project.is_local", return_value=False):
         with pytest.raises(aiohttp.web.HTTPForbidden):
             p = Project()
             p.path = str(tmpdir)
@@ -110,11 +109,11 @@ def test_changing_path_not_allowed(tmpdir):
 
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"location": p.location, "path": p.path, "project_id": p.id, "temporary": False}
+    assert p.__json__() == {"name": p.name, "location": p.location, "path": p.path, "project_id": p.id, "temporary": False}
 
 
 def test_vm_working_directory(tmpdir, vm):
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+    with patch("gns3server.modules.project.Project.is_local", return_value=True):
         p = Project(location=str(tmpdir))
         assert p.vm_working_directory(vm) == os.path.join(str(tmpdir), p.id, 'project-files', vm.module_name, vm.id)
         assert os.path.exists(p.vm_working_directory(vm))

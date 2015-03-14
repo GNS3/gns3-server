@@ -85,11 +85,12 @@ def test_vm_invalid_iouyap_path(project, manager, loop):
 def test_start(loop, vm, monkeypatch):
 
     with patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-                    loop.run_until_complete(asyncio.async(vm.start()))
-                    assert vm.is_running()
+        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
+            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+                with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+                        loop.run_until_complete(asyncio.async(vm.start()))
+                        assert vm.is_running()
 
 
 def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
@@ -100,13 +101,14 @@ def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file, "iouyap_path": vm.iouyap_path}):
         with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-                with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as exec_mock:
-                        loop.run_until_complete(asyncio.async(vm.start()))
-                        assert vm.is_running()
-                        arsgs, kwargs = exec_mock.call_args
-                        assert kwargs["env"]["IOURC"] == fake_file
+            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
+                with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+                    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+                        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as exec_mock:
+                            loop.run_until_complete(asyncio.async(vm.start()))
+                            assert vm.is_running()
+                            arsgs, kwargs = exec_mock.call_args
+                            assert kwargs["env"]["IOURC"] == fake_file
 
 
 def test_rename_nvram_file(loop, vm, monkeypatch):

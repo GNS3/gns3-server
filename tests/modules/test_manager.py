@@ -60,7 +60,7 @@ def test_create_vm_new_topology_without_uuid(loop, project, port_manager):
 
 def test_create_vm_old_topology(loop, project, tmpdir, port_manager):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+    with patch("gns3server.modules.project.Project.is_local", return_value=True):
         # Create an old topology directory
         project_dir = str(tmpdir / "testold")
         vm_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")

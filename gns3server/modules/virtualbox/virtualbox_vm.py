@@ -155,7 +155,8 @@ class VirtualBoxVM(BaseVM):
             yield from self.set_adapters(self._adapters)
 
         vm_info = yield from self._get_vm_info()
-        self._ram = int(vm_info["memory"])
+        if "memory" in vm_info:
+            self._ram = int(vm_info["memory"])
 
     @asyncio.coroutine
     def start(self):

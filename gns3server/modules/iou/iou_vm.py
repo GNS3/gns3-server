@@ -345,6 +345,10 @@ class IOUVM(BaseVM):
         Checks for a valid IOU key in the iourc file (paranoid mode).
         """
 
+        license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", False)
+        if license_check:
+            return
+
         config = configparser.ConfigParser()
         try:
             with open(self.iourc_path) as f:
@@ -401,10 +405,7 @@ class IOUVM(BaseVM):
             if iourc_path and not os.path.isfile(iourc_path):
                 raise IOUError("A valid iourc file is necessary to start IOU")
 
-            license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", False)
-            if license_check:
-                yield from self._check_iou_licence()
-
+            yield from self._check_iou_licence()
             iouyap_path = self.iouyap_path
             if not iouyap_path or not os.path.isfile(iouyap_path):
                 raise IOUError("iouyap is necessary to start IOU")
