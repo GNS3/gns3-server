@@ -91,7 +91,7 @@ def interfaces():
                 results.append({"id": interface,
                                 "name": interface})
         except ImportError:
-            return
+            raise aiohttp.web.HTTPInternalServerError(text="Could not import netifaces module")
     else:
         try:
             results = get_windows_interfaces()
