@@ -199,6 +199,19 @@ class Dynamips(BaseManager):
             if device.project.id == project.id:
                 yield from device.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
 
+    @asyncio.coroutine
+    def project_committed(self, project):
+        """
+        Called when a project has been committed.
+
+        :param project: Project instance
+        """
+
+        # save the configs when the project is committed
+        for vm in self._vms.values():
+            if vm.project.id == project.id:
+                yield from vm.save_configs()
+
     @property
     def dynamips_path(self):
         """

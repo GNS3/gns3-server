@@ -324,6 +324,8 @@ class Project:
             vm = self._vms_to_destroy.pop()
             yield from vm.delete()
             self.remove_vm(vm)
+        for module in self.modules():
+            yield from module.instance().project_committed(self)
 
     @asyncio.coroutine
     def delete(self):
