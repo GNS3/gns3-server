@@ -151,8 +151,20 @@ class Config(object):
         if not self._config.has_section(section):
             self._config.add_section(section)
         for key in content:
+            if isinstance(content[key], bool):
+                content[key] = str(content[key]).lower()
             self._config.set(section, key, content[key])
         self._override_config[section] = content
+
+    def set(self, section, key, value):
+        """
+        Set a config value.
+        It's not dumped on the disk.
+
+        If the section doesn't exists the section is created
+        """
+
+        self.set_section_config(section, {key: value})
 
     @staticmethod
     def instance(files=None):

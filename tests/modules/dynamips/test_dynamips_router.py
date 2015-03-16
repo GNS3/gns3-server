@@ -47,10 +47,8 @@ def test_router(project, manager):
 def test_router_invalid_dynamips_path(project, manager, loop):
 
     config = Config.instance()
-    dynamips_section = config.get_section_config("Dynamips")
-    dynamips_section["dynamips_path"] = "/bin/test_fake"
-    dynamips_section["allocate_aux_console_ports"] = "false"
-    config.set_section_config("Dynamips", dynamips_section)
+    config.set("Dynamips", "dynamips_path", "/bin/test_fake")
+    config.set("Dynamips", "allocate_aux_console_ports", False)
 
     with pytest.raises(DynamipsError):
         router = Router("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)

@@ -20,23 +20,18 @@ This test suite check /version endpoint
 It's also used for unittest the HTTP implementation.
 """
 
-from unittest.mock import patch, MagicMock
-from configparser import ConfigParser
+from gns3server.config import Config
 
 from gns3server.version import __version__
 
 
 def test_version_output(server):
-    gns_config = MagicMock()
-    config = ConfigParser()
-    config.add_section("Server")
+    config = Config.instance()
     config.set("Server", "local", "true")
-    gns_config.get_section_config.return_value = config["Server"]
 
-    with patch("gns3server.config.Config.instance", return_value=gns_config):
-        response = server.get('/version', example=True)
-        assert response.status == 200
-        assert response.json == {'local': True, 'version': __version__}
+    response = server.get('/version', example=True)
+    assert response.status == 200
+    assert response.json == {'local': True, 'version': __version__}
 
 
 def test_version_input(server):

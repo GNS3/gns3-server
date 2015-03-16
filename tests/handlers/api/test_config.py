@@ -15,17 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from configparser import ConfigParser
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+from gns3server.config import Config
 
 
 def test_reload_accepted(server):
 
     gns_config = MagicMock()
-    config = ConfigParser()
-    config.add_section("Server")
+    config = Config.instance()
     config.set("Server", "local", "true")
-    gns_config.get_section_config.return_value = config["Server"]
+    gns_config.get_section_config.return_value = config.get_section_config("Server")
 
     with patch("gns3server.config.Config.instance", return_value=gns_config):
         response = server.post('/config/reload', example=True)
@@ -36,13 +35,9 @@ def test_reload_accepted(server):
 
 def test_reload_forbidden(server):
 
-    gns_config = MagicMock()
-    config = ConfigParser()
-    config.add_section("Server")
+    config = Config.instance()
     config.set("Server", "local", "false")
-    gns_config.get_section_config.return_value = config["Server"]
 
-    with patch("gns3server.config.Config.instance", return_value=gns_config):
-        response = server.post('/config/reload')
+    response = server.post('/config/reload')
 
     assert response.status == 403

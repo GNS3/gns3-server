@@ -135,18 +135,11 @@ def run_around_tests(monkeypatch):
 
     Config.reset()
     config = Config.instance()
-    server_section = config.get_section_config("Server")
-    server_section["project_directory"] = tmppath
-    config.set_section_config("Server", server_section)
+    config.set("Server", "project_directory", tmppath)
 
     # Prevent exectuions of the VM if we forgot to mock something
-    vbox_section = config.get_section_config("VirtualBox")
-    vbox_section["vboxmanage_path"] = tmppath
-    config.set_section_config("VirtualBox", vbox_section)
-
-    vbox_section = config.get_section_config("VPCS")
-    vbox_section["vpcs_path"] = tmppath
-    config.set_section_config("VPCS", vbox_section)
+    config.set("VirtualBox", "vboxmanage_path", tmppath)
+    config.set("VPCS", "vpcs_path", tmppath)
 
     monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: tmppath)
 
