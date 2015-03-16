@@ -207,10 +207,11 @@ class Dynamips(BaseManager):
         :param project: Project instance
         """
 
+        pass
         # save the configs when the project is committed
-        for vm in self._vms.values():
-            if vm.project.id == project.id:
-                yield from vm.save_configs()
+        #for vm in self._vms.values():
+        #    if vm.project.id == project.id:
+        #        yield from vm.save_configs()
 
     @property
     def dynamips_path(self):
