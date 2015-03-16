@@ -23,6 +23,7 @@ from unittest.mock import patch
 from gns3server.modules.dynamips.nodes.router import Router
 from gns3server.modules.dynamips.dynamips_error import DynamipsError
 from gns3server.modules.dynamips import Dynamips
+from gns3server.config import Config
 
 
 @pytest.fixture(scope="module")
@@ -44,9 +45,15 @@ def test_router(project, manager):
 
 
 def test_router_invalid_dynamips_path(project, manager, loop):
-    with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": "/bin/test_fake"}):
-        with pytest.raises(DynamipsError):
-            router = Router("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
-            loop.run_until_complete(asyncio.async(router.create()))
-            assert router.name == "test"
-            assert router.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
+
+    config = Config.instance()
+    dynamips_section = config.get_section_config("Dynamips")
+    dynamips_section["dynamips_path"] = "/bin/test_fake"
+    dynamips_section["allocate_aux_console_ports"] = "false"
+    config.set_section_config("Dynamips", dynamips_section)
+
+    with pytest.raises(DynamipsError):
+        router = Router("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
+        loop.run_until_complete(asyncio.async(router.create()))
+        assert router.name == "test"
+        assert router.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"

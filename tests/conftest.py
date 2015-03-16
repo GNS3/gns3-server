@@ -133,6 +133,7 @@ def run_around_tests(monkeypatch):
 
     tmppath = tempfile.mkdtemp()
 
+    Config.reset()
     config = Config.instance()
     server_section = config.get_section_config("Server")
     server_section["project_directory"] = tmppath
