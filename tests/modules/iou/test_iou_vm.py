@@ -20,6 +20,7 @@ import aiohttp
 import asyncio
 import os
 import stat
+import socket
 from tests.utils import asyncio_patch
 
 
@@ -37,7 +38,7 @@ def manager(port_manager):
 
 
 @pytest.fixture(scope="function")
-def vm(project, manager, tmpdir, fake_iou_bin):
+def vm(project, manager, tmpdir, fake_iou_bin, iourc_file):
     fake_file = str(tmpdir / "iouyap")
     with open(fake_file, "w+") as f:
         f.write("1")
@@ -45,6 +46,7 @@ def vm(project, manager, tmpdir, fake_iou_bin):
     vm = IOUVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     config = manager.config.get_section_config("IOU")
     config["iouyap_path"] = fake_file
+    config["iourc_path"] = iourc_file
     manager.config.set_section_config("IOU", config)
 
     vm.path = fake_iou_bin
@@ -52,10 +54,20 @@ def vm(project, manager, tmpdir, fake_iou_bin):
 
 
 @pytest.fixture
+def iourc_file(tmpdir):
+    path = str(tmpdir / "iourc")
+    with open(path, "w+") as f:
+        hostname = socket.gethostname()
+        f.write("[license]\n{} = aaaaaaaaaaaaaaaa;".format(hostname))
+    return path
+
+
+@pytest.fixture
 def fake_iou_bin(tmpdir):
     """Create a fake IOU image on disk"""
 
-    path = str(tmpdir / "iou.bin")
+    os.makedirs(str(tmpdir / "IOU"), exist_ok=True)
+    path = str(tmpdir / "IOU" / "iou.bin")
     with open(path, "w+") as f:
         f.write('\x7fELF\x01\x01\x01')
     os.chmod(path, stat.S_IREAD | stat.S_IEXEC)
@@ -313,3 +325,45 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
 def test_get_legacy_vm_workdir():
 
     assert IOU.get_legacy_vm_workdir(42, "bla") == "iou/device-42"
+
+
+def test_invalid_iou_file(loop, vm, iourc_file):
+
+    hostname = socket.gethostname()
+
+    loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+
+    # Missing ;
+    with pytest.raises(IOUError):
+        with open(iourc_file, "w+") as f:
+            f.write("[license]\n{} = aaaaaaaaaaaaaaaa".format(hostname))
+        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+
+    # Key too short
+    with pytest.raises(IOUError):
+        with open(iourc_file, "w+") as f:
+            f.write("[license]\n{} = aaaaaaaaaaaaaa;".format(hostname))
+        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+
+    # Invalid hostname
+    with pytest.raises(IOUError):
+        with open(iourc_file, "w+") as f:
+            f.write("[license]\nbla = aaaaaaaaaaaaaa;")
+        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+
+    # Missing licence section
+    with pytest.raises(IOUError):
+        with open(iourc_file, "w+") as f:
+            f.write("[licensetest]\n{} = aaaaaaaaaaaaaaaa;")
+        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+
+    # Broken config file
+    with pytest.raises(IOUError):
+        with open(iourc_file, "w+") as f:
+            f.write("[")
+        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+
+    # Missing file
+    with pytest.raises(IOUError):
+        os.remove(iourc_file)
+        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))

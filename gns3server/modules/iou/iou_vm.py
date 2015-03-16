@@ -46,6 +46,7 @@ import gns3server.utils.asyncio
 
 
 import logging
+import sys
 log = logging.getLogger(__name__)
 
 
@@ -368,25 +369,30 @@ class IOUVM(BaseVM):
         if len(user_ioukey) != 17:
             raise IOUError("IOU key length is not 16 characters in iourc file".format(self.iourc_path))
         user_ioukey = user_ioukey[:16]
-        try:
-            hostid = (yield from gns3server.utils.asyncio.subprocess_check_output("hostid")).strip()
-        except FileNotFoundError as e:
-            raise IOUError("Could not find hostid: {}".format(e))
-        except subprocess.SubprocessError as e:
-            raise IOUError("Could not execute hostid: {}".format(e))
-        try:
-            ioukey = int(hostid, 16)
-        except ValueError:
-            raise IOUError("Invalid hostid detected: {}".format(hostid))
-        for x in hostname:
-            ioukey += ord(x)
-        pad1 = b'\x4B\x58\x21\x81\x56\x7B\x0D\xF3\x21\x43\x9B\x7E\xAC\x1D\xE6\x8A'
-        pad2 = b'\x80' + 39 * b'\0'
-        ioukey = hashlib.md5(pad1 + pad2 + struct.pack('!i', ioukey) + pad1).hexdigest()[:16]
-        if ioukey != user_ioukey:
-            raise IOUError("Invalid IOU license key {} detected in iourc file {} for host {}".format(user_ioukey,
-                                                                                                     self.iourc_path,
-                                                                                                     hostname))
+
+        # We can't test this because it's mean distributing a valid licence key
+        # in tests or generating one
+        if not sys._called_from_test:
+            try:
+                hostid = (yield from gns3server.utils.asyncio.subprocess_check_output("hostid")).strip()
+            except FileNotFoundError as e:
+                raise IOUError("Could not find hostid: {}".format(e))
+            except subprocess.SubprocessError as e:
+                raise IOUError("Could not execute hostid: {}".format(e))
+
+            try:
+                ioukey = int(hostid, 16)
+            except ValueError:
+                raise IOUError("Invalid hostid detected: {}".format(hostid))
+            for x in hostname:
+                ioukey += ord(x)
+            pad1 = b'\x4B\x58\x21\x81\x56\x7B\x0D\xF3\x21\x43\x9B\x7E\xAC\x1D\xE6\x8A'
+            pad2 = b'\x80' + 39 * b'\0'
+            ioukey = hashlib.md5(pad1 + pad2 + struct.pack('!i', ioukey) + pad1).hexdigest()[:16]
+            if ioukey != user_ioukey:
+                raise IOUError("Invalid IOU license key {} detected in iourc file {} for host {}".format(user_ioukey,
+                                                                                                         self.iourc_path,
+                                                                                                         hostname))
 
     @asyncio.coroutine
     def start(self):
