@@ -49,11 +49,9 @@ class QemuVM(BaseVM):
     :param manager: parent VM Manager
     :param console: TCP console port
     :param qemu_path: path to the QEMU binary
-    :param host: host/address to bind for console and UDP connections
     :param qemu_id: QEMU VM instance ID
     :param console: TCP console port
     :param monitor: TCP monitor port
-    :param monitor_host: IP address to bind for monitor connections
     """
 
     def __init__(self,
@@ -62,20 +60,19 @@ class QemuVM(BaseVM):
                  project,
                  manager,
                  qemu_path=None,
-                 host="127.0.0.1",
                  console=None,
-                 monitor=None,
-                 monitor_host="127.0.0.1"):
+                 monitor=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
 
-        self._host = host
+        server_config = manager.config.get_section_config("Server")
+        self._host = server_config.get("host", "127.0.0.1")
+        self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
         self._command = []
         self._started = False
         self._process = None
         self._cpulimit_process = None
         self._stdout_file = ""
-        self._monitor_host = monitor_host
 
         # QEMU settings
         self._qemu_path = qemu_path

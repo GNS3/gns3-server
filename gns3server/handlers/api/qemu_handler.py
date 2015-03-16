@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
-
 from ...web.route import Route
 from ...schemas.qemu import QEMU_CREATE_SCHEMA
 from ...schemas.qemu import QEMU_UPDATE_SCHEMA
@@ -55,8 +52,8 @@ class QEMUHandler:
                                        request.json.get("vm_id"),
                                        qemu_path=request.json.get("qemu_path"),
                                        console=request.json.get("console"),
-                                       monitor=request.json.get("monitor"),
-                                       )
+                                       monitor=request.json.get("monitor"))
+
         # Clear already used keys
         map(request.json.__delitem__, ["name", "project_id", "vm_id",
                                        "qemu_path", "console", "monitor"])
