@@ -32,7 +32,7 @@ class VersionHandler:
     def version(request, response):
 
         config = Config.instance()
-        local_server =config.get_section_config("Server").getboolean("local", False)
+        local_server = config.get_section_config("Server").getboolean("local", False)
         response.json({"version": __version__, "local": local_server})
 
     @classmethod
