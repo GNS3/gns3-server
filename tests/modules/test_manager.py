@@ -65,6 +65,7 @@ def test_create_vm_old_topology(loop, project, tmpdir, port_manager):
         project_dir = str(tmpdir / "testold")
         vm_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
         project.path = project_dir
+        project.name = "testold"
         os.makedirs(vm_dir, exist_ok=True)
         with open(os.path.join(vm_dir, "startup.vpc"), "w+") as f:
             f.write("1")
