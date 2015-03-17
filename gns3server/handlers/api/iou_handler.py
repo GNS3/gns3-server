@@ -61,7 +61,8 @@ class IOUHandler:
                                       ram=request.json.get("ram"),
                                       nvram=request.json.get("nvram"),
                                       l1_keepalives=request.json.get("l1_keepalives"),
-                                      initial_config=request.json.get("initial_config_content")
+                                      initial_config=request.json.get("initial_config_content"),
+                                      iourc_content=request.json.get("iourc_content")
                                       )
         vm.path = request.json.get("path", vm.path)
         response.set_status(201)

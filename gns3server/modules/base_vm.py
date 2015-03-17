@@ -20,6 +20,7 @@ import logging
 import aiohttp
 import shutil
 import asyncio
+import tempfile
 
 from ..utils.asyncio import wait_run_in_executor
 
@@ -45,6 +46,7 @@ class BaseVM:
         self._project = project
         self._manager = manager
         self._console = console
+        self._temporary_directory = None
 
         if self._console is not None:
             self._console = self._manager.port_manager.reserve_tcp_port(self._console)
@@ -61,6 +63,9 @@ class BaseVM:
     def __del__(self):
 
         self.close()
+        if self._temporary_directory is not None:
+            if os.path.exists(self._temporary_directory):
+                shutil.rmtree(self._temporary_directory)
 
     @property
     def project(self):
@@ -123,6 +128,12 @@ class BaseVM:
         """
 
         return self._project.vm_working_directory(self)
+
+    @property
+    def temporary_directory(self):
+        if self._temporary_directory is None:
+            self._temporary_directory = tempfile.mkdtemp()
+        return self._temporary_directory
 
     def create(self):
         """

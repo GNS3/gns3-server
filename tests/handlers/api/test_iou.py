@@ -75,6 +75,7 @@ def test_iou_create_with_params(server, project, base_params):
     params["l1_keepalives"] = True
     params["initial_config_content"] = "hostname test"
     params["use_default_iou_values"] = True
+    params["iourc_content"] = "test"
 
     response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -91,6 +92,8 @@ def test_iou_create_with_params(server, project, base_params):
     assert "initial-config.cfg" in response.json["initial_config"]
     with open(initial_config_file(project, response.json)) as f:
         assert f.read() == params["initial_config_content"]
+
+    assert "iourc" in response.json["iourc_path"]
 
 
 def test_iou_get(server, project, vm):

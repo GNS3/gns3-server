@@ -367,3 +367,11 @@ def test_invalid_iou_file(loop, vm, iourc_file):
     with pytest.raises(IOUError):
         os.remove(iourc_file)
         loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+
+
+def test_iourc_content(vm):
+
+    vm.iourc_content = "test"
+
+    with open(os.path.join(vm.temporary_directory, "iourc")) as f:
+        assert f.read() == "test"

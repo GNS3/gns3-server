@@ -73,6 +73,10 @@ IOU_CREATE_SCHEMA = {
         "initial_config_content": {
             "description": "Initial configuration of the IOU",
             "type": ["string", "null"]
+        },
+        "iourc_content": {
+            "description": "Content of the iourc file, if a file exist on servers this variable is ignored. It's mostly for compatibility with < 1.3 releases",
+            "type": ["string", "null"]
         }
     },
     "additionalProperties": False,
@@ -192,6 +196,10 @@ IOU_OBJECT_SCHEMA = {
         "use_default_iou_values": {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
+        },
+        "iourc_path": {
+            "description": "Path of the iourc file used by remote servers",
+            "type": ["string", "null"]
         }
     },
     "additionalProperties": False,

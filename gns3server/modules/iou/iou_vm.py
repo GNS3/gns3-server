@@ -67,6 +67,7 @@ class IOUVM(BaseVM):
     :params nvram: Nvram KB
     :params l1_keepalives: Always up ethernet interface:
     :params initial_config: Content of the initial configuration file
+    :params iourc_content: Content of the iourc file if no licence is installed on server
     """
 
     def __init__(self, name, vm_id, project, manager,
@@ -76,7 +77,8 @@ class IOUVM(BaseVM):
                  ethernet_adapters=None,
                  serial_adapters=None,
                  l1_keepalives=None,
-                 initial_config=None):
+                 initial_config=None,
+                 iourc_content=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
 
@@ -99,6 +101,7 @@ class IOUVM(BaseVM):
         self._ram = 256 if ram is None else ram  # Megabytes
         self._l1_keepalives = False if l1_keepalives is None else l1_keepalives  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
+        self.iourc_content = iourc_content
         if initial_config is not None:
             self.initial_config = initial_config
 
@@ -209,7 +212,8 @@ class IOUVM(BaseVM):
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
                        "initial_config": self.relative_initial_config_file,
-                       "use_default_iou_values": self._use_default_iou_values}
+                       "use_default_iou_values": self._use_default_iou_values,
+                       "iourc_path": self.iourc_path}
 
         # return the relative path if the IOU image is in the images_path directory
         server_config = self.manager.config.get_section_config("Server")
@@ -248,6 +252,10 @@ class IOUVM(BaseVM):
                 return path
             # look for the iourc file in the current working dir.
             path = os.path.join(self.working_dir, "iourc")
+            if os.path.exists(path):
+                return path
+            # look for the iourc file in the temporary  dir.
+            path = os.path.join(self.temporary_directory, "iourc")
             if os.path.exists(path):
                 return path
         return iourc_path
@@ -321,6 +329,17 @@ class IOUVM(BaseVM):
     @property
     def application_id(self):
         return self._manager.get_application_id(self.id)
+
+    @property
+    def iourc_content(self):
+        with open(os.path.join(self.temporary_directory, "iourc")) as f:
+            return f.read()
+
+    @iourc_content.setter
+    def iourc_content(self, value):
+        if value is not None:
+            with open(os.path.join(self.temporary_directory, "iourc"), "w+") as f:
+                f.write(value)
 
     @asyncio.coroutine
     def _library_check(self):
