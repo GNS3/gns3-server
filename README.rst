@@ -41,6 +41,12 @@ Finally these commands will install the server as well as the rest of the depend
    sudo python3 setup.py install
    gns3server
 
+To run tests use:
+
+.. code:: bash
+
+   py.test -v
+
 Windows
 -------
 
