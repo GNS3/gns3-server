@@ -710,10 +710,18 @@ class QemuVM(BaseVM):
         """
         Returns this VM suspend status (running|paused)
 
+        Status are extracted from:
+          https://github.com/qemu/qemu/blob/master/qapi-schema.json#L152
+
         :returns: status (string)
         """
 
-        result = yield from self._control_vm("info status", [b"running", b"paused"])
+        result = yield from self._control_vm("info status", [
+            b"debug", b"inmigrate", b"internal-error", b"io-error",
+            b"paused", b"postmigrate", b"prelaunch", b"finish-migrate",
+            b"restore-vm", b"running", b"save-vm", b"shutdown", b"suspended",
+            b"watchdog", b"guest-panicked"
+        ])
         return result.rsplit(' ', 1)[1]
 
     @asyncio.coroutine
