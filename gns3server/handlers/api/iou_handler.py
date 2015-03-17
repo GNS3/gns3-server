@@ -117,6 +117,7 @@ class IOUHandler:
         vm.nvram = request.json.get("nvram", vm.nvram)
         vm.l1_keepalives = request.json.get("l1_keepalives", vm.l1_keepalives)
         vm.initial_config = request.json.get("initial_config_content", vm.initial_config)
+        vm.iourc_content = request.json.get("iourc_content", None)
 
         response.json(vm)
 

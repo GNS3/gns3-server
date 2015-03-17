@@ -130,6 +130,10 @@ IOU_UPDATE_SCHEMA = {
         "use_default_iou_values": {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
+        },
+        "iourc_content": {
+            "description": "Content of the iourc file, if a file exist on servers this variable is ignored. It's mostly for compatibility with < 1.3 releases",
+            "type": ["string", "null"]
         }
     },
     "additionalProperties": False,

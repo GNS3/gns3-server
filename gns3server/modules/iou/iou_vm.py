@@ -393,7 +393,7 @@ class IOUVM(BaseVM):
 
         # We can't test this because it's mean distributing a valid licence key
         # in tests or generating one
-        if not sys._called_from_test:
+        if not hasattr(sys, "_called_from_test"):
             try:
                 hostid = (yield from gns3server.utils.asyncio.subprocess_check_output("hostid")).strip()
             except FileNotFoundError as e:

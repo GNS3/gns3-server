@@ -147,7 +147,8 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
         "serial_adapters": 0,
         "l1_keepalives": True,
         "initial_config_content": "hostname test",
-        "use_default_iou_values": True
+        "use_default_iou_values": True,
+        "iourc_content": "test"
     }
     response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
     assert response.status == 200
@@ -162,6 +163,8 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
     assert "initial-config.cfg" in response.json["initial_config"]
     with open(initial_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
+
+    assert "iourc" in response.json["iourc_path"]
 
 
 def test_iou_nio_create_udp(server, vm):
