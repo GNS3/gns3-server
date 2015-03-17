@@ -45,9 +45,6 @@ class Config(object):
         # Monitor configuration files for changes
         self._watched_files = {}
 
-        # Override config from command line even if we modify the config file and live reload it.
-        self._override_config = {}
-
         if sys.platform.startswith("win"):
 
             appname = "GNS3"
@@ -90,9 +87,16 @@ class Config(object):
                                os.path.join("/etc/xdg", appname + ".conf"),
                                filename]
 
-        self._config = configparser.ConfigParser()
-        self.read_config()
+        self.clear()
         self._watch_config_file()
+
+    def clear(self):
+        """Restart with a clean config"""
+        self._config = configparser.ConfigParser()
+        # Override config from command line even if we modify the config file and live reload it.
+        self._override_config = {}
+
+        self.read_config()
 
     def _watch_config_file(self):
         asyncio.get_event_loop().call_later(1, self._check_config_file_change)
@@ -185,7 +189,12 @@ class Config(object):
         If the section doesn't exists the section is created
         """
 
-        self.set_section_config(section, {key: value})
+        conf = self.get_section_config(section)
+        if isinstance(value, bool):
+            conf[key] = str(value)
+        else:
+            conf[key] = value
+        self.set_section_config(section, conf)
 
     @staticmethod
     def instance(files=None):

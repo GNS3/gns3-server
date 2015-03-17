@@ -133,8 +133,8 @@ def run_around_tests(monkeypatch):
 
     tmppath = tempfile.mkdtemp()
 
-    Config.reset()
     config = Config.instance()
+    config.clear()
     config.set("Server", "project_directory", tmppath)
 
     # Prevent exectuions of the VM if we forgot to mock something
