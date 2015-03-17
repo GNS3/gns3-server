@@ -370,6 +370,8 @@ class IOUVM(BaseVM):
             return
 
         config = configparser.ConfigParser()
+        if self.iourc_path is None:
+            raise IOUError("Could not found iourc file")
         try:
             with open(self.iourc_path) as f:
                 config.read_file(f)
