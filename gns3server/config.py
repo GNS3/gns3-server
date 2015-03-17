@@ -92,6 +92,27 @@ class Config(object):
 
         self._config = configparser.ConfigParser()
         self.read_config()
+        self._watch_config_file()
+
+    def _watch_config_file(self):
+        asyncio.get_event_loop().call_later(1, self._check_config_file_change)
+
+    def _check_config_file_change(self):
+        """
+        Check if configuration file has changed on the disk
+        """
+        changed = False
+        for file in self._watched_files:
+            try:
+                if os.stat(file).st_mtime != self._watched_files[file]:
+                    changed = True
+            except OSError:
+                continue
+        if changed:
+            self.read_config()
+            for section in self._override_config:
+                self.set_section_config(section, self._override_config[section])
+        self._watch_config_file()
 
     def reload(self):
         """
