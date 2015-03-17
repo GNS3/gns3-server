@@ -37,8 +37,7 @@ class UploadHandler:
             for root, _, files in os.walk(UploadHandler.image_directory()):
                 for filename in files:
                     image_file = os.path.join(root, filename)
-                    if os.access(image_file, os.X_OK):
-                        uploaded_files.append(image_file)
+                    uploaded_files.append(image_file)
         except OSError:
             pass
         iourc_path = os.path.join(os.path.expanduser("~/"), ".iourc")
