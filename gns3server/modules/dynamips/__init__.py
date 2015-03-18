@@ -115,7 +115,6 @@ class Dynamips(BaseManager):
         self._devices = {}
         self._ghost_files = set()
         self._dynamips_path = None
-        self._project_lock = asyncio.Lock()
 
     @asyncio.coroutine
     def unload(self):
@@ -192,28 +191,13 @@ class Dynamips(BaseManager):
         :param project: Project instance
         """
 
-        with (yield from self._project_lock):
-            for vm in self._vms.values():
-                if vm.project.id == project.id:
-                    yield from vm.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
+        for vm in self._vms.values():
+            if vm.project.id == project.id:
+                yield from vm.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
 
-            for device in self._devices.values():
-                if device.project.id == project.id:
-                    yield from device.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
-
-    @asyncio.coroutine
-    def project_committed(self, project):
-        """
-        Called when a project has been committed.
-
-        :param project: Project instance
-        """
-
-        # save the configs when the project is committed
-        with (yield from self._project_lock):
-            for vm in self._vms.values():
-                if vm.project.id == project.id:
-                    yield from vm.save_configs()
+        for device in self._devices.values():
+            if device.project.id == project.id:
+                yield from device.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
 
     @property
     def dynamips_path(self):

@@ -15,10 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import os
 import base64
-import asyncio
 
 from ...web.route import Route
 from ...schemas.dynamips_vm import VM_CREATE_SCHEMA
@@ -341,7 +339,7 @@ class DynamipsVMHandler:
         },
         output=VM_CONFIGS_SCHEMA,
         description="Retrieve the startup and private configs content")
-    def show_initial_config(request, response):
+    def get_configs(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"],
@@ -354,6 +352,23 @@ class DynamipsVMHandler:
         response.set_status(200)
         response.json({"startup_config_content": startup_config_content,
                        "private_config_content": private_config_content})
+
+    @Route.post(
+        r"/projects/{project_id}/dynamips/vms/{vm_id}/configs/save",
+        status_codes={
+            200: "Configs saved",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Save the startup and private configs content")
+    def save_configs(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_vm(request.match_info["vm_id"],
+                                     project_id=request.match_info["project_id"])
+
+        yield from vm.save_configs()
+        response.set_status(200)
 
     @Route.get(
         r"/projects/{project_id}/dynamips/vms/{vm_id}/idlepc_proposals",
