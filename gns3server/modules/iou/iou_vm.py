@@ -332,14 +332,21 @@ class IOUVM(BaseVM):
 
     @property
     def iourc_content(self):
-        with open(os.path.join(self.temporary_directory, "iourc")) as f:
-            return f.read()
+        try:
+            with open(os.path.join(self.temporary_directory, "iourc")) as f:
+                return f.read()
+        except OSError:
+            return None
 
     @iourc_content.setter
     def iourc_content(self, value):
         if value is not None:
-            with open(os.path.join(self.temporary_directory, "iourc"), "w+") as f:
-                f.write(value)
+            path = os.path.join(self.temporary_directory, "iourc")
+            try:
+                with open(path, "w+") as f:
+                    f.write(value)
+            except OSError as e:
+                raise IOUError("Could not write iourc file {}: {}".format(path, e))
 
     @asyncio.coroutine
     def _library_check(self):

@@ -23,6 +23,7 @@ import asyncio
 import tempfile
 
 from ..utils.asyncio import wait_run_in_executor
+from .vm_error import VMError
 
 log = logging.getLogger(__name__)
 
@@ -132,7 +133,10 @@ class BaseVM:
     @property
     def temporary_directory(self):
         if self._temporary_directory is None:
-            self._temporary_directory = tempfile.mkdtemp()
+            try:
+                self._temporary_directory = tempfile.mkdtemp()
+            except OSError as e:
+                raise VMError("Can't create temporary directory: {}".format(e))
         return self._temporary_directory
 
     def create(self):
