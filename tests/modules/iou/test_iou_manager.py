@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 GNS3 Technologies Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+import pytest
+import uuid
+
+
+from gns3server.modules.iou import IOU
+from gns3server.modules.iou.iou_error import IOUError
+from gns3server.modules.project_manager import ProjectManager
+
+
+def test_get_application_id(loop, project, port_manager):
+    # Cleanup the IOU object
+    IOU._instance = None
+    iou = IOU.instance()
+    iou.port_manager = port_manager
+    vm1_id = str(uuid.uuid4())
+    vm2_id = str(uuid.uuid4())
+    vm3_id = str(uuid.uuid4())
+    loop.run_until_complete(iou.create_vm("PC 1", project.id, vm1_id))
+    loop.run_until_complete(iou.create_vm("PC 2", project.id, vm2_id))
+    assert iou.get_application_id(vm1_id) == 1
+    assert iou.get_application_id(vm1_id) == 1
+    assert iou.get_application_id(vm2_id) == 2
+    loop.run_until_complete(iou.delete_vm(vm1_id))
+    loop.run_until_complete(iou.create_vm("PC 3", project.id, vm3_id))
+    assert iou.get_application_id(vm3_id) == 1
+
+
+def test_get_application_id_multiple_project(loop, port_manager):
+    # Cleanup the IOU object
+    IOU._instance = None
+    iou = IOU.instance()
+    iou.port_manager = port_manager
+    vm1_id = str(uuid.uuid4())
+    vm2_id = str(uuid.uuid4())
+    vm3_id = str(uuid.uuid4())
+    project1 = ProjectManager.instance().create_project()
+    project2 = ProjectManager.instance().create_project()
+    loop.run_until_complete(iou.create_vm("PC 1", project1.id, vm1_id))
+    loop.run_until_complete(iou.create_vm("PC 2", project1.id, vm2_id))
+    loop.run_until_complete(iou.create_vm("PC 2", project2.id, vm3_id))
+    assert iou.get_application_id(vm1_id) == 1
+    assert iou.get_application_id(vm2_id) == 2
+    assert iou.get_application_id(vm3_id) == 3
+
+
+def test_get_application_id_no_id_available(loop, project, port_manager):
+    # Cleanup the IOU object
+    IOU._instance = None
+    iou = IOU.instance()
+    iou.port_manager = port_manager
+    with pytest.raises(IOUError):
+        for i in range(1, 513):
+            vm_id = str(uuid.uuid4())
+            loop.run_until_complete(iou.create_vm("PC {}".format(i), project.id, vm_id))
+            assert iou.get_application_id(vm_id) == i

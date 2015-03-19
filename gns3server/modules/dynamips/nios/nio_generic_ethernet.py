@@ -19,13 +19,15 @@
 Interface for generic Ethernet NIOs (PCAP library).
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_GenericEthernet(NIO):
+class NIOGenericEthernet(NIO):
+
     """
     Dynamips generic Ethernet NIO.
 
@@ -37,19 +39,12 @@ class NIO_GenericEthernet(NIO):
 
     def __init__(self, hypervisor, ethernet_device):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIO_GenericEthernet._instance_count
-        NIO_GenericEthernet._instance_count += 1
-        self._name = 'nio_gen_eth' + str(self._id)
+        # create an unique ID and name
+        nio_id = NIOGenericEthernet._instance_count
+        NIOGenericEthernet._instance_count += 1
+        name = 'nio_gen_eth' + str(nio_id)
         self._ethernet_device = ethernet_device
-
-        self._hypervisor.send("nio create_gen_eth {name} {eth_device}".format(name=self._name,
-                                                                              eth_device=ethernet_device))
-
-        log.info("NIO Generic Ethernet {name} created with device {device}".format(name=self._name,
-                                                                                   device=ethernet_device))
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -58,6 +53,15 @@ class NIO_GenericEthernet(NIO):
         """
 
         cls._instance_count = 0
+
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self._hypervisor.send("nio create_gen_eth {name} {eth_device}".format(name=self._name,
+                                                                                         eth_device=self._ethernet_device))
+
+        log.info("NIO Generic Ethernet {name} created with device {device}".format(name=self._name,
+                                                                                   device=self._ethernet_device))
 
     @property
     def ethernet_device(self):
@@ -68,3 +72,8 @@ class NIO_GenericEthernet(NIO):
         """
 
         return self._ethernet_device
+
+    def __json__(self):
+
+        return {"type": "nio_generic_ethernet",
+                "ethernet_device": self._ethernet_device}

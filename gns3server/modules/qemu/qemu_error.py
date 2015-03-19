@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 GNS3 Technologies Inc.
+# Copyright (C) 2013 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,24 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Custom exceptions for QEMU module.
+Custom exceptions for Qemu module.
 """
 
+from ..vm_error import VMError
 
-class QemuError(Exception):
 
-    def __init__(self, message, original_exception=None):
+class QemuError(VMError):
 
-        Exception.__init__(self, message)
-        if isinstance(message, Exception):
-            message = str(message)
-        self._message = message
-        self._original_exception = original_exception
-
-    def __repr__(self):
-
-        return self._message
-
-    def __str__(self):
-
-        return self._message
+    pass

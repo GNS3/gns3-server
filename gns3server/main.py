@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,23 +19,18 @@
 import os
 import datetime
 import sys
-import multiprocessing
 import locale
-import tornado.options
+import argparse
+
 from gns3server.server import Server
+from gns3server.web.logger import init_logger
 from gns3server.version import __version__
+from gns3server.config import Config
+from gns3server.modules.project import Project
+from gns3server.crash_report import CrashReport
 
 import logging
 log = logging.getLogger(__name__)
-
-# command line options
-from tornado.options import define
-define("host", default="0.0.0.0", help="run on the given host/IP address", type=str)
-define("port", default=8000, help="run on the given port", type=int)
-define("ipc", default=False, help="use IPC for module communication", type=bool)
-define("version", default=False, help="show the version", type=bool)
-define("quiet", default=False, help="do not show output on stdout", type=bool)
-define("console_bind_to_any", default=True, help="bind console ports to any local IP address", type=bool)
 
 
 def locale_check():
@@ -50,7 +45,7 @@ def locale_check():
     or there: http://robjwells.com/post/61198832297/get-your-us-ascii-out-of-my-face
     """
 
-    # no need to check on Windows or when frozen
+    # no need to check on Windows or when this application is frozen
     if sys.platform.startswith("win") or hasattr(sys, "frozen"):
         return
 
@@ -58,23 +53,82 @@ def locale_check():
     try:
         language, encoding = locale.getlocale()
     except ValueError as e:
-        log.error("could not determine the current locale: {}".format(e))
+        log.error("Could not determine the current locale: {}".format(e))
     if not language and not encoding:
         try:
-            log.warn("could not find a default locale, switching to C.UTF-8...")
+            log.warn("Could not find a default locale, switching to C.UTF-8...")
             locale.setlocale(locale.LC_ALL, ("C", "UTF-8"))
         except locale.Error as e:
-            log.error("could not switch to the C.UTF-8 locale: {}".format(e))
+            log.error("Could not switch to the C.UTF-8 locale: {}".format(e))
             raise SystemExit
     elif encoding != "UTF-8":
-        log.warn("your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
+        log.warn("Your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
         try:
             locale.setlocale(locale.LC_ALL, (language, "UTF-8"))
         except locale.Error as e:
-            log.error("could not set an UTF-8 encoding for the {} locale: {}".format(language, e))
+            log.error("Could not set an UTF-8 encoding for the {} locale: {}".format(language, e))
             raise SystemExit
     else:
-        log.info("current locale is {}.{}".format(language, encoding))
+        log.info("Current locale is {}.{}".format(language, encoding))
+
+
+def parse_arguments(argv, config):
+    """
+    Parse command line arguments and override local configuration
+
+    :params args: Array of command line arguments
+    :params config: ConfigParser with default variable from configuration
+    """
+
+    defaults = {
+        "host": config.get("host", "0.0.0.0"),
+        "port": config.get("port", 8000),
+        "ssl": config.getboolean("ssl", False),
+        "certfile": config.get("certfile", ""),
+        "certkey": config.get("certkey", ""),
+        "record": config.get("record", ""),
+        "local": config.getboolean("local", False),
+        "allow": config.getboolean("allow_remote_console", False),
+        "quiet": config.getboolean("quiet", False),
+        "debug": config.getboolean("debug", False),
+        "live": config.getboolean("live", False),
+    }
+
+    parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
+    parser.set_defaults(**defaults)
+    parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
+    parser.add_argument("--host", help="run on the given host/IP address")
+    parser.add_argument("--port", help="run on the given port", type=int)
+    parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
+    parser.add_argument("--certfile", help="SSL cert file")
+    parser.add_argument("--certkey", help="SSL key file")
+    parser.add_argument("--record", help="save curl requests into a file")
+    parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
+    parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
+    parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
+    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
+    parser.add_argument("--live", action="store_true", help="enable code live reload")
+    parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
+
+    return parser.parse_args(argv)
+
+
+def set_config(args):
+
+    config = Config.instance()
+    server_config = config.get_section_config("Server")
+    server_config["local"] = str(args.local)
+    server_config["allow_remote_console"] = str(args.allow)
+    server_config["host"] = args.host
+    server_config["port"] = str(args.port)
+    server_config["ssl"] = str(args.ssl)
+    server_config["certfile"] = args.certfile
+    server_config["certkey"] = args.certkey
+    server_config["record"] = args.record
+    server_config["debug"] = str(args.debug)
+    server_config["live"] = str(args.live)
+    server_config["shell"] = str(args.shell)
+    config.set_section_config("Server", server_config)
 
 
 def main():
@@ -82,33 +136,23 @@ def main():
     Entry point for GNS3 server
     """
 
-    if sys.platform.startswith("win"):
-        # necessary on Windows to freeze the application
-        multiprocessing.freeze_support()
+    level = logging.INFO
+    args = parse_arguments(sys.argv[1:], Config.instance().get_section_config("Server"))
+    if args.debug:
+        level = logging.DEBUG
 
-    try:
-        tornado.options.parse_command_line()
-    except (tornado.options.Error, ValueError):
-        tornado.options.print_help()
-        raise SystemExit
-
-    from tornado.options import options
-    if options.version:
-        print(__version__)
-        raise SystemExit
-
-    current_year = datetime.date.today().year
-
-    user_log = logging.getLogger('user_facing')
-    if not options.quiet:
-        # Send user facing messages to stdout.
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.addFilter(logging.Filter(name='user_facing'))
-        user_log.addHandler(stream_handler)
-        user_log.propagate = False
-
+    user_log = init_logger(level, quiet=args.quiet)
     user_log.info("GNS3 server version {}".format(__version__))
+    current_year = datetime.date.today().year
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+
+    for config_file in Config.instance().get_config_files():
+        user_log.info("Config file {} loaded".format(config_file))
+
+    set_config(args)
+    server_config = Config.instance().get_section_config("Server")
+    if server_config.getboolean("local"):
+        log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
     # we only support Python 3 version >= 3.3
     if sys.version_info < (3, 3):
@@ -118,19 +162,27 @@ def main():
                   major=sys.version_info[0], minor=sys.version_info[1],
                   micro=sys.version_info[2], pid=os.getpid()))
 
-    # check for the correct locale
-    # (UNIX/Linux only)
+    # check for the correct locale (UNIX/Linux only)
     locale_check()
 
     try:
         os.getcwd()
     except FileNotFoundError:
-        log.critical("the current working directory doesn't exist")
+        log.critical("The current working directory doesn't exist")
         return
 
-    server = Server(options.host, options.port, options.ipc, options.console_bind_to_any)
-    server.load_modules()
-    server.run()
+    Project.clean_project_directory()
+
+    CrashReport.instance()
+    host = server_config["host"]
+    port = int(server_config["port"])
+    server = Server.instance(host, port)
+    try:
+        server.run()
+    except Exception as e:
+        log.critical("Critical error while running the server: {}".format(e), exc_info=1)
+        CrashReport.instance().capture_exception()
+        return
 
 if __name__ == '__main__':
     main()

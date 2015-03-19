@@ -19,13 +19,15 @@
 Interface for dummy NIOs (mostly for tests).
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_Null(NIO):
+class NIONull(NIO):
+
     """
     Dynamips NULL NIO.
 
@@ -36,15 +38,11 @@ class NIO_Null(NIO):
 
     def __init__(self, hypervisor):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIO_Null._instance_count
-        NIO_Null._instance_count += 1
-        self._name = 'nio_null' + str(self._id)
-
-        self._hypervisor.send("nio create_null {}".format(self._name))
-        log.info("NIO NULL {name} created.".format(name=self._name))
+        # create an unique ID and name
+        nio_id = NIONull._instance_count
+        NIONull._instance_count += 1
+        name = 'nio_null' + str(nio_id)
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -53,3 +51,13 @@ class NIO_Null(NIO):
         """
 
         cls._instance_count = 0
+
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self._hypervisor.send("nio create_null {}".format(self._name))
+        log.info("NIO NULL {name} created.".format(name=self._name))
+
+    def __json__(self):
+
+        return {"type": "nio_null"}

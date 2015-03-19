@@ -19,13 +19,15 @@
 Interface for TAP NIOs (UNIX based OSes only).
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_TAP(NIO):
+class NIOTAP(NIO):
+
     """
     Dynamips TAP NIO.
 
@@ -37,19 +39,12 @@ class NIO_TAP(NIO):
 
     def __init__(self, hypervisor, tap_device):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIO_TAP._instance_count
-        NIO_TAP._instance_count += 1
-        self._name = 'nio_tap' + str(self._id)
+        # create an unique ID and name
+        nio_id = NIOTAP._instance_count
+        NIOTAP._instance_count += 1
+        name = 'nio_tap' + str(nio_id)
         self._tap_device = tap_device
-
-        self._hypervisor.send("nio create_tap {name} {tap}".format(name=self._name,
-                                                                   tap=tap_device))
-
-        log.info("NIO TAP {name} created with device {device}".format(name=self._name,
-                                                                      device=tap_device))
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -58,6 +53,12 @@ class NIO_TAP(NIO):
         """
 
         cls._instance_count = 0
+
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self._hypervisor.send("nio create_tap {name} {tap}".format(name=self._name, tap=self._tap_device))
+        log.info("NIO TAP {name} created with device {device}".format(name=self._name, device=self._tap_device))
 
     @property
     def tap_device(self):
@@ -68,3 +69,8 @@ class NIO_TAP(NIO):
         """
 
         return self._tap_device
+
+    def __json__(self):
+
+        return {"type": "nio_tap",
+                "tap_device": self._tap_device}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,5 +23,5 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-__version__ = "1.2.3"
-__version_info__ = (1, 2, 3, 0)
+__version__ = "1.3.0rc1"
+__version_info__ = (1, 3, 0, -99)

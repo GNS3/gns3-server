@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class PA_8E(Adapter):
+
     """
     PA-8E Ethernet port adapter.
     """

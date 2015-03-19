@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@ Represents a Dynamips hypervisor and starts/stops the associated Dynamips proces
 """
 
 import os
-import time
 import subprocess
 import tempfile
+import asyncio
 
 from .dynamips_hypervisor import DynamipsHypervisor
 from .dynamips_error import DynamipsError
@@ -32,18 +32,20 @@ log = logging.getLogger(__name__)
 
 
 class Hypervisor(DynamipsHypervisor):
+
     """
     Hypervisor.
 
     :param path: path to Dynamips executable
     :param working_dir: working directory
-    :param port: port for this hypervisor
     :param host: host/address for this hypervisor
+    :param port: port for this hypervisor
+    :param console_host: host/address for console connections
     """
 
-    _instance_count = 0
+    _instance_count = 1
 
-    def __init__(self, path, working_dir, host, port):
+    def __init__(self, path, working_dir, host, port, console_host):
 
         DynamipsHypervisor.__init__(self, working_dir, host, port)
 
@@ -51,16 +53,12 @@ class Hypervisor(DynamipsHypervisor):
         self._id = Hypervisor._instance_count
         Hypervisor._instance_count += 1
 
+        self._console_host = console_host
         self._path = path
         self._command = []
         self._process = None
         self._stdout_file = ""
         self._started = False
-
-        # settings used the load-balance hypervisors
-        # (for the hypervisor manager)
-        self._memory_load = 0
-        self._ios_image_ref = ""
 
     @property
     def id(self):
@@ -102,99 +100,7 @@ class Hypervisor(DynamipsHypervisor):
 
         self._path = path
 
-    @property
-    def port(self):
-        """
-        Returns the port used to start the Dynamips hypervisor.
-
-        :returns: port number (integer)
-        """
-
-        return self._port
-
-    @port.setter
-    def port(self, port):
-        """
-        Sets the port used to start the Dynamips hypervisor.
-
-        :param port: port number (integer)
-        """
-
-        self._port = port
-
-    @property
-    def host(self):
-        """
-        Returns the host (binding) used to start the Dynamips hypervisor.
-
-        :returns: host/address (string)
-        """
-
-        return self._host
-
-    @host.setter
-    def host(self, host):
-        """
-        Sets the host (binding) used to start the Dynamips hypervisor.
-
-        :param host: host/address (string)
-        """
-
-        self._host = host
-
-    @property
-    def image_ref(self):
-        """
-        Returns the reference IOS image name
-        (used by the hypervisor manager for load-balancing purposes).
-
-        :returns: image reference name
-        """
-
-        return self._ios_image_ref
-
-    @image_ref.setter
-    def image_ref(self, ios_image_name):
-        """
-        Sets the reference IOS image name
-        (used by the hypervisor manager for load-balancing purposes).
-
-        :param ios_image_name: image reference name
-        """
-
-        self._ios_image_ref = ios_image_name
-
-    def increase_memory_load(self, memory):
-        """
-        Increases the memory load of this hypervisor.
-        (used by the hypervisor manager for load-balancing purposes).
-
-        :param memory: amount of RAM (integer)
-        """
-
-        self._memory_load += memory
-
-    def decrease_memory_load(self, memory):
-        """
-        Decreases the memory load of this hypervisor.
-        (used by the hypervisor manager for load-balancing purposes).
-
-        :param memory: amount of RAM (integer)
-        """
-
-        self._memory_load -= memory
-
-    @property
-    def memory_load(self):
-        """
-        Returns the memory load of this hypervisor.
-        (used by the hypervisor manager for load-balancing purposes).
-
-        :returns: amount of RAM (integer)
-        """
-
-        return self._memory_load
-
+    @asyncio.coroutine
     def start(self):
         """
         Starts the Dynamips hypervisor process.
@@ -202,38 +108,39 @@ class Hypervisor(DynamipsHypervisor):
 
         self._command = self._build_command()
         try:
-            log.info("starting Dynamips: {}".format(self._command))
+            log.info("Starting Dynamips: {}".format(self._command))
+
             with tempfile.NamedTemporaryFile(delete=False) as fd:
                 self._stdout_file = fd.name
                 log.info("Dynamips process logging to {}".format(fd.name))
-                self._process = subprocess.Popen(self._command,
-                                                 stdout=fd,
-                                                 stderr=subprocess.STDOUT,
-                                                 cwd=self._working_dir)
-            log.info("Dynamips started PID={}".format(self._process.pid))
+                self._process = yield from asyncio.create_subprocess_exec(*self._command,
+                                                                          stdout=fd,
+                                                                          stderr=subprocess.STDOUT,
+                                                                          cwd=self._working_dir)
+            log.info("Dynamips process started PID={}".format(self._process.pid))
             self._started = True
         except (OSError, subprocess.SubprocessError) as e:
-            log.error("could not start Dynamips: {}".format(e))
-            raise DynamipsError("could not start Dynamips: {}".format(e))
+            log.error("Could not start Dynamips: {}".format(e))
+            raise DynamipsError("Could not start Dynamips: {}".format(e))
 
+    @asyncio.coroutine
     def stop(self):
         """
         Stops the Dynamips hypervisor process.
         """
 
         if self.is_running():
-            DynamipsHypervisor.stop(self)
-            log.info("stopping Dynamips PID={}".format(self._process.pid))
+            log.info("Stopping Dynamips process PID={}".format(self._process.pid))
+            yield from DynamipsHypervisor.stop(self)
+            # give some time for the hypervisor to properly stop.
+            # time to delete UNIX NIOs for instance.
+            yield from asyncio.sleep(0.01)
             try:
-                # give some time for the hypervisor to properly stop.
-                # time to delete UNIX NIOs for instance.
-                time.sleep(0.01)
-                self._process.terminate()
-                self._process.wait(1)
-            except subprocess.TimeoutExpired:
-                self._process.kill()
-                if self._process.poll() is None:
-                    log.warn("Dynamips process {} is still running".format(self._process.pid))
+                yield from asyncio.wait_for(self._process.wait(), timeout=3)
+            except asyncio.TimeoutError:
+                if self._process.returncode is None:
+                    log.warn("Dynamips process {} is still running... killing it".format(self._process.pid))
+                    self._process.kill()
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:
@@ -264,7 +171,7 @@ class Hypervisor(DynamipsHypervisor):
         :returns: True or False
         """
 
-        if self._process and self._process.poll() is None:
+        if self._process and self._process.returncode is None:
             return True
         return False
 
@@ -276,8 +183,11 @@ class Hypervisor(DynamipsHypervisor):
 
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
-        command.extend(["-l", "dynamips_log_{}.txt".format(self._port)])  # log file
-        if self._host != "0.0.0.0" and self._host != "::":
+        command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
+        # Dynamips cannot listen for hypervisor commands and for console connections on
+        # 2 different IP addresses.
+        # See https://github.com/GNS3/dynamips/issues/62
+        if self._console_host != "0.0.0.0" and self._console_host != "::":
             command.extend(["-H", "{}:{}".format(self._host, self._port)])
         else:
             command.extend(["-H", str(self._port)])

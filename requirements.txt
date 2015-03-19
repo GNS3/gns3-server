@@ -1,9 +1,6 @@
-netifaces
-tornado==3.2.2
-pyzmq
-jsonschema
-pycurl
-python-dateutil
-apache-libcloud
-requests
-
+netifaces==0.10.4
+jsonschema==2.4.0
+python-dateutil==2.3
+aiohttp==0.14.4
+Jinja2==2.7.3
+raven==5.2.0

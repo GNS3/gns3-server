@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class C2600_MB_1FE(Adapter):
+
     """
     Integrated 1 port FastEthernet adapter for the c2600 platform.
     """

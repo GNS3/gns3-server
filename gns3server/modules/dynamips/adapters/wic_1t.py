@@ -17,6 +17,7 @@
 
 
 class WIC_1T(object):
+
     """
     WIC-1T Serial
     """

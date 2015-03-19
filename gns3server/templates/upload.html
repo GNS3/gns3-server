@@ -1,20 +1,22 @@
-<html>
-<head> 
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
-<title>Upload Form for GNS3 server {{version}}</title>
-</head>
-<body>
-<p><h1>Select & Upload (v{{version}})</h1></p>
-<form enctype="multipart/form-data" action="/upload" method="post">
-File: <input type="file" name="file" />
-<br />
-<br />
-<input type="submit" value="upload" />
-</form>
-{%if items%}
-<h3>Files on {{host}}</h3>
-{%for item in items%}
-<p>{{path}}/{{item}}</a></p>
-{%end%}
-{%end%}
-</body>
+{% extends "layout.html" %}
+{% block body %}
+    <h1>Select & Upload an image for GNS3</h1>
+    <form enctype="multipart/form-data" action="/upload" method="post">
+    File path: <input type="file" name="file" /><br>
+    File type: <select name="type" />
+        <option value="IOU">IOU</option>
+        <option value="IOURC">IOU licence (iourc)</option>
+        <option value="IOS">IOS</option>
+        <option value="QEMU">Qemu</option>
+    </select>
+    <br />
+    <br />
+    <input type="submit" value="Upload" />
+    </form>
+    {%if files%}
+        <h2>Files on {{gns3_host}}</h2>
+        {%for file in files%}
+            <p>{{file}}</a></p>
+        {%endfor%}
+    {%endif%}
+{% endblock %}

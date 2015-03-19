@@ -20,111 +20,74 @@ Interface for Dynamips virtual Ethernet switch module ("ethsw").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 """
 
-import os
+import asyncio
+
+from .device import Device
+from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
+
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class EthernetSwitch(object):
+class EthernetSwitch(Device):
+
     """
     Dynamips Ethernet switch.
 
-    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this switch
+    :param device_id: Device instance identifier
+    :param project: Project instance
+    :param manager: Parent VM Manager
+    :param hypervisor: Dynamips hypervisor instance
     """
 
-    _instances = []
+    def __init__(self, name, device_id, project, manager, hypervisor=None):
 
-    def __init__(self, hypervisor, name):
-
-         # find an instance identifier (0 < id <= 4096)
-        self._id = 0
-        for identifier in range(1, 4097):
-            if identifier not in self._instances:
-                self._id = identifier
-                self._instances.append(self._id)
-                break
-
-        if self._id == 0:
-            raise DynamipsError("Maximum number of instances reached")
-
-        self._hypervisor = hypervisor
-        self._name = '"' + name + '"'  # put name into quotes to protect spaces
-        self._hypervisor.send("ethsw create {}".format(self._name))
-
-        log.info("Ethernet switch {name} [id={id}] has been created".format(name=self._name,
-                                                                            id=self._id))
-
-        self._hypervisor.devices.append(self)
+        super().__init__(name, device_id, project, manager, hypervisor)
         self._nios = {}
-        self._mapping = {}
+        self._mappings = {}
 
-    @classmethod
-    def reset(cls):
-        """
-        Resets the instance count and the allocated instances list.
-        """
+    def __json__(self):
 
-        cls._instances.clear()
+        ethernet_switch_info = {"name": self.name,
+                                "device_id": self.id,
+                                "project_id": self.project.id}
 
-    @property
-    def id(self):
-        """
-        Returns the unique ID for this Ethernet switch.
+        ports = []
+        for port_number, settings in self._mappings.items():
+            ports.append({"port": port_number,
+                          "type": settings[0],
+                          "vlan": settings[1]})
 
-        :returns: id (integer)
-        """
+        ethernet_switch_info["ports"] = ports
+        return ethernet_switch_info
 
-        return self._id
+    @asyncio.coroutine
+    def create(self):
 
-    @property
-    def name(self):
-        """
-        Returns the current name of this Ethernet switch.
+        if self._hypervisor is None:
+            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
+            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=module_workdir)
 
-        :returns: Ethernet switch name
-        """
+        yield from self._hypervisor.send('ethsw create "{}"'.format(self._name))
+        log.info('Ethernet switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        self._hypervisor.devices.append(self)
 
-        return self._name[1:-1]  # remove quotes
-
-    @name.setter
-    def name(self, new_name):
+    @asyncio.coroutine
+    def set_name(self, new_name):
         """
         Renames this Ethernet switch.
 
         :param new_name: New name for this switch
         """
 
-        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
-        self._hypervisor.send("ethsw rename {name} {new_name}".format(name=self._name,
-                                                                      new_name=new_name))
-
-        log.info("Ethernet switch {name} [id={id}]: renamed to {new_name}".format(name=self._name,
-                                                                                  id=self._id,
-                                                                                  new_name=new_name))
-
+        yield from self._hypervisor.send('ethsw rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
+        log.info('Ethernet switch "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name,
+                                                                                   id=self._id,
+                                                                                   new_name=new_name))
         self._name = new_name
-
-    @property
-    def hypervisor(self):
-        """
-        Returns the current hypervisor.
-
-        :returns: hypervisor instance
-        """
-
-        return self._hypervisor
-
-    def list(self):
-        """
-        Returns all Ethernet switches instances.
-
-        :returns: list of all Ethernet switches
-        """
-
-        return self._hypervisor.send("ethsw list")
 
     @property
     def nios(self):
@@ -137,142 +100,171 @@ class EthernetSwitch(object):
         return self._nios
 
     @property
-    def mapping(self):
+    def mappings(self):
         """
-        Returns port mapping
+        Returns port mappings
 
-        :returns: mapping list
+        :returns: mappings list
         """
 
-        return self._mapping
+        return self._mappings
 
+    @asyncio.coroutine
     def delete(self):
         """
         Deletes this Ethernet switch.
         """
 
-        self._hypervisor.send("ethsw delete {}".format(self._name))
+        for nio in self._nios.values():
+            if nio and isinstance(nio, NIOUDP):
+                self.manager.port_manager.release_udp_port(nio.lport)
 
-        log.info("Ethernet switch {name} [id={id}] has been deleted".format(name=self._name,
-                                                                            id=self._id))
-        self._hypervisor.devices.remove(self)
-        self._instances.remove(self._id)
+        try:
+            yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
+            log.info('Ethernet switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+        except DynamipsError:
+            log.debug("Could not properly delete Ethernet switch {}".format(self._name))
+        if self._hypervisor and self in self._hypervisor.devices:
+            self._hypervisor.devices.remove(self)
+        if self._hypervisor and not self._hypervisor.devices:
+            yield from self.hypervisor.stop()
 
-    def add_nio(self, nio, port):
+    @asyncio.coroutine
+    def add_nio(self, nio, port_number):
         """
         Adds a NIO as new port on Ethernet switch.
 
         :param nio: NIO instance to add
-        :param port: port to allocate for the NIO
+        :param port_number: port to allocate for the NIO
         """
 
-        if port in self._nios:
-            raise DynamipsError("Port {} isn't free".format(port))
+        if port_number in self._nios:
+            raise DynamipsError("Port {} isn't free".format(port_number))
 
-        self._hypervisor.send("ethsw add_nio {name} {nio}".format(name=self._name,
-                                                                  nio=nio))
+        yield from self._hypervisor.send('ethsw add_nio "{name}" {nio}'.format(name=self._name, nio=nio))
 
-        log.info("Ethernet switch {name} [id={id}]: NIO {nio} bound to port {port}".format(name=self._name,
-                                                                                           id=self._id,
-                                                                                           nio=nio,
-                                                                                           port=port))
-        self._nios[port] = nio
+        log.info('Ethernet switch "{name}" [{id}]: NIO {nio} bound to port {port}'.format(name=self._name,
+                                                                                          id=self._id,
+                                                                                          nio=nio,
+                                                                                          port=port_number))
+        self._nios[port_number] = nio
 
-    def remove_nio(self, port):
+    @asyncio.coroutine
+    def remove_nio(self, port_number):
         """
         Removes the specified NIO as member of this Ethernet switch.
 
-        :param port: allocated port
+        :param port_number: allocated port number
 
         :returns: the NIO that was bound to the port
         """
 
-        if port not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port))
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._nios[port]
-        self._hypervisor.send("ethsw remove_nio {name} {nio}".format(name=self._name,
-                                                                     nio=nio))
+        nio = self._nios[port_number]
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport)
+        yield from self._hypervisor.send('ethsw remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
 
-        log.info("Ethernet switch {name} [id={id}]: NIO {nio} removed from port {port}".format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               nio=nio,
-                                                                                               port=port))
+        log.info('Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
+                                                                                              id=self._id,
+                                                                                              nio=nio,
+                                                                                              port=port_number))
 
-        del self._nios[port]
-
-        if port in self._mapping:
-            del self._mapping[port]
+        del self._nios[port_number]
+        if port_number in self._mappings:
+            del self._mappings[port_number]
 
         return nio
 
-    def set_access_port(self, port, vlan_id):
+    @asyncio.coroutine
+    def set_port_settings(self, port_number, settings):
+        """
+        Applies port settings to a specific port.
+
+        :param port_number: port number to set the settings
+        :param settings: port settings
+        """
+
+        if settings["type"] == "access":
+            yield from self.set_access_port(port_number, settings["vlan"])
+        elif settings["type"] == "dot1q":
+            yield from self.set_dot1q_port(port_number, settings["vlan"])
+        elif settings["type"] == "qinq":
+            yield from self.set_qinq_port(port_number, settings["vlan"])
+
+    @asyncio.coroutine
+    def set_access_port(self, port_number, vlan_id):
         """
         Sets the specified port as an ACCESS port.
 
-        :param port: allocated port
+        :param port_number: allocated port number
         :param vlan_id: VLAN number membership
         """
 
-        if port not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port))
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._nios[port]
-        self._hypervisor.send("ethsw set_access_port {name} {nio} {vlan_id}".format(name=self._name,
-                                                                                    nio=nio,
-                                                                                    vlan_id=vlan_id))
+        nio = self._nios[port_number]
+        yield from self._hypervisor.send('ethsw set_access_port "{name}" {nio} {vlan_id}'.format(name=self._name,
+                                                                                                 nio=nio,
+                                                                                                 vlan_id=vlan_id))
 
-        log.info("Ethernet switch {name} [id={id}]: port {port} set as an access port in VLAN {vlan_id}".format(name=self._name,
-                                                                                                                id=self._id,
-                                                                                                                port=port,
-                                                                                                                vlan_id=vlan_id))
-        self._mapping[port] = ("access", vlan_id)
+        log.info('Ethernet switch "{name}" [{id}]: port {port} set as an access port in VLAN {vlan_id}'.format(name=self._name,
+                                                                                                               id=self._id,
+                                                                                                               port=port_number,
+                                                                                                               vlan_id=vlan_id))
+        self._mappings[port_number] = ("access", vlan_id)
 
-    def set_dot1q_port(self, port, native_vlan):
+    @asyncio.coroutine
+    def set_dot1q_port(self, port_number, native_vlan):
         """
         Sets the specified port as a 802.1Q trunk port.
 
-        :param port: allocated port
+        :param port_number: allocated port number
         :param native_vlan: native VLAN for this trunk port
         """
 
-        if port not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port))
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._nios[port]
-        self._hypervisor.send("ethsw set_dot1q_port {name} {nio} {native_vlan}".format(name=self._name,
-                                                                                       nio=nio,
-                                                                                       native_vlan=native_vlan))
+        nio = self._nios[port_number]
+        yield from self._hypervisor.send('ethsw set_dot1q_port "{name}" {nio} {native_vlan}'.format(name=self._name,
+                                                                                                    nio=nio,
+                                                                                                    native_vlan=native_vlan))
 
-        log.info("Ethernet switch {name} [id={id}]: port {port} set as a 802.1Q port with native VLAN {vlan_id}".format(name=self._name,
-                                                                                                                        id=self._id,
-                                                                                                                        port=port,
-                                                                                                                        vlan_id=native_vlan))
+        log.info('Ethernet switch "{name}" [{id}]: port {port} set as a 802.1Q port with native VLAN {vlan_id}'.format(name=self._name,
+                                                                                                                       id=self._id,
+                                                                                                                       port=port_number,
+                                                                                                                       vlan_id=native_vlan))
 
-        self._mapping[port] = ("dot1q", native_vlan)
+        self._mappings[port_number] = ("dot1q", native_vlan)
 
-    def set_qinq_port(self, port, outer_vlan):
+    @asyncio.coroutine
+    def set_qinq_port(self, port_number, outer_vlan):
         """
         Sets the specified port as a trunk (QinQ) port.
 
-        :param port: allocated port
+        :param port_number: allocated port number
         :param outer_vlan: outer VLAN (transport VLAN) for this QinQ port
         """
 
-        if port not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port))
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._nios[port]
-        self._hypervisor.send("ethsw set_qinq_port {name} {nio} {outer_vlan}".format(name=self._name,
-                                                                                     nio=nio,
-                                                                                     outer_vlan=outer_vlan))
+        nio = self._nios[port_number]
+        yield from self._hypervisor.send('ethsw set_qinq_port "{name}" {nio} {outer_vlan}'.format(name=self._name,
+                                                                                                  nio=nio,
+                                                                                                  outer_vlan=outer_vlan))
 
-        log.info("Ethernet switch {name} [id={id}]: port {port} set as a QinQ port with outer VLAN {vlan_id}".format(name=self._name,
-                                                                                                                       id=self._id,
-                                                                                                                       port=port,
-                                                                                                                       vlan_id=outer_vlan))
-        self._mapping[port] = ("qinq", outer_vlan)
+        log.info('Ethernet switch "{name}" [{id}]: port {port} set as a QinQ port with outer VLAN {vlan_id}'.format(name=self._name,
+                                                                                                                    id=self._id,
+                                                                                                                    port=port_number,
+                                                                                                                    vlan_id=outer_vlan))
+        self._mappings[port_number] = ("qinq", outer_vlan)
 
+    @asyncio.coroutine
     def get_mac_addr_table(self):
         """
         Returns the MAC address table for this Ethernet switch.
@@ -280,62 +272,59 @@ class EthernetSwitch(object):
         :returns: list of entries (Ethernet address, VLAN, NIO)
         """
 
-        return self._hypervisor.send("ethsw show_mac_addr_table {}".format(self._name))
+        mac_addr_table = yield from self._hypervisor.send('ethsw show_mac_addr_table "{}"'.format(self._name))
+        return mac_addr_table
 
+    @asyncio.coroutine
     def clear_mac_addr_table(self):
         """
         Clears the MAC address table for this Ethernet switch.
         """
 
-        self._hypervisor.send("ethsw clear_mac_addr_table {}".format(self._name))
+        yield from self._hypervisor.send('ethsw clear_mac_addr_table "{}"'.format(self._name))
 
-    def start_capture(self, port, output_file, data_link_type="DLT_EN10MB"):
+    @asyncio.coroutine
+    def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
 
-        :param port: allocated port
+        :param port_number: allocated port number
         :param output_file: PCAP destination file for the capture
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        if port not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port))
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._nios[port]
+        nio = self._nios[port_number]
 
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
             data_link_type = data_link_type[4:]
 
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
-            raise DynamipsError("Port {} has already a filter applied".format(port))
+            raise DynamipsError("Port {} has already a filter applied".format(port_number))
 
-        try:
-            os.makedirs(os.path.dirname(output_file))
-        except FileExistsError:
-            pass
-        except OSError as e:
-            raise DynamipsError("Could not create captures directory {}".format(e))
+        yield from nio.bind_filter("both", "capture")
+        yield from nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
 
-        nio.bind_filter("both", "capture")
-        nio.setup_filter("both", "{} {}".format(data_link_type, output_file))
+        log.info('Ethernet switch "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  port=port_number))
 
-        log.info("Ethernet switch {name} [id={id}]: starting packet capture on {port}".format(name=self._name,
-                                                                                              id=self._id,
-                                                                                              port=port))
-
-    def stop_capture(self, port):
+    @asyncio.coroutine
+    def stop_capture(self, port_number):
         """
         Stops a packet capture.
 
-        :param port: allocated port
+        :param port_number: allocated port number
         """
 
-        if port not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port))
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
 
-        nio = self._nios[port]
-        nio.unbind_filter("both")
-        log.info("Ethernet switch {name} [id={id}]: stopping packet capture on {port}".format(name=self._name,
-                                                                                              id=self._id,
-                                                                                              port=port))
+        nio = self._nios[port_number]
+        yield from nio.unbind_filter("both")
+        log.info('Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
+                                                                                                  id=self._id,
+                                                                                                  port=port_number))

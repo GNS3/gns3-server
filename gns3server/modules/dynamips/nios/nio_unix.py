@@ -19,13 +19,15 @@
 Interface for UNIX NIOs (Unix based OSes only).
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_UNIX(NIO):
+class NIOUNIX(NIO):
+
     """
     Dynamips UNIX NIO.
 
@@ -38,22 +40,13 @@ class NIO_UNIX(NIO):
 
     def __init__(self, hypervisor, local_file, remote_file):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIO_UNIX._instance_count
-        NIO_UNIX._instance_count += 1
-        self._name = 'nio_unix' + str(self._id)
+        # create an unique ID and name
+        nio_id = NIOUNIX._instance_count
+        NIOUNIX._instance_count += 1
+        name = 'nio_unix' + str(nio_id)
         self._local_file = local_file
         self._remote_file = remote_file
-
-        self._hypervisor.send("nio create_unix {name} {local} {remote}".format(name=self._name,
-                                                                               local=local_file,
-                                                                               remote=remote_file))
-
-        log.info("NIO UNIX {name} created with local file {local} and remote file {remote}".format(name=self._name,
-                                                                                                   local=local_file,
-                                                                                                   remote=remote_file))
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -62,6 +55,17 @@ class NIO_UNIX(NIO):
         """
 
         cls._instance_count = 0
+
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self._hypervisor.send("nio create_unix {name} {local} {remote}".format(name=self._name,
+                                                                                          local=self._local_file,
+                                                                                          remote=self._remote_file))
+
+        log.info("NIO UNIX {name} created with local file {local} and remote file {remote}".format(name=self._name,
+                                                                                                   local=self._local_file,
+                                                                                                   remote=self._remote_file))
 
     @property
     def local_file(self):
@@ -82,3 +86,9 @@ class NIO_UNIX(NIO):
         """
 
         return self._remote_file
+
+    def __json__(self):
+
+        return {"type": "nio_unix",
+                "local_file": self._local_file,
+                "remote_file": self._remote_file}

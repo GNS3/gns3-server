@@ -1,0 +1,264 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2014 GNS3 Technologies Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+VBOX_CREATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to create a new VirtualBox VM instance",
+    "type": "object",
+    "properties": {
+        "vm_id": {
+            "description": "VirtualBox VM instance identifier",
+            "oneOf": [
+                {"type": "string",
+                 "minLength": 36,
+                 "maxLength": 36,
+                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"},
+                {"type": "integer"}  # for legacy projects
+            ]
+        },
+        "linked_clone": {
+            "description": "either the VM is a linked clone or not",
+            "type": "boolean"
+        },
+        "name": {
+            "description": "VirtualBox VM instance name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "vmname": {
+            "description": "VirtualBox VM name (in VirtualBox itself)",
+            "type": "string",
+            "minLength": 1,
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "use_any_adapter": {
+            "description": "allow GNS3 to use any VirtualBox adapter",
+            "type": "boolean",
+        },
+        "adapter_type": {
+            "description": "VirtualBox adapter type",
+            "type": "string",
+            "minLength": 1,
+        },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "enable_remote_console": {
+            "description": "enable the remote console",
+            "type": "boolean"
+        },
+        "ram": {
+            "description": "Amount of RAM",
+            "minimum": 0,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "headless": {
+            "description": "headless mode",
+            "type": "boolean"
+        },
+    },
+    "additionalProperties": False,
+    "required": ["name", "vmname", "linked_clone"],
+}
+
+VBOX_UPDATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to update a VirtualBox VM instance",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "VirtualBox VM instance name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "vmname": {
+            "description": "VirtualBox VM name (in VirtualBox itself)",
+            "type": "string",
+            "minLength": 1,
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "use_any_adapter": {
+            "description": "allow GNS3 to use any VirtualBox adapter",
+            "type": "boolean",
+        },
+        "adapter_type": {
+            "description": "VirtualBox adapter type",
+            "type": "string",
+            "minLength": 1,
+        },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "enable_remote_console": {
+            "description": "enable the remote console",
+            "type": "boolean"
+        },
+        "ram": {
+            "description": "Amount of RAM",
+            "minimum": 0,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "headless": {
+            "description": "headless mode",
+            "type": "boolean"
+        },
+    },
+    "additionalProperties": False,
+}
+
+VBOX_NIO_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to add a NIO for a VirtualBox VM instance",
+    "type": "object",
+    "definitions": {
+        "UDP": {
+            "description": "UDP Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_udp"]
+                },
+                "lport": {
+                    "description": "Local port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "rhost": {
+                    "description": "Remote host",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "rport": {
+                    "description": "Remote port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
+            },
+            "required": ["type", "lport", "rhost", "rport"],
+            "additionalProperties": False
+        },
+    },
+    "oneOf": [
+        {"$ref": "#/definitions/UDP"},
+    ],
+    "additionalProperties": True,
+    "required": ["type"]
+}
+
+VBOX_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a packet capture on a VirtualBox VM instance port",
+    "type": "object",
+    "properties": {
+        "capture_file_name": {
+            "description": "Capture file name",
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "additionalProperties": False,
+    "required": ["capture_file_name"]
+}
+
+VBOX_OBJECT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "VirtualBox VM instance",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "VirtualBox VM instance name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "vm_id": {
+            "description": "VirtualBox VM instance UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "project_id": {
+            "description": "Project UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "vmname": {
+            "description": "VirtualBox VM name (in VirtualBox itself)",
+            "type": "string",
+            "minLength": 1,
+        },
+        "enable_remote_console": {
+            "description": "enable the remote console",
+            "type": "boolean"
+        },
+        "headless": {
+            "description": "headless mode",
+            "type": "boolean"
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
+        },
+        "use_any_adapter": {
+            "description": "allow GNS3 to use any VirtualBox adapter",
+            "type": "boolean",
+        },
+        "adapter_type": {
+            "description": "VirtualBox adapter type",
+            "type": "string",
+            "minLength": 1,
+        },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "ram": {
+            "description": "Amount of RAM",
+            "minimum": 0,
+            "maximum": 65535,
+            "type": "integer"
+        },
+    },
+    "additionalProperties": False,
+    "required": ["name", "vm_id", "project_id"]
+}

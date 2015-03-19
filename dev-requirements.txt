@@ -1,4 +1,9 @@
 -rrequirements.txt
 
-pytest
-ws4py
+sphinx==1.2.3
+pytest==2.6.4
+pep8==1.5.7
+pytest-timeout
+pytest-capturelog
+pytest-cov
+python-coveralls

@@ -40,3 +40,10 @@ nosetests.xml
 
 # Gedit Backup Files
 *~
+
+#Documentation build
+docs/_build
+
+#VPCS
+vpcs.hist
+startup.vpcs

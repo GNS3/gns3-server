@@ -28,10 +28,22 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        # import here, cause outside the eggs aren't loaded
         import pytest
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
+
+
+dependencies = ["aiohttp==0.14.4",
+                "jsonschema==2.4.0",
+                "Jinja2==2.7.3",
+                "raven==5.2.0"]
+
+#if not sys.platform.startswith("win"):
+#    dependencies.append("netifaces==0.10.4")
+
+if sys.version_info == (3, 3):
+    dependencies.append("asyncio==3.4.2")
 
 setup(
     name="gns3-server",
@@ -40,17 +52,9 @@ setup(
     license="GNU General Public License v3 (GPLv3)",
     tests_require=["pytest"],
     cmdclass={"test": PyTest},
-    author="Jeremy Grossmann",
-    author_email="package-maintainer@gns3.net",
-    description="GNS3 server to asynchronously manage emulators",
+    description="GNS3 server",
     long_description=open("README.rst", "r").read(),
-    install_requires=[
-        "tornado>=3.1",
-        "pyzmq>=14.0.0",
-        "jsonschema>=2.3.0",
-        "apache-libcloud>=0.14.1",
-        "requests",
-    ],
+    install_requires=dependencies,
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
@@ -67,7 +71,7 @@ setup(
         "Intended Audience :: Information Technology",
         "Topic :: System :: Networking",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        'Natural Language :: English',
+        "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",

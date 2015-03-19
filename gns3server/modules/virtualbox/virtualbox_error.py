@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,21 +19,9 @@
 Custom exceptions for VirtualBox module.
 """
 
+from ..vm_error import VMError
 
-class VirtualBoxError(Exception):
 
-    def __init__(self, message, original_exception=None):
+class VirtualBoxError(VMError):
 
-        Exception.__init__(self, message)
-        if isinstance(message, Exception):
-            message = str(message)
-        self._message = message
-        self._original_exception = original_exception
-
-    def __repr__(self):
-
-        return self._message
-
-    def __str__(self):
-
-        return self._message
+    pass

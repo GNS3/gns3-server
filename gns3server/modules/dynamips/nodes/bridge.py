@@ -20,65 +20,49 @@ Interface for Dynamips NIO bridge module ("nio_bridge").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L538
 """
 
+import asyncio
+from .device import Device
 
-class Bridge(object):
+
+class Bridge(Device):
+
     """
     Dynamips bridge.
 
-    :param hypervisor: Dynamips hypervisor instance
     :param name: name for this bridge
+    :param node_id: Node instance identifier
+    :param project: Project instance
+    :param manager: Parent VM Manager
+    :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, hypervisor, name):
+    def __init__(self, name, node_id, project, manager, hypervisor=None):
 
-        self._hypervisor = hypervisor
-        self._name = '"' + name + '"'  # put name into quotes to protect spaces
-        self._hypervisor.send("nio_bridge create {}".format(self._name))
-        self._hypervisor.devices.append(self)
+        super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = []
 
-    @property
-    def name(self):
-        """
-        Returns the current name of this bridge.
+    @asyncio.coroutine
+    def create(self):
 
-        :returns: bridge name
-        """
+        if self._hypervisor is None:
+            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
+            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=module_workdir)
 
-        return self._name[1:-1]  # remove quotes
+        yield from self._hypervisor.send('nio_bridge create "{}"'.format(self._name))
+        self._hypervisor.devices.append(self)
 
-    @name.setter
-    def name(self, new_name):
+    @asyncio.coroutine
+    def set_name(self, new_name):
         """
         Renames this bridge.
 
         :param new_name: New name for this bridge
         """
 
-        new_name = '"' + new_name + '"'  # put the new name into quotes to protect spaces
-        self._hypervisor.send("nio_bridge rename {name} {new_name}".format(name=self._name,
-                                                                           new_name=new_name))
+        yield from self._hypervisor.send('nio_bridge rename "{name}" "{new_name}"'.format(name=self._name,
+                                                                                          new_name=new_name))
 
         self._name = new_name
-
-    @property
-    def hypervisor(self):
-        """
-        Returns the current hypervisor.
-
-        :returns: hypervisor instance
-        """
-
-        return self._hypervisor
-
-    def list(self):
-        """
-        Returns all bridge instances.
-
-        :returns: list of all bridges
-        """
-
-        return self._hypervisor.send("nio_bridge list")
 
     @property
     def nios(self):
@@ -90,14 +74,18 @@ class Bridge(object):
 
         return self._nios
 
+    @asyncio.coroutine
     def delete(self):
         """
         Deletes this bridge.
         """
 
-        self._hypervisor.send("nio_bridge delete {}".format(self._name))
-        self._hypervisor.devices.remove(self)
+        if self._hypervisor and self in self._hypervisor.devices:
+            self._hypervisor.devices.remove(self)
+        if self._hypervisor and not self._hypervisor.devices:
+            yield from self._hypervisor.send('nio_bridge delete "{}"'.format(self._name))
 
+    @asyncio.coroutine
     def add_nio(self, nio):
         """
         Adds a NIO as new port on this bridge.
@@ -105,10 +93,10 @@ class Bridge(object):
         :param nio: NIO instance to add
         """
 
-        self._hypervisor.send("nio_bridge add_nio {name} {nio}".format(name=self._name,
-                                                                       nio=nio))
+        yield from self._hypervisor.send('nio_bridge add_nio "{name}" {nio}'.format(name=self._name, nio=nio))
         self._nios.append(nio)
 
+    @asyncio.coroutine
     def remove_nio(self, nio):
         """
         Removes the specified NIO as member of this bridge.
@@ -116,6 +104,5 @@ class Bridge(object):
         :param nio: NIO instance to remove
         """
 
-        self._hypervisor.send("nio_bridge remove_nio {name} {nio}".format(name=self._name,
-                                                                          nio=nio))
+        yield from self._hypervisor.send('nio_bridge remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
         self._nios.remove(nio)

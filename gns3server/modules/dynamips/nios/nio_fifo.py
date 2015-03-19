@@ -19,13 +19,15 @@
 Interface for FIFO NIOs.
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_FIFO(NIO):
+class NIOFIFO(NIO):
+
     """
     Dynamips FIFO NIO.
 
@@ -36,16 +38,11 @@ class NIO_FIFO(NIO):
 
     def __init__(self, hypervisor):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIO_FIFO._instance_count
-        NIO_FIFO._instance_count += 1
-        self._name = 'nio_fifo' + str(self._id)
-
-        self._hypervisor.send("nio create_fifo {}".format(self._name))
-
-        log.info("NIO FIFO {name} created.".format(name=self._name))
+        # create an unique ID and name
+        nio_id = NIOFIFO._instance_count
+        NIOFIFO._instance_count += 1
+        name = 'nio_fifo' + str(nio_id)
+        NIO.__init__(name, self, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -55,6 +52,13 @@ class NIO_FIFO(NIO):
 
         cls._instance_count = 0
 
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self._hypervisor.send("nio create_fifo {}".format(self._name))
+        log.info("NIO FIFO {name} created.".format(name=self._name))
+
+    @asyncio.coroutine
     def crossconnect(self, nio):
         """
         Establishes a cross-connect between this FIFO NIO and another one.
@@ -62,7 +66,11 @@ class NIO_FIFO(NIO):
         :param nio: FIFO NIO instance
         """
 
-        self._hypervisor.send("nio crossconnect_fifo {name} {nio}".format(name=self._name,
-                                                                          nio=nio))
+        yield from self._hypervisor.send("nio crossconnect_fifo {name} {nio}".format(name=self._name,
+                                                                                     nio=nio))
 
         log.info("NIO FIFO {name} crossconnected with {nio_name}.".format(name=self._name, nio_name=nio.name))
+
+    def __json__(self):
+
+        return {"type": "nio_fifo"}

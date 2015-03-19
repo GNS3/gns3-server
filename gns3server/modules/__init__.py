@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,16 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from .base import IModule
-from .deadman import DeadMan
-from .dynamips import Dynamips
-from .qemu import Qemu
 from .vpcs import VPCS
 from .virtualbox import VirtualBox
+from .dynamips import Dynamips
+from .qemu import Qemu
 
-MODULES = [DeadMan, Dynamips, VPCS, VirtualBox, Qemu]
+MODULES = [VPCS, VirtualBox, Dynamips, Qemu]
 
-if sys.platform.startswith("linux"):
+if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
     # IOU runs only on Linux
     from .iou import IOU
     MODULES.append(IOU)
