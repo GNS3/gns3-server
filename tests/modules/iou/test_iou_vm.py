@@ -28,7 +28,7 @@ from unittest.mock import patch, MagicMock
 from gns3server.modules.iou.iou_vm import IOUVM
 from gns3server.modules.iou.iou_error import IOUError
 from gns3server.modules.iou import IOU
-
+from gns3server.config import Config
 
 @pytest.fixture(scope="module")
 def manager(port_manager):
@@ -196,8 +196,9 @@ def test_path(vm, fake_iou_bin):
 
 def test_path_relative(vm, fake_iou_bin, tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        vm.path = "iou.bin"
+    config = Config.instance()
+    config.set("Server", "images_path", str(tmpdir))
+    vm.path = "iou.bin"
     assert vm.path == fake_iou_bin
 
 
