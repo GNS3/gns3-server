@@ -30,6 +30,7 @@ from gns3server.modules.iou.iou_error import IOUError
 from gns3server.modules.iou import IOU
 from gns3server.config import Config
 
+
 @pytest.fixture(scope="module")
 def manager(port_manager):
     m = IOU.instance()
