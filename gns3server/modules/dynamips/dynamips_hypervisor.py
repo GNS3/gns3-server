@@ -59,6 +59,8 @@ class DynamipsHypervisor:
         self._reader = None
         self._writer = None
 
+        self._io_lock = asyncio.Lock()
+
     @asyncio.coroutine
     def connect(self, timeout=10):
         """
@@ -80,7 +82,8 @@ class DynamipsHypervisor:
         while time.time() - begin < timeout:
             yield from asyncio.sleep(0.01)
             try:
-                self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
+                with (yield from self._io_lock):
+                    self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
             except OSError as e:
                 last_exception = e
                 continue
@@ -120,8 +123,9 @@ class DynamipsHypervisor:
         """
 
         yield from self.send("hypervisor close")
-        self._writer.close()
-        self._reader, self._writer = None
+        with (yield from self._io_lock):
+            self._writer.close()
+            self._reader, self._writer = None
 
     @asyncio.coroutine
     def stop(self):
@@ -129,17 +133,18 @@ class DynamipsHypervisor:
         Stops this hypervisor (will no longer run).
         """
 
-        try:
-            # try to properly stop the hypervisor
-            yield from self.send("hypervisor stop")
-        except DynamipsError:
-            pass
-        try:
-            yield from self._writer.drain()
-            self._writer.close()
-        except OSError as e:
-            log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
-        self._reader = self._writer = None
+        with (yield from self._io_lock):
+            try:
+                # try to properly stop the hypervisor
+                yield from self.send("hypervisor stop")
+            except DynamipsError:
+                pass
+            try:
+                yield from self._writer.drain()
+                self._writer.close()
+            except OSError as e:
+                log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
+            self._reader = self._writer = None
 
     @asyncio.coroutine
     def reset(self):
@@ -255,59 +260,60 @@ class DynamipsHypervisor:
         # but still have more data. The only thing we know for sure is the last line
         # will begin with '100-' or a '2xx-' and end with '\r\n'
 
-        if self._writer is None or self._reader is None:
-            raise DynamipsError("Not connected")
+        with (yield from self._io_lock):
+            if self._writer is None or self._reader is None:
+                raise DynamipsError("Not connected")
 
-        try:
-            command = command.strip() + '\n'
-            log.debug("sending {}".format(command))
-            self._writer.write(command.encode())
-        except OSError as e:
-            raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
-                                .format(host=self._host, port=self._port, error=e, run=self.is_running()))
-
-        # Now retrieve the result
-        data = []
-        buf = ''
-        while True:
             try:
-                chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
-                if not chunk:
-                    raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
-                                        .format(host=self._host, port=self._port, run=self.is_running()))
-                buf += chunk.decode()
+                command = command.strip() + '\n'
+                log.debug("sending {}".format(command))
+                self._writer.write(command.encode())
             except OSError as e:
-                raise DynamipsError("Communication timed out with {host}:{port} :{error}, Dynamips process running: {run}"
+                raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                     .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
-            # If the buffer doesn't end in '\n' then we can't be done
-            try:
-                if buf[-1] != '\n':
-                    continue
-            except IndexError:
-                raise DynamipsError("Could not communicate with {host}:{port}, Dynamips process running: {run}"
-                                    .format(host=self._host, port=self._port, run=self.is_running()))
-
-            data += buf.split('\r\n')
-            if data[-1] == '':
-                data.pop()
+            # Now retrieve the result
+            data = []
             buf = ''
+            while True:
+                try:
+                    chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
+                    if not chunk:
+                        raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
+                                            .format(host=self._host, port=self._port, run=self.is_running()))
+                    buf += chunk.decode()
+                except OSError as e:
+                    raise DynamipsError("Communication timed out with {host}:{port} :{error}, Dynamips process running: {run}"
+                                        .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
-            # Does it contain an error code?
-            if self.error_re.search(data[-1]):
-                raise DynamipsError(data[-1][4:])
+                # If the buffer doesn't end in '\n' then we can't be done
+                try:
+                    if buf[-1] != '\n':
+                        continue
+                except IndexError:
+                    raise DynamipsError("Could not communicate with {host}:{port}, Dynamips process running: {run}"
+                                        .format(host=self._host, port=self._port, run=self.is_running()))
 
-            # Or does the last line begin with '100-'? Then we are done!
-            if data[-1][:4] == '100-':
-                data[-1] = data[-1][4:]
-                if data[-1] == 'OK':
+                data += buf.split('\r\n')
+                if data[-1] == '':
                     data.pop()
-                break
+                buf = ''
 
-        # Remove success responses codes
-        for index in range(len(data)):
-            if self.success_re.search(data[index]):
-                data[index] = data[index][4:]
+                # Does it contain an error code?
+                if self.error_re.search(data[-1]):
+                    raise DynamipsError(data[-1][4:])
 
-        log.debug("returned result {}".format(data))
-        return data
+                # Or does the last line begin with '100-'? Then we are done!
+                if data[-1][:4] == '100-':
+                    data[-1] = data[-1][4:]
+                    if data[-1] == 'OK':
+                        data.pop()
+                    break
+
+            # Remove success responses codes
+            for index in range(len(data)):
+                if self.success_re.search(data[index]):
+                    data[index] = data[index][4:]
+
+            log.debug("returned result {}".format(data))
+            return data
