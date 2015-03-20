@@ -14,8 +14,6 @@ Clients like the GNS3 GUI controls the server using a HTTP REST API.
 
 You will need the GNS3 GUI (gns3-gui repository) to control the server.
 
-**NOTE** Checkout the asyncio branch of the repository. It will soon be released in the next release.
-
 Linux (Debian based)
 --------------------
 
