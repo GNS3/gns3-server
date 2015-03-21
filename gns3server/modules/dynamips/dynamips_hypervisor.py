@@ -58,7 +58,6 @@ class DynamipsHypervisor:
         self._uuid = None
         self._reader = None
         self._writer = None
-
         self._io_lock = asyncio.Lock()
 
     @asyncio.coroutine
@@ -82,8 +81,7 @@ class DynamipsHypervisor:
         while time.time() - begin < timeout:
             yield from asyncio.sleep(0.01)
             try:
-                with (yield from self._io_lock):
-                    self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
+                self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
             except OSError as e:
                 last_exception = e
                 continue
@@ -123,9 +121,8 @@ class DynamipsHypervisor:
         """
 
         yield from self.send("hypervisor close")
-        with (yield from self._io_lock):
-            self._writer.close()
-            self._reader, self._writer = None
+        self._writer.close()
+        self._reader, self._writer = None
 
     @asyncio.coroutine
     def stop(self):
@@ -133,18 +130,17 @@ class DynamipsHypervisor:
         Stops this hypervisor (will no longer run).
         """
 
-        with (yield from self._io_lock):
-            try:
-                # try to properly stop the hypervisor
-                yield from self.send("hypervisor stop")
-            except DynamipsError:
-                pass
-            try:
-                yield from self._writer.drain()
-                self._writer.close()
-            except OSError as e:
-                log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
-            self._reader = self._writer = None
+        try:
+            # try to properly stop the hypervisor
+            yield from self.send("hypervisor stop")
+        except DynamipsError:
+            pass
+        try:
+            yield from self._writer.drain()
+            self._writer.close()
+        except OSError as e:
+            log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
+        self._reader = self._writer = None
 
     @asyncio.coroutine
     def reset(self):
@@ -283,7 +279,7 @@ class DynamipsHypervisor:
                                             .format(host=self._host, port=self._port, run=self.is_running()))
                     buf += chunk.decode()
                 except OSError as e:
-                    raise DynamipsError("Communication timed out with {host}:{port} :{error}, Dynamips process running: {run}"
+                    raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                         .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
                 # If the buffer doesn't end in '\n' then we can't be done
