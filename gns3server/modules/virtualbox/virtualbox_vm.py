@@ -305,14 +305,14 @@ class VirtualBoxVM(BaseVM):
 
         log.debug("VirtualBox VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
         if self._console:
-            self._manager.port_manager.release_tcp_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
 
         for adapter in self._ethernet_adapters:
             if adapter is not None:
                 for nio in adapter.ports.values():
                     if nio and isinstance(nio, NIOUDP):
-                        self.manager.port_manager.release_udp_port(nio.lport)
+                        self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         yield from self.stop()
 
@@ -828,7 +828,7 @@ class VirtualBoxVM(BaseVM):
 
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
 
         log.info("VirtualBox VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,

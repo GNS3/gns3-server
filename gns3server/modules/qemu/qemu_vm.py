@@ -93,9 +93,9 @@ class QemuVM(BaseVM):
         self._process_priority = "low"
 
         if self._monitor is not None:
-            self._monitor = self._manager.port_manager.reserve_tcp_port(self._monitor)
+            self._monitor = self._manager.port_manager.reserve_tcp_port(self._monitor, self._project)
         else:
-            self._monitor = self._manager.port_manager.get_free_tcp_port()
+            self._monitor = self._manager.port_manager.get_free_tcp_port(self._project)
 
         self.adapters = 1  # creates 1 adapter by default
         log.info("QEMU VM {name} [id={id}] has been created".format(name=self._name,
@@ -122,8 +122,8 @@ class QemuVM(BaseVM):
         if monitor == self._monitor:
             return
         if self._monitor:
-            self._manager.port_manager.release_monitor_port(self._monitor)
-        self._monitor = self._manager.port_manager.reserve_monitor_port(monitor)
+            self._manager.port_manager.release_monitor_port(self._monitor, self._project)
+        self._monitor = self._manager.port_manager.reserve_monitor_port(monitor, self._project)
         log.info("{module}: '{name}' [{id}]: monitor port set to {port}".format(
             module=self.manager.module_name,
             name=self.name,
@@ -699,10 +699,10 @@ class QemuVM(BaseVM):
         log.debug('QEMU VM "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
         yield from self.stop()
         if self._console:
-            self._manager.port_manager.release_tcp_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
         if self._monitor:
-            self._manager.port_manager.release_tcp_port(self._monitor)
+            self._manager.port_manager.release_tcp_port(self._monitor, self._project)
             self._monitor = None
 
     @asyncio.coroutine
@@ -825,7 +825,7 @@ class QemuVM(BaseVM):
 
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
         log.info("QEMU VM {name} [id={id}]: {nio} removed from adapter {adapter_id}".format(name=self._name,
                                                                                             id=self._id,

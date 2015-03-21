@@ -74,12 +74,12 @@ class VPCSVM(BaseVM):
 
         log.debug("VPCS {name} [{id}] is closing".format(name=self._name, id=self._id))
         if self._console:
-            self._manager.port_manager.release_tcp_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
 
         nio = self._ethernet_adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         self._terminate_process()
 
@@ -334,7 +334,7 @@ class VPCSVM(BaseVM):
 
         nio = self._ethernet_adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         self._ethernet_adapter.remove_nio(port_number)
 
         log.info("VPCS {name} [{id}]: {nio} removed from port {port_number}".format(name=self._name,

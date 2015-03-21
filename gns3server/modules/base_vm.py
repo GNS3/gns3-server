@@ -50,9 +50,9 @@ class BaseVM:
         self._temporary_directory = None
 
         if self._console is not None:
-            self._console = self._manager.port_manager.reserve_tcp_port(self._console)
+            self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
         else:
-            self._console = self._manager.port_manager.get_free_tcp_port()
+            self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
         log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(
             module=self.manager.module_name,
@@ -203,8 +203,8 @@ class BaseVM:
         if console == self._console:
             return
         if self._console:
-            self._manager.port_manager.release_tcp_port(self._console)
-        self._console = self._manager.port_manager.reserve_tcp_port(console)
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
+        self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
         log.info("{module}: '{name}' [{id}]: console port set to {port}".format(
             module=self.manager.module_name,
             name=self.name,

@@ -173,9 +173,11 @@ class PortManager:
                                                                                                                      host,
                                                                                                                      last_exception))
 
-    def get_free_tcp_port(self):
+    def get_free_tcp_port(self, project):
         """
         Get an available TCP port and reserve it
+
+        :param project: Project instance
         """
 
         port = self.find_unused_port(self._console_port_range[0],
@@ -185,36 +187,43 @@ class PortManager:
                                      ignore_ports=self._used_tcp_ports)
 
         self._used_tcp_ports.add(port)
+        project.record_tcp_port(port)
         log.debug("TCP port {} has been allocated".format(port))
         return port
 
-    def reserve_tcp_port(self, port):
+    def reserve_tcp_port(self, port, project):
         """
         Reserve a specific TCP port number
 
         :param port: TCP port number
+        :param project: Project instance
         """
 
         if port in self._used_tcp_ports:
             raise HTTPConflict(text="TCP port {} already in use on host".format(port, self._console_host))
         self._used_tcp_ports.add(port)
+        project.record_tcp_port(port)
         log.debug("TCP port {} has been reserved".format(port))
         return port
 
-    def release_tcp_port(self, port):
+    def release_tcp_port(self, port, project):
         """
         Release a specific TCP port number
 
         :param port: TCP port number
+        :param project: Project instance
         """
 
         if port in self._used_tcp_ports:
             self._used_tcp_ports.remove(port)
+            project.remove_tcp_port(port)
             log.debug("TCP port {} has been released".format(port))
 
-    def get_free_udp_port(self):
+    def get_free_udp_port(self, project):
         """
         Get an available UDP port and reserve it
+
+        :param project: Project instance
         """
 
         port = self.find_unused_port(self._udp_port_range[0],
@@ -224,28 +233,33 @@ class PortManager:
                                      ignore_ports=self._used_udp_ports)
 
         self._used_udp_ports.add(port)
+        project.record_udp_port(port)
         log.debug("UDP port {} has been allocated".format(port))
         return port
 
-    def reserve_udp_port(self, port):
+    def reserve_udp_port(self, port, project):
         """
         Reserve a specific UDP port number
 
         :param port: UDP port number
+        :param project: Project instance
         """
 
         if port in self._used_udp_ports:
             raise HTTPConflict(text="UDP port {} already in use on host".format(port, self._console_host))
         self._used_udp_ports.add(port)
+        project.record_udp_port(port)
         log.debug("UDP port {} has been reserved".format(port))
 
-    def release_udp_port(self, port):
+    def release_udp_port(self, port, project):
         """
         Release a specific UDP port number
 
         :param port: UDP port number
+        :param project: Project instance
         """
 
         if port in self._used_udp_ports:
             self._used_udp_ports.remove(port)
+            project.remove_udp_port(port)
             log.debug("UDP port {} has been released".format(port))

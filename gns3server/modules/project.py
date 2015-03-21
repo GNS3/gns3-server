@@ -62,6 +62,8 @@ class Project:
         self._vms = set()
         self._vms_to_destroy = set()
         self.temporary = temporary
+        self._used_tcp_ports = set()
+        self._used_udp_ports = set()
 
         if path is None:
             path = os.path.join(self._location, self._id)
@@ -167,6 +169,46 @@ class Project:
 
         self._temporary = temporary
         self._update_temporary_file()
+
+    def record_tcp_port(self, port):
+        """
+        Associate a reserved TCP port number with this project.
+
+        :param port: TCP port number
+        """
+
+        if port not in self._used_tcp_ports:
+            self._used_tcp_ports.add(port)
+
+    def record_udp_port(self, port):
+        """
+        Associate a reserved UDP port number with this project.
+
+        :param port: UDP port number
+        """
+
+        if port not in self._used_udp_ports:
+            self._used_udp_ports.add(port)
+
+    def remove_tcp_port(self, port):
+        """
+        Removes an associated TCP port number from this project.
+
+        :param port: TCP port number
+        """
+
+        if port in self._used_tcp_ports:
+            self._used_tcp_ports.remove(port)
+
+    def remove_udp_port(self, port):
+        """
+        Removes an associated UDP port number from this project.
+
+        :param port: UDP port number
+        """
+
+        if port in self._used_udp_ports:
+            self._used_udp_ports.remove(port)
 
     def _update_temporary_file(self):
         """
@@ -309,12 +351,17 @@ class Project:
         else:
             log.info("Project {id} with path '{path}' closed".format(path=self._path, id=self._id))
 
-        port_manager = PortManager.instance()
-        if port_manager.tcp_ports:
-            log.debug("TCP ports still in use: {}".format(port_manager.tcp_ports))
+        if self._used_tcp_ports:
+            log.warning("Project {} has TCP ports still in use: {}".format(self.id, self._used_tcp_ports))
+        if self._used_udp_ports:
+            log.warning("Project {} has UDP ports still in use: {}".format(self.id, self._used_udp_ports))
 
-        if port_manager.udp_ports:
-            log.debug("UDP ports still in use: {}".format(port_manager.udp_ports))
+        # clean the remaining ports that have not been cleaned by their respective VM or device.
+        port_manager = PortManager.instance()
+        for port in self._used_tcp_ports.copy():
+            port_manager.release_tcp_port(port, self)
+        for port in self._used_udp_ports.copy():
+            port_manager.release_udp_port(port, self)
 
     @asyncio.coroutine
     def commit(self):

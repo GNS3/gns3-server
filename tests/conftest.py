@@ -114,14 +114,14 @@ def port_manager():
 
 
 @pytest.fixture(scope="function")
-def free_console_port(request, port_manager):
+def free_console_port(request, port_manager, project):
     """Get a free TCP port"""
 
     # In case of already use ports we will raise an exception
-    port = port_manager.get_free_tcp_port()
+    port = port_manager.get_free_tcp_port(project)
     # We release the port immediately in order to allow
     # the test do whatever the test want
-    port_manager.release_tcp_port(port)
+    port_manager.release_tcp_port(port, project)
     return port
 
 

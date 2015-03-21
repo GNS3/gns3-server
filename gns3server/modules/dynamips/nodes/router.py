@@ -109,16 +109,16 @@ class Router(BaseVM):
             self._dynamips_ids[project.id].append(self._dynamips_id)
 
             if self._aux is not None:
-                self._aux = self._manager.port_manager.reserve_tcp_port(self._aux)
+                self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
             else:
                 allocate_aux = self.manager.config.get_section_config("Dynamips").getboolean("allocate_aux_console_ports", False)
                 if allocate_aux:
-                    self._aux = self._manager.port_manager.get_free_tcp_port()
+                    self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
         else:
             log.info("Creating a new ghost IOS instance")
             if self._console:
                 # Ghost VMs do not need a console port.
-                self._manager.port_manager.release_tcp_port(self._console)
+                self._manager.port_manager.release_tcp_port(self._console, self._project)
                 self._console = None
             self._dynamips_id = 0
             self._name = "Ghost"
@@ -326,18 +326,18 @@ class Router(BaseVM):
             self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
         if self._console:
-            self._manager.port_manager.release_tcp_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
 
         if self._aux:
-            self._manager.port_manager.release_tcp_port(self._aux)
+            self._manager.port_manager.release_tcp_port(self._aux, self._project)
             self._aux = None
 
         for adapter in self._slots:
             if adapter is not None:
                 for nio in adapter.ports.values():
                     if nio and isinstance(nio, NIOUDP):
-                        self.manager.port_manager.release_udp_port(nio.lport)
+                        self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         if self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
@@ -876,8 +876,8 @@ class Router(BaseVM):
                                                                                                            old_console=self._console,
                                                                                                            new_console=console))
 
-        self._manager.port_manager.release_tcp_port(self._console)
-        self._console = self._manager.port_manager.reserve_tcp_port(console)
+        self._manager.port_manager.release_tcp_port(self._console, self._project)
+        self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
 
     @property
     def aux(self):
@@ -904,8 +904,8 @@ class Router(BaseVM):
                                                                                                old_aux=self._aux,
                                                                                                new_aux=aux))
 
-        self._manager.port_manager.release_tcp_port(self._aux)
-        self._aux = self._manager.port_manager.reserve_tcp_port(aux)
+        self._manager.port_manager.release_tcp_port(self._aux, self._project)
+        self._aux = self._manager.port_manager.reserve_tcp_port(aux, self._project)
 
     @asyncio.coroutine
     def get_cpu_usage(self, cpu_id=0):
@@ -1228,7 +1228,7 @@ class Router(BaseVM):
         if nio is None:
             return
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(port_number)
 
         log.info('Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_number}/{port_number}'.format(name=self._name,

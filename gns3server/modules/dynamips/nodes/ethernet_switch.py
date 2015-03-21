@@ -117,7 +117,7 @@ class EthernetSwitch(Device):
 
         for nio in self._nios.values():
             if nio and isinstance(nio, NIOUDP):
-                self.manager.port_manager.release_udp_port(nio.lport)
+                self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         try:
             yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
@@ -164,7 +164,7 @@ class EthernetSwitch(Device):
 
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         yield from self._hypervisor.send('ethsw remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
 
         log.info('Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,

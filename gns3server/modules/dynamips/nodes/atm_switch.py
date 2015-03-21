@@ -109,7 +109,7 @@ class ATMSwitch(Device):
 
         for nio in self._nios.values():
             if nio and isinstance(nio, NIOUDP):
-                self.manager.port_manager.release_udp_port(nio.lport)
+                self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         try:
             yield from self._hypervisor.send('atmsw delete "{}"'.format(self._name))
@@ -162,7 +162,7 @@ class ATMSwitch(Device):
 
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         log.info('ATM switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
                                                                                          id=self._id,
                                                                                          nio=nio,

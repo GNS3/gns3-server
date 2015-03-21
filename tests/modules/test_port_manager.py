@@ -18,10 +18,11 @@
 import aiohttp
 import pytest
 from gns3server.modules.port_manager import PortManager
-
+from gns3server.modules.project import Project
 
 def test_reserve_tcp_port():
     pm = PortManager()
-    pm.reserve_tcp_port(4242)
+    project = Project()
+    pm.reserve_tcp_port(4242, project)
     with pytest.raises(aiohttp.web.HTTPConflict):
-        pm.reserve_tcp_port(4242)
+        pm.reserve_tcp_port(4242, project)

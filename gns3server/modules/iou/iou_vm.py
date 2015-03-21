@@ -111,7 +111,7 @@ class IOUVM(BaseVM):
         log.debug('IOU "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
 
         if self._console:
-            self._manager.port_manager.release_tcp_port(self._console)
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
 
         adapters = self._ethernet_adapters + self._serial_adapters
@@ -119,7 +119,7 @@ class IOUVM(BaseVM):
             if adapter is not None:
                 for nio in adapter.ports.values():
                     if nio and isinstance(nio, NIOUDP):
-                        self.manager.port_manager.release_udp_port(nio.lport)
+                        self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         yield from self.stop()
 
@@ -875,7 +875,7 @@ class IOUVM(BaseVM):
 
         nio = adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(port_number)
         log.info("IOU {name} [id={id}]: {nio} removed from {adapter_number}/{port_number}".format(name=self._name,
                                                                                                   id=self._id,

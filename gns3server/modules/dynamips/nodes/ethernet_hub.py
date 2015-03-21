@@ -76,7 +76,7 @@ class EthernetHub(Bridge):
 
         for nio in self._nios:
             if nio and isinstance(nio, NIOUDP):
-                self.manager.port_manager.release_udp_port(nio.lport)
+                self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         try:
             yield from Bridge.delete(self)
@@ -121,7 +121,7 @@ class EthernetHub(Bridge):
 
         nio = self._mappings[port_number]
         if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport)
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
         yield from Bridge.remove_nio(self, nio)
 
         log.info('Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
