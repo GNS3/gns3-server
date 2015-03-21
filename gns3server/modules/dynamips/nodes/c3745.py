@@ -23,6 +23,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L326
 import asyncio
 from .router import Router
 from ..adapters.gt96100_fe import GT96100_FE
+from ..dynamips_error import DynamipsError
 
 import logging
 log = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class C3745(Router):
     :param aux: auxiliary console port
     """
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None):
+    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
         Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c3745")
 
         # Set default values for this platform (must be the same as Dynamips)
@@ -55,6 +56,9 @@ class C3745(Router):
 
         self._create_slots(5)
         self._slots[0] = GT96100_FE()
+
+        if chassis is not None:
+            raise DynamipsError("c3745 routers do not have chassis")
 
     def __json__(self):
 

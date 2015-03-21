@@ -58,7 +58,8 @@ class DynamipsVMHandler:
                                                    request.json.get("dynamips_id"),
                                                    request.json.pop("platform"),
                                                    console=request.json.get("console"),
-                                                   aux=request.json.get("aux"))
+                                                   aux=request.json.get("aux"),
+                                                   chassis=request.json.pop("chassis", None))
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
         yield from dynamips_manager.ghost_ios_support(vm)

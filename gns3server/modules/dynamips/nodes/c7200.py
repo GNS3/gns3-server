@@ -22,10 +22,10 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L294
 
 import asyncio
 
-from ..dynamips_error import DynamipsError
 from .router import Router
 from ..adapters.c7200_io_fe import C7200_IO_FE
 from ..adapters.c7200_io_ge_e import C7200_IO_GE_E
+from ..dynamips_error import DynamipsError
 
 import logging
 log = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class C7200(Router):
     :param npe: Default NPE
     """
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, npe="npe-400"):
+    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, npe="npe-400", chassis=None):
         Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c7200")
 
         # Set default values for this platform (must be the same as Dynamips)
@@ -70,6 +70,9 @@ class C7200(Router):
         self._power_supplies = [1, 1]
 
         self._create_slots(7)
+
+        if chassis is not None:
+            raise DynamipsError("c7200 routers do not have chassis")
 
     def __json__(self):
 
