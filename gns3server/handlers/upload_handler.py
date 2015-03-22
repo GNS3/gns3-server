@@ -58,6 +58,14 @@ class UploadHandler:
             response.redirect("/upload")
             return
 
+        filename = data['file'].filename
+        file_format = filename.split('.')[-1]
+        valid_formats = ['jpeg', 'tif', 'png', 'gif', 'jpg', 'rif', 'bmp', 'bpg']
+
+        if file_format not in valid_formats:
+            response.redirect('/upload')
+            return
+
         if data["type"] not in ["IOU", "IOURC", "QEMU", "IOS"]:
             raise aiohttp.web.HTTPForbidden("You are not authorized to upload this kind of image {}".format(data["type"]))
 
