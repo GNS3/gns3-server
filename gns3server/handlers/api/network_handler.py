@@ -17,6 +17,7 @@
 
 from ...web.route import Route
 from ...modules.port_manager import PortManager
+from ...modules.project_manager import ProjectManager
 from ...utils.interfaces import interfaces
 
 
@@ -24,15 +25,21 @@ class NetworkHandler:
 
     @classmethod
     @Route.post(
-        r"/ports/udp",
+        r"/projects/{project_id}/ports/udp",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
         status_codes={
             201: "UDP port allocated",
+            404: "The project doesn't exist"
         },
         description="Allocate an UDP port on the server")
     def allocate_udp_port(request, response):
 
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
         m = PortManager.instance()
-        udp_port = m.get_free_udp_port()
+        udp_port = m.get_free_udp_port(project)
         response.set_status(201)
         response.json({"udp_port": udp_port})
 
