@@ -726,7 +726,7 @@ class IOUVM(BaseVM):
 
         initial_config_file = self.initial_config_file
         if initial_config_file:
-            command.extend(["-c", initial_config_file])
+            command.extend(["-c", os.path.basename(initial_config_file)])
         if self._l1_keepalives:
             yield from self._enable_l1_keepalives(command)
         command.extend([str(self.application_id)])
