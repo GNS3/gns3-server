@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class PA_8T(Adapter):
+
     """
     PA-8T Serial port adapter.
     """

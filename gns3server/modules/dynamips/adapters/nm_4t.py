@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class NM_4T(Adapter):
+
     """
     NM-4T Serial network module.
     """

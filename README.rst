@@ -1,10 +1,16 @@
 GNS3-server
 ===========
 
+.. image:: https://travis-ci.org/GNS3/gns3-server.svg?branch=master
+    :target: https://travis-ci.org/GNS3/gns3-server
+
+.. image:: https://img.shields.io/pypi/v/gns3-server.svg
+    :target: https://pypi.python.org/pypi/gns3-server
+
 This is the GNS3 server repository.
 
 The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
-Clients like the GNS3 GUI controls the server using a JSON-RPC API over Websockets.
+Clients like the GNS3 GUI controls the server using a HTTP REST API.
 
 You will need the GNS3 GUI (gns3-gui repository) to control the server.
 
@@ -17,18 +23,16 @@ You must be connected to the Internet in order to install the dependencies.
 Dependencies:
 
 - Python 3.3 or above
-- Setuptools
-- PyZMQ library
-- Netifaces library
-- Tornado
-- Jsonschema
+- aiohttp
+- setuptools
+- netifaces
+- jsonschema
 
 The following commands will install some of these dependencies:
 
 .. code:: bash
 
    sudo apt-get install python3-setuptools
-   sudo apt-get install python3-zmq
    sudo apt-get install python3-netifaces
 
 Finally these commands will install the server as well as the rest of the dependencies:
@@ -38,6 +42,12 @@ Finally these commands will install the server as well as the rest of the depend
    cd gns3-server-master
    sudo python3 setup.py install
    gns3server
+
+To run tests use:
+
+.. code:: bash
+
+   py.test -v
 
 Windows
 -------

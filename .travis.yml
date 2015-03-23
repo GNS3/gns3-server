@@ -1,29 +1,32 @@
 language: python
-
-env:
-  - TOX_ENV=py33
-  - TOX_ENV=py34
+python:
+  - "3.3"
+  - "3.4"
 
 before_install:
   - sudo add-apt-repository ppa:gns3/ppa -y
   - sudo apt-get update -q
-
+  - sudo apt-get install dynamips
+    
 install:
-  - pip install tox
-  - sudo apt-get install vpcs dynamips
+  - python setup.py install
+  - pip install -rdev-requirements.txt
 
 script:
-  - tox -e $TOX_ENV
+    - py.test -v -s tests --cov gns3server --cov-report term-missing
 
-branches:
-  only:
-    - master
+#branches:
+#  only:
+#    - master
 
 notifications:
-  email: false
-  irc:
-    channels:
-      - "chat.freenode.net#gns3"
-    on_success: change
-    on_failure: always
+  email:
+    - julien@gns3.net
+#  irc:
+#    channels:
+#      - "chat.freenode.net#gns3"
+#    on_success: change
+#    on_failure: always
 
+after_success:
+  - coveralls

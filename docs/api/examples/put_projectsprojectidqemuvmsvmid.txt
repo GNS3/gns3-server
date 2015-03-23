@@ -1,0 +1,39 @@
+curl -i -X PUT 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/a68a00de-a264-4cc0-821c-301af5059ea4' -d '{"console": 2002, "hdb_disk_image": "hdb", "name": "test", "ram": 1024}'
+
+PUT /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/a68a00de-a264-4cc0-821c-301af5059ea4 HTTP/1.1
+{
+    "console": 2002,
+    "hdb_disk_image": "hdb",
+    "name": "test",
+    "ram": 1024
+}
+
+
+HTTP/1.1 200
+CONNECTION: keep-alive
+CONTENT-LENGTH: 565
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 GNS3/1.3.dev1
+X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
+
+{
+    "adapter_type": "e1000",
+    "adapters": 1,
+    "console": 2002,
+    "cpu_throttling": 0,
+    "hda_disk_image": "",
+    "hdb_disk_image": "hdb",
+    "initrd": "",
+    "kernel_command_line": "",
+    "kernel_image": "",
+    "legacy_networking": false,
+    "monitor": 2001,
+    "name": "test",
+    "options": "",
+    "process_priority": "low",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph25p8xei/qemu_x42",
+    "ram": 1024,
+    "vm_id": "a68a00de-a264-4cc0-821c-301af5059ea4"
+}

@@ -19,13 +19,15 @@
 Interface for multicast NIOs.
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_Mcast(NIO):
+class NIOMcast(NIO):
+
     """
     Dynamips Linux Ethernet NIO.
 
@@ -38,23 +40,14 @@ class NIO_Mcast(NIO):
 
     def __init__(self, hypervisor, group, port):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIO_Mcast._instance_count
-        NIO_Mcast._instance_count += 1
-        self._name = 'nio_mcast' + str(self._id)
+        # create an unique ID and name
+        nio_id = NIOMcast._instance_count
+        NIOMcast._instance_count += 1
+        name = 'nio_mcast' + str(nio_id)
         self._group = group
         self._port = port
         self._ttl = 1  # default TTL
-
-        self._hypervisor.send("nio create_mcast {name} {mgroup} {mport}".format(name=self._name,
-                                                                                mgroup=group,
-                                                                                mport=port))
-
-        log.info("NIO Multicast {name} created with mgroup={group}, mport={port}".format(name=self._name,
-                                                                                         group=group,
-                                                                                         port=port))
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -63,6 +56,17 @@ class NIO_Mcast(NIO):
         """
 
         cls._instance_count = 0
+
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self._hypervisor.send("nio create_mcast {name} {mgroup} {mport}".format(name=self._name,
+                                                                                           mgroup=self._group,
+                                                                                           mport=self._port))
+
+        log.info("NIO Multicast {name} created with mgroup={group}, mport={port}".format(name=self._name,
+                                                                                         group=self._group,
+                                                                                         port=self._port))
 
     @property
     def group(self):
@@ -94,14 +98,19 @@ class NIO_Mcast(NIO):
 
         return self._ttl
 
-    @ttl.setter
-    def ttl(self, ttl):
+    def set_ttl(self, ttl):
         """
         Sets the TTL for the multicast address
 
         :param ttl: TTL value
         """
 
-        self._hypervisor.send("nio set_mcast_ttl {name} {ttl}".format(name=self._name,
-                                                                          ttl=ttl))
+        yield from self._hypervisor.send("nio set_mcast_ttl {name} {ttl}".format(name=self._name,
+                                                                                 ttl=ttl))
         self._ttl = ttl
+
+    def __json__(self):
+
+        return {"type": "nio_mcast",
+                "mgroup": self._mgroup,
+                "mport": self._mport}

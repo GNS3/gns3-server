@@ -20,22 +20,25 @@ Base interface for Dynamips Network Input/Output (NIO) module ("nio").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L451
 """
 
+import asyncio
 from ..dynamips_error import DynamipsError
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO(object):
+class NIO:
+
     """
     Base NIO class
 
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, hypervisor):
+    def __init__(self, name, hypervisor):
 
         self._hypervisor = hypervisor
+        self._name = name
         self._bandwidth = None  # no bandwidth constraint by default
         self._input_filter = None  # no input filter applied by default
         self._output_filter = None  # no output filter applied by default
@@ -43,6 +46,7 @@ class NIO(object):
         self._output_filter_options = None  # no output filter options by default
         self._dynamips_direction = {"in": 0, "out": 1, "both": 2}
 
+    @asyncio.coroutine
     def list(self):
         """
         Returns all NIOs.
@@ -50,18 +54,21 @@ class NIO(object):
         :returns: NIO list
         """
 
-        return self._hypervisor.send("nio list")
+        nio_list = yield from self._hypervisor.send("nio list")
+        return nio_list
 
+    @asyncio.coroutine
     def delete(self):
         """
         Deletes this NIO.
         """
 
         if self._input_filter or self._output_filter:
-            self.unbind_filter("both")
-        self._hypervisor.send("nio delete {}".format(self._name))
+            yield from self.unbind_filter("both")
+        yield from self._hypervisor.send("nio delete {}".format(self._name))
         log.info("NIO {name} has been deleted".format(name=self._name))
 
+    @asyncio.coroutine
     def rename(self, new_name):
         """
         Renames this NIO
@@ -69,13 +76,12 @@ class NIO(object):
         :param new_name: new NIO name
         """
 
-        self._hypervisor.send("nio rename {name} {new_name}".format(name=self._name,
-                                                                    new_name=new_name))
+        yield from self._hypervisor.send("nio rename {name} {new_name}".format(name=self._name, new_name=new_name))
 
-        log.info("NIO {name} renamed to {new_name}".format(name=self._name,
-                                                           new_name=new_name))
+        log.info("NIO {name} renamed to {new_name}".format(name=self._name, new_name=new_name))
         self._name = new_name
 
+    @asyncio.coroutine
     def debug(self, debug):
         """
         Enables/Disables debugging for this NIO.
@@ -83,9 +89,9 @@ class NIO(object):
         :param debug: debug value (0 = disable, enable = 1)
         """
 
-        self._hypervisor.send("nio set_debug {name} {debug}".format(name=self._name,
-                                                                    debug=debug))
+        yield from self._hypervisor.send("nio set_debug {name} {debug}".format(name=self._name, debug=debug))
 
+    @asyncio.coroutine
     def bind_filter(self, direction, filter_name):
         """
         Adds a packet filter to this NIO.
@@ -100,9 +106,9 @@ class NIO(object):
             raise DynamipsError("Unknown direction {} to bind filter {}:".format(direction, filter_name))
         dynamips_direction = self._dynamips_direction[direction]
 
-        self._hypervisor.send("nio bind_filter {name} {direction} {filter}".format(name=self._name,
-                                                                                   direction=dynamips_direction,
-                                                                                   filter=filter_name))
+        yield from self._hypervisor.send("nio bind_filter {name} {direction} {filter}".format(name=self._name,
+                                                                                              direction=dynamips_direction,
+                                                                                              filter=filter_name))
 
         if direction == "in":
             self._input_filter = filter_name
@@ -112,6 +118,7 @@ class NIO(object):
             self._input_filter = filter_name
             self._output_filter = filter_name
 
+    @asyncio.coroutine
     def unbind_filter(self, direction):
         """
         Removes packet filter for this NIO.
@@ -123,8 +130,8 @@ class NIO(object):
             raise DynamipsError("Unknown direction {} to unbind filter:".format(direction))
         dynamips_direction = self._dynamips_direction[direction]
 
-        self._hypervisor.send("nio unbind_filter {name} {direction}".format(name=self._name,
-                                                                            direction=dynamips_direction))
+        yield from self._hypervisor.send("nio unbind_filter {name} {direction}".format(name=self._name,
+                                                                                       direction=dynamips_direction))
 
         if direction == "in":
             self._input_filter = None
@@ -134,6 +141,7 @@ class NIO(object):
             self._input_filter = None
             self._output_filter = None
 
+    @asyncio.coroutine
     def setup_filter(self, direction, options):
         """
         Setups a packet filter bound with this NIO.
@@ -156,9 +164,9 @@ class NIO(object):
             raise DynamipsError("Unknown direction {} to setup filter:".format(direction))
         dynamips_direction = self._dynamips_direction[direction]
 
-        self._hypervisor.send("nio setup_filter {name} {direction} {options}".format(name=self._name,
-                                                                                     direction=dynamips_direction,
-                                                                                     options=options))
+        yield from self._hypervisor.send("nio setup_filter {name} {direction} {options}".format(name=self._name,
+                                                                                                direction=dynamips_direction,
+                                                                                                options=options))
 
         if direction == "in":
             self._input_filter_options = options
@@ -188,6 +196,7 @@ class NIO(object):
 
         return self._output_filter, self._output_filter_options
 
+    @asyncio.coroutine
     def get_stats(self):
         """
         Gets statistics for this NIO.
@@ -195,25 +204,16 @@ class NIO(object):
         :returns: NIO statistics (string with packets in, packets out, bytes in, bytes out)
         """
 
-        return self._hypervisor.send("nio get_stats {}".format(self._name))[0]
+        stats = yield from self._hypervisor.send("nio get_stats {}".format(self._name))
+        return stats[0]
 
+    @asyncio.coroutine
     def reset_stats(self):
         """
         Resets statistics for this NIO.
         """
 
-        self._hypervisor.send("nio reset_stats {}".format(self._name))
-
-    def set_bandwidth(self, bandwidth):
-        """
-        Sets bandwidth constraint.
-
-        :param bandwidth: bandwidth integer value (in Kb/s)
-        """
-
-        self._hypervisor.send("nio set_bandwidth {name} {bandwidth}".format(name=self._name,
-                                                                            bandwidth=bandwidth))
-        self._bandwidth = bandwidth
+        yield from self._hypervisor.send("nio reset_stats {}".format(self._name))
 
     @property
     def bandwidth(self):
@@ -224,6 +224,17 @@ class NIO(object):
         """
 
         return self._bandwidth
+
+    @asyncio.coroutine
+    def set_bandwidth(self, bandwidth):
+        """
+        Sets bandwidth constraint.
+
+        :param bandwidth: bandwidth integer value (in Kb/s)
+        """
+
+        yield from self._hypervisor.send("nio set_bandwidth {name} {bandwidth}".format(name=self._name, bandwidth=bandwidth))
+        self._bandwidth = bandwidth
 
     def __str__(self):
         """

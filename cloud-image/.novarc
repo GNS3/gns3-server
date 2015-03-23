@@ -1,5 +1,0 @@
-export OS_USERNAME=username
-export OS_PASSWORD=""
-export OS_TENANT_NAME=000000
-export OS_AUTH_URL=https://identity.api.rackspacecloud.com/v2.0/
-export OS_REGION_NAME=ord

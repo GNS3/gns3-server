@@ -17,6 +17,7 @@
 
 
 class WIC_1ENET(object):
+
     """
     WIC-1ENET Ethernet
     """

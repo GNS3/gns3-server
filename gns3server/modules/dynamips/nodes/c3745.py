@@ -20,27 +20,34 @@ Interface for Dynamips virtual Cisco 3745 instances module ("c3745")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L326
 """
 
+import asyncio
 from .router import Router
 from ..adapters.gt96100_fe import GT96100_FE
+from ..dynamips_error import DynamipsError
 
 import logging
 log = logging.getLogger(__name__)
 
 
 class C3745(Router):
+
     """
     Dynamips c3745 router.
 
-    :param hypervisor: Dynamips hypervisor instance
-    :param name: name for this router
-    :param router_id: router instance ID
+    :param name: The name of this router
+    :param vm_id: Router instance identifier
+    :param project: Project instance
+    :param manager: Parent VM Manager
+    :param dynamips_id: ID to use with Dynamips
+    :param console: console port
+    :param aux: auxiliary console port
     """
 
-    def __init__(self, hypervisor, name, router_id=None):
-        Router.__init__(self, hypervisor, name, router_id, platform="c3745")
+    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
+        Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c3745")
 
-        # Set default values for this platform
-        self._ram = 256
+        # Set default values for this platform (must be the same as Dynamips)
+        self._ram = 128
         self._nvram = 304
         self._disk0 = 16
         self._disk1 = 0
@@ -50,34 +57,16 @@ class C3745(Router):
         self._create_slots(5)
         self._slots[0] = GT96100_FE()
 
-    def defaults(self):
-        """
-        Returns all the default attribute values for this platform.
+        if chassis is not None:
+            raise DynamipsError("c3745 routers do not have chassis")
 
-        :returns: default values (dictionary)
-        """
+    def __json__(self):
 
-        router_defaults = Router.defaults(self)
+        c3745_router_info = {"iomem": self._iomem}
 
-        platform_defaults = {"ram": self._ram,
-                             "nvram": self._nvram,
-                             "disk0": self._disk0,
-                             "disk1": self._disk1,
-                             "iomem": self._iomem,
-                             "clock_divisor": self._clock_divisor}
-
-        # update the router defaults with the platform specific defaults
-        router_defaults.update(platform_defaults)
-        return router_defaults
-
-    def list(self):
-        """
-        Returns all c3745 instances.
-
-        :returns: c3745 instance list
-        """
-
-        return self._hypervisor.send("c3745 list")
+        router_info = Router.__json__(self)
+        router_info.update(c3745_router_info)
+        return router_info
 
     @property
     def iomem(self):
@@ -89,19 +78,18 @@ class C3745(Router):
 
         return self._iomem
 
-    @iomem.setter
-    def iomem(self, iomem):
+    @asyncio.coroutine
+    def set_iomem(self, iomem):
         """
         Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
-        self._hypervisor.send("c3745 set_iomem {name} {size}".format(name=self._name,
-                                                                     size=iomem))
+        yield from self._hypervisor.send('c3745 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
 
-        log.info("router {name} [id={id}]: I/O memory updated from {old_iomem}% to {new_iomem}%".format(name=self._name,
-                                                                                                        id=self._id,
-                                                                                                        old_iomem=self._iomem,
-                                                                                                        new_iomem=iomem))
+        log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       old_iomem=self._iomem,
+                                                                                                       new_iomem=iomem))
         self._iomem = iomem

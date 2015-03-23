@@ -1,3 +1,0 @@
-fabric
-pygithub
-python-novaclient

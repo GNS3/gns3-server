@@ -19,13 +19,15 @@
 Interface for UDP NIOs.
 """
 
+import asyncio
 from .nio import NIO
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class NIO_UDP(NIO):
+class NIOUDP(NIO):
+
     """
     Dynamips UDP NIO.
 
@@ -39,25 +41,14 @@ class NIO_UDP(NIO):
 
     def __init__(self, hypervisor, lport, rhost, rport):
 
-        NIO.__init__(self, hypervisor)
-
-        # create an unique ID
-        self._id = NIO_UDP._instance_count
-        NIO_UDP._instance_count += 1
-        self._name = 'nio_udp' + str(self._id)
+        # create an unique ID and name
+        nio_id = NIOUDP._instance_count
+        NIOUDP._instance_count += 1
+        name = 'nio_udp' + str(nio_id)
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
-
-        self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
-                                                                                     lport=lport,
-                                                                                     rhost=rhost,
-                                                                                     rport=rport))
-
-        log.info("NIO UDP {name} created with lport={lport}, rhost={rhost}, rport={rport}".format(name=self._name,
-                                                                                                  lport=lport,
-                                                                                                  rhost=rhost,
-                                                                                                  rport=rport))
+        NIO.__init__(self, name, hypervisor)
 
     @classmethod
     def reset(cls):
@@ -66,6 +57,19 @@ class NIO_UDP(NIO):
         """
 
         cls._instance_count = 0
+
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
+                                                                                                lport=self._lport,
+                                                                                                rhost=self._rhost,
+                                                                                                rport=self._rport))
+
+        log.info("NIO UDP {name} created with lport={lport}, rhost={rhost}, rport={rport}".format(name=self._name,
+                                                                                                  lport=self._lport,
+                                                                                                  rhost=self._rhost,
+                                                                                                  rport=self._rport))
 
     @property
     def lport(self):
@@ -96,3 +100,10 @@ class NIO_UDP(NIO):
         """
 
         return self._rport
+
+    def __json__(self):
+
+        return {"type": "nio_udp",
+                "lport": self._lport,
+                "rport": self._rport,
+                "rhost": self._rhost}

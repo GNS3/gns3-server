@@ -43,3 +43,6 @@ class HomePage:
     )
     def index(request, response):
         response.template("homepage.html")
+
+if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
+    from gns3server.handlers.api.iou_handler import IOUHandler

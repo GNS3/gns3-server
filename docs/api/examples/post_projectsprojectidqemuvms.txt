@@ -1,0 +1,39 @@
+curl -i -X POST 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms' -d '{"hda_disk_image": "hda", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph25p8xei/qemu_x42", "ram": 1024}'
+
+POST /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms HTTP/1.1
+{
+    "hda_disk_image": "hda",
+    "name": "PC TEST 1",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph25p8xei/qemu_x42",
+    "ram": 1024
+}
+
+
+HTTP/1.1 201
+CONNECTION: keep-alive
+CONTENT-LENGTH: 570
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 GNS3/1.3.dev1
+X-ROUTE: /v1/projects/{project_id}/qemu/vms
+
+{
+    "adapter_type": "e1000",
+    "adapters": 1,
+    "console": 2000,
+    "cpu_throttling": 0,
+    "hda_disk_image": "hda",
+    "hdb_disk_image": "",
+    "initrd": "",
+    "kernel_command_line": "",
+    "kernel_image": "",
+    "legacy_networking": false,
+    "monitor": 2001,
+    "name": "PC TEST 1",
+    "options": "",
+    "process_priority": "low",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph25p8xei/qemu_x42",
+    "ram": 1024,
+    "vm_id": "4e47d2c8-d591-4508-9c3e-00e366f7c22d"
+}

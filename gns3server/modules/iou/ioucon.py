@@ -55,26 +55,26 @@ EXIT_ABORT = 2
 
 # Mostly from:
 # https://code.google.com/p/miniboa/source/browse/trunk/miniboa/telnet.py
-#--[ Telnet Commands ]---------------------------------------------------------
-SE = 240 # End of sub-negotiation parameters
-NOP = 241 # No operation
-DATMK = 242 # Data stream portion of a sync.
-BREAK = 243 # NVT Character BRK
-IP = 244 # Interrupt Process
-AO = 245 # Abort Output
-AYT = 246 # Are you there
-EC = 247 # Erase Character
-EL = 248 # Erase Line
-GA = 249 # The Go Ahead Signal
-SB = 250 # Sub-option to follow
-WILL = 251 # Will; request or confirm option begin
-WONT = 252 # Wont; deny option request
-DO = 253 # Do = Request or confirm remote option
-DONT = 254 # Don't = Demand or confirm option halt
-IAC = 255 # Interpret as Command
+# --[ Telnet Commands ]---------------------------------------------------------
+SE = 240  # End of sub-negotiation parameters
+NOP = 241  # No operation
+DATMK = 242  # Data stream portion of a sync.
+BREAK = 243  # NVT Character BRK
+IP = 244  # Interrupt Process
+AO = 245  # Abort Output
+AYT = 246  # Are you there
+EC = 247  # Erase Character
+EL = 248  # Erase Line
+GA = 249  # The Go Ahead Signal
+SB = 250  # Sub-option to follow
+WILL = 251  # Will; request or confirm option begin
+WONT = 252  # Wont; deny option request
+DO = 253  # Do = Request or confirm remote option
+DONT = 254  # Don't = Demand or confirm option halt
+IAC = 255  # Interpret as Command
 SEND = 1   # Sub-process negotiation SEND command
 IS = 0   # Sub-process negotiation IS command
-#--[ Telnet Options ]----------------------------------------------------------
+# --[ Telnet Options ]----------------------------------------------------------
 BINARY = 0   # Transmit Binary
 ECHO = 1   # Echo characters back to sender
 RECON = 2   # Reconnection
@@ -154,12 +154,9 @@ class FileLock:
 
 
 class Console:
+
     def fileno(self):
         raise NotImplementedError("Only routers have fileno()")
-
-
-class Router:
-    pass
 
 
 class TTY(Console):
@@ -173,6 +170,9 @@ class TTY(Console):
     def register(self, epoll):
         self.epoll = epoll
         epoll.register(self.fd, select.EPOLLIN | select.EPOLLET)
+
+    def unregister(self, epoll):
+        epoll.unregister(self.fd)
 
     def __enter__(self):
         try:
@@ -243,6 +243,9 @@ class TelnetServer(Console):
         self.epoll = epoll
         epoll.register(self.sock_fd, select.EPOLLIN)
 
+    def unregister(self, epoll):
+        epoll.unregister(self.sock_fd)
+
     def _read_block(self, bufsize):
         buf = self._read_cur(bufsize, socket.MSG_WAITALL)
         # If we don't get everything we were looking for then the
@@ -301,9 +304,12 @@ class TelnetServer(Console):
                     buf.extend(self._read_block(1))
                     iac_cmd.append(buf[iac_loc + 2])
                 # We do ECHO, SGA, and BINARY. Period.
-                if iac_cmd[1] == DO and iac_cmd[2] not in [ECHO, SGA, BINARY]:
-                    self._write_cur(bytes([IAC, WONT, iac_cmd[2]]))
-                    log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                if iac_cmd[1] == DO:
+                    if iac_cmd[2] not in [ECHO, SGA, BINARY]:
+                        self._write_cur(bytes([IAC, WONT, iac_cmd[2]]))
+                        log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                elif iac_cmd[1] == WILL and iac_cmd[2] == BINARY:
+                    pass  # It's standard negociation we can ignore it
                 else:
                     log.debug("Unhandled telnet command: "
                               "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
@@ -366,7 +372,7 @@ class TelnetServer(Console):
         return False
 
 
-class IOU(Router):
+class IOU:
 
     def __init__(self, ttyC, ttyS, stop_event):
         self.ttyC = ttyC
@@ -420,6 +426,9 @@ class IOU(Router):
         self.epoll = epoll
         epoll.register(self.fd, select.EPOLLIN | select.EPOLLET)
 
+    def unregister(self, epoll):
+        epoll.unregister(self.fd)
+
     def fileno(self):
         return self.fd.fileno()
 
@@ -468,70 +477,73 @@ def mkdir_netio(netio_dir):
         raise NetioError("Couldn't create directory {}: {}".format(netio_dir, e))
 
 
-def send_recv_loop(console, router, esc_char, stop_event):
-
-    epoll = select.epoll()
+def send_recv_loop(epoll, console, router, esc_char, stop_event):
     router.register(epoll)
     console.register(epoll)
 
-    router_fileno = router.fileno()
-    esc_quit = bytes(ESC_QUIT.upper(), 'ascii')
-    esc_state = False
+    try:
+        router_fileno = router.fileno()
+        esc_quit = bytes(ESC_QUIT.upper(), 'ascii')
+        esc_state = False
 
-    while not stop_event.is_set():
-        event_list = epoll.poll(timeout=POLL_TIMEOUT)
+        while not stop_event.is_set():
+            event_list = epoll.poll(timeout=POLL_TIMEOUT)
 
-        # When/if the poll times out we send an empty datagram. If IOU
-        # has gone away then this will toss a ConnectionRefusedError
-        # exception.
-        if not event_list:
-            router.write(b'')
-            continue
+            # When/if the poll times out we send an empty datagram. If IOU
+            # has gone away then this will toss a ConnectionRefusedError
+            # exception.
+            if not event_list:
+                router.write(b'')
+                continue
 
-        for fileno, event in event_list:
-            buf = bytearray()
+            for fileno, event in event_list:
+                buf = bytearray()
 
-            # IOU --> tty(s)
-            if fileno == router_fileno:
-                while not stop_event.is_set():
-                    data = router.read(BUFFER_SIZE)
-                    if not data:
-                        break
-                    buf.extend(data)
-                console.write(buf)
+                # IOU --> tty(s)
+                if fileno == router_fileno:
+                    while not stop_event.is_set():
+                        data = router.read(BUFFER_SIZE)
+                        if not data:
+                            break
+                        buf.extend(data)
+                    console.write(buf)
 
-            # tty --> IOU
-            else:
-                while not stop_event.is_set():
-                    data = console.read(fileno, BUFFER_SIZE)
-                    if not data:
-                        break
-                    buf.extend(data)
-
-                # If we just received the escape character then
-                # enter the escape state.
-                #
-                # If we are in the escape state then check for a
-                # quit command. Or if it's the escape character then
-                # send the escape character. Else, send the escape
-                # character we ate earlier and whatever character we
-                # just got. Exit escape state.
-                #
-                # If we're not in the escape state and this isn't an
-                # escape character then just send it to IOU.
-                if esc_state:
-                    if buf.upper() == esc_quit:
-                        sys.exit(EXIT_SUCCESS)
-                    elif buf == esc_char:
-                        router.write(esc_char)
-                    else:
-                        router.write(esc_char)
-                        router.write(buf)
-                    esc_state = False
-                elif buf == esc_char:
-                    esc_state = True
+                # tty --> IOU
                 else:
-                    router.write(buf)
+                    while not stop_event.is_set():
+                        data = console.read(fileno, BUFFER_SIZE)
+                        if not data:
+                            break
+                        buf.extend(data)
+
+                    # If we just received the escape character then
+                    # enter the escape state.
+                    #
+                    # If we are in the escape state then check for a
+                    # quit command. Or if it's the escape character then
+                    # send the escape character. Else, send the escape
+                    # character we ate earlier and whatever character we
+                    # just got. Exit escape state.
+                    #
+                    # If we're not in the escape state and this isn't an
+                    # escape character then just send it to IOU.
+                    if esc_state:
+                        if buf.upper() == esc_quit:
+                            sys.exit(EXIT_SUCCESS)
+                        elif buf == esc_char:
+                            router.write(esc_char)
+                        else:
+                            router.write(esc_char)
+                            router.write(buf)
+                        esc_state = False
+                    elif buf == esc_char:
+                        esc_state = True
+                    else:
+                        router.write(buf)
+    finally:
+        log.debug("Finally")
+        router.unregister(epoll)
+        console.unregister(epoll)
 
 
 def get_args():
@@ -609,14 +621,20 @@ def start_ioucon(cmdline_args, stop_event):
                                       'ADDR:PORT (like 127.0.0.1:20000)')
 
             while not stop_event.is_set():
+                epoll = select.epoll()
                 try:
                     if args.telnet_server:
                         with TelnetServer(addr, nport, stop_event) as console:
-                            with IOU(ttyC, ttyS, stop_event) as router:
-                                send_recv_loop(console, router, b'', stop_event)
+                            # We loop inside the Telnet server otherwise the client is disconnected when user use the reload command inside a terminal
+                            while not stop_event.is_set():
+                                try:
+                                    with IOU(ttyC, ttyS, stop_event) as router:
+                                        send_recv_loop(epoll, console, router, b'', stop_event)
+                                except ConnectionRefusedError:
+                                    pass
                     else:
                         with IOU(ttyC, ttyS, stop_event) as router, TTY() as console:
-                            send_recv_loop(console, router, esc_char, stop_event)
+                            send_recv_loop(epoll, console, router, esc_char, stop_event)
                 except ConnectionRefusedError:
                     pass
                 except KeyboardInterrupt:

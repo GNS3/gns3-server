@@ -1,0 +1,20 @@
+curl -i -X POST 'http://localhost:8000/projects' -d '{}'
+
+POST /projects HTTP/1.1
+{}
+
+
+HTTP/1.1 201
+CONNECTION: keep-alive
+CONTENT-LENGTH: 277
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 GNS3/1.3.dev1
+X-ROUTE: /v1/projects
+
+{
+    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp4s49s4hy",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp4s49s4hy/119348c0-fa80-4386-bf1e-b00755c9c6b4",
+    "project_id": "119348c0-fa80-4386-bf1e-b00755c9c6b4",
+    "temporary": false
+}

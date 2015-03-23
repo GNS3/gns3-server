@@ -1,0 +1,20 @@
+curl -i -X GET 'http://localhost:8000/projects/00010203-0405-0607-0809-0a0b0c0d0e02'
+
+GET /projects/00010203-0405-0607-0809-0a0b0c0d0e02 HTTP/1.1
+
+
+
+HTTP/1.1 200
+CONNECTION: keep-alive
+CONTENT-LENGTH: 277
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 GNS3/1.3.dev1
+X-ROUTE: /v1/projects/{project_id}
+
+{
+    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpju7ztx9a",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpju7ztx9a/00010203-0405-0607-0809-0a0b0c0d0e02",
+    "project_id": "00010203-0405-0607-0809-0a0b0c0d0e02",
+    "temporary": false
+}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,317 +19,214 @@
 Set up and run the server.
 """
 
-import zmq
-from zmq.eventloop import ioloop, zmqstream
-ioloop.install()
-
-import sys
 import os
-import tempfile
+import sys
 import signal
-import errno
-import socket
-import tornado.ioloop
-import tornado.web
-import tornado.autoreload
-import pkg_resources
-import ipaddress
-import base64
-import uuid
+import asyncio
+import aiohttp
+import functools
+import types
+import time
 
-from pkg_resources import parse_version
+from .web.route import Route
+from .web.request_handler import RequestHandler
 from .config import Config
-from .handlers.jsonrpc_websocket import JSONRPCWebSocket
-from .handlers.version_handler import VersionHandler
-from .handlers.file_upload_handler import FileUploadHandler
-from .handlers.auth_handler import LoginHandler
-from .builtins.server_version import server_version
-from .builtins.interfaces import interfaces
 from .modules import MODULES
+from .modules.port_manager import PortManager
+
+# do not delete this import
+import gns3server.handlers
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class Server(object):
+class Server:
 
-    # built-in handlers
-    handlers = [(r"/version", VersionHandler),
-                (r"/upload", FileUploadHandler),
-                (r"/login", LoginHandler)]
-
-    def __init__(self, host, port, ipc, console_bind_to_any):
+    def __init__(self, host, port):
 
         self._host = host
         self._port = port
-        self._router = None
-        self._stream = None
+        self._loop = None
+        self._handler = None
+        self._start_time = time.time()
+        self._port_manager = PortManager(host)
 
-        if console_bind_to_any:
-            if ipaddress.ip_address(self._host).version == 6:
-                self._console_host = "::"
-            else:
-                self._console_host = "0.0.0.0"
-        else:
-            self._console_host = self._host
+    @staticmethod
+    def instance(host=None, port=None):
+        """
+        Singleton to return only one instance of Server.
 
-        if ipc:
-            self._zmq_port = 0  # this forces to use IPC for communications with the ZeroMQ server
-        else:
-            # communication between the ZeroMQ server and the modules (ZeroMQ dealers)
-            # is IPv4 and local (127.0.0.1)
-            try:
-                # let the OS find an unused port for the ZeroMQ server
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.bind(("127.0.0.1", 0))
-                    self._zmq_port = sock.getsockname()[1]
-            except OSError as e:
-                log.critical("server cannot listen to {}: {}".format(self._host, e))
-                raise SystemExit
-        self._ipc = ipc
-        self._modules = []
+        :returns: instance of Server
+        """
 
-        # get the projects and temp directories from the configuration file (passed to the modules)
-        config = Config.instance()
-        server_config = config.get_default_section()
-        # default projects directory is "~/GNS3/projects"
-        self._projects_dir = os.path.expandvars(os.path.expanduser(server_config.get("projects_directory", "~/GNS3/projects")))
-        self._temp_dir = server_config.get("temporary_directory", tempfile.gettempdir())
+        if not hasattr(Server, "_instance") or Server._instance is None:
+            assert host is not None
+            assert port is not None
+            Server._instance = Server(host, port)
+        return Server._instance
+
+    @asyncio.coroutine
+    def _run_application(self, handler, ssl_context=None):
 
         try:
-            os.makedirs(self._projects_dir)
-            log.info("projects directory '{}' created".format(self._projects_dir))
-        except FileExistsError:
-            pass
+            server = yield from self._loop.create_server(handler, self._host, self._port, ssl=ssl_context)
         except OSError as e:
-            log.error("could not create the projects directory {}: {}".format(self._projects_dir, e))
+            log.critical("Could not start the server: {}".format(e))
+            self._loop.stop()
+            return
+        return server
 
-    def load_modules(self):
+    @asyncio.coroutine
+    def shutdown_server(self):
         """
-        Loads the modules.
+        Cleanly shutdown the server.
         """
 
-        #=======================================================================
-        # cwd = os.path.dirname(os.path.abspath(__file__))
-        # module_path = os.path.join(cwd, 'modules')
-        # log.info("loading modules from {}".format(module_path))
-        # module_manager = ModuleManager([module_path])
-        # module_manager.load_modules()
-        # for module in module_manager.get_all_modules():
-        #     instance = module_manager.activate_module(module,
-        #                                               "127.0.0.1",  # ZeroMQ server address
-        #                                               self._zmq_port,  # ZeroMQ server port
-        #                                               projects_dir=self._projects_dir,
-        #                                               temp_dir=self._temp_dir)
-        #     if not instance:
-        #         continue
-        #     self._modules.append(instance)
-        #     destinations = instance.destinations()
-        #     for destination in destinations:
-        #         JSONRPCWebSocket.register_destination(destination, module.name)
-        #     instance.start()  # starts the new process
-        #=======================================================================
-
-        # special built-in to return the server version
-        JSONRPCWebSocket.register_destination("builtin.version", server_version)
-        # special built-in to return the available interfaces on this host
-        JSONRPCWebSocket.register_destination("builtin.interfaces", interfaces)
+        if self._handler:
+            yield from self._handler.finish_connections()
 
         for module in MODULES:
-            instance = module(module.__name__.lower(),
-                              "127.0.0.1",  # ZeroMQ server address
-                              self._zmq_port,  # ZeroMQ server port
-                              host=self._host,  # server host address
-                              console_host=self._console_host,
-                              projects_dir=self._projects_dir,
-                              temp_dir=self._temp_dir)
+            log.debug("Unloading module {}".format(module.__name__))
+            m = module.instance()
+            yield from m.unload()
 
-            self._modules.append(instance)
-            destinations = instance.destinations()
-            for destination in destinations:
-                JSONRPCWebSocket.register_destination(destination, instance.name)
-            instance.start()  # starts the new process
+        if self._port_manager.tcp_ports:
+            log.warning("TCP ports are still used {}".format(self._port_manager.tcp_ports))
+
+        if self._port_manager.udp_ports:
+            log.warning("UDP ports are still used {}".format(self._port_manager.udp_ports))
+
+        self._loop.stop()
+
+    def _signal_handling(self):
+
+        @asyncio.coroutine
+        def signal_handler(signame):
+            log.warning("Server has got signal {}, exiting...".format(signame))
+            yield from self.shutdown_server()
+
+        signals = ["SIGTERM", "SIGINT"]
+        if sys.platform.startswith("win"):
+            signals.extend(["SIGBREAK"])
+        else:
+            signals.extend(["SIGHUP", "SIGQUIT"])
+
+        for signal_name in signals:
+            callback = functools.partial(asyncio.async, signal_handler(signal_name))
+            if sys.platform.startswith("win"):
+                # add_signal_handler() is not yet supported on Windows
+                signal.signal(getattr(signal, signal_name), callback)
+            else:
+                self._loop.add_signal_handler(getattr(signal, signal_name), callback)
+
+    def _reload_hook(self):
+
+        @asyncio.coroutine
+        def reload():
+
+            log.info("Reloading")
+            yield from self.shutdown_server()
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+
+        # code extracted from tornado
+        for module in sys.modules.values():
+            # Some modules play games with sys.modules (e.g. email/__init__.py
+            # in the standard library), and occasionally this can cause strange
+            # failures in getattr.  Just ignore anything that's not an ordinary
+            # module.
+            if not isinstance(module, types.ModuleType):
+                continue
+            path = getattr(module, "__file__", None)
+            if not path:
+                continue
+            if path.endswith(".pyc") or path.endswith(".pyo"):
+                path = path[:-1]
+            modified = os.stat(path).st_mtime
+            if modified > self._start_time:
+                log.debug("File {} has been modified".format(path))
+                asyncio.async(reload())
+        self._loop.call_later(1, self._reload_hook)
+
+    def _create_ssl_context(self, server_config):
+
+        import ssl
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        certfile = server_config["certfile"]
+        certkey = server_config["certkey"]
+        try:
+            ssl_context.load_cert_chain(certfile, certkey)
+        except FileNotFoundError:
+            log.critical("Could not find the SSL certfile or certkey")
+            raise SystemExit
+        except ssl.SSLError as e:
+            log.critical("SSL error: {}".format(e))
+            raise SystemExit
+        return ssl_context
+
+    @asyncio.coroutine
+    def start_shell(self):
+        try:
+            from ptpython.repl import embed
+        except ImportError:
+            log.error("Unable to start a shell: the ptpython module must be installed!")
+            return
+        yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True)
 
     def run(self):
         """
-        Starts the Tornado web server and ZeroMQ server.
+        Starts the server.
         """
 
-        settings = {
-            "debug":True,
-            "cookie_secret": base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes),
-            "login_url": "/login",
-        }
+        logger = logging.getLogger("asyncio")
+        logger.setLevel(logging.WARNING)
 
-        ssl_options = {}
+        server_config = Config.instance().get_section_config("Server")
+        if sys.platform.startswith("win"):
+            # use the Proactor event loop on Windows
+            loop = asyncio.ProactorEventLoop()
 
-        try:
-            cloud_config = Config.instance().get_section_config("CLOUD_SERVER")
+            # Add a periodic callback to give a chance to process signals on Windows
+            # because asyncio.add_signal_handler() is not supported yet on that platform
+            # otherwise the loop runs outside of signal module's ability to trap signals.
+            def wakeup():
+                loop.call_later(0.5, wakeup)
+            loop.call_later(0.5, wakeup)
+            asyncio.set_event_loop(loop)
 
-            cloud_settings = {
-
-                "required_user" : cloud_config['WEB_USERNAME'],
-                "required_pass" : cloud_config['WEB_PASSWORD'],
-            }
-
-            settings.update(cloud_settings)
-
-            if cloud_config["SSL_ENABLED"] == "yes":
-                ssl_options = {
-                    "certfile" : cloud_config["SSL_CRT"],
-                    "keyfile" : cloud_config["SSL_KEY"],
-                }
-
-                log.info("Certs found - starting in SSL mode")
-        except KeyError:
-           log.info("Missing cloud.conf - disabling HTTP auth and SSL")
-
-        router = self._create_zmq_router()
-        # Add our JSON-RPC Websocket handler to Tornado
-        self.handlers.extend([(r"/", JSONRPCWebSocket, dict(zmq_router=router))])
-        if hasattr(sys, "frozen"):
-            templates_dir = "templates"
-        else:
-            templates_dir = pkg_resources.resource_filename("gns3server", "templates")
-        tornado_app = tornado.web.Application(self.handlers,
-                                              template_path=templates_dir,
-                                              **settings)  # FIXME: debug mode!
-
-        try:
-            user_log = logging.getLogger('user_facing')
-            user_log.info("Starting server on {}:{} (Tornado v{}, PyZMQ v{}, ZMQ v{})".format(
-                          self._host, self._port, tornado.version, zmq.__version__, zmq.zmq_version()))
-
-            kwargs = {"address": self._host}
-
-            if ssl_options:
-                kwargs["ssl_options"] = ssl_options
-
-            if parse_version(tornado.version) >= parse_version("3.1"):
-                kwargs["max_buffer_size"] = 524288000  # 500 MB file upload limit
-
-            tornado_app.listen(self._port, **kwargs)
-        except OSError as e:
-            if e.errno == errno.EADDRINUSE:  # socket already in use
-                logging.critical("socket in use for {}:{}".format(self._host, self._port))
-                self._cleanup(graceful=False)
-
-        ioloop = tornado.ioloop.IOLoop.instance()
-        self._stream = zmqstream.ZMQStream(router, ioloop)
-        self._stream.on_recv_stream(JSONRPCWebSocket.dispatch_message)
-        tornado.autoreload.add_reload_hook(self._reload_callback)
-
-        def signal_handler(signum=None, frame=None):
-            try:
-                log.warning("Server got signal {}, exiting...".format(signum))
-                self._cleanup(signum)
-            except RuntimeError:
-                # to ignore logging exception: RuntimeError: reentrant call inside <_io.BufferedWriter name='<stderr>'>
-                pass
-
-        signals = [signal.SIGTERM, signal.SIGINT]
-        if not sys.platform.startswith("win"):
-            signals.extend([signal.SIGHUP, signal.SIGQUIT])
-        else:
-            signals.extend([signal.SIGBREAK])
-        for sig in signals:
-            signal.signal(sig, signal_handler)
-
-        try:
-            ioloop.start()
-        except (KeyboardInterrupt, SystemExit):
-            log.info("\nExiting...")
-            self._cleanup()
-
-    def _create_zmq_router(self):
-        """
-        Creates the ZeroMQ router socket to send
-        requests to modules.
-
-        :returns: ZeroMQ router socket
-        """
-
-        context = zmq.Context()
-        context.linger = 0
-        self._router = context.socket(zmq.ROUTER)
-        if self._ipc:
-            try:
-                self._router.bind("ipc:///tmp/gns3.ipc")
-            except zmq.error.ZMQError as e:
-                log.critical("Could not start ZeroMQ server on ipc:///tmp/gns3.ipc, reason: {}".format(e))
-                self._cleanup(graceful=False)
+        ssl_context = None
+        if server_config.getboolean("ssl"):
+            if sys.platform.startswith("win"):
+                log.critical("SSL mode is not supported on Windows")
                 raise SystemExit
-            log.info("ZeroMQ server listening to ipc:///tmp/gns3.ipc")
-        else:
-            try:
-                self._router.bind("tcp://127.0.0.1:{}".format(self._zmq_port))
-            except zmq.error.ZMQError as e:
-                log.critical("Could not start ZeroMQ server on 127.0.0.1:{}, reason: {}".format(self._zmq_port, e))
-                self._cleanup(graceful=False)
-                raise SystemExit
-            log.info("ZeroMQ server listening to 127.0.0.1:{}".format(self._zmq_port))
-        return self._router
+            ssl_context = self._create_ssl_context(server_config)
 
-    def stop_module(self, module):
-        """
-        Stop a given module.
+        self._loop = asyncio.get_event_loop()
+        app = aiohttp.web.Application()
+        for method, route, handler in Route.get_routes():
+            log.debug("Adding route: {} {}".format(method, route))
+            app.router.add_route(method, route, handler)
+        for module in MODULES:
+            log.debug("Loading module {}".format(module.__name__))
+            m = module.instance()
+            m.port_manager = self._port_manager
 
-        :param module: module name
-        """
+        log.info("Starting server on {}:{}".format(self._host, self._port))
+        self._handler = app.make_handler(handler=RequestHandler)
+        self._loop.run_until_complete(self._run_application(self._handler, ssl_context))
+        self._signal_handling()
 
-        if not self._router.closed:
-            self._router.send_string(module, zmq.SNDMORE)
-            self._router.send_string("stop")
+        if server_config.getboolean("live"):
+            log.info("Code live reload is enabled, watching for file changes")
+            self._loop.call_later(1, self._reload_hook)
 
-    def _reload_callback(self):
-        """
-        Callback for the Tornado reload hook.
-        """
+        if server_config.getboolean("shell"):
+            asyncio.async(self.start_shell())
 
-        for module in self._modules:
-            if module.is_alive():
-                module.terminate()
-                module.join(timeout=1)
-
-    def _shutdown(self):
-        """
-        Shutdowns the I/O loop and the ZeroMQ stream & socket.
-        """
-
-        if self._stream and not self._stream.closed:
-            # close the ZeroMQ stream
-            self._stream.close()
-
-        if self._router and not self._router.closed:
-            # close the ZeroMQ router socket
-            self._router.close()
-
-        ioloop = tornado.ioloop.IOLoop.instance()
-        ioloop.stop()
-
-    def _cleanup(self, signum=None, graceful=True):
-        """
-        Shutdowns any running module processes
-        and adds a callback to stop the event loop & ZeroMQ
-
-        :param signum: signal number (if called by a signal handler)
-        :param graceful: gracefully stop the modules
-        """
-
-        # terminate all modules
-        for module in self._modules:
-            if module.is_alive() and graceful:
-                log.info("stopping {}".format(module.name))
-                self.stop_module(module.name)
-                module.join(timeout=3)
-            if module.is_alive():
-                # just kill the module if it is still alive.
-                log.info("terminating {}".format(module.name))
-                module.terminate()
-                module.join(timeout=1)
-
-        ioloop = tornado.ioloop.IOLoop.instance()
-        if signum:
-            ioloop.add_callback_from_signal(self._shutdown)
-        else:
-            ioloop.add_callback(self._shutdown)
+        try:
+            self._loop.run_forever()
+        except TypeError as e:
+            # This is to ignore an asyncio.windows_events exception
+            # on Windows when the process gets the SIGBREAK signal
+            # TypeError: async() takes 1 positional argument but 3 were given
+            log.warning("TypeError exception in the loop {}".format(e))

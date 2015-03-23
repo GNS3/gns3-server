@@ -1,0 +1,36 @@
+curl -i -X PUT 'http://localhost:8000/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/324dab07-d86c-4a3b-8390-7a8e9a506006' -d '{"console": 2001, "ethernet_adapters": 4, "initial_config_content": "hostname test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0}'
+
+PUT /projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/324dab07-d86c-4a3b-8390-7a8e9a506006 HTTP/1.1
+{
+    "console": 2001,
+    "ethernet_adapters": 4,
+    "initial_config_content": "hostname test",
+    "l1_keepalives": true,
+    "name": "test",
+    "nvram": 2048,
+    "ram": 512,
+    "serial_adapters": 0
+}
+
+
+HTTP/1.1 200
+CONNECTION: keep-alive
+CONTENT-LENGTH: 423
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 GNS3/1.3.dev1
+X-ROUTE: /v1/projects/{project_id}/iou/vms/{vm_id}
+
+{
+    "console": 2001,
+    "ethernet_adapters": 4,
+    "initial_config": "initial-config.cfg",
+    "l1_keepalives": true,
+    "name": "test",
+    "nvram": 2048,
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-3783/test_iou_update0/iou.bin",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 512,
+    "serial_adapters": 0,
+    "vm_id": "324dab07-d86c-4a3b-8390-7a8e9a506006"
+}

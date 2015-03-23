@@ -19,6 +19,7 @@ from .adapter import Adapter
 
 
 class PA_FE_TX(Adapter):
+
     """
     PA-FE-TX FastEthernet port adapter.
     """

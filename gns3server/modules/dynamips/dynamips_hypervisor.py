@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,18 @@ Interface for Dynamips hypervisor management module ("hypervisor")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L46
 """
 
-import socket
 import re
+import time
 import logging
+import asyncio
+
 from .dynamips_error import DynamipsError
-from .nios.nio_udp_auto import NIO_UDP_auto
 
 log = logging.getLogger(__name__)
 
 
-class DynamipsHypervisor(object):
+class DynamipsHypervisor:
+
     """
     Creates a new connection to a Dynamips server (also called hypervisor)
 
@@ -50,22 +52,16 @@ class DynamipsHypervisor(object):
         self._port = port
 
         self._devices = []
-        self._ghosts = {}
-        self._jitsharing_groups = {}
         self._working_dir = working_dir
-        self._console_start_port_range = 2001
-        self._console_end_port_range = 2500
-        self._aux_start_port_range = 2501
-        self._aux_end_port_range = 3000
-        self._udp_start_port_range = 10001
-        self._udp_end_port_range = 20000
-        self._nio_udp_auto_instances = {}
         self._version = "N/A"
         self._timeout = timeout
-        self._socket = None
         self._uuid = None
+        self._reader = None
+        self._writer = None
+        self._io_lock = asyncio.Lock()
 
-    def connect(self):
+    @asyncio.coroutine
+    def connect(self, timeout=10):
         """
         Connects to the hypervisor.
         """
@@ -79,20 +75,34 @@ class DynamipsHypervisor(object):
         else:
             host = self._host
 
-        try:
-            self._socket = socket.create_connection((host, self._port), self._timeout)
-        except OSError as e:
-            raise DynamipsError("Could not connect to server: {}".format(e))
+        begin = time.time()
+        connection_success = False
+        last_exception = None
+        while time.time() - begin < timeout:
+            yield from asyncio.sleep(0.01)
+            try:
+                self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
+            except OSError as e:
+                last_exception = e
+                continue
+            connection_success = True
+            break
+
+        if not connection_success:
+            raise DynamipsError("Couldn't connect to hypervisor on {}:{} :{}".format(host, self._port, last_exception))
+        else:
+            log.info("Connected to Dynamips hypervisor after {:.4f} seconds".format(time.time() - begin))
 
         try:
-            self._version = self.send("hypervisor version")[0].split("-", 1)[0]
+            version = yield from self.send("hypervisor version")
+            self._version = version[0].split("-", 1)[0]
         except IndexError:
             self._version = "Unknown"
 
-        self._uuid = self.send("hypervisor uuid")
+        self._uuid = yield from self.send("hypervisor uuid")
 
         # this forces to send the working dir to Dynamips
-        self.working_dir = self._working_dir
+        yield from self.set_working_dir(self._working_dir)
 
     @property
     def version(self):
@@ -104,53 +114,54 @@ class DynamipsHypervisor(object):
 
         return self._version
 
-    def module_list(self):
-        """
-        Returns the modules supported by this hypervisor.
-
-        :returns: module list
-        """
-
-        return self.send("hypervisor module_list")
-
-    def cmd_list(self, module):
-        """
-        Returns commands recognized by the specified module.
-
-        :param module: the module name
-        :returns: command list
-        """
-
-        return self.send("hypervisor cmd_list {}".format(module))
-
+    @asyncio.coroutine
     def close(self):
         """
         Closes the connection to this hypervisor (but leave it running).
         """
 
-        self.send("hypervisor close")
-        self._socket.shutdown(socket.SHUT_RDWR)
-        self._socket.close()
-        self._socket = None
+        yield from self.send("hypervisor close")
+        self._writer.close()
+        self._reader, self._writer = None
 
+    @asyncio.coroutine
     def stop(self):
         """
         Stops this hypervisor (will no longer run).
         """
 
-        self.send("hypervisor stop")
-        self._socket.shutdown(socket.SHUT_RDWR)
-        self._socket.close()
-        self._socket = None
-        self._nio_udp_auto_instances.clear()
+        try:
+            # try to properly stop the hypervisor
+            yield from self.send("hypervisor stop")
+        except DynamipsError:
+            pass
+        try:
+            yield from self._writer.drain()
+            self._writer.close()
+        except OSError as e:
+            log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
+        self._reader = self._writer = None
 
+    @asyncio.coroutine
     def reset(self):
         """
         Resets this hypervisor (used to get an empty configuration).
         """
 
-        self.send('hypervisor reset')
-        self._nio_udp_auto_instances.clear()
+        yield from self.send("hypervisor reset")
+
+    @asyncio.coroutine
+    def set_working_dir(self, working_dir):
+        """
+        Sets the working directory for this hypervisor.
+
+        :param working_dir: path to the working directory
+        """
+
+        # encase working_dir in quotes to protect spaces in the path
+        yield from self.send('hypervisor working_dir "{}"'.format(working_dir))
+        self._working_dir = working_dir
+        log.debug("Working directory set to {}".format(self._working_dir))
 
     @property
     def working_dir(self):
@@ -161,29 +172,6 @@ class DynamipsHypervisor(object):
         """
 
         return self._working_dir
-
-    @working_dir.setter
-    def working_dir(self, working_dir):
-        """
-        Sets the working directory for this hypervisor.
-
-        :param working_dir: path to the working directory
-        """
-
-        # encase working_dir in quotes to protect spaces in the path
-        self.send("hypervisor working_dir {}".format('"' + working_dir + '"'))
-        self._working_dir = working_dir
-        log.debug("working directory set to {}".format(self._working_dir))
-
-    def save_config(self, filename):
-        """
-        Saves the configuration of all Dynamips instances into the specified file.
-
-        :param filename: path string
-        """
-
-        # encase working_dir in quotes to protect spaces in the path
-        self.send("hypervisor save_config {}".format('"' + filename + '"'))
 
     @property
     def uuid(self):
@@ -196,17 +184,6 @@ class DynamipsHypervisor(object):
         return self._uuid
 
     @property
-    def socket(self):
-        """
-        Returns the current socket used to communicate with this hypervisor.
-
-        :returns: socket instance
-        """
-
-        assert self._socket
-        return self._socket
-
-    @property
     def devices(self):
         """
         Returns the list of devices managed by this hypervisor instance.
@@ -216,234 +193,47 @@ class DynamipsHypervisor(object):
 
         return self._devices
 
-    @devices.setter
-    def devices(self, devices):
-        """
-        Sets the list of devices managed by this hypervisor instance.
-        This method is for internal use.
-
-        :param devices: a list of device objects
-        """
-
-        self._devices = devices
-
-    @property
-    def console_start_port_range(self):
-        """
-        Returns the console start port range value
-
-        :returns: console start port range value (integer)
-        """
-
-        return self._console_start_port_range
-
-    @console_start_port_range.setter
-    def console_start_port_range(self, console_start_port_range):
-        """
-        Set a new console start port range value
-
-        :param console_start_port_range: console start port range value (integer)
-        """
-
-        self._console_start_port_range = console_start_port_range
-
-    @property
-    def console_end_port_range(self):
-        """
-        Returns the console end port range value
-
-        :returns: console end port range value (integer)
-        """
-
-        return self._console_end_port_range
-
-    @console_end_port_range.setter
-    def console_end_port_range(self, console_end_port_range):
-        """
-        Set a new console end port range value
-
-        :param console_end_port_range: console end port range value (integer)
-        """
-
-        self._console_end_port_range = console_end_port_range
-
-    @property
-    def aux_start_port_range(self):
-        """
-        Returns the auxiliary console start port range value
-
-        :returns: auxiliary console  start port range value (integer)
-        """
-
-        return self._aux_start_port_range
-
-    @aux_start_port_range.setter
-    def aux_start_port_range(self, aux_start_port_range):
-        """
-        Sets a new auxiliary console start port range value
-
-        :param aux_start_port_range: auxiliary console start port range value (integer)
-        """
-
-        self._aux_start_port_range = aux_start_port_range
-
-    @property
-    def aux_end_port_range(self):
-        """
-        Returns the auxiliary console end port range value
-
-        :returns: auxiliary console end port range value (integer)
-        """
-
-        return self._aux_end_port_range
-
-    @aux_end_port_range.setter
-    def aux_end_port_range(self, aux_end_port_range):
-        """
-        Sets a new auxiliary console end port range value
-
-        :param aux_end_port_range: auxiliary console end port range value (integer)
-        """
-
-        self._aux_end_port_range = aux_end_port_range
-
-    @property
-    def udp_start_port_range(self):
-        """
-        Returns the UDP start port range value
-
-        :returns: UDP start port range value (integer)
-        """
-
-        return self._udp_start_port_range
-
-    @udp_start_port_range.setter
-    def udp_start_port_range(self, udp_start_port_range):
-        """
-        Sets a new UDP start port range value
-
-        :param udp_start_port_range: UDP start port range value (integer)
-        """
-
-        self._udp_start_port_range = udp_start_port_range
-
-    @property
-    def udp_end_port_range(self):
-        """
-        Returns the UDP end port range value
-
-        :returns: UDP end port range value (integer)
-        """
-
-        return self._udp_end_port_range
-
-    @udp_end_port_range.setter
-    def udp_end_port_range(self, udp_end_port_range):
-        """
-        Sets an new UDP end port range value
-
-        :param udp_end_port_range: UDP end port range value (integer)
-        """
-
-        self._udp_end_port_range = udp_end_port_range
-
-    @property
-    def ghosts(self):
-        """
-        Returns a list of the ghosts hosted by this hypervisor.
-
-        :returns: Ghosts dict (image_name -> device)
-        """
-
-        return self._ghosts
-
-    def add_ghost(self, image_name, router):
-        """
-        Adds a ghost name to the list of ghosts created on this hypervisor.
-
-        :param image_name: name of the ghost image
-        :param router: Router instance
-        """
-
-        self._ghosts[image_name] = router
-
-    @property
-    def jitsharing_groups(self):
-        """
-        Returns a list of the JIT sharing groups hosted by this hypervisor.
-
-        :returns: JIT sharing groups dict (image_name -> group number)
-        """
-
-        return self._jitsharing_groups
-
-    def add_jitsharing_group(self, image_name, group_number):
-        """
-        Adds a JIT blocks sharing group name to the list of groups created on this hypervisor.
-
-        :param image_name: name of the ghost image
-        :param group_number: group (integer)
-        """
-
-        self._jitsharing_groups[image_name] = group_number
-
-    @property
-    def host(self):
-        """
-        Returns this hypervisor host.
-
-        :returns: host (string)
-        """
-
-        return self._host
-
     @property
     def port(self):
         """
-        Returns this hypervisor port.
-
-        :returns: port (integer)
-        """
-
-        return self._port
-
-    def get_nio_udp_auto(self, port):
-        """
-        Returns an allocated NIO UDP auto instance.
-
-        :returns: NIO UDP auto instance
-        """
-
-        if port in self._nio_udp_auto_instances:
-            return self._nio_udp_auto_instances.pop(port)
-        else:
-            return None
-
-    def allocate_udp_port(self):
-        """
-        Allocates a new UDP port for creating an UDP NIO Auto.
+        Returns the port used to start the hypervisor.
 
         :returns: port number (integer)
         """
 
-        # use Dynamips's NIO UDP auto back-end.
-        nio = NIO_UDP_auto(self, self._host, self._udp_start_port_range, self._udp_end_port_range)
-        self._nio_udp_auto_instances[nio.lport] = nio
-        allocated_port = nio.lport
-        return allocated_port
+        return self._port
 
-    def send_raw(self, string):
+    @port.setter
+    def port(self, port):
         """
-        Sends a raw command to this hypervisor. Use sparingly.
+        Sets the port used to start the hypervisor.
 
-        :param string: command string.
-
-        :returns: command result (string)
+        :param port: port number (integer)
         """
 
-        result = self.send(string)
-        return result
+        self._port = port
 
+    @property
+    def host(self):
+        """
+        Returns the host (binding) used to start the hypervisor.
+
+        :returns: host/address (string)
+        """
+
+        return self._host
+
+    @host.setter
+    def host(self, host):
+        """
+        Sets the host (binding) used to start the hypervisor.
+
+        :param host: host/address (string)
+        """
+
+        self._host = host
+
+    @asyncio.coroutine
     def send(self, command):
         """
         Sends commands to this hypervisor.
@@ -466,60 +256,60 @@ class DynamipsHypervisor(object):
         # but still have more data. The only thing we know for sure is the last line
         # will begin with '100-' or a '2xx-' and end with '\r\n'
 
-        if not self._socket:
-            raise DynamipsError("Not connected")
+        with (yield from self._io_lock):
+            if self._writer is None or self._reader is None:
+                raise DynamipsError("Not connected")
 
-        try:
-            command = command.strip() + '\n'
-            log.debug("sending {}".format(command))
-            self.socket.sendall(command.encode('utf-8'))
-        except OSError as e:
-            raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
-                                .format(host=self._host, port=self._port, error=e, run=self.is_running()))
-
-        # Now retrieve the result
-        data = []
-        buf = ''
-        while True:
             try:
-                chunk = self.socket.recv(1024)  # match to Dynamips' buffer size
-                buf += chunk.decode("utf-8")
+                command = command.strip() + '\n'
+                log.debug("sending {}".format(command))
+                self._writer.write(command.encode())
             except OSError as e:
-                raise DynamipsError("Communication timed out with {host}:{port} :{error}, Dynamips process running: {run}"
+                raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                     .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
-            # If the buffer doesn't end in '\n' then we can't be done
-            try:
-                if buf[-1] != '\n':
-                    continue
-            except IndexError:
-                raise DynamipsError("Could not communicate with {host}:{port}, Dynamips process running: {run}"
-                                    .format(host=self._host, port=self._port, run=self.is_running()))
-
-            data += buf.split('\r\n')
-            if data[-1] == '':
-                data.pop()
+            # Now retrieve the result
+            data = []
             buf = ''
+            while True:
+                try:
+                    chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
+                    if not chunk:
+                        raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
+                                            .format(host=self._host, port=self._port, run=self.is_running()))
+                    buf += chunk.decode()
+                except OSError as e:
+                    raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
+                                        .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
-            if len(data) == 0:
-                raise DynamipsError("no data returned from {host}:{port}, Dynamips process running: {run}"
-                                    .format(host=self._host, port=self._port, run=self.is_running()))
+                # If the buffer doesn't end in '\n' then we can't be done
+                try:
+                    if buf[-1] != '\n':
+                        continue
+                except IndexError:
+                    raise DynamipsError("Could not communicate with {host}:{port}, Dynamips process running: {run}"
+                                        .format(host=self._host, port=self._port, run=self.is_running()))
 
-            # Does it contain an error code?
-            if self.error_re.search(data[-1]):
-                raise DynamipsError(data[-1][4:])
-
-            # Or does the last line begin with '100-'? Then we are done!
-            if data[-1][:4] == '100-':
-                data[-1] = data[-1][4:]
-                if data[-1] == 'OK':
+                data += buf.split('\r\n')
+                if data[-1] == '':
                     data.pop()
-                break
+                buf = ''
 
-        # Remove success responses codes
-        for index in range(len(data)):
-            if self.success_re.search(data[index]):
-                data[index] = data[index][4:]
+                # Does it contain an error code?
+                if self.error_re.search(data[-1]):
+                    raise DynamipsError(data[-1][4:])
 
-        log.debug("returned result {}".format(data))
-        return data
+                # Or does the last line begin with '100-'? Then we are done!
+                if data[-1][:4] == '100-':
+                    data[-1] = data[-1][4:]
+                    if data[-1] == 'OK':
+                        data.pop()
+                    break
+
+            # Remove success responses codes
+            for index in range(len(data)):
+                if self.success_re.search(data[index]):
+                    data[index] = data[index][4:]
+
+            log.debug("returned result {}".format(data))
+            return data
