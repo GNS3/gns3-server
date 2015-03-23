@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-def test_udp_allocation(server):
-    response = server.post('/ports/udp', {}, example=True)
+def test_udp_allocation(server, project):
+    response = server.post('/projects/{}/ports/udp'.format(project.id), {}, example=True)
     assert response.status == 201
     assert response.json == {'udp_port': 10000}
 
