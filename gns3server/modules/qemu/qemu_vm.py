@@ -722,6 +722,8 @@ class QemuVM(BaseVM):
             b"restore-vm", b"running", b"save-vm", b"shutdown", b"suspended",
             b"watchdog", b"guest-panicked"
         ])
+        if result is None:
+            return result
         return result.rsplit(' ', 1)[1]
 
     @asyncio.coroutine
@@ -731,7 +733,9 @@ class QemuVM(BaseVM):
         """
 
         vm_status = yield from self._get_vm_status()
-        if vm_status == "running":
+        if vm_status is None:
+            raise QemuError("Suspending a QEMU VM is not supported")
+        elif vm_status == "running":
             yield from self._control_vm("stop")
             log.debug("QEMU VM has been suspended")
         else:
@@ -753,7 +757,9 @@ class QemuVM(BaseVM):
         """
 
         vm_status = yield from self._get_vm_status()
-        if vm_status == "paused":
+        if vm_status is None:
+            raise QemuError("Resuming a QEMU VM is not supported")
+        elif vm_status == "paused":
             yield from self._control_vm("cont")
             log.debug("QEMU VM has been resumed")
         else:
