@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.3.0rc2 23/03/2015
+
+* Update sentry key
+* Prevent error when suspend/resume is not supported in QEMU VM.
+* Adds project id when requesting UDP port.
+* Make sure used ports in a project are cleaned up when closing it.
+* Save configs when project is committed.
+* Initialize chassis when creating an IOS router. Fixes  #107.
+* Lock the dynamips reader an writer
+
 ## 1.3.0rc1 19/03/2015
 
 * Save IOS router config when saving the project
