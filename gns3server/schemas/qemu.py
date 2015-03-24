@@ -47,12 +47,6 @@ QEMU_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
-        "monitor": {
-            "description": "monitor TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": ["integer", "null"]
-        },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
             "type": ["string", "null"],
@@ -142,12 +136,6 @@ QEMU_UPDATE_SCHEMA = {
         },
         "console": {
             "description": "console TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": ["integer", "null"]
-        },
-        "monitor": {
-            "description": "monitor TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
@@ -341,12 +329,6 @@ QEMU_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
-        "monitor": {
-            "description": "monitor TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": "integer"
-        },
         "initrd": {
             "description": "QEMU initrd path",
             "type": "string",
@@ -386,7 +368,7 @@ QEMU_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image", "hdb_disk_image",
                  "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "console",
-                 "monitor", "initrd", "kernel_image", "kernel_command_line",
+                 "initrd", "kernel_image", "kernel_command_line",
                  "legacy_networking", "cpu_throttling", "process_priority", "options"
                  ]
 }

@@ -151,14 +151,11 @@ def test_close(vm, port_manager, loop):
         loop.run_until_complete(asyncio.async(vm.start()))
 
         console_port = vm.console
-        monitor_port = vm.monitor
 
         loop.run_until_complete(asyncio.async(vm.close()))
 
         # Raise an exception if the port is not free
         port_manager.reserve_tcp_port(console_port, vm.project)
-        # Raise an exception if the port is not free
-        port_manager.reserve_tcp_port(monitor_port, vm.project)
 
         assert vm.is_running() is False
 
@@ -226,7 +223,6 @@ def test_json(vm, project):
 def test_control_vm(vm, loop):
 
     vm._process = MagicMock()
-    vm._monitor = 4242
     reader = MagicMock()
     writer = MagicMock()
     with asyncio_patch("asyncio.open_connection", return_value=(reader, writer)) as open_connect:
@@ -238,7 +234,6 @@ def test_control_vm(vm, loop):
 def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
 
     vm._process = running_subprocess_mock
-    vm._monitor = 4242
     reader = MagicMock()
     writer = MagicMock()
     with asyncio_patch("asyncio.open_connection", return_value=(reader, writer)) as open_connect:
@@ -247,6 +242,7 @@ def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
         future.set_result(b"epic product")
         reader.readline.return_value = future
 
+        vm._monitor = 4242
         res = loop.run_until_complete(asyncio.async(vm._control_vm("test", [b"epic"])))
         assert writer.write.called_with("test")
 
@@ -269,8 +265,6 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
                 os.path.join(vm.working_dir, "flash.qcow2"),
                 "-serial",
                 "telnet:127.0.0.1:{},server,nowait".format(vm.console),
-                "-monitor",
-                "tcp:127.0.0.1:{},server,nowait".format(vm.monitor),
                 "-device",
                 "e1000,mac=00:00:ab:7e:b5:00,netdev=gns3-0",
                 "-netdev",
