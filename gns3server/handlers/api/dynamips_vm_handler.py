@@ -28,6 +28,12 @@ from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
 from ...modules.dynamips import Dynamips
 from ...modules.project_manager import ProjectManager
 
+DEFAULT_CHASSIS = {
+    "c1700": "1720",
+    "c2600": "2610",
+    "c3600": "3640"
+}
+
 
 class DynamipsVMHandler:
 
@@ -52,14 +58,18 @@ class DynamipsVMHandler:
     def create(request, response):
 
         dynamips_manager = Dynamips.instance()
+        platform = request.json.pop("platform")
+        default_chassis = None
+        if platform in DEFAULT_CHASSIS:
+            default_chassis = DEFAULT_CHASSIS[platform]
         vm = yield from dynamips_manager.create_vm(request.json.pop("name"),
                                                    request.match_info["project_id"],
                                                    request.json.get("vm_id"),
                                                    request.json.get("dynamips_id"),
-                                                   request.json.pop("platform"),
+                                                   platform,
                                                    console=request.json.get("console"),
                                                    aux=request.json.get("aux"),
-                                                   chassis=request.json.pop("chassis", None))
+                                                   chassis=request.json.pop("chassis", default_chassis))
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
         yield from dynamips_manager.ghost_ios_support(vm)
