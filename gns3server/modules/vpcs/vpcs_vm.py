@@ -81,7 +81,8 @@ class VPCSVM(BaseVM):
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        self._terminate_process()
+        if self.is_running():
+            self._terminate_process()
 
     @asyncio.coroutine
     def _check_requirements(self):
@@ -264,16 +265,15 @@ class VPCSVM(BaseVM):
     def _terminate_process(self):
         """Terminate the process if running"""
 
-        if self._process:
-            log.info("Stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
-            if sys.platform.startswith("win32"):
-                self._process.send_signal(signal.CTRL_BREAK_EVENT)
-            else:
-                try:
-                    self._process.terminate()
-                # Sometime the process can already be dead when we garbage collect
-                except ProcessLookupError:
-                    pass
+        log.info("Stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
+        if sys.platform.startswith("win32"):
+            self._process.send_signal(signal.CTRL_BREAK_EVENT)
+        else:
+            try:
+                self._process.terminate()
+            # Sometime the process can already be dead when we garbage collect
+            except ProcessLookupError:
+                pass
 
     def read_vpcs_stdout(self):
         """
@@ -296,7 +296,7 @@ class VPCSVM(BaseVM):
         :returns: True or False
         """
 
-        if self._process:
+        if self._process and self._process.returncode is None:
             return True
         return False
 
