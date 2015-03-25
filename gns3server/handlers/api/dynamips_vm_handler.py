@@ -357,12 +357,16 @@ class DynamipsVMHandler:
                                      project_id=request.match_info["project_id"])
 
         startup_config, private_config = yield from vm.extract_config()
-        startup_config_content = base64.decodebytes(startup_config.encode("utf-8")).decode("utf-8")
-        private_config_content = base64.decodebytes(private_config.encode("utf-8")).decode("utf-8")
+        result = {}
+        if startup_config:
+            startup_config_content = base64.decodebytes(startup_config.encode("utf-8")).decode("utf-8")
+            result["startup_config_content"] = startup_config_content
+        if private_config:
+            private_config_content = base64.decodebytes(private_config.encode("utf-8")).decode("utf-8")
+            result["private_config_content"] = private_config_content
 
         response.set_status(200)
-        response.json({"startup_config_content": startup_config_content,
-                       "private_config_content": private_config_content})
+        response.json(result)
 
     @Route.post(
         r"/projects/{project_id}/dynamips/vms/{vm_id}/configs/save",
