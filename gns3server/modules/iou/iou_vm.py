@@ -597,42 +597,39 @@ class IOUVM(BaseVM):
                     if self._iou_process.returncode is None:
                         log.warn("IOU process {} is still running... killing it".format(self._iou_process.pid))
                         self._iou_process.kill()
-
             self._iou_process = None
 
-            if self._iouyap_process is not None:
-                self._terminate_process_iouyap()
-                try:
-                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._iouyap_process, timeout=3)
-                except asyncio.TimeoutError:
-                    if self._iouyap_process.returncode is None:
-                        log.warn("IOUYAP process {} is still running... killing it".format(self._iouyap_process.pid))
-                        self._iouyap_process.kill()
-
+        if self.is_iouyap_running():
+            self._terminate_process_iouyap()
+            try:
+                yield from gns3server.utils.asyncio.wait_for_process_termination(self._iouyap_process, timeout=3)
+            except asyncio.TimeoutError:
+                if self._iouyap_process.returncode is None:
+                    log.warn("IOUYAP process {} is still running... killing it".format(self._iouyap_process.pid))
+                    self._iouyap_process.kill()
             self._iouyap_process = None
-            self._started = False
+
+        self._started = False
 
     def _terminate_process_iouyap(self):
         """Terminate the process if running"""
 
-        if self._iouyap_process:
-            log.info("Stopping IOUYAP instance {} PID={}".format(self.name, self._iouyap_process.pid))
-            try:
-                self._iouyap_process.terminate()
-            # Sometime the process can already be dead when we garbage collect
-            except ProcessLookupError:
-                pass
+        log.info("Stopping IOUYAP instance {} PID={}".format(self.name, self._iouyap_process.pid))
+        try:
+            self._iouyap_process.terminate()
+        # Sometime the process can already be dead when we garbage collect
+        except ProcessLookupError:
+            pass
 
     def _terminate_process_iou(self):
         """Terminate the process if running"""
 
-        if self._iou_process:
-            log.info("Stopping IOU instance {} PID={}".format(self.name, self._iou_process.pid))
-            try:
-                self._iou_process.terminate()
-            # Sometime the process can already be dead when we garbage collect
-            except ProcessLookupError:
-                pass
+        log.info("Stopping IOU instance {} PID={}".format(self.name, self._iou_process.pid))
+        try:
+            self._iou_process.terminate()
+        # Sometime the process can already be dead when we garbage collect
+        except ProcessLookupError:
+            pass
 
     @asyncio.coroutine
     def reload(self):
@@ -650,7 +647,7 @@ class IOUVM(BaseVM):
         :returns: True or False
         """
 
-        if self._iou_process:
+        if self._iou_process and self._iou_process.returncode is None:
             return True
         return False
 
@@ -661,7 +658,7 @@ class IOUVM(BaseVM):
         :returns: True or False
         """
 
-        if self._iouyap_process:
+        if self._iouyap_process and self._iouyap_process.returncode is None:
             return True
         return False
 
