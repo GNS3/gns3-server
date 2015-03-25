@@ -26,6 +26,7 @@ import random
 import subprocess
 import shlex
 import asyncio
+import socket
 
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -51,7 +52,6 @@ class QemuVM(BaseVM):
     :param qemu_path: path to the QEMU binary
     :param qemu_id: QEMU VM instance ID
     :param console: TCP console port
-    :param monitor: TCP monitor port
     """
 
     def __init__(self,
@@ -60,8 +60,7 @@ class QemuVM(BaseVM):
                  project,
                  manager,
                  qemu_path=None,
-                 console=None,
-                 monitor=None):
+                 console=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
 
@@ -72,6 +71,7 @@ class QemuVM(BaseVM):
         self._started = False
         self._process = None
         self._cpulimit_process = None
+        self._monitor = None
         self._stdout_file = ""
 
         # QEMU settings
@@ -82,7 +82,6 @@ class QemuVM(BaseVM):
         self._hdd_disk_image = ""
         self._options = ""
         self._ram = 256
-        self._monitor = monitor
         self._ethernet_adapters = []
         self._adapter_type = "e1000"
         self._initrd = ""
@@ -91,11 +90,6 @@ class QemuVM(BaseVM):
         self._legacy_networking = False
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
-
-        if self._monitor is not None:
-            self._monitor = self._manager.port_manager.reserve_tcp_port(self._monitor, self._project)
-        else:
-            self._monitor = self._manager.port_manager.get_free_tcp_port(self._project)
 
         self.adapters = 1  # creates 1 adapter by default
         log.info("QEMU VM {name} [id={id}] has been created".format(name=self._name,
@@ -110,25 +104,6 @@ class QemuVM(BaseVM):
         """
 
         return self._monitor
-
-    @monitor.setter
-    def monitor(self, monitor):
-        """
-        Sets the TCP monitor port.
-
-        :param monitor: monitor port (integer)
-        """
-
-        if monitor == self._monitor:
-            return
-        if self._monitor:
-            self._manager.port_manager.release_monitor_port(self._monitor, self._project)
-        self._monitor = self._manager.port_manager.reserve_monitor_port(monitor, self._project)
-        log.info("{module}: '{name}' [{id}]: monitor port set to {port}".format(
-            module=self.manager.module_name,
-            name=self.name,
-            id=self.id,
-            port=monitor))
 
     @property
     def qemu_path(self):
@@ -610,6 +585,16 @@ class QemuVM(BaseVM):
             return
 
         else:
+
+            if self._manager.config.get_section_config("Qemu").getboolean("monitor", True):
+                try:
+                    # let the OS find an unused port for the Qemu monitor
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                        sock.bind((self._monitor_host, 0))
+                        self._monitor = sock.getsockname()[1]
+                except OSError as e:
+                    raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
+
             self._command = yield from self._build_command()
             try:
                 log.info("starting QEMU: {}".format(self._command))
@@ -701,9 +686,6 @@ class QemuVM(BaseVM):
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
-        if self._monitor:
-            self._manager.port_manager.release_tcp_port(self._monitor, self._project)
-            self._monitor = None
 
     @asyncio.coroutine
     def _get_vm_status(self):
@@ -732,14 +714,15 @@ class QemuVM(BaseVM):
         Suspends this QEMU VM.
         """
 
-        vm_status = yield from self._get_vm_status()
-        if vm_status is None:
-            raise QemuError("Suspending a QEMU VM is not supported")
-        elif vm_status == "running":
-            yield from self._control_vm("stop")
-            log.debug("QEMU VM has been suspended")
-        else:
-            log.info("QEMU VM is not running to be suspended, current status is {}".format(vm_status))
+        if self.is_running():
+            vm_status = yield from self._get_vm_status()
+            if vm_status is None:
+                raise QemuError("Suspending a QEMU VM is not supported")
+            elif vm_status == "running":
+                yield from self._control_vm("stop")
+                log.debug("QEMU VM has been suspended")
+            else:
+                log.info("QEMU VM is not running to be suspended, current status is {}".format(vm_status))
 
     @asyncio.coroutine
     def reload(self):

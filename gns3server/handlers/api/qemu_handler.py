@@ -51,12 +51,11 @@ class QEMUHandler:
                                        request.match_info["project_id"],
                                        request.json.get("vm_id"),
                                        qemu_path=request.json.get("qemu_path"),
-                                       console=request.json.get("console"),
-                                       monitor=request.json.get("monitor"))
+                                       console=request.json.get("console"))
 
         # Clear already used keys
         map(request.json.__delitem__, ["name", "project_id", "vm_id",
-                                       "qemu_path", "console", "monitor"])
+                                       "qemu_path", "console"])
 
         for field in request.json:
             setattr(vm, field, request.json[field])

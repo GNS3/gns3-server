@@ -181,7 +181,10 @@ class DynamipsDeviceHandler:
         dynamips_manager = Dynamips.instance()
         device = dynamips_manager.get_device(request.match_info["device_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from device.remove_nio(port_number)
+        if asyncio.iscoroutinefunction(device.remove_nio):
+            yield from device.remove_nio(port_number)
+        else:
+            device.remove_nio(port_number)
         response.set_status(204)
 
     @Route.post(
