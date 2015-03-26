@@ -590,6 +590,7 @@ class IOUVM(BaseVM):
                 self._ioucon_thread = None
 
             self._terminate_process_iou()
+
             if self._iou_process.returncode is None:
                 try:
                     yield from gns3server.utils.asyncio.wait_for_process_termination(self._iou_process, timeout=3)

@@ -24,7 +24,7 @@ import socket
 from tests.utils import asyncio_patch
 
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 from gns3server.modules.iou.iou_vm import IOUVM
 from gns3server.modules.iou.iou_error import IOUError
 from gns3server.modules.iou import IOU
@@ -97,11 +97,13 @@ def test_vm_invalid_iouyap_path(project, manager, loop):
 
 def test_start(loop, vm, monkeypatch):
 
+    mock_process = MagicMock()
     with patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
         with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
             with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
                 with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process):
+                        mock_process.returncode = None
                         loop.run_until_complete(asyncio.async(vm.start()))
                         assert vm.is_running()
 
@@ -111,13 +113,14 @@ def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
     fake_file = str(tmpdir / "iourc")
     with open(fake_file, "w+") as f:
         f.write("1")
-
+    mock_process = MagicMock()
     with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file, "iouyap_path": vm.iouyap_path}):
         with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
             with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
                 with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
                     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as exec_mock:
+                        with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
+                            mock_process.returncode = None
                             loop.run_until_complete(asyncio.async(vm.start()))
                             assert vm.is_running()
                             arsgs, kwargs = exec_mock.call_args
@@ -152,11 +155,13 @@ def test_stop(loop, vm):
         with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
             with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
                 with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                    loop.run_until_complete(asyncio.async(vm.start()))
-                    assert vm.is_running()
-                    loop.run_until_complete(asyncio.async(vm.stop()))
-                    assert vm.is_running() is False
-                    process.terminate.assert_called_with()
+                    with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                        loop.run_until_complete(asyncio.async(vm.start()))
+                        process.returncode = None
+                        assert vm.is_running()
+                        loop.run_until_complete(asyncio.async(vm.stop()))
+                        assert vm.is_running() is False
+                        process.terminate.assert_called_with()
 
 
 def test_reload(loop, vm, fake_iou_bin):
@@ -166,16 +171,18 @@ def test_reload(loop, vm, fake_iou_bin):
     future = asyncio.Future()
     future.set_result(True)
     process.wait.return_value = future
+    process.returncode = None
 
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
         with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
             with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
                 with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                    loop.run_until_complete(asyncio.async(vm.start()))
-                    assert vm.is_running()
-                    loop.run_until_complete(asyncio.async(vm.reload()))
-                    assert vm.is_running() is True
-                    process.terminate.assert_called_with()
+                    with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                        loop.run_until_complete(asyncio.async(vm.start()))
+                        assert vm.is_running()
+                        loop.run_until_complete(asyncio.async(vm.reload()))
+                        assert vm.is_running() is True
+                        process.terminate.assert_called_with()
 
 
 def test_close(vm, port_manager, loop):
@@ -239,7 +246,7 @@ def test_build_command_initial_config(vm, loop):
     with open(filepath, "w+") as f:
         f.write("service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption")
 
-    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", "-c", vm.initial_config_file, str(vm.application_id)]
+    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", "-c", os.path.basename(vm.initial_config_file), str(vm.application_id)]
 
 
 def test_get_initial_config(vm):
