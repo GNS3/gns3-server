@@ -74,6 +74,7 @@ class IOUVM(BaseVM):
                  console=None,
                  ram=None,
                  nvram=None,
+                 use_default_iou_values=None,
                  ethernet_adapters=None,
                  serial_adapters=None,
                  l1_keepalives=None,
@@ -95,7 +96,7 @@ class IOUVM(BaseVM):
         self._serial_adapters = []
         self.ethernet_adapters = 2 if ethernet_adapters is None else ethernet_adapters  # one adapter = 4 interfaces
         self.serial_adapters = 2 if serial_adapters is None else serial_adapters  # one adapter = 4 interfaces
-        self._use_default_iou_values = True  # for RAM & NVRAM values
+        self._use_default_iou_values = True if use_default_iou_values is None else use_default_iou_values  # for RAM & NVRAM values
         self._nvram = 128 if nvram is None else nvram  # Kilobytes
         self._initial_config = ""
         self._ram = 256 if ram is None else ram  # Megabytes

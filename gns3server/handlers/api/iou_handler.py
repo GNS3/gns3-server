@@ -60,6 +60,7 @@ class IOUHandler:
                                       ethernet_adapters=request.json.get("ethernet_adapters"),
                                       ram=request.json.get("ram"),
                                       nvram=request.json.get("nvram"),
+                                      use_default_iou_values=request.json.get("use_default_iou_values"),
                                       l1_keepalives=request.json.get("l1_keepalives"),
                                       initial_config=request.json.get("initial_config_content"),
                                       iourc_content=request.json.get("iourc_content")
@@ -115,6 +116,7 @@ class IOUHandler:
         vm.serial_adapters = request.json.get("serial_adapters", vm.serial_adapters)
         vm.ram = request.json.get("ram", vm.ram)
         vm.nvram = request.json.get("nvram", vm.nvram)
+        vm.use_default_iou_values = request.json.get("use_default_iou_values", vm.use_default_iou_values)
         vm.l1_keepalives = request.json.get("l1_keepalives", vm.l1_keepalives)
         vm.initial_config = request.json.get("initial_config_content", vm.initial_config)
         vm.iourc_content = request.json.get("iourc_content", None)
