@@ -380,8 +380,6 @@ class IOUVM(BaseVM):
             return
 
         config = configparser.ConfigParser()
-        if self.iourc_path is None:
-            raise IOUError("Could not found iourc file")
         try:
             with open(self.iourc_path) as f:
                 config.read_file(f)
@@ -439,8 +437,10 @@ class IOUVM(BaseVM):
             self._rename_nvram_file()
 
             iourc_path = self.iourc_path
-            if iourc_path and not os.path.isfile(iourc_path):
-                raise IOUError("A valid iourc file is necessary to start IOU")
+            if iourc_path is None:
+                raise IOUError("Could not find a iourc file (IOU license)")
+            if not os.path.isfile(iourc_path):
+                raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
 
             yield from self._check_iou_licence()
             iouyap_path = self.iouyap_path
