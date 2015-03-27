@@ -28,6 +28,21 @@ from gns3server.handlers.api.vpcs_handler import VPCSHandler
 from gns3server.handlers.api.config_handler import ConfigHandler
 from gns3server.handlers.api.server_handler import ServerHandler
 from gns3server.handlers.upload_handler import UploadHandler
+from ..web.route import Route
+
+if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
+    from gns3server.handlers.api.iou_handler import IOUHandler
+
+class HomePage:
+
+    @classmethod
+    @Route.get(
+        r"/",
+        description="Home page for GNS3Server",
+        api_version=None
+    )
+    def index(request, response):
+        response.template("homepage.html")
 
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
     from gns3server.handlers.api.iou_handler import IOUHandler
