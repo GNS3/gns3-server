@@ -1181,6 +1181,11 @@ class Router(BaseVM):
         except IndexError:
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
                                                                                               slot_number=slot_number))
+
+        if adapter is None:
+            raise DynamipsError("Adapter is missing in {slot_number}".format(                                                                                   slot_number=slot_number))
+
+
         if not adapter.port_exists(port_number):
             raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
@@ -1215,6 +1220,9 @@ class Router(BaseVM):
         except IndexError:
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
                                                                                               slot_number=slot_number))
+
+
+
         if not adapter.port_exists(port_number):
             raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
