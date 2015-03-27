@@ -136,8 +136,9 @@ class DynamipsHypervisor:
         except DynamipsError:
             pass
         try:
-            yield from self._writer.drain()
-            self._writer.close()
+            if self._writer is not None:
+                yield from self._writer.drain()
+                self._writer.close()
         except OSError as e:
             log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
         self._reader = self._writer = None
