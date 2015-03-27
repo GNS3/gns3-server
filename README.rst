@@ -14,6 +14,19 @@ Clients like the GNS3 GUI controls the server using a HTTP REST API.
 
 You will need the GNS3 GUI (gns3-gui repository) to control the server.
 
+Branches
+--------
+
+master
+******
+master is the next stable release, you can test it in your day to day activities.
+Bug fixes or small improvements pull requests goes here.
+
+unstable
+********
+*Never* use this branch for production. Major new features pull requests goes here. 
+
+
 Linux (Debian based)
 --------------------
 
