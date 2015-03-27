@@ -20,27 +20,12 @@ import aiohttp
 import os
 from unittest.mock import patch
 
+from gns3server.version import __version__
 
-def test_index_upload(server):
-    response = server.get('/upload', api_version=None)
+
+def test_index(server):
+    response = server.get('/', api_version=None)
     assert response.status == 200
     html = response.html
-    assert "GNS3 Server" in html
-    assert "Select & Upload" in html
-
-
-def test_upload(server, tmpdir):
-
-    with open(str(tmpdir / "test"), "w+") as f:
-        f.write("TEST")
-    body = aiohttp.FormData()
-    body.add_field("type", "QEMU")
-    body.add_field("file", open(str(tmpdir / "test"), "rb"), content_type="application/iou", filename="test2")
-
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        response = server.post('/upload', api_version=None, body=body, raw=True)
-
-    with open(str(tmpdir / "QEMU" / "test2")) as f:
-        assert f.read() == "TEST"
-
-    assert "test2" in response.body.decode("utf-8")
+    assert "Community" in html
+    assert __version__ in html
