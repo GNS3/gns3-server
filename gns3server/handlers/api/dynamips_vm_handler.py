@@ -356,13 +356,13 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_vm(request.match_info["vm_id"],
                                      project_id=request.match_info["project_id"])
 
-        startup_config, private_config = yield from vm.extract_config()
+        startup_config_base64, private_config_base64 = yield from vm.extract_config()
         result = {}
-        if startup_config:
-            startup_config_content = base64.decodebytes(startup_config.encode("utf-8")).decode("utf-8")
+        if startup_config_base64:
+            startup_config_content = base64.b64decode(startup_config_base64).decode(errors='replace')
             result["startup_config_content"] = startup_config_content
-        if private_config:
-            private_config_content = base64.decodebytes(private_config.encode("utf-8")).decode("utf-8")
+        if private_config_base64:
+            private_config_content = base64.b64decode(private_config_base64).decode(errors='replace')
             result["private_config_content"] = private_config_content
 
         response.set_status(200)

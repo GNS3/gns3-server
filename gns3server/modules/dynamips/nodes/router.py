@@ -26,6 +26,7 @@ import sys
 import os
 import glob
 import base64
+import binascii
 
 import logging
 log = logging.getLogger(__name__)
@@ -1183,8 +1184,7 @@ class Router(BaseVM):
                                                                                               slot_number=slot_number))
 
         if adapter is None:
-            raise DynamipsError("Adapter is missing in {slot_number}".format(                                                                                   slot_number=slot_number))
-
+            raise DynamipsError("Adapter is missing in slot {slot_number}".format(slot_number=slot_number))
 
         if not adapter.port_exists(port_number):
             raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
@@ -1221,7 +1221,8 @@ class Router(BaseVM):
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
                                                                                               slot_number=slot_number))
 
-
+        if adapter is None:
+            raise DynamipsError("Adapter is missing in slot {slot_number}".format(slot_number=slot_number))
 
         if not adapter.port_exists(port_number):
             raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
@@ -1494,24 +1495,24 @@ class Router(BaseVM):
             startup_config_base64, private_config_base64 = yield from self.extract_config()
             if startup_config_base64:
                 try:
-                    config = base64.decodebytes(startup_config_base64.encode("utf-8")).decode("utf-8")
+                    config = base64.b64decode(startup_config_base64).decode(errors='replace')
                     config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.startup_config)
                     with open(config_path, "w") as f:
                         log.info("saving startup-config to {}".format(self.startup_config))
                         f.write(config)
-                except OSError as e:
+                except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
             if private_config_base64:
                 try:
-                    config = base64.decodebytes(private_config_base64.encode("utf-8")).decode("utf-8")
+                    config = base64.b64decode(private_config_base64).decode(errors='replace')
                     config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.private_config)
                     with open(config_path, "w") as f:
                         log.info("saving private-config to {}".format(self.private_config))
                         f.write(config)
-                except OSError as e:
+                except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
 
     def delete(self):
