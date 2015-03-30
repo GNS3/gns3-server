@@ -9,8 +9,8 @@ Get a Qemu.instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -30,11 +30,12 @@ Output
     <tr><td>cpu_throttling</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
     <tr><td>hdb_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdb disk image path</td>                     </tr>
+    <tr><td>hdc_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdc disk image path</td>                     </tr>
+    <tr><td>hdd_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdd disk image path</td>                     </tr>
     <tr><td>initrd</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU initrd path</td>                     </tr>
     <tr><td>kernel_command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU kernel command line</td>                     </tr>
     <tr><td>kernel_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU kernel image path</td>                     </tr>
     <tr><td>legacy_networking</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Use QEMU legagy networking commands (-net syntax)</td>                     </tr>
-    <tr><td>monitor</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>monitor TCP port</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU VM instance name</td>                     </tr>
     <tr><td>options</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Additional QEMU options</td>                     </tr>
     <tr><td>process_priority</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: realtime, very high, high, normal, low, very low</td>                     </tr>
@@ -57,8 +58,8 @@ Update a Qemu.instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -79,11 +80,12 @@ Input
     <tr><td>cpu_throttling</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hda disk image path</td>                     </tr>
     <tr><td>hdb_disk_image</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hdb disk image path</td>                     </tr>
+    <tr><td>hdc_disk_image</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hdc disk image path</td>                     </tr>
+    <tr><td>hdd_disk_image</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hdd disk image path</td>                     </tr>
     <tr><td>initrd</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU initrd path</td>                     </tr>
     <tr><td>kernel_command_line</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU kernel command line</td>                     </tr>
     <tr><td>kernel_image</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU kernel image path</td>                     </tr>
     <tr><td>legacy_networking</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Use QEMU legagy networking commands (-net syntax)</td>                     </tr>
-    <tr><td>monitor</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>monitor TCP port</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU VM instance name</td>                     </tr>
     <tr><td>options</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Additional QEMU options</td>                     </tr>
     <tr><td>process_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: realtime, very high, high, normal, low, very low, null</td>                     </tr>
@@ -103,11 +105,12 @@ Output
     <tr><td>cpu_throttling</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
     <tr><td>hdb_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdb disk image path</td>                     </tr>
+    <tr><td>hdc_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdc disk image path</td>                     </tr>
+    <tr><td>hdd_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdd disk image path</td>                     </tr>
     <tr><td>initrd</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU initrd path</td>                     </tr>
     <tr><td>kernel_command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU kernel command line</td>                     </tr>
     <tr><td>kernel_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU kernel image path</td>                     </tr>
     <tr><td>legacy_networking</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Use QEMU legagy networking commands (-net syntax)</td>                     </tr>
-    <tr><td>monitor</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>monitor TCP port</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU VM instance name</td>                     </tr>
     <tr><td>options</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Additional QEMU options</td>                     </tr>
     <tr><td>process_priority</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: realtime, very high, high, normal, low, very low</td>                     </tr>
@@ -130,8 +133,8 @@ Delete a Qemu.instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************

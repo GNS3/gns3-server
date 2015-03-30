@@ -1,26 +1,24 @@
-/v1/projects/{project_id}/qemu/vms/{vm_id}/start
+/v1/projects/{project_id}/ports/udp
 ----------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v1/projects/**{project_id}**/qemu/vms/**{vm_id}**/start
+POST /v1/projects/**{project_id}**/ports/udp
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Start a Qemu.instance
+Allocate an UDP port on the server
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
-- **project_id**: UUID for the project
+- **project_id**: The UUID of the project
 
 Response status codes
 **********************
-- **400**: Invalid request
-- **404**: Instance doesn't exist
-- **204**: Instance started
+- **201**: UDP port allocated
+- **404**: The project doesn't exist
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../examples/post_projectsprojectidqemuvmsvmidstart.txt
+.. literalinclude:: ../../examples/post_projectsprojectidportsudp.txt
 

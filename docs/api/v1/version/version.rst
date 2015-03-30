@@ -17,6 +17,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Either this is a local server</td>                     </tr>
     <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number human readable</td>                     </tr>
     </table>
 
@@ -42,6 +43,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Either this is a local server</td>                     </tr>
     <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number human readable</td>                     </tr>
     </table>
 
@@ -51,6 +53,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Either this is a local server</td>                     </tr>
     <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number human readable</td>                     </tr>
     </table>
 

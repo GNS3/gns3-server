@@ -9,10 +9,10 @@ Stop a packet capture on a VirtualBox VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
-- **vm_id**: UUID for the instance
 - **adapter_number**: Adapter to stop a packet capture
 - **port_number**: Port on the adapter (always 0)
+- **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************

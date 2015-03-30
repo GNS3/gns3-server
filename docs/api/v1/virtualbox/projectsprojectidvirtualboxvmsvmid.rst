@@ -9,8 +9,8 @@ Get a VirtualBox VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -31,6 +31,7 @@ Output
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>headless mode</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance name</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>ram</td>                    <td> </td>                     <td>integer</td>                     <td>Amount of RAM</td>                     </tr>
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>allow GNS3 to use any VirtualBox adapter</td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance UUID</td>                     </tr>
     <tr><td>vmname</td>                    <td> </td>                     <td>string</td>                     <td>VirtualBox VM name (in VirtualBox itself)</td>                     </tr>
@@ -49,8 +50,8 @@ Update a VirtualBox VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -71,6 +72,7 @@ Input
     <tr><td>enable_remote_console</td>                    <td> </td>                     <td>boolean</td>                     <td>enable the remote console</td>                     </tr>
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>headless mode</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>VirtualBox VM instance name</td>                     </tr>
+    <tr><td>ram</td>                    <td> </td>                     <td>integer</td>                     <td>Amount of RAM</td>                     </tr>
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>allow GNS3 to use any VirtualBox adapter</td>                     </tr>
     <tr><td>vmname</td>                    <td> </td>                     <td>string</td>                     <td>VirtualBox VM name (in VirtualBox itself)</td>                     </tr>
     </table>
@@ -88,6 +90,7 @@ Output
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>headless mode</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance name</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>ram</td>                    <td> </td>                     <td>integer</td>                     <td>Amount of RAM</td>                     </tr>
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>allow GNS3 to use any VirtualBox adapter</td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance UUID</td>                     </tr>
     <tr><td>vmname</td>                    <td> </td>                     <td>string</td>                     <td>VirtualBox VM name (in VirtualBox itself)</td>                     </tr>
@@ -106,8 +109,8 @@ Delete a VirtualBox VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
