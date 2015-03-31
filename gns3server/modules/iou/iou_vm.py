@@ -1012,6 +1012,10 @@ class IOUVM(BaseVM):
                                                                                           port_number=port_number))
 
         nio = adapter.get_nio(port_number)
+        if not nio:
+            raise IOUError("NIO {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
+                                                                                         port_number=port_number))
+
         if nio.capturing:
             raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
                                                                                                           port_number=port_number))
