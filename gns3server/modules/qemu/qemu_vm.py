@@ -1068,7 +1068,10 @@ class QemuVM(BaseVM):
         command.extend(self._monitor_options())
         additional_options = self._options.strip()
         if additional_options:
-            command.extend(shlex.split(additional_options))
+            try:
+                command.extend(shlex.split(additional_options))
+            except ValueError as e:
+                QemuError("Invalid additional options: {} error {}".format(additional_options, e))
         command.extend(self._network_options())
         command.extend(self._graphic())
         return command

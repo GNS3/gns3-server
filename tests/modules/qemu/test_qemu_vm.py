@@ -280,6 +280,13 @@ def test_build_command_without_display(vm, loop, fake_qemu_binary):
         assert "-nographic" in cmd
 
 
+def test_build_command_witht_invalid_options(vm, loop, fake_qemu_binary):
+
+    vm.options = "'test"
+    with pytest.raises(QemuError):
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+
+
 def test_hda_disk_image(vm, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
