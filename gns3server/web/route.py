@@ -123,7 +123,7 @@ class Route(object):
                     yield from func(request, response)
                     return response
 
-                # API call
+                # API call
                 try:
                     request = yield from parse_request(request, input_schema)
                     server_config = Config.instance().get_section_config("Server")
@@ -151,6 +151,11 @@ class Route(object):
                     response = Response(route=route)
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
+                except aiohttp.ClientDisconnectedError:
+                    log.error("Client disconnected")
+                    response = Response(route=route)
+                    response.set_status(408)
+                    response.json({"message": "Client disconnected", "status": 408})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(route=route)
