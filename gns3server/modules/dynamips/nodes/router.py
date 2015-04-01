@@ -228,6 +228,8 @@ class Router(BaseVM):
         """
 
         status = yield from self._hypervisor.send('vm get_status "{name}"'.format(name=self._name))
+        if len(status) == 0:
+            raise DynamipsError("Can't get vm {name} status".format(name=self._name))
         return self._status[int(status[0])]
 
     @asyncio.coroutine
