@@ -5,7 +5,7 @@ include LICENSE
 include MANIFEST.in
 include tox.ini
 recursive-exclude tests *
-recursive-include docs *
+recursive-exclude docs *
 recursive-include gns3server *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]

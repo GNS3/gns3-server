@@ -61,7 +61,7 @@ setup(
             "gns3dms = gns3dms.main:main",
         ]
     },
-    packages=find_packages(),
+    packages=find_packages(".", exclude=["docs", "tests"]),
     package_data={"gns3server": ["templates/upload.html"]},
     include_package_data=True,
     platforms="any",
