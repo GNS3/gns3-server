@@ -189,7 +189,7 @@ class VirtualBoxVM(BaseVM):
         # add a guest property to let the VM know about the GNS3 project directory
         yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
 
-        if self._enable_remote_console:
+        if self._enable_remote_console and self._console is not None:
             self._start_remote_console()
 
     @asyncio.coroutine
