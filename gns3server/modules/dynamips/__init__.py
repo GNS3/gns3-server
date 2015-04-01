@@ -560,8 +560,8 @@ class Dynamips(BaseManager):
             raise DynamipsError("Could not create Dynamips configs directory: {}".format(e))
 
         try:
-            with open(path, "w") as f:
-                f.write(content)
+            with open(path, "wb") as f:
+                f.write(content.encode("utf-8"))
         except OSError as e:
             raise DynamipsError("Could not create config file {}: {}".format(path, e))
 
