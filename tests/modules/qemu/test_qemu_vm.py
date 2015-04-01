@@ -40,7 +40,8 @@ def manager(port_manager):
 @pytest.fixture
 def fake_qemu_img_binary():
 
-    bin_path = os.path.join(os.environ["PATH"], "qemu-img")
+    # Should not crash with unicode characters
+    bin_path = os.path.join(os.environ["PATH"], "qemu-img\u62FF")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -166,7 +167,8 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
     with pytest.raises(QemuError):
         vm.qemu_path = None
 
-    path = str(tmpdir / "bla")
+    # Should not crash with unicode characters
+    path = str(tmpdir / "bla\u62FF")
 
     # Raise because file doesn't exists
     with pytest.raises(QemuError):
