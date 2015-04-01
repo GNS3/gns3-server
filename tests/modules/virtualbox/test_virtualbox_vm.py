@@ -54,3 +54,4 @@ def test_vm_invalid_virtualbox_api_version(loop, project, manager):
         with pytest.raises(VirtualBoxError):
             vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
             loop.run_until_complete(asyncio.async(vm.create()))
+

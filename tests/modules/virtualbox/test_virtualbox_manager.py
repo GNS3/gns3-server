@@ -18,6 +18,8 @@
 
 import pytest
 import tempfile
+import os
+import stat
 
 from gns3server.modules.virtualbox import VirtualBox
 from gns3server.modules.virtualbox.virtualbox_error import VirtualBoxError
@@ -36,9 +38,28 @@ def test_vm_invalid_vboxmanage_path(manager):
         with pytest.raises(VirtualBoxError):
             manager.find_vboxmanage()
 
-
 def test_vm_non_executable_vboxmanage_path(manager):
     tmpfile = tempfile.NamedTemporaryFile()
     with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": tmpfile.name}):
         with pytest.raises(VirtualBoxError):
             manager.find_vboxmanage()
+
+def test_vm_invalid_executable_name_vboxmanage_path(manager, tmpdir):
+    path = str(tmpdir / "vpcs")
+    with open(path, "w+") as f:
+        f.write(path)
+    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    tmpfile = tempfile.NamedTemporaryFile()
+    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": path}):
+        with pytest.raises(VirtualBoxError):
+            manager.find_vboxmanage()
+
+def test_vboxmanage_path(manager, tmpdir):
+    path = str(tmpdir / "VBoxManage")
+    with open(path, "w+") as f:
+        f.write(path)
+    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    tmpfile = tempfile.NamedTemporaryFile()
+    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": path}):
+        assert manager.find_vboxmanage() == path
+

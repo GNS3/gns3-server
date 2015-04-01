@@ -73,6 +73,8 @@ class VirtualBox(BaseManager):
             raise VirtualBoxError("VBoxManage {} is not accessible".format(vboxmanage_path))
         if not os.access(vboxmanage_path, os.X_OK):
             raise VirtualBoxError("VBoxManage is not executable")
+        if os.path.basename(vboxmanage_path) not in ["VBoxManage", "VBoxManage.exe", "vboxmanage"]:
+            raise VirtualBoxError("Invalid VBoxManage executable name {}".format(os.path.basename(vboxmanage_path)))
 
         self._vboxmanage_path = vboxmanage_path
         return vboxmanage_path
