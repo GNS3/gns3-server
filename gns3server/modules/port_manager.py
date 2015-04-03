@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
+import sys
 import ipaddress
 from aiohttp.web import HTTPConflict
 from gns3server.config import Config
@@ -251,13 +252,18 @@ class PortManager:
         project.record_udp_port(port)
         log.debug("UDP port {} has been reserved".format(port))
 
-    def release_udp_port(self, port, project):
+    def release_udp_port(self, port, project, force_remove=False):
         """
         Release a specific UDP port number
 
         :param port: UDP port number
         :param project: Project instance
+        :param force_remove: Force port removal even on Darwnin
         """
+
+        # A bug with dynamips on darwin doesn't correctly free the port we free it only when changing project
+        if sys.platform.startswith("darwin") and force_remove is False:
+            return
 
         if port in self._used_udp_ports:
             self._used_udp_ports.remove(port)
