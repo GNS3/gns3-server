@@ -1500,9 +1500,9 @@ class Router(BaseVM):
                     config = base64.b64decode(startup_config_base64).decode(errors='replace')
                     config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.startup_config)
-                    with open(config_path, "w") as f:
+                    with open(config_path, "wb") as f:
                         log.info("saving startup-config to {}".format(self.startup_config))
-                        f.write(config)
+                        f.write(config.encode("utf-8"))
                 except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
@@ -1511,9 +1511,9 @@ class Router(BaseVM):
                     config = base64.b64decode(private_config_base64).decode(errors='replace')
                     config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.private_config)
-                    with open(config_path, "w") as f:
+                    with open(config_path, "wb") as f:
                         log.info("saving private-config to {}".format(self.private_config))
-                        f.write(config)
+                        f.write(config.encode("utf-8"))
                 except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
 
