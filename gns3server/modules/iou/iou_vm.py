@@ -959,7 +959,7 @@ class IOUVM(BaseVM):
                     initial_config = initial_config.replace("%h", self._name)
                     f.write(initial_config)
         except OSError as e:
-            raise IOUError("Can't write initial configuration file '{}'".format(script_file))
+            raise IOUError("Can't write initial configuration file '{}': {}".format(script_file, e))
 
     @property
     def initial_config_file(self):

@@ -647,7 +647,11 @@ class VirtualBoxVM(BaseVM):
             attachment = nic_attachments[adapter_number]
             if attachment == "null":
                 # disconnect the cable if no backend is attached.
-                self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+            if attachment == "none":
+                # set the backend to null to avoid a difference in the number of interfaces in the Guest.
+                yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
+                yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
                 if not self._use_any_adapter and attachment not in ("none", "null", "generic"):
@@ -683,10 +687,6 @@ class VirtualBoxVM(BaseVM):
                 if nio.capturing:
                     yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
                     yield from self._modify_vm('--nictracefile{} "{}"'.format(adapter_number + 1, nio.pcap_output_file))
-            else:
-                yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
-                yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
-
 
         for adapter_number in range(self._adapters, self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_number))
