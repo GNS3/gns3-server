@@ -393,7 +393,7 @@ class VPCSVM(BaseVM):
             elif isinstance(nio, NIOTAP):
                 # TAP interface
                 command.extend(["-e"])
-                command.extend(["-d", nio.tap_vm])
+                command.extend(["-d", nio.tap_device])
 
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
