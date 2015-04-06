@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.1rc2 06/04/2015
+
+* Do not overwrite initial-config IOU if client send an empty
+* Fix documentation about /ports/udp
+
 ## 1.3.1rc1 05/04/2015
 
 * Fix issues with macos X dynamips not freeing UDP port
