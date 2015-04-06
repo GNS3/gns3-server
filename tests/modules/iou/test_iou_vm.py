@@ -265,6 +265,18 @@ def test_update_initial_config(vm):
         assert f.read() == content
 
 
+def test_update_initial_config_empty(vm):
+    content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    vm.initial_config = content
+    filepath = os.path.join(vm.working_dir, "initial-config.cfg")
+    assert os.path.exists(filepath)
+    with open(filepath) as f:
+        assert f.read() == content
+    vm.initial_config = ""
+    with open(filepath) as f:
+        assert f.read() == content
+
+
 def test_update_initial_config_h(vm):
     content = "hostname %h\n"
     vm.name = "pc1"

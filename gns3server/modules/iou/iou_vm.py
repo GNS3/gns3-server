@@ -952,8 +952,13 @@ class IOUVM(BaseVM):
 
         try:
             script_file = os.path.join(self.working_dir, "initial-config.cfg")
+
+            # We disallow erasing the initial config file
+            if len(initial_config) == 0 and os.path.exists(script_file):
+                return
+
             with open(script_file, 'w+') as f:
-                if initial_config is None:
+                if len(initial_config) == 0:
                     f.write('')
                 else:
                     initial_config = initial_config.replace("%h", self._name)
