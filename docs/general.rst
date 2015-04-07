@@ -42,7 +42,8 @@ The next step is to create a project.
     # curl -X POST "http://localhost:8000/v1/projects" -d "{}"
     {
         "project_id": "42f9feee-3217-4104-981e-85d5f0a806ec",
-        "temporary": false
+        "temporary": false,
+        "name": "Test"
     }
 
 With this project id we can now create two VPCS VM.
