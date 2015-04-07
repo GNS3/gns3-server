@@ -30,5 +30,5 @@ from gns3server.handlers.api.server_handler import ServerHandler
 from gns3server.handlers.upload_handler import UploadHandler
 from gns3server.handlers.index_handler import IndexHandler
 
-if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
+if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
     from gns3server.handlers.api.iou_handler import IOUHandler

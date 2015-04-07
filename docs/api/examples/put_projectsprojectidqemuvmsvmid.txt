@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/824ca299-8319-47d8-a8f5-22d400dbe41a' -d '{"console": 2001, "hdb_disk_image": "/tmp/hdb", "name": "test", "ram": 1024}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/e5b90e65-6f6a-4d44-b2d8-3a5c3a4a626b' -d '{"console": 2001, "hdb_disk_image": "/tmp/hdb", "name": "test", "ram": 1024}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/824ca299-8319-47d8-a8f5-22d400dbe41a HTTP/1.1
+PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/e5b90e65-6f6a-4d44-b2d8-3a5c3a4a626b HTTP/1.1
 {
     "console": 2001,
     "hdb_disk_image": "/tmp/hdb",
@@ -14,7 +14,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 601
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.0.dev3
+SERVER: Python/3.4 GNS3/1.3.1.rc2
 X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
 
 {
@@ -34,7 +34,7 @@ X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
     "options": "",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpyllkr06h/qemu_x42",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpyasp9636/qemu_x42",
     "ram": 1024,
-    "vm_id": "824ca299-8319-47d8-a8f5-22d400dbe41a"
+    "vm_id": "e5b90e65-6f6a-4d44-b2d8-3a5c3a4a626b"
 }

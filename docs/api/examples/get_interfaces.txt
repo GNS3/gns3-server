@@ -9,7 +9,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 718
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.0.dev3
+SERVER: Python/3.4 GNS3/1.3.1.rc2
 X-ROUTE: /v1/interfaces
 
 [
@@ -34,16 +34,16 @@ X-ROUTE: /v1/interfaces
         "name": "en1"
     },
     {
+        "id": "fw0",
+        "name": "fw0"
+    },
+    {
         "id": "en2",
         "name": "en2"
     },
     {
         "id": "p2p0",
         "name": "p2p0"
-    },
-    {
-        "id": "fw0",
-        "name": "fw0"
     },
     {
         "id": "bridge0",

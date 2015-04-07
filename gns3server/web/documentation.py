@@ -37,6 +37,7 @@ class Documentation(object):
 
     def write(self):
         for handler_name in sorted(self._documentation):
+            print("Build {}".format(handler_name))
 
             for path in sorted(self._documentation[handler_name]):
 
