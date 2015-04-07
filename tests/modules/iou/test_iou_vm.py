@@ -202,6 +202,15 @@ def test_path(vm, fake_iou_bin):
     assert vm.path == fake_iou_bin
 
 
+def test_path_12_location(vm, fake_iou_bin):
+
+    # In 1.2 users uploaded images to the images roots
+    # after the migration their images are inside images/IOU
+    # but old topologies use old path
+    vm.path = fake_iou_bin.replace("/IOU", "")
+    assert vm.path == fake_iou_bin
+
+
 def test_path_relative(vm, fake_iou_bin, tmpdir):
 
     config = Config.instance()
