@@ -25,7 +25,8 @@ class SerialAdapter(Adapter):
     """
 
     def __init__(self, interfaces=1):
-        Adapter.__init__(self, interfaces=interfaces)
+
+        super().__init__(interfaces)
 
     def __str__(self):
 

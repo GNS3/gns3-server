@@ -17,7 +17,6 @@
 
 
 import asyncio
-import shutil
 
 
 @asyncio.coroutine

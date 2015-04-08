@@ -44,7 +44,8 @@ class C2691(Router):
     """
 
     def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
-        Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c2691")
+
+        super().__init__(name, vm_id, project, manager, dynamips_id, console, aux, platform="c2691")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128

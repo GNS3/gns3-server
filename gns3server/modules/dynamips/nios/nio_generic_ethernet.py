@@ -44,7 +44,7 @@ class NIOGenericEthernet(NIO):
         NIOGenericEthernet._instance_count += 1
         name = 'nio_gen_eth' + str(nio_id)
         self._ethernet_device = ethernet_device
-        NIO.__init__(self, name, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

@@ -35,10 +35,10 @@ class Project:
     A project contains a list of VM.
     In theory VM are isolated project/project.
 
-    :param project_id: Force project identifier (None by default auto generate an UUID)
-    :param path: Path of the project. (None use the standard directory)
-    :param location: Parent path of the project. (None should create a tmp directory)
-    :param temporary: Boolean the project is a temporary project (destroy when closed)
+    :param project_id: force project identifier (None by default auto generate an UUID)
+    :param path: path of the project. (None use the standard directory)
+    :param location: parent path of the project. (None should create a tmp directory)
+    :param temporary: boolean to tell if the project is a temporary project (destroy when closed)
     """
 
     def __init__(self, name=None, project_id=None, path=None, location=None, temporary=False):
@@ -231,7 +231,7 @@ class Project:
 
     def module_working_directory(self, module_name):
         """
-        Return a working directory for the module
+        Returns a working directory for the module
         If the directory doesn't exist, the directory is created.
 
         :param module_name: name for the module
@@ -247,18 +247,20 @@ class Project:
 
     def module_working_path(self, module_name):
         """
-        Return the working direcotory for the module. If you want
+        Returns the working directory for the module. If you want
         to be sure to have the directory on disk take a look on:
             module_working_directory
         """
+
         return os.path.join(self._path, "project-files", module_name)
 
     def vm_working_directory(self, vm):
         """
-        Return a working directory for a specific VM.
+        Returns a working directory for a specific VM.
         If the directory doesn't exist, the directory is created.
 
         :param vm: VM instance
+
         :returns: VM working directory
         """
 
@@ -271,7 +273,7 @@ class Project:
 
     def capture_working_directory(self):
         """
-        Return a working directory where to store packet capture files.
+        Returns a working directory where to store packet capture files.
 
         :returns: path to the directory
         """
@@ -293,7 +295,7 @@ class Project:
 
     def add_vm(self, vm):
         """
-        Add a VM to the project.
+        Adds a VM to the project.
         In theory this should be called by the VM manager.
 
         :param vm: VM instance
@@ -303,7 +305,7 @@ class Project:
 
     def remove_vm(self, vm):
         """
-        Remove a VM from the project.
+        Removes a VM from the project.
         In theory this should be called by the VM manager.
 
         :param vm: VM instance
@@ -314,7 +316,9 @@ class Project:
 
     @asyncio.coroutine
     def close(self):
-        """Close the project, but keep information on disk"""
+        """
+        Closes the project, but keep information on disk
+        """
 
         for module in self.modules():
             yield from module.instance().project_closing(self)
@@ -325,7 +329,7 @@ class Project:
     @asyncio.coroutine
     def _close_and_clean(self, cleanup):
         """
-        Close the project, and cleanup the disk if cleanup is True
+        Closes the project, and cleanup the disk if cleanup is True
 
         :param cleanup: If True drop the project directory
         """
@@ -365,7 +369,9 @@ class Project:
 
     @asyncio.coroutine
     def commit(self):
-        """Write project changes on disk"""
+        """
+        Writes project changes on disk
+        """
 
         while self._vms_to_destroy:
             vm = self._vms_to_destroy.pop()
@@ -376,7 +382,9 @@ class Project:
 
     @asyncio.coroutine
     def delete(self):
-        """Remove project from disk"""
+        """
+        Removes project from disk
+        """
 
         for module in self.modules():
             yield from module.instance().project_closing(self)
@@ -386,7 +394,9 @@ class Project:
 
     @classmethod
     def clean_project_directory(cls):
-        """At startup drop old temporary project. After a crash for example"""
+        """
+        At startup drop old temporary project. After a crash for example
+        """
 
         config = Config.instance().get_section_config("Server")
         directory = config.get("project_directory", cls._get_default_project_directory())
@@ -398,7 +408,9 @@ class Project:
                     shutil.rmtree(path)
 
     def modules(self):
-        """Return VM modules loaded"""
+        """
+        Returns all loaded VM modules.
+        """
 
         # We import it at the last time to avoid circular dependencies
         from ..modules import MODULES

@@ -25,7 +25,8 @@ class PA_8T(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=8)
+
+        super().__init__(interfaces=8)
 
     def __str__(self):
 

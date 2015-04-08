@@ -25,7 +25,8 @@ class PA_4T(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=4)
+
+        super().__init__(interfaces=4)
 
     def __str__(self):
 

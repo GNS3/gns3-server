@@ -25,7 +25,8 @@ class C7200_IO_GE_E(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=1)
+
+        super().__init__(interfaces=1)
 
     def __str__(self):
 

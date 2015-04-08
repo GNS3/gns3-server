@@ -42,7 +42,7 @@ class NIONull(NIO):
         nio_id = NIONull._instance_count
         NIONull._instance_count += 1
         name = 'nio_null' + str(nio_id)
-        NIO.__init__(self, name, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

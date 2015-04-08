@@ -48,7 +48,7 @@ class NIOUDP(NIO):
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
-        NIO.__init__(self, name, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

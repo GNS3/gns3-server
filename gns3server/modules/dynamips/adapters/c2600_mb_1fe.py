@@ -25,7 +25,8 @@ class C2600_MB_1FE(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=1, wics=3)
+
+        super().__init__(interfaces=1, wics=3)
         self._interfaces = 1
 
     def __str__(self):

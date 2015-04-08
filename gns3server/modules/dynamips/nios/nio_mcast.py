@@ -47,7 +47,7 @@ class NIOMcast(NIO):
         self._group = group
         self._port = port
         self._ttl = 1  # default TTL
-        NIO.__init__(self, name, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

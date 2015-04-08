@@ -46,7 +46,7 @@ class NIOVDE(NIO):
         name = 'nio_vde' + str(nio_id)
         self._control_file = control_file
         self._local_file = local_file
-        NIO.__init__(self, name, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

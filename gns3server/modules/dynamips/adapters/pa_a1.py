@@ -25,7 +25,8 @@ class PA_A1(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=1)
+
+        super().__init__(interfaces=1)
 
     def __str__(self):
 

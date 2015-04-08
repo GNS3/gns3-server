@@ -17,7 +17,7 @@
 
 """
 IOU VM management (creates command line, processes, files etc.) in
-order to run an IOU instance.
+order to run an IOU VM.
 """
 
 import os
@@ -54,20 +54,20 @@ class IOUVM(BaseVM):
     module_name = 'iou'
 
     """
-    IOU vm implementation.
+    IOU VM implementation.
 
-    :param name: name of this IOU vm
-    :param vm_id: IOU instance identifier
+    :param name: IOU VM name
+    :param vm_id: IOU VM identifier
     :param project: Project instance
-    :param manager: parent VM Manager
+    :param manager: Manager instance
     :param console: TCP console port
-    :params ethernet_adapters: Number of ethernet adapters
-    :params serial_adapters: Number of serial adapters
-    :params ram: Ram MB
-    :params nvram: Nvram KB
-    :params l1_keepalives: Always up ethernet interface:
-    :params initial_config: Content of the initial configuration file
-    :params iourc_content: Content of the iourc file if no licence is installed on server
+    :params ethernet_adapters: number of ethernet adapters
+    :params serial_adapters: number of serial adapters
+    :params ram: amount of RAM in MB
+    :params nvram: amount of NVRAM in KB
+    :params l1_keepalives: always keep the Ethernet interfaces up
+    :params initial_config: content of the initial configuration file
+    :params iourc_content: content of the iourc file if no licence is installed on the machine
     """
 
     def __init__(self, name, vm_id, project, manager,
@@ -108,6 +108,9 @@ class IOUVM(BaseVM):
 
     @asyncio.coroutine
     def close(self):
+        """
+        Closes this IOU VM.
+        """
 
         log.debug('IOU "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
 
@@ -126,16 +129,20 @@ class IOUVM(BaseVM):
 
     @property
     def path(self):
-        """Path of the iou binary"""
+        """
+        Path of the IOU executable.
+
+        :returns: path to the IOU image executable
+        """
 
         return self._path
 
     @path.setter
     def path(self, path):
         """
-        Path of the iou binary
+        Path of the IOU executable.
 
-        :params path: Path to the binary
+        :param path: path to the IOU image executable
         """
 
         if not os.path.isabs(path):
@@ -171,6 +178,7 @@ class IOUVM(BaseVM):
     def use_default_iou_values(self):
         """
         Returns if this device uses the default IOU image values.
+
         :returns: boolean
         """
 
@@ -180,28 +188,30 @@ class IOUVM(BaseVM):
     def use_default_iou_values(self, state):
         """
         Sets if this device uses the default IOU image values.
+
         :param state: boolean
         """
 
         self._use_default_iou_values = state
         if state:
-            log.info("IOU {name} [id={id}]: uses the default IOU image values".format(name=self._name, id=self._id))
+            log.info('IOU "{name}" [{id}]: uses the default IOU image values'.format(name=self._name, id=self._id))
         else:
-            log.info("IOU {name} [id={id}]: does not use the default IOU image values".format(name=self._name, id=self._id))
+            log.info('IOU "{name}" [{id}]: does not use the default IOU image values'.format(name=self._name, id=self._id))
 
     def _check_requirements(self):
         """
-        Check if IOUYAP is available
+        Checks if IOUYAP executable is available.
         """
+
         path = self.iouyap_path
         if not path:
-            raise IOUError("No path to a IOU executable has been set")
+            raise IOUError("No path to iouyap program has been set")
 
         if not os.path.isfile(path):
-            raise IOUError("IOU program '{}' is not accessible".format(path))
+            raise IOUError("iouyap program '{}' is not accessible".format(path))
 
         if not os.access(path, os.X_OK):
-            raise IOUError("IOU program '{}' is not executable".format(path))
+            raise IOUError("iouyap program '{}' is not executable".format(path))
 
     def __json__(self):
 
@@ -243,7 +253,7 @@ class IOUVM(BaseVM):
     @property
     def iourc_path(self):
         """
-        Returns the IOURC path.
+        Returns the IOURC file path.
 
         :returns: path to IOURC
         """
@@ -267,8 +277,9 @@ class IOUVM(BaseVM):
     @property
     def ram(self):
         """
-        Returns the amount of RAM allocated to this IOU instance.
-        :returns: amount of RAM in Mbytes (integer)
+        Returns the amount of RAM allocated to this IOU VM.
+
+        :returns: amount of RAM in MBytes (integer)
         """
 
         return self._ram
@@ -277,16 +288,17 @@ class IOUVM(BaseVM):
     def ram(self, ram):
         """
         Sets amount of RAM allocated to this IOU instance.
-        :param ram: amount of RAM in Mbytes (integer)
+
+        :param ram: amount of RAM in MBytes (integer)
         """
 
         if self._ram == ram:
             return
 
-        log.info("IOU {name} [id={id}]: RAM updated from {old_ram}MB to {new_ram}MB".format(name=self._name,
-                                                                                            id=self._id,
-                                                                                            old_ram=self._ram,
-                                                                                            new_ram=ram))
+        log.info('IOU "{name}" [{id}]: RAM updated from {old_ram}MB to {new_ram}MB'.format(name=self._name,
+                                                                                           id=self._id,
+                                                                                           old_ram=self._ram,
+                                                                                           new_ram=ram))
 
         self._ram = ram
 
@@ -294,7 +306,8 @@ class IOUVM(BaseVM):
     def nvram(self):
         """
         Returns the mount of NVRAM allocated to this IOU instance.
-        :returns: amount of NVRAM in Kbytes (integer)
+
+        :returns: amount of NVRAM in KBytes (integer)
         """
 
         return self._nvram
@@ -303,22 +316,23 @@ class IOUVM(BaseVM):
     def nvram(self, nvram):
         """
         Sets amount of NVRAM allocated to this IOU instance.
-        :param nvram: amount of NVRAM in Kbytes (integer)
+
+        :param nvram: amount of NVRAM in KBytes (integer)
         """
 
         if self._nvram == nvram:
             return
 
-        log.info("IOU {name} [id={id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB".format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  old_nvram=self._nvram,
-                                                                                                  new_nvram=nvram))
+        log.info('IOU "{name}" [{id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB'.format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 old_nvram=self._nvram,
+                                                                                                 new_nvram=nvram))
         self._nvram = nvram
 
     @BaseVM.name.setter
     def name(self, new_name):
         """
-        Sets the name of this IOU vm.
+        Sets the name of this IOU VM.
 
         :param new_name: name
         """
@@ -332,10 +346,12 @@ class IOUVM(BaseVM):
 
     @property
     def application_id(self):
+
         return self._manager.get_application_id(self.id)
 
     @property
     def iourc_content(self):
+
         try:
             with open(os.path.join(self.temporary_directory, "iourc")) as f:
                 return f.read()
@@ -344,13 +360,14 @@ class IOUVM(BaseVM):
 
     @iourc_content.setter
     def iourc_content(self, value):
+
         if value is not None:
             path = os.path.join(self.temporary_directory, "iourc")
             try:
                 with open(path, "w+") as f:
                     f.write(value)
             except OSError as e:
-                raise IOUError("Could not write iourc file {}: {}".format(path, e))
+                raise IOUError("Could not write the iourc file {}: {}".format(path, e))
 
     @asyncio.coroutine
     def _library_check(self):
@@ -468,11 +485,11 @@ class IOUVM(BaseVM):
                 log.info("IOU instance {} started PID={}".format(self._id, self._iou_process.pid))
                 self._started = True
             except FileNotFoundError as e:
-                raise IOUError("could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
+                raise IOUError("Could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
             except (OSError, subprocess.SubprocessError) as e:
                 iou_stdout = self.read_iou_stdout()
-                log.error("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
-                raise IOUError("could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
+                log.error("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
+                raise IOUError("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
 
             # start console support
             self._start_ioucon()
@@ -481,7 +498,7 @@ class IOUVM(BaseVM):
 
     def _rename_nvram_file(self):
         """
-        Before start the VM rename the nvram file to the correct application id
+        Before starting the VM, rename the nvram and vlan.dat files with the correct IOU application identifier.
         """
 
         destination = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
@@ -494,7 +511,7 @@ class IOUVM(BaseVM):
     @asyncio.coroutine
     def _start_iouyap(self):
         """
-        Starts iouyap (handles connections to and from this IOU device).
+        Starts iouyap (handles connections to and from this IOU VM).
         """
 
         try:
@@ -512,7 +529,7 @@ class IOUVM(BaseVM):
             log.info("iouyap started PID={}".format(self._iouyap_process.pid))
         except (OSError, subprocess.SubprocessError) as e:
             iouyap_stdout = self.read_iouyap_stdout()
-            log.error("could not start iouyap: {}\n{}".format(e, iouyap_stdout))
+            log.error("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
             raise IOUError("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
 
     def _update_iouyap_config(self):
@@ -614,29 +631,33 @@ class IOUVM(BaseVM):
         self._started = False
 
     def _terminate_process_iouyap(self):
-        """Terminate the process if running"""
+        """
+        Terminate the IOUYAP process if running.
+        """
 
-        log.info("Stopping IOUYAP instance {} PID={}".format(self.name, self._iouyap_process.pid))
+        log.info('Stopping IOUYAP process for IOU VM "{}" PID={}'.format(self.name, self._iouyap_process.pid))
         try:
             self._iouyap_process.terminate()
-        # Sometime the process can already be dead when we garbage collect
+        # Sometime the process may already be dead when we garbage collect
         except ProcessLookupError:
             pass
 
     def _terminate_process_iou(self):
-        """Terminate the process if running"""
+        """
+        Terminate the IOU process if running
+        """
 
-        log.info("Stopping IOU instance {} PID={}".format(self.name, self._iou_process.pid))
+        log.info('Stopping IOU process for IOU VM "{}" PID={}'.format(self.name, self._iou_process.pid))
         try:
             self._iou_process.terminate()
-        # Sometime the process can already be dead when we garbage collect
+        # Sometime the process may already be dead when we garbage collect
         except ProcessLookupError:
             pass
 
     @asyncio.coroutine
     def reload(self):
         """
-        Reload the IOU process. (Stop / Start)
+        Reloads the IOU process (stop & start).
         """
 
         yield from self.stop()
@@ -688,6 +709,7 @@ class IOUVM(BaseVM):
         """
         Command to start the IOU process.
         (to be passed to subprocess.Popen())
+
         IOU command line:
         Usage: <image> [options] <application id>
         <image>: unix-js-m | unix-is-m | unix-i-m | ...
@@ -777,7 +799,8 @@ class IOUVM(BaseVM):
     @property
     def ethernet_adapters(self):
         """
-        Returns the number of Ethernet adapters for this IOU instance.
+        Returns the number of Ethernet adapters for this IOU VM.
+
         :returns: number of adapters
         """
 
@@ -786,7 +809,8 @@ class IOUVM(BaseVM):
     @ethernet_adapters.setter
     def ethernet_adapters(self, ethernet_adapters):
         """
-        Sets the number of Ethernet adapters for this IOU instance.
+        Sets the number of Ethernet adapters for this IOU VM.
+
         :param ethernet_adapters: number of adapters
         """
 
@@ -794,16 +818,17 @@ class IOUVM(BaseVM):
         for _ in range(0, ethernet_adapters):
             self._ethernet_adapters.append(EthernetAdapter(interfaces=4))
 
-        log.info("IOU {name} [id={id}]: number of Ethernet adapters changed to {adapters}".format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  adapters=len(self._ethernet_adapters)))
+        log.info('IOU "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 adapters=len(self._ethernet_adapters)))
 
         self._adapters = self._ethernet_adapters + self._serial_adapters
 
     @property
     def serial_adapters(self):
         """
-        Returns the number of Serial adapters for this IOU instance.
+        Returns the number of Serial adapters for this IOU VM.
+
         :returns: number of adapters
         """
 
@@ -812,7 +837,8 @@ class IOUVM(BaseVM):
     @serial_adapters.setter
     def serial_adapters(self, serial_adapters):
         """
-        Sets the number of Serial adapters for this IOU instance.
+        Sets the number of Serial adapters for this IOU VM.
+
         :param serial_adapters: number of adapters
         """
 
@@ -820,67 +846,69 @@ class IOUVM(BaseVM):
         for _ in range(0, serial_adapters):
             self._serial_adapters.append(SerialAdapter(interfaces=4))
 
-        log.info("IOU {name} [id={id}]: number of Serial adapters changed to {adapters}".format(name=self._name,
-                                                                                                id=self._id,
-                                                                                                adapters=len(self._serial_adapters)))
+        log.info('IOU "{name}" [{id}]: number of Serial adapters changed to {adapters}'.format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               adapters=len(self._serial_adapters)))
 
         self._adapters = self._ethernet_adapters + self._serial_adapters
 
     def adapter_add_nio_binding(self, adapter_number, port_number, nio):
         """
         Adds a adapter NIO binding.
-        :param adapter_number: adapter ID
-        :param port_number: port ID
+
+        :param adapter_number: adapter number
+        :param port_number: port number
         :param nio: NIO instance to add to the adapter/port
         """
 
         try:
             adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
-                                                                                         adapter_number=adapter_number))
+            raise IOUError('Adapter {adapter_number} does not exist for IOU "{name}"'.format(name=self._name,
+                                                                                             adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                          port_number=port_number))
+            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_number=port_number))
 
         adapter.add_nio(port_number, nio)
-        log.info("IOU {name} [id={id}]: {nio} added to {adapter_number}/{port_number}".format(name=self._name,
-                                                                                              id=self._id,
-                                                                                              nio=nio,
-                                                                                              adapter_number=adapter_number,
-                                                                                              port_number=port_number))
+        log.info('IOU "{name}" [{id}]: {nio} added to {adapter_number}/{port_number}'.format(name=self._name,
+                                                                                             id=self._id,
+                                                                                             nio=nio,
+                                                                                             adapter_number=adapter_number,
+                                                                                             port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
 
     def adapter_remove_nio_binding(self, adapter_number, port_number):
         """
-        Removes a adapter NIO binding.
-        :param adapter_number: adapter ID
-        :param port_number: port ID
+        Removes an adapter NIO binding.
+
+        :param adapter_number: adapter number
+        :param port_number: port number
         :returns: NIO instance
         """
 
         try:
             adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
-                                                                                         adapter_number=adapter_number))
+            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
+                                                                                            adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                          port_number=port_number))
+            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_number=port_number))
 
         nio = adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(port_number)
-        log.info("IOU {name} [id={id}]: {nio} removed from {adapter_number}/{port_number}".format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  nio=nio,
-                                                                                                  adapter_number=adapter_number,
-                                                                                                  port_number=port_number))
+        log.info('IOU "{name}" [{id}]: {nio} removed from {adapter_number}/{port_number}'.format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 nio=nio,
+                                                                                                 adapter_number=adapter_number,
+                                                                                                 port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)
@@ -891,6 +919,7 @@ class IOUVM(BaseVM):
     def l1_keepalives(self):
         """
         Returns either layer 1 keepalive messages option is enabled or disabled.
+
         :returns: boolean
         """
 
@@ -900,19 +929,21 @@ class IOUVM(BaseVM):
     def l1_keepalives(self, state):
         """
         Enables or disables layer 1 keepalive messages.
+
         :param state: boolean
         """
 
         self._l1_keepalives = state
         if state:
-            log.info("IOU {name} [id={id}]: has activated layer 1 keepalive messages".format(name=self._name, id=self._id))
+            log.info('IOU "{name}" [{id}]: has activated layer 1 keepalive messages'.format(name=self._name, id=self._id))
         else:
-            log.info("IOU {name} [id={id}]: has deactivated layer 1 keepalive messages".format(name=self._name, id=self._id))
+            log.info('IOU "{name}" [{id}]: has deactivated layer 1 keepalive messages'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
     def _enable_l1_keepalives(self, command):
         """
         Enables L1 keepalive messages if supported.
+
         :param command: command line
         """
 
@@ -930,7 +961,9 @@ class IOUVM(BaseVM):
 
     @property
     def initial_config(self):
-        """Return the content of the current initial-config file"""
+        """
+        Returns the content of the current initial-config file.
+        """
 
         config_file = self.initial_config_file
         if config_file is None:
@@ -947,7 +980,7 @@ class IOUVM(BaseVM):
         """
         Update the initial config
 
-        :param initial_config: The content of the initial configuration file
+        :param initial_config: content of the initial configuration file
         """
 
         try:
@@ -964,7 +997,7 @@ class IOUVM(BaseVM):
     @property
     def initial_config_file(self):
         """
-        Returns the initial config file for this IOU instance.
+        Returns the initial config file for this IOU VM.
 
         :returns: path to config file. None if the file doesn't exist
         """
@@ -979,7 +1012,7 @@ class IOUVM(BaseVM):
     def relative_initial_config_file(self):
         """
         Returns the initial config file relative to the project directory.
-        It's compatible with pre 1.3 topologies.
+        It's compatible with pre 1.3 projects.
 
         :returns: path to config file. None if the file doesn't exist
         """
@@ -994,9 +1027,9 @@ class IOUVM(BaseVM):
     def start_capture(self, adapter_number, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
-        :param adapter_number: adapter ID
-        :param port_number: port ID
-        :param port: allocated port
+
+        :param adapter_number: adapter number
+        :param port_number: port number
         :param output_file: PCAP destination file for the capture
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
@@ -1004,35 +1037,28 @@ class IOUVM(BaseVM):
         try:
             adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
-                                                                                         adapter_number=adapter_number))
+            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
+                                                                                            adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                          port_number=port_number))
+            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_number=port_number))
 
         nio = adapter.get_nio(port_number)
         if not nio:
-            raise IOUError("NIO {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                         port_number=port_number))
+            raise IOUError("NIO {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
 
         if nio.capturing:
             raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
                                                                                                           port_number=port_number))
 
-        try:
-            os.makedirs(os.path.dirname(output_file))
-        except FileExistsError:
-            pass
-        except OSError as e:
-            raise IOUError("Could not create captures directory {}".format(e))
 
         nio.startPacketCapture(output_file, data_link_type)
-
-        log.info("IOU {name} [id={id}]: starting packet capture on {adapter_number}/{port_number}".format(name=self._name,
-                                                                                                          id=self._id,
-                                                                                                          adapter_number=adapter_number,
-                                                                                                          port_number=port_number))
+        log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number}'.format(name=self._name,
+                                                                                                         id=self._id,
+                                                                                                         adapter_number=adapter_number,
+                                                                                                         port_number=port_number))
 
         if self.is_iouyap_running():
             self._update_iouyap_config()
@@ -1042,26 +1068,27 @@ class IOUVM(BaseVM):
     def stop_capture(self, adapter_number, port_number):
         """
         Stops a packet capture.
-        :param adapter_number: adapter ID
-        :param port_number: port ID
+
+        :param adapter_number: adapter number
+        :param port_number: port number
         """
 
         try:
             adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError("Adapter {adapter_number} doesn't exist on IOU {name}".format(name=self._name,
-                                                                                         adapter_number=adapter_number))
+            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
+                                                                                            adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=adapter,
-                                                                                          port_number=port_number))
+            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                           port_number=port_number))
 
         nio = adapter.get_nio(port_number)
         nio.stopPacketCapture()
-        log.info("IOU {name} [id={id}]: stopping packet capture on {adapter_number}/{port_number}".format(name=self._name,
-                                                                                                          id=self._id,
-                                                                                                          adapter_number=adapter_number,
-                                                                                                          port_number=port_number))
+        log.info('IOU "{name}" [{id}]: stopping packet capture on {adapter_number}/{port_number}'.format(name=self._name,
+                                                                                                         id=self._id,
+                                                                                                         adapter_number=adapter_number,
+                                                                                                         port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
             os.kill(self._iouyap_process.pid, signal.SIGHUP)

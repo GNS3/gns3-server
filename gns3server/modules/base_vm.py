@@ -54,19 +54,17 @@ class BaseVM:
         else:
             self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
-        log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(
-            module=self.manager.module_name,
-            name=self.name,
-            id=self.id,
-            console=self._console
-        ))
+        log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(module=self.manager.module_name,
+                                                                                       name=self.name,
+                                                                                       id=self.id,
+                                                                                       console=self._console))
 
     def __del__(self):
 
         self.close()
         if self._temporary_directory is not None:
             if os.path.exists(self._temporary_directory):
-                shutil.rmtree(self._temporary_directory)
+                shutil.rmtree(self._temporary_directory, ignore_errors=True)
 
     @property
     def project(self):
@@ -195,7 +193,7 @@ class BaseVM:
     @console.setter
     def console(self, console):
         """
-        Change console port
+        Changes the console port
 
         :params console: Console port (integer)
         """
@@ -205,8 +203,7 @@ class BaseVM:
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
         self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
-        log.info("{module}: '{name}' [{id}]: console port set to {port}".format(
-            module=self.manager.module_name,
-            name=self.name,
-            id=self.id,
-            port=console))
+        log.info("{module}: '{name}' [{id}]: console port set to {port}".format(module=self.manager.module_name,
+                                                                                name=self.name,
+                                                                                id=self.id,
+                                                                                port=console))

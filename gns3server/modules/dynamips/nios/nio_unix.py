@@ -46,7 +46,7 @@ class NIOUNIX(NIO):
         name = 'nio_unix' + str(nio_id)
         self._local_file = local_file
         self._remote_file = remote_file
-        NIO.__init__(self, name, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

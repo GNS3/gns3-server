@@ -42,7 +42,7 @@ class NIOFIFO(NIO):
         nio_id = NIOFIFO._instance_count
         NIOFIFO._instance_count += 1
         name = 'nio_fifo' + str(nio_id)
-        NIO.__init__(name, self, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

@@ -28,25 +28,37 @@ from .iou_vm import IOUVM
 
 
 class IOU(BaseManager):
+
     _VM_CLASS = IOUVM
 
     def __init__(self):
+
         super().__init__()
         self._free_application_ids = list(range(1, 512))
         self._used_application_ids = {}
 
     @asyncio.coroutine
     def create_vm(self, *args, **kwargs):
+        """
+        Creates a new IOU VM.
+
+        :returns: IOUVM instance
+        """
 
         vm = yield from super().create_vm(*args, **kwargs)
         try:
             self._used_application_ids[vm.id] = self._free_application_ids.pop(0)
         except IndexError:
-            raise IOUError("No mac address available")
+            raise IOUError("Cannot create a new IOU VM (limit of 512 VMs reached on this host)")
         return vm
 
     @asyncio.coroutine
     def close_vm(self, vm_id, *args, **kwargs):
+        """
+        Closes an IOU VM.
+
+        :returns: IOUVM instance
+        """
 
         vm = self.get_vm(vm_id)
         if vm_id in self._used_application_ids:
@@ -58,10 +70,11 @@ class IOU(BaseManager):
 
     def get_application_id(self, vm_id):
         """
-        Get an unique IOU mac id
+        Get an unique application identifier for IOU.
 
-        :param vm_id: ID of the IOU VM
-        :returns: IOU MAC id
+        :param vm_id: IOU VM identifier
+
+        :returns: IOU application identifier
         """
 
         return self._used_application_ids.get(vm_id, 1)

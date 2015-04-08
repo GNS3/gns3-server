@@ -40,8 +40,8 @@ from .nios.nio_generic_ethernet import NIOGenericEthernet
 class BaseManager:
 
     """
-    Base class for all Manager.
-    Responsible of management of a VM pool
+    Base class for all Manager classes.
+    Responsible of management of a VM pool of the same type.
     """
 
     _convert_lock = None

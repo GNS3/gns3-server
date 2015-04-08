@@ -32,14 +32,15 @@ from .qemu_vm import QemuVM
 
 
 class Qemu(BaseManager):
+
     _VM_CLASS = QemuVM
 
     @staticmethod
     def binary_list():
         """
-        Gets QEMU binaries list available on the matchine
+        Gets QEMU binaries list available on the host.
 
-        :returns: Array of dictionnary {"path": Qemu binaries path, "version": Version of Qemu}
+        :returns: Array of dictionary {"path": Qemu binary path, "version": version of Qemu}
         """
 
         qemus = []
@@ -82,7 +83,8 @@ class Qemu(BaseManager):
     def _get_qemu_version(qemu_path):
         """
         Gets the Qemu version.
-        :param qemu_path: path to Qemu
+
+        :param qemu_path: path to Qemu executable.
         """
 
         if sys.platform.startswith("win"):

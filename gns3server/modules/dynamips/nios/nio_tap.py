@@ -44,7 +44,7 @@ class NIOTAP(NIO):
         NIOTAP._instance_count += 1
         name = 'nio_tap' + str(nio_id)
         self._tap_device = tap_device
-        NIO.__init__(self, name, hypervisor)
+        super().__init__(name, hypervisor)
 
     @classmethod
     def reset(cls):

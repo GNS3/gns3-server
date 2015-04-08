@@ -25,7 +25,8 @@ class Leopard_2FE(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=2)
+
+        super().__init__(interfaces=2)
         self._interfaces = 2
 
     def __str__(self):

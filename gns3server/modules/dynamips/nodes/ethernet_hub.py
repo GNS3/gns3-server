@@ -43,7 +43,7 @@ class EthernetHub(Bridge):
 
     def __init__(self, name, device_id, project, manager, hypervisor=None):
 
-        Bridge.__init__(self, name, device_id, project, manager, hypervisor)
+        super().__init__(name, device_id, project, manager, hypervisor)
         self._mappings = {}
 
     def __json__(self):

@@ -261,7 +261,7 @@ class PortManager:
         :param force_remove: Force port removal even on Darwnin
         """
 
-        # A bug with dynamips on darwin doesn't correctly free the port we free it only when changing project
+        # A bug with Dynamips on Darwin which doesn't correctly free UDP ports, they are freed only when changing the project
         if sys.platform.startswith("darwin") and force_remove is False:
             return
 
