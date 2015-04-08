@@ -1,4 +1,4 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms' -d '{"ethernet_adapters": 0, "initial_config_content": "hostname test", "iourc_content": "test", "l1_keepalives": true, "name": "PC TEST 1", "nvram": 512, "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-4332/test_iou_create_with_params0/iou.bin", "ram": 1024, "serial_adapters": 4, "use_default_iou_values": true}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms' -d '{"ethernet_adapters": 0, "initial_config_content": "hostname test", "iourc_content": "test", "l1_keepalives": true, "name": "PC TEST 1", "nvram": 512, "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-4450/test_iou_create_with_params0/iou.bin", "ram": 1024, "serial_adapters": 4, "use_default_iou_values": true}'
 
 POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms HTTP/1.1
 {
@@ -8,7 +8,7 @@ POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms HTTP/1.1
     "l1_keepalives": true,
     "name": "PC TEST 1",
     "nvram": 512,
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-4332/test_iou_create_with_params0/iou.bin",
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-4450/test_iou_create_with_params0/iou.bin",
     "ram": 1024,
     "serial_adapters": 4,
     "use_default_iou_values": true
@@ -20,14 +20,14 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 466
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.0.dev3
+SERVER: Python/3.4 GNS3/1.3.1.rc2
 X-ROUTE: /v1/projects/{project_id}/iou/vms
 
 {
     "console": 2000,
     "ethernet_adapters": 0,
     "initial_config": "initial-config.cfg",
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmnf8_vaz/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmps796q8lx/iourc",
     "l1_keepalives": true,
     "name": "PC TEST 1",
     "nvram": 512,
@@ -36,5 +36,5 @@ X-ROUTE: /v1/projects/{project_id}/iou/vms
     "ram": 1024,
     "serial_adapters": 4,
     "use_default_iou_values": true,
-    "vm_id": "ffb44d02-75a0-4cd3-b24a-bdb7b71efbd8"
+    "vm_id": "69f5842a-d4e5-45fe-a500-1010c72f1748"
 }

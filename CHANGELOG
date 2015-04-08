@@ -1,5 +1,33 @@
 # Change Log
 
+## 1.3.1rc3 07/04/2015
+
+* Fix missing IOU documentation
+* Add missing project name in curl documentation
+* Look in old IOU images location in order to smooth transition
+
+## 1.3.1rc2 06/04/2015
+
+* Do not overwrite initial-config IOU if client send an empty
+* Fix documentation about /ports/udp
+
+## 1.3.1rc1 05/04/2015
+
+* Fix issues with macos X dynamips not freeing UDP port
+* Fix encoding error when saving dynamips configuration
+* The upload web page return a 200 in case of error (IE compatibility)
+* Do not crash if dynamips config contain non ascii chars
+* Test path with chinese charcaters in Qemu
+* Do not crash if no console port is available for VBox
+* Raise a DynamipsError if we can't access to VM status
+* Check name of the VBoxManage executable
+* Exclude docs and tests package from distribution
+* Catch error when qemu additional options are invalid
+* Fix ClientDisconnectedError
+* Fix crash when NIO doesn't exist
+* Turn off crash report if raven not available
+* Fix crash when IOU script file is incorrect
+
 ## 1.3.0 30/03/2015
 
 * Fix issue when asyncio read is cancelled and data is still sent by Dynamips hypervisor.

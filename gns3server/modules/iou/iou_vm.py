@@ -153,6 +153,16 @@ class IOUVM(BaseVM):
             path = relative_path
 
         self._path = path
+
+        # In 1.2 users uploaded images to the images roots
+        # after the migration their images are inside images/IOU
+        # but old topologies use old path
+        if "IOU" not in self._path:
+            location, filename = os.path.split(self._path)
+            fix_path = os.path.join(location, "IOU", filename)
+            if os.path.isfile(fix_path):
+                self._path = fix_path
+
         if not os.path.isfile(self._path) or not os.path.exists(self._path):
             if os.path.islink(self._path):
                 raise IOUError("IOU image '{}' linked to '{}' is not accessible".format(self._path, os.path.realpath(self._path)))
@@ -985,8 +995,13 @@ class IOUVM(BaseVM):
 
         try:
             script_file = os.path.join(self.working_dir, "initial-config.cfg")
+
+            # We disallow erasing the initial config file
+            if len(initial_config) == 0 and os.path.exists(script_file):
+                return
+
             with open(script_file, 'w+') as f:
-                if initial_config is None:
+                if len(initial_config) == 0:
                     f.write('')
                 else:
                     initial_config = initial_config.replace("%h", self._name)

@@ -202,6 +202,15 @@ def test_path(vm, fake_iou_bin):
     assert vm.path == fake_iou_bin
 
 
+def test_path_12_location(vm, fake_iou_bin):
+
+    # In 1.2 users uploaded images to the images roots
+    # after the migration their images are inside images/IOU
+    # but old topologies use old path
+    vm.path = fake_iou_bin.replace("/IOU", "")
+    assert vm.path == fake_iou_bin
+
+
 def test_path_relative(vm, fake_iou_bin, tmpdir):
 
     config = Config.instance()
@@ -261,6 +270,18 @@ def test_update_initial_config(vm):
     vm.initial_config = content
     filepath = os.path.join(vm.working_dir, "initial-config.cfg")
     assert os.path.exists(filepath)
+    with open(filepath) as f:
+        assert f.read() == content
+
+
+def test_update_initial_config_empty(vm):
+    content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    vm.initial_config = content
+    filepath = os.path.join(vm.working_dir, "initial-config.cfg")
+    assert os.path.exists(filepath)
+    with open(filepath) as f:
+        assert f.read() == content
+    vm.initial_config = ""
     with open(filepath) as f:
         assert f.read() == content
 

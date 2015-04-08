@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/3cb294d9-b144-4b4d-a3be-fc27358551e7/stop' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/59df4b41-6a23-4c99-9370-600b3a2cff23/stop' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/3cb294d9-b144-4b4d-a3be-fc27358551e7/stop HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/59df4b41-6a23-4c99-9370-600b3a2cff23/stop HTTP/1.1
 {}
 
 
@@ -8,6 +8,6 @@ HTTP/1.1 204
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.0.dev3
+SERVER: Python/3.4 GNS3/1.3.1.rc2
 X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}/stop
 
