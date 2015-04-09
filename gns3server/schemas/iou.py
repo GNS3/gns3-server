@@ -212,7 +212,7 @@ IOU_OBJECT_SCHEMA = {
 
 IOU_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for a VPCS instance",
+    "description": "Request validation to add a NIO for a IOU instance",
     "type": "object",
     "definitions": {
         "UDP": {
