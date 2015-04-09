@@ -40,6 +40,7 @@ def parse_request(request, input_schema):
         try:
             request.json = json.loads(body.decode('utf-8'))
         except ValueError as e:
+            request.json = {"malformed_json": body.decode('utf-8')}
             raise aiohttp.web.HTTPBadRequest(text="Invalid JSON {}".format(e))
     else:
         request.json = {}
@@ -137,6 +138,10 @@ class Route(object):
                             log.warn("Could not write to the record file {}: {}".format(record_file, e))
                     response = Response(route=route, output_schema=output_schema)
                     yield from func(request, response)
+                except aiohttp.web.HTTPBadRequest as e:
+                    response = Response(route=route)
+                    response.set_status(e.status)
+                    response.json({"message": e.text, "status": e.status, "path": route, "request": request.json})
                 except aiohttp.web.HTTPException as e:
                     response = Response(route=route)
                     response.set_status(e.status)
