@@ -996,6 +996,9 @@ class IOUVM(BaseVM):
         try:
             script_file = os.path.join(self.working_dir, "initial-config.cfg")
 
+            if initial_config is None:
+                initial_config = ''
+
             # We disallow erasing the initial config file
             if len(initial_config) == 0 and os.path.exists(script_file):
                 return
@@ -1067,7 +1070,6 @@ class IOUVM(BaseVM):
         if nio.capturing:
             raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
                                                                                                           port_number=port_number))
-
 
         nio.startPacketCapture(output_file, data_link_type)
         log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number}'.format(name=self._name,
