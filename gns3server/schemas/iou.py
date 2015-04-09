@@ -309,8 +309,7 @@ IOU_INITIAL_CONFIG_SCHEMA = {
     "properties": {
         "content": {
             "description": "Content of the initial configuration file",
-            "type": ["string", "null"],
-            "minLength": 1,
+            "type": ["string", "null"]
         },
     },
     "additionalProperties": False,
