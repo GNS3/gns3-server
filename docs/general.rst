@@ -39,7 +39,7 @@ The next step is to create a project.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:8000/v1/projects" -d "{}"
+    # curl -X POST "http://localhost:8000/v1/projects" -d '{"name": "test"}'
     {
         "project_id": "42f9feee-3217-4104-981e-85d5f0a806ec",
         "temporary": false,
