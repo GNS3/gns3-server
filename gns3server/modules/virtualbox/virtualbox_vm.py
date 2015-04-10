@@ -583,8 +583,7 @@ class VirtualBoxVM(BaseVM):
         :returns: pipe path (string)
         """
 
-        p = re.compile('\s+', re.UNICODE)
-        pipe_name = p.sub("_", self._vmname)
+        pipe_name = self._vmname.encode("hex", "strict")
         if sys.platform.startswith("win"):
             pipe_name = r"\\.\pipe\VBOX\{}".format(pipe_name)
         else:
