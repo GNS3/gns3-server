@@ -20,6 +20,7 @@ Interface for dummy NIOs (mostly for tests).
 """
 
 import asyncio
+import uuid
 from .nio import NIO
 
 import logging
@@ -34,23 +35,11 @@ class NIONull(NIO):
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    _instance_count = 0
-
     def __init__(self, hypervisor):
 
-        # create an unique ID and name
-        nio_id = NIONull._instance_count
-        NIONull._instance_count += 1
-        name = 'nio_null' + str(nio_id)
+        # create an unique name
+        name = 'null-{}'.format(uuid.uuid4())
         super().__init__(name, hypervisor)
-
-    @classmethod
-    def reset(cls):
-        """
-        Reset the instance count.
-        """
-
-        cls._instance_count = 0
 
     @asyncio.coroutine
     def create(self):
