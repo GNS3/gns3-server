@@ -149,6 +149,7 @@ class FrameRelaySwitch(Device):
 
         self._nios[port_number] = nio
 
+    @asyncio.coroutine
     def remove_nio(self, port_number):
         """
         Removes the specified NIO as member of this Frame Relay switch.
@@ -160,6 +161,14 @@ class FrameRelaySwitch(Device):
 
         if port_number not in self._nios:
             raise DynamipsError("Port {} is not allocated".format(port_number))
+
+        # remove VCs mapped with the port
+        for source, destination in self._mappings.copy().items():
+            source_port, source_dlci = source
+            destination_port, destination_dlci = destination
+            if port_number == source_port:
+                yield from self.unmap_vc(source_port, source_dlci, destination_port, destination_dlci)
+                yield from self.unmap_vc(destination_port, destination_dlci, source_port, source_dlci)
 
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):

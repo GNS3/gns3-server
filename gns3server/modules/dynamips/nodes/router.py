@@ -172,14 +172,6 @@ class Router(BaseVM):
 
         return router_info
 
-    @classmethod
-    def reset(cls):
-        """
-        Resets the instance count and the allocated instances list.
-        """
-
-        cls._dynamips_ids.clear()
-
     @property
     def dynamips_id(self):
         """

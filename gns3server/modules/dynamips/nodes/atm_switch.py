@@ -150,6 +150,7 @@ class ATMSwitch(Device):
 
         self._nios[port_number] = nio
 
+    @asyncio.coroutine
     def remove_nio(self, port_number):
         """
         Removes the specified NIO as member of this ATM switch.
@@ -159,6 +160,23 @@ class ATMSwitch(Device):
 
         if port_number not in self._nios:
             raise DynamipsError("Port {} is not allocated".format(port_number))
+
+        # remove VCs mapped with the port
+        for source, destination in self._mappings.copy().items():
+            if len(source) == 3 and len(destination) == 3:
+                # remove the virtual channels mapped with this port/nio
+                source_port, source_vpi, source_vci = source
+                destination_port, destination_vpi, destination_vci = destination
+                if port_number == source_port:
+                    yield from self.unmap_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
+                    yield from self.unmap_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
+            else:
+                # remove the virtual paths mapped with this port/nio
+                source_port, source_vpi = source
+                destination_port, destination_vpi = destination
+                if port_number == source_port:
+                    yield from self.unmap_vp(source_port, source_vpi, destination_port, destination_vpi)
+                    yield from self.unmap_vp(destination_port, destination_vpi, source_port, source_vpi)
 
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):

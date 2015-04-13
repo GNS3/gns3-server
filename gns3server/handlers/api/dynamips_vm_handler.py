@@ -290,7 +290,8 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        yield from vm.slot_remove_nio_binding(slot_number, port_number)
+        nio = yield from vm.slot_remove_nio_binding(slot_number, port_number)
+        yield from nio.delete()
         response.set_status(204)
 
     @Route.post(
