@@ -25,6 +25,7 @@ from ...schemas.iou import IOU_OBJECT_SCHEMA
 from ...schemas.iou import IOU_NIO_SCHEMA
 from ...schemas.iou import IOU_CAPTURE_SCHEMA
 from ...schemas.iou import IOU_INITIAL_CONFIG_SCHEMA
+from ...schemas.iou import IOU_LIST_VMS_SCHEMA
 from ...modules.iou import IOU
 
 
@@ -310,3 +311,17 @@ class IOUHandler:
                                 project_id=request.match_info["project_id"])
         response.set_status(200)
         response.json({"content": vm.initial_config})
+
+    @Route.get(
+        r"/iou/vms",
+        status_codes={
+            200: "List of IOU VM retrieved",
+        },
+        description="Retrieve the list of IOU VMS",
+        output=IOU_LIST_VMS_SCHEMA)
+    def list_vms(request, response):
+
+        iou_manager = IOU.instance()
+        vms = yield from iou_manager.list_images()
+        response.set_status(200)
+        response.json(vms)
