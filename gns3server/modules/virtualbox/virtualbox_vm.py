@@ -105,9 +105,10 @@ class VirtualBoxVM(BaseVM):
 
         results = yield from self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
-            name, value = info.split('=', 1)
-            if name == "VMState":
-                return value.strip('"')
+            if '=' in info:
+                name, value = info.split('=', 1)
+                if name == "VMState":
+                    return value.strip('"')
         raise VirtualBoxError("Could not get VM state for {}".format(self._vmname))
 
     @asyncio.coroutine
