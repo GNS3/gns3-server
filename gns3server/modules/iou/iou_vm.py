@@ -145,14 +145,7 @@ class IOUVM(BaseVM):
         :param path: path to the IOU image executable
         """
 
-        if not os.path.isabs(path):
-            server_config = self.manager.config.get_section_config("Server")
-            relative_path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), path)
-            if not os.path.exists(relative_path):
-                relative_path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", path)
-            path = relative_path
-
-        self._path = path
+        self._path = self.manager.get_abs_image_path(path)
 
         # In 1.2 users uploaded images to the images roots
         # after the migration their images are inside images/IOU
@@ -240,11 +233,7 @@ class IOUVM(BaseVM):
                        "iourc_path": self.iourc_path}
 
         # return the relative path if the IOU image is in the images_path directory
-        server_config = self.manager.config.get_section_config("Server")
-        relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", self.path)
-        if os.path.exists(relative_image):
-            iou_vm_info["path"] = os.path.basename(self.path)
-
+        iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)
         return iou_vm_info
 
     @property

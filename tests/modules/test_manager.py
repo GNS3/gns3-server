@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 
 from gns3server.modules.vpcs import VPCS
+from gns3server.modules.iou import IOU
 
 
 def test_create_vm_new_topology(loop, project, port_manager):
@@ -82,3 +83,33 @@ def test_create_vm_old_topology(loop, project, tmpdir, port_manager):
         vm_dir = os.path.join(project_dir, "project-files", "vpcs", vm.id)
         with open(os.path.join(vm_dir, "startup.vpc")) as f:
             assert f.read() == "1"
+
+
+def test_get_abs_image_path(iou, tmpdir):
+    os.makedirs(str(tmpdir / "IOU"))
+    path1 = str(tmpdir / "test1.bin")
+    open(path1, 'w+').close()
+
+    path2 = str(tmpdir / "IOU" / "test2.bin")
+    open(path2, 'w+').close()
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        assert iou.get_abs_image_path(path1) == path1
+        assert iou.get_abs_image_path(path2) == path2
+        assert iou.get_abs_image_path("test2.bin") == path2
+        assert iou.get_abs_image_path("../test1.bin") == path1
+
+
+def test_get_relative_image_path(iou, tmpdir):
+    os.makedirs(str(tmpdir / "IOU"))
+    path1 = str(tmpdir / "test1.bin")
+    open(path1, 'w+').close()
+
+    path2 = str(tmpdir / "IOU" / "test2.bin")
+    open(path2, 'w+').close()
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        assert iou.get_relative_image_path(path1) == path1
+        assert iou.get_relative_image_path(path2) == "test2.bin"
+        assert iou.get_relative_image_path("test2.bin") == "test2.bin"
+        assert iou.get_relative_image_path("../test1.bin") == path1
