@@ -125,14 +125,7 @@ class IOUVM(BaseVM):
         :param path: path to the IOU image executable
         """
 
-        if not os.path.isabs(path):
-            server_config = self.manager.config.get_section_config("Server")
-            relative_path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), path)
-            if not os.path.exists(relative_path):
-                relative_path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", path)
-            path = relative_path
-
-        self._path = path
+        self._path = self.manager.get_abs_image_path(path)
 
         # In 1.2 users uploaded images to the images roots
         # after the migration their images are inside images/IOU
@@ -219,11 +212,7 @@ class IOUVM(BaseVM):
                        "use_default_iou_values": self._use_default_iou_values}
 
         # return the relative path if the IOU image is in the images_path directory
-        server_config = self.manager.config.get_section_config("Server")
-        relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", self.path)
-        if os.path.exists(relative_image):
-            iou_vm_info["path"] = os.path.basename(self.path)
-
+        iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)
         return iou_vm_info
 
     @property
@@ -975,6 +964,9 @@ class IOUVM(BaseVM):
         try:
             script_file = os.path.join(self.working_dir, "initial-config.cfg")
 
+            if initial_config is None:
+                initial_config = ''
+
             # We disallow erasing the initial config file
             if len(initial_config) == 0 and os.path.exists(script_file):
                 return
@@ -1046,7 +1038,6 @@ class IOUVM(BaseVM):
         if nio.capturing:
             raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
                                                                                                           port_number=port_number))
-
 
         nio.startPacketCapture(output_file, data_link_type)
         log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number}'.format(name=self._name,

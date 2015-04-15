@@ -105,9 +105,10 @@ class VirtualBoxVM(BaseVM):
 
         results = yield from self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
-            name, value = info.split('=', 1)
-            if name == "VMState":
-                return value.strip('"')
+            if '=' in info:
+                name, value = info.split('=', 1)
+                if name == "VMState":
+                    return value.strip('"')
         raise VirtualBoxError("Could not get VM state for {}".format(self._vmname))
 
     @asyncio.coroutine
@@ -139,6 +140,8 @@ class VirtualBoxVM(BaseVM):
     def create(self):
 
         yield from self._get_system_properties()
+        if "API version" not in self._system_properties:
+            raise VirtualBoxError("Can't access to VirtualBox API Version")
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))

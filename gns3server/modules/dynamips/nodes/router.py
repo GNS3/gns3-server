@@ -151,10 +151,7 @@ class Router(BaseVM):
                        "system_id": self._system_id}
 
         # return the relative path if the IOS image is in the images_path directory
-        server_config = self.manager.config.get_section_config("Server")
-        relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOS", self._image)
-        if os.path.exists(relative_image):
-            router_info["image"] = os.path.basename(self._image)
+        router_info["image"] = self.manager.get_relative_image_path(self._image)
 
         # add the slots
         slot_number = 0
@@ -419,9 +416,7 @@ class Router(BaseVM):
         :param image: path to IOS image file
         """
 
-        if not os.path.isabs(image):
-            server_config = self.manager.config.get_section_config("Server")
-            image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOS", image)
+        image = self.manager.get_abs_image_path(image)
 
         if not os.path.isfile(image):
             raise DynamipsError("IOS image '{}' is not accessible".format(image))

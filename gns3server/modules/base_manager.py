@@ -371,3 +371,40 @@ class BaseManager:
             nio = NIOGenericEthernet(nio_settings["ethernet_device"])
         assert nio is not None
         return nio
+
+    def get_abs_image_path(self, path):
+        """
+        Get the absolute path of an image
+
+        :param path: file path
+        :return: file path
+        """
+
+        img_directory = self.get_images_directory()
+
+        if not os.path.isabs(path):
+            s = os.path.split(path)
+            return os.path.normpath(os.path.join(img_directory, *s))
+        return path
+
+    def get_relative_image_path(self, path):
+        """
+        Get a path relative to images directory path
+        or an abspath if the path is not located inside
+        image directory
+
+        :param path: file path
+        :return: file path
+        """
+
+        img_directory = self.get_images_directory()
+        path = self.get_abs_image_path(path)
+        if os.path.dirname(path) == img_directory:
+            return os.path.basename(path)
+        return path
+
+    def get_images_directory(self):
+        """
+        Get the image directory on disk
+        """
+        raise NotImplementedError
