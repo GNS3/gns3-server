@@ -25,6 +25,14 @@ from gns3server.modules.vpcs import VPCS
 from gns3server.modules.iou import IOU
 
 
+@pytest.fixture(scope="function")
+def iou(port_manager):
+    IOU._instance = None
+    iou = IOU.instance()
+    iou.port_manager = port_manager
+    return iou
+
+
 def test_create_vm_new_topology(loop, project, port_manager):
 
     VPCS._instance = None
