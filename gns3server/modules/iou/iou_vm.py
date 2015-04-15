@@ -81,9 +81,9 @@ class IOUVM(BaseVM):
         self.ethernet_adapters = 2  # one adapter = 4 interfaces
         self.serial_adapters = 2  # one adapter = 4 interfaces
         self._use_default_iou_values = True  # for RAM & NVRAM values
-        self._nvram = 128 # Kilobytes
+        self._nvram = 128  # Kilobytes
         self._initial_config = ""
-        self._ram = 256 # Megabytes
+        self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
     @asyncio.coroutine
@@ -209,6 +209,7 @@ class IOUVM(BaseVM):
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
                        "initial_config": self.relative_initial_config_file,
+                       "iourc_path": self.iourc_path,
                        "use_default_iou_values": self._use_default_iou_values}
 
         # return the relative path if the IOU image is in the images_path directory
