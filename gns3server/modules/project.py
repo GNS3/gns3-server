@@ -365,7 +365,7 @@ class Project:
         for port in self._used_tcp_ports.copy():
             port_manager.release_tcp_port(port, self)
         for port in self._used_udp_ports.copy():
-            port_manager.release_udp_port(port, self, force_remove=True)
+            port_manager.release_udp_port(port, self)
 
     @asyncio.coroutine
     def commit(self):

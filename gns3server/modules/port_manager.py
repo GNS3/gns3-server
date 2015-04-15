@@ -252,18 +252,13 @@ class PortManager:
         project.record_udp_port(port)
         log.debug("UDP port {} has been reserved".format(port))
 
-    def release_udp_port(self, port, project, force_remove=False):
+    def release_udp_port(self, port, project):
         """
         Release a specific UDP port number
 
         :param port: UDP port number
         :param project: Project instance
-        :param force_remove: Force port removal even on Darwnin
         """
-
-        # A bug with Dynamips on Darwin which doesn't correctly free UDP ports, they are freed only when changing the project
-        if sys.platform.startswith("darwin") and force_remove is False:
-            return
 
         if port in self._used_udp_ports:
             self._used_udp_ports.remove(port)
