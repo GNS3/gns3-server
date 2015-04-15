@@ -39,21 +39,9 @@ def test_reserve_udp_port():
         pm.reserve_udp_port(4242, project)
 
 
-@pytest.mark.skipif(sys.platform == 'darwin', reason="not working on darwin")
 def test_release_udp_port():
     pm = PortManager()
     project = Project()
     pm.reserve_udp_port(4242, project)
     pm.release_udp_port(4242, project)
     pm.reserve_udp_port(4242, project)
-
-
-@pytest.mark.skipif(sys.platform != 'darwin', reason="requires darwin")
-def test_release_darwin_udp_port():
-    """Due to dynamips / darwin bug we didn't free the port"""
-    pm = PortManager()
-    project = Project()
-    pm.reserve_udp_port(4242, project)
-    pm.release_udp_port(4242, project)
-    with pytest.raises(aiohttp.web.HTTPConflict):
-        pm.reserve_udp_port(4242, project)
