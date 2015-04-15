@@ -41,24 +41,21 @@ class QEMUHandler:
             400: "Invalid request",
             409: "Conflict"
         },
-        description="Create a new Qemu.instance",
+        description="Create a new Qemu VM instance",
         input=QEMU_CREATE_SCHEMA,
         output=QEMU_OBJECT_SCHEMA)
     def create(request, response):
 
         qemu = Qemu.instance()
-        vm = yield from qemu.create_vm(request.json["name"],
+        vm = yield from qemu.create_vm(request.json.pop("name"),
                                        request.match_info["project_id"],
                                        request.json.get("vm_id"),
                                        qemu_path=request.json.get("qemu_path"),
                                        console=request.json.get("console"))
 
-        # Clear already used keys
-        map(request.json.__delitem__, ["name", "project_id", "vm_id",
-                                       "qemu_path", "console"])
-
-        for field in request.json:
-            setattr(vm, field, request.json[field])
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
 
         response.set_status(201)
         response.json(vm)
@@ -75,7 +72,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Get a Qemu.instance",
+        description="Get a Qemu VM instance",
         output=QEMU_OBJECT_SCHEMA)
     def show(request, response):
 
@@ -96,15 +93,17 @@ class QEMUHandler:
             404: "Instance doesn't exist",
             409: "Conflict"
         },
-        description="Update a Qemu.instance",
+        description="Update a Qemu VM instance",
         input=QEMU_UPDATE_SCHEMA,
         output=QEMU_OBJECT_SCHEMA)
     def update(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        for field in request.json:
-            setattr(vm, field, request.json[field])
+
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
 
         response.json(vm)
 
@@ -120,7 +119,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Delete a Qemu.instance")
+        description="Delete a Qemu VM instance")
     def delete(request, response):
 
         yield from Qemu.instance().delete_vm(request.match_info["vm_id"])
@@ -138,7 +137,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Start a Qemu.instance")
+        description="Start a Qemu VM instance")
     def start(request, response):
 
         qemu_manager = Qemu.instance()
@@ -158,7 +157,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Stop a Qemu.instance")
+        description="Stop a Qemu VM instance")
     def stop(request, response):
 
         qemu_manager = Qemu.instance()
@@ -178,7 +177,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Reload a Qemu.instance")
+        description="Reload a Qemu VM instance")
     def reload(request, response):
 
         qemu_manager = Qemu.instance()
@@ -198,7 +197,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Suspend a Qemu.instance")
+        description="Suspend a Qemu VM instance")
     def suspend(request, response):
 
         qemu_manager = Qemu.instance()
@@ -218,7 +217,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Resume a Qemu.instance")
+        description="Resume a Qemu VM instance")
     def resume(request, response):
 
         qemu_manager = Qemu.instance()
@@ -239,7 +238,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Add a NIO to a Qemu.instance",
+        description="Add a NIO to a Qemu VM instance",
         input=QEMU_NIO_SCHEMA,
         output=QEMU_NIO_SCHEMA)
     def create_nio(request, response):
@@ -265,7 +264,7 @@ class QEMUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Remove a NIO from a Qemu.instance")
+        description="Remove a NIO from a Qemu VM instance")
     def delete_nio(request, response):
 
         qemu_manager = Qemu.instance()

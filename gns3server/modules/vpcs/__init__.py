@@ -62,9 +62,9 @@ class VPCS(BaseManager):
         """
 
         vm = self.get_vm(vm_id)
-        i = self._used_mac_ids[vm_id]
-        self._free_mac_ids[vm.project.id].insert(0, i)
         if vm_id in self._used_mac_ids:
+            i = self._used_mac_ids[vm_id]
+            self._free_mac_ids[vm.project.id].insert(0, i)
             del self._used_mac_ids[vm_id]
         yield from super().close_vm(vm_id, *args, **kwargs)
         return vm

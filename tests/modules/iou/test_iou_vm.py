@@ -82,7 +82,8 @@ def test_vm(project, manager):
 
 
 def test_vm_initial_config(project, manager):
-    vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager, initial_config="hostname %h")
+    vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager)
+    vm.initial_config = "hostname %h"
     assert vm.name == "test"
     assert vm.initial_config == "hostname test"
     assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"

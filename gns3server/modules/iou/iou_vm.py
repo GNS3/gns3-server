@@ -61,25 +61,9 @@ class IOUVM(BaseVM):
     :param project: Project instance
     :param manager: Manager instance
     :param console: TCP console port
-    :params ethernet_adapters: number of ethernet adapters
-    :params serial_adapters: number of serial adapters
-    :params ram: amount of RAM in MB
-    :params nvram: amount of NVRAM in KB
-    :params l1_keepalives: always keep the Ethernet interfaces up
-    :params initial_config: content of the initial configuration file
-    :params iourc_content: content of the iourc file if no licence is installed on the machine
     """
 
-    def __init__(self, name, vm_id, project, manager,
-                 console=None,
-                 ram=None,
-                 nvram=None,
-                 use_default_iou_values=None,
-                 ethernet_adapters=None,
-                 serial_adapters=None,
-                 l1_keepalives=None,
-                 initial_config=None,
-                 iourc_content=None):
+    def __init__(self, name, vm_id, project, manager, console=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
 
@@ -94,17 +78,13 @@ class IOUVM(BaseVM):
         # IOU settings
         self._ethernet_adapters = []
         self._serial_adapters = []
-        self.ethernet_adapters = 2 if ethernet_adapters is None else ethernet_adapters  # one adapter = 4 interfaces
-        self.serial_adapters = 2 if serial_adapters is None else serial_adapters  # one adapter = 4 interfaces
-        self._use_default_iou_values = True if use_default_iou_values is None else use_default_iou_values  # for RAM & NVRAM values
-        self._nvram = 128 if nvram is None else nvram  # Kilobytes
+        self.ethernet_adapters = 2  # one adapter = 4 interfaces
+        self.serial_adapters = 2  # one adapter = 4 interfaces
+        self._use_default_iou_values = True  # for RAM & NVRAM values
+        self._nvram = 128  # Kilobytes
         self._initial_config = ""
-        self._ram = 256 if ram is None else ram  # Megabytes
-        self._l1_keepalives = False if l1_keepalives is None else l1_keepalives  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
-
-        self.iourc_content = iourc_content
-        if initial_config is not None:
-            self.initial_config = initial_config
+        self._ram = 256  # Megabytes
+        self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
     @asyncio.coroutine
     def close(self):
@@ -145,14 +125,7 @@ class IOUVM(BaseVM):
         :param path: path to the IOU image executable
         """
 
-        if not os.path.isabs(path):
-            server_config = self.manager.config.get_section_config("Server")
-            relative_path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), path)
-            if not os.path.exists(relative_path):
-                relative_path = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", path)
-            path = relative_path
-
-        self._path = path
+        self._path = self.manager.get_abs_image_path(path)
 
         # In 1.2 users uploaded images to the images roots
         # after the migration their images are inside images/IOU
@@ -236,15 +209,11 @@ class IOUVM(BaseVM):
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
                        "initial_config": self.relative_initial_config_file,
-                       "use_default_iou_values": self._use_default_iou_values,
-                       "iourc_path": self.iourc_path}
+                       "iourc_path": self.iourc_path,
+                       "use_default_iou_values": self._use_default_iou_values}
 
         # return the relative path if the IOU image is in the images_path directory
-        server_config = self.manager.config.get_section_config("Server")
-        relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "IOU", self.path)
-        if os.path.exists(relative_image):
-            iou_vm_info["path"] = os.path.basename(self.path)
-
+        iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)
         return iou_vm_info
 
     @property

@@ -20,6 +20,7 @@ Interface for generic Ethernet NIOs (PCAP library).
 """
 
 import asyncio
+import uuid
 from .nio import NIO
 
 import logging
@@ -35,24 +36,12 @@ class NIOGenericEthernet(NIO):
     :param ethernet_device: Ethernet device name (e.g. eth0)
     """
 
-    _instance_count = 0
-
     def __init__(self, hypervisor, ethernet_device):
 
-        # create an unique ID and name
-        nio_id = NIOGenericEthernet._instance_count
-        NIOGenericEthernet._instance_count += 1
-        name = 'nio_gen_eth' + str(nio_id)
+        # create an unique name
+        name = 'generic_ethernet-{}'.format(uuid.uuid4())
         self._ethernet_device = ethernet_device
         super().__init__(name, hypervisor)
-
-    @classmethod
-    def reset(cls):
-        """
-        Reset the instance count.
-        """
-
-        cls._instance_count = 0
 
     @asyncio.coroutine
     def create(self):

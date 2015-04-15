@@ -148,14 +148,10 @@ class QemuVM(BaseVM):
         :param hda_disk_image: QEMU hda disk image path
         """
 
-        if not os.path.isabs(hda_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hda_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hda_disk_image)
-
+        self._hda_disk_image = self.manager.get_abs_image_path(hda_disk_image)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU hda disk image path to {disk_image}'.format(name=self._name,
                                                                                                        id=self._id,
-                                                                                                       disk_image=hda_disk_image))
-        self._hda_disk_image = hda_disk_image
+                                                                                                       disk_image=self._hda_disk_image))
 
     @property
     def hdb_disk_image(self):
@@ -175,14 +171,10 @@ class QemuVM(BaseVM):
         :param hdb_disk_image: QEMU hdb disk image path
         """
 
-        if not os.path.isabs(hdb_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hdb_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdb_disk_image)
-
+        self._hdb_disk_image = self.manager.get_abs_image_path(hdb_disk_image)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU hdb disk image path to {disk_image}'.format(name=self._name,
                                                                                                        id=self._id,
-                                                                                                       disk_image=hdb_disk_image))
-        self._hdb_disk_image = hdb_disk_image
+                                                                                                       disk_image=self._hdb_disk_image))
 
     @property
     def hdc_disk_image(self):
@@ -202,14 +194,10 @@ class QemuVM(BaseVM):
         :param hdc_disk_image: QEMU hdc disk image path
         """
 
-        if not os.path.isabs(hdc_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hdc_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdc_disk_image)
-
+        self._hdc_disk_image = self.manager.get_abs_image_path(hdc_disk_image)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU hdc disk image path to {disk_image}'.format(name=self._name,
                                                                                                        id=self._id,
-                                                                                                       disk_image=hdc_disk_image))
-        self._hdc_disk_image = hdc_disk_image
+                                                                                                       disk_image=self._hdc_disk_image))
 
     @property
     def hdd_disk_image(self):
@@ -229,14 +217,11 @@ class QemuVM(BaseVM):
         :param hdd_disk_image: QEMU hdd disk image path
         """
 
-        if not os.path.isabs(hdd_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hdd_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdd_disk_image)
-
+        self._hdd_disk_image = hdd_disk_image
+        self._hdd_disk_image = self.manager.get_abs_image_path(hdd_disk_image)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU hdd disk image path to {disk_image}'.format(name=self._name,
                                                                                                        id=self._id,
-                                                                                                       disk_image=hdd_disk_image))
-        self._hdd_disk_image = hdd_disk_image
+                                                                                                       disk_image=self._hdd_disk_image))
 
     @property
     def adapters(self):
@@ -778,9 +763,9 @@ class QemuVM(BaseVM):
 
         adapter.add_nio(0, nio)
         log.info('QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(name=self._name,
-                                                                                          id=self._id,
-                                                                                          nio=nio,
-                                                                                          adapter_number=adapter_number))
+                                                                                           id=self._id,
+                                                                                           nio=nio,
+                                                                                           adapter_number=adapter_number))
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
@@ -1068,23 +1053,6 @@ class QemuVM(BaseVM):
         command.extend(self._graphic())
         return command
 
-    def _get_relative_disk_image_path(self, disk_image):
-        """
-        Returns a relative image path if the disk image is in the images directory.
-
-        :param disk_image: path to the disk image
-
-        :returns: relative or full path
-        """
-
-        if disk_image:
-            # return the relative path if the disk image is in the images_path directory
-            server_config = self.manager.config.get_section_config("Server")
-            relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", disk_image)
-            if os.path.exists(relative_image):
-                return os.path.basename(disk_image)
-        return disk_image
-
     def __json__(self):
         answer = {
             "project_id": self.project.id,
@@ -1095,11 +1063,11 @@ class QemuVM(BaseVM):
             if field not in answer:
                 answer[field] = getattr(self, field)
 
-        answer["hda_disk_image"] = self._get_relative_disk_image_path(self._hda_disk_image)
-        answer["hdb_disk_image"] = self._get_relative_disk_image_path(self._hdb_disk_image)
-        answer["hdc_disk_image"] = self._get_relative_disk_image_path(self._hdc_disk_image)
-        answer["hdd_disk_image"] = self._get_relative_disk_image_path(self._hdd_disk_image)
-        answer["initrd"] = self._get_relative_disk_image_path(self._initrd)
-        answer["kernel_image"] = self._get_relative_disk_image_path(self._kernel_image)
+        answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image)
+        answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image)
+        answer["hdc_disk_image"] = self.manager.get_relative_image_path(self._hdc_disk_image)
+        answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image)
+        answer["initrd"] = self.manager.get_relative_image_path(self._initrd)
+        answer["kernel_image"] = self.manager.get_relative_image_path(self._kernel_image)
 
         return answer

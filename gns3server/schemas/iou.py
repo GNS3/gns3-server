@@ -70,8 +70,12 @@ IOU_CREATE_SCHEMA = {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
         },
+        "initial_config": {
+            "description": "Path to the initial configuration of IOU",
+            "type": ["string", "null"]
+        },
         "initial_config_content": {
-            "description": "Initial configuration of the IOU",
+            "description": "Initial configuration of IOU",
             "type": ["string", "null"]
         },
         "iourc_content": {
@@ -123,8 +127,12 @@ IOU_UPDATE_SCHEMA = {
             "description": "Always up ethernet interface",
             "type": ["boolean", "null"]
         },
+        "initial_config": {
+            "description": "Path to the initial configuration of IOU",
+            "type": ["string", "null"]
+        },
         "initial_config_content": {
-            "description": "Initial configuration of the IOU",
+            "description": "Initial configuration of IOU",
             "type": ["string", "null"]
         },
         "use_default_iou_values": {
