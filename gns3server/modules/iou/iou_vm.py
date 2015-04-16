@@ -372,8 +372,8 @@ class IOUVM(BaseVM):
         Checks for a valid IOU key in the iourc file (paranoid mode).
         """
 
-        license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", False)
-        if license_check:
+        license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", True)
+        if license_check is False:
             return
 
         config = configparser.ConfigParser()
