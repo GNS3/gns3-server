@@ -81,11 +81,11 @@ def test_vm(project, manager):
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_vm_initial_config(project, manager):
+def test_vm_initial_config_content(project, manager):
     vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager)
-    vm.initial_config = "hostname %h"
+    vm.initial_config_content = "hostname %h"
     assert vm.name == "test"
-    assert vm.initial_config == "hostname test"
+    assert vm.initial_config_content == "hostname test"
     assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"
 
 
@@ -287,10 +287,10 @@ def test_update_initial_config_empty(vm):
         assert f.read() == content
 
 
-def test_update_initial_config_h(vm):
+def test_update_initial_config_content_hostname(vm):
     content = "hostname %h\n"
     vm.name = "pc1"
-    vm.initial_config = content
+    vm.initial_config_content = content
     with open(vm.initial_config_file) as f:
         assert f.read() == "hostname pc1\n"
 
