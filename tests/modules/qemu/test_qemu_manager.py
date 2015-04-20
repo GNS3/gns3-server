@@ -32,7 +32,7 @@ def test_get_qemu_version(loop):
 
 def test_binary_list(loop):
 
-    files_to_create = ["qemu-system-x86", "qemu-system-x42", "hello"]
+    files_to_create = ["qemu-system-x86", "qemu-system-x42", "qemu-kvm", "hello"]
 
     for file_to_create in files_to_create:
         path = os.path.join(os.environ["PATH"], file_to_create)
@@ -44,6 +44,7 @@ def test_binary_list(loop):
         qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list()))
 
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": "2.2.0"} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": "2.2.0"} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": "2.2.0"} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": "2.2.0"} not in qemus
 

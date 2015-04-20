@@ -59,8 +59,6 @@ class IOUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
-        if "initial_config_content" in request.json:
-            vm.initial_config = request.json.get("initial_config_content")
         response.set_status(201)
         response.json(vm)
 
@@ -108,8 +106,6 @@ class IOUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
-        if "initial_config_content" in request.json:
-            vm.initial_config = request.json.get("initial_config_content")
         response.json(vm)
 
     @classmethod
@@ -309,4 +305,4 @@ class IOUHandler:
         vm = iou_manager.get_vm(request.match_info["vm_id"],
                                 project_id=request.match_info["project_id"])
         response.set_status(200)
-        response.json({"content": vm.initial_config})
+        response.json({"content": vm.initial_config_content})
