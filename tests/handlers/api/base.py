@@ -44,7 +44,7 @@ class Query:
     def delete(self, path, **kwargs):
         return self._fetch("DELETE", path, **kwargs)
 
-    def _get_url(self, path, version):
+    def get_url(self, path, version):
         if version is None:
             return "http://{}:{}{}".format(self._host, self._port, path)
         return "http://{}:{}/v{}{}".format(self._host, self._port, version, path)
@@ -62,7 +62,7 @@ class Query:
 
         @asyncio.coroutine
         def go(future):
-            response = yield from aiohttp.request(method, self._get_url(path, api_version), data=body)
+            response = yield from aiohttp.request(method, self.get_url(path, api_version), data=body)
             future.set_result(response)
         future = asyncio.Future()
         asyncio.async(go(future))
