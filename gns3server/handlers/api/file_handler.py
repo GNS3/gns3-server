@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import aiohttp
 
 from ...web.route import Route
 from ...schemas.file import FILE_STREAM_SCHEMA
@@ -28,17 +29,19 @@ class FileHandler:
         description="Stream a file from the server",
         status_codes={
             200: "File retrieved",
-            404: "File doesn't exist"
+            404: "File doesn't exist",
+            409: "Can't access to file"
         },
         input=FILE_STREAM_SCHEMA
     )
     def read(request, response):
+        response.enable_chunked_encoding()
+
         try:
             with open(request.json.get("location"), "rb") as f:
                 loop = asyncio.get_event_loop()
                 response.content_type = "application/octet-stream"
                 response.set_status(200)
-                response.enable_chunked_encoding()
                 # Very important: do not send a content lenght otherwise QT close the connection but curl can consume the Feed
                 response.content_length = None
 
@@ -51,4 +54,7 @@ class FileHandler:
                     else:
                         response.write(data)
         except FileNotFoundError:
-            response.set_status(404)
+            raise aiohttp.web.HTTPNotFound()
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text=str(e))
+

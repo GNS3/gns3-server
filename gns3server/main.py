@@ -175,7 +175,7 @@ def main():
 
     Project.clean_project_directory()
 
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=100) # We allow 100 parallel executors
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=100)  # We allow 100 parallel executors
     loop = asyncio.get_event_loop().set_default_executor(executor)
 
     CrashReport.instance()
