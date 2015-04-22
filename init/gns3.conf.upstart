@@ -1,0 +1,19 @@
+description "GNS3 server"
+author      "GNS3 Team"
+
+start on filesystem or runlevel [2345]
+stop on shutdown
+
+script
+    echo $$ > /var/run/gns3.pid
+    exec start-stop-daemon --start -c gns3 --exec /usr/local/bin/gns3server --log /var/log/gns3.log
+end script
+
+pre-start script
+    echo "[`date`] GNS3 Starting" >> /var/log/gns3.log
+end script
+
+pre-stop script
+    rm /var/run/gns3.pid
+    echo "[`date`] GNS3 Stopping" >> /var/log/gns3.log
+end script

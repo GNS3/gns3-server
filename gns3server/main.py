@@ -92,6 +92,7 @@ def parse_arguments(argv, config):
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
         "live": config.getboolean("live", False),
+        "logfile": config.getboolean("logfile", ""),
     }
 
     parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
@@ -109,6 +110,7 @@ def parse_arguments(argv, config):
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
     parser.add_argument("--live", action="store_true", help="enable code live reload")
     parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
+    parser.add_argument("--log", help="send output to logfile instead of console")
 
     return parser.parse_args(argv)
 
@@ -141,7 +143,7 @@ def main():
     if args.debug:
         level = logging.DEBUG
 
-    user_log = init_logger(level, quiet=args.quiet)
+    user_log = init_logger(level, logfile=args.log, quiet=args.quiet)
     user_log.info("GNS3 server version {}".format(__version__))
     current_year = datetime.date.today().year
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
