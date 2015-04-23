@@ -26,6 +26,12 @@ unstable
 ********
 *Never* use this branch for production. Major new features pull requests goes here. 
 
+Linux
+-----
+
+GNS3 is perhaps packaged for your distribution:
+* Gentoo: https://packages.gentoo.org/package/net-misc/gns3-server
+
 
 Linux (Debian based)
 --------------------
@@ -61,6 +67,26 @@ To run tests use:
 .. code:: bash
 
    py.test -v
+
+
+Run as daemon 
+***************
+
+You will found init sample script for various systems
+inside the init directory.
+
+upstart
+~~~~~~~
+
+For ubuntu < 15.04
+
+You need to copy init/gns3.conf.upstart to /etc/init/gns3.conf
+
+.. code:: bash
+
+    sudo chown root /etc/init/gns3.conf
+    sudo service gns3 start
+
 
 Windows
 -------

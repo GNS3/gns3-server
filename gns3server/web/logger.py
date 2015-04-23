@@ -78,8 +78,11 @@ class ColouredStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-def init_logger(level, quiet=False):
-    if sys.platform.startswith("win"):
+def init_logger(level, logfile=None, quiet=False):
+    if logfile and len(logfile) > 0:
+        stream_handler = logging.FileHandler(logfile)
+        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{")
+    elif sys.platform.startswith("win"):
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{")
     else:

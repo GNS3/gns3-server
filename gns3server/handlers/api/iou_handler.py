@@ -310,7 +310,7 @@ class IOUHandler:
         vm = iou_manager.get_vm(request.match_info["vm_id"],
                                 project_id=request.match_info["project_id"])
         response.set_status(200)
-        response.json({"content": vm.initial_config})
+        response.json({"content": vm.initial_config_content})
 
     @Route.get(
         r"/iou/vms",
@@ -325,3 +325,4 @@ class IOUHandler:
         vms = yield from iou_manager.list_images()
         response.set_status(200)
         response.json(vms)
+

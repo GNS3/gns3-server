@@ -317,9 +317,9 @@ class IOUVM(BaseVM):
         """
 
         if self.initial_config_file:
-            content = self.initial_config
+            content = self.initial_config_content
             content = content.replace(self._name, new_name)
-            self.initial_config = content
+            self.initial_config_content = content
 
         super(IOUVM, IOUVM).name.__set__(self, new_name)
 
@@ -372,8 +372,8 @@ class IOUVM(BaseVM):
         Checks for a valid IOU key in the iourc file (paranoid mode).
         """
 
-        license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", False)
-        if license_check:
+        license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", True)
+        if license_check is False:
             return
 
         config = configparser.ConfigParser()
@@ -939,7 +939,7 @@ class IOUVM(BaseVM):
             log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
 
     @property
-    def initial_config(self):
+    def initial_config_content(self):
         """
         Returns the content of the current initial-config file.
         """
@@ -952,10 +952,10 @@ class IOUVM(BaseVM):
             with open(config_file) as f:
                 return f.read()
         except OSError as e:
-            raise IOUError("Can't read configuration file '{}'".format(config_file))
+            raise IOUError("Can't read configuration file '{}': {}".format(config_file, e))
 
-    @initial_config.setter
-    def initial_config(self, initial_config):
+    @initial_config_content.setter
+    def initial_config_content(self, initial_config):
         """
         Update the initial config
 
