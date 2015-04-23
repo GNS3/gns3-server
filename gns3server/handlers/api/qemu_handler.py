@@ -21,6 +21,7 @@ from ...schemas.qemu import QEMU_UPDATE_SCHEMA
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 from ...schemas.qemu import QEMU_NIO_SCHEMA
 from ...schemas.qemu import QEMU_BINARY_LIST_SCHEMA
+from ...schemas.qemu import QEMU_LIST_IMAGES_SCHEMA
 from ...modules.qemu import Qemu
 
 
@@ -286,3 +287,17 @@ class QEMUHandler:
 
         binaries = yield from Qemu.binary_list()
         response.json(binaries)
+
+    @Route.get(
+        r"/qemu/vms",
+        status_codes={
+            200: "List of Qemu images retrieved",
+        },
+        description="Retrieve the list of Qemu images",
+        output=QEMU_LIST_IMAGES_SCHEMA)
+    def list_vms(request, response):
+
+        qemu_manager = Qemu.instance()
+        vms = yield from qemu_manager.list_images()
+        response.set_status(200)
+        response.json(vms)
