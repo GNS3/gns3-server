@@ -120,7 +120,7 @@ class Route(object):
 
                 # Non API call
                 if api_version is None:
-                    response = Response(route=route, output_schema=output_schema)
+                    response = Response(request=request, route=route, output_schema=output_schema)
                     yield from func(request, response)
                     return response
 
@@ -136,34 +136,34 @@ class Route(object):
                                 f.write("\n")
                         except OSError as e:
                             log.warn("Could not write to the record file {}: {}".format(record_file, e))
-                    response = Response(route=route, output_schema=output_schema)
+                    response = Response(request=request, route=route, output_schema=output_schema)
                     yield from func(request, response)
                 except aiohttp.web.HTTPBadRequest as e:
-                    response = Response(route=route)
+                    response = Response(request=request, route=route)
                     response.set_status(e.status)
                     response.json({"message": e.text, "status": e.status, "path": route, "request": request.json})
                 except aiohttp.web.HTTPException as e:
-                    response = Response(route=route)
+                    response = Response(request=request, route=route)
                     response.set_status(e.status)
                     response.json({"message": e.text, "status": e.status})
                 except VMError as e:
                     log.error("VM error detected: {type}".format(type=type(e)), exc_info=1)
-                    response = Response(route=route)
+                    response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409})
                 except asyncio.futures.CancelledError as e:
                     log.error("Request canceled")
-                    response = Response(route=route)
+                    response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
                 except aiohttp.ClientDisconnectedError:
                     log.error("Client disconnected")
-                    response = Response(route=route)
+                    response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Client disconnected", "status": 408})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
-                    response = Response(route=route)
+                    response = Response(request=request, route=route)
                     response.set_status(500)
                     CrashReport.instance().capture_exception(request)
                     exc_type, exc_value, exc_tb = sys.exc_info()
