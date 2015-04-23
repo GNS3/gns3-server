@@ -586,12 +586,14 @@ class VirtualBoxVM(BaseVM):
         :returns: pipe path (string)
         """
 
-        p = re.compile('\s+', re.UNICODE)
-        pipe_name = p.sub("_", self._vmname)
         if sys.platform.startswith("win"):
-            pipe_name = r"\\.\pipe\VBOX\{}".format(pipe_name)
+            pipe_name = r"\\.\pipe\gns3_vbox\{}".format(self.id)
         else:
-            pipe_name = os.path.join(tempfile.gettempdir(), "pipe_{}".format(pipe_name))
+            pipe_name = os.path.join(tempfile.gettempdir(), "gns3_vbox", "{}".format(self.id))
+            try:
+                os.makedirs(os.path.dirname(pipe_name), exist_ok=True)
+            except OSError as e:
+                raise VirtualBoxError("Could not create the VirtualBox pipe directory: {}".format(e))
         return pipe_name
 
     @asyncio.coroutine
