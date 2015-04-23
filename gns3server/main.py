@@ -21,6 +21,8 @@ import datetime
 import sys
 import locale
 import argparse
+import asyncio
+import concurrent
 
 from gns3server.server import Server
 from gns3server.web.logger import init_logger
@@ -174,6 +176,9 @@ def main():
         return
 
     Project.clean_project_directory()
+
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=100)  # We allow 100 parallel executors
+    loop = asyncio.get_event_loop().set_default_executor(executor)
 
     CrashReport.instance()
     host = server_config["host"]
