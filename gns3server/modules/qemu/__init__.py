@@ -30,6 +30,9 @@ from ..base_manager import BaseManager
 from .qemu_error import QemuError
 from .qemu_vm import QemuVM
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class Qemu(BaseManager):
 
@@ -44,7 +47,11 @@ class Qemu(BaseManager):
         """
 
         qemus = []
-        paths = [os.getcwd()] + os.environ["PATH"].split(os.pathsep)
+        paths = [os.getcwd()]
+        if "PATH" in os.environ:
+            paths.extend(os.environ["PATH"].split(os.pathsep))
+        else:
+            log.warning("The PATH environment variable doesn't exist")
         # look for Qemu binaries in the current working directory and $PATH
         if sys.platform.startswith("win"):
             # add specific Windows paths
