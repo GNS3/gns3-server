@@ -380,8 +380,9 @@ class BaseManager:
         :return: file path
         """
 
+        if not path:
+            return ""
         img_directory = self.get_images_directory()
-
         if not os.path.isabs(path):
             s = os.path.split(path)
             return os.path.normpath(os.path.join(img_directory, *s))
@@ -397,6 +398,8 @@ class BaseManager:
         :return: file path
         """
 
+        if not path:
+            return ""
         img_directory = self.get_images_directory()
         path = self.get_abs_image_path(path)
         if os.path.dirname(path) == img_directory:
@@ -407,4 +410,5 @@ class BaseManager:
         """
         Get the image directory on disk
         """
+
         raise NotImplementedError
