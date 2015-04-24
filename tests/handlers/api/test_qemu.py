@@ -200,3 +200,22 @@ def test_vms(server, tmpdir, fake_qemu_vm):
         response = server.get("/qemu/vms")
     assert response.status == 200
     assert response.json == [{"filename": "linux.img"}]
+
+
+def test_upload_vm(server, tmpdir):
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/qemu/vms/test2", body="TEST", raw=True)
+        assert response.status == 204
+
+    with open(str(tmpdir / "test2")) as f:
+        assert f.read() == "TEST"
+
+
+def test_upload_vm_permission_denied(server, tmpdir):
+    with open(str(tmpdir / "test2"), "w+") as f:
+        f.write("")
+    os.chmod(str(tmpdir / "test2"), 0)
+
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/qemu/vms/test2", body="TEST", raw=True)
+        assert response.status == 409
