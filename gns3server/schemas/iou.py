@@ -319,3 +319,21 @@ IOU_INITIAL_CONFIG_SCHEMA = {
     "additionalProperties": False,
     "required": ["content"]
 }
+
+IOU_LIST_VMS_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "List available IOU images",
+    "type": "array",
+    "items": [
+        {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "description": "Image filename",
+                    "type": ["string"]
+                },
+            },
+        }
+    ],
+    "additionalProperties": False,
+}

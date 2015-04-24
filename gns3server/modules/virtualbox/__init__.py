@@ -117,7 +117,7 @@ class VirtualBox(BaseManager):
             return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
     @asyncio.coroutine
-    def get_list(self):
+    def list_images(self):
         """
         Gets VirtualBox VM list.
         """
