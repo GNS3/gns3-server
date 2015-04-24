@@ -19,6 +19,7 @@ import pytest
 import os
 import stat
 import sys
+import uuid
 
 from tests.utils import asyncio_patch
 from unittest.mock import patch, MagicMock, PropertyMock
@@ -94,9 +95,30 @@ def test_iou_create_with_params(server, project, base_params):
 
     assert "initial-config.cfg" in response.json["initial_config"]
     with open(initial_config_file(project, response.json)) as f:
-        assert f.read() == params["initial_config_content"]
+        assert f.read() == "hostname test"
 
     assert "iourc" in response.json["iourc_path"]
+
+
+def test_iou_create_initial_config_already_exist(server, project, base_params):
+    """We don't erase an initial config if already exist at project creation"""
+
+    vm_id = str(uuid.uuid4())
+    initial_config_file_path = initial_config_file(project, {'vm_id': vm_id})
+    with open(initial_config_file_path, 'w+') as f:
+        f.write("echo hello")
+
+    params = base_params
+    params["vm_id"] = vm_id
+    params["initial_config_content"] = "hostname test"
+
+    response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
+    assert response.status == 201
+    assert response.route == "/projects/{project_id}/iou/vms"
+
+    assert "initial-config.cfg" in response.json["initial_config"]
+    with open(initial_config_file(project, response.json)) as f:
+        assert f.read() == "echo hello"
 
 
 def test_iou_get(server, project, vm):
