@@ -208,7 +208,7 @@ class Dynamips(BaseManager):
         """
 
         # save the configs when the project is committed
-        for vm in self._vms.values():
+        for vm in self._vms.copy().values():
             if vm.project.id == project.id:
                 yield from vm.save_configs()
 
