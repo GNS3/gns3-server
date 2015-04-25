@@ -131,7 +131,7 @@ class Route(object):
                     record_file = server_config.get("record")
                     if record_file:
                         try:
-                            with open(record_file, "a") as f:
+                            with open(record_file, "a", encoding="utf-8") as f:
                                 f.write("curl -X {} 'http://{}{}' -d '{}'".format(request.method, request.host, request.path_qs, json.dumps(request.json)))
                                 f.write("\n")
                         except OSError as e:

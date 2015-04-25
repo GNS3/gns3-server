@@ -166,8 +166,8 @@ class VPCSVM(BaseVM):
             return None
 
         try:
-            with open(script_file) as f:
-                return f.read()
+            with open(script_file, "rb") as f:
+                return f.read().decode("utf-8", errors="replace")
         except OSError as e:
             raise VPCSError('Cannot read the startup script file "{}": {}'.format(script_file, e))
 
@@ -181,7 +181,7 @@ class VPCSVM(BaseVM):
 
         try:
             script_file = os.path.join(self.working_dir, 'startup.vpc')
-            with open(script_file, 'w+') as f:
+            with open(script_file, "w+", encoding="utf-8") as f:
                 if startup_script is None:
                     f.write('')
                 else:
@@ -226,7 +226,7 @@ class VPCSVM(BaseVM):
                 flags = 0
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
-                with open(self._vpcs_stdout_file, "w") as fd:
+                with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
@@ -290,8 +290,8 @@ class VPCSVM(BaseVM):
         output = ""
         if self._vpcs_stdout_file:
             try:
-                with open(self._vpcs_stdout_file, errors="replace") as file:
-                    output = file.read()
+                with open(self._vpcs_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
                 log.warn("Could not read {}: {}".format(self._vpcs_stdout_file, e))
         return output

@@ -574,7 +574,7 @@ class QemuVM(BaseVM):
                 log.info("Starting QEMU: {}".format(self._command))
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
                 log.info("logging to {}".format(self._stdout_file))
-                with open(self._stdout_file, "w") as fd:
+                with open(self._stdout_file, "w", encoding="utf-8") as fd:
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
@@ -817,8 +817,8 @@ class QemuVM(BaseVM):
         output = ""
         if self._stdout_file:
             try:
-                with open(self._stdout_file, errors="replace") as file:
-                    output = file.read()
+                with open(self._stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
                 log.warn("Could not read {}: {}".format(self._stdout_file, e))
         return output
