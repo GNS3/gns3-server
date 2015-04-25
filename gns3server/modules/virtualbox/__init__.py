@@ -133,6 +133,7 @@ class VirtualBox(BaseManager):
             if not extra_data[0].strip() == "Value: yes":
                 # get the amount of RAM
                 info_results = yield from self.execute("showvminfo", [vmname, "--machinereadable"])
+                ram = 0
                 for info in info_results:
                     try:
                         name, value = info.split('=', 1)

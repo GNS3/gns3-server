@@ -209,7 +209,7 @@ class VirtualBoxVM(BaseVM):
             log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
             log.debug("Stop result: {}".format(result))
 
-            yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
+            # yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
             try:
                 # deactivate the first serial port
                 yield from self._modify_vm("--uart1 off")
