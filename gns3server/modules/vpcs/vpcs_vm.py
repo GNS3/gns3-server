@@ -27,6 +27,7 @@ import signal
 import re
 import asyncio
 import shutil
+import gns3server.utils.asyncio
 
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
@@ -247,12 +248,13 @@ class VPCSVM(BaseVM):
 
         if self.is_running():
             self._terminate_process()
-            try:
-                yield from asyncio.wait_for(self._process.wait(), timeout=3)
-            except asyncio.TimeoutError:
-                if self._process.returncode is None:
-                    log.warn("VPCS process {} is still running... killing it".format(self._process.pid))
-                    self._process.kill()
+            if self._process.returncode is None:
+                try:
+                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                except asyncio.TimeoutError:
+                    if self._process.returncode is None:
+                        log.warn("VPCS process {} is still running... killing it".format(self._process.pid))
+                        self._process.kill()
 
         self._process = None
         self._started = False
