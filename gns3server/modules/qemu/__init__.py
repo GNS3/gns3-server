@@ -47,7 +47,11 @@ class Qemu(BaseManager):
         """
 
         qemus = []
-        paths = [os.getcwd()]
+        paths = []
+        try:
+            paths.append(os.getcwd())
+        except FileNotFoundError:
+            log.warning("The current working directory doesn't exist")
         if "PATH" in os.environ:
             paths.extend(os.environ["PATH"].split(os.pathsep))
         else:
