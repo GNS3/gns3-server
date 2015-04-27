@@ -18,9 +18,12 @@
 import pytest
 import os
 import stat
+import sys
 
 from tests.utils import asyncio_patch
 from unittest.mock import patch, MagicMock, PropertyMock
+
+pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 
 
 @pytest.fixture
