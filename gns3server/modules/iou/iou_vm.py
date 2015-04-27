@@ -384,6 +384,8 @@ class IOUVM(BaseVM):
             raise IOUError("Could not open iourc file {}: {}".format(self.iourc_path, e))
         except configparser.Error as e:
             raise IOUError("Could not parse iourc file {}: {}".format(self.iourc_path, e))
+        except UnicodeDecodeError as e:
+            raise IOUError("Invalid iourc file {}: {}".format(self.iourc_path, e))
         if "license" not in config:
             raise IOUError("License section not found in iourc file {}".format(self.iourc_path))
         hostname = socket.gethostname()
@@ -587,7 +589,6 @@ class IOUVM(BaseVM):
                 self._ioucon_thread = None
 
             self._terminate_process_iou()
-
             if self._iou_process.returncode is None:
                 try:
                     yield from gns3server.utils.asyncio.wait_for_process_termination(self._iou_process, timeout=3)
@@ -963,23 +964,23 @@ class IOUVM(BaseVM):
         """
 
         try:
-            script_file = os.path.join(self.working_dir, "initial-config.cfg")
+            initial_config_path = os.path.join(self.working_dir, "initial-config.cfg")
 
             if initial_config is None:
                 initial_config = ''
 
             # We disallow erasing the initial config file
-            if len(initial_config) == 0 and os.path.exists(script_file):
+            if len(initial_config) == 0 and os.path.exists(initial_config_path):
                 return
 
-            with open(script_file, "w+", encoding="utf-8") as f:
+            with open(initial_config_path, "w+", encoding="utf-8") as f:
                 if len(initial_config) == 0:
                     f.write('')
                 else:
                     initial_config = initial_config.replace("%h", self._name)
                     f.write(initial_config)
         except OSError as e:
-            raise IOUError("Can't write initial configuration file '{}': {}".format(script_file, e))
+            raise IOUError("Can't write initial configuration file '{}': {}".format(initial_config_path, e))
 
     @property
     def initial_config_file(self):
@@ -1070,6 +1071,10 @@ class IOUVM(BaseVM):
                                                                                            port_number=port_number))
 
         nio = adapter.get_nio(port_number)
+        if not nio:
+            raise IOUError("NIO {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
+
         nio.stopPacketCapture()
         log.info('IOU "{name}" [{id}]: stopping packet capture on {adapter_number}/{port_number}'.format(name=self._name,
                                                                                                          id=self._id,
