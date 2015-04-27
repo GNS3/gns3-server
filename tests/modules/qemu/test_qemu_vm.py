@@ -19,6 +19,7 @@ import pytest
 import aiohttp
 import asyncio
 import os
+import sys
 import stat
 import re
 from tests.utils import asyncio_patch
@@ -51,7 +52,10 @@ def fake_qemu_img_binary():
 @pytest.fixture
 def fake_qemu_binary():
 
-    bin_path = os.path.join(os.environ["PATH"], "qemu_x42")
+    if sys.platform.startswith("win"):
+        bin_path = os.path.join(os.environ["PATH"], "qemu_x42.EXE")
+    else:
+        bin_path = os.path.join(os.environ["PATH"], "qemu_x42")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -178,8 +182,9 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
         f.write("1")
 
     # Raise because file is not executable
-    with pytest.raises(QemuError):
-        vm.qemu_path = path
+    if not sys.platform.startswith("win"):
+        with pytest.raises(QemuError):
+            vm.qemu_path = path
 
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
@@ -204,6 +209,7 @@ def test_disk_options(vm, loop, fake_qemu_img_binary):
         assert args == (fake_qemu_img_binary, "create", "-f", "qcow2", os.path.join(vm.working_dir, "flash.qcow2"), "256M")
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_set_process_priority(vm, loop, fake_qemu_img_binary):
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
@@ -273,7 +279,7 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
                 "user,id=gns3-0"
             ]
 
-
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_build_command_without_display(vm, loop, fake_qemu_binary):
 
     os.environ["DISPLAY"] = ""
@@ -282,7 +288,9 @@ def test_build_command_without_display(vm, loop, fake_qemu_binary):
         assert "-nographic" in cmd
 
 
-def test_build_command_witht_invalid_options(vm, loop, fake_qemu_binary):
+# Windows accept this kind of mistake
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+def test_build_command_with_invalid_options(vm, loop, fake_qemu_binary):
 
     vm.options = "'test"
     with pytest.raises(QemuError):

@@ -18,6 +18,7 @@
 
 import pytest
 import tempfile
+import sys
 
 from gns3server.modules.dynamips import Dynamips
 from gns3server.modules.dynamips.dynamips_error import DynamipsError
@@ -36,7 +37,7 @@ def test_vm_invalid_dynamips_path(manager):
         with pytest.raises(DynamipsError):
             manager.find_dynamips()
 
-
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported by Windows")
 def test_vm_non_executable_dynamips_path(manager):
     tmpfile = tempfile.NamedTemporaryFile()
     with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": tmpfile.name}):

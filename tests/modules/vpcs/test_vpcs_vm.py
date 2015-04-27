@@ -19,6 +19,7 @@ import pytest
 import aiohttp
 import asyncio
 import os
+import sys
 from tests.utils import asyncio_patch
 
 
@@ -100,7 +101,11 @@ def test_stop(loop, vm):
             with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
                 loop.run_until_complete(asyncio.async(vm.stop()))
             assert vm.is_running() is False
-            process.terminate.assert_called_with()
+
+            if sys.platform.startswith("win"):
+                process.send_signal.assert_called_with(1)
+            else:
+                process.terminate.assert_called_with()
 
 
 def test_reload(loop, vm):
@@ -122,7 +127,11 @@ def test_reload(loop, vm):
             with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
                 loop.run_until_complete(asyncio.async(vm.reload()))
             assert vm.is_running() is True
-            process.terminate.assert_called_with()
+
+            if sys.platform.startswith("win"):
+                process.send_signal.assert_called_with(1)
+            else:
+                process.terminate.assert_called_with()
 
 
 def test_add_nio_binding_udp(vm):

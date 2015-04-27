@@ -182,12 +182,12 @@ class VPCSVM(BaseVM):
 
         try:
             script_file = os.path.join(self.working_dir, 'startup.vpc')
-            with open(script_file, "w+", encoding="utf-8") as f:
+            with open(script_file, "wb+") as f:
                 if startup_script is None:
-                    f.write('')
+                    f.write(b'')
                 else:
                     startup_script = startup_script.replace("%h", self._name)
-                    f.write(startup_script)
+                    f.write(startup_script.encode("utf-8"))
         except OSError as e:
             raise VPCSError('Cannot write the startup script file "{}": {}'.format(self.script_file, e))
 
