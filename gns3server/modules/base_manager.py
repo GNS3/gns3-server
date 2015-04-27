@@ -364,8 +364,9 @@ class BaseManager:
             nio = NIOUDP(lport, rhost, rport)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
-            if not self._has_privileged_access(executable):
-                raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
+            #FIXME: check for permissions on tap device
+            #if not self._has_privileged_access(executable):
+            #    raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
             nio = NIOTAP(tap_device)
         elif nio_settings["type"] == "nio_generic_ethernet":
             nio = NIOGenericEthernet(nio_settings["ethernet_device"])

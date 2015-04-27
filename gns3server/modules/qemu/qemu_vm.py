@@ -32,6 +32,7 @@ import socket
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
+from ..nios.nio_tap import NIOTAP
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 
@@ -995,19 +996,25 @@ class QemuVM(BaseVM):
             else:
                 network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_number)])
             nio = adapter.get_nio(0)
-            if nio and isinstance(nio, NIOUDP):
-                if self._legacy_networking:
-                    network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
-                                                                                                                 adapter_number,
-                                                                                                                 nio.lport,
-                                                                                                                 nio.rport,
-                                                                                                                 nio.rhost)])
-                else:
-                    network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
-                                                                                                            nio.rhost,
-                                                                                                            nio.rport,
-                                                                                                            self._host,
-                                                                                                            nio.lport)])
+            if nio:
+                if isinstance(nio, NIOUDP):
+                    if self._legacy_networking:
+                        network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
+                                                                                                                     adapter_number,
+                                                                                                                     nio.lport,
+                                                                                                                     nio.rport,
+                                                                                                                     nio.rhost)])
+                    else:
+                        network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
+                                                                                                                nio.rhost,
+                                                                                                                nio.rport,
+                                                                                                                self._host,
+                                                                                                                nio.lport)])
+                elif isinstance(nio, NIOTAP):
+                    if self._legacy_networking:
+                        network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
+                    else:
+                        network_options.extend(["-netdev", "tap,id=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
             else:
                 if self._legacy_networking:
                     network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_number, adapter_number)])
