@@ -147,13 +147,13 @@ def test_add_nio_binding_tap(vm):
         assert nio.tap_device == "test"
 
 
-def test_add_nio_binding_tap_no_privileged_access(vm):
-    with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=False):
-        with pytest.raises(aiohttp.web.HTTPForbidden):
-            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_tap", "tap_device": "test"})
-            vm.port_add_nio_binding(0, nio)
-    assert vm._ethernet_adapter.ports[0] is None
-
+# def test_add_nio_binding_tap_no_privileged_access(vm):
+#     with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=False):
+#         with pytest.raises(aiohttp.web.HTTPForbidden):
+#             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_tap", "tap_device": "test"})
+#             vm.port_add_nio_binding(0, nio)
+#     assert vm._ethernet_adapter.ports[0] is None
+#
 
 def test_port_remove_nio_binding(vm):
     nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
