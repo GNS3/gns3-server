@@ -19,11 +19,11 @@ import os
 import base64
 
 from ...web.route import Route
+from ...schemas.nio import NIO_SCHEMA
 from ...schemas.dynamips_vm import VM_CREATE_SCHEMA
 from ...schemas.dynamips_vm import VM_UPDATE_SCHEMA
 from ...schemas.dynamips_vm import VM_CAPTURE_SCHEMA
 from ...schemas.dynamips_vm import VM_OBJECT_SCHEMA
-from ...schemas.dynamips_vm import VM_NIO_SCHEMA
 from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
 from ...modules.dynamips import Dynamips
 from ...modules.project_manager import ProjectManager
@@ -256,8 +256,8 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Add a NIO to a Dynamips VM instance",
-        input=VM_NIO_SCHEMA,
-        output=VM_NIO_SCHEMA)
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA)
     def create_nio(request, response):
 
         dynamips_manager = Dynamips.instance()

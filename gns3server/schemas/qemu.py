@@ -211,62 +211,6 @@ QEMU_UPDATE_SCHEMA = {
     "additionalProperties": False,
 }
 
-QEMU_NIO_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for a QEMU instance",
-    "type": "object",
-    "definitions": {
-        "UDP": {
-            "description": "UDP Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_udp"]
-                },
-                "lport": {
-                    "description": "Local port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "rhost": {
-                    "description": "Remote host",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "rport": {
-                    "description": "Remote port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                }
-            },
-            "required": ["type", "lport", "rhost", "rport"],
-            "additionalProperties": False
-        },
-        "Ethernet": {
-            "description": "Generic Ethernet Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_generic_ethernet"]
-                },
-                "ethernet_device": {
-                    "description": "Ethernet device name e.g. eth0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["type", "ethernet_device"],
-            "additionalProperties": False
-        },
-    },
-    "oneOf": [
-        {"$ref": "#/definitions/UDP"},
-        {"$ref": "#/definitions/Ethernet"},
-    ],
-    "additionalProperties": True,
-    "required": ["type"]
-}
-
 QEMU_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation for a QEMU VM instance",

@@ -16,10 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from aiohttp.web import HTTPConflict
 from ...web.route import Route
+from ...schemas.nio import NIO_SCHEMA
 from ...schemas.virtualbox import VBOX_CREATE_SCHEMA
 from ...schemas.virtualbox import VBOX_UPDATE_SCHEMA
-from ...schemas.virtualbox import VBOX_NIO_SCHEMA
 from ...schemas.virtualbox import VBOX_CAPTURE_SCHEMA
 from ...schemas.virtualbox import VBOX_OBJECT_SCHEMA
 from ...modules.virtualbox import VirtualBox
@@ -286,12 +287,15 @@ class VirtualBoxHandler:
             404: "Instance doesn't exist"
         },
         description="Add a NIO to a VirtualBox VM instance",
-        input=VBOX_NIO_SCHEMA,
-        output=VBOX_NIO_SCHEMA)
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA)
     def create_nio(request, response):
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        nio_type = request.json["type"]
+        if nio_type != "nio_udp":
+            raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vbox_manager.create_nio(vbox_manager.vboxmanage_path, request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)

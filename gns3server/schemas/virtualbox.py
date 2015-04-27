@@ -139,46 +139,6 @@ VBOX_UPDATE_SCHEMA = {
     "additionalProperties": False,
 }
 
-VBOX_NIO_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for a VirtualBox VM instance",
-    "type": "object",
-    "definitions": {
-        "UDP": {
-            "description": "UDP Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_udp"]
-                },
-                "lport": {
-                    "description": "Local port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "rhost": {
-                    "description": "Remote host",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "rport": {
-                    "description": "Remote port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                }
-            },
-            "required": ["type", "lport", "rhost", "rport"],
-            "additionalProperties": False
-        },
-    },
-    "oneOf": [
-        {"$ref": "#/definitions/UDP"},
-    ],
-    "additionalProperties": True,
-    "required": ["type"]
-}
-
 VBOX_CAPTURE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to start a packet capture on a VirtualBox VM instance port",

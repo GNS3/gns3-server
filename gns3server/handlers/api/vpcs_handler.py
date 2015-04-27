@@ -15,11 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from aiohttp.web import HTTPConflict
 from ...web.route import Route
+from ...schemas.nio import NIO_SCHEMA
 from ...schemas.vpcs import VPCS_CREATE_SCHEMA
 from ...schemas.vpcs import VPCS_UPDATE_SCHEMA
 from ...schemas.vpcs import VPCS_OBJECT_SCHEMA
-from ...schemas.vpcs import VPCS_NIO_SCHEMA
 from ...modules.vpcs import VPCS
 
 
@@ -191,12 +192,15 @@ class VPCSHandler:
             404: "Instance doesn't exist"
         },
         description="Add a NIO to a VPCS instance",
-        input=VPCS_NIO_SCHEMA,
-        output=VPCS_NIO_SCHEMA)
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA)
     def create_nio(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        nio_type = request.json["type"]
+        if nio_type not in ("nio_udp", "nio_tap"):
+            raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vpcs_manager.create_nio(vm.vpcs_path, request.json)
         vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
