@@ -202,8 +202,8 @@ def test_get_startup_script_using_default_script(vm):
     vm._script_file = None
 
     filepath = os.path.join(vm.working_dir, 'startup.vpc')
-    with open(filepath, 'w+') as f:
-        assert f.write(content)
+    with open(filepath, 'wb+') as f:
+        assert f.write(content.encode("utf-8"))
 
     assert vm.startup_script == content
     assert vm.script_file == filepath

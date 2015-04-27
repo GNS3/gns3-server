@@ -18,6 +18,7 @@
 
 import asyncio
 import pytest
+import sys
 from unittest.mock import MagicMock
 
 from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination
@@ -43,6 +44,7 @@ def test_exception_wait_run_in_executor(loop):
         result = loop.run_until_complete(asyncio.async(exec))
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_subprocess_check_output(loop, tmpdir, restore_original_path):
 
     path = str(tmpdir / "test")
