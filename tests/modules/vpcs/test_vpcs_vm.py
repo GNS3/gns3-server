@@ -97,7 +97,8 @@ def test_stop(loop, vm):
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.is_running()
 
-            loop.run_until_complete(asyncio.async(vm.stop()))
+            with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                loop.run_until_complete(asyncio.async(vm.stop()))
             assert vm.is_running() is False
             process.terminate.assert_called_with()
 
@@ -117,7 +118,9 @@ def test_reload(loop, vm):
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.is_running()
-            loop.run_until_complete(asyncio.async(vm.reload()))
+
+            with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                loop.run_until_complete(asyncio.async(vm.reload()))
             assert vm.is_running() is True
             process.terminate.assert_called_with()
 
