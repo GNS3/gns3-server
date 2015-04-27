@@ -644,7 +644,7 @@ class QemuVM(BaseVM):
                             break
                         for expect in expected:
                             if expect in line:
-                                result = line.decode().strip()
+                                result = line.decode("utf-8").strip()
                                 break
                 except EOFError as e:
                     log.warn("Could not read from QEMU monitor: {}".format(e))
