@@ -150,10 +150,7 @@ def test_qemu_nio_create_ethernet(server, vm):
                                                                                                                                                      "ethernet_device": "eth0",
                                                                                                                                                      },
                            example=True)
-    assert response.status == 201
-    assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
-    assert response.json["type"] == "nio_generic_ethernet"
-    assert response.json["ethernet_device"] == "eth0"
+    assert response.status == 409
 
 
 def test_qemu_delete_nio(server, vm):
