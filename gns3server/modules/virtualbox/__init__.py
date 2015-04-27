@@ -110,7 +110,6 @@ class VirtualBox(BaseManager):
                 raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
 
             if process.returncode:
-                # only the first line of the output is useful
                 vboxmanage_error = stderr_data.decode("utf-8", errors="ignore")
                 raise VirtualBoxError("VirtualBox has returned an error: {}".format(vboxmanage_error))
 
