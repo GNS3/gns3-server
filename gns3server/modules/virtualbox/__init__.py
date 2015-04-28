@@ -110,7 +110,6 @@ class VirtualBox(BaseManager):
                 raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
 
             if process.returncode:
-                # only the first line of the output is useful
                 vboxmanage_error = stderr_data.decode("utf-8", errors="ignore")
                 raise VirtualBoxError("VirtualBox has returned an error: {}".format(vboxmanage_error))
 
@@ -133,6 +132,7 @@ class VirtualBox(BaseManager):
             if not extra_data[0].strip() == "Value: yes":
                 # get the amount of RAM
                 info_results = yield from self.execute("showvminfo", [vmname, "--machinereadable"])
+                ram = 0
                 for info in info_results:
                     try:
                         name, value = info.split('=', 1)

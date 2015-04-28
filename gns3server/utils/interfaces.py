@@ -58,10 +58,11 @@ def get_windows_interfaces():
 
     import win32com.client
     import pywintypes
-    locator = win32com.client.Dispatch("WbemScripting.SWbemLocator")
-    service = locator.ConnectServer(".", "root\cimv2")
+
     interfaces = []
     try:
+        locator = win32com.client.Dispatch("WbemScripting.SWbemLocator")
+        service = locator.ConnectServer(".", "root\cimv2")
         # more info on Win32_NetworkAdapter: http://msdn.microsoft.com/en-us/library/aa394216%28v=vs.85%29.aspx
         for adapter in service.InstancesOf("Win32_NetworkAdapter"):
             if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
@@ -70,7 +71,7 @@ def get_windows_interfaces():
                 interfaces.append({"id": npf_interface,
                                    "name": adapter.NetConnectionID})
     except (AttributeError, pywintypes.com_error):
-        log.warn("could not use the COM service to retrieve interface info, trying using the registry...")
+        log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")
         return _get_windows_interfaces_from_registry()
 
     return interfaces

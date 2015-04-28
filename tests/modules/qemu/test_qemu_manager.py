@@ -18,6 +18,7 @@
 import os
 import stat
 import asyncio
+import sys
 
 from gns3server.modules.qemu import Qemu
 from tests.utils import asyncio_patch
@@ -27,7 +28,10 @@ def test_get_qemu_version(loop):
 
     with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
         version = loop.run_until_complete(asyncio.async(Qemu._get_qemu_version("/tmp/qemu-test")))
-        assert version == "2.2.0"
+        if sys.platform.startswith("win"):
+            assert version == ""
+        else:
+            assert version == "2.2.0"
 
 
 def test_binary_list(loop):
@@ -43,12 +47,17 @@ def test_binary_list(loop):
     with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
         qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list()))
 
-        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": "2.2.0"} in qemus
-        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": "2.2.0"} in qemus
-        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": "2.2.0"} in qemus
-        assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": "2.2.0"} not in qemus
+        if sys.platform.startswith("win"):
+            version = ""
+        else:
+            version = "2.2.0"
+
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
 
 
 def test_get_legacy_vm_workdir():
 
-    assert Qemu.get_legacy_vm_workdir(42, "bla") == "qemu/vm-42"
+    assert Qemu.get_legacy_vm_workdir(42, "bla") == os.path.join("qemu", "vm-42")

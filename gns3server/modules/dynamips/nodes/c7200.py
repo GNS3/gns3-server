@@ -120,7 +120,7 @@ class C7200(Router):
         npe-225, npe-300, npe-400 and npe-g2 (PowerPC c7200 only)
         """
 
-        if self.is_running():
+        if (yield from self.is_running()):
             raise DynamipsError("Cannot change NPE on running router")
 
         yield from self._hypervisor.send('c7200 set_npe "{name}" {npe}'.format(name=self._name, npe=npe))

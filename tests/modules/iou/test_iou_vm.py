@@ -21,13 +21,19 @@ import asyncio
 import os
 import stat
 import socket
+import sys
 from tests.utils import asyncio_patch
 
 
 from unittest.mock import patch, MagicMock, PropertyMock
-from gns3server.modules.iou.iou_vm import IOUVM
-from gns3server.modules.iou.iou_error import IOUError
-from gns3server.modules.iou import IOU
+
+pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+
+if not sys.platform.startswith("win"):
+    from gns3server.modules.iou.iou_vm import IOUVM
+    from gns3server.modules.iou.iou_error import IOUError
+    from gns3server.modules.iou import IOU
+
 from gns3server.config import Config
 
 

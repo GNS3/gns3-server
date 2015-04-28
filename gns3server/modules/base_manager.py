@@ -364,8 +364,9 @@ class BaseManager:
             nio = NIOUDP(lport, rhost, rport)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
-            if not self._has_privileged_access(executable):
-                raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
+            # FIXME: check for permissions on tap device
+            # if not self._has_privileged_access(executable):
+            #    raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
             nio = NIOTAP(tap_device)
         elif nio_settings["type"] == "nio_generic_ethernet":
             nio = NIOGenericEthernet(nio_settings["ethernet_device"])
@@ -380,8 +381,9 @@ class BaseManager:
         :return: file path
         """
 
+        if not path:
+            return ""
         img_directory = self.get_images_directory()
-
         if not os.path.isabs(path):
             s = os.path.split(path)
             return os.path.normpath(os.path.join(img_directory, *s))
@@ -397,6 +399,8 @@ class BaseManager:
         :return: file path
         """
 
+        if not path:
+            return ""
         img_directory = self.get_images_directory()
         path = self.get_abs_image_path(path)
         if os.path.dirname(path) == img_directory:
@@ -426,4 +430,5 @@ class BaseManager:
         """
         Get the image directory on disk
         """
+
         raise NotImplementedError
