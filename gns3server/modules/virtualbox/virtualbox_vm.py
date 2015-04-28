@@ -321,7 +321,6 @@ class VirtualBoxVM(BaseVM):
 
         if self._linked_clone:
             hdd_table = []
-            hdd_files_to_close = []
             if os.path.exists(self.working_dir):
                 hdd_files = yield from self._get_all_hdd_files()
                 vm_info = yield from self._get_vm_info()
@@ -332,7 +331,6 @@ class VirtualBoxVM(BaseVM):
                         port = match.group(2)
                         device = match.group(3)
                         if value in hdd_files:
-                            hdd_files_to_close.append(value)
                             log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
                                                                                                                        id=self.id,
                                                                                                                        controller=controller,
@@ -352,12 +350,6 @@ class VirtualBoxVM(BaseVM):
 
             log.info("VirtualBox VM '{name}' [{id}] unregistering".format(name=self.name, id=self.id))
             yield from self.manager.execute("unregistervm", [self._name])
-
-            for hdd_file in hdd_files_to_close:
-                log.info("VirtualBox VM '{name}' [{id}] closing disk {disk}".format(name=self.name,
-                                                                                    id=self.id,
-                                                                                    disk=os.path.basename(hdd_file)))
-                yield from self.manager.execute("closemedium", ["disk", hdd_file])
 
             if hdd_table:
                 try:
