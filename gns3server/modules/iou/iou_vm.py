@@ -973,7 +973,7 @@ class IOUVM(BaseVM):
             if len(initial_config) == 0 and os.path.exists(initial_config_path):
                 return
 
-            with open(initial_config_path, "w+", encoding="utf-8") as f:
+            with open(initial_config_path, 'w+', encoding='utf-8') as f:
                 if len(initial_config) == 0:
                     f.write('')
                 else:

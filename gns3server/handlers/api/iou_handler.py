@@ -58,6 +58,8 @@ class IOUHandler:
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
+                if name == "initial_config_content" and (vm.initial_config_content and len(vm.initial_config_content) > 0):
+                    continue
                 setattr(vm, name, value)
         response.set_status(201)
         response.json(vm)
