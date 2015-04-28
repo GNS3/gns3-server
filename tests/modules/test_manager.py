@@ -109,7 +109,7 @@ def test_get_abs_image_path(qemu, tmpdir):
 
 
 def test_get_relative_image_path(qemu, tmpdir):
-    os.makedirs(str(tmpdir / "Qemu"))
+    os.makedirs(str(tmpdir / "QEMU"))
     path1 = str(tmpdir / "test1.bin")
     open(path1, 'w+').close()
 
