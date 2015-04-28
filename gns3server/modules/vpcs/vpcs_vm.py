@@ -409,7 +409,7 @@ class VPCSVM(BaseVM):
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
 
         if self.script_file:
-            command.extend([self.script_file])
+            command.extend([os.path.basename(self.script_file)])
         return command
 
     @property
