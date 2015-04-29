@@ -483,11 +483,12 @@ class IOUVM(BaseVM):
 
     def _termination_callback(self, returncode):
         """
-        Called when the process is killed
+        Called when the process has stopped.
 
         :param returncode: Process returncode
         """
-        log.info("IOU process crash return code: %d", returncode)
+
+        log.info("IOU process has stopped, return code: %d", returncode)
         self._terminate_process_iou()
         self._terminate_process_iouyap()
         self._ioucon_thread_stop_event.set()

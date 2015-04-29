@@ -65,7 +65,7 @@ class Project:
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
 
-        # List of clients listen for notifications
+        # List of clients listening for notifications
         self._listeners = set()
 
         if path is None:
@@ -409,11 +409,12 @@ class Project:
 
     def emit(self, action, event):
         """
-        Send an event to all the client listens for notifications
+        Send an event to all the client listening for notifications
 
-        :param action: Action happened
-        :param event: Event sended to the client
+        :param action: Action name
+        :param event: Event to send
         """
+
         for listener in self._listeners:
             listener.put_nowait((action, event, ))
 

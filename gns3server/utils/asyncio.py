@@ -17,7 +17,6 @@
 
 
 import asyncio
-import shutil
 import sys
 
 
@@ -91,6 +90,6 @@ def _check_process(process, termination_callback):
 
 
 def monitor_process(process, termination_callback):
-    """Call termination_callback when process die"""
+    """Call termination_callback when a process dies"""
 
     asyncio.async(_check_process(process, termination_callback))

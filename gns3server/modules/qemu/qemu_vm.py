@@ -620,12 +620,13 @@ class QemuVM(BaseVM):
 
     def _termination_callback(self, returncode):
         """
-        Called when the process is killed
+        Called when the process has stopped.
 
         :param returncode: Process returncode
         """
+
         if self.started:
-            log.info("Process Qemu is dead. Return code: %d", returncode)
+            log.info("QEMU process has stopped, return code: %d", returncode)
             self.status = "stopped"
             self._process = None
 

@@ -240,12 +240,13 @@ class VPCSVM(BaseVM):
 
     def _termination_callback(self, returncode):
         """
-        Called when the process is killed
+        Called when the process has stopped.
 
         :param returncode: Process returncode
         """
+
         if self._started:
-            log.info("Process VPCS is dead. Return code: %d", returncode)
+            log.info("VPCS process has stopped, return code: %d", returncode)
             self._started = False
             self.status = "stopped"
             self._process = None
