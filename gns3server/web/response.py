@@ -30,10 +30,11 @@ renderer = jinja2.Environment(loader=jinja2.PackageLoader('gns3server', 'templat
 
 class Response(aiohttp.web.Response):
 
-    def __init__(self, route=None, output_schema=None, headers={}, **kwargs):
+    def __init__(self, request=None, route=None, output_schema=None, headers={}, **kwargs):
 
         self._route = route
         self._output_schema = output_schema
+        self._request = request
         headers['X-Route'] = self._route
         headers['Server'] = "Python/{0[0]}.{0[1]} GNS3/{1}".format(sys.version_info, __version__)
         super().__init__(headers=headers, **kwargs)
@@ -70,6 +71,7 @@ class Response(aiohttp.web.Response):
         """
         template = renderer.get_template(template_filename)
         kwargs["gns3_version"] = __version__
+        kwargs["gns3_host"] = self._request.host
         self.html(template.render(**kwargs))
 
     def json(self, answer):

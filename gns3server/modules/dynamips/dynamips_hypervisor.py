@@ -284,7 +284,7 @@ class DynamipsHypervisor:
                     if not line:
                         raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
                                             .format(host=self._host, port=self._port, run=self.is_running()))
-                    buf += line.decode()
+                    buf += line.decode("utf-8")
                 except OSError as e:
                     raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                         .format(host=self._host, port=self._port, error=e, run=self.is_running()))

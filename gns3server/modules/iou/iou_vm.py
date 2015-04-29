@@ -337,8 +337,8 @@ class IOUVM(BaseVM):
     @property
     def iourc_content(self):
         try:
-            with open(os.path.join(self.temporary_directory, "iourc")) as f:
-                return f.read()
+            with open(os.path.join(self.temporary_directory, "iourc"), "rb") as f:
+                return f.read().decode("utf-8")
         except OSError:
             return None
 
@@ -347,8 +347,8 @@ class IOUVM(BaseVM):
         if value is not None:
             path = os.path.join(self.temporary_directory, "iourc")
             try:
-                with open(path, "w+") as f:
-                    f.write(value)
+                with open(path, "wb+") as f:
+                    f.write(value.encode("utf-8"))
             except OSError as e:
                 raise IOUError("Could not write iourc file {}: {}".format(path, e))
 
@@ -382,12 +382,14 @@ class IOUVM(BaseVM):
 
         config = configparser.ConfigParser()
         try:
-            with open(self.iourc_path) as f:
+            with open(self.iourc_path, encoding="utf-8") as f:
                 config.read_file(f)
         except OSError as e:
             raise IOUError("Could not open iourc file {}: {}".format(self.iourc_path, e))
         except configparser.Error as e:
             raise IOUError("Could not parse iourc file {}: {}".format(self.iourc_path, e))
+        except UnicodeDecodeError as e:
+            raise IOUError("Invalid iourc file {}: {}".format(self.iourc_path, e))
         if "license" not in config:
             raise IOUError("License section not found in iourc file {}".format(self.iourc_path))
         hostname = socket.gethostname()
@@ -459,7 +461,7 @@ class IOUVM(BaseVM):
                 log.info("Starting IOU: {}".format(self._command))
                 self._iou_stdout_file = os.path.join(self.working_dir, "iou.log")
                 log.info("Logging to {}".format(self._iou_stdout_file))
-                with open(self._iou_stdout_file, "w") as fd:
+                with open(self._iou_stdout_file, "w", encoding="utf-8") as fd:
                     self._iou_process = yield from asyncio.create_subprocess_exec(*self._command,
                                                                                   stdout=fd,
                                                                                   stderr=subprocess.STDOUT,
@@ -503,7 +505,7 @@ class IOUVM(BaseVM):
             log.info("starting iouyap: {}".format(command))
             self._iouyap_stdout_file = os.path.join(self.working_dir, "iouyap.log")
             log.info("logging to {}".format(self._iouyap_stdout_file))
-            with open(self._iouyap_stdout_file, "w") as fd:
+            with open(self._iouyap_stdout_file, "w", encoding="utf-8") as fd:
                 self._iouyap_process = yield from asyncio.create_subprocess_exec(*command,
                                                                                  stdout=fd,
                                                                                  stderr=subprocess.STDOUT,
@@ -569,7 +571,7 @@ class IOUVM(BaseVM):
             bay_id += 1
 
         try:
-            with open(iouyap_ini, "w") as config_file:
+            with open(iouyap_ini, "w", encoding="utf-8") as config_file:
                 config.write(config_file)
             log.info("IOU {name} [id={id}]: iouyap.ini updated".format(name=self._name,
                                                                        id=self._id))
@@ -591,7 +593,6 @@ class IOUVM(BaseVM):
                 self._ioucon_thread = None
 
             self._terminate_process_iou()
-
             if self._iou_process.returncode is None:
                 try:
                     yield from gns3server.utils.asyncio.wait_for_process_termination(self._iou_process, timeout=3)
@@ -677,7 +678,7 @@ class IOUVM(BaseVM):
 
         netmap_path = os.path.join(self.working_dir, "NETMAP")
         try:
-            with open(netmap_path, "w") as f:
+            with open(netmap_path, "w", encoding="utf-8") as f:
                 for bay in range(0, 16):
                     for unit in range(0, 4):
                         f.write("{iouyap_id}:{bay}/{unit}{iou_id:>5d}:{bay}/{unit}\n".format(iouyap_id=str(self.application_id + 512),
@@ -747,8 +748,8 @@ class IOUVM(BaseVM):
         output = ""
         if self._iou_stdout_file:
             try:
-                with open(self._iou_stdout_file, errors="replace") as file:
-                    output = file.read()
+                with open(self._iou_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._iou_stdout_file, e))
         return output
@@ -762,8 +763,8 @@ class IOUVM(BaseVM):
         output = ""
         if self._iouyap_stdout_file:
             try:
-                with open(self._iouyap_stdout_file, errors="replace") as file:
-                    output = file.read()
+                with open(self._iouyap_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._iouyap_stdout_file, e))
         return output
@@ -955,8 +956,8 @@ class IOUVM(BaseVM):
             return None
 
         try:
-            with open(config_file) as f:
-                return f.read()
+            with open(config_file, "rb") as f:
+                return f.read().decode("utf-8", errors="replace")
         except OSError as e:
             raise IOUError("Can't read configuration file '{}': {}".format(config_file, e))
 
@@ -969,23 +970,23 @@ class IOUVM(BaseVM):
         """
 
         try:
-            script_file = os.path.join(self.working_dir, "initial-config.cfg")
+            initial_config_path = os.path.join(self.working_dir, "initial-config.cfg")
 
             if initial_config is None:
                 initial_config = ''
 
             # We disallow erasing the initial config file
-            if len(initial_config) == 0 and os.path.exists(script_file):
+            if len(initial_config) == 0 and os.path.exists(initial_config_path):
                 return
 
-            with open(script_file, 'w+') as f:
+            with open(initial_config_path, 'w+', encoding='utf-8') as f:
                 if len(initial_config) == 0:
                     f.write('')
                 else:
                     initial_config = initial_config.replace("%h", self._name)
                     f.write(initial_config)
         except OSError as e:
-            raise IOUError("Can't write initial configuration file '{}': {}".format(script_file, e))
+            raise IOUError("Can't write initial configuration file '{}': {}".format(initial_config_path, e))
 
     @property
     def initial_config_file(self):
@@ -1076,6 +1077,10 @@ class IOUVM(BaseVM):
                                                                                            port_number=port_number))
 
         nio = adapter.get_nio(port_number)
+        if not nio:
+            raise IOUError("NIO {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
+
         nio.stopPacketCapture()
         log.info('IOU "{name}" [{id}]: stopping packet capture on {adapter_number}/{port_number}'.format(name=self._name,
                                                                                                          id=self._id,

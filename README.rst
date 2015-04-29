@@ -98,6 +98,9 @@ Windows
 
 Please use our all-in-one installer.
 
+If you install it via source you need to install also:
+https://sourceforge.net/projects/pywin32/
+
 Mac OS X
 --------
 

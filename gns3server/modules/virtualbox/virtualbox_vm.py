@@ -209,7 +209,7 @@ class VirtualBoxVM(BaseVM):
             log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
             log.debug("Stop result: {}".format(result))
 
-            yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
+            # yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
             try:
                 # deactivate the first serial port
                 yield from self._modify_vm("--uart1 off")
@@ -276,7 +276,7 @@ class VirtualBoxVM(BaseVM):
 
         hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
         try:
-            with open(hdd_info_file, "r") as f:
+            with open(hdd_info_file, "r", encoding="utf-8") as f:
                 hdd_table = json.load(f)
         except OSError as e:
             raise VirtualBoxError("Could not read HDD info file: {}".format(e))
@@ -354,7 +354,7 @@ class VirtualBoxVM(BaseVM):
             if hdd_table:
                 try:
                     hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
-                    with open(hdd_info_file, "w") as f:
+                    with open(hdd_info_file, "w", encoding="utf-8") as f:
                         json.dump(hdd_table, f, indent=4)
                 except OSError as e:
                     log.warning("VirtualBox VM '{name}' [{id}] could not write HHD info file: {error}".format(name=self.name,
@@ -586,12 +586,14 @@ class VirtualBoxVM(BaseVM):
         :returns: pipe path (string)
         """
 
-        p = re.compile('\s+', re.UNICODE)
-        pipe_name = p.sub("_", self._vmname)
         if sys.platform.startswith("win"):
-            pipe_name = r"\\.\pipe\VBOX\{}".format(pipe_name)
+            pipe_name = r"\\.\pipe\gns3_vbox\{}".format(self.id)
         else:
-            pipe_name = os.path.join(tempfile.gettempdir(), "pipe_{}".format(pipe_name))
+            pipe_name = os.path.join(tempfile.gettempdir(), "gns3_vbox", "{}".format(self.id))
+            try:
+                os.makedirs(os.path.dirname(pipe_name), exist_ok=True)
+            except OSError as e:
+                raise VirtualBoxError("Could not create the VirtualBox pipe directory: {}".format(e))
         return pipe_name
 
     @asyncio.coroutine

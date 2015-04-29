@@ -22,7 +22,7 @@ from unittest.mock import patch
 
 
 from gns3server.modules.vpcs import VPCS
-from gns3server.modules.iou import IOU
+from gns3server.modules.qemu import Qemu
 
 
 @pytest.fixture(scope="function")
@@ -34,11 +34,11 @@ def vpcs(port_manager):
 
 
 @pytest.fixture(scope="function")
-def iou(port_manager):
-    IOU._instance = None
-    iou = IOU.instance()
-    iou.port_manager = port_manager
-    return iou
+def qemu(port_manager):
+    Qemu._instance = None
+    qemu = Qemu.instance()
+    qemu.port_manager = port_manager
+    return qemu
 
 
 def test_create_vm_new_topology(loop, project, vpcs):
@@ -86,55 +86,55 @@ def test_create_vm_old_topology(loop, project, tmpdir, vpcs):
             assert f.read() == "1"
 
 
-def test_get_abs_image_path(iou, tmpdir):
-    os.makedirs(str(tmpdir / "IOU"))
+def test_get_abs_image_path(qemu, tmpdir):
+    os.makedirs(str(tmpdir / "QEMU"))
     path1 = str(tmpdir / "test1.bin")
     open(path1, 'w+').close()
 
-    path2 = str(tmpdir / "IOU" / "test2.bin")
+    path2 = str(tmpdir / "QEMU" / "test2.bin")
     open(path2, 'w+').close()
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        assert iou.get_abs_image_path(path1) == path1
-        assert iou.get_abs_image_path(path2) == path2
-        assert iou.get_abs_image_path("test2.bin") == path2
-        assert iou.get_abs_image_path("../test1.bin") == path1
+        assert qemu.get_abs_image_path(path1) == path1
+        assert qemu.get_abs_image_path(path2) == path2
+        assert qemu.get_abs_image_path("test2.bin") == path2
+        assert qemu.get_abs_image_path("../test1.bin") == path1
 
 
-def test_get_relative_image_path(iou, tmpdir):
-    os.makedirs(str(tmpdir / "IOU"))
+def test_get_relative_image_path(qemu, tmpdir):
+    os.makedirs(str(tmpdir / "QEMU"))
     path1 = str(tmpdir / "test1.bin")
     open(path1, 'w+').close()
 
-    path2 = str(tmpdir / "IOU" / "test2.bin")
+    path2 = str(tmpdir / "QEMU" / "test2.bin")
     open(path2, 'w+').close()
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        assert iou.get_relative_image_path(path1) == path1
-        assert iou.get_relative_image_path(path2) == "test2.bin"
-        assert iou.get_relative_image_path("test2.bin") == "test2.bin"
-        assert iou.get_relative_image_path("../test1.bin") == path1
+        assert qemu.get_relative_image_path(path1) == path1
+        assert qemu.get_relative_image_path(path2) == "test2.bin"
+        assert qemu.get_relative_image_path("test2.bin") == "test2.bin"
+        assert qemu.get_relative_image_path("../test1.bin") == path1
 
 
-def test_list_images(loop, iou, tmpdir):
+def test_list_images(loop, qemu, tmpdir):
 
     fake_images = ["a.bin", "b.bin", ".blu.bin"]
     for image in fake_images:
         with open(str(tmpdir / image), "w+") as f:
             f.write("1")
 
-    with patch("gns3server.modules.IOU.get_images_directory", return_value=str(tmpdir)):
-        assert loop.run_until_complete(iou.list_images()) == [
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir)):
+        assert loop.run_until_complete(qemu.list_images()) == [
             {"filename": "a.bin"},
             {"filename": "b.bin"}
         ]
 
 
-def test_list_images_empty(loop, iou, tmpdir):
-    with patch("gns3server.modules.IOU.get_images_directory", return_value=str(tmpdir)):
-        assert loop.run_until_complete(iou.list_images()) == []
+def test_list_images_empty(loop, qemu, tmpdir):
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir)):
+        assert loop.run_until_complete(qemu.list_images()) == []
 
 
-def test_list_images_directory_not_exist(loop, iou):
-    with patch("gns3server.modules.IOU.get_images_directory", return_value="/bla"):
-        assert loop.run_until_complete(iou.list_images()) == []
+def test_list_images_directory_not_exist(loop, qemu):
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value="/bla"):
+        assert loop.run_until_complete(qemu.list_images()) == []

@@ -15,11 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from aiohttp.web import HTTPConflict
 from ...web.route import Route
+from ...schemas.nio import NIO_SCHEMA
 from ...schemas.qemu import QEMU_CREATE_SCHEMA
 from ...schemas.qemu import QEMU_UPDATE_SCHEMA
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
-from ...schemas.qemu import QEMU_NIO_SCHEMA
 from ...schemas.qemu import QEMU_BINARY_LIST_SCHEMA
 from ...schemas.qemu import QEMU_LIST_IMAGES_SCHEMA
 from ...modules.qemu import Qemu
@@ -240,12 +241,15 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Add a NIO to a Qemu VM instance",
-        input=QEMU_NIO_SCHEMA,
-        output=QEMU_NIO_SCHEMA)
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA)
     def create_nio(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        nio_type = request.json["type"]
+        if nio_type not in ("nio_udp", "nio_tap"):
+            raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = qemu_manager.create_nio(vm.qemu_path, request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)

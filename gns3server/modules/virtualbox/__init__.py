@@ -110,11 +110,54 @@ class VirtualBox(BaseManager):
                 raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
 
             if process.returncode:
-                # only the first line of the output is useful
                 vboxmanage_error = stderr_data.decode("utf-8", errors="ignore")
                 raise VirtualBoxError("VirtualBox has returned an error: {}".format(vboxmanage_error))
 
             return stdout_data.decode("utf-8", errors="ignore").splitlines()
+
+    @asyncio.coroutine
+    def _find_inaccessible_hdd_files(self):
+        """
+        Finds inaccessible disk files (to clean up the VirtualBox media manager)
+        """
+
+        hdds = []
+        try:
+            properties = yield from self.execute("list", ["hdds"])
+        # If VirtualBox is not available we have no inaccessible hdd
+        except VirtualBoxError:
+            return hdds
+
+        flag_inaccessible = False
+        for prop in properties:
+            try:
+                name, value = prop.split(':', 1)
+            except ValueError:
+                continue
+            if name.strip() == "State" and value.strip() == "inaccessible":
+                flag_inaccessible = True
+            if flag_inaccessible and name.strip() == "Location":
+                hdds.append(value.strip())
+                flag_inaccessible = False
+        return reversed(hdds)
+
+    @asyncio.coroutine
+    def project_closed(self, project):
+        """
+        Called when a project is closed.
+
+        :param project: Project instance
+        """
+
+        yield from super().project_closed(project)
+        hdd_files_to_close = yield from self._find_inaccessible_hdd_files()
+        for hdd_file in hdd_files_to_close:
+            log.info("Closing VirtualBox VM disk file {}".format(os.path.basename(hdd_file)))
+            try:
+                yield from self.execute("closemedium", ["disk", hdd_file])
+            except VirtualBoxError as e:
+                log.warning("Could not close VirtualBox VM disk file {}: {}".format(os.path.basename(hdd_file), e))
+                continue
 
     @asyncio.coroutine
     def list_images(self):
@@ -133,6 +176,7 @@ class VirtualBox(BaseManager):
             if not extra_data[0].strip() == "Value: yes":
                 # get the amount of RAM
                 info_results = yield from self.execute("showvminfo", [vmname, "--machinereadable"])
+                ram = 0
                 for info in info_results:
                     try:
                         name, value = info.split('=', 1)

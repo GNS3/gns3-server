@@ -27,6 +27,7 @@ import signal
 import re
 import asyncio
 import shutil
+import gns3server.utils.asyncio
 
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
@@ -167,8 +168,8 @@ class VPCSVM(BaseVM):
             return None
 
         try:
-            with open(script_file) as f:
-                return f.read()
+            with open(script_file, "rb") as f:
+                return f.read().decode("utf-8", errors="replace")
         except OSError as e:
             raise VPCSError('Cannot read the startup script file "{}": {}'.format(script_file, e))
 
@@ -182,12 +183,12 @@ class VPCSVM(BaseVM):
 
         try:
             script_file = os.path.join(self.working_dir, 'startup.vpc')
-            with open(script_file, 'w+') as f:
+            with open(script_file, "wb+") as f:
                 if startup_script is None:
-                    f.write('')
+                    f.write(b'')
                 else:
                     startup_script = startup_script.replace("%h", self._name)
-                    f.write(startup_script)
+                    f.write(startup_script.encode("utf-8"))
         except OSError as e:
             raise VPCSError('Cannot write the startup script file "{}": {}'.format(self.script_file, e))
 
@@ -227,7 +228,7 @@ class VPCSVM(BaseVM):
                 flags = 0
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
-                with open(self._vpcs_stdout_file, "w") as fd:
+                with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
@@ -263,12 +264,13 @@ class VPCSVM(BaseVM):
 
         if self.is_running():
             self._terminate_process()
-            try:
-                yield from asyncio.wait_for(self._process.wait(), timeout=3)
-            except asyncio.TimeoutError:
-                if self._process.returncode is None:
-                    log.warn("VPCS process {} is still running... killing it".format(self._process.pid))
-                    self._process.kill()
+            if self._process.returncode is None:
+                try:
+                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                except asyncio.TimeoutError:
+                    if self._process.returncode is None:
+                        log.warn("VPCS process {} is still running... killing it".format(self._process.pid))
+                        self._process.kill()
 
         self._process = None
         self._started = False
@@ -307,8 +309,8 @@ class VPCSVM(BaseVM):
         output = ""
         if self._vpcs_stdout_file:
             try:
-                with open(self._vpcs_stdout_file, errors="replace") as file:
-                    output = file.read()
+                with open(self._vpcs_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
                 log.warn("Could not read {}: {}".format(self._vpcs_stdout_file, e))
         return output
@@ -424,7 +426,7 @@ class VPCSVM(BaseVM):
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
 
         if self.script_file:
-            command.extend([self.script_file])
+            command.extend([os.path.basename(self.script_file)])
         return command
 
     @property

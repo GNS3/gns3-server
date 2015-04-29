@@ -20,10 +20,14 @@ import pytest
 from unittest.mock import patch
 import uuid
 import os
+import sys
 
+pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 
-from gns3server.modules.iou import IOU
-from gns3server.modules.iou.iou_error import IOUError
+if not sys.platform.startswith("win"):
+    from gns3server.modules.iou import IOU
+    from gns3server.modules.iou.iou_error import IOUError
+
 from gns3server.modules.project_manager import ProjectManager
 
 

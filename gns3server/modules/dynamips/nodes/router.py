@@ -1411,7 +1411,7 @@ class Router(BaseVM):
             startup_config_path = os.path.join(module_workdir, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
             if os.path.isfile(startup_config_path):
                 try:
-                    with open(startup_config_path, "r+", errors="replace") as f:
+                    with open(startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
                         old_config = f.read()
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)
@@ -1424,7 +1424,7 @@ class Router(BaseVM):
             private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
             if os.path.isfile(private_config_path):
                 try:
-                    with open(private_config_path, "r+", errors="replace") as f:
+                    with open(private_config_path, "r+", encoding="utf-8", errors="replace") as f:
                         old_config = f.read()
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)
@@ -1499,7 +1499,7 @@ class Router(BaseVM):
             startup_config_base64, private_config_base64 = yield from self.extract_config()
             if startup_config_base64:
                 try:
-                    config = base64.b64decode(startup_config_base64).decode(errors='replace')
+                    config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
                     config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.startup_config)
                     with open(config_path, "wb") as f:
@@ -1510,7 +1510,7 @@ class Router(BaseVM):
 
             if private_config_base64:
                 try:
-                    config = base64.b64decode(private_config_base64).decode(errors='replace')
+                    config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
                     config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.private_config)
                     with open(config_path, "wb") as f:

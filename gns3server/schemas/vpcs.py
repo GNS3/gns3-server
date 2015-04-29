@@ -75,62 +75,6 @@ VPCS_UPDATE_SCHEMA = {
     "additionalProperties": False,
 }
 
-VPCS_NIO_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for a VPCS instance",
-    "type": "object",
-    "definitions": {
-        "UDP": {
-            "description": "UDP Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_udp"]
-                },
-                "lport": {
-                    "description": "Local port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "rhost": {
-                    "description": "Remote host",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "rport": {
-                    "description": "Remote port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                }
-            },
-            "required": ["type", "lport", "rhost", "rport"],
-            "additionalProperties": False
-        },
-        "TAP": {
-            "description": "TAP Network Input/Output",
-            "properties": {
-                "type": {
-                    "enum": ["nio_tap"]
-                },
-                "tap_device": {
-                    "description": "TAP device name e.g. tap0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["type", "tap_device"],
-            "additionalProperties": False
-        },
-    },
-    "oneOf": [
-        {"$ref": "#/definitions/UDP"},
-        {"$ref": "#/definitions/TAP"},
-    ],
-    "additionalProperties": True,
-    "required": ["type"]
-}
-
 VPCS_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "VPCS instance",
