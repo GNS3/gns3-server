@@ -15,13 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# __version__ is a human-readable version number.
 
-# __version_info__ is a four-tuple for programmatic comparison. The first
-# three numbers are the components of the version number. The fourth
-# is zero for an official release, positive for a development branch,
-# or negative for a release candidate or beta (after the base version
-# number has been incremented)
-
-__version__ = "1.4.0.dev1"
-__version_info__ = (1, 4, 0, -99)
+FILE_STREAM_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation retrieval of a file stream",
+    "type": "object",
+    "properties": {
+        "location": {
+            "description": "File path",
+            "type": ["string"],
+            "minLength": 1
+        }
+    },
+    "additionalProperties": False,
+    "required": ["location"]
+}

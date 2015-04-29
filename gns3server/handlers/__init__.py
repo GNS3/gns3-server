@@ -27,6 +27,7 @@ from gns3server.handlers.api.virtualbox_handler import VirtualBoxHandler
 from gns3server.handlers.api.vpcs_handler import VPCSHandler
 from gns3server.handlers.api.config_handler import ConfigHandler
 from gns3server.handlers.api.server_handler import ServerHandler
+from gns3server.handlers.api.file_handler import FileHandler
 from gns3server.handlers.upload_handler import UploadHandler
 from gns3server.handlers.index_handler import IndexHandler
 

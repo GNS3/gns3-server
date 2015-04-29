@@ -407,6 +407,25 @@ class BaseManager:
             return os.path.basename(path)
         return path
 
+    @asyncio.coroutine
+    def list_images(self):
+        """
+        Return the list of available images for this VM type
+
+        :returns: Array of hash
+        """
+
+        try:
+            files = os.listdir(self.get_images_directory())
+        except FileNotFoundError:
+            return []
+        files.sort()
+        images = []
+        for filename in files:
+            if filename[0] != ".":
+                images.append({"filename": filename})
+        return images
+
     def get_images_directory(self):
         """
         Get the image directory on disk
