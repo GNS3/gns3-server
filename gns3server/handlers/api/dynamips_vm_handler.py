@@ -25,6 +25,7 @@ from ...schemas.dynamips_vm import VM_CAPTURE_SCHEMA
 from ...schemas.dynamips_vm import VM_OBJECT_SCHEMA
 from ...schemas.dynamips_vm import VM_NIO_SCHEMA
 from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
+from ...schemas.dynamips_vm import VMS_LIST_SCHEMA
 from ...modules.dynamips import Dynamips
 from ...modules.project_manager import ProjectManager
 
@@ -290,7 +291,8 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        yield from vm.slot_remove_nio_binding(slot_number, port_number)
+        nio = yield from vm.slot_remove_nio_binding(slot_number, port_number)
+        yield from nio.delete()
         response.set_status(204)
 
     @Route.post(
@@ -356,13 +358,13 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_vm(request.match_info["vm_id"],
                                      project_id=request.match_info["project_id"])
 
-        startup_config, private_config = yield from vm.extract_config()
+        startup_config_base64, private_config_base64 = yield from vm.extract_config()
         result = {}
-        if startup_config:
-            startup_config_content = base64.decodebytes(startup_config.encode("utf-8")).decode("utf-8")
+        if startup_config_base64:
+            startup_config_content = base64.b64decode(startup_config_base64).decode(errors='replace')
             result["startup_config_content"] = startup_config_content
-        if private_config:
-            private_config_content = base64.decodebytes(private_config.encode("utf-8")).decode("utf-8")
+        if private_config_base64:
+            private_config_content = base64.b64decode(private_config_base64).decode(errors='replace')
             result["private_config_content"] = private_config_content
 
         response.set_status(200)
@@ -420,3 +422,17 @@ class DynamipsVMHandler:
         idlepc = yield from dynamips_manager.auto_idlepc(vm)
         response.set_status(200)
         response.json({"idlepc": idlepc})
+
+    @Route.get(
+        r"/dynamips/vms",
+        status_codes={
+            200: "List of Dynamips VM retrieved",
+        },
+        description="Retrieve the list of Dynamips VMS",
+        output=VMS_LIST_SCHEMA)
+    def list_vms(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vms = yield from dynamips_manager.list_images()
+        response.set_status(200)
+        response.json(vms)

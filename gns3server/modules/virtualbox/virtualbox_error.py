@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Custom exceptions for VirtualBox module.
+Custom exceptions for the VirtualBox module.
 """
 
 from ..vm_error import VMError

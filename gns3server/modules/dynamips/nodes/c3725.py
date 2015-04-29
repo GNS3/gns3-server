@@ -44,7 +44,8 @@ class C3725(Router):
     """
 
     def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
-        Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c3725")
+
+        super().__init__(name, vm_id, project, manager, dynamips_id, console, aux, platform="c3725")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128

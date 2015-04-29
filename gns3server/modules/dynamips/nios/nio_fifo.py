@@ -20,6 +20,7 @@ Interface for FIFO NIOs.
 """
 
 import asyncio
+import uuid
 from .nio import NIO
 
 import logging
@@ -34,23 +35,11 @@ class NIOFIFO(NIO):
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    _instance_count = 0
-
     def __init__(self, hypervisor):
 
-        # create an unique ID and name
-        nio_id = NIOFIFO._instance_count
-        NIOFIFO._instance_count += 1
-        name = 'nio_fifo' + str(nio_id)
-        NIO.__init__(name, self, hypervisor)
-
-    @classmethod
-    def reset(cls):
-        """
-        Reset the instance count.
-        """
-
-        cls._instance_count = 0
+        # create an unique name
+        name = 'fifo-{}'.format(uuid.uuid4())
+        super().__init__(name, hypervisor)
 
     @asyncio.coroutine
     def create(self):

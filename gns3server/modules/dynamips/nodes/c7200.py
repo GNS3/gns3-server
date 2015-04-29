@@ -47,7 +47,8 @@ class C7200(Router):
     """
 
     def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, npe="npe-400", chassis=None):
-        Router.__init__(self, name, vm_id, project, manager, dynamips_id, console, aux, platform="c7200")
+
+        super().__init__(name, vm_id, project, manager, dynamips_id, console, aux, platform="c7200")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 256

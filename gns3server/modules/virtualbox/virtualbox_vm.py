@@ -62,7 +62,7 @@ class VirtualBoxVM(BaseVM):
 
         # VirtualBox settings
         self._adapters = adapters
-        self._ethernet_adapters = []
+        self._ethernet_adapters = {}
         self._headless = False
         self._enable_remote_console = False
         self._vmname = vmname
@@ -105,9 +105,10 @@ class VirtualBoxVM(BaseVM):
 
         results = yield from self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
-            name, value = info.split('=', 1)
-            if name == "VMState":
-                return value.strip('"')
+            if '=' in info:
+                name, value = info.split('=', 1)
+                if name == "VMState":
+                    return value.strip('"')
         raise VirtualBoxError("Could not get VM state for {}".format(self._vmname))
 
     @asyncio.coroutine
@@ -139,6 +140,8 @@ class VirtualBoxVM(BaseVM):
     def create(self):
 
         yield from self._get_system_properties()
+        if "API version" not in self._system_properties:
+            raise VirtualBoxError("Can't access to VirtualBox API Version")
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))
@@ -189,7 +192,7 @@ class VirtualBoxVM(BaseVM):
         # add a guest property to let the VM know about the GNS3 project directory
         yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
 
-        if self._enable_remote_console:
+        if self._enable_remote_console and self._console is not None:
             self._start_remote_console()
 
     @asyncio.coroutine
@@ -213,7 +216,7 @@ class VirtualBoxVM(BaseVM):
             except VirtualBoxError as e:
                 log.warn("Could not deactivate the first serial port: {}".format(e))
 
-            for adapter_number in range(0, len(self._ethernet_adapters)):
+            for adapter_number in range(0, self._adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
                 if nio:
                     yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
@@ -308,7 +311,7 @@ class VirtualBoxVM(BaseVM):
             self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
 
-        for adapter in self._ethernet_adapters:
+        for adapter in self._ethernet_adapters.values():
             if adapter is not None:
                 for nio in adapter.ports.values():
                     if nio and isinstance(nio, NIOUDP):
@@ -483,12 +486,12 @@ class VirtualBoxVM(BaseVM):
 
         # check for the maximum adapters supported by the VM
         self._maximum_adapters = yield from self._get_maximum_supported_adapters()
-        if len(self._ethernet_adapters) > self._maximum_adapters:
+        if adapters > self._maximum_adapters:
             raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(self._maximum_adapters))
 
         self._ethernet_adapters.clear()
         for adapter_number in range(0, adapters):
-            self._ethernet_adapters.append(EthernetAdapter())
+            self._ethernet_adapters[adapter_number] = EthernetAdapter()
 
         self._adapters = len(self._ethernet_adapters)
         log.info("VirtualBox VM '{name}' [{id}] has changed the number of Ethernet adapters to {adapters}".format(name=self.name,
@@ -643,11 +646,15 @@ class VirtualBoxVM(BaseVM):
         """
 
         nic_attachments = yield from self._get_nic_attachements(self._maximum_adapters)
-        for adapter_number in range(0, len(self._ethernet_adapters)):
+        for adapter_number in range(0, self._adapters):
             attachment = nic_attachments[adapter_number]
             if attachment == "null":
                 # disconnect the cable if no backend is attached.
-                self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+            if attachment == "none":
+                # set the backend to null to avoid a difference in the number of interfaces in the Guest.
+                yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
+                yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
                 if not self._use_any_adapter and attachment not in ("none", "null", "generic"):
@@ -684,7 +691,7 @@ class VirtualBoxVM(BaseVM):
                     yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
                     yield from self._modify_vm('--nictracefile{} "{}"'.format(adapter_number + 1, nio.pcap_output_file))
 
-        for adapter_number in range(len(self._ethernet_adapters), self._maximum_adapters):
+        for adapter_number in range(self._adapters, self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_number))
             yield from self._modify_vm("--nic{} none".format(adapter_number + 1))
 

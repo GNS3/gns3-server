@@ -17,7 +17,7 @@
 
 """
 VPCS VM management (creates command line, processes, files etc.) in
-order to run an VPCS instance.
+order to run a VPCS VM.
 """
 
 import os
@@ -45,20 +45,19 @@ class VPCSVM(BaseVM):
     module_name = 'vpcs'
 
     """
-    VPCS vm implementation.
+    VPCS VM implementation.
 
-    :param name: The name of this VM
-    :param vm_id: VPCS instance identifier
+    :param name: VPCS VM name
+    :param vm_id: VPCS VM identifier
     :param project: Project instance
-    :param manager: Parent VM Manager
+    :param manager: Manager instance
     :param console: TCP console port
-    :param startup_script: Content of vpcs startup script file
+    :param startup_script: content of the startup script file
     """
 
     def __init__(self, name, vm_id, project, manager, console=None, startup_script=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
-
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
@@ -71,8 +70,11 @@ class VPCSVM(BaseVM):
 
     @asyncio.coroutine
     def close(self):
+        """
+        Closes this VPCS VM.
+        """
 
-        log.debug("VPCS {name} [{id}] is closing".format(name=self._name, id=self._id))
+        log.debug('VPCS "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
@@ -87,8 +89,9 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def _check_requirements(self):
         """
-        Check if VPCS is available with the correct version
+        Check if VPCS is available with the correct version.
         """
+
         path = self.vpcs_path
         if not path:
             raise VPCSError("No path to a VPCS executable has been set")
@@ -141,7 +144,7 @@ class VPCSVM(BaseVM):
     @BaseVM.name.setter
     def name(self, new_name):
         """
-        Sets the name of this VPCS vm.
+        Sets the name of this VPCS VM.
 
         :param new_name: name
         """
@@ -155,7 +158,9 @@ class VPCSVM(BaseVM):
 
     @property
     def startup_script(self):
-        """Return the content of the current startup script"""
+        """
+        Returns the content of the current startup script
+        """
 
         script_file = self.script_file
         if script_file is None:
@@ -165,14 +170,14 @@ class VPCSVM(BaseVM):
             with open(script_file) as f:
                 return f.read()
         except OSError as e:
-            raise VPCSError("Can't read VPCS startup file '{}'".format(script_file))
+            raise VPCSError('Cannot read the startup script file "{}": {}'.format(script_file, e))
 
     @startup_script.setter
     def startup_script(self, startup_script):
         """
-        Update the startup script
+        Updates the startup script.
 
-        :param startup_script The content of the vpcs startup script
+        :param startup_script: content of the startup script
         """
 
         try:
@@ -184,7 +189,7 @@ class VPCSVM(BaseVM):
                     startup_script = startup_script.replace("%h", self._name)
                     f.write(startup_script)
         except OSError as e:
-            raise VPCSError("Can't write VPCS startup file '{}'".format(self.script_file))
+            raise VPCSError('Cannot write the startup script file "{}": {}'.format(self.script_file, e))
 
     @asyncio.coroutine
     def _check_vpcs_version(self):
@@ -210,7 +215,6 @@ class VPCSVM(BaseVM):
         """
 
         yield from self._check_requirements()
-
         if not self.is_running():
             if not self._ethernet_adapter.get_nio(0):
                 raise VPCSError("This VPCS instance must be connected in order to start")
@@ -273,14 +277,16 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def reload(self):
         """
-        Reload the VPCS process. (Stop / Start)
+        Reloads the VPCS process (stop & start).
         """
 
         yield from self.stop()
         yield from self.start()
 
     def _terminate_process(self):
-        """Terminate the process if running"""
+        """
+        Terminate the process if running
+        """
 
         log.info("Stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
         if sys.platform.startswith("win32"):
@@ -288,7 +294,7 @@ class VPCSVM(BaseVM):
         else:
             try:
                 self._process.terminate()
-            # Sometime the process can already be dead when we garbage collect
+            # Sometime the process may already be dead when we garbage collect
             except ProcessLookupError:
                 pass
 
@@ -297,13 +303,14 @@ class VPCSVM(BaseVM):
         Reads the standard output of the VPCS process.
         Only use when the process has been stopped or has crashed.
         """
+
         output = ""
         if self._vpcs_stdout_file:
             try:
                 with open(self._vpcs_stdout_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
-                log.warn("could not read {}: {}".format(self._vpcs_stdout_file, e))
+                log.warn("Could not read {}: {}".format(self._vpcs_stdout_file, e))
         return output
 
     def is_running(self):
@@ -330,10 +337,10 @@ class VPCSVM(BaseVM):
                                                                                            port_number=port_number))
 
         self._ethernet_adapter.add_nio(port_number, nio)
-        log.info("VPCS {name} [{id}]: {nio} added to port {port_number}".format(name=self._name,
-                                                                                id=self.id,
-                                                                                nio=nio,
-                                                                                port_number=port_number))
+        log.info('VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
+                                                                                  id=self.id,
+                                                                                  nio=nio,
+                                                                                  port_number=port_number))
         return nio
 
     def port_remove_nio_binding(self, port_number):
@@ -354,10 +361,10 @@ class VPCSVM(BaseVM):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         self._ethernet_adapter.remove_nio(port_number)
 
-        log.info("VPCS {name} [{id}]: {nio} removed from port {port_number}".format(name=self._name,
-                                                                                    id=self.id,
-                                                                                    nio=nio,
-                                                                                    port_number=port_number))
+        log.info('VPCS "{name}" [{id}]: {nio} removed from port {port_number}'.format(name=self._name,
+                                                                                      id=self.id,
+                                                                                      nio=nio,
+                                                                                      port_number=port_number))
         return nio
 
     def _build_command(self):
@@ -410,7 +417,7 @@ class VPCSVM(BaseVM):
             elif isinstance(nio, NIOTAP):
                 # TAP interface
                 command.extend(["-e"])
-                command.extend(["-d", nio.tap_vm])
+                command.extend(["-d", nio.tap_device])
 
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
@@ -423,12 +430,12 @@ class VPCSVM(BaseVM):
     @property
     def script_file(self):
         """
-        Returns the script-file for this VPCS instance.
+        Returns the startup script file for this VPCS VM.
 
-        :returns: path to script-file
+        :returns: path to startup script file
         """
 
-        # If the default VPCS file exist we use it
+        # use the default VPCS file if it exists
         path = os.path.join(self.working_dir, 'startup.vpc')
         if os.path.exists(path):
             return path

@@ -42,7 +42,7 @@ class VirtualBoxHandler:
     def show(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vms = yield from vbox_manager.get_list()
+        vms = yield from vbox_manager.list_images()
         response.json(vms)
 
     @classmethod
@@ -79,8 +79,9 @@ class VirtualBoxHandler:
                 yield from vm.set_ram(ram)
 
         for name, value in request.json.items():
-            if hasattr(vm, name) and getattr(vm, name) != value:
-                setattr(vm, name, value)
+            if name != "vm_id":
+                if hasattr(vm, name) and getattr(vm, name) != value:
+                    setattr(vm, name, value)
 
         response.set_status(201)
         response.json(vm)

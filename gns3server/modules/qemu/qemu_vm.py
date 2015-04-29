@@ -16,7 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-QEMU VM instance.
+QEMU VM management (creates command line, processes, files etc.) in
+order to run a QEMU VM.
 """
 
 import sys
@@ -46,26 +47,18 @@ class QemuVM(BaseVM):
     """
     QEMU VM implementation.
 
-    :param name: name of this Qemu vm
-    :param vm_id: IOU instance identifier
+    :param name: Qemu VM name
+    :param vm_id: Qemu VM identifier
     :param project: Project instance
-    :param manager: parent VM Manager
+    :param manager: Manager instance
     :param console: TCP console port
     :param qemu_path: path to the QEMU binary
-    :param qemu_id: QEMU VM instance ID
     :param console: TCP console port
     """
 
-    def __init__(self,
-                 name,
-                 vm_id,
-                 project,
-                 manager,
-                 qemu_path=None,
-                 console=None):
+    def __init__(self, name, vm_id, project, manager, qemu_path=None, console=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
-
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
@@ -75,7 +68,7 @@ class QemuVM(BaseVM):
         self._monitor = None
         self._stdout_file = ""
 
-        # QEMU settings
+        # QEMU VM settings
         self._qemu_path = qemu_path
         self._hda_disk_image = ""
         self._hdb_disk_image = ""
@@ -93,8 +86,7 @@ class QemuVM(BaseVM):
         self._process_priority = "low"
 
         self.adapters = 1  # creates 1 adapter by default
-        log.info("QEMU VM {name} [id={id}] has been created".format(name=self._name,
-                                                                    id=self._id))
+        log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
     @property
     def monitor(self):
@@ -135,9 +127,9 @@ class QemuVM(BaseVM):
             raise QemuError("QEMU binary '{}' is not executable".format(qemu_path))
 
         self._qemu_path = qemu_path
-        log.info("QEMU VM {name} [id={id}] has set the QEMU path to {qemu_path}".format(name=self._name,
-                                                                                        id=self._id,
-                                                                                        qemu_path=qemu_path))
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(name=self._name,
+                                                                                       id=self._id,
+                                                                                       qemu_path=qemu_path))
 
     @property
     def hda_disk_image(self):
@@ -157,14 +149,10 @@ class QemuVM(BaseVM):
         :param hda_disk_image: QEMU hda disk image path
         """
 
-        if not os.path.isabs(hda_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hda_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hda_disk_image)
-
-        log.info("QEMU VM {name} [id={id}] has set the QEMU hda disk image path to {disk_image}".format(name=self._name,
-                                                                                                        id=self._id,
-                                                                                                        disk_image=hda_disk_image))
-        self._hda_disk_image = hda_disk_image
+        self._hda_disk_image = self.manager.get_abs_image_path(hda_disk_image)
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hda disk image path to {disk_image}'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       disk_image=self._hda_disk_image))
 
     @property
     def hdb_disk_image(self):
@@ -184,14 +172,10 @@ class QemuVM(BaseVM):
         :param hdb_disk_image: QEMU hdb disk image path
         """
 
-        if not os.path.isabs(hdb_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hdb_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdb_disk_image)
-
-        log.info("QEMU VM {name} [id={id}] has set the QEMU hdb disk image path to {disk_image}".format(name=self._name,
-                                                                                                        id=self._id,
-                                                                                                        disk_image=hdb_disk_image))
-        self._hdb_disk_image = hdb_disk_image
+        self._hdb_disk_image = self.manager.get_abs_image_path(hdb_disk_image)
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdb disk image path to {disk_image}'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       disk_image=self._hdb_disk_image))
 
     @property
     def hdc_disk_image(self):
@@ -211,14 +195,10 @@ class QemuVM(BaseVM):
         :param hdc_disk_image: QEMU hdc disk image path
         """
 
-        if not os.path.isabs(hdc_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hdc_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdc_disk_image)
-
-        log.info("QEMU VM {name} [id={id}] has set the QEMU hdc disk image path to {disk_image}".format(name=self._name,
-                                                                                                        id=self._id,
-                                                                                                        disk_image=hdc_disk_image))
-        self._hdc_disk_image = hdc_disk_image
+        self._hdc_disk_image = self.manager.get_abs_image_path(hdc_disk_image)
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdc disk image path to {disk_image}'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       disk_image=self._hdc_disk_image))
 
     @property
     def hdd_disk_image(self):
@@ -238,19 +218,16 @@ class QemuVM(BaseVM):
         :param hdd_disk_image: QEMU hdd disk image path
         """
 
-        if not os.path.isabs(hdd_disk_image):
-            server_config = self.manager.config.get_section_config("Server")
-            hdd_disk_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", hdd_disk_image)
-
-        log.info("QEMU VM {name} [id={id}] has set the QEMU hdd disk image path to {disk_image}".format(name=self._name,
-                                                                                                        id=self._id,
-                                                                                                        disk_image=hdd_disk_image))
         self._hdd_disk_image = hdd_disk_image
+        self._hdd_disk_image = self.manager.get_abs_image_path(hdd_disk_image)
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdd disk image path to {disk_image}'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       disk_image=self._hdd_disk_image))
 
     @property
     def adapters(self):
         """
-        Returns the number of Ethernet adapters for this QEMU VM instance.
+        Returns the number of Ethernet adapters for this QEMU VM.
 
         :returns: number of adapters
         """
@@ -260,23 +237,23 @@ class QemuVM(BaseVM):
     @adapters.setter
     def adapters(self, adapters):
         """
-        Sets the number of Ethernet adapters for this QEMU VM instance.
+        Sets the number of Ethernet adapters for this QEMU VM.
 
         :param adapters: number of adapters
         """
 
         self._ethernet_adapters.clear()
-        for adapter_id in range(0, adapters):
+        for adapter_number in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
 
-        log.info("QEMU VM {name} [id={id}]: number of Ethernet adapters changed to {adapters}".format(name=self._name,
-                                                                                                      id=self._id,
-                                                                                                      adapters=adapters))
+        log.info('QEMU VM "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     adapters=adapters))
 
     @property
     def adapter_type(self):
         """
-        Returns the adapter type for this QEMU VM instance.
+        Returns the adapter type for this QEMU VM.
 
         :returns: adapter type (string)
         """
@@ -286,16 +263,16 @@ class QemuVM(BaseVM):
     @adapter_type.setter
     def adapter_type(self, adapter_type):
         """
-        Sets the adapter type for this QEMU VM instance.
+        Sets the adapter type for this QEMU VM.
 
         :param adapter_type: adapter type (string)
         """
 
         self._adapter_type = adapter_type
 
-        log.info("QEMU VM {name} [id={id}]: adapter type changed to {adapter_type}".format(name=self._name,
-                                                                                           id=self._id,
-                                                                                           adapter_type=adapter_type))
+        log.info('QEMU VM "{name}" [{id}]: adapter type changed to {adapter_type}'.format(name=self._name,
+                                                                                          id=self._id,
+                                                                                          adapter_type=adapter_type))
 
     @property
     def legacy_networking(self):
@@ -316,9 +293,9 @@ class QemuVM(BaseVM):
         """
 
         if legacy_networking:
-            log.info("QEMU VM {name} [id={id}] has enabled legacy networking".format(name=self._name, id=self._id))
+            log.info('QEMU VM "{name}" [{id}] has enabled legacy networking'.format(name=self._name, id=self._id))
         else:
-            log.info("QEMU VM {name} [id={id}] has disabled legacy networking".format(name=self._name, id=self._id))
+            log.info('QEMU VM "{name}" [{id}] has disabled legacy networking'.format(name=self._name, id=self._id))
         self._legacy_networking = legacy_networking
 
     @property
@@ -339,9 +316,9 @@ class QemuVM(BaseVM):
         :param cpu_throttling: integer
         """
 
-        log.info("QEMU VM {name} [id={id}] has set the percentage of CPU allowed to {cpu}".format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  cpu=cpu_throttling))
+        log.info('QEMU VM "{name}" [{id}] has set the percentage of CPU allowed to {cpu}'.format(name=self._name,
+                                                                                                 id=self._id,
+                                                                                                 cpu=cpu_throttling))
         self._cpu_throttling = cpu_throttling
         self._stop_cpulimit()
         if cpu_throttling:
@@ -365,9 +342,9 @@ class QemuVM(BaseVM):
         :param process_priority: string
         """
 
-        log.info("QEMU VM {name} [id={id}] has set the process priority to {priority}".format(name=self._name,
-                                                                                              id=self._id,
-                                                                                              priority=process_priority))
+        log.info('QEMU VM "{name}" [{id}] has set the process priority to {priority}'.format(name=self._name,
+                                                                                             id=self._id,
+                                                                                             priority=process_priority))
         self._process_priority = process_priority
 
     @property
@@ -388,9 +365,7 @@ class QemuVM(BaseVM):
         :param ram: RAM amount in MB
         """
 
-        log.info("QEMU VM {name} [id={id}] has set the RAM to {ram}".format(name=self._name,
-                                                                            id=self._id,
-                                                                            ram=ram))
+        log.info('QEMU VM "{name}" [{id}] has set the RAM to {ram}'.format(name=self._name, id=self._id, ram=ram))
         self._ram = ram
 
     @property
@@ -411,9 +386,9 @@ class QemuVM(BaseVM):
         :param options: QEMU options
         """
 
-        log.info("QEMU VM {name} [id={id}] has set the QEMU options to {options}".format(name=self._name,
-                                                                                         id=self._id,
-                                                                                         options=options))
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU options to {options}'.format(name=self._name,
+                                                                                        id=self._id,
+                                                                                        options=options))
         self._options = options
 
     @property
@@ -438,9 +413,9 @@ class QemuVM(BaseVM):
             server_config = self.manager.config.get_section_config("Server")
             initrd = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", initrd)
 
-        log.info("QEMU VM {name} [id={id}] has set the QEMU initrd path to {initrd}".format(name=self._name,
-                                                                                            id=self._id,
-                                                                                            initrd=initrd))
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(name=self._name,
+                                                                                           id=self._id,
+                                                                                           initrd=initrd))
         self._initrd = initrd
 
     @property
@@ -465,9 +440,9 @@ class QemuVM(BaseVM):
             server_config = self.manager.config.get_section_config("Server")
             kernel_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", kernel_image)
 
-        log.info("QEMU VM {name} [id={id}] has set the QEMU kernel image path to {kernel_image}".format(name=self._name,
-                                                                                                        id=self._id,
-                                                                                                        kernel_image=kernel_image))
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU kernel image path to {kernel_image}'.format(name=self._name,
+                                                                                                       id=self._id,
+                                                                                                       kernel_image=kernel_image))
         self._kernel_image = kernel_image
 
     @property
@@ -488,9 +463,9 @@ class QemuVM(BaseVM):
         :param kernel_command_line: QEMU kernel command line
         """
 
-        log.info("QEMU VM {name} [id={id}] has set the QEMU kernel command line to {kernel_command_line}".format(name=self._name,
-                                                                                                                 id=self._id,
-                                                                                                                 kernel_command_line=kernel_command_line))
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU kernel command line to {kernel_command_line}'.format(name=self._name,
+                                                                                                                id=self._id,
+                                                                                                                kernel_command_line=kernel_command_line))
         self._kernel_command_line = kernel_command_line
 
     @asyncio.coroutine
@@ -539,7 +514,7 @@ class QemuVM(BaseVM):
                 process = yield from asyncio.create_subprocess_exec('renice', '-n', str(priority), '-p', str(self._process.pid))
                 yield from process.wait()
             except (OSError, subprocess.SubprocessError) as e:
-                log.error("could not change process priority for QEMU VM {}: {}".format(self._name, e))
+                log.error('Could not change process priority for QEMU VM "{}": {}'.format(self._name, e))
 
     def _stop_cpulimit(self):
         """
@@ -551,7 +526,7 @@ class QemuVM(BaseVM):
             try:
                 self._process.wait(3)
             except subprocess.TimeoutExpired:
-                log.error("could not kill cpulimit process {}".format(self._cpulimit_process.pid))
+                log.error("Could not kill cpulimit process {}".format(self._cpulimit_process.pid))
 
     def _set_cpu_throttling(self):
         """
@@ -580,7 +555,6 @@ class QemuVM(BaseVM):
         """
 
         if self.is_running():
-
             # resume the VM if it is paused
             yield from self.resume()
             return
@@ -598,7 +572,7 @@ class QemuVM(BaseVM):
 
             self._command = yield from self._build_command()
             try:
-                log.info("starting QEMU: {}".format(self._command))
+                log.info("Starting QEMU: {}".format(self._command))
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
                 log.info("logging to {}".format(self._stdout_file))
                 with open(self._stdout_file, "w") as fd:
@@ -606,13 +580,13 @@ class QemuVM(BaseVM):
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir)
-                log.info("QEMU VM instance {} started PID={}".format(self._id, self._process.pid))
+                log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
                 self.status = "started"
                 monitor_process(self._process, self._termination_callback)
             except (OSError, subprocess.SubprocessError) as e:
                 stdout = self.read_stdout()
-                log.error("could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
-                raise QemuError("could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
+                log.error("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
+                raise QemuError("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
 
             self._set_process_priority()
             if self._cpu_throttling:
@@ -638,15 +612,14 @@ class QemuVM(BaseVM):
 
         # stop the QEMU process
         if self.is_running():
-            log.info("stopping QEMU VM instance {} PID={}".format(self._id, self._process.pid))
+            log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
             try:
                 self._process.terminate()
                 self._process.wait()
             except subprocess.TimeoutExpired:
                 self._process.kill()
                 if self._process.returncode is None:
-                    log.warn("QEMU VM instance {} PID={} is still running".format(self._id,
-                                                                                  self._process.pid))
+                    log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
         self._process = None
         self.status = "stopped"
         self._stop_cpulimit()
@@ -657,9 +630,9 @@ class QemuVM(BaseVM):
         Executes a command with QEMU monitor when this VM is running.
 
         :param command: QEMU monitor command (e.g. info status, stop etc.)
-        :params expected: An array with the string attended (Default None)
+        :param expected: An array of expected strings
 
-        :returns: result of the command (Match object or None)
+        :returns: result of the command (matched object or None)
         """
 
         result = None
@@ -694,6 +667,9 @@ class QemuVM(BaseVM):
 
     @asyncio.coroutine
     def close(self):
+        """
+        Closes this QEMU VM.
+        """
 
         log.debug('QEMU VM "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
         yield from self.stop()
@@ -704,7 +680,7 @@ class QemuVM(BaseVM):
     @asyncio.coroutine
     def _get_vm_status(self):
         """
-        Returns this VM suspend status (running|paused)
+        Returns this VM suspend status.
 
         Status are extracted from:
           https://github.com/qemu/qemu/blob/master/qapi-schema.json#L152
@@ -763,27 +739,27 @@ class QemuVM(BaseVM):
             log.info("QEMU VM is not paused to be resumed, current status is {}".format(vm_status))
 
     @asyncio.coroutine
-    def adapter_add_nio_binding(self, adapter_id, nio):
+    def adapter_add_nio_binding(self, adapter_number, nio):
         """
         Adds a port NIO binding.
 
-        :param adapter_id: adapter ID
+        :param adapter_number: adapter number
         :param nio: NIO instance to add to the adapter
         """
 
         try:
-            adapter = self._ethernet_adapters[adapter_id]
+            adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise QemuError("Adapter {adapter_id} doesn't exist on QEMU VM {name}".format(name=self._name,
-                                                                                          adapter_id=adapter_id))
+            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
+                                                                                                 adapter_number=adapter_number))
 
         if self.is_running():
             # dynamically configure an UDP tunnel on the QEMU VM adapter
             if nio and isinstance(nio, NIOUDP):
                 if self._legacy_networking:
-                    yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
-                    yield from self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
-                                                                                                                          adapter_id,
+                    yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_number, adapter_number))
+                    yield from self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
+                                                                                                                          adapter_number,
                                                                                                                           nio.lport,
                                                                                                                           nio.rport,
                                                                                                                           nio.rhost))
@@ -792,48 +768,48 @@ class QemuVM(BaseVM):
                     # Apparently there is a bug in Qemu...
                     # netdev_add [user|tap|socket|hubport|netmap],id=str[,prop=value][,...] -- add host network device
                     # netdev_del id -- remove host network device
-                    yield from self._control_vm("netdev_del gns3-{}".format(adapter_id))
-                    yield from self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                    yield from self._control_vm("netdev_del gns3-{}".format(adapter_number))
+                    yield from self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
                                                                                                                 nio.rhost,
                                                                                                                 nio.rport,
                                                                                                                 self._host,
                                                                                                                 nio.lport))
 
         adapter.add_nio(0, nio)
-        log.info("QEMU VM {name} [id={id}]: {nio} added to adapter {adapter_id}".format(name=self._name,
-                                                                                        id=self._id,
-                                                                                        nio=nio,
-                                                                                        adapter_id=adapter_id))
+        log.info('QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(name=self._name,
+                                                                                           id=self._id,
+                                                                                           nio=nio,
+                                                                                           adapter_number=adapter_number))
 
     @asyncio.coroutine
-    def adapter_remove_nio_binding(self, adapter_id):
+    def adapter_remove_nio_binding(self, adapter_number):
         """
         Removes a port NIO binding.
 
-        :param adapter_id: adapter ID
+        :param adapter_number: adapter number
 
         :returns: NIO instance
         """
 
         try:
-            adapter = self._ethernet_adapters[adapter_id]
+            adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise QemuError("Adapter {adapter_id} doesn't exist on QEMU VM {name}".format(name=self._name,
-                                                                                          adapter_id=adapter_id))
+            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
+                                                                                                 adapter_number=adapter_number))
 
         if self.is_running():
             # dynamically disable the QEMU VM adapter
-            yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_id, adapter_id))
-            yield from self._control_vm("host_net_add user vlan={},name=gns3-{}".format(adapter_id, adapter_id))
+            yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_number, adapter_number))
+            yield from self._control_vm("host_net_add user vlan={},name=gns3-{}".format(adapter_number, adapter_number))
 
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
-        log.info("QEMU VM {name} [id={id}]: {nio} removed from adapter {adapter_id}".format(name=self._name,
-                                                                                            id=self._id,
-                                                                                            nio=nio,
-                                                                                            adapter_id=adapter_id))
+        log.info('QEMU VM "{name}" [{id}]: {nio} removed from adapter {adapter_number}'.format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               nio=nio,
+                                                                                               adapter_number=adapter_number))
         return nio
 
     @property
@@ -858,7 +834,7 @@ class QemuVM(BaseVM):
                 with open(self._stdout_file, errors="replace") as file:
                     output = file.read()
             except OSError as e:
-                log.warn("could not read {}: {}".format(self._stdout_file, e))
+                log.warn("Could not read {}: {}".format(self._stdout_file, e))
         return output
 
     def is_running(self):
@@ -1018,47 +994,48 @@ class QemuVM(BaseVM):
 
         return options
 
-    def _get_random_mac(self, adapter_id):
+    def _get_random_mac(self, adapter_number):
         # TODO: let users specify a base mac address
-        return "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_id)
+        return "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_number)
 
     def _network_options(self):
 
         network_options = []
-        adapter_id = 0
+        adapter_number = 0
         for adapter in self._ethernet_adapters:
-            mac = self._get_random_mac(adapter_id)
+            mac = self._get_random_mac(adapter_number)
             if self._legacy_networking:
-                network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_id, mac, self._adapter_type)])
+                network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
             else:
-                network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_id)])
+                network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_number)])
             nio = adapter.get_nio(0)
             if nio and isinstance(nio, NIOUDP):
                 if self._legacy_networking:
-                    network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_id,
-                                                                                                                 adapter_id,
+                    network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
+                                                                                                                 adapter_number,
                                                                                                                  nio.lport,
                                                                                                                  nio.rport,
                                                                                                                  nio.rhost)])
                 else:
-                    network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_id,
+                    network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
                                                                                                             nio.rhost,
                                                                                                             nio.rport,
                                                                                                             self._host,
                                                                                                             nio.lport)])
             else:
                 if self._legacy_networking:
-                    network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_id, adapter_id)])
+                    network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_number, adapter_number)])
                 else:
-                    network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_id)])
-            adapter_id += 1
+                    network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_number)])
+            adapter_number += 1
 
         return network_options
 
     def _graphic(self):
         """
-        Add the correct graphic options depending of the OS
+        Adds the correct graphic options depending of the OS
         """
+
         if sys.platform.startswith("win"):
             return []
         if len(os.environ.get("DISPLAY", "")) > 0:
@@ -1082,27 +1059,13 @@ class QemuVM(BaseVM):
         command.extend(self._monitor_options())
         additional_options = self._options.strip()
         if additional_options:
-            command.extend(shlex.split(additional_options))
+            try:
+                command.extend(shlex.split(additional_options))
+            except ValueError as e:
+                QemuError("Invalid additional options: {} error {}".format(additional_options, e))
         command.extend(self._network_options())
         command.extend(self._graphic())
         return command
-
-    def _get_relative_disk_image_path(self, disk_image):
-        """
-        Returns a relative image path if the disk image is in the images directory.
-
-        :param disk_image: path to the disk image
-
-        :returns: relative or full path
-        """
-
-        if disk_image:
-            # return the relative path if disks images are in the images_path directory
-            server_config = self.manager.config.get_section_config("Server")
-            relative_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", disk_image)
-            if os.path.exists(relative_image):
-                return os.path.basename(disk_image)
-        return disk_image
 
     def __json__(self):
         answer = {
@@ -1114,11 +1077,11 @@ class QemuVM(BaseVM):
             if field not in answer:
                 answer[field] = getattr(self, field)
 
-        answer["hda_disk_image"] = self._get_relative_disk_image_path(self._hda_disk_image)
-        answer["hdb_disk_image"] = self._get_relative_disk_image_path(self._hdb_disk_image)
-        answer["hdc_disk_image"] = self._get_relative_disk_image_path(self._hdc_disk_image)
-        answer["hdd_disk_image"] = self._get_relative_disk_image_path(self._hdd_disk_image)
-        answer["initrd"] = self._get_relative_disk_image_path(self._initrd)
-        answer["kernel_image"] = self._get_relative_disk_image_path(self._kernel_image)
+        answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image)
+        answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image)
+        answer["hdc_disk_image"] = self.manager.get_relative_image_path(self._hdc_disk_image)
+        answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image)
+        answer["initrd"] = self.manager.get_relative_image_path(self._initrd)
+        answer["kernel_image"] = self.manager.get_relative_image_path(self._kernel_image)
 
         return answer

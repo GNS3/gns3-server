@@ -40,7 +40,8 @@ def manager(port_manager):
 @pytest.fixture
 def fake_qemu_img_binary():
 
-    bin_path = os.path.join(os.environ["PATH"], "qemu-img")
+    # Should not crash with unicode characters
+    bin_path = os.path.join(os.environ["PATH"], "qemu-img\u62FF")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -166,7 +167,8 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
     with pytest.raises(QemuError):
         vm.qemu_path = None
 
-    path = str(tmpdir / "bla")
+    # Should not crash with unicode characters
+    path = str(tmpdir / "bla\u62FF")
 
     # Raise because file doesn't exists
     with pytest.raises(QemuError):
@@ -278,6 +280,13 @@ def test_build_command_without_display(vm, loop, fake_qemu_binary):
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
         assert "-nographic" in cmd
+
+
+def test_build_command_witht_invalid_options(vm, loop, fake_qemu_binary):
+
+    vm.options = "'test"
+    with pytest.raises(QemuError):
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
 
 
 def test_hda_disk_image(vm, tmpdir):

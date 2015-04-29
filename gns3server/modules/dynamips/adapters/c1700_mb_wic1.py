@@ -26,7 +26,8 @@ class C1700_MB_WIC1(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=0, wics=2)
+
+        super().__init__(interfaces=0, wics=2)
 
     def __str__(self):
 

@@ -20,6 +20,7 @@ Interface for UNIX NIOs (Unix based OSes only).
 """
 
 import asyncio
+import uuid
 from .nio import NIO
 
 import logging
@@ -36,25 +37,13 @@ class NIOUNIX(NIO):
     :param remote_file: remote UNIX socket filename
     """
 
-    _instance_count = 0
-
     def __init__(self, hypervisor, local_file, remote_file):
 
-        # create an unique ID and name
-        nio_id = NIOUNIX._instance_count
-        NIOUNIX._instance_count += 1
-        name = 'nio_unix' + str(nio_id)
+        # create an unique name
+        name = 'unix-{}'.format(uuid.uuid4())
         self._local_file = local_file
         self._remote_file = remote_file
-        NIO.__init__(self, name, hypervisor)
-
-    @classmethod
-    def reset(cls):
-        """
-        Reset the instance count.
-        """
-
-        cls._instance_count = 0
+        super().__init__(name, hypervisor)
 
     @asyncio.coroutine
     def create(self):

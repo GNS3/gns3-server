@@ -76,7 +76,7 @@ class UploadHandler:
             os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         except OSError as e:
             response.html("Could not upload file: {}".format(e))
-            response.set_status(500)
+            response.set_status(200)
             return
         response.redirect("/upload")
 

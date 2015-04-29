@@ -34,16 +34,16 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
-dependencies = ["aiohttp==0.14.4",
-                "jsonschema==2.4.0",
-                "Jinja2==2.7.3",
-                "raven==5.2.0"]
+dependencies = ["aiohttp>=0.14.4",
+                "jsonschema>=2.4.0",
+                "Jinja2>=2.7.3",
+                "raven>=5.2.0"]
 
 #if not sys.platform.startswith("win"):
 #    dependencies.append("netifaces==0.10.4")
 
 if sys.version_info == (3, 3):
-    dependencies.append("asyncio==3.4.2")
+    dependencies.append("asyncio>=3.4.2")
 
 setup(
     name="gns3-server",
@@ -61,7 +61,7 @@ setup(
             "gns3dms = gns3dms.main:main",
         ]
     },
-    packages=find_packages(),
+    packages=find_packages(".", exclude=["docs", "tests"]),
     package_data={"gns3server": ["templates/upload.html"]},
     include_package_data=True,
     platforms="any",

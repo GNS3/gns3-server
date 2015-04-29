@@ -25,7 +25,8 @@ class PA_2FE_TX(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=2)
+
+        super().__init__(interfaces=2)
 
     def __str__(self):
 

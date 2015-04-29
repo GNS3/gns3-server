@@ -19,13 +19,13 @@ import os
 from aiohttp.web import HTTPConflict
 
 from ...web.route import Route
-from ...modules.port_manager import PortManager
 from ...schemas.iou import IOU_CREATE_SCHEMA
 from ...schemas.iou import IOU_UPDATE_SCHEMA
 from ...schemas.iou import IOU_OBJECT_SCHEMA
 from ...schemas.iou import IOU_NIO_SCHEMA
 from ...schemas.iou import IOU_CAPTURE_SCHEMA
 from ...schemas.iou import IOU_INITIAL_CONFIG_SCHEMA
+from ...schemas.iou import IOU_LIST_VMS_SCHEMA
 from ...modules.iou import IOU
 
 
@@ -52,20 +52,16 @@ class IOUHandler:
     def create(request, response):
 
         iou = IOU.instance()
-        vm = yield from iou.create_vm(request.json["name"],
+        vm = yield from iou.create_vm(request.json.pop("name"),
                                       request.match_info["project_id"],
                                       request.json.get("vm_id"),
-                                      console=request.json.get("console"),
-                                      serial_adapters=request.json.get("serial_adapters"),
-                                      ethernet_adapters=request.json.get("ethernet_adapters"),
-                                      ram=request.json.get("ram"),
-                                      nvram=request.json.get("nvram"),
-                                      use_default_iou_values=request.json.get("use_default_iou_values"),
-                                      l1_keepalives=request.json.get("l1_keepalives"),
-                                      initial_config=request.json.get("initial_config_content"),
-                                      iourc_content=request.json.get("iourc_content")
-                                      )
-        vm.path = request.json.get("path", vm.path)
+                                      console=request.json.get("console"))
+
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
+        if "initial_config_content" in request.json:
+            vm.initial_config = request.json.get("initial_config_content")
         response.set_status(201)
         response.json(vm)
 
@@ -109,18 +105,12 @@ class IOUHandler:
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        vm.name = request.json.get("name", vm.name)
-        vm.console = request.json.get("console", vm.console)
-        vm.path = request.json.get("path", vm.path)
-        vm.ethernet_adapters = request.json.get("ethernet_adapters", vm.ethernet_adapters)
-        vm.serial_adapters = request.json.get("serial_adapters", vm.serial_adapters)
-        vm.ram = request.json.get("ram", vm.ram)
-        vm.nvram = request.json.get("nvram", vm.nvram)
-        vm.use_default_iou_values = request.json.get("use_default_iou_values", vm.use_default_iou_values)
-        vm.l1_keepalives = request.json.get("l1_keepalives", vm.l1_keepalives)
-        vm.initial_config = request.json.get("initial_config_content", vm.initial_config)
-        vm.iourc_content = request.json.get("iourc_content", None)
 
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
+        if "initial_config_content" in request.json:
+            vm.initial_config = request.json.get("initial_config_content")
         response.json(vm)
 
     @classmethod
@@ -273,7 +263,7 @@ class IOUHandler:
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
 
         if not vm.is_running():
-            raise HTTPConflict(text="You can't capture the traffic on a non started VM")
+            raise HTTPConflict(text="Cannot capture traffic on a non started VM")
         yield from vm.start_capture(adapter_number, port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": str(pcap_file_path)})
 
@@ -298,7 +288,7 @@ class IOUHandler:
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
         if not vm.is_running():
-            raise HTTPConflict(text="You can't capture the traffic on a non started VM")
+            raise HTTPConflict(text="Cannot capture traffic on a non started VM")
 
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
@@ -320,4 +310,19 @@ class IOUHandler:
         vm = iou_manager.get_vm(request.match_info["vm_id"],
                                 project_id=request.match_info["project_id"])
         response.set_status(200)
-        response.json({"content": vm.initial_config})
+        response.json({"content": vm.initial_config_content})
+
+    @Route.get(
+        r"/iou/vms",
+        status_codes={
+            200: "List of IOU VM retrieved",
+        },
+        description="Retrieve the list of IOU VMS",
+        output=IOU_LIST_VMS_SCHEMA)
+    def list_vms(request, response):
+
+        iou_manager = IOU.instance()
+        vms = yield from iou_manager.list_images()
+        response.set_status(200)
+        response.json(vms)
+

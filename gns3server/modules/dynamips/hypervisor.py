@@ -47,7 +47,7 @@ class Hypervisor(DynamipsHypervisor):
 
     def __init__(self, path, working_dir, host, port, console_host):
 
-        DynamipsHypervisor.__init__(self, working_dir, host, port)
+        super().__init__(working_dir, host, port)
 
         # create an unique ID
         self._id = Hypervisor._instance_count

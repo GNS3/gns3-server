@@ -25,7 +25,8 @@ class NM_16ESW(Adapter):
     """
 
     def __init__(self):
-        Adapter.__init__(self, interfaces=16)
+
+        super().__init__(interfaces=16)
 
     def __str__(self):
 

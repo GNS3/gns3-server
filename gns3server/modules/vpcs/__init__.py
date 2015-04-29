@@ -28,40 +28,54 @@ from .vpcs_vm import VPCSVM
 
 
 class VPCS(BaseManager):
+
     _VM_CLASS = VPCSVM
 
     def __init__(self):
+
         super().__init__()
         self._free_mac_ids = {}
         self._used_mac_ids = {}
 
     @asyncio.coroutine
     def create_vm(self, *args, **kwargs):
+        """
+        Creates a new VPCS VM.
+
+        :returns: VPCSVM instance
+        """
 
         vm = yield from super().create_vm(*args, **kwargs)
         self._free_mac_ids.setdefault(vm.project.id, list(range(0, 255)))
         try:
             self._used_mac_ids[vm.id] = self._free_mac_ids[vm.project.id].pop(0)
         except IndexError:
-            raise VPCSError("No mac address available")
+            raise VPCSError("Cannot create a new VPCS VM (limit of 255 VMs reached on this host)")
         return vm
 
     @asyncio.coroutine
     def close_vm(self, vm_id, *args, **kwargs):
+        """
+        Closes a VPCS VM.
+
+        :returns: VPCSVM instance
+        """
 
         vm = self.get_vm(vm_id)
-        i = self._used_mac_ids[vm_id]
-        self._free_mac_ids[vm.project.id].insert(0, i)
-        del self._used_mac_ids[vm_id]
+        if vm_id in self._used_mac_ids:
+            i = self._used_mac_ids[vm_id]
+            self._free_mac_ids[vm.project.id].insert(0, i)
+            del self._used_mac_ids[vm_id]
         yield from super().close_vm(vm_id, *args, **kwargs)
         return vm
 
     def get_mac_id(self, vm_id):
         """
-        Get an unique VPCS mac id
+        Get an unique VPCS MAC id (offset)
 
-        :param vm_id: ID of the VPCS VM
-        :returns: VPCS MAC id
+        :param vm_id: VPCS VM identifier
+
+        :returns: VPCS MAC identifier
         """
 
         return self._used_mac_ids.get(vm_id, 1)

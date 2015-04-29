@@ -284,19 +284,9 @@ VM_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "startup_config": {
-            "description": "path to the IOS startup configuration file",
-            "type": "string",
-            "minLength": 1,
-        },
         "startup_config_content": {
             "description": "Content of IOS startup configuration file",
             "type": "string",
-        },
-        "private_config": {
-            "description": "path to the IOS private configuration file",
-            "type": "string",
-            "minLength": 1,
         },
         "private_config_content": {
             "description": "Content of IOS private configuration file",
@@ -897,4 +887,22 @@ VM_CONFIGS_SCHEMA = {
     },
     "additionalProperties": False,
     "required": ["startup_config_content", "private_config_content"]
+}
+
+VMS_LIST_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "List available Dynamips images",
+    "type": "array",
+    "items": [
+        {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "description": "Image filename",
+                    "type": ["string"]
+                },
+            },
+        }
+    ],
+    "additionalProperties": False,
 }

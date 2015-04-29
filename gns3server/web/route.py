@@ -40,6 +40,7 @@ def parse_request(request, input_schema):
         try:
             request.json = json.loads(body.decode('utf-8'))
         except ValueError as e:
+            request.json = {"malformed_json": body.decode('utf-8')}
             raise aiohttp.web.HTTPBadRequest(text="Invalid JSON {}".format(e))
     else:
         request.json = {}
@@ -123,7 +124,7 @@ class Route(object):
                     yield from func(request, response)
                     return response
 
-                # API call
+                # API call
                 try:
                     request = yield from parse_request(request, input_schema)
                     server_config = Config.instance().get_section_config("Server")
@@ -137,6 +138,10 @@ class Route(object):
                             log.warn("Could not write to the record file {}: {}".format(record_file, e))
                     response = Response(route=route, output_schema=output_schema)
                     yield from func(request, response)
+                except aiohttp.web.HTTPBadRequest as e:
+                    response = Response(route=route)
+                    response.set_status(e.status)
+                    response.json({"message": e.text, "status": e.status, "path": route, "request": request.json})
                 except aiohttp.web.HTTPException as e:
                     response = Response(route=route)
                     response.set_status(e.status)
@@ -151,6 +156,11 @@ class Route(object):
                     response = Response(route=route)
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
+                except aiohttp.ClientDisconnectedError:
+                    log.error("Client disconnected")
+                    response = Response(route=route)
+                    response.set_status(408)
+                    response.json({"message": "Client disconnected", "status": 408})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(route=route)

@@ -213,7 +213,7 @@ QEMU_UPDATE_SCHEMA = {
 
 QEMU_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for a VPCS instance",
+    "description": "Request validation to add a NIO for a QEMU instance",
     "type": "object",
     "definitions": {
         "UDP": {
@@ -395,5 +395,23 @@ QEMU_BINARY_LIST_SCHEMA = {
             },
         }
     },
+    "additionalProperties": False,
+}
+
+QEMU_LIST_IMAGES_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "List available QEMU images",
+    "type": "array",
+    "items": [
+        {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "description": "Image filename",
+                    "type": ["string"]
+                },
+            },
+        }
+    ],
     "additionalProperties": False,
 }

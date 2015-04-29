@@ -32,14 +32,15 @@ from .qemu_vm import QemuVM
 
 
 class Qemu(BaseManager):
+
     _VM_CLASS = QemuVM
 
     @staticmethod
     def binary_list():
         """
-        Gets QEMU binaries list available on the matchine
+        Gets QEMU binaries list available on the host.
 
-        :returns: Array of dictionnary {"path": Qemu binaries path, "version": Version of Qemu}
+        :returns: Array of dictionary {"path": Qemu binary path, "version": version of Qemu}
         """
 
         qemus = []
@@ -66,7 +67,7 @@ class Qemu(BaseManager):
         for path in paths:
             try:
                 for f in os.listdir(path):
-                    if (f.startswith("qemu-system") or f == "qemu" or f == "qemu.exe") and \
+                    if (f.startswith("qemu-system") or f.startswith("qemu-kvm") or f == "qemu" or f == "qemu.exe") and \
                             os.access(os.path.join(path, f), os.X_OK) and \
                             os.path.isfile(os.path.join(path, f)):
                         qemu_path = os.path.join(path, f)
@@ -82,7 +83,8 @@ class Qemu(BaseManager):
     def _get_qemu_version(qemu_path):
         """
         Gets the Qemu version.
-        :param qemu_path: path to Qemu
+
+        :param qemu_path: path to Qemu executable.
         """
 
         if sys.platform.startswith("win"):
@@ -110,3 +112,9 @@ class Qemu(BaseManager):
         """
 
         return os.path.join("qemu", "vm-{}".format(legacy_vm_id))
+
+    def get_images_directory(self):
+        """
+        Return the full path of the images directory on disk
+        """
+        return os.path.join(os.path.expanduser(self.config.get_section_config("Server").get("images_path", "~/GNS3/images")), "QEMU")

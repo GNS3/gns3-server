@@ -560,8 +560,8 @@ class Dynamips(BaseManager):
             raise DynamipsError("Could not create Dynamips configs directory: {}".format(e))
 
         try:
-            with open(path, "w") as f:
-                f.write(content)
+            with open(path, "wb") as f:
+                f.write(content.encode("utf-8"))
         except OSError as e:
             raise DynamipsError("Could not create config file {}: {}".format(path, e))
 
@@ -616,3 +616,9 @@ class Dynamips(BaseManager):
             if was_auto_started:
                 yield from vm.stop()
         return validated_idlepc
+
+    def get_images_directory(self):
+        """
+        Return the full path of the images directory on disk
+        """
+        return os.path.join(os.path.expanduser(self.config.get_section_config("Server").get("images_path", "~/GNS3/images")), "IOS")

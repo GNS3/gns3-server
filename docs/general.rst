@@ -39,10 +39,11 @@ The next step is to create a project.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:8000/v1/projects" -d "{}"
+    # curl -X POST "http://localhost:8000/v1/projects" -d '{"name": "test"}'
     {
         "project_id": "42f9feee-3217-4104-981e-85d5f0a806ec",
-        "temporary": false
+        "temporary": false,
+        "name": "Test"
     }
 
 With this project id we can now create two VPCS VM.
@@ -69,12 +70,12 @@ two UDP ports.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:8000/v1/ports/udp" -d '{}'
+    # curl -X POST "http://localhost:8000/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/ports/udp" -d '{}'
     {
         "udp_port": 10000
     }                                                                                  
     
-    # curl -X POST "http://localhost:8000/v1/ports/udp" -d '{}'
+    # curl -X POST "http://localhost:8000/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/ports/udp" -d '{}'
     {
         "udp_port": 10001
     }

@@ -1,19 +1,20 @@
-/v1/ports/udp
+/v1/config/reload
 ----------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v1/ports/udp
+POST /v1/config/reload
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Allocate an UDP port on the server
+Check if version is the same as the server
 
 Response status codes
 **********************
-- **201**: UDP port allocated
+- **201**: Config reload
+- **403**: Config reload refused
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../examples/post_portsudp.txt
+.. literalinclude:: ../../examples/post_configreload.txt
 

@@ -70,8 +70,12 @@ IOU_CREATE_SCHEMA = {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
         },
+        "initial_config": {
+            "description": "Path to the initial configuration of IOU",
+            "type": ["string", "null"]
+        },
         "initial_config_content": {
-            "description": "Initial configuration of the IOU",
+            "description": "Initial configuration of IOU",
             "type": ["string", "null"]
         },
         "iourc_content": {
@@ -124,7 +128,7 @@ IOU_UPDATE_SCHEMA = {
             "type": ["boolean", "null"]
         },
         "initial_config_content": {
-            "description": "Initial configuration of the IOU",
+            "description": "Initial configuration of IOU",
             "type": ["string", "null"]
         },
         "use_default_iou_values": {
@@ -212,7 +216,7 @@ IOU_OBJECT_SCHEMA = {
 
 IOU_NIO_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to add a NIO for a VPCS instance",
+    "description": "Request validation to add a NIO for a IOU instance",
     "type": "object",
     "definitions": {
         "UDP": {
@@ -309,10 +313,27 @@ IOU_INITIAL_CONFIG_SCHEMA = {
     "properties": {
         "content": {
             "description": "Content of the initial configuration file",
-            "type": ["string", "null"],
-            "minLength": 1,
+            "type": ["string", "null"]
         },
     },
     "additionalProperties": False,
     "required": ["content"]
+}
+
+IOU_LIST_VMS_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "List available IOU images",
+    "type": "array",
+    "items": [
+        {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "description": "Image filename",
+                    "type": ["string"]
+                },
+            },
+        }
+    ],
+    "additionalProperties": False,
 }

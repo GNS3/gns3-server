@@ -265,6 +265,7 @@ class DynamipsHypervisor:
                 command = command.strip() + '\n'
                 log.debug("sending {}".format(command))
                 self._writer.write(command.encode())
+                yield from self._writer.drain()
             except OSError as e:
                 raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                     .format(host=self._host, port=self._port, error=e, run=self.is_running()))
@@ -274,11 +275,16 @@ class DynamipsHypervisor:
             buf = ''
             while True:
                 try:
-                    chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
-                    if not chunk:
+                    try:
+                        line = yield from self._reader.readline()
+                    except asyncio.CancelledError:
+                        # task has been canceled but continue to read
+                        # any remaining data sent by the hypervisor
+                        continue
+                    if not line:
                         raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
                                             .format(host=self._host, port=self._port, run=self.is_running()))
-                    buf += chunk.decode()
+                    buf += line.decode()
                 except OSError as e:
                     raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                         .format(host=self._host, port=self._port, error=e, run=self.is_running()))

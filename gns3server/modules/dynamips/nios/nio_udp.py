@@ -20,6 +20,7 @@ Interface for UDP NIOs.
 """
 
 import asyncio
+import uuid
 from .nio import NIO
 
 import logging
@@ -37,26 +38,14 @@ class NIOUDP(NIO):
     :param rport: remote port number
     """
 
-    _instance_count = 0
-
     def __init__(self, hypervisor, lport, rhost, rport):
 
-        # create an unique ID and name
-        nio_id = NIOUDP._instance_count
-        NIOUDP._instance_count += 1
-        name = 'nio_udp' + str(nio_id)
+        # create an unique name
+        name = 'udp-{}'.format(uuid.uuid4())
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
-        NIO.__init__(self, name, hypervisor)
-
-    @classmethod
-    def reset(cls):
-        """
-        Reset the instance count.
-        """
-
-        cls._instance_count = 0
+        super().__init__(name, hypervisor)
 
     @asyncio.coroutine
     def create(self):

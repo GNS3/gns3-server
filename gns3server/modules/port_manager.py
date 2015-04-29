@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
+import sys
 import ipaddress
 from aiohttp.web import HTTPConflict
 from gns3server.config import Config

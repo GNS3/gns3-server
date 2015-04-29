@@ -23,7 +23,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>device_id</td>                    <td> </td>                     <td>string</td>                     <td>Dynamips device instance identifier</td>                     </tr>
+    <tr><td>device_id</td>                    <td> </td>                     <td></td>                     <td>Dynamips device instance identifier</td>                     </tr>
     <tr><td>device_type</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Dynamips device type</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Dynamips device name</td>                     </tr>
     </table>

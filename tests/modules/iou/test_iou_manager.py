@@ -17,7 +17,9 @@
 
 
 import pytest
+from unittest.mock import patch
 import uuid
+import os
 
 
 from gns3server.modules.iou import IOU
@@ -25,11 +27,16 @@ from gns3server.modules.iou.iou_error import IOUError
 from gns3server.modules.project_manager import ProjectManager
 
 
-def test_get_application_id(loop, project, port_manager):
+@pytest.fixture(scope="function")
+def iou(port_manager):
     # Cleanup the IOU object
     IOU._instance = None
     iou = IOU.instance()
     iou.port_manager = port_manager
+    return iou
+
+
+def test_get_application_id(loop, project, iou):
     vm1_id = str(uuid.uuid4())
     vm2_id = str(uuid.uuid4())
     vm3_id = str(uuid.uuid4())
@@ -43,11 +50,7 @@ def test_get_application_id(loop, project, port_manager):
     assert iou.get_application_id(vm3_id) == 1
 
 
-def test_get_application_id_multiple_project(loop, port_manager):
-    # Cleanup the IOU object
-    IOU._instance = None
-    iou = IOU.instance()
-    iou.port_manager = port_manager
+def test_get_application_id_multiple_project(loop, iou):
     vm1_id = str(uuid.uuid4())
     vm2_id = str(uuid.uuid4())
     vm3_id = str(uuid.uuid4())
@@ -61,13 +64,14 @@ def test_get_application_id_multiple_project(loop, port_manager):
     assert iou.get_application_id(vm3_id) == 3
 
 
-def test_get_application_id_no_id_available(loop, project, port_manager):
-    # Cleanup the IOU object
-    IOU._instance = None
-    iou = IOU.instance()
-    iou.port_manager = port_manager
+def test_get_application_id_no_id_available(loop, project, iou):
     with pytest.raises(IOUError):
         for i in range(1, 513):
             vm_id = str(uuid.uuid4())
             loop.run_until_complete(iou.create_vm("PC {}".format(i), project.id, vm_id))
             assert iou.get_application_id(vm_id) == i
+
+
+def test_get_images_directory(iou, tmpdir):
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        assert iou.get_images_directory() == str(tmpdir / "IOU")

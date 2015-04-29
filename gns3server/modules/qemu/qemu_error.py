@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Custom exceptions for Qemu module.
+Custom exceptions for the Qemu module.
 """
 
 from ..vm_error import VMError

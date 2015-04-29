@@ -20,6 +20,7 @@ Interface for VDE (Virtual Distributed Ethernet) NIOs (Unix based OSes only).
 """
 
 import asyncio
+import uuid
 from .nio import NIO
 
 import logging
@@ -36,25 +37,13 @@ class NIOVDE(NIO):
     :param local_file: VDE local filename
     """
 
-    _instance_count = 0
-
     def __init__(self, hypervisor, control_file, local_file):
 
-        # create an unique ID and name
-        nio_id = NIOVDE._instance_count
-        NIOVDE._instance_count += 1
-        name = 'nio_vde' + str(nio_id)
+        # create an unique name
+        name = 'vde-{}'.format(uuid.uuid4())
         self._control_file = control_file
         self._local_file = local_file
-        NIO.__init__(self, name, hypervisor)
-
-    @classmethod
-    def reset(cls):
-        """
-        Reset the instance count.
-        """
-
-        cls._instance_count = 0
+        super().__init__(name, hypervisor)
 
     @asyncio.coroutine
     def create(self):

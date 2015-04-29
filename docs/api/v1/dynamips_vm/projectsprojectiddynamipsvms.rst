@@ -26,7 +26,6 @@ Input
     <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
-    <tr><td>confreg</td>                    <td> </td>                     <td>string</td>                     <td>configuration register</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>disk0</td>                    <td> </td>                     <td>integer</td>                     <td>disk0 size in MB</td>                     </tr>
     <tr><td>disk1</td>                    <td> </td>                     <td>integer</td>                     <td>disk1 size in MB</td>                     </tr>
@@ -74,10 +73,9 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>auxiliary console TCP port</td>                     </tr>
+    <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
-    <tr><td>confreg</td>                    <td> </td>                     <td>string</td>                     <td>configuration register</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>disk0</td>                    <td> </td>                     <td>integer</td>                     <td>disk0 size in MB</td>                     </tr>
     <tr><td>disk1</td>                    <td> </td>                     <td>integer</td>                     <td>disk1 size in MB</td>                     </tr>

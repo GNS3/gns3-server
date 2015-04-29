@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Custom exceptions for IOU module.
+Custom exceptions for the IOU module.
 """
 
 from ..vm_error import VMError

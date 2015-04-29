@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import os
 from .vpcs import VPCS
 from .virtualbox import VirtualBox
 from .dynamips import Dynamips
@@ -23,7 +24,7 @@ from .qemu import Qemu
 
 MODULES = [VPCS, VirtualBox, Dynamips, Qemu]
 
-if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test"):
+if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
     # IOU runs only on Linux
     from .iou import IOU
     MODULES.append(IOU)

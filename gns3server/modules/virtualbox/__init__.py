@@ -41,6 +41,7 @@ class VirtualBox(BaseManager):
 
         super().__init__()
         self._vboxmanage_path = None
+        self._execute_lock = asyncio.Lock()
 
     @property
     def vboxmanage_path(self):
@@ -73,6 +74,8 @@ class VirtualBox(BaseManager):
             raise VirtualBoxError("VBoxManage {} is not accessible".format(vboxmanage_path))
         if not os.access(vboxmanage_path, os.X_OK):
             raise VirtualBoxError("VBoxManage is not executable")
+        if os.path.basename(vboxmanage_path) not in ["VBoxManage", "VBoxManage.exe", "vboxmanage"]:
+            raise VirtualBoxError("Invalid VBoxManage executable name {}".format(os.path.basename(vboxmanage_path)))
 
         self._vboxmanage_path = vboxmanage_path
         return vboxmanage_path
@@ -80,37 +83,41 @@ class VirtualBox(BaseManager):
     @asyncio.coroutine
     def execute(self, subcommand, args, timeout=60):
 
-        vboxmanage_path = self.vboxmanage_path
-        if not vboxmanage_path:
-            vboxmanage_path = self.find_vboxmanage()
-        command = [vboxmanage_path, "--nologo", subcommand]
-        command.extend(args)
-        log.debug("Executing VBoxManage with command: {}".format(command))
-        try:
-            vbox_user = self.config.get_section_config("VirtualBox").get("vbox_user")
-            if vbox_user:
-                # TODO: test & review this part
-                sudo_command = "sudo -i -u {}".format(vbox_user) + " ".join(command)
-                process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            else:
-                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        except (OSError, subprocess.SubprocessError) as e:
-            raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
+        # We use a lock prevent parallel execution due to strange errors
+        # reported by a user and reproduced by us.
+        # https://github.com/GNS3/gns3-gui/issues/261
+        with (yield from self._execute_lock):
+            vboxmanage_path = self.vboxmanage_path
+            if not vboxmanage_path:
+                vboxmanage_path = self.find_vboxmanage()
+            command = [vboxmanage_path, "--nologo", subcommand]
+            command.extend(args)
+            log.debug("Executing VBoxManage with command: {}".format(command))
+            try:
+                vbox_user = self.config.get_section_config("VirtualBox").get("vbox_user")
+                if vbox_user:
+                    # TODO: test & review this part
+                    sudo_command = "sudo -i -u {}".format(vbox_user) + " ".join(command)
+                    process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                else:
+                    process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            except (OSError, subprocess.SubprocessError) as e:
+                raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
 
-        try:
-            stdout_data, stderr_data = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
-            raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
+            try:
+                stdout_data, stderr_data = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
+            except asyncio.TimeoutError:
+                raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
 
-        if process.returncode:
-            # only the first line of the output is useful
-            vboxmanage_error = stderr_data.decode("utf-8", errors="ignore")
-            raise VirtualBoxError("VirtualBox has returned an error: {}".format(vboxmanage_error))
+            if process.returncode:
+                # only the first line of the output is useful
+                vboxmanage_error = stderr_data.decode("utf-8", errors="ignore")
+                raise VirtualBoxError("VirtualBox has returned an error: {}".format(vboxmanage_error))
 
-        return stdout_data.decode("utf-8", errors="ignore").splitlines()
+            return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
     @asyncio.coroutine
-    def get_list(self):
+    def list_images(self):
         """
         Gets VirtualBox VM list.
         """

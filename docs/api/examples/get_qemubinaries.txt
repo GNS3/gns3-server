@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/qemu/binaries'
+curl -i -X GET 'http://localhost:8000/v1/qemu/binaries'
 
-GET /qemu/binaries HTTP/1.1
+GET /v1/qemu/binaries HTTP/1.1
 
 
 
@@ -9,7 +9,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 134
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.dev1
+SERVER: Python/3.4 GNS3/1.3.1.rc2
 X-ROUTE: /v1/qemu/binaries
 
 [

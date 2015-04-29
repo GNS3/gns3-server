@@ -15,11 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import raven
 import os
 import sys
 import struct
 import platform
+
+try:
+    import raven
+    RAVEN_AVAILABLE = True
+except ImportError:
+    # raven is not installed with deb package in order to simplify packaging
+    RAVEN_AVAILABLE = False
 
 from .version import __version__
 from .config import Config
@@ -34,7 +40,7 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "sync+https://2f1f465755f3482993eec637cae95f4c:f71b4e8ecec54ea48666c09d68790558@app.getsentry.com/38482"
+    DSN = "sync+https://90fe04368a3e4109b584a116ee03ca87:268ef86c65cf4e8fa41d4c7fb1c70b72@app.getsentry.com/38482"
     if hasattr(sys, "frozen"):
         cacert = os.path.join(os.getcwd(), "cacert.pem")
         if os.path.isfile(cacert):
@@ -47,6 +53,8 @@ class CrashReport:
         self._client = None
 
     def capture_exception(self, request=None):
+        if not RAVEN_AVAILABLE:
+            return
         server_config = Config.instance().get_section_config("Server")
         if server_config.getboolean("report_errors"):
             if self._client is None:

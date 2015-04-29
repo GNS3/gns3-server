@@ -29,4 +29,4 @@ notifications:
 #    on_failure: always
 
 after_success:
-  - coveralls
+  - coveralls --data_file .coverage --base_dir gns3server

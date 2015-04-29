@@ -10,9 +10,9 @@ Start a packet capture on a Dynamips VM instance
 Parameters
 **********
 - **project_id**: UUID for the project
-- **vm_id**: UUID for the instance
 - **adapter_number**: Adapter to start a packet capture
 - **port_number**: Port on the adapter
+- **vm_id**: UUID for the instance
 
 Response status codes
 **********************

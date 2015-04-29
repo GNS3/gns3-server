@@ -20,6 +20,7 @@ Interface for multicast NIOs.
 """
 
 import asyncio
+import uuid
 from .nio import NIO
 
 import logging
@@ -36,26 +37,14 @@ class NIOMcast(NIO):
     :param port: port for binding
     """
 
-    _instance_count = 0
-
     def __init__(self, hypervisor, group, port):
 
-        # create an unique ID and name
-        nio_id = NIOMcast._instance_count
-        NIOMcast._instance_count += 1
-        name = 'nio_mcast' + str(nio_id)
+        # create an unique name
+        name = 'mcast-{}'.format(uuid.uuid4())
         self._group = group
         self._port = port
         self._ttl = 1  # default TTL
-        NIO.__init__(self, name, hypervisor)
-
-    @classmethod
-    def reset(cls):
-        """
-        Reset the instance count.
-        """
-
-        cls._instance_count = 0
+        super().__init__(name, hypervisor)
 
     @asyncio.coroutine
     def create(self):
