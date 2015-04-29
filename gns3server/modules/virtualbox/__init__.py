@@ -151,7 +151,7 @@ class VirtualBox(BaseManager):
             try:
                 yield from self.execute("closemedium", ["disk", hdd_file])
             except VirtualBoxError as e:
-                log.warning("Could not close VirtualBox VM disk file {}: {error}".format(os.path.basename(hdd_file), e))
+                log.warning("Could not close VirtualBox VM disk file {}: {}".format(os.path.basename(hdd_file), e))
                 continue
 
     @asyncio.coroutine
