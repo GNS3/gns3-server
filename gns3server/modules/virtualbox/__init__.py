@@ -122,7 +122,12 @@ class VirtualBox(BaseManager):
         """
 
         hdds = []
-        properties = yield from self.execute("list", ["hdds"])
+        try:
+            properties = yield from self.execute("list", ["hdds"])
+        # If VirtualBox is not available we have no inaccessible hdd
+        except VirtualBoxError:
+            return hdds
+
         flag_inaccessible = False
         for prop in properties:
             try:
