@@ -541,7 +541,6 @@ def send_recv_loop(epoll, console, router, esc_char, stop_event):
                     else:
                         router.write(buf)
     finally:
-        log.debug("Finally")
         router.unregister(epoll)
         console.unregister(epoll)
 

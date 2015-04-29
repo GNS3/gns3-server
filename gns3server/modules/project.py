@@ -65,6 +65,9 @@ class Project:
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
 
+        # List of clients listening for notifications
+        self._listeners = set()
+
         if path is None:
             path = os.path.join(self._location, self._id)
         try:
@@ -415,3 +418,27 @@ class Project:
         # We import it at the last time to avoid circular dependencies
         from ..modules import MODULES
         return MODULES
+
+    def emit(self, action, event):
+        """
+        Send an event to all the client listening for notifications
+
+        :param action: Action name
+        :param event: Event to send
+        """
+
+        for listener in self._listeners:
+            listener.put_nowait((action, event, ))
+
+    def get_listen_queue(self):
+        """Get a queue where you receive all the events related to the
+        project."""
+
+        queue = asyncio.Queue()
+        self._listeners.add(queue)
+        return queue
+
+    def stop_listen_queue(self, queue):
+        """Stop sending notification to this clients"""
+
+        self._listeners.remove(queue)

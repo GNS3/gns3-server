@@ -71,6 +71,16 @@ class Hypervisor(DynamipsHypervisor):
         return self._id
 
     @property
+    def process(self):
+        """
+        Returns the subprocess of the Hypervisor
+
+        :returns: subprocess
+        """
+
+        return self._process
+
+    @property
     def started(self):
         """
         Returns either this hypervisor has been started or not.
