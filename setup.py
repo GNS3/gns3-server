@@ -34,7 +34,7 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
-dependencies = ["aiohttp>=0.14.4",
+dependencies = ["aiohttp>=0.15.1",
                 "jsonschema>=2.4.0",
                 "Jinja2>=2.7.3",
                 "raven>=5.2.0"]
