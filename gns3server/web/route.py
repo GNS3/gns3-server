@@ -89,6 +89,7 @@ class Route(object):
         output_schema = kw.get("output", {})
         input_schema = kw.get("input", {})
         api_version = kw.get("api_version", 1)
+        raw = kw.get("raw", False)
 
         # If it's a JSON api endpoint just register the endpoint an do nothing
         if api_version is None:
@@ -119,8 +120,9 @@ class Route(object):
                 # This block is executed at each method call
 
                 # Non API call
-                if api_version is None:
+                if api_version is None or raw is True:
                     response = Response(request=request, route=route, output_schema=output_schema)
+
                     yield from func(request, response)
                     return response
 

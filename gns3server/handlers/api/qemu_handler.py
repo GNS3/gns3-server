@@ -305,3 +305,16 @@ class QEMUHandler:
         vms = yield from qemu_manager.list_images()
         response.set_status(200)
         response.json(vms)
+
+    @Route.post(
+        r"/qemu/vms/{filename}",
+        status_codes={
+            204: "Image uploaded",
+        },
+        raw=True,
+        description="Upload Qemu image.")
+    def upload_vm(request, response):
+
+        qemu_manager = Qemu.instance()
+        yield from qemu_manager.write_image(request.match_info["filename"], request.content)
+        response.set_status(204)
