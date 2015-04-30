@@ -40,7 +40,11 @@ def iou(port_manager):
     return iou
 
 
-def test_get_application_id(loop, project, iou):
+def test_get_application_id(loop, project, port_manager):
+    # Cleanup the IOU object
+    IOU._instance = None
+    iou = IOU.instance()
+    iou.port_manager = port_manager
     vm1_id = str(uuid.uuid4())
     vm2_id = str(uuid.uuid4())
     vm3_id = str(uuid.uuid4())
@@ -54,7 +58,11 @@ def test_get_application_id(loop, project, iou):
     assert iou.get_application_id(vm3_id) == 1
 
 
-def test_get_application_id_multiple_project(loop, iou):
+def test_get_application_id_multiple_project(loop, port_manager):
+    # Cleanup the IOU object
+    IOU._instance = None
+    iou = IOU.instance()
+    iou.port_manager = port_manager
     vm1_id = str(uuid.uuid4())
     vm2_id = str(uuid.uuid4())
     vm3_id = str(uuid.uuid4())
@@ -68,7 +76,11 @@ def test_get_application_id_multiple_project(loop, iou):
     assert iou.get_application_id(vm3_id) == 3
 
 
-def test_get_application_id_no_id_available(loop, project, iou):
+def test_get_application_id_no_id_available(loop, project, port_manager):
+    # Cleanup the IOU object
+    IOU._instance = None
+    iou = IOU.instance()
+    iou.port_manager = port_manager
     with pytest.raises(IOUError):
         for i in range(1, 513):
             vm_id = str(uuid.uuid4())

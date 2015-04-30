@@ -33,29 +33,9 @@ def fake_qemu_bin():
 
 
 @pytest.fixture
-def fake_qemu_vm(tmpdir):
-
-    bin_path = os.path.join(str(tmpdir / "linux.img"))
-    with open(bin_path, "w+") as f:
-        f.write("1")
-    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    return bin_path
-
-
-@pytest.fixture
 def base_params(tmpdir, fake_qemu_bin):
     """Return standard parameters"""
     return {"name": "PC TEST 1", "qemu_path": fake_qemu_bin}
-
-
-@pytest.fixture
-def fake_qemu_bin():
-
-    bin_path = os.path.join(os.environ["PATH"], "qemu_x42")
-    with open(bin_path, "w+") as f:
-        f.write("1")
-    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    return bin_path
 
 
 @pytest.fixture
@@ -192,11 +172,3 @@ def test_qemu_list_binaries(server, vm):
         assert mock.called
         assert response.status == 200
         assert response.json == ret
-
-
-def test_vms(server, tmpdir, fake_qemu_vm):
-
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir), example=True):
-        response = server.get("/qemu/vms")
-    assert response.status == 200
-    assert response.json == [{"filename": "linux.img"}]

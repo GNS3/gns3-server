@@ -309,11 +309,3 @@ def test_get_initial_config_with_config_file(server, project, vm):
     response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
     assert response.json["content"] == "TEST"
-
-
-def test_vms(server, vm, tmpdir, fake_iou_bin):
-
-    with patch("gns3server.modules.IOU.get_images_directory", return_value=str(tmpdir), example=True):
-        response = server.get("/iou/vms")
-    assert response.status == 200
-    assert response.json == [{"filename": "iou.bin"}]

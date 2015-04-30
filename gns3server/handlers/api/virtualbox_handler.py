@@ -43,7 +43,7 @@ class VirtualBoxHandler:
     def show(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vms = yield from vbox_manager.list_images()
+        vms = yield from vbox_manager.get_list()
         response.json(vms)
 
     @classmethod

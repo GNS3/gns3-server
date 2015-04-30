@@ -25,7 +25,6 @@ from ...schemas.dynamips_vm import VM_UPDATE_SCHEMA
 from ...schemas.dynamips_vm import VM_CAPTURE_SCHEMA
 from ...schemas.dynamips_vm import VM_OBJECT_SCHEMA
 from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
-from ...schemas.dynamips_vm import VMS_LIST_SCHEMA
 from ...modules.dynamips import Dynamips
 from ...modules.project_manager import ProjectManager
 
@@ -422,17 +421,3 @@ class DynamipsVMHandler:
         idlepc = yield from dynamips_manager.auto_idlepc(vm)
         response.set_status(200)
         response.json({"idlepc": idlepc})
-
-    @Route.get(
-        r"/dynamips/vms",
-        status_codes={
-            200: "List of Dynamips VM retrieved",
-        },
-        description="Retrieve the list of Dynamips VMS",
-        output=VMS_LIST_SCHEMA)
-    def list_vms(request, response):
-
-        dynamips_manager = Dynamips.instance()
-        vms = yield from dynamips_manager.list_images()
-        response.set_status(200)
-        response.json(vms)

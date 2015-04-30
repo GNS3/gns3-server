@@ -69,16 +69,11 @@ To run tests use:
    py.test -v
 
 
-Run as daemon (Unix only)
-**************************
+Run as daemon 
+***************
 
 You will found init sample script for various systems
 inside the init directory.
-
-Usefull options:
-* --daemon: start process as a daemon
-* --log logfile: store output in a logfile
-* --pid pidfile: store the pid of the running process in a file and prevent double execution
 
 upstart
 ~~~~~~~

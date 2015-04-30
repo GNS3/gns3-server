@@ -16,10 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import os
-import stat
-from unittest.mock import patch
-
 from tests.utils import asyncio_patch
 
 
@@ -127,22 +123,3 @@ from tests.utils import asyncio_patch
 #     assert response.status == 200
 #     assert response.json["name"] == "test"
 #     assert response.json["console"] == free_console_port
-
-
-@pytest.fixture
-def fake_dynamips(tmpdir):
-    """Create a fake IOU image on disk"""
-
-    path = str(tmpdir / "7200.bin")
-    with open(path, "w+") as f:
-        f.write('1')
-    os.chmod(path, stat.S_IREAD)
-    return path
-
-
-def test_vms(server, tmpdir, fake_dynamips):
-
-    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
-        response = server.get("/dynamips/vms")
-    assert response.status == 200
-    assert response.json == [{"filename": "7200.bin"}]
