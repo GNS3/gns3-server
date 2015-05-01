@@ -5,7 +5,7 @@
 
 POST /v1/projects/**{project_id}**/qemu/vms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create a new Qemu.instance
+Create a new Qemu VM instance
 
 Parameters
 **********

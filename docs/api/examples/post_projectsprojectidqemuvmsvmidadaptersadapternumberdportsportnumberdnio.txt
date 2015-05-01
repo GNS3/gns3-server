@@ -1,21 +1,21 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/e791569e-7f95-4a1d-9f8d-b48611afeef3/adapters/1/ports/0/nio' -d '{"ethernet_device": "eth0", "type": "nio_generic_ethernet"}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/d378a8bd-711d-47b1-aaa0-dfa0c3ff420b/adapters/1/ports/0/nio' -d '{"ethernet_device": "eth0", "type": "nio_generic_ethernet"}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/e791569e-7f95-4a1d-9f8d-b48611afeef3/adapters/1/ports/0/nio HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/d378a8bd-711d-47b1-aaa0-dfa0c3ff420b/adapters/1/ports/0/nio HTTP/1.1
 {
     "ethernet_device": "eth0",
     "type": "nio_generic_ethernet"
 }
 
 
-HTTP/1.1 201
+HTTP/1.1 409
 CONNECTION: keep-alive
-CONTENT-LENGTH: 69
+CONTENT-LENGTH: 89
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.1.rc2
+SERVER: Python/3.4 GNS3/1.4.0.dev1
 X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 
 {
-    "ethernet_device": "eth0",
-    "type": "nio_generic_ethernet"
+    "message": "NIO of type nio_generic_ethernet is not supported",
+    "status": 409
 }

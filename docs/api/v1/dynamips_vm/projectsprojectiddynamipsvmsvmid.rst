@@ -9,8 +9,8 @@ Get a Dynamips VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -74,8 +74,8 @@ Update a Dynamips VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -110,7 +110,6 @@ Input
     <tr><td>nvram</td>                    <td> </td>                     <td>integer</td>                     <td>amount of NVRAM in KB</td>                     </tr>
     <tr><td>platform</td>                    <td> </td>                     <td>string</td>                     <td>platform</td>                     </tr>
     <tr><td>power_supplies</td>                    <td> </td>                     <td>array</td>                     <td>Power supplies status</td>                     </tr>
-    <tr><td>private_config</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS private configuration file</td>                     </tr>
     <tr><td>private_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>private configuration base64 encoded</td>                     </tr>
     <tr><td>private_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS private configuration file</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>integer</td>                     <td>amount of RAM in MB</td>                     </tr>
@@ -123,7 +122,6 @@ Input
     <tr><td>slot5</td>                    <td> </td>                     <td></td>                     <td>Network module slot 5</td>                     </tr>
     <tr><td>slot6</td>                    <td> </td>                     <td></td>                     <td>Network module slot 6</td>                     </tr>
     <tr><td>sparsemem</td>                    <td> </td>                     <td>boolean</td>                     <td>sparse memory feature</td>                     </tr>
-    <tr><td>startup_config</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS startup configuration file</td>                     </tr>
     <tr><td>startup_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>startup configuration base64 encoded</td>                     </tr>
     <tr><td>startup_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS startup configuration file</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>system ID</td>                     </tr>
@@ -188,8 +186,8 @@ Delete a Dynamips VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************

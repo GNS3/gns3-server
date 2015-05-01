@@ -5,14 +5,14 @@
 
 POST /v1/projects/**{project_id}**/qemu/vms/**{vm_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Add a NIO to a Qemu.instance
+Add a NIO to a Qemu VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
-- **adapter_number**: Network adapter where the nio is located
 - **port_number**: Port on the adapter (always 0)
 - **vm_id**: UUID for the instance
+- **adapter_number**: Network adapter where the nio is located
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -29,14 +29,14 @@ Sample session
 
 DELETE /v1/projects/**{project_id}**/qemu/vms/**{vm_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Remove a NIO from a Qemu.instance
+Remove a NIO from a Qemu VM instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
-- **adapter_number**: Network adapter where the nio is located
 - **port_number**: Port on the adapter (always 0)
 - **vm_id**: UUID for the instance
+- **adapter_number**: Network adapter where the nio is located
+- **project_id**: UUID for the project
 
 Response status codes
 **********************

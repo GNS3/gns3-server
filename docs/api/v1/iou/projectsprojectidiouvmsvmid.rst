@@ -9,8 +9,8 @@ Get a IOU instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -52,8 +52,8 @@ Update a IOU instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -70,7 +70,7 @@ Input
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>
-    <tr><td>initial_config_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Initial configuration of the IOU</td>                     </tr>
+    <tr><td>initial_config_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Initial configuration of IOU</td>                     </tr>
     <tr><td>iourc_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the iourc file, if a file exist on servers this variable is ignored. It's mostly for compatibility with < 1.3 releases</td>                     </tr>
     <tr><td>l1_keepalives</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Always up ethernet interface</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>IOU VM name</td>                     </tr>
@@ -115,8 +115,8 @@ Delete a IOU instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **vm_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
