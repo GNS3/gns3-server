@@ -246,7 +246,7 @@ class VirtualBoxHandler:
             404: "Instance doesn't exist"
         },
         description="Resume a suspended VirtualBox VM instance")
-    def suspend(request, response):
+    def resume(request, response):
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])

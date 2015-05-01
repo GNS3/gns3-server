@@ -25,6 +25,7 @@ from gns3server.handlers.api.dynamips_vm_handler import DynamipsVMHandler
 from gns3server.handlers.api.qemu_handler import QEMUHandler
 from gns3server.handlers.api.virtualbox_handler import VirtualBoxHandler
 from gns3server.handlers.api.vpcs_handler import VPCSHandler
+from gns3server.handlers.api.vmware_handler import VMwareHandler
 from gns3server.handlers.api.config_handler import ConfigHandler
 from gns3server.handlers.api.server_handler import ServerHandler
 from gns3server.handlers.api.file_handler import FileHandler

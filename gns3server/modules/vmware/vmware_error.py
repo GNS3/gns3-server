@@ -15,19 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
-from .vpcs import VPCS
-from .virtualbox import VirtualBox
-from .dynamips import Dynamips
-from .qemu import Qemu
-from .vmware import VMware
+"""
+Custom exceptions for the VirtualBox module.
+"""
 
-MODULES = [VPCS, VirtualBox, Dynamips, Qemu, VMware]
+from ..vm_error import VMError
 
-if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
 
-    # IOU runs only on Linux but testsuite work on UNIX platform
-    if not sys.platform.startswith("win"):
-        from .iou import IOU
-        MODULES.append(IOU)
+class VMwareError(VMError):
+
+    pass
