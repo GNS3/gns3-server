@@ -146,3 +146,22 @@ def test_vms(server, tmpdir, fake_dynamips):
         response = server.get("/dynamips/vms")
     assert response.status == 200
     assert response.json == [{"filename": "7200.bin"}]
+
+
+def test_upload_vm(server, tmpdir):
+    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/dynamips/vms/test2", body="TEST", raw=True)
+        assert response.status == 204
+
+    with open(str(tmpdir / "test2")) as f:
+        assert f.read() == "TEST"
+
+
+def test_upload_vm_permission_denied(server, tmpdir):
+    with open(str(tmpdir / "test2"), "w+") as f:
+        f.write("")
+    os.chmod(str(tmpdir / "test2"), 0)
+
+    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/dynamips/vms/test2", body="TEST", raw=True)
+        assert response.status == 409

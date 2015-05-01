@@ -39,7 +39,7 @@ dependencies = ["aiohttp>=0.15.1",
                 "Jinja2>=2.7.3",
                 "raven>=5.2.0"]
 
-#if not sys.platform.startswith("win"):
+# if not sys.platform.startswith("win"):
 #    dependencies.append("netifaces==0.10.4")
 
 if sys.version_info == (3, 3):
