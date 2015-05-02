@@ -41,7 +41,7 @@ class VMware(BaseManager):
 
         super().__init__()
         self._vmrun_path = None
-        self._host_type = "player"
+        self._default_vm_path = "/home/grossmj/vmware"
 
     @property
     def vmrun_path(self):
@@ -84,7 +84,10 @@ class VMware(BaseManager):
         if not vmrun_path:
             vmrun_path = self.find_vmrun()
         if host_type is None:
-            host_type = self._host_type
+            if sys.platform.startswith("darwin"):
+                host_type = "fusion"
+            else:
+                host_type = self.config.get_section_config("VMware").get("host_type", "ws")
         command = [vmrun_path, "-T", host_type, subcommand]
         command.extend(args)
         log.debug("Executing vmrun with command: {}".format(command))
@@ -104,3 +107,26 @@ class VMware(BaseManager):
             raise VMwareError("vmrun has returned an error: {}".format(vmrun_error))
 
         return stdout_data.decode("utf-8", errors="ignore").splitlines()
+
+    def list_vms(self):
+        """
+        Gets VMware VM list.
+        """
+
+        vms = []
+        for path, _, filenames in os.walk(os.path.expanduser("~/vmware")):
+            for filename in filenames:
+                if os.path.splitext(filename)[1] == ".vmx":
+                    vmx_path = os.path.join(path, filename)
+                    try:
+                        with open(vmx_path, encoding="utf-8") as f:
+                            for line in f.read().splitlines():
+                                name, value = line.split('=', 1)
+                                if name.strip() == "displayName":
+                                    vmname = value.strip('" ')
+                                    vms.append({"vmname": vmname, "vmx_path": vmx_path})
+                                    break
+                    except (OSError, ValueError) as e:
+                        log.warning("Could not read VMware vmx file {}: {}".format(vmx_path, e))
+                        continue
+        return vms

@@ -99,8 +99,8 @@ class VMwareVM(BaseVM):
         Suspends this VMware VM.
         """
 
-        yield from self._control_vm("suspend")
-        log.info("VMware VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
+        yield from self._control_vm("pause")
+        log.info("VMware VM '{name}' [{id}] paused".format(name=self.name, id=self.id))
 
     @asyncio.coroutine
     def resume(self):
@@ -108,7 +108,7 @@ class VMwareVM(BaseVM):
         Resumes this VMware VM.
         """
 
-        yield from self.start()
+        yield from self._control_vm("unpause")
         log.info("VMware VM '{name}' [{id}] resumed".format(name=self.name, id=self.id))
 
     @asyncio.coroutine
@@ -141,7 +141,10 @@ class VMwareVM(BaseVM):
         #            if nio and isinstance(nio, NIOUDP):
         #                self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        yield from self.stop()
+        try:
+            yield from self.stop()
+        except VMwareError:
+            pass
 
         log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
         self._closed = True

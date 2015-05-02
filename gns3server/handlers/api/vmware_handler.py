@@ -30,6 +30,19 @@ class VMwareHandler:
     """
 
     @classmethod
+    @Route.get(
+        r"/vmware/vms",
+        status_codes={
+            200: "Success",
+        },
+        description="Get all VMware VMs available")
+    def show(request, response):
+
+        vmware_manager = VMware.instance()
+        vms = vmware_manager.list_vms()
+        response.json(vms)
+
+    @classmethod
     @Route.post(
         r"/projects/{project_id}/vmware/vms",
         parameters={
@@ -53,10 +66,10 @@ class VMwareHandler:
                                                  request.json.pop("linked_clone"),
                                                  console=request.json.get("console", None))
 
-        # for name, value in request.json.items():
-        #     if name != "vm_id":
-        #         if hasattr(vm, name) and getattr(vm, name) != value:
-        #             setattr(vm, name, value)
+        for name, value in request.json.items():
+            if name != "vm_id":
+                if hasattr(vm, name) and getattr(vm, name) != value:
+                    setattr(vm, name, value)
 
         response.set_status(201)
         response.json(vm)
@@ -102,9 +115,9 @@ class VMwareHandler:
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
-        # for name, value in request.json.items():
-        #     if hasattr(vm, name) and getattr(vm, name) != value:
-        #         setattr(vm, name, value)
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
 
         response.json(vm)
 
