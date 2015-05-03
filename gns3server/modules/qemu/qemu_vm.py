@@ -981,16 +981,13 @@ class QemuVM(BaseVM):
 
         return options
 
-    def _get_random_mac(self, adapter_number):
-        # TODO: let users specify a base mac address
-        return "00:00:ab:%02x:%02x:%02d" % (random.randint(0x00, 0xff), random.randint(0x00, 0xff), adapter_number)
-
     def _network_options(self):
 
         network_options = []
         adapter_number = 0
         for adapter in self._ethernet_adapters:
-            mac = self._get_random_mac(adapter_number)
+            # TODO: let users specify a base mac address
+            mac = "00:00:ab:%s:%s:%02x" % (self.id[-4:-2], self.id[-2:], adapter_number)
             if self._legacy_networking:
                 network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
             else:
