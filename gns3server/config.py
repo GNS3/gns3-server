@@ -135,7 +135,7 @@ class Config(object):
         Read the configuration files.
         """
 
-        parsed_files = self._config.read(self._files)
+        parsed_files = self._config.read(self._files, encoding="utf-8")
         if not parsed_files:
             log.warning("No configuration file could be found or read")
         else:
