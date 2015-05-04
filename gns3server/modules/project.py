@@ -139,8 +139,21 @@ class Project:
             if path != self._path and self.is_local() is False:
                 raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
 
+        old_path = None
+        if hasattr(self, "_path"):
+            old_path = self._path
+
         self._path = path
         self._update_temporary_file()
+
+        # The order of operation is important because we want to avoid losing
+        # data
+        if old_path:
+            try:
+                shutil.rmtree(old_path)
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict("Can't remove temporary directory {}: {}".format(old_path ,e))
+
 
     @property
     def name(self):
