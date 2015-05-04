@@ -260,24 +260,23 @@ def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
 def test_build_command(vm, loop, fake_qemu_binary, port_manager):
 
     os.environ["DISPLAY"] = "0:0"
-    with patch("gns3server.modules.qemu.qemu_vm.QemuVM._get_random_mac", return_value="00:00:ab:7e:b5:00"):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
-            cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
-            assert cmd == [
-                fake_qemu_binary,
-                "-name",
-                "test",
-                "-m",
-                "256",
-                "-hda",
-                os.path.join(vm.working_dir, "flash.qcow2"),
-                "-serial",
-                "telnet:127.0.0.1:{},server,nowait".format(vm.console),
-                "-device",
-                "e1000,mac=00:00:ab:7e:b5:00,netdev=gns3-0",
-                "-netdev",
-                "user,id=gns3-0"
-            ]
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert cmd == [
+            fake_qemu_binary,
+            "-name",
+            "test",
+            "-m",
+            "256",
+            "-hda",
+            os.path.join(vm.working_dir, "flash.qcow2"),
+            "-serial",
+            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "-device",
+            "e1000,mac=00:00:ab:0e:0f:00,netdev=gns3-0",
+            "-netdev",
+            "user,id=gns3-0"
+        ]
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_build_command_without_display(vm, loop, fake_qemu_binary):
