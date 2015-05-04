@@ -225,11 +225,6 @@ class Server:
 
         try:
             self._loop.run_forever()
-        except OSError as e:
-            # This is to ignore OSError: [WinError 0] The operation completed successfully
-            # exception on Windows.
-            if not sys.platform.startswith("win") and not e.winerror == 0:
-                raise
         except TypeError as e:
             # This is to ignore an asyncio.windows_events exception
             # on Windows when the process gets the SIGBREAK signal
