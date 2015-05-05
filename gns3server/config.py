@@ -92,7 +92,7 @@ class Config(object):
 
     def clear(self):
         """Restart with a clean config"""
-        self._config = configparser.ConfigParser()
+        self._config = configparser.RawConfigParser()
         # Override config from command line even if we modify the config file and live reload it.
         self._override_config = {}
 
