@@ -26,6 +26,7 @@ from ...schemas.dynamips_vm import VM_CAPTURE_SCHEMA
 from ...schemas.dynamips_vm import VM_OBJECT_SCHEMA
 from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
 from ...modules.dynamips import Dynamips
+from ...modules.dynamips.dynamips_error import DynamipsError
 from ...modules.project_manager import ProjectManager
 
 DEFAULT_CHASSIS = {
@@ -358,13 +359,39 @@ class DynamipsVMHandler:
                                      project_id=request.match_info["project_id"])
 
         startup_config_base64, private_config_base64 = yield from vm.extract_config()
+        module_workdir = vm.project.module_working_directory(dynamips_manager.module_name.lower())
         result = {}
         if startup_config_base64:
-            startup_config_content = base64.b64decode(startup_config_base64).decode(errors='replace')
+            startup_config_content = base64.b64decode(startup_config_base64).decode("utf-8", errors='replace')
             result["startup_config_content"] = startup_config_content
+        else:
+            # nvram doesn't contain anything if the router has not been started at least once
+            # in this case just use the startup-config file
+            startup_config_path = os.path.join(module_workdir, vm.startup_config)
+            if os.path.exists(startup_config_path):
+                try:
+                    with open(startup_config_path, "rb") as f:
+                        content = f.read().decode("utf-8", errors='replace')
+                        if content:
+                            result["startup_config_content"] = content
+                except OSError as e:
+                    raise DynamipsError("Could not read the startup-config {}: {}".format(startup_config_path, e))
+
         if private_config_base64:
-            private_config_content = base64.b64decode(private_config_base64).decode(errors='replace')
+            private_config_content = base64.b64decode(private_config_base64).decode("utf-8", errors='replace')
             result["private_config_content"] = private_config_content
+        else:
+            # nvram doesn't contain anything if the router has not been started at least once
+            # in this case just use the private-config file
+            private_config_path = os.path.join(module_workdir, vm.private_config)
+            if os.path.exists(private_config_path):
+                try:
+                    with open(private_config_path, "rb") as f:
+                        content = f.read().decode("utf-8", errors='replace')
+                        if content:
+                            result["private_config_content"] = content
+                except OSError as e:
+                    raise DynamipsError("Could not read the private-config {}: {}".format(private_config_path, e))
 
         response.set_status(200)
         response.json(result)

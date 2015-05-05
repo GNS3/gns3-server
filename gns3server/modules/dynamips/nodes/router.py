@@ -1436,6 +1436,17 @@ class Router(BaseVM):
         private_config = private_config.replace("\\", '/')
 
         if self._startup_config != startup_config or self._private_config != private_config:
+            self._startup_config = startup_config
+            self._private_config = private_config
+
+            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
+            private_config_path = os.path.join(module_workdir, private_config)
+            try:
+                if not os.path.getsize(private_config_path):
+                    # an empty private-config can prevent a router to boot.
+                    private_config = ''
+            except OSError as e:
+                raise DynamipsError("Cannot access the private-config {}: {}".format(private_config_path, e))
 
             yield from self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(name=self._name,
                                                                                                      startup=startup_config,
@@ -1445,14 +1456,10 @@ class Router(BaseVM):
                                                                                                 id=self._id,
                                                                                                 startup=startup_config))
 
-            self._startup_config = startup_config
-
             if private_config:
                 log.info('Router "{name}" [{id}]: has a new private-config set: "{private}"'.format(name=self._name,
                                                                                                     id=self._id,
                                                                                                     private=private_config))
-
-                self._private_config = private_config
 
     @asyncio.coroutine
     def extract_config(self):

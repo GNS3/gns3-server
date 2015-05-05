@@ -745,5 +745,4 @@ VM_CONFIGS_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["startup_config_content", "private_config_content"]
 }

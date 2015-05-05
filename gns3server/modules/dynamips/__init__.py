@@ -521,38 +521,32 @@ class Dynamips(BaseManager):
         default_startup_config_path = os.path.join(module_workdir, "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
         default_private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
 
-        startup_config_content = settings.get("startup_config_content")
-        if startup_config_content:
-            startup_config_path = self._create_config(vm, startup_config_content, default_startup_config_path)
+        startup_config_path = settings.get("startup_config")
+        if startup_config_path:
             yield from vm.set_configs(startup_config_path)
         else:
-            startup_config_path = settings.get("startup_config")
-            if startup_config_path:
-                yield from vm.set_configs(startup_config_path)
+            startup_config_path = self._create_config(vm, default_startup_config_path, settings.get("startup_config_content"))
+            yield from vm.set_configs(startup_config_path)
 
-        private_config_content = settings.get("private_config_content")
-        if private_config_content:
-            private_config_path = self._create_config(vm, private_config_content, default_private_config_path)
+        private_config_path = settings.get("private_config")
+        if private_config_path:
             yield from vm.set_configs(vm.startup_config, private_config_path)
         else:
-            private_config_path = settings.get("private_config")
-            if private_config_path:
-                yield from vm.set_configs(vm.startup_config, private_config_path)
+            private_config_path = self._create_config(vm, default_private_config_path, settings.get("private_config_content"))
+            yield from vm.set_configs(vm.startup_config, private_config_path)
 
-    def _create_config(self, vm, content, path):
+    def _create_config(self, vm, path, content=None):
         """
         Creates a config file.
 
         :param vm: VM instance
-        :param content: config content
         :param path: path to the destination config file
+        :param content: config content
 
         :returns: relative path to the created config file
         """
 
         log.info("Creating config file {}".format(path))
-        content = "!\n" + content.replace("\r", "")
-        content = content.replace('%h', vm.name)
         config_dir = os.path.dirname(path)
         try:
             os.makedirs(config_dir, exist_ok=True)
@@ -561,7 +555,10 @@ class Dynamips(BaseManager):
 
         try:
             with open(path, "wb") as f:
-                f.write(content.encode("utf-8"))
+                if content:
+                    content = "!\n" + content.replace("\r", "")
+                    content = content.replace('%h', vm.name)
+                    f.write(content.encode("utf-8"))
         except OSError as e:
             raise DynamipsError("Could not create config file {}: {}".format(path, e))
 
