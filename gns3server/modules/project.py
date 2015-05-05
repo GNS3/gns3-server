@@ -152,8 +152,7 @@ class Project:
             try:
                 shutil.rmtree(old_path)
             except OSError as e:
-                raise aiohttp.web.HTTPConflict("Can't remove temporary directory {}: {}".format(old_path ,e))
-
+                raise aiohttp.web.HTTPConflict("Can't remove temporary directory {}: {}".format(old_path, e))
 
     @property
     def name(self):
@@ -241,7 +240,10 @@ class Project:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create temporary project: {}".format(e))
         else:
             if os.path.exists(os.path.join(self._path, ".gns3_temporary")):
-                os.remove(os.path.join(self._path, ".gns3_temporary"))
+                try:
+                    os.remove(os.path.join(self._path, ".gns3_temporary"))
+                except OSError as e:
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not mark project as no longer temporary: {}".format(e))
 
     def module_working_directory(self, module_name):
         """
