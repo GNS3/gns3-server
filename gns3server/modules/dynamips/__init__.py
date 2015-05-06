@@ -410,6 +410,8 @@ class Dynamips(BaseManager):
             nio = NIOVDE(node.hypervisor, control_file, local_file)
         elif nio_settings["type"] == "nio_null":
             nio = NIONull(node.hypervisor)
+        else:
+            raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_settings["type"]))
 
         yield from nio.create()
         return nio

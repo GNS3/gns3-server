@@ -23,7 +23,6 @@ order to run a QEMU VM.
 import sys
 import os
 import shutil
-import random
 import subprocess
 import shlex
 import asyncio
@@ -33,6 +32,7 @@ from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
+from ..nios.nio_nat import NIONAT
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 
@@ -984,40 +984,44 @@ class QemuVM(BaseVM):
     def _network_options(self):
 
         network_options = []
-        adapter_number = 0
-        for adapter in self._ethernet_adapters:
+        network_options.extend(["-net", "none"])  # we do not want any user networking back-end if no adapter is connected.
+        for adapter_number, adapter in enumerate(self._ethernet_adapters):
             # TODO: let users specify a base mac address
             mac = "00:00:ab:%s:%s:%02x" % (self.id[-4:-2], self.id[-2:], adapter_number)
-            if self._legacy_networking:
-                network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
-            else:
-                network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_number)])
             nio = adapter.get_nio(0)
-            if nio:
-                if isinstance(nio, NIOUDP):
-                    if self._legacy_networking:
+            if self._legacy_networking:
+                # legacy QEMU networking syntax (-net)
+                if nio:
+                    network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
+                    if isinstance(nio, NIOUDP):
                         network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
                                                                                                                      adapter_number,
                                                                                                                      nio.lport,
                                                                                                                      nio.rport,
                                                                                                                      nio.rhost)])
-                    else:
+                    elif isinstance(nio, NIOTAP):
+                        network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
+                    elif isinstance(nio, NIONAT):
+                        network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_number, adapter_number)])
+                else:
+                    network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
+
+            else:
+                # newer QEMU networking syntax
+                if nio:
+                    network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_number)])
+                    if isinstance(nio, NIOUDP):
                         network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
                                                                                                                 nio.rhost,
                                                                                                                 nio.rport,
                                                                                                                 self._host,
                                                                                                                 nio.lport)])
-                elif isinstance(nio, NIOTAP):
-                    if self._legacy_networking:
-                        network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
-                    else:
+                    elif isinstance(nio, NIOTAP):
                         network_options.extend(["-netdev", "tap,id=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
-            else:
-                if self._legacy_networking:
-                    network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_number, adapter_number)])
+                    elif isinstance(nio, NIONAT):
+                        network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_number)])
                 else:
-                    network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_number)])
-            adapter_number += 1
+                    network_options.extend(["-device", "{},mac={}".format(self._adapter_type, mac)])
 
         return network_options
 
