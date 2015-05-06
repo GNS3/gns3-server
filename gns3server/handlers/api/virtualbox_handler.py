@@ -294,7 +294,7 @@ class VirtualBoxHandler:
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
-        if nio_type != "nio_udp":
+        if nio_type not in ("nio_udp", "nio_nat"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vbox_manager.create_nio(vbox_manager.vboxmanage_path, request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)

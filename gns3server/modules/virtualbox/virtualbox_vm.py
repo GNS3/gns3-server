@@ -31,6 +31,7 @@ import asyncio
 from pkg_resources import parse_version
 from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
+from ..nios.nio_nat import NIONAT
 from ..adapters.ethernet_adapter import EthernetAdapter
 from .telnet_server import TelnetServer  # TODO: port TelnetServer to asyncio
 from ..base_vm import BaseVM
@@ -659,12 +660,12 @@ class VirtualBoxVM(BaseVM):
                 yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
-                if not self._use_any_adapter and attachment not in ("none", "null", "generic"):
+                if not isinstance(nio, NIONAT) and not self._use_any_adapter and attachment not in ("none", "null", "generic"):
                     raise VirtualBoxError("Attachment ({}) already configured on adapter {}. "
                                           "Please set it to 'Not attached' to allow GNS3 to use it.".format(attachment,
                                                                                                             adapter_number + 1))
-                yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
 
+                yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
                 vbox_adapter_type = "82540EM"
                 if self._adapter_type == "PCnet-PCI II (Am79C970A)":
                     vbox_adapter_type = "Am79C970A"
@@ -681,13 +682,17 @@ class VirtualBoxVM(BaseVM):
                 args = [self._vmname, "--nictype{}".format(adapter_number + 1), vbox_adapter_type]
                 yield from self.manager.execute("modifyvm", args)
 
-                log.debug("setting UDP params on adapter {}".format(adapter_number))
-                yield from self._modify_vm("--nic{} generic".format(adapter_number + 1))
-                yield from self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_number + 1))
-                yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
-                yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
-                yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
-                yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
+                if isinstance(nio, NIOUDP):
+                    log.debug("setting UDP params on adapter {}".format(adapter_number))
+                    yield from self._modify_vm("--nic{} generic".format(adapter_number + 1))
+                    yield from self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_number + 1))
+                    yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
+                    yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
+                    yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
+                    yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
+                elif isinstance(nio, NIONAT):
+                    yield from self._modify_vm("--nic{} nat".format(adapter_number + 1))
+                    yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
 
                 if nio.capturing:
                     yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
