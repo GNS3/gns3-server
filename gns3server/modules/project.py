@@ -152,7 +152,7 @@ class Project:
             try:
                 shutil.rmtree(old_path)
             except OSError as e:
-                raise aiohttp.web.HTTPConflict("Can't remove temporary directory {}: {}".format(old_path, e))
+                raise aiohttp.web.HTTPConflict(text="Can't remove temporary directory {}: {}".format(old_path, e))
 
     @property
     def name(self):
