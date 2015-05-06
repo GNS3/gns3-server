@@ -45,3 +45,13 @@ def test_release_udp_port():
     pm.reserve_udp_port(4242, project)
     pm.release_udp_port(4242, project)
     pm.reserve_udp_port(4242, project)
+
+
+def test_find_unused_port():
+    p = PortManager().find_unused_port(1000, 10000)
+    assert p is not None
+
+
+def test_find_unused_port_invalid_range():
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        p = PortManager().find_unused_port(10000, 1000)
