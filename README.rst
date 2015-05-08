@@ -20,16 +20,17 @@ Branches
 master
 ******
 master is the next stable release, you can test it in your day to day activities.
-Bug fixes or small improvements pull requests goes here.
+Bug fixes or small improvements pull requests go here.
 
 unstable
 ********
-*Never* use this branch for production. Major new features pull requests goes here. 
+*Never* use this branch for production. Pull requests for major new features go here.
 
 Linux
 -----
 
 GNS3 is perhaps packaged for your distribution:
+
 * Gentoo: https://packages.gentoo.org/package/net-misc/gns3-server
 
 
@@ -76,6 +77,7 @@ You will found init sample script for various systems
 inside the init directory.
 
 Usefull options:
+
 * --daemon: start process as a daemon
 * --log logfile: store output in a logfile
 * --pid pidfile: store the pid of the running process in a file and prevent double execution
@@ -96,10 +98,39 @@ You need to copy init/gns3.conf.upstart to /etc/init/gns3.conf
 Windows
 -------
 
-Please use our all-in-one installer.
 
-If you install it via source you need to install also:
-https://sourceforge.net/projects/pywin32/
+Please use our `all-in-one installer <https://community.gns3.com/community/software/download>`_ to install the stable build.
+
+If you install via source you need to first install:
+
+- Python (3.3 or above) - https://www.python.org/downloads/windows/
+- Pywin32 - https://sourceforge.net/projects/pywin32/
+
+Then you can call
+
+.. code:: bash
+
+    python setup.py install
+
+to install the remaining dependencies.
+
+To run the tests, you also need to call
+
+.. code:: bash
+
+   pip install pytest pytest-capturelog
+
+before actually running the tests with
+
+.. code:: bash
+
+   python setup.py test
+
+or with
+
+.. code:: bash
+
+   py.test -v
 
 Mac OS X
 --------
