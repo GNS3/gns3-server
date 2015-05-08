@@ -34,6 +34,7 @@ from .project_manager import ProjectManager
 
 from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
+from .nios.nio_nat import NIONAT
 from .nios.nio_generic_ethernet import NIOGenericEthernet
 
 
@@ -370,6 +371,8 @@ class BaseManager:
             nio = NIOTAP(tap_device)
         elif nio_settings["type"] == "nio_generic_ethernet":
             nio = NIOGenericEthernet(nio_settings["ethernet_device"])
+        elif nio_settings["type"] == "nio_nat":
+            nio = NIONAT()
         assert nio is not None
         return nio
 
@@ -386,7 +389,16 @@ class BaseManager:
         img_directory = self.get_images_directory()
         if not os.path.isabs(path):
             s = os.path.split(path)
-            return os.path.normpath(os.path.join(img_directory, *s))
+            path = os.path.normpath(os.path.join(img_directory, *s))
+
+            # Compatibility with old topologies we look in parent directory
+            # We look at first in new location
+            if not os.path.exists(path):
+                old_path = os.path.normpath(os.path.join(img_directory, '..', *s))
+                if os.path.exists(old_path):
+                    return old_path
+
+            return path
         return path
 
     def get_relative_image_path(self, path):

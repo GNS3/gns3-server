@@ -69,15 +69,14 @@ def test_changing_path_temporary_flag(tmpdir):
     with patch("gns3server.modules.project.Project.is_local", return_value=True):
         p = Project(temporary=True)
         assert os.path.exists(p.path)
+        original_path = p.path
         assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
-        p.temporary = False
-        assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
-
-        with open(str(tmpdir / ".gns3_temporary"), "w+") as f:
-            f.write("1")
 
         p.path = str(tmpdir)
+        p.temporary = False
+        assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
         assert not os.path.exists(os.path.join(str(tmpdir), ".gns3_temporary"))
+        assert not os.path.exists(original_path)
 
 
 def test_temporary_path():

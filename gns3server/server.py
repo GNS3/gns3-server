@@ -27,6 +27,7 @@ import aiohttp
 import functools
 import types
 import time
+import atexit
 
 from .web.route import Route
 from .web.request_handler import RequestHandler
@@ -173,6 +174,18 @@ class Server:
             return
         yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True)
 
+    def _exit_handling(self):
+        def close_asyncio_loop():
+            loop = None
+            try:
+                loop = asyncio.get_event_loop()
+            except AttributeError:
+                pass
+            if loop is not None:
+                loop.close()
+
+        atexit.register(close_asyncio_loop)
+
     def run(self):
         """
         Starts the server.
@@ -216,6 +229,8 @@ class Server:
         self._loop.run_until_complete(self._run_application(self._handler, ssl_context))
         self._signal_handling()
 
+        self._exit_handling()
+
         if server_config.getboolean("live"):
             log.info("Code live reload is enabled, watching for file changes")
             self._loop.call_later(1, self._reload_hook)
@@ -225,11 +240,6 @@ class Server:
 
         try:
             self._loop.run_forever()
-        except OSError as e:
-            # This is to ignore OSError: [WinError 0] The operation completed successfully
-            # exception on Windows.
-            if not sys.platform.startswith("win") and not e.winerror == 0:
-                raise
         except TypeError as e:
             # This is to ignore an asyncio.windows_events exception
             # on Windows when the process gets the SIGBREAK signal

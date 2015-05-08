@@ -140,7 +140,7 @@ class PortManager:
         """
 
         if end_port < start_port:
-            raise Exception("Invalid port range {}-{}".format(start_port, end_port))
+            raise HTTPConflict(text="Invalid port range {}-{}".format(start_port, end_port))
 
         if socket_type == "UDP":
             socket_type = socket.SOCK_DGRAM

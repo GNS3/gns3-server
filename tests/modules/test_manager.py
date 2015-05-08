@@ -96,9 +96,15 @@ def test_get_abs_image_path(qemu, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
         assert qemu.get_abs_image_path(path1) == path1
+        assert qemu.get_abs_image_path("test1.bin") == path1
         assert qemu.get_abs_image_path(path2) == path2
         assert qemu.get_abs_image_path("test2.bin") == path2
         assert qemu.get_abs_image_path("../test1.bin") == path1
+
+        # We look at first in new location
+        path2 = str(tmpdir / "QEMU" / "test1.bin")
+        open(path2, 'w+').close()
+        assert qemu.get_abs_image_path("test1.bin") == path2
 
 
 def test_get_relative_image_path(qemu, tmpdir):
@@ -111,6 +117,7 @@ def test_get_relative_image_path(qemu, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
         assert qemu.get_relative_image_path(path1) == path1
+        assert qemu.get_relative_image_path("test1.bin") == path1
         assert qemu.get_relative_image_path(path2) == "test2.bin"
         assert qemu.get_relative_image_path("test2.bin") == "test2.bin"
         assert qemu.get_relative_image_path("../test1.bin") == path1

@@ -276,15 +276,16 @@ class DynamipsHypervisor:
             while True:
                 try:
                     try:
-                        line = yield from self._reader.readline()
+                        #line = yield from self._reader.readline()  # this can lead to ValueError: Line is too long
+                        chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
                     except asyncio.CancelledError:
                         # task has been canceled but continue to read
                         # any remaining data sent by the hypervisor
                         continue
-                    if not line:
+                    if not chunk:
                         raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
                                             .format(host=self._host, port=self._port, run=self.is_running()))
-                    buf += line.decode("utf-8")
+                    buf += chunk.decode("utf-8")
                 except OSError as e:
                     raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                         .format(host=self._host, port=self._port, error=e, run=self.is_running()))

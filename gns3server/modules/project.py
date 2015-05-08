@@ -139,8 +139,20 @@ class Project:
             if path != self._path and self.is_local() is False:
                 raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
 
+        old_path = None
+        if hasattr(self, "_path"):
+            old_path = self._path
+
         self._path = path
         self._update_temporary_file()
+
+        # The order of operation is important because we want to avoid losing
+        # data
+        if old_path:
+            try:
+                shutil.rmtree(old_path)
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Can't remove temporary directory {}: {}".format(old_path, e))
 
     @property
     def name(self):
@@ -228,7 +240,10 @@ class Project:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create temporary project: {}".format(e))
         else:
             if os.path.exists(os.path.join(self._path, ".gns3_temporary")):
-                os.remove(os.path.join(self._path, ".gns3_temporary"))
+                try:
+                    os.remove(os.path.join(self._path, ".gns3_temporary"))
+                except OSError as e:
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not mark project as no longer temporary: {}".format(e))
 
     def module_working_directory(self, module_name):
         """

@@ -92,7 +92,7 @@ class Config(object):
 
     def clear(self):
         """Restart with a clean config"""
-        self._config = configparser.ConfigParser()
+        self._config = configparser.RawConfigParser()
         # Override config from command line even if we modify the config file and live reload it.
         self._override_config = {}
 
@@ -135,7 +135,11 @@ class Config(object):
         Read the configuration files.
         """
 
-        parsed_files = self._config.read(self._files)
+        try:
+            parsed_files = self._config.read(self._files, encoding="utf-8")
+        except configparser.Error as e:
+            log.error("Can't parse configuration file: %s", str(e))
+            return
         if not parsed_files:
             log.warning("No configuration file could be found or read")
         else:

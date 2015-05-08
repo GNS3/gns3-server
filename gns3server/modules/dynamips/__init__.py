@@ -410,6 +410,8 @@ class Dynamips(BaseManager):
             nio = NIOVDE(node.hypervisor, control_file, local_file)
         elif nio_settings["type"] == "nio_null":
             nio = NIONull(node.hypervisor)
+        else:
+            raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_settings["type"]))
 
         yield from nio.create()
         return nio
@@ -471,31 +473,42 @@ class Dynamips(BaseManager):
                 if hasattr(vm, "set_{}".format(name)):
                     setter = getattr(vm, "set_{}".format(name))
                     yield from setter(value)
-
             elif name.startswith("slot") and value in ADAPTER_MATRIX:
                 slot_id = int(name[-1])
                 adapter_name = value
                 adapter = ADAPTER_MATRIX[adapter_name]()
-                if vm.slots[slot_id] and not isinstance(vm.slots[slot_id], type(adapter)):
-                    yield from vm.slot_remove_binding(slot_id)
-                if not isinstance(vm.slots[slot_id], type(adapter)):
-                    yield from vm.slot_add_binding(slot_id, adapter)
+                try:
+                    if vm.slots[slot_id] and not isinstance(vm.slots[slot_id], type(adapter)):
+                        yield from vm.slot_remove_binding(slot_id)
+                    if not isinstance(vm.slots[slot_id], type(adapter)):
+                        yield from vm.slot_add_binding(slot_id, adapter)
+                except IndexError:
+                    raise DynamipsError("Slot {} doesn't exist on this router".format(slot_id))
             elif name.startswith("slot") and value is None:
                 slot_id = int(name[-1])
-                if vm.slots[slot_id]:
-                    yield from vm.slot_remove_binding(slot_id)
+                try:
+                    if vm.slots[slot_id]:
+                        yield from vm.slot_remove_binding(slot_id)
+                except IndexError:
+                    raise DynamipsError("Slot {} doesn't exist on this router".format(slot_id))
             elif name.startswith("wic") and value in WIC_MATRIX:
                 wic_slot_id = int(name[-1])
                 wic_name = value
                 wic = WIC_MATRIX[wic_name]()
-                if vm.slots[0].wics[wic_slot_id] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
-                    yield from vm.uninstall_wic(wic_slot_id)
-                if not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
-                    yield from vm.install_wic(wic_slot_id, wic)
+                try:
+                    if vm.slots[0].wics[wic_slot_id] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
+                        yield from vm.uninstall_wic(wic_slot_id)
+                    if not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
+                        yield from vm.install_wic(wic_slot_id, wic)
+                except IndexError:
+                    raise DynamipsError("WIC slot {} doesn't exist on this router".format(wic_slot_id))
             elif name.startswith("wic") and value is None:
                 wic_slot_id = int(name[-1])
-                if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
-                    yield from vm.uninstall_wic(wic_slot_id)
+                try:
+                    if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
+                        yield from vm.uninstall_wic(wic_slot_id)
+                except IndexError:
+                    raise DynamipsError("WIC slot {} doesn't exist on this router".format(wic_slot_id))
 
         mmap_support = self.config.get_section_config("Dynamips").getboolean("mmap_support", True)
         if mmap_support is False:
@@ -521,38 +534,32 @@ class Dynamips(BaseManager):
         default_startup_config_path = os.path.join(module_workdir, "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
         default_private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
 
-        startup_config_content = settings.get("startup_config_content")
-        if startup_config_content:
-            startup_config_path = self._create_config(vm, startup_config_content, default_startup_config_path)
+        startup_config_path = settings.get("startup_config")
+        if startup_config_path:
             yield from vm.set_configs(startup_config_path)
         else:
-            startup_config_path = settings.get("startup_config")
-            if startup_config_path:
-                yield from vm.set_configs(startup_config_path)
+            startup_config_path = self._create_config(vm, default_startup_config_path, settings.get("startup_config_content"))
+            yield from vm.set_configs(startup_config_path)
 
-        private_config_content = settings.get("private_config_content")
-        if private_config_content:
-            private_config_path = self._create_config(vm, private_config_content, default_private_config_path)
+        private_config_path = settings.get("private_config")
+        if private_config_path:
             yield from vm.set_configs(vm.startup_config, private_config_path)
         else:
-            private_config_path = settings.get("private_config")
-            if private_config_path:
-                yield from vm.set_configs(vm.startup_config, private_config_path)
+            private_config_path = self._create_config(vm, default_private_config_path, settings.get("private_config_content"))
+            yield from vm.set_configs(vm.startup_config, private_config_path)
 
-    def _create_config(self, vm, content, path):
+    def _create_config(self, vm, path, content=None):
         """
         Creates a config file.
 
         :param vm: VM instance
-        :param content: config content
         :param path: path to the destination config file
+        :param content: config content
 
         :returns: relative path to the created config file
         """
 
         log.info("Creating config file {}".format(path))
-        content = "!\n" + content.replace("\r", "")
-        content = content.replace('%h', vm.name)
         config_dir = os.path.dirname(path)
         try:
             os.makedirs(config_dir, exist_ok=True)
@@ -561,7 +568,10 @@ class Dynamips(BaseManager):
 
         try:
             with open(path, "wb") as f:
-                f.write(content.encode("utf-8"))
+                if content:
+                    content = "!\n" + content.replace("\r", "")
+                    content = content.replace('%h', vm.name)
+                    f.write(content.encode("utf-8"))
         except OSError as e:
             raise DynamipsError("Could not create config file {}: {}".format(path, e))
 

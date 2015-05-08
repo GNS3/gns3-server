@@ -181,15 +181,15 @@ class VPCSVM(BaseVM):
         """
 
         try:
-            script_file = os.path.join(self.working_dir, 'startup.vpc')
-            with open(script_file, "wb+") as f:
+            startup_script_path = os.path.join(self.working_dir, 'startup.vpc')
+            with open(startup_script_path, "w+", encoding='utf-8') as f:
                 if startup_script is None:
-                    f.write(b'')
+                    f.write('')
                 else:
                     startup_script = startup_script.replace("%h", self._name)
-                    f.write(startup_script.encode("utf-8"))
+                    f.write(startup_script)
         except OSError as e:
-            raise VPCSError('Cannot write the startup script file "{}": {}'.format(self.script_file, e))
+            raise VPCSError('Cannot write the startup script file "{}": {}'.format(startup_script_path, e))
 
     @asyncio.coroutine
     def _check_vpcs_version(self):
