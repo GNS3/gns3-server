@@ -72,6 +72,7 @@ def test_vm_invalid_vpcs_path(project, manager, loop):
 def test_start(loop, vm):
     process = MagicMock()
     process.returncode = None
+    queue = vm.project.get_listen_queue()
 
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
@@ -79,6 +80,9 @@ def test_start(loop, vm):
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.is_running()
+    (action, event) = queue.get_nowait()
+    assert action == "vm.started"
+    assert event == vm
 
 
 def test_stop(loop, vm):
@@ -98,6 +102,8 @@ def test_stop(loop, vm):
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.is_running()
 
+            queue = vm.project.get_listen_queue()
+
             with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
                 loop.run_until_complete(asyncio.async(vm.stop()))
             assert vm.is_running() is False
@@ -106,6 +112,10 @@ def test_stop(loop, vm):
                 process.send_signal.assert_called_with(1)
             else:
                 process.terminate.assert_called_with()
+
+            (action, event) = queue.get_nowait()
+            assert action == "vm.stopped"
+            assert event == vm
 
 
 def test_reload(loop, vm):
