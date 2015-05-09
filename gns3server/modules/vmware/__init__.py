@@ -174,10 +174,13 @@ class VMware(BaseManager):
             # TODO: default location can be changed in the preferences file (prefvmx.defaultvmpath = "path")
             # Windows: %APPDATA%\Vmware\preferences.ini
             # Linux: ~/.vmware/preferences
+            # OSX: ~/Library/Preferences/VMware Fusion/preferences
             if sys.platform.startswith("win"):
                 default_vm_path = os.path.expandvars(r"%USERPROFILE%\Documents\Virtual Machines")
+            elif sys.platform.startswith("darwin"):
+                default_vm_path = os.path.expanduser("~/Documents/Virtual Machines.localized")
             else:
-                default_vm_path = os.path.expanduser("~/vmware")  # FIXME: check if correct path on OSX
+                default_vm_path = os.path.expanduser("~/vmware")
             if os.path.isdir(default_vm_path):
                 return self._get_vms_from_default_folder(default_vm_path)
             log.warning("Default VMware VM location doesn't exist: {}".format(default_vm_path))
