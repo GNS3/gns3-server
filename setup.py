@@ -21,7 +21,6 @@ from setuptools.command.test import test as TestCommand
 
 
 class PyTest(TestCommand):
-
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
@@ -30,17 +29,17 @@ class PyTest(TestCommand):
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
         import pytest
+
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
 
-dependencies = ["aiohttp>=0.15.1",
-                "jsonschema>=2.4.0",
-                "Jinja2>=2.7.3",
-                "raven>=5.2.0"]
-
-#if not sys.platform.startswith("win"):
-#    dependencies.append("netifaces==0.10.4")
+dependencies = [
+    "jsonschema>=2.4.0",
+    "aiohttp>=0.15.1",
+    "Jinja2>=2.7.3",
+    "raven>=5.2.0"
+]
 
 if sys.version_info == (3, 3):
     dependencies.append("asyncio>=3.4.2")
@@ -50,7 +49,7 @@ setup(
     version=__import__("gns3server").__version__,
     url="http://github.com/GNS3/gns3-server",
     license="GNU General Public License v3 (GPLv3)",
-    tests_require=["pytest"],
+    tests_require=["pytest", "pytest-capturelog"],
     cmdclass={"test": PyTest},
     description="GNS3 server",
     long_description=open("README.rst", "r").read(),
