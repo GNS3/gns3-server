@@ -53,12 +53,17 @@ class VMware(BaseManager):
         return self._vmrun_path
 
     def find_vmrun(self):
+        """
+        Searches for vmrun.
+
+        :returns: path to vmrun
+        """
 
         # look for vmrun
         vmrun_path = self.config.get_section_config("VMware").get("vmrun_path")
         if not vmrun_path:
             if sys.platform.startswith("win"):
-                pass  # TODO: use registry to find vmrun
+                pass  # TODO: use registry to find vmrun or search for default location
             elif sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
@@ -107,51 +112,80 @@ class VMware(BaseManager):
 
         return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
+    @staticmethod
+    def _parse_vmware_file(path):
+        """
+        Parses a VMware file (VMX, preferences or inventory).
+
+        :param path: path to the VMware file
+
+        :returns: dict
+        """
+
+        pairs = {}
+        with open(path, encoding="utf-8") as f:
+            for line in f.read().splitlines():
+                try:
+                    key, value = line.split('=', 1)
+                    pairs[key.strip()] = value.strip('" ')
+                except ValueError:
+                    continue
+        return pairs
+
     def _get_vms_from_inventory(self, inventory_path):
+        """
+        Searches for VMs by parsing a VMware inventory file.
+
+        :param inventory_path: path to the inventory file
+
+        :returns: list of VMs
+        """
 
         vm_entries = {}
         vms = []
         try:
-            with open(inventory_path, encoding="utf-8") as f:
-                for line in f.read().splitlines():
+            log.debug('Reading VMware inventory file "{}"'.format(inventory_path))
+            pairs = self._parse_vmware_file(inventory_path)
+            for key, value in pairs.items():
+                if key.startswith("vmlist"):
                     try:
-                        name, value = line.split('=', 1)
-                        vm_entry, variable_name = name.split('.', 1)
-                        if vm_entry.startswith("vmlist"):
-                            if not vm_entry in vm_entries:
-                                vm_entries[vm_entry] = {}
-                            vm_entries[vm_entry][variable_name.strip()] = value.strip('" ')
+                        vm_entry, variable_name = key.split('.', 1)
                     except ValueError:
                         continue
+                    if not vm_entry in vm_entries:
+                        vm_entries[vm_entry] = {}
+                    vm_entries[vm_entry][variable_name.strip()] = value
         except OSError as e:
             log.warning("Could not read VMware inventory file {}: {}".format(inventory_path, e))
 
         for vm_settings in vm_entries.values():
             if "DisplayName" in vm_settings and "config" in vm_settings:
+                log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["displayName"], vm_settings["config"]))
                 vms.append({"vmname": vm_settings["DisplayName"], "vmx_path": vm_settings["config"]})
-
         return vms
 
-    def _get_vms_from_default_folder(self, folder):
+    def _get_vms_from_directory(self, directory):
+        """
+        Searches for VMs in a given directory.
+
+        :param directory: path to the directory
+
+        :returns: list of VMs
+        """
 
         vms = []
-        for path, _, filenames in os.walk(folder):
+        for path, _, filenames in os.walk(directory):
             for filename in filenames:
                 if os.path.splitext(filename)[1] == ".vmx":
                     vmx_path = os.path.join(path, filename)
+                    log.debug('Reading VMware VMX file "{}"'.format(vmx_path))
                     try:
-                        with open(vmx_path, encoding="utf-8") as f:
-                            for line in f.read().splitlines():
-                                try:
-                                    name, value = line.split('=', 1)
-                                    if name.strip() == "displayName":
-                                        vmname = value.strip('" ')
-                                        vms.append({"vmname": vmname, "vmx_path": vmx_path})
-                                        break
-                                except ValueError:
-                                    continue
+                        pairs = self._parse_vmware_file(vmx_path)
+                        if "displayName" in pairs:
+                            log.debug('Found VM named "{}"'.format(pairs["displayName"]))
+                            vms.append({"vmname": pairs["displayName"], "vmx_path": vmx_path})
                     except OSError as e:
-                        log.warning("Could not read VMware vmx file {}: {}".format(vmx_path, e))
+                        log.warning('Could not read VMware VMX file "{}": {}'.format(vmx_path, e))
                         continue
         return vms
 
@@ -170,17 +204,26 @@ class VMware(BaseManager):
         if os.path.exists(inventory_path):
             return self._get_vms_from_inventory(inventory_path)
         else:
-            # VMware player has no inventory file, let's use the default location for VMs.
-            # TODO: default location can be changed in the preferences file (prefvmx.defaultvmpath = "path")
-            # Windows: %APPDATA%\Vmware\preferences.ini
-            # Linux: ~/.vmware/preferences
-            # OSX: ~/Library/Preferences/VMware Fusion/preferences
+            # VMware player has no inventory file, let's search the default location for VMs.
             if sys.platform.startswith("win"):
+                vmware_preferences_path = os.path.expandvars(r"%APPDATA%\VMware\preferences.ini")
                 default_vm_path = os.path.expandvars(r"%USERPROFILE%\Documents\Virtual Machines")
             elif sys.platform.startswith("darwin"):
+                vmware_preferences_path = os.path.expanduser("~/Library/Preferences/VMware Fusion/preferences")
                 default_vm_path = os.path.expanduser("~/Documents/Virtual Machines.localized")
             else:
+                vmware_preferences_path = os.path.expanduser("~/.vmware/preferences")
                 default_vm_path = os.path.expanduser("~/vmware")
-            if os.path.isdir(default_vm_path):
-                return self._get_vms_from_default_folder(default_vm_path)
-            log.warning("Default VMware VM location doesn't exist: {}".format(default_vm_path))
+
+            if os.path.exists(vmware_preferences_path):
+                # the default vm path may be present in VMware preferences file.
+                try:
+                    pairs = self._parse_vmware_file(vmware_preferences_path)
+                    if "prefvmx.defaultvmpath" in pairs:
+                        default_vm_path = pairs["prefvmx.defaultvmpath"]
+                except OSError as e:
+                    log.warning('Could not read VMware preferences file "{}": {}'.format(vmware_preferences_path, e))
+
+            if not os.path.isdir(default_vm_path):
+                raise VMwareError('Could not find the default VM directory: "{}"'.format(default_vm_path))
+            return self._get_vms_from_directory(default_vm_path)
