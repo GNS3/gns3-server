@@ -41,6 +41,7 @@ dependencies = [
     "raven>=5.2.0"
 ]
 
+
 if sys.version_info == (3, 3):
     dependencies.append("asyncio>=3.4.2")
 

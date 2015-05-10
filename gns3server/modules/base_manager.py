@@ -444,3 +444,20 @@ class BaseManager:
         """
 
         raise NotImplementedError
+
+    @asyncio.coroutine
+    def write_image(self, filename, stream):
+        directory = self.get_images_directory()
+        path = os.path.join(directory, os.path.basename(filename))
+        log.info("Writting image file %s", path)
+        try:
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'wb+') as f:
+                while True:
+                    packet = yield from stream.read(512)
+                    if not packet:
+                        break
+                    f.write(packet)
+            os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Could not write image: {} to {}".format(filename, e))

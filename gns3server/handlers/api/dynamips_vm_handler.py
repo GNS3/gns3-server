@@ -463,3 +463,16 @@ class DynamipsVMHandler:
         vms = yield from dynamips_manager.list_images()
         response.set_status(200)
         response.json(vms)
+
+    @Route.post(
+        r"/dynamips/vms/{filename}",
+        status_codes={
+            204: "Image uploaded",
+        },
+        raw=True,
+        description="Upload Dynamips image.")
+    def upload_vm(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        yield from dynamips_manager.write_image(request.match_info["filename"], request.content)
+        response.set_status(204)
