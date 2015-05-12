@@ -272,10 +272,10 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             os.path.join(vm.working_dir, "flash.qcow2"),
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "-net",
+            "none",
             "-device",
-            "e1000,mac=00:00:ab:0e:0f:00,netdev=gns3-0",
-            "-netdev",
-            "user,id=gns3-0"
+            "e1000,mac=00:00:ab:0e:0f:00",
         ]
 
 
