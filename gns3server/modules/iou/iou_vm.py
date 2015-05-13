@@ -439,8 +439,8 @@ class IOUVM(BaseVM):
                 raise IOUError("Could not rename nvram files: {}".format(e))
 
             iourc_path = self.iourc_path
-            if iourc_path is None:
-                raise IOUError("Could not find a iourc file (IOU license)")
+            if not iourc_path:
+                raise IOUError("Could not find an iourc file (IOU license)")
             if not os.path.isfile(iourc_path):
                 raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
 
