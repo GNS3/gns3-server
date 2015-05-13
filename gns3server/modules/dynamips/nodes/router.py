@@ -259,11 +259,13 @@ class Router(BaseVM):
     @asyncio.coroutine
     def _termination_callback(self, returncode):
         """
-        Called when the process is killed
+        Called when the process has stopped.
 
         :param returncode: Process returncode
         """
+
         self.status = "stopped"
+        log.info("Dynamips hypervisor process has stopped, return code: %d", returncode)
 
     @asyncio.coroutine
     def stop(self):
