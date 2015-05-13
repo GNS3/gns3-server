@@ -367,15 +367,16 @@ class DynamipsVMHandler:
         else:
             # nvram doesn't contain anything if the router has not been started at least once
             # in this case just use the startup-config file
-            startup_config_path = os.path.join(module_workdir, vm.startup_config)
-            if os.path.exists(startup_config_path):
-                try:
-                    with open(startup_config_path, "rb") as f:
-                        content = f.read().decode("utf-8", errors='replace')
-                        if content:
-                            result["startup_config_content"] = content
-                except OSError as e:
-                    raise DynamipsError("Could not read the startup-config {}: {}".format(startup_config_path, e))
+            if vm.startup_config:
+                startup_config_path = os.path.join(module_workdir, vm.startup_config)
+                if os.path.isfile(startup_config_path):
+                    try:
+                        with open(startup_config_path, "rb") as f:
+                            content = f.read().decode("utf-8", errors='replace')
+                            if content:
+                                result["startup_config_content"] = content
+                    except OSError as e:
+                        raise DynamipsError("Could not read the startup-config {}: {}".format(startup_config_path, e))
 
         if private_config_base64:
             private_config_content = base64.b64decode(private_config_base64).decode("utf-8", errors='replace')
@@ -383,15 +384,16 @@ class DynamipsVMHandler:
         else:
             # nvram doesn't contain anything if the router has not been started at least once
             # in this case just use the private-config file
-            private_config_path = os.path.join(module_workdir, vm.private_config)
-            if os.path.exists(private_config_path):
-                try:
-                    with open(private_config_path, "rb") as f:
-                        content = f.read().decode("utf-8", errors='replace')
-                        if content:
-                            result["private_config_content"] = content
-                except OSError as e:
-                    raise DynamipsError("Could not read the private-config {}: {}".format(private_config_path, e))
+            if vm.private_config:
+                private_config_path = os.path.join(module_workdir, vm.private_config)
+                if os.path.isfile(private_config_path):
+                    try:
+                        with open(private_config_path, "rb") as f:
+                            content = f.read().decode("utf-8", errors='replace')
+                            if content:
+                                result["private_config_content"] = content
+                    except OSError as e:
+                        raise DynamipsError("Could not read the private-config {}: {}".format(private_config_path, e))
 
         response.set_status(200)
         response.json(result)
