@@ -272,11 +272,12 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             os.path.join(vm.working_dir, "flash.qcow2"),
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "-net",
+            "none",
             "-device",
-            "e1000,mac=00:00:ab:0e:0f:00,netdev=gns3-0",
-            "-netdev",
-            "user,id=gns3-0"
+            "e1000,mac=00:00:ab:0e:0f:00"
         ]
+
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_build_command_without_display(vm, loop, fake_qemu_binary):
@@ -313,6 +314,7 @@ def test_hdb_disk_image(vm, tmpdir):
         vm.hdb_disk_image = "test"
         assert vm.hdb_disk_image == str(tmpdir / "QEMU" / "test")
 
+
 def test_hdc_disk_image(vm, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
@@ -320,6 +322,7 @@ def test_hdc_disk_image(vm, tmpdir):
         assert vm.hdc_disk_image == "/tmp/test"
         vm.hdc_disk_image = "test"
         assert vm.hdc_disk_image == str(tmpdir / "QEMU" / "test")
+
 
 def test_hdd_disk_image(vm, tmpdir):
 
