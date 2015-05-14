@@ -535,17 +535,19 @@ class Dynamips(BaseManager):
         default_private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
 
         startup_config_path = settings.get("startup_config")
+        startup_config_content = settings.get("startup_config_content")
         if startup_config_path:
             yield from vm.set_configs(startup_config_path)
-        else:
-            startup_config_path = self._create_config(vm, default_startup_config_path, settings.get("startup_config_content"))
+        elif startup_config_content:
+            startup_config_path = self._create_config(vm, default_startup_config_path, startup_config_content)
             yield from vm.set_configs(startup_config_path)
 
         private_config_path = settings.get("private_config")
+        private_config_content = settings.get("private_config_content")
         if private_config_path:
             yield from vm.set_configs(vm.startup_config, private_config_path)
-        else:
-            private_config_path = self._create_config(vm, default_private_config_path, settings.get("private_config_content"))
+        elif private_config_content:
+            private_config_path = self._create_config(vm, default_private_config_path, private_config_content)
             yield from vm.set_configs(vm.startup_config, private_config_path)
 
     def _create_config(self, vm, path, content=None):

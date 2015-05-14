@@ -275,7 +275,7 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-net",
             "none",
             "-device",
-            "e1000,mac=00:00:ab:0e:0f:00",
+            "e1000,mac=00:00:ab:0e:0f:00"
         ]
 
 

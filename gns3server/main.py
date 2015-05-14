@@ -20,6 +20,14 @@
 Entry point of the server. It's support daemonize the process
 """
 
+# WARNING
+# Due to buggy user machines we choose to put this as the first loading modules
+# otherwise the egg cache is initialized in his standard location and
+# if is not writetable the application crash. It's the user fault
+# because one day the user as used sudo to run an egg and break his
+# filesystem permissions, but it's a common mistake.
+import gns3server.utils.get_resource
+
 import os
 import sys
 

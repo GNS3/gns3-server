@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.3.3 14/05/15
+
+* Check for empty iourc path.
+* Fixes bugs with IOS router configs. Fixes #354.
+* Use a temporary directory as egg cache
+* Catch crash error in IOU in case of permission denied
+
 ## 1.3.3rc1 07/05/2015
 
 * Return an error if an adapter slot doesn't exist on an IOS router.
