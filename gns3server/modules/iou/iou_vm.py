@@ -433,11 +433,14 @@ class IOUVM(BaseVM):
 
             yield from self._library_check()
 
-            self._rename_nvram_file()
+            try:
+                self._rename_nvram_file()
+            except OSError as e:
+                raise IOUError("Could not rename nvram files: {}".format(e))
 
             iourc_path = self.iourc_path
-            if iourc_path is None:
-                raise IOUError("Could not find a iourc file (IOU license)")
+            if not iourc_path:
+                raise IOUError("Could not find an iourc file (IOU license)")
             if not os.path.isfile(iourc_path):
                 raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
 
@@ -481,11 +484,12 @@ class IOUVM(BaseVM):
 
     def _termination_callback(self, returncode):
         """
-        Called when the process is killed
+        Called when the process has stopped.
 
         :param returncode: Process returncode
         """
-        log.info("IOU process crash return code: %d", returncode)
+
+        log.info("IOU process has stopped, return code: %d", returncode)
         self._terminate_process_iou()
         self._terminate_process_iouyap()
         self._ioucon_thread_stop_event.set()
