@@ -218,6 +218,16 @@ DEVICE_NIO_SCHEMA = {
             "required": ["type", "ethernet_device"],
             "additionalProperties": False
         },
+        "NAT": {
+            "description": "NAT Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_nat"]
+                },
+            },
+            "required": ["type"],
+            "additionalProperties": False
+        },
         "TAP": {
             "description": "TAP Network Input/Output",
             "properties": {
@@ -291,6 +301,7 @@ DEVICE_NIO_SCHEMA = {
                 {"$ref": "#/definitions/UDP"},
                 {"$ref": "#/definitions/Ethernet"},
                 {"$ref": "#/definitions/LinuxEthernet"},
+                {"$ref": "#/definitions/NAT"},
                 {"$ref": "#/definitions/TAP"},
                 {"$ref": "#/definitions/UNIX"},
                 {"$ref": "#/definitions/VDE"},
