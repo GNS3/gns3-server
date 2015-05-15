@@ -113,7 +113,7 @@ class VMware(BaseManager):
         return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
     @staticmethod
-    def _parse_vmware_file(path):
+    def parse_vmware_file(path):
         """
         Parses a VMware file (VMX, preferences or inventory).
 
@@ -145,7 +145,7 @@ class VMware(BaseManager):
         vms = []
         try:
             log.debug('Reading VMware inventory file "{}"'.format(inventory_path))
-            pairs = self._parse_vmware_file(inventory_path)
+            pairs = self.parse_vmware_file(inventory_path)
             for key, value in pairs.items():
                 if key.startswith("vmlist"):
                     try:
@@ -180,7 +180,7 @@ class VMware(BaseManager):
                     vmx_path = os.path.join(path, filename)
                     log.debug('Reading VMware VMX file "{}"'.format(vmx_path))
                     try:
-                        pairs = self._parse_vmware_file(vmx_path)
+                        pairs = self.parse_vmware_file(vmx_path)
                         if "displayName" in pairs:
                             log.debug('Found VM named "{}"'.format(pairs["displayName"]))
                             vms.append({"vmname": pairs["displayName"], "vmx_path": vmx_path})
@@ -218,7 +218,7 @@ class VMware(BaseManager):
             if os.path.exists(vmware_preferences_path):
                 # the default vm path may be present in VMware preferences file.
                 try:
-                    pairs = self._parse_vmware_file(vmware_preferences_path)
+                    pairs = self.parse_vmware_file(vmware_preferences_path)
                     if "prefvmx.defaultvmpath" in pairs:
                         default_vm_path = pairs["prefvmx.defaultvmpath"]
                 except OSError as e:

@@ -56,6 +56,17 @@ VMWARE_CREATE_SCHEMA = {
             "description": "headless mode",
             "type": "boolean"
         },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,  # maximum adapters support by VMware VMs
+        },
+        "adapter_type": {
+            "description": "VMware adapter type",
+            "type": "string",
+            "minLength": 1,
+        },
     },
     "additionalProperties": False,
     "required": ["name", "vmx_path", "linked_clone"],
@@ -89,6 +100,17 @@ VMWARE_UPDATE_SCHEMA = {
         "headless": {
             "description": "headless mode",
             "type": "boolean"
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,  # maximum adapters support by VMware VMs
+        },
+        "adapter_type": {
+            "description": "VMware adapter type",
+            "type": "string",
+            "minLength": 1,
         },
     },
     "additionalProperties": False,
@@ -130,6 +152,17 @@ VMWARE_OBJECT_SCHEMA = {
         "headless": {
             "description": "headless mode",
             "type": "boolean"
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,  # maximum adapters support by VMware VMs
+        },
+        "adapter_type": {
+            "description": "VMware adapter type",
+            "type": "string",
+            "minLength": 1,
         },
         "console": {
             "description": "console TCP port",

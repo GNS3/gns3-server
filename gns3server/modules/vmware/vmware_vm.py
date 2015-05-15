@@ -28,14 +28,23 @@ import json
 import socket
 import asyncio
 
+from gns3server.utils.interfaces import interfaces
 from pkg_resources import parse_version
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
+from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_vm import BaseVM
 
 import logging
 log = logging.getLogger(__name__)
 
+VMX_ETHERNET_TEMPLATE = """
+ethernet{number}.present = "TRUE"
+ethernet{number}.connectionType = "hostonly"
+ethernet{number}.addressType = "generated"
+ethernet{number}.generatedAddressOffset = "0"
+ethernet{number}.autoDetect = "TRUE"
+"""
 
 class VMwareVM(BaseVM):
 
@@ -53,6 +62,13 @@ class VMwareVM(BaseVM):
         # VMware VM settings
         self._headless = False
         self._vmx_path = vmx_path
+        self._enable_remote_console = False
+        self._adapters = 0
+        self._ethernet_adapters = {}
+        self._adapter_type = "e1000"
+
+        if not os.path.exists(vmx_path):
+            raise VMwareError('VMware VM "{name}" [{id}]: could not find VMX file "{}"'.format(name, vmx_path))
 
     def __json__(self):
 
@@ -61,7 +77,10 @@ class VMwareVM(BaseVM):
                 "console": self.console,
                 "project_id": self.project.id,
                 "vmx_path": self.vmx_path,
-                "headless": self.headless}
+                "headless": self.headless,
+                "enable_remote_console": self.enable_remote_console,
+                "adapters": self._adapters,
+                "adapter_type": self.adapter_type}
 
     @asyncio.coroutine
     def _control_vm(self, subcommand, *additional_args):
@@ -72,12 +91,39 @@ class VMwareVM(BaseVM):
         log.debug("Control VM '{}' result: {}".format(subcommand, result))
         return result
 
+    def _set_network_options(self):
+
+        try:
+            self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
+        except OSError as e:
+            raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
+
+        vmnet_interfaces = interfaces()
+        print(vmnet_interfaces)
+
+        for adapter_number in range(0, self._adapters):
+            nio = self._ethernet_adapters[adapter_number].get_nio(0)
+            if nio and isinstance(nio, NIOUDP):
+                connection_type = "ethernet{}.connectionType".format(adapter_number)
+                if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] not in ("hostonly", "custom"):
+                    raise VMwareError("Attachment ({}) already configured on adapter {}. "
+                                      "Please set it to 'hostonly' or 'custom to allow GNS3 to use it.".format(self._vmx_pairs[connection_type],
+                                                                                                               adapter_number))
+
+                vnet = "ethernet{}.vnet".format(adapter_number)
+                if vnet in self._vmx_pairs:
+                    pass
+                #if "ethernet{}.present".format(adapter_number) in self._vmx_pairs:
+                #    print("ETHERNET {} FOUND".format(adapter_number))
+                #ethernet0.vnet
+
     @asyncio.coroutine
     def start(self):
         """
         Starts this VMware VM.
         """
 
+        self._set_network_options()
         if self._headless:
             yield from self._control_vm("start", "nogui")
         else:
@@ -193,3 +239,83 @@ class VMwareVM(BaseVM):
 
         log.info("VMware VM '{name}' [{id}] has set the vmx file path to '{vmx}'".format(name=self.name, id=self.id, vmx=vmx_path))
         self._vmx_path = vmx_path
+
+    @property
+    def enable_remote_console(self):
+        """
+        Returns either the remote console is enabled or not
+
+        :returns: boolean
+        """
+
+        return self._enable_remote_console
+
+    @asyncio.coroutine
+    def set_enable_remote_console(self, enable_remote_console):
+        """
+        Sets either the console is enabled or not
+
+        :param enable_remote_console: boolean
+        """
+
+        if enable_remote_console:
+            log.info("VMware VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
+            #self._start_remote_console()
+        else:
+            log.info("VMware VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
+            #self._stop_remote_console()
+        self._enable_remote_console = enable_remote_console
+
+    @property
+    def adapters(self):
+        """
+        Returns the number of adapters configured for this VMware VM.
+
+        :returns: number of adapters
+        """
+
+        return self._adapters
+
+    @adapters.setter
+    def adapters(self, adapters):
+        """
+        Sets the number of Ethernet adapters for this VMware VM instance.
+
+        :param adapters: number of adapters
+        """
+
+        # VMware VMs are limit to 10 adapters
+        if adapters > 10:
+            raise VMwareError("Number of adapters above the maximum supported of 10")
+
+        self._ethernet_adapters.clear()
+        for adapter_number in range(0, adapters):
+            self._ethernet_adapters[adapter_number] = EthernetAdapter()
+
+        self._adapters = len(self._ethernet_adapters)
+        log.info("VMware VM '{name}' [{id}] has changed the number of Ethernet adapters to {adapters}".format(name=self.name,
+                                                                                                              id=self.id,
+                                                                                                              adapters=adapters))
+
+    @property
+    def adapter_type(self):
+        """
+        Returns the adapter type for this VMware VM instance.
+
+        :returns: adapter type (string)
+        """
+
+        return self._adapter_type
+
+    @adapter_type.setter
+    def adapter_type(self, adapter_type):
+        """
+        Sets the adapter type for this VMware VM instance.
+
+        :param adapter_type: adapter type (string)
+        """
+
+        self._adapter_type = adapter_type
+        log.info("VMware VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(name=self.name,
+                                                                                            id=self.id,
+                                                                                            adapter_type=adapter_type))
