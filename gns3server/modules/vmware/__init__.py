@@ -81,6 +81,23 @@ class VMware(BaseManager):
         self._vmrun_path = vmrun_path
         return vmrun_path
 
+    @property
+    def host_type(self):
+        """
+        Returns the VMware host type.
+        player = VMware player
+        ws = VMware Workstation
+        fusion = VMware Fusion
+
+        :returns: host type (string)
+        """
+
+        if sys.platform.startswith("darwin"):
+            host_type = "fusion"
+        else:
+            host_type = self.config.get_section_config("VMware").get("host_type", "ws")
+        return host_type
+
     @asyncio.coroutine
     def execute(self, subcommand, args, timeout=60, host_type=None):
 
@@ -88,10 +105,8 @@ class VMware(BaseManager):
         if not vmrun_path:
             vmrun_path = self.find_vmrun()
         if host_type is None:
-            if sys.platform.startswith("darwin"):
-                host_type = "fusion"
-            else:
-                host_type = self.config.get_section_config("VMware").get("host_type", "ws")
+            host_type = self.host_type
+
         command = [vmrun_path, "-T", host_type, subcommand]
         command.extend(args)
         log.debug("Executing vmrun with command: {}".format(command))

@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from aiohttp.web import HTTPConflict
 from ...web.route import Route
 from ...schemas.vmware import VMWARE_CREATE_SCHEMA
 from ...schemas.vmware import VMWARE_UPDATE_SCHEMA
 from ...schemas.vmware import VMWARE_OBJECT_SCHEMA
+from ...schemas.nio import NIO_SCHEMA
 from ...modules.vmware import VMware
 from ...modules.project_manager import ProjectManager
 
@@ -239,4 +241,54 @@ class VMwareHandler:
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.reload()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/vmware/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "adapter_number": "Adapter where the nio should be added",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            201: "NIO created",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Add a NIO to a VMware VM instance",
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA)
+    def create_nio(request, response):
+
+        vmware_manager = VMware.instance()
+        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        nio_type = request.json["type"]
+        if nio_type != "nio_udp":
+            raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
+        nio = vmware_manager.create_nio(None, request.json)
+        vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
+        response.set_status(201)
+        response.json(nio)
+
+    @classmethod
+    @Route.delete(
+        r"/projects/{project_id}/vmware/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "adapter_number": "Adapter from where the nio should be removed",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            204: "NIO deleted",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Remove a NIO from a VMware VM instance")
+    def delete_nio(request, response):
+
+        vmware_manager = VMware.instance()
+        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)

@@ -145,6 +145,8 @@ class VMwareVM(BaseVM):
         Suspends this VMware VM.
         """
 
+        if self.manager.host_type != "ws":
+            raise VMwareError("Pausing a VM is only supported by VMware Workstation")
         yield from self._control_vm("pause")
         log.info("VMware VM '{name}' [{id}] paused".format(name=self.name, id=self.id))
 
@@ -154,6 +156,8 @@ class VMwareVM(BaseVM):
         Resumes this VMware VM.
         """
 
+        if self.manager.host_type != "ws":
+            raise VMwareError("Unpausing a VM is only supported by VMware Workstation")
         yield from self._control_vm("unpause")
         log.info("VMware VM '{name}' [{id}] resumed".format(name=self.name, id=self.id))
 
@@ -250,8 +254,8 @@ class VMwareVM(BaseVM):
 
         return self._enable_remote_console
 
-    @asyncio.coroutine
-    def set_enable_remote_console(self, enable_remote_console):
+    @enable_remote_console.setter
+    def enable_remote_console(self, enable_remote_console):
         """
         Sets either the console is enabled or not
 
@@ -319,3 +323,49 @@ class VMwareVM(BaseVM):
         log.info("VMware VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(name=self.name,
                                                                                             id=self.id,
                                                                                             adapter_type=adapter_type))
+
+    def adapter_add_nio_binding(self, adapter_number, nio):
+        """
+        Adds an adapter NIO binding.
+
+        :param adapter_number: adapter number
+        :param nio: NIO instance to add to the slot/port
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except IndexError:
+            raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
+
+        adapter.add_nio(0, nio)
+        log.info("VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
+                                                                                             id=self.id,
+                                                                                             nio=nio,
+                                                                                             adapter_number=adapter_number))
+
+    def adapter_remove_nio_binding(self, adapter_number):
+        """
+        Removes an adapter NIO binding.
+
+        :param adapter_number: adapter number
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except IndexError:
+            raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
+        adapter.remove_nio(0)
+
+        log.info("VMware VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
+                                                                                                 id=self.id,
+                                                                                                 nio=nio,
+                                                                                                 adapter_number=adapter_number))
+        return nio

@@ -69,7 +69,8 @@ def get_windows_interfaces():
                 # adapter is connected or media disconnected
                 npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
                 interfaces.append({"id": npf_interface,
-                                   "name": adapter.NetConnectionID})
+                                   "name": adapter.NetConnectionID,
+                                   "netcard": adapter.name})
     except (AttributeError, pywintypes.com_error):
         log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")
         return _get_windows_interfaces_from_registry()
