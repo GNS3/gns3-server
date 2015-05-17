@@ -19,6 +19,10 @@ import os
 import sys
 import struct
 import platform
+import faulthandler
+
+# Display a traceback in case of segfault crash. Usefull when frozen
+faulthandler.enable()
 
 try:
     import raven

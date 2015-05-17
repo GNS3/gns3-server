@@ -190,6 +190,8 @@ def main():
     port = int(server_config["port"])
     server = Server.instance(host, port)
     try:
+        import faulthandler
+        faulthandler._sigsegv()
         server.run()
     except OSError as e:
         # This is to ignore OSError: [WinError 0] The operation completed successfully exception on Windows.
