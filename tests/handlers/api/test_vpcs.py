@@ -42,7 +42,7 @@ def test_vpcs_get(server, project, vm):
     assert response.route == "/projects/{project_id}/vpcs/vms/{vm_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
-    assert response.json["startup_script_path"] == None
+    assert response.json["startup_script_path"] is None
 
 
 def test_vpcs_create_startup_script(server, project):
@@ -51,7 +51,7 @@ def test_vpcs_create_startup_script(server, project):
     assert response.route == "/projects/{project_id}/vpcs/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
-    assert response.json["startup_script"] == "ip 192.168.1.2\necho TEST"
+    assert response.json["startup_script"] == os.linesep.join(["ip 192.168.1.2", "echo TEST"])
     assert response.json["startup_script_path"] == "startup.vpc"
 
 
