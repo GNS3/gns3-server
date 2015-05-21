@@ -25,6 +25,7 @@ import shutil
 import asyncio
 import subprocess
 import logging
+from collections import OrderedDict
 
 log = logging.getLogger(__name__)
 
@@ -137,7 +138,7 @@ class VMware(BaseManager):
         :returns: dict
         """
 
-        pairs = {}
+        pairs = OrderedDict()
         with open(path, encoding="utf-8") as f:
             for line in f.read().splitlines():
                 try:
@@ -146,6 +147,25 @@ class VMware(BaseManager):
                 except ValueError:
                     continue
         return pairs
+
+    @staticmethod
+    def write_vmx_file(path, pairs):
+        """
+        Write a VMware VMX file.
+
+        :param path: path to the VMX file
+        :param pairs: settings to write
+        """
+
+        with open(path, "w", encoding="utf-8") as f:
+            if sys.platform.startswith("linux"):
+                # write the shebang on the first line on Linux
+                vmware_path = shutil.which("vmware")
+                if vmware_path:
+                    f.write("#!{}\n".format(vmware_path))
+            for key, value in pairs.items():
+                entry = '{} = "{}"\n'.format(key, value)
+                f.write(entry)
 
     def _get_vms_from_inventory(self, inventory_path):
         """
@@ -175,7 +195,7 @@ class VMware(BaseManager):
 
         for vm_settings in vm_entries.values():
             if "DisplayName" in vm_settings and "config" in vm_settings:
-                log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["displayName"], vm_settings["config"]))
+                log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["DisplayName"], vm_settings["config"]))
                 vms.append({"vmname": vm_settings["DisplayName"], "vmx_path": vm_settings["config"]})
         return vms
 

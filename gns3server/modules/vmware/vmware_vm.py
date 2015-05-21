@@ -20,31 +20,30 @@ VMware VM instance.
 """
 
 import sys
-import shlex
-import re
 import os
 import tempfile
 import json
 import socket
+import re
+import subprocess
+import configparser
+import shutil
 import asyncio
 
 from gns3server.utils.interfaces import interfaces
+from gns3server.utils.asyncio import wait_for_process_termination
+from gns3server.utils.asyncio import monitor_process
 from pkg_resources import parse_version
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_vm import BaseVM
 
+
 import logging
 log = logging.getLogger(__name__)
 
-VMX_ETHERNET_TEMPLATE = """
-ethernet{number}.present = "TRUE"
-ethernet{number}.connectionType = "hostonly"
-ethernet{number}.addressType = "generated"
-ethernet{number}.generatedAddressOffset = "0"
-ethernet{number}.autoDetect = "TRUE"
-"""
+
 
 class VMwareVM(BaseVM):
 
@@ -57,6 +56,8 @@ class VMwareVM(BaseVM):
         super().__init__(name, vm_id, project, manager, console=console)
 
         self._linked_clone = linked_clone
+        self._ubridge_process = None
+        self._ubridge_stdout_file = ""
         self._closed = False
 
         # VMware VM settings
@@ -91,6 +92,26 @@ class VMwareVM(BaseVM):
         log.debug("Control VM '{}' result: {}".format(subcommand, result))
         return result
 
+    def _get_vmnet_interfaces(self):
+
+        vmnet_intefaces = []
+        for interface in interfaces():
+            if sys.platform.startswith("win"):
+                if "netcard" in interface:
+                    windows_name = interface["netcard"]
+                else:
+                    windows_name = interface["name"]
+                match = re.search("(VMnet[0-9]+)", windows_name)
+                if match:
+                    vmnet = match.group(1)
+                    if vmnet not in ("VMnet1", "VMnet8"):
+                        vmnet_intefaces.append(vmnet)
+            elif interface["name"].startswith("vmnet"):
+                vmnet = interface["name"]
+                if vmnet not in ("vmnet1", "vmnet8"):
+                    vmnet_intefaces.append(interface["name"])
+        return vmnet_intefaces
+
     def _set_network_options(self):
 
         try:
@@ -98,24 +119,184 @@ class VMwareVM(BaseVM):
         except OSError as e:
             raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
-        vmnet_interfaces = interfaces()
-        print(vmnet_interfaces)
-
+        vmnet_interfaces = self._get_vmnet_interfaces()
         for adapter_number in range(0, self._adapters):
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
-            if nio and isinstance(nio, NIOUDP):
-                connection_type = "ethernet{}.connectionType".format(adapter_number)
-                if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] not in ("hostonly", "custom"):
-                    raise VMwareError("Attachment ({}) already configured on adapter {}. "
-                                      "Please set it to 'hostonly' or 'custom to allow GNS3 to use it.".format(self._vmx_pairs[connection_type],
-                                                                                                               adapter_number))
+            if nio:
+                if "ethernet{}.present".format(adapter_number) in self._vmx_pairs:
+
+                    # check for the connection type
+                    connection_type = "ethernet{}.connectionType".format(adapter_number)
+                    if connection_type in self._vmx_pairs:
+                        if self._vmx_pairs[connection_type] not in ("hostonly", "custom"):
+                            raise VMwareError("Attachment ({}) already configured on adapter {}. "
+                                              "Please set it to 'hostonly' or 'custom' to allow GNS3 to use it.".format(self._vmx_pairs[connection_type],
+                                                                                                                        adapter_number))
+                    # check for the vmnet interface
+                    vnet = "ethernet{}.vnet".format(adapter_number)
+                    if vnet in self._vmx_pairs:
+                        vmnet = os.path.basename(self._vmx_pairs[vnet])
+                        if vmnet in vmnet_interfaces:
+                            vmnet_interfaces.remove(vmnet)
+                    else:
+                        raise VMwareError("Network adapter {} is not associated with a VMnet interface".format(adapter_number))
+
+                    # check for adapter type
+                    # adapter_type = "ethernet{}.virtualDev".format(adapter_number)
+                    # if adapter_type in self._vmx_pairs and self._vmx_pairs[adapter_type] != self._adapter_type:
+                    #     raise VMwareError("Network adapter {} is not of type {}".format(self._adapter_type))
+                    # else:
+                    #     self._vmx_pairs[adapter_type] = self._adapter_type
+                else:
+                    new_ethernet_adapter = {"ethernet{}.present".format(adapter_number): "TRUE",
+                                            "ethernet{}.connectionType".format(adapter_number): "custom",
+                                            "ethernet{}.vnet".format(adapter_number): "vmnet1",
+                                            "ethernet{}.addressType".format(adapter_number): "generated",
+                                            "ethernet{}.generatedAddressOffset".format(adapter_number): "0"}
+                    self._vmx_pairs.update(new_ethernet_adapter)
+
+                    #raise VMwareError("Network adapter {} does not exist".format(adapter_number))
+
+        self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
+        self._update_ubridge_config()
+
+    def _update_ubridge_config(self):
+        """
+        Updates the ubrige.ini file.
+        """
+
+        ubridge_ini = os.path.join(self.working_dir, "ubridge.ini")
+        config = configparser.ConfigParser()
+        for adapter_number in range(0, self._adapters):
+            nio = self._ethernet_adapters[adapter_number].get_nio(0)
+            if nio:
+                bridge_name = "bridge{}".format(adapter_number)
 
                 vnet = "ethernet{}.vnet".format(adapter_number)
-                if vnet in self._vmx_pairs:
-                    pass
-                #if "ethernet{}.present".format(adapter_number) in self._vmx_pairs:
-                #    print("ETHERNET {} FOUND".format(adapter_number))
-                #ethernet0.vnet
+                if not vnet in self._vmx_pairs:
+                    continue
+
+                vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
+                if sys.platform.startswith("linux"):
+                    config[bridge_name] = {"source_linux_raw": vmnet_interface}
+                elif sys.platform.startswith("win"):
+                    windows_interfaces = interfaces()
+                    npf = None
+                    for interface in windows_interfaces:
+                        if "netcard" in interface and vmnet_interface in interface["netcard"]:
+                            npf = interface["id"]
+                        elif vmnet_interface in interface["name"]:
+                            npf = interface["id"]
+                    if npf:
+                        config[bridge_name] = {"source_ethernet": npf}
+                    else:
+                        raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
+                else:
+                    config[bridge_name] = {"source_ethernet": vmnet_interface}
+
+                if isinstance(nio, NIOUDP):
+                    udp_tunnel_info = {"destination_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
+                                                                                           rhost=nio.rhost,
+                                                                                           rport=nio.rport)}
+                    config[bridge_name].update(udp_tunnel_info)
+
+                if nio.capturing:
+                    capture_info = {"pcap_file": "{pcap_file}".format(pcap_file=nio.pcap_output_file)}
+                    config[bridge_name].update(capture_info)
+
+        try:
+            with open(ubridge_ini, "w", encoding="utf-8") as config_file:
+                config.write(config_file)
+            log.info('VMware VM "{name}" [id={id}]: ubridge.ini updated'.format(name=self._name,
+                                                                                id=self._id))
+        except OSError as e:
+            raise VMwareError("Could not create {}: {}".format(ubridge_ini, e))
+
+    @property
+    def ubridge_path(self):
+        """
+        Returns the uBridge executable path.
+
+        :returns: path to uBridge
+        """
+
+        path = self._manager.config.get_section_config("VMware").get("ubridge_path", "ubridge")
+        if path == "ubridge":
+            path = shutil.which("ubridge")
+        return path
+
+    @asyncio.coroutine
+    def _start_ubridge(self):
+        """
+        Starts uBridge (handles connections to and from this VMware VM).
+        """
+
+        try:
+            #self._update_ubridge_config()
+            command = [self.ubridge_path]
+            log.info("starting ubridge: {}".format(command))
+            self._ubridge_stdout_file = os.path.join(self.working_dir, "ubridge.log")
+            log.info("logging to {}".format(self._ubridge_stdout_file))
+            with open(self._ubridge_stdout_file, "w", encoding="utf-8") as fd:
+                self._ubridge_process = yield from asyncio.create_subprocess_exec(*command,
+                                                                                  stdout=fd,
+                                                                                  stderr=subprocess.STDOUT,
+                                                                                  cwd=self.working_dir)
+
+                monitor_process(self._ubridge_process, self._termination_callback)
+            log.info("ubridge started PID={}".format(self._ubridge_process.pid))
+        except (OSError, subprocess.SubprocessError) as e:
+            ubridge_stdout = self.read_ubridge_stdout()
+            log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
+            raise VMwareError("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
+
+    def _termination_callback(self, returncode):
+        """
+        Called when the process has stopped.
+
+        :param returncode: Process returncode
+        """
+
+        log.info("uBridge process has stopped, return code: %d", returncode)
+
+    def is_ubridge_running(self):
+        """
+        Checks if the ubridge process is running
+
+        :returns: True or False
+        """
+
+        if self._ubridge_process and self._ubridge_process.returncode is None:
+            return True
+        return False
+
+    def read_ubridge_stdout(self):
+        """
+        Reads the standard output of the uBridge process.
+        Only use when the process has been stopped or has crashed.
+        """
+
+        output = ""
+        if self._ubridge_stdout_file:
+            try:
+                with open(self._ubridge_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
+            except OSError as e:
+                log.warn("could not read {}: {}".format(self._ubridge_stdout_file, e))
+        return output
+
+    def _terminate_process_ubridge(self):
+        """
+        Terminate the ubridge process if running.
+        """
+
+        if self._ubridge_process:
+            log.info('Stopping uBridge process for VMware VM "{}" PID={}'.format(self.name, self._ubridge_process.pid))
+            try:
+                self._ubridge_process.terminate()
+            # Sometime the process can already be dead when we garbage collect
+            except ProcessLookupError:
+                pass
 
     @asyncio.coroutine
     def start(self):
@@ -123,7 +304,13 @@ class VMwareVM(BaseVM):
         Starts this VMware VM.
         """
 
+        ubridge_path = self.ubridge_path
+        if not ubridge_path or not os.path.isfile(ubridge_path):
+            raise VMwareError("ubridge is necessary to start a VMware VM")
+
         self._set_network_options()
+        yield from self._start_ubridge()
+
         if self._headless:
             yield from self._control_vm("start", "nogui")
         else:
@@ -135,6 +322,16 @@ class VMwareVM(BaseVM):
         """
         Stops this VMware VM.
         """
+
+        if self.is_ubridge_running():
+            self._terminate_process_ubridge()
+            try:
+                yield from wait_for_process_termination(self._ubridge_process, timeout=3)
+            except asyncio.TimeoutError:
+                if self._ubridge_process.returncode is None:
+                    log.warn("uBridge process {} is still running... killing it".format(self._ubridge_process.pid))
+                    self._ubridge_process.kill()
+            self._ubridge_process = None
 
         yield from self._control_vm("stop")
         log.info("VMware VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
@@ -185,11 +382,11 @@ class VMwareVM(BaseVM):
             self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
 
-        #for adapter in self._ethernet_adapters.values():
-        #    if adapter is not None:
-        #        for nio in adapter.ports.values():
-        #            if nio and isinstance(nio, NIOUDP):
-        #                self.manager.port_manager.release_udp_port(nio.lport, self._project)
+        for adapter in self._ethernet_adapters.values():
+            if adapter is not None:
+                for nio in adapter.ports.values():
+                    if nio and isinstance(nio, NIOUDP):
+                        self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         try:
             yield from self.stop()
