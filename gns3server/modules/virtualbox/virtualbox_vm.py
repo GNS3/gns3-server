@@ -504,7 +504,7 @@ class VirtualBoxVM(BaseVM):
         """
         Returns either GNS3 can use any VirtualBox adapter on this instance.
 
-        :returns: index
+        :returns: boolean
         """
 
         return self._use_any_adapter
@@ -520,7 +520,7 @@ class VirtualBoxVM(BaseVM):
         if use_any_adapter:
             log.info("VirtualBox VM '{name}' [{id}] is allowed to use any adapter".format(name=self.name, id=self.id))
         else:
-            log.info("VirtualBox VM '{name}' [{id}] is not allowd to use any adapter".format(name=self.name, id=self.id))
+            log.info("VirtualBox VM '{name}' [{id}] is not allowed to use any adapter".format(name=self.name, id=self.id))
         self._use_any_adapter = use_any_adapter
 
     @property

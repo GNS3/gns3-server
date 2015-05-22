@@ -21,11 +21,14 @@ VMware player/workstation server module.
 
 import os
 import sys
+import re
 import shutil
 import asyncio
 import subprocess
 import logging
+
 from collections import OrderedDict
+from gns3server.utils.interfaces import interfaces
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +45,12 @@ class VMware(BaseManager):
 
         super().__init__()
         self._vmrun_path = None
+        self._vmnets = []
+        self._vmnet_start_range = 2
+        if sys.platform.startswith("win"):
+            self._vmnet_end_range = 19
+        else:
+            self._vmnet_end_range = 255
 
     @property
     def vmrun_path(self):
@@ -81,6 +90,62 @@ class VMware(BaseManager):
 
         self._vmrun_path = vmrun_path
         return vmrun_path
+
+    @staticmethod
+    def get_vmnet_interfaces():
+
+        vmnet_interfaces = []
+        for interface in interfaces():
+            if sys.platform.startswith("win"):
+                if "netcard" in interface:
+                    windows_name = interface["netcard"]
+                else:
+                    windows_name = interface["name"]
+                match = re.search("(VMnet[0-9]+)", windows_name)
+                if match:
+                    vmnet = match.group(1)
+                    if vmnet not in ("VMnet1", "VMnet8"):
+                        vmnet_interfaces.append(vmnet)
+            elif interface["name"].startswith("vmnet"):
+                vmnet = interface["name"]
+                if vmnet not in ("vmnet1", "vmnet8"):
+                    vmnet_interfaces.append(interface["name"])
+        return vmnet_interfaces
+
+    def is_managed_vmnet(self, vmnet):
+
+        self._vmnet_start_range = self.config.get_section_config("VMware").getint("vmnet_start_range", self._vmnet_start_range)
+        self._vmnet_end_range = self.config.get_section_config("VMware").getint("vmnet_end_range", self._vmnet_end_range)
+        match = re.search("vmnet([0-9]+)$", vmnet, re.IGNORECASE)
+        if match:
+            vmnet_number = match.group(1)
+            if self._vmnet_start_range <= int(vmnet_number) <= self._vmnet_end_range:
+                return True
+        return False
+
+    def allocate_vmnet(self):
+
+        if not self._vmnets:
+            raise VMwareError("No more VMnet interfaces available")
+        return self._vmnets.pop(0)
+
+    def refresh_vmnet_list(self):
+
+        vmnet_interfaces = self.get_vmnet_interfaces()
+
+        # remove vmnets already in use
+        for vm in self._vms.values():
+            for used_vmnet in vm.vmnets:
+                if used_vmnet in vmnet_interfaces:
+                    log.debug("{} is already in use".format(used_vmnet))
+                    vmnet_interfaces.remove(used_vmnet)
+
+        # remove vmnets that are not managed
+        for vmnet in vmnet_interfaces.copy():
+            if vmnet in vmnet_interfaces and self.is_managed_vmnet(vmnet) is False:
+                vmnet_interfaces.remove(vmnet)
+
+        self._vmnets = vmnet_interfaces
 
     @property
     def host_type(self):

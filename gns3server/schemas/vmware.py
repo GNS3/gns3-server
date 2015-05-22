@@ -67,6 +67,10 @@ VMWARE_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "use_any_adapter": {
+            "description": "allow GNS3 to use any VMware adapter",
+            "type": "boolean",
+        },
     },
     "additionalProperties": False,
     "required": ["name", "vmx_path", "linked_clone"],
@@ -111,6 +115,10 @@ VMWARE_UPDATE_SCHEMA = {
             "description": "VMware adapter type",
             "type": "string",
             "minLength": 1,
+        },
+        "use_any_adapter": {
+            "description": "allow GNS3 to use any VMware adapter",
+            "type": "boolean",
         },
     },
     "additionalProperties": False,
@@ -163,6 +171,10 @@ VMWARE_OBJECT_SCHEMA = {
             "description": "VMware adapter type",
             "type": "string",
             "minLength": 1,
+        },
+        "use_any_adapter": {
+            "description": "allow GNS3 to use any VMware adapter",
+            "type": "boolean",
         },
         "console": {
             "description": "console TCP port",
