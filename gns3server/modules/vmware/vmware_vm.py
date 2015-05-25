@@ -21,10 +21,6 @@ VMware VM instance.
 
 import sys
 import os
-import tempfile
-import json
-import socket
-import re
 import subprocess
 import configparser
 import shutil
@@ -33,7 +29,6 @@ import asyncio
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
 from collections import OrderedDict
-from pkg_resources import parse_version
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -119,7 +114,7 @@ class VMwareVM(BaseVM):
         except OSError as e:
             raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
-        # first to some sanity checks
+        # first do some sanity checks
         for adapter_number in range(0, self._adapters):
             connected = "ethernet{}.startConnected".format(adapter_number)
             if self._get_vmx_setting(connected):
@@ -330,6 +325,9 @@ class VMwareVM(BaseVM):
         """
         Starts this VMware VM.
         """
+
+        if os.path.exists(self._vmx_path + ".lck"):
+            raise VMwareError("VM locked, it is either running or being edited in VMware")
 
         ubridge_path = self.ubridge_path
         if not ubridge_path or not os.path.isfile(ubridge_path):
