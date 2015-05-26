@@ -390,6 +390,9 @@ class VPCSVM(BaseVM):
 
         command = [self.vpcs_path]
         command.extend(["-p", str(self._console)])  # listen to console port
+        command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
+        command.extend(["-i", "1"])  # option to start only one VPC instance
+        command.extend(["-F"])  # option to avoid the daemonization of VPCS
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:
@@ -403,10 +406,6 @@ class VPCSVM(BaseVM):
                 # TAP interface
                 command.extend(["-e"])
                 command.extend(["-d", nio.tap_device])
-
-        command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
-        command.extend(["-i", "1"])  # option to start only one VPC instance
-        command.extend(["-F"])  # option to avoid the daemonization of VPCS
 
         if self.script_file:
             command.extend([os.path.basename(self.script_file)])
