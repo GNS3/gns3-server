@@ -24,6 +24,8 @@ import shutil
 import os
 import sys
 from aiohttp import web
+from unittest.mock import patch
+
 
 sys._called_from_test = True
 # Prevent execution of external binaries
@@ -100,10 +102,11 @@ def server(request, loop, port_manager, monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def project():
+def project(tmpdir):
     """A GNS3 lab"""
 
-    return ProjectManager.instance().create_project(project_id="a1e920ca-338a-4e9f-b363-aa607b09dd80")
+    p = ProjectManager.instance().create_project(project_id="a1e920ca-338a-4e9f-b363-aa607b09dd80")
+    return p
 
 
 @pytest.fixture(scope="session")

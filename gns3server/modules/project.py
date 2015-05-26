@@ -19,6 +19,7 @@ import aiohttp
 import os
 import shutil
 import asyncio
+import hashlib
 
 from uuid import UUID, uuid4
 from .port_manager import PortManager
@@ -457,3 +458,42 @@ class Project:
         """Stop sending notification to this clients"""
 
         self._listeners.remove(queue)
+
+    @asyncio.coroutine
+    def list_files(self):
+        """
+        :returns: Array of files in project without temporary files. The files are dictionnary {"path": "test.bin", "md5sum": "aaaaa"}
+        """
+
+        files = []
+        for (dirpath, dirnames, filenames) in os.walk(self.path):
+            for filename in filenames:
+                if not filename.endswith(".ghost"):
+                    path = os.path.relpath(dirpath, self.path)
+                    path = os.path.join(path, filename)
+                    path = os.path.normpath(path)
+                    file_info = {"path": path}
+
+                    try:
+                        file_info["md5sum"] = yield from wait_run_in_executor(self._hash_file, os.path.join(dirpath, filename))
+                    except OSError:
+                        continue
+                    files.append(file_info)
+
+        return files
+
+    def _hash_file(self, path):
+        """
+        Compute and md5 hash for file
+
+        :returns: hexadecimal md5
+        """
+
+        m = hashlib.md5()
+        with open(path, "rb") as f:
+            while True:
+                buf = f.read(128)
+                if not buf:
+                    break
+                m.update(buf)
+        return m.hexdigest()

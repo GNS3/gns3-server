@@ -229,3 +229,29 @@ def test_clean_project_directory(tmpdir):
     assert os.path.exists(str(project1))
     assert os.path.exists(str(oldproject))
     assert not os.path.exists(str(project2))
+
+
+def test_list_files(tmpdir, loop):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+        project = Project()
+        path = project.path
+        os.makedirs(os.path.join(path, "vm-1", "dynamips"))
+        with open(os.path.join(path, "vm-1", "dynamips", "test.bin"), "w+") as f:
+            f.write("test")
+        open(os.path.join(path, "vm-1", "dynamips", "test.ghost"), "w+").close()
+        with open(os.path.join(path, "test.txt"), "w+") as f:
+            f.write("test2")
+
+        files = loop.run_until_complete(asyncio.async(project.list_files()))
+
+        assert files == [
+            {
+                "path": "test.txt",
+                "md5sum": "ad0234829205b9033196ba818f7a872b"
+            },
+            {
+                "path": os.path.join("vm-1", "dynamips", "test.bin"),
+                "md5sum": "098f6bcd4621d373cade4e832627b4f6"
+            }
+        ]
