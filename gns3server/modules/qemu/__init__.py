@@ -74,7 +74,11 @@ class Qemu(BaseManager):
             # add specific locations on Mac OS X regardless of what's in $PATH
             paths.extend(["/usr/local/bin", "/opt/local/bin"])
             if hasattr(sys, "frozen"):
-                paths.append(os.path.abspath(os.path.join(os.getcwd(), "../../../qemu/bin/")))
+                try:
+                    paths.append(os.path.abspath(os.path.join(os.getcwd(), "../../../qemu/bin/")))
+                # If the user run the server by hand from outside
+                except FileNotFoundError:
+                    paths.append(["/Applications/GNS3.app/Contents/Resources/qemu/bin"])
         for path in paths:
             try:
                 for f in os.listdir(path):
