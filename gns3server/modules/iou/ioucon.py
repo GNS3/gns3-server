@@ -21,10 +21,14 @@ import socket
 import sys
 import os
 import select
-import fcntl
+try:
+    import fcntl
+    import termios
+    import tty
+except ImportError:
+    # On windows it's not available but this module can be included by the test suite
+    pass
 import struct
-import termios
-import tty
 import time
 import argparse
 import traceback
