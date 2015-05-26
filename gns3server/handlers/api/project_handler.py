@@ -84,9 +84,11 @@ class ProjectHandler:
         project.name = request.json.get("name", project.name)
         project_path = request.json.get("path", project.path)
         if project_path != project.path:
+            old_path = project.path
             project.path = project_path
             for module in MODULES:
                 yield from module.instance().project_moved(project)
+            yield from project.clean_old_path(old_path)
         # Very important we need to remove temporary flag after moving the project
         project.temporary = request.json.get("temporary", project.temporary)
         response.json(project)

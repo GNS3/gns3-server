@@ -146,11 +146,15 @@ class Project:
         self._path = path
         self._update_temporary_file()
 
-        # The order of operation is important because we want to avoid losing
-        # data
-        if old_path:
+    @asyncio.coroutine
+    def clean_old_path(self, old_path):
+        """
+        Called after a project location change. All the modules should
+        have been notified before
+        """
+        if self._temporary:
             try:
-                shutil.rmtree(old_path)
+                yield from wait_run_in_executor(shutil.rmtree, old_path)
             except OSError as e:
                 log.warn("Can't remove temporary directory {}: {}".format(old_path, e))
 
