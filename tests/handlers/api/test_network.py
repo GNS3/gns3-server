@@ -26,7 +26,7 @@ def test_udp_allocation(server, project):
 
 
 # Netfifaces is not available on Travis
-@pytest.skipif(os.environ.get("TRAVIS", False))
+@pytest.mark.skipif(os.environ.get("TRAVIS", False), reason="Not supported on Travis")
 def test_interfaces(server):
     response = server.get('/interfaces', example=True)
     assert response.status == 200
