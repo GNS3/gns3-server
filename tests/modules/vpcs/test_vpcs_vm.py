@@ -190,9 +190,9 @@ def test_update_startup_script_h(vm):
 
 
 def test_get_startup_script(vm):
-    content = os.linesep.join(["echo GNS3 VPCS", "ip 192.168.1.2"])
+    content = "echo GNS3 VPCS\nip 192.168.1.2"
     vm.startup_script = content
-    assert vm.startup_script == "echo GNS3 VPCS\nip 192.168.1.2"
+    assert vm.startup_script == os.linesep.join(["echo GNS3 VPCS","ip 192.168.1.2"])
 
 
 def test_get_startup_script_using_default_script(vm):
