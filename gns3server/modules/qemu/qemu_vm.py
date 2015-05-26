@@ -70,7 +70,7 @@ class QemuVM(BaseVM):
         self._stdout_file = ""
 
         # QEMU VM settings
-        self._qemu_path = qemu_path
+        self.qemu_path = qemu_path
         self._hda_disk_image = ""
         self._hdb_disk_image = ""
         self._hdc_disk_image = ""
