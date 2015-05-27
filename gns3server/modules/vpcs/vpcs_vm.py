@@ -254,7 +254,10 @@ class VPCSVM(BaseVM):
                 except asyncio.TimeoutError:
                     if self._process.returncode is None:
                         log.warn("VPCS process {} is still running... killing it".format(self._process.pid))
-                        self._process.kill()
+                        try:
+                            self._process.kill()
+                        except OSError as e:
+                            raise VPCSError("Can not stop the VPCS process: {}".format(e))
 
         self._process = None
         self._started = False
