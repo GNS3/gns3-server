@@ -54,3 +54,9 @@ def test_vm_invalid_virtualbox_api_version(loop, project, manager):
         with pytest.raises(VirtualBoxError):
             vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
             loop.run_until_complete(asyncio.async(vm.create()))
+
+
+def test_vm_adapter_add_nio_binding_adapter_not_exist(loop, vm, manager, free_console_port):
+    nio = manager.create_nio(manager.vboxmanage_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "192.168.1.2"})
+    with pytest.raises(VirtualBoxError):
+        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(15, nio)))

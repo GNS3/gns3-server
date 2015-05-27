@@ -799,7 +799,7 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
@@ -830,7 +830,7 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
@@ -861,7 +861,7 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
@@ -883,7 +883,7 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
