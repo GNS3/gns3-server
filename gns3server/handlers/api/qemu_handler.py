@@ -292,6 +292,21 @@ class QEMUHandler:
         binaries = yield from Qemu.binary_list()
         response.json(binaries)
 
+    @classmethod
+    @Route.get(
+        r"/qemu/img-binaries",
+        status_codes={
+            200: "Success",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Get a list of available Qemu-img binaries",
+        output=QEMU_BINARY_LIST_SCHEMA)
+    def list_img_binaries(request, response):
+
+        binaries = yield from Qemu.img_binary_list()
+        response.json(binaries)
+
     @Route.get(
         r"/qemu/vms",
         status_codes={

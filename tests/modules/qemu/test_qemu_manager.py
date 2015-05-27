@@ -57,6 +57,28 @@ def test_binary_list(loop):
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
 
+def test_img_binary_list(loop):
+
+    files_to_create = ["qemu-img", "qemu-io", "qemu-system-x86", "qemu-system-x42", "qemu-kvm", "hello"]
+
+    for file_to_create in files_to_create:
+        path = os.path.join(os.environ["PATH"], file_to_create)
+        with open(path, "w+") as f:
+            f.write("1")
+        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+    with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="qemu-img version 2.2.0, Copyright (c) 2004-2008 Fabrice Bellard") as mock:
+        qemus = loop.run_until_complete(asyncio.async(Qemu.img_binary_list()))
+
+        version = "2.2.0"
+
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-img"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-io"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
+
 
 def test_get_legacy_vm_workdir():
 
