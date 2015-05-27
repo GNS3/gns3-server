@@ -741,6 +741,8 @@ class QemuVM(BaseVM):
                                                                                                  adapter_number=adapter_number))
 
         if self.is_running():
+            raise QemuError("Sorry, adding a link to a started Qemu VM is not supported.")
+            # FIXME: does the code below work? very undocumented feature...
             # dynamically configure an UDP tunnel on the QEMU VM adapter
             if nio and isinstance(nio, NIOUDP):
                 if self._legacy_networking:
@@ -751,7 +753,6 @@ class QemuVM(BaseVM):
                                                                                                                           nio.rport,
                                                                                                                           nio.rhost))
                 else:
-                    # FIXME: does it work? very undocumented feature...
                     # Apparently there is a bug in Qemu...
                     # netdev_add [user|tap|socket|hubport|netmap],id=str[,prop=value][,...] -- add host network device
                     # netdev_del id -- remove host network device
@@ -785,6 +786,7 @@ class QemuVM(BaseVM):
                                                                                                  adapter_number=adapter_number))
 
         if self.is_running():
+            # FIXME: does the code below work? very undocumented feature...
             # dynamically disable the QEMU VM adapter
             yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_number, adapter_number))
             yield from self._control_vm("host_net_add user vlan={},name=gns3-{}".format(adapter_number, adapter_number))

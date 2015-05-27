@@ -344,7 +344,7 @@ class VirtualBoxHandler:
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        vm.start_capture(adapter_number, pcap_file_path)
+        yield from vm.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
