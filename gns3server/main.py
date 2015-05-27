@@ -186,7 +186,13 @@ def main():
     Project.clean_project_directory()
 
     CrashReport.instance()
-    host = server_config["host"]
+
+    try:
+        host = server_config["host"].encode("idna").decode()
+    except UnicodeError:
+        log.critical("Invalid hostname %s", server_config["host"])
+        return
+
     port = int(server_config["port"])
     server = Server.instance(host, port)
     try:
