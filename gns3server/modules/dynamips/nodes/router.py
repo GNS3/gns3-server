@@ -836,7 +836,7 @@ class Router(BaseVM):
         return self._disk1
 
     @asyncio.coroutine
-    def disk1(self, disk1):
+    def set_disk1(self, disk1):
         """
         Sets the size (MB) for PCMCIA disk1.
 
