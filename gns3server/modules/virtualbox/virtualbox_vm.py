@@ -799,7 +799,7 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
@@ -830,7 +830,7 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
@@ -851,6 +851,7 @@ class VirtualBoxVM(BaseVM):
                                                                                                      adapter_number=adapter_number))
         return nio
 
+    @asyncio.coroutine
     def start_capture(self, adapter_number, output_file):
         """
         Starts a packet capture.
@@ -861,9 +862,13 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
+
+        vm_state = yield from self._get_vm_state()
+        if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
+            raise VirtualBoxError("Sorry, packet capturing on a started VirtualBox VM is not supported.")
 
         nio = adapter.get_nio(0)
         if nio.capturing:
@@ -883,7 +888,7 @@ class VirtualBoxVM(BaseVM):
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
+        except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 

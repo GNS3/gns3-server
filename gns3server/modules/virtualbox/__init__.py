@@ -168,6 +168,8 @@ class VirtualBox(BaseManager):
         vms = []
         result = yield from self.execute("list", ["vms"])
         for line in result:
+            if line[0] != '"' or line[-1:] != "}":
+                continue # Broken output (perhaps a carriage return in VM name
             vmname, _ = line.rsplit(' ', 1)
             vmname = vmname.strip('"')
             if vmname == "<inaccessible>":

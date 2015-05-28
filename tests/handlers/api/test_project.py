@@ -23,6 +23,7 @@ import uuid
 import os
 import asyncio
 import aiohttp
+
 from unittest.mock import patch
 from tests.utils import asyncio_patch
 
@@ -91,17 +92,42 @@ def test_update_temporary_project(server):
     assert response.json["temporary"] is False
 
 
-def test_update_path_project(server, tmpdir):
+def test_update_path_project_temporary(server, tmpdir):
+
+    os.makedirs(str(tmpdir / "a"))
+    os.makedirs(str(tmpdir / "b"))
 
     with patch("gns3server.modules.project.Project.is_local", return_value=True):
-        response = server.post("/projects", {"name": "first_name"})
+        response = server.post("/projects", {"name": "first_name", "path": str(tmpdir / "a"), "temporary": True})
         assert response.status == 201
         assert response.json["name"] == "first_name"
-        query = {"name": "second_name", "path": str(tmpdir)}
+        query = {"name": "second_name", "path": str(tmpdir / "b")}
         response = server.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
         assert response.status == 200
-        assert response.json["path"] == str(tmpdir)
+        assert response.json["path"] == str(tmpdir / "b")
         assert response.json["name"] == "second_name"
+
+        assert not os.path.exists(str(tmpdir / "a"))
+        assert os.path.exists(str(tmpdir / "b"))
+
+
+def test_update_path_project_non_temporary(server, tmpdir):
+
+    os.makedirs(str(tmpdir / "a"))
+    os.makedirs(str(tmpdir / "b"))
+
+    with patch("gns3server.modules.project.Project.is_local", return_value=True):
+        response = server.post("/projects", {"name": "first_name", "path": str(tmpdir / "a")})
+        assert response.status == 201
+        assert response.json["name"] == "first_name"
+        query = {"name": "second_name", "path": str(tmpdir / "b")}
+        response = server.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
+        assert response.status == 200
+        assert response.json["path"] == str(tmpdir / "b")
+        assert response.json["name"] == "second_name"
+
+        assert os.path.exists(str(tmpdir / "a"))
+        assert os.path.exists(str(tmpdir / "b"))
 
 
 def test_update_path_project_non_local(server, tmpdir):

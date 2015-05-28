@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import pytest
+
 
 def test_udp_allocation(server, project):
     response = server.post('/projects/{}/ports/udp'.format(project.id), {}, example=True)
@@ -22,6 +25,8 @@ def test_udp_allocation(server, project):
     assert response.json == {'udp_port': 10000}
 
 
+# Netfifaces is not available on Travis
+@pytest.mark.skipif(os.environ.get("TRAVIS", False) is not False, reason="Not supported on Travis")
 def test_interfaces(server):
     response = server.get('/interfaces', example=True)
     assert response.status == 200

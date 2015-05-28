@@ -73,10 +73,6 @@ def test_changing_path_temporary_flag(tmpdir):
         assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
         p.path = str(tmpdir)
-        p.temporary = False
-        assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
-        assert not os.path.exists(os.path.join(str(tmpdir), ".gns3_temporary"))
-        assert not os.path.exists(original_path)
 
 
 def test_temporary_path():
