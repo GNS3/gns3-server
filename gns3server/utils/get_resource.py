@@ -19,6 +19,8 @@ import tempfile
 import pkg_resources
 import atexit
 import logging
+import os
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -39,3 +41,19 @@ def clean_egg_cache():
     except Exception:
         # We don't care if we can not cleanup
         pass
+
+
+def get_resource(resource_name):
+    """
+    Return a resource in current directory or in frozen package
+    """
+
+    resource_path = None
+    if hasattr(sys, "frozen") and sys.platform.startswith("darwin"):
+        resource_name = os.path.join("../Resources", resource_name)
+    if hasattr(sys, "frozen") and os.path.exists(resource_name):
+        resource_path = os.path.normpath(os.path.join(os.getcwd(), resource_name))
+    elif not hasattr(sys, "frozen") and pkg_resources.resource_exists("gns3", resource_name):
+        resource_path = pkg_resources.resource_filename("gns3", resource_name)
+        resource_path = os.path.normpath(resource_path)
+    return resource_path

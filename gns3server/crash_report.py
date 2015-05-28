@@ -33,6 +33,7 @@ except ImportError:
 
 from .version import __version__
 from .config import Config
+from .utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
@@ -46,7 +47,7 @@ class CrashReport:
 
     DSN = "sync+https://9e6f04df72c74b6894a6dcd2928d069e:2035d1beb1654136b170f1e91f05ee51@app.getsentry.com/38482"
     if hasattr(sys, "frozen"):
-        cacert = os.path.join(os.getcwd(), "cacert.pem")
+        cacert = get_resource("cacert.pem")
         if os.path.isfile(cacert):
             DSN += "?ca_certs={}".format(cacert)
         else:
