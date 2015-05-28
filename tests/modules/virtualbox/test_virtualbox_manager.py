@@ -71,7 +71,7 @@ def test_vboxmanage_path(manager, tmpdir):
         assert manager.find_vboxmanage() == path
 
 
-def test_get_list(manager, loop):
+def test_list_images(manager, loop):
     vm_list = ['"Windows 8.1" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
                '"Carriage',
                'Return" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
@@ -91,7 +91,7 @@ def test_get_list(manager, loop):
 
     with asyncio_patch("gns3server.modules.virtualbox.VirtualBox.execute") as mock:
         mock.side_effect = execute_mock
-        vms = loop.run_until_complete(asyncio.async(manager.get_list()))
+        vms = loop.run_until_complete(asyncio.async(manager.list_images()))
     assert vms == [
         {"vmname": "Windows 8.1", "ram": 512},
         {"vmname": "Linux Microcore 4.7.1", "ram": 256}
