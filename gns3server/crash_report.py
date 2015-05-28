@@ -19,10 +19,7 @@ import os
 import sys
 import struct
 import platform
-import faulthandler
 
-# Display a traceback in case of segfault crash. Usefull when frozen
-faulthandler.enable()
 
 try:
     import raven
@@ -37,6 +34,16 @@ from .utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
+
+
+# Dev build
+if __version__[4] != 0:
+    import faulthandler
+
+    # Display a traceback in case of segfault crash. Usefull when frozen
+    # Not enabled by default for security reason
+    log.info("Enable catching segfault")
+    faulthandler.enable()
 
 
 class CrashReport:
