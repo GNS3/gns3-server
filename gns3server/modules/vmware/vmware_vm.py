@@ -21,23 +21,28 @@ VMware VM instance.
 
 import sys
 import os
+import socket
 import subprocess
 import configparser
 import shutil
 import asyncio
+import tempfile
 
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
+from gns3server.utils.telnet_server import TelnetServer
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_vm import BaseVM
 
+if sys.platform.startswith('win'):
+    import msvcrt
+    import win32file
 
 import logging
 log = logging.getLogger(__name__)
-
 
 
 class VMwareVM(BaseVM):
@@ -54,8 +59,11 @@ class VMwareVM(BaseVM):
         self._vmx_pairs = OrderedDict()
         self._ubridge_process = None
         self._ubridge_stdout_file = ""
+        self._telnet_server_thread = None
+        self._serial_pipe = None
         self._vmnets = []
         self._maximum_adapters = 10
+        self._started = False
         self._closed = False
 
         # VMware VM settings
@@ -108,11 +116,6 @@ class VMwareVM(BaseVM):
         return None
 
     def _set_network_options(self):
-
-        try:
-            self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
-        except OSError as e:
-            raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
         # first do some sanity checks
         for adapter_number in range(0, self._adapters):
@@ -179,7 +182,6 @@ class VMwareVM(BaseVM):
                 log.debug("disabling remaining adapter {}".format(adapter_number))
                 self._vmx_pairs["ethernet{}.startConnected".format(adapter_number)] = "FALSE"
 
-        self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
         self._update_ubridge_config()
 
     def _update_ubridge_config(self):
@@ -242,7 +244,7 @@ class VMwareVM(BaseVM):
         :returns: path to uBridge
         """
 
-        path = self._manager.config.get_section_config("VMware").get("ubridge_path", "ubridge")
+        path = self._manager.config.get_section_config("Server").get("ubridge_path", "ubridge")
         if path == "ubridge":
             path = shutil.which("ubridge")
         return path
@@ -333,13 +335,26 @@ class VMwareVM(BaseVM):
         if not ubridge_path or not os.path.isfile(ubridge_path):
             raise VMwareError("ubridge is necessary to start a VMware VM")
 
-        self._set_network_options()
-        yield from self._start_ubridge()
+        try:
+            self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
+        except OSError as e:
+            raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
+        self._set_network_options()
+        self._set_serial_console()
+        self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
+
+        yield from self._start_ubridge()
         if self._headless:
             yield from self._control_vm("start", "nogui")
         else:
             yield from self._control_vm("start")
+
+        if self._enable_remote_console and self._console is not None:
+            yield from asyncio.sleep(1)  # give some time to VMware to create the pipe file.
+            self._start_remote_console()
+
+        self._started = True
         log.info("VMware VM '{name}' [{id}] started".format(name=self.name, id=self.id))
 
     @asyncio.coroutine
@@ -348,6 +363,7 @@ class VMwareVM(BaseVM):
         Stops this VMware VM.
         """
 
+        self._stop_remote_console()
         if self.is_ubridge_running():
             self._terminate_process_ubridge()
             try:
@@ -361,9 +377,8 @@ class VMwareVM(BaseVM):
         try:
             yield from self._control_vm("stop")
         finally:
-
+            self._started = False
             self._vmnets.clear()
-
             try:
                 self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
             except OSError as e:
@@ -518,10 +533,11 @@ class VMwareVM(BaseVM):
 
         if enable_remote_console:
             log.info("VMware VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
-            #self._start_remote_console()
+            if self._started:
+                self._start_remote_console()
         else:
             log.info("VMware VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
-            #self._stop_remote_console()
+            self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
     @property
@@ -647,3 +663,81 @@ class VMwareVM(BaseVM):
                                                                                                  nio=nio,
                                                                                                  adapter_number=adapter_number))
         return nio
+
+    def _get_pipe_name(self):
+        """
+        Returns the pipe name to create a serial connection.
+
+        :returns: pipe path (string)
+        """
+
+        if sys.platform.startswith("win"):
+            pipe_name = r"\\.\pipe\gns3_vmware\{}".format(self.id)
+        else:
+            pipe_name = os.path.join(tempfile.gettempdir(), "gns3_vmware", "{}".format(self.id))
+            try:
+                os.makedirs(os.path.dirname(pipe_name), exist_ok=True)
+            except OSError as e:
+                raise VMwareError("Could not create the VMware pipe directory: {}".format(e))
+        return pipe_name
+
+    def _set_serial_console(self):
+        """
+        Configures the first serial port to allow a serial console connection.
+        """
+
+        pipe_name = self._get_pipe_name()
+        serial_port = {"serial0.present": "TRUE",
+                       "serial0.fileType": "pipe",
+                       "serial0.fileName": pipe_name,
+                       "serial0.pipe.endPoint": "server"}
+        self._vmx_pairs.update(serial_port)
+
+    def _start_remote_console(self):
+        """
+        Starts remote console support for this VM.
+        """
+
+        # starts the Telnet to pipe thread
+        pipe_name = self._get_pipe_name()
+        if sys.platform.startswith("win"):
+            try:
+                self._serial_pipe = open(pipe_name, "a+b")
+            except OSError as e:
+                raise VMwareError("Could not open the pipe {}: {}".format(pipe_name, e))
+            try:
+                self._telnet_server_thread = TelnetServer(self.name, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._manager.port_manager.console_host, self._console)
+            except OSError as e:
+                raise VMwareError("Unable to create Telnet server: {}".format(e))
+            self._telnet_server_thread.start()
+        else:
+            try:
+                self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self._serial_pipe.connect(pipe_name)
+            except OSError as e:
+                raise VMwareError("Could not connect to the pipe {}: {}".format(pipe_name, e))
+            try:
+                self._telnet_server_thread = TelnetServer(self.name, self._serial_pipe, self._manager.port_manager.console_host, self._console)
+            except OSError as e:
+                raise VMwareError("Unable to create Telnet server: {}".format(e))
+            self._telnet_server_thread.start()
+
+    def _stop_remote_console(self):
+        """
+        Stops remote console support for this VM.
+        """
+
+        if self._telnet_server_thread:
+            if self._telnet_server_thread.is_alive():
+                self._telnet_server_thread.stop()
+                self._telnet_server_thread.join(timeout=3)
+            if self._telnet_server_thread.is_alive():
+                log.warn("Serial pipe thread is still alive!")
+            self._telnet_server_thread = None
+
+        if self._serial_pipe:
+            if sys.platform.startswith("win"):
+                win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
+            else:
+                self._serial_pipe.close()
+            self._serial_pipe = None

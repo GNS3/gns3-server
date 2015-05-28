@@ -29,11 +29,11 @@ import socket
 import asyncio
 
 from pkg_resources import parse_version
+from gns3server.utils.telnet_server import TelnetServer
 from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_nat import NIONAT
 from ..adapters.ethernet_adapter import EthernetAdapter
-from .telnet_server import TelnetServer  # TODO: port TelnetServer to asyncio
 from ..base_vm import BaseVM
 
 if sys.platform.startswith('win'):
