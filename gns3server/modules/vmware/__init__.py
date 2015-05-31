@@ -44,6 +44,7 @@ class VMware(BaseManager):
     def __init__(self):
 
         super().__init__()
+        self._execute_lock = asyncio.Lock()
         self._vmrun_path = None
         self._vmnets = []
         self._vmnet_start_range = 2
@@ -167,31 +168,32 @@ class VMware(BaseManager):
     @asyncio.coroutine
     def execute(self, subcommand, args, timeout=60, host_type=None):
 
-        vmrun_path = self.vmrun_path
-        if not vmrun_path:
-            vmrun_path = self.find_vmrun()
-        if host_type is None:
-            host_type = self.host_type
+        with (yield from self._execute_lock):
+            vmrun_path = self.vmrun_path
+            if not vmrun_path:
+                vmrun_path = self.find_vmrun()
+            if host_type is None:
+                host_type = self.host_type
 
-        command = [vmrun_path, "-T", host_type, subcommand]
-        command.extend(args)
-        log.debug("Executing vmrun with command: {}".format(command))
-        try:
-            process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        except (OSError, subprocess.SubprocessError) as e:
-            raise VMwareError("Could not execute vmrun: {}".format(e))
+            command = [vmrun_path, "-T", host_type, subcommand]
+            command.extend(args)
+            log.debug("Executing vmrun with command: {}".format(command))
+            try:
+                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            except (OSError, subprocess.SubprocessError) as e:
+                raise VMwareError("Could not execute vmrun: {}".format(e))
 
-        try:
-            stdout_data, _ = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
-            raise VMwareError("vmrun has timed out after {} seconds!".format(timeout))
+            try:
+                stdout_data, _ = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
+            except asyncio.TimeoutError:
+                raise VMwareError("vmrun has timed out after {} seconds!".format(timeout))
 
-        if process.returncode:
-            # vmrun print errors on stdout
-            vmrun_error = stdout_data.decode("utf-8", errors="ignore")
-            raise VMwareError("vmrun has returned an error: {}".format(vmrun_error))
+            if process.returncode:
+                # vmrun print errors on stdout
+                vmrun_error = stdout_data.decode("utf-8", errors="ignore")
+                raise VMwareError("vmrun has returned an error: {}".format(vmrun_error))
 
-        return stdout_data.decode("utf-8", errors="ignore").splitlines()
+            return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
     @staticmethod
     def parse_vmware_file(path):
@@ -212,6 +214,20 @@ class VMware(BaseManager):
                 except ValueError:
                     continue
         return pairs
+
+    @staticmethod
+    def write_vmware_file(path, pairs):
+        """
+        Write a VMware file (excepting VMX file).
+
+        :param path: path to the VMware file
+        :param pairs: settings to write
+        """
+
+        with open(path, "w", encoding="utf-8") as f:
+            for key, value in pairs.items():
+                entry = '{} = "{}"\n'.format(key, value)
+                f.write(entry)
 
     @staticmethod
     def write_vmx_file(path, pairs):
@@ -289,31 +305,63 @@ class VMware(BaseManager):
                         continue
         return vms
 
+    @staticmethod
+    def get_vmware_inventory_path():
+        """
+        Returns VMware inventory file path.
+
+        :returns: path to the inventory file
+        """
+
+        if sys.platform.startswith("win"):
+            return os.path.expandvars(r"%APPDATA%\Vmware\Inventory.vmls")
+        elif sys.platform.startswith("darwin"):
+            return os.path.expanduser("~/Library/Application\ Support/VMware Fusion/vmInventory")
+        else:
+            return os.path.expanduser("~/.vmware/inventory.vmls")
+
+    @staticmethod
+    def get_vmware_preferences_path():
+        """
+        Returns VMware preferences file path.
+
+        :returns: path to the preferences file
+        """
+
+        if sys.platform.startswith("win"):
+            return os.path.expandvars(r"%APPDATA%\VMware\preferences.ini")
+        elif sys.platform.startswith("darwin"):
+            return os.path.expanduser("~/Library/Preferences/VMware Fusion/preferences")
+        else:
+            return  os.path.expanduser("~/.vmware/preferences")
+
+    @staticmethod
+    def get_vmware_default_vm_path():
+        """
+        Returns VMware default VM directory path.
+
+        :returns: path to the default VM directory
+        """
+
+        if sys.platform.startswith("win"):
+            return os.path.expandvars(r"%USERPROFILE%\Documents\Virtual Machines")
+        elif sys.platform.startswith("darwin"):
+            return os.path.expanduser("~/Documents/Virtual Machines.localized")
+        else:
+            return os.path.expanduser("~/vmware")
+
     def list_vms(self):
         """
         Gets VMware VM list.
         """
 
-        if sys.platform.startswith("win"):
-            inventory_path = os.path.expandvars(r"%APPDATA%\Vmware\Inventory.vmls")
-        elif sys.platform.startswith("darwin"):
-            inventory_path = os.path.expanduser("~/Library/Application\ Support/VMware Fusion/vmInventory")
-        else:
-            inventory_path = os.path.expanduser("~/.vmware/inventory.vmls")
-
+        inventory_path = self.get_vmware_inventory_path()
         if os.path.exists(inventory_path):
             return self._get_vms_from_inventory(inventory_path)
         else:
             # VMware player has no inventory file, let's search the default location for VMs.
-            if sys.platform.startswith("win"):
-                vmware_preferences_path = os.path.expandvars(r"%APPDATA%\VMware\preferences.ini")
-                default_vm_path = os.path.expandvars(r"%USERPROFILE%\Documents\Virtual Machines")
-            elif sys.platform.startswith("darwin"):
-                vmware_preferences_path = os.path.expanduser("~/Library/Preferences/VMware Fusion/preferences")
-                default_vm_path = os.path.expanduser("~/Documents/Virtual Machines.localized")
-            else:
-                vmware_preferences_path = os.path.expanduser("~/.vmware/preferences")
-                default_vm_path = os.path.expanduser("~/vmware")
+            vmware_preferences_path = self.get_vmware_preferences_path()
+            default_vm_path = self.get_vmware_default_vm_path()
 
             if os.path.exists(vmware_preferences_path):
                 # the default vm path may be present in VMware preferences file.

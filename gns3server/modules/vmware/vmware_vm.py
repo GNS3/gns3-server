@@ -105,6 +105,71 @@ class VMwareVM(BaseVM):
         log.debug("Control VM '{}' result: {}".format(subcommand, result))
         return result
 
+    @asyncio.coroutine
+    def create(self):
+
+        if self._linked_clone and not os.path.exists(os.path.join(self.working_dir, os.path.basename(self._vmx_path))):
+            # create the base snapshot for linked clones
+            base_snapshot_name = "GNS3 Linked Base for clones"
+            vmsd_path = os.path.splitext(self._vmx_path)[0] + ".vmsd"
+            if not os.path.exists(vmsd_path):
+                raise VMwareError("{} doesn't not exist".format(vmsd_path))
+            try:
+                vmsd_pairs = self.manager.parse_vmware_file(vmsd_path)
+            except OSError as e:
+                raise VMwareError('Could not read VMware VMSD file "{}": {}'.format(vmsd_path, e))
+            gns3_snapshot_exists = False
+            for value in vmsd_pairs.values():
+                if value == base_snapshot_name:
+                    gns3_snapshot_exists = True
+                    break
+            if not gns3_snapshot_exists:
+                log.info("Creating snapshot '{}'".format(base_snapshot_name))
+                yield from self._control_vm("snapshot", base_snapshot_name)
+
+            # create the linked clone based on the base snapshot
+            new_vmx_path = os.path.join(self.working_dir, self.name + ".vmx")
+            yield from self._control_vm("clone",
+                                        new_vmx_path,
+                                        "linked",
+                                        "-snapshot={}".format(base_snapshot_name),
+                                        "-cloneName={}".format(self.name))
+
+            try:
+                vmsd_pairs = self.manager.parse_vmware_file(vmsd_path)
+            except OSError as e:
+                raise VMwareError('Could not read VMware VMSD file "{}": {}'.format(vmsd_path, e))
+
+            snapshot_name = None
+            for name, value in vmsd_pairs.items():
+                if value == base_snapshot_name:
+                    snapshot_name = name.split(".", 1)[0]
+                    break
+
+            if snapshot_name is None:
+                raise VMwareError("Could not find the linked base snapshot in {}".format(vmsd_path))
+
+            num_clones_entry = "{}.numClones".format(snapshot_name)
+            if num_clones_entry in vmsd_pairs:
+                try:
+                    nb_of_clones = int(vmsd_pairs[num_clones_entry])
+                except ValueError:
+                    raise VMwareError("Value of {} in {} is not a number".format(num_clones_entry, vmsd_path))
+                vmsd_pairs[num_clones_entry] = str(nb_of_clones - 1)
+
+                for clone_nb in range(0, nb_of_clones):
+                    clone_entry = "{}.clone{}".format(snapshot_name, clone_nb)
+                    if clone_entry in vmsd_pairs:
+                        del vmsd_pairs[clone_entry]
+
+                try:
+                    self.manager.write_vmware_file(vmsd_path, vmsd_pairs)
+                except OSError as e:
+                    raise VMwareError('Could not write VMware VMSD file "{}": {}'.format(vmsd_path, e))
+
+            # update the VMX file path
+            self._vmx_path = new_vmx_path
+
     def _get_vmx_setting(self, name, value=None):
 
         if name in self._vmx_pairs:
@@ -342,7 +407,11 @@ class VMwareVM(BaseVM):
 
         self._set_network_options()
         self._set_serial_console()
-        self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
+
+        try:
+            self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
+        except OSError as e:
+            raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
         yield from self._start_ubridge()
         if self._headless:
@@ -464,6 +533,31 @@ class VMwareVM(BaseVM):
             yield from self.stop()
         except VMwareError:
             pass
+
+        if self._linked_clone:
+            # clean the VMware inventory path from this linked clone
+            inventory_path = self.manager.get_vmware_inventory_path()
+            if os.path.exists(inventory_path):
+                try:
+                    inventory_pairs = self.manager.parse_vmware_file(inventory_path)
+                except OSError as e:
+                    log.warning('Could not read VMware inventory file "{}": {}'.format(inventory_path, e))
+
+                vmlist_entry = None
+                for name, value in inventory_pairs.items():
+                    if value == self._vmx_path:
+                        vmlist_entry = name.split(".", 1)[0]
+                        break
+
+                if vmlist_entry is not None:
+                    for name in inventory_pairs.keys():
+                        if name.startswith(vmlist_entry):
+                            del inventory_pairs[name]
+
+            try:
+                self.manager.write_vmware_file(inventory_path, inventory_pairs)
+            except OSError as e:
+                raise VMwareError('Could not write VMware inventory file "{}": {}'.format(inventory_path, e))
 
         log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
         self._closed = True
