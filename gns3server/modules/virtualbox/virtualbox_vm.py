@@ -871,6 +871,10 @@ class VirtualBoxVM(BaseVM):
             raise VirtualBoxError("Sorry, packet capturing on a started VirtualBox VM is not supported.")
 
         nio = adapter.get_nio(0)
+
+        if not nio:
+            raise VirtualBoxError("Adapter {} is not connected".format(adapter_number))
+
         if nio.capturing:
             raise VirtualBoxError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
@@ -893,6 +897,10 @@ class VirtualBoxVM(BaseVM):
                                                                                                             adapter_number=adapter_number))
 
         nio = adapter.get_nio(0)
+
+        if not nio:
+            raise VirtualBoxError("Adapter {} is not connected".format(adapter_number))
+
         nio.stopPacketCapture()
 
         log.info("VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,

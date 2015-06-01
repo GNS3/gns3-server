@@ -1303,6 +1303,10 @@ class Router(BaseVM):
 
         nio = adapter.get_nio(port_number)
 
+        if not nio:
+            raise DynamipsError("Port {slot_number}/{port_number} is not connected".format(slot_number=slot_number,
+                                                                                           port_number=port_number))
+
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
             raise DynamipsError("Port {port_number} has already a filter applied on {adapter}".format(adapter=adapter,
                                                                                                       port_number=port_number))
@@ -1335,6 +1339,11 @@ class Router(BaseVM):
                                                                                                 port_number=port_number))
 
         nio = adapter.get_nio(port_number)
+
+        if not nio:
+            raise DynamipsError("Port {slot_number}/{port_number} is not connected".format(slot_number=slot_number,
+                                                                                           port_number=port_number))
+
         yield from nio.unbind_filter("both")
 
         log.info('Router "{name}" [{id}]: stopping packet capture on port {slot_number}/{port_number}'.format(name=self._name,

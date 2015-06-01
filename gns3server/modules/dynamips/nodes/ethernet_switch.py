@@ -298,6 +298,9 @@ class EthernetSwitch(Device):
 
         nio = self._nios[port_number]
 
+        if not nio:
+            raise DynamipsError("Port {} is not connected".format(port_number))
+
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
             data_link_type = data_link_type[4:]
@@ -324,6 +327,10 @@ class EthernetSwitch(Device):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         nio = self._nios[port_number]
+
+        if not nio:
+            raise DynamipsError("Port {} is not connected".format(port_number))
+
         yield from nio.unbind_filter("both")
         log.info('Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                   id=self._id,
