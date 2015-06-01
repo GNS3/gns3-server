@@ -178,23 +178,24 @@ class VirtualBoxVM(BaseVM):
         if vm_state != "poweroff" and vm_state != "saved":
             raise VirtualBoxError("VirtualBox VM not powered off or saved")
 
-        yield from self._set_network_options()
-        yield from self._set_serial_console()
+        with (yield from self.manager.start_lock):
+            yield from self._set_network_options()
+            yield from self._set_serial_console()
 
-        args = [self._vmname]
-        if self._headless:
-            args.extend(["--type", "headless"])
-        result = yield from self.manager.execute("startvm", args)
-        log.info("VirtualBox VM '{name}' [{id}] started".format(name=self.name, id=self.id))
-        log.debug("Start result: {}".format(result))
+            args = [self._vmname]
+            if self._headless:
+                args.extend(["--type", "headless"])
+            result = yield from self.manager.execute("startvm", args)
+            log.info("VirtualBox VM '{name}' [{id}] started".format(name=self.name, id=self.id))
+            log.debug("Start result: {}".format(result))
 
-        # add a guest property to let the VM know about the GNS3 name
-        yield from self.manager.execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
-        # add a guest property to let the VM know about the GNS3 project directory
-        yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
+            # add a guest property to let the VM know about the GNS3 name
+            yield from self.manager.execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
+            # add a guest property to let the VM know about the GNS3 project directory
+            yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
 
-        if self._enable_remote_console and self._console is not None:
-            self._start_remote_console()
+            if self._enable_remote_console and self._console is not None:
+                self._start_remote_console()
 
     @asyncio.coroutine
     def stop(self):

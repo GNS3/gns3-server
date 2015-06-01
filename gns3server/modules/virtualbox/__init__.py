@@ -41,6 +41,9 @@ class VirtualBox(BaseManager):
 
         super().__init__()
         self._vboxmanage_path = None
+        # It seem starting two VM in paralell can be an issue:
+        # https://github.com/GNS3/gns3-server/issues/190
+        self.start_lock = asyncio.Lock()
         self._execute_lock = asyncio.Lock()
 
     @property
