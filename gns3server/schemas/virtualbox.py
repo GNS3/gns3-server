@@ -80,6 +80,10 @@ VBOX_CREATE_SCHEMA = {
             "description": "headless mode",
             "type": "boolean"
         },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown",
+            "type": "boolean"
+        },
     },
     "additionalProperties": False,
     "required": ["name", "vmname", "linked_clone"],
@@ -133,6 +137,10 @@ VBOX_UPDATE_SCHEMA = {
         },
         "headless": {
             "description": "headless mode",
+            "type": "boolean"
+        },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown",
             "type": "boolean"
         },
     },
@@ -189,6 +197,10 @@ VBOX_OBJECT_SCHEMA = {
         },
         "headless": {
             "description": "headless mode",
+            "type": "boolean"
+        },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown",
             "type": "boolean"
         },
         "adapters": {

@@ -65,6 +65,7 @@ class VirtualBoxVM(BaseVM):
         self._adapters = adapters
         self._ethernet_adapters = {}
         self._headless = False
+        self._acpi_shutdown = False
         self._enable_remote_console = False
         self._vmname = vmname
         self._use_any_adapter = False
@@ -79,6 +80,7 @@ class VirtualBoxVM(BaseVM):
                 "project_id": self.project.id,
                 "vmname": self.vmname,
                 "headless": self.headless,
+                "acpi_shutdown": self.acpi_shutdown,
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
@@ -205,11 +207,16 @@ class VirtualBoxVM(BaseVM):
         self._stop_remote_console()
         vm_state = yield from self._get_vm_state()
         if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
-            # power off the VM
-            result = yield from self._control_vm("poweroff")
-            log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
-            log.debug("Stop result: {}".format(result))
+            if self.acpi_shutdown:
+                # use ACPI to shutdown the VM
+                result = yield from self._control_vm("acpipowerbutton")
+                log.debug("ACPI shutdown result: {}".format(result))
+            else:
+                # power off the VM
+                result = yield from self._control_vm("poweroff")
+                log.debug("Stop result: {}".format(result))
 
+            log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
             # yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
             try:
                 # deactivate the first serial port
@@ -388,6 +395,30 @@ class VirtualBoxVM(BaseVM):
         else:
             log.info("VirtualBox VM '{name}' [{id}] has disabled the headless mode".format(name=self.name, id=self.id))
         self._headless = headless
+
+    @property
+    def acpi_shutdown(self):
+        """
+        Returns either the VM will use ACPI shutdown
+
+        :returns: boolean
+        """
+
+        return self._acpi_shutdown
+
+    @acpi_shutdown.setter
+    def acpi_shutdown(self, acpi_shutdown):
+        """
+        Sets either the VM will use ACPI shutdown
+
+        :param acpi_shutdown: boolean
+        """
+
+        if acpi_shutdown:
+            log.info("VirtualBox VM '{name}' [{id}] has enabled the ACPI shutdown mode".format(name=self.name, id=self.id))
+        else:
+            log.info("VirtualBox VM '{name}' [{id}] has disabled the ACPI shutdown mode".format(name=self.name, id=self.id))
+        self._acpi_shutdown = acpi_shutdown
 
     @property
     def enable_remote_console(self):
