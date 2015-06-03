@@ -78,6 +78,12 @@ QEMU_CREATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1,
         },
+        "mac_address": {
+            "description": "QEMU MAC address",
+            "type": ["string", "null"],
+            "minLength": 1,
+            "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+        },
         "initrd": {
             "description": "QEMU initrd path",
             "type": ["string", "null"],
@@ -174,6 +180,12 @@ QEMU_UPDATE_SCHEMA = {
             "description": "QEMU adapter type",
             "type": ["string", "null"],
             "minLength": 1,
+        },
+        "mac_address": {
+            "description": "QEMU MAC address",
+            "type": ["string", "null"],
+            "minLength": 1,
+            "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
         },
         "initrd": {
             "description": "QEMU initrd path",
@@ -275,6 +287,12 @@ QEMU_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "mac_address": {
+            "description": "QEMU MAC address",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+        },
         "console": {
             "description": "console TCP port",
             "minimum": 1,
@@ -323,7 +341,7 @@ QEMU_OBJECT_SCHEMA = {
     },
     "additionalProperties": False,
     "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image", "hdb_disk_image",
-                 "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "console",
+                 "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "mac_address", "console",
                  "initrd", "kernel_image", "kernel_command_line", "legacy_networking", "acpi_shutdown",
                  "cpu_throttling", "process_priority", "options"]
 }

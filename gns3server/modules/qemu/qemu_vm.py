@@ -75,6 +75,7 @@ class QemuVM(BaseVM):
         self._hdb_disk_image = ""
         self._hdc_disk_image = ""
         self._hdd_disk_image = ""
+        self._mac_address = "00:00:ab:%s:%s:00" % (self.id[-4:-2], self.id[-2:])
         self._options = ""
         self._ram = 256
         self._ethernet_adapters = []
@@ -275,6 +276,31 @@ class QemuVM(BaseVM):
         log.info('QEMU VM "{name}" [{id}]: adapter type changed to {adapter_type}'.format(name=self._name,
                                                                                           id=self._id,
                                                                                           adapter_type=adapter_type))
+
+    @property
+    def mac_address(self):
+        """
+        Returns the MAC address for this QEMU VM.
+
+        :returns: adapter type (string)
+        """
+
+        return self._mac_address
+
+    @mac_address.setter
+    def mac_address(self, mac_address):
+        """
+        Sets the MAC address for this QEMU VM.
+
+        :param mac_address: MAC address
+        """
+
+        self._mac_address = mac_address
+
+        log.info('QEMU VM "{name}" [{id}]: MAC address changed to {mac_addr}'.format(name=self._name,
+                                                                                     id=self._id,
+                                                                                     mac_addr=mac_address))
+
 
     @property
     def legacy_networking(self):
@@ -1033,8 +1059,7 @@ class QemuVM(BaseVM):
         network_options = []
         network_options.extend(["-net", "none"])  # we do not want any user networking back-end if no adapter is connected.
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
-            # TODO: let users specify a base mac address
-            mac = "00:00:ab:%s:%s:%02x" % (self.id[-4:-2], self.id[-2:], adapter_number)
+            mac = "%s%02x" % (self._mac_address[:-2], (int(self._mac_address[-2:]) + adapter_number) % 255)
             nio = adapter.get_nio(0)
             if self._legacy_networking:
                 # legacy QEMU networking syntax (-net)
