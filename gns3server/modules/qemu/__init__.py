@@ -46,12 +46,8 @@ class Qemu(BaseManager):
         :returns: List of folders where Qemu binaries MAY reside.
         """
 
-<<<<<<< HEAD
-        paths = []
-=======
         qemus = []
         paths = set()
->>>>>>> master
         try:
             paths.add(os.getcwd())
         except FileNotFoundError:
@@ -76,18 +72,13 @@ class Qemu(BaseManager):
                 paths.add(os.path.join(os.environ["PROGRAMFILES"], "qemu"))
         elif sys.platform.startswith("darwin"):
             # add specific locations on Mac OS X regardless of what's in $PATH
-<<<<<<< HEAD
-            paths.extend(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
-=======
-            paths.update(["/usr/local/bin", "/opt/local/bin"])
->>>>>>> master
+            paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
             if hasattr(sys, "frozen"):
                 try:
                     paths.add(os.path.abspath(os.path.join(os.getcwd(), "../../../qemu/bin/")))
                 # If the user run the server by hand from outside
                 except FileNotFoundError:
-<<<<<<< HEAD
-                    paths.append(["/Applications/GNS3.app/Contents/Resources/qemu/bin"])
+                    paths.add("/Applications/GNS3.app/Contents/Resources/qemu/bin")
         return paths
 
     @staticmethod
@@ -100,10 +91,6 @@ class Qemu(BaseManager):
 
         qemus = []
         for path in Qemu.paths_list():
-=======
-                    paths.add("/Applications/GNS3.app/Contents/Resources/qemu/bin")
-        for path in paths:
->>>>>>> master
             try:
                 for f in os.listdir(path):
                     if (f.startswith("qemu-system") or f.startswith("qemu-kvm") or f == "qemu" or f == "qemu.exe") and \
