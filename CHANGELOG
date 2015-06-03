@@ -1,5 +1,23 @@
 # Change Log
 
+## 1.3.4 02/06/15
+
+* Drop useless dependencie dateutil
+* Check if port or adapter is connected before starting/stopping a packet capture. Fixes #196.
+* Prevent users to add links to running Qemu VMs and start a capture on running VirtualBox VMs.
+* Fixes bug: couldn't set PCMCIA disk1 size for IOS routers.
+* Fix crash if you pass an invalid hostname
+* Catch VPCS kill errors
+* Raise a VirtualBox error if adapter doesn't exists
+* Ignore VirtualBox VM Name with a carriage return in name
+* Cleanup the temporary project after modules have been notified of the path change
+* Do not return error if we can't remove the old project directory
+* Catch encoding errors in windows logger
+* Use setter for the qemu_path (allow to pass only the binary name)
+* Fixes TAP connection when using VPCS.
+* Fix crash launching qemu on OSX from another location.
+* Adds NAT NIO in device schema validation so they can return an error that it is not supported.
+
 ## 1.3.3 14/05/15
 
 * Check for empty iourc path.

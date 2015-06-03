@@ -84,6 +84,28 @@ class Route(object):
         return cls._route('DELETE', path, *args, **kw)
 
     @classmethod
+    def authenticate(cls, request, route, server_config):
+        """
+        Ask user for authentication
+
+        :returns: Response if you need to auth the user otherwise None
+        """
+        user = server_config.get("user", "").strip()
+        password = server_config.get("password", "").strip()
+
+        if len(user) == 0:
+            return
+
+        if "AUTHORIZATION" in request.headers:
+            if request.headers["AUTHORIZATION"] == aiohttp.helpers.BasicAuth(user, password).encode():
+                return
+
+        response = Response(request=request, route=route)
+        response.set_status(401)
+        response.headers["WWW-Authenticate"] = 'Basic realm="GNS3 server"'
+        return response
+
+    @classmethod
     def _route(cls, method, path, *args, **kw):
         # This block is executed only the first time
         output_schema = kw.get("output", {})
@@ -119,6 +141,13 @@ class Route(object):
             def control_schema(request):
                 # This block is executed at each method call
 
+                server_config = Config.instance().get_section_config("Server")
+
+                # Authenticate
+                response = cls.authenticate(request, route, server_config)
+                if response:
+                    return response
+
                 # Non API call
                 if api_version is None or raw is True:
                     response = Response(request=request, route=route, output_schema=output_schema)
@@ -129,7 +158,6 @@ class Route(object):
                 # API call
                 try:
                     request = yield from parse_request(request, input_schema)
-                    server_config = Config.instance().get_section_config("Server")
                     record_file = server_config.get("record")
                     if record_file:
                         try:

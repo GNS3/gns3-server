@@ -75,6 +75,7 @@ def test_list_images(manager, loop):
     vm_list = ['"Windows 8.1" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
                '"Carriage',
                'Return" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
+               '',
                '"<inaccessible>" {42b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
                '"Linux Microcore 4.7.1" {ccd8c50b-c172-457d-99fa-dd69371ede0e}']
 

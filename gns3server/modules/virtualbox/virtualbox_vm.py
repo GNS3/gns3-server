@@ -837,12 +837,16 @@ class VirtualBoxVM(BaseVM):
 
         vm_state = yield from self._get_vm_state()
         if vm_state == "running":
-            # dynamically configure an UDP tunnel on the VirtualBox adapter
-            yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_number + 1))
-            yield from self._control_vm("nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
-            yield from self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
-            yield from self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
-            yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+            if isinstance(nio, NIOUDP):
+                # dynamically configure an UDP tunnel on the VirtualBox adapter
+                yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_number + 1))
+                yield from self._control_vm("nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
+                yield from self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
+                yield from self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
+                yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+            elif isinstance(nio, NIONAT):
+                yield from self._control_vm("nic{} nat".format(adapter_number + 1))
+                yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
         log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -903,6 +907,10 @@ class VirtualBoxVM(BaseVM):
             raise VirtualBoxError("Sorry, packet capturing on a started VirtualBox VM is not supported.")
 
         nio = adapter.get_nio(0)
+
+        if not nio:
+            raise VirtualBoxError("Adapter {} is not connected".format(adapter_number))
+
         if nio.capturing:
             raise VirtualBoxError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
@@ -925,6 +933,10 @@ class VirtualBoxVM(BaseVM):
                                                                                                             adapter_number=adapter_number))
 
         nio = adapter.get_nio(0)
+
+        if not nio:
+            raise VirtualBoxError("Adapter {} is not connected".format(adapter_number))
+
         nio.stopPacketCapture()
 
         log.info("VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
