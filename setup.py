@@ -44,10 +44,6 @@ dependencies = [
     "raven>=5.2.0"
 ]
 
-
-if sys.version_info == (3, 4):
-    dependencies.append("asyncio>=3.4.2")
-
 setup(
     name="gns3-server",
     version=__import__("gns3server").__version__,
