@@ -27,6 +27,7 @@ import subprocess
 import shlex
 import asyncio
 import socket
+import gns3server
 
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -36,7 +37,6 @@ from ..nios.nio_nat import NIONAT
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 from ...utils.asyncio import monitor_process
-from ...config import Config
 
 import logging
 log = logging.getLogger(__name__)
@@ -83,6 +83,7 @@ class QemuVM(BaseVM):
         self._kernel_image = ""
         self._kernel_command_line = ""
         self._legacy_networking = False
+        self._acpi_shutdown = False
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
 
@@ -298,6 +299,30 @@ class QemuVM(BaseVM):
         else:
             log.info('QEMU VM "{name}" [{id}] has disabled legacy networking'.format(name=self._name, id=self._id))
         self._legacy_networking = legacy_networking
+
+    @property
+    def acpi_shutdown(self):
+        """
+        Returns either this QEMU VM can be ACPI shutdown.
+
+        :returns: boolean
+        """
+
+        return self._acpi_shutdown
+
+    @acpi_shutdown.setter
+    def acpi_shutdown(self, acpi_shutdown):
+        """
+        Sets either this QEMU VM can be ACPI shutdown.
+
+        :param acpi_shutdown: boolean
+        """
+
+        if acpi_shutdown:
+            log.info('QEMU VM "{name}" [{id}] has enabled ACPI shutdown'.format(name=self._name, id=self._id))
+        else:
+            log.info('QEMU VM "{name}" [{id}] has disabled ACPI shutdown'.format(name=self._name, id=self._id))
+        self._acpi_shutdown = acpi_shutdown
 
     @property
     def cpu_throttling(self):
@@ -616,14 +641,18 @@ class QemuVM(BaseVM):
         if self.is_running():
             log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
             try:
-                self._process.terminate()
-                self._process.wait()
-            except subprocess.TimeoutExpired:
+                if self.acpi_shutdown:
+                    yield from self._control_vm("system_powerdown")
+                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=30)
+                else:
+                    self._process.terminate()
+                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+            except asyncio.TimeoutError:
                 self._process.kill()
                 if self._process.returncode is None:
                     log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
-        self._process = None
         self.status = "stopped"
+        self._process = None
         self._stop_cpulimit()
 
     @asyncio.coroutine
@@ -674,6 +703,7 @@ class QemuVM(BaseVM):
         """
 
         log.debug('QEMU VM "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
+        self.acpi_shutdown = False
         yield from self.stop()
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)

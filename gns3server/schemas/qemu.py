@@ -94,6 +94,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": ["boolean", "null"],
         },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown support",
+            "type": ["boolean", "null"],
+        },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
             "minimum": 0,
@@ -185,6 +189,10 @@ QEMU_UPDATE_SCHEMA = {
         },
         "legacy_networking": {
             "description": "Use QEMU legagy networking commands (-net syntax)",
+            "type": ["boolean", "null"],
+        },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown support",
             "type": ["boolean", "null"],
         },
         "cpu_throttling": {
@@ -289,6 +297,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": "boolean",
         },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown support",
+            "type": "boolean",
+        },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
             "minimum": 0,
@@ -312,9 +324,8 @@ QEMU_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image", "hdb_disk_image",
                  "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "console",
-                 "initrd", "kernel_image", "kernel_command_line",
-                 "legacy_networking", "cpu_throttling", "process_priority", "options"
-                 ]
+                 "initrd", "kernel_image", "kernel_command_line", "legacy_networking", "acpi_shutdown",
+                 "cpu_throttling", "process_priority", "options"]
 }
 
 QEMU_BINARY_LIST_SCHEMA = {

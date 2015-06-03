@@ -325,6 +325,7 @@ class VirtualBoxVM(BaseVM):
                     if nio and isinstance(nio, NIOUDP):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
+        self.acpi_shutdown = False
         yield from self.stop()
 
         if self._linked_clone:
