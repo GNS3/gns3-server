@@ -201,7 +201,7 @@ def run():
 
     # we only support Python 3 version >= 3.4
     if sys.version_info < (3, 4):
-        raise RuntimeError("Python 3.4 or higher is required")
+        raise SystemExit("Python 3.4 or higher is required")
 
     user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
                   major=sys.version_info[0], minor=sys.version_info[1],
