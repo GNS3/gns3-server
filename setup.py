@@ -21,7 +21,7 @@ from setuptools.command.test import test as TestCommand
 
 # we only support Python 3 version >= 3.4
 if sys.version_info < (3, 4):
-    raise RuntimeError("Python 3.4 or higher is required")
+    raise SystemExit("Python 3.4 or higher is required")
 
 class PyTest(TestCommand):
     def finalize_options(self):
@@ -57,7 +57,7 @@ setup(
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
-            "gns3dms = gns3dms.main:main",
+            "gns3vmnet = utils.vmnet:main",
         ]
     },
     packages=find_packages(".", exclude=["docs", "tests"]),
