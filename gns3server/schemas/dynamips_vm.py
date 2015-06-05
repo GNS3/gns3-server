@@ -120,6 +120,10 @@ VM_CREATE_SCHEMA = {
             "description": "disk1 size in MB",
             "type": "integer"
         },
+        "auto_delete_disks": {
+            "description": "automatically delete nvram and disk files",
+            "type": "boolean"
+        },
         "console": {
             "description": "console TCP port",
             "type": "integer",
@@ -336,6 +340,10 @@ VM_UPDATE_SCHEMA = {
         "disk1": {
             "description": "disk1 size in MB",
             "type": "integer"
+        },
+        "auto_delete_disks": {
+            "description": "automatically delete nvram and disk files",
+            "type": "boolean"
         },
         "console": {
             "description": "console TCP port",
@@ -590,6 +598,10 @@ VM_OBJECT_SCHEMA = {
         "disk1": {
             "description": "disk1 size in MB",
             "type": "integer"
+        },
+        "auto_delete_disks": {
+            "description": "automatically delete nvram and disk files",
+            "type": "boolean"
         },
         "console": {
             "description": "console TCP port",
