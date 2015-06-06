@@ -41,8 +41,7 @@ def manager(port_manager):
 @pytest.fixture
 def fake_qemu_img_binary():
 
-    # Should not crash with unicode characters
-    bin_path = os.path.join(os.environ["PATH"], "qemu-img\u62FF")
+    bin_path = os.path.join(os.environ["PATH"], "qemu-img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)

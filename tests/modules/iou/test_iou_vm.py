@@ -87,11 +87,11 @@ def test_vm(project, manager):
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_vm_initial_config_content(project, manager):
+def test_vm_startup_config_content(project, manager):
     vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager)
-    vm.initial_config_content = "hostname %h"
+    vm.startup_config_content = "hostname %h"
     assert vm.name == "test"
-    assert vm.initial_config_content == "hostname test"
+    assert vm.startup_config_content == "hostname test"
     assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"
 
 
@@ -255,54 +255,44 @@ def test_build_command(vm, loop):
 
     assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", str(vm.application_id)]
 
-
-def test_build_command_initial_config(vm, loop):
-
-    filepath = os.path.join(vm.working_dir, "initial-config.cfg")
-    with open(filepath, "w+") as f:
-        f.write("service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption")
-
-    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", "-c", os.path.basename(vm.initial_config_file), str(vm.application_id)]
-
-
-def test_get_initial_config(vm):
+def test_get_startup_config(vm):
 
     content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
-    vm.initial_config = content
-    assert vm.initial_config == content
+    vm.startup_config = content
+    assert vm.startup_config == content
 
 
-def test_update_initial_config(vm):
+def test_update_startup_config(vm):
     content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
-    vm.initial_config = content
-    filepath = os.path.join(vm.working_dir, "initial-config.cfg")
+    vm.startup_config_content = content
+    filepath = os.path.join(vm.working_dir, "startup-config.cfg")
     assert os.path.exists(filepath)
     with open(filepath) as f:
         assert f.read() == content
 
 
-def test_update_initial_config_empty(vm):
+def test_update_startup_config_empty(vm):
     content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
-    vm.initial_config = content
-    filepath = os.path.join(vm.working_dir, "initial-config.cfg")
+    vm.startup_config_content = content
+    filepath = os.path.join(vm.working_dir, "startup-config.cfg")
     assert os.path.exists(filepath)
     with open(filepath) as f:
         assert f.read() == content
-    vm.initial_config = ""
+    vm.startup_config_content = ""
     with open(filepath) as f:
         assert f.read() == content
 
 
-def test_update_initial_config_content_hostname(vm):
+def test_update_startup_config_content_hostname(vm):
     content = "hostname %h\n"
     vm.name = "pc1"
-    vm.initial_config_content = content
-    with open(vm.initial_config_file) as f:
+    vm.startup_config_content = content
+    with open(vm.startup_config_file) as f:
         assert f.read() == "hostname pc1\n"
 
 
 def test_change_name(vm, tmpdir):
-    path = os.path.join(vm.working_dir, "initial-config.cfg")
+    path = os.path.join(vm.working_dir, "startup-config.cfg")
     vm.name = "world"
     with open(path, 'w+') as f:
         f.write("hostname world")

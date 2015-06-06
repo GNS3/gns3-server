@@ -52,10 +52,10 @@ def vm(server, project, base_params):
     return response.json
 
 
-def initial_config_file(project, vm):
+def startup_config_file(project, vm):
     directory = os.path.join(project.path, "project-files", "iou", vm["vm_id"])
     os.makedirs(directory, exist_ok=True)
-    return os.path.join(directory, "initial-config.cfg")
+    return os.path.join(directory, "startup-config.cfg")
 
 
 def test_iou_create(server, project, base_params):
@@ -78,7 +78,7 @@ def test_iou_create_with_params(server, project, base_params):
     params["serial_adapters"] = 4
     params["ethernet_adapters"] = 0
     params["l1_keepalives"] = True
-    params["initial_config_content"] = "hostname test"
+    params["startup_config_content"] = "hostname test"
     params["use_default_iou_values"] = True
     params["iourc_content"] = "test"
 
@@ -94,31 +94,31 @@ def test_iou_create_with_params(server, project, base_params):
     assert response.json["l1_keepalives"] is True
     assert response.json["use_default_iou_values"] is True
 
-    assert "initial-config.cfg" in response.json["initial_config"]
-    with open(initial_config_file(project, response.json)) as f:
+    assert "startup-config.cfg" in response.json["startup_config"]
+    with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
 
     assert "iourc" in response.json["iourc_path"]
 
 
-def test_iou_create_initial_config_already_exist(server, project, base_params):
-    """We don't erase an initial config if already exist at project creation"""
+def test_iou_create_startup_config_already_exist(server, project, base_params):
+    """We don't erase a startup-config if already exist at project creation"""
 
     vm_id = str(uuid.uuid4())
-    initial_config_file_path = initial_config_file(project, {'vm_id': vm_id})
-    with open(initial_config_file_path, 'w+') as f:
+    startup_config_file_path = startup_config_file(project, {'vm_id': vm_id})
+    with open(startup_config_file_path, 'w+') as f:
         f.write("echo hello")
 
     params = base_params
     params["vm_id"] = vm_id
-    params["initial_config_content"] = "hostname test"
+    params["startup_config_content"] = "hostname test"
 
     response = server.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/vms"
 
-    assert "initial-config.cfg" in response.json["initial_config"]
-    with open(initial_config_file(project, response.json)) as f:
+    assert "startup-config.cfg" in response.json["startup_config"]
+    with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "echo hello"
 
 
@@ -172,7 +172,7 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
         "ethernet_adapters": 4,
         "serial_adapters": 0,
         "l1_keepalives": True,
-        "initial_config_content": "hostname test",
+        "startup_config_content": "hostname test",
         "use_default_iou_values": True,
         "iourc_content": "test"
     }
@@ -186,8 +186,8 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
     assert response.json["nvram"] == 2048
     assert response.json["l1_keepalives"] is True
     assert response.json["use_default_iou_values"] is True
-    assert "initial-config.cfg" in response.json["initial_config"]
-    with open(initial_config_file(project, response.json)) as f:
+    assert "startup-config.cfg" in response.json["startup_config"]
+    with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
 
     assert "iourc" in response.json["iourc_path"]
@@ -294,22 +294,22 @@ def test_iou_stop_capture_not_started(server, vm, tmpdir):
             assert response.status == 409
 
 
-def test_get_initial_config_without_config_file(server, vm):
+def test_get_configs_without_configs_file(server, vm):
 
-    response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = server.get("/projects/{project_id}/iou/vms/{vm_id}/configs".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
-    assert response.json["content"] == None
+    assert "startup_config" not in response.json
+    assert "private_config" not in response.json
 
+def test_get_configs_with_startup_config_file(server, project, vm):
 
-def test_get_initial_config_with_config_file(server, project, vm):
-
-    path = initial_config_file(project, vm)
+    path = startup_config_file(project, vm)
     with open(path, "w+") as f:
         f.write("TEST")
 
-    response = server.get("/projects/{project_id}/iou/vms/{vm_id}/initial_config".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = server.get("/projects/{project_id}/iou/vms/{vm_id}/configs".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 200
-    assert response.json["content"] == "TEST"
+    assert response.json["startup_config_content"] == "TEST"
 
 
 def test_vms(server, tmpdir, fake_iou_bin):

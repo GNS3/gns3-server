@@ -24,7 +24,7 @@ from ...schemas.iou import IOU_CREATE_SCHEMA
 from ...schemas.iou import IOU_UPDATE_SCHEMA
 from ...schemas.iou import IOU_OBJECT_SCHEMA
 from ...schemas.iou import IOU_CAPTURE_SCHEMA
-from ...schemas.iou import IOU_INITIAL_CONFIG_SCHEMA
+from ...schemas.iou import IOU_CONFIGS_SCHEMA
 from ...schemas.iou import IOU_LIST_VMS_SCHEMA
 from ...modules.iou import IOU
 
@@ -59,11 +59,15 @@ class IOUHandler:
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
-                if name == "initial_config_content" and (vm.initial_config_content and len(vm.initial_config_content) > 0):
+                if name == "startup_config_content" and (vm.startup_config_content and len(vm.startup_config_content) > 0):
+                    continue
+                if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):
                     continue
                 setattr(vm, name, value)
-        if "initial_config_content" in request.json:
-            vm.initial_config = request.json.get("initial_config_content")
+        if "startup_config_content" in request.json:
+            vm.startup_config = request.json.get("startup_config_content")
+        if "private_config_content" in request.json:
+            vm.private_config = request.json.get("private_config_content")
         response.set_status(201)
         response.json(vm)
 
@@ -111,8 +115,10 @@ class IOUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
-        if "initial_config_content" in request.json:
-            vm.initial_config = request.json.get("initial_config_content")
+        if "startup_config_content" in request.json:
+            vm.startup_config = request.json.get("startup_config_content")
+        if "private_config_content" in request.json:
+            vm.private_config = request.json.get("private_config_content")
         response.json(vm)
 
     @classmethod
@@ -301,21 +307,56 @@ class IOUHandler:
         response.set_status(204)
 
     @Route.get(
-        r"/projects/{project_id}/iou/vms/{vm_id}/initial_config",
+        r"/projects/{project_id}/iou/vms/{vm_id}/configs",
         status_codes={
-            200: "Initial config retrieved",
+            200: "Configs retrieved",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        output=IOU_INITIAL_CONFIG_SCHEMA,
-        description="Retrieve the initial config content")
-    def show_initial_config(request, response):
+        output=IOU_CONFIGS_SCHEMA,
+        description="Retrieve the startup and private configs content")
+    def get_configs(request, response):
 
         iou_manager = IOU.instance()
-        vm = iou_manager.get_vm(request.match_info["vm_id"],
-                                project_id=request.match_info["project_id"])
+        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+
+        startup_config_content, private_config_content = vm.extract_configs()
+        result = {}
+        if startup_config_content:
+            result["startup_config_content"] = startup_config_content.decode("utf-8", errors='replace')
+        else:
+            # nvram doesn't exists if the VM has not been started at least once
+            # in this case just use the startup-config file
+            startup_config_content = vm.startup_config_content
+            if startup_config_content:
+                result["startup_config_content"] = startup_config_content
+
+        if private_config_content:
+            result["private_config_content"] = private_config_content.decode("utf-8", errors='replace')
+        else:
+            # nvram doesn't exists if the VM has not been started at least once
+            # in this case just use the private-config file
+            private_config_content = vm.private_config_content
+            if private_config_content:
+                result["private_config_content"] = private_config_content
+
         response.set_status(200)
-        response.json({"content": vm.initial_config_content})
+        response.json(result)
+
+    @Route.post(
+        r"/projects/{project_id}/iou/vms/{vm_id}/configs/save",
+        status_codes={
+            200: "Configs saved",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Save the startup and private configs content")
+    def save_configs(request, response):
+
+        iou_manager = IOU.instance()
+        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm.save_configs()
+        response.set_status(200)
 
     @Route.get(
         r"/iou/vms",

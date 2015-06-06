@@ -70,12 +70,20 @@ IOU_CREATE_SCHEMA = {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
         },
-        "initial_config": {
-            "description": "Path to the initial configuration of IOU",
+        "startup_config": {
+            "description": "Path to the startup-config of IOU",
             "type": ["string", "null"]
         },
-        "initial_config_content": {
-            "description": "Initial configuration of IOU",
+        "private_config": {
+            "description": "Path to the private-config of IOU",
+            "type": ["string", "null"]
+        },
+        "startup_config_content": {
+            "description": "Startup-config of IOU",
+            "type": ["string", "null"]
+        },
+        "private_config_content": {
+            "description": "Private-config of IOU",
             "type": ["string", "null"]
         },
         "iourc_content": {
@@ -127,8 +135,12 @@ IOU_UPDATE_SCHEMA = {
             "description": "Always up ethernet interface",
             "type": ["boolean", "null"]
         },
-        "initial_config_content": {
-            "description": "Initial configuration of IOU",
+        "startup_config_content": {
+            "description": "Startup-config of IOU",
+            "type": ["string", "null"]
+        },
+        "private_config_content": {
+            "description": "Private-config of IOU",
             "type": ["string", "null"]
         },
         "use_default_iou_values": {
@@ -197,8 +209,12 @@ IOU_OBJECT_SCHEMA = {
             "description": "Always up ethernet interface",
             "type": "boolean"
         },
-        "initial_config": {
-            "description": "Path of the initial config content relative to project directory",
+        "startup_config": {
+            "description": "Path of the startup-config content relative to project directory",
+            "type": ["string", "null"]
+        },
+        "private_config": {
+            "description": "Path of the private-config content relative to project directory",
             "type": ["string", "null"]
         },
         "use_default_iou_values": {
@@ -211,7 +227,8 @@ IOU_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters", "ram", "nvram", "l1_keepalives", "initial_config", "use_default_iou_values"]
+    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters",
+                 "ram", "nvram", "l1_keepalives", "startup_config", "private_config", "use_default_iou_values"]
 }
 
 IOU_CAPTURE_SCHEMA = {
@@ -234,18 +251,23 @@ IOU_CAPTURE_SCHEMA = {
     "required": ["capture_file_name", "data_link_type"]
 }
 
-IOU_INITIAL_CONFIG_SCHEMA = {
+IOU_CONFIGS_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to get the initial configuration file",
+    "description": "Request validation to get the startup and private configuration file",
     "type": "object",
     "properties": {
-        "content": {
-            "description": "Content of the initial configuration file",
-            "type": ["string", "null"]
+        "startup_config_content": {
+            "description": "Content of the startup configuration file",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
+        "private_config_content": {
+            "description": "Content of the private configuration file",
+            "type": ["string", "null"],
+            "minLength": 1,
         },
     },
     "additionalProperties": False,
-    "required": ["content"]
 }
 
 IOU_LIST_VMS_SCHEMA = {

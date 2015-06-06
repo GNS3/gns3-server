@@ -68,6 +68,19 @@ class IOU(BaseManager):
         yield from super().close_vm(vm_id, *args, **kwargs)
         return vm
 
+    @asyncio.coroutine
+    def project_committed(self, project):
+        """
+        Called when a project has been committed.
+
+        :param project: Project instance
+        """
+
+        # save the configs when the project is committed
+        for vm in self._vms.copy().values():
+            if vm.project.id == project.id:
+                vm.save_configs()
+
     def get_application_id(self, vm_id):
         """
         Get an unique application identifier for IOU.

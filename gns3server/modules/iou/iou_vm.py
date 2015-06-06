@@ -33,6 +33,7 @@ import configparser
 import struct
 import hashlib
 import glob
+import binascii
 
 from .iou_error import IOUError
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -41,6 +42,8 @@ from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..nios.nio_generic_ethernet import NIOGenericEthernet
 from ..base_vm import BaseVM
+from .utils.iou_import import nvram_import
+from .utils.iou_export import nvram_export
 from .ioucon import start_ioucon
 import gns3server.utils.asyncio
 
@@ -82,7 +85,8 @@ class IOUVM(BaseVM):
         self.serial_adapters = 2  # one adapter = 4 interfaces
         self._use_default_iou_values = True  # for RAM & NVRAM values
         self._nvram = 128  # Kilobytes
-        self._initial_config = ""
+        self._startup_config = ""
+        self._private_config = ""
         self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
@@ -106,6 +110,7 @@ class IOUVM(BaseVM):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         yield from self.stop()
+        self.save_configs()
 
     @property
     def path(self):
@@ -208,7 +213,8 @@ class IOUVM(BaseVM):
                        "ram": self._ram,
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
-                       "initial_config": self.relative_initial_config_file,
+                       "startup_config": self.relative_startup_config_file,
+                       "private_config": self.relative_private_config_file,
                        "iourc_path": self.iourc_path,
                        "use_default_iou_values": self._use_default_iou_values}
 
@@ -316,10 +322,10 @@ class IOUVM(BaseVM):
         :param new_name: name
         """
 
-        if self.initial_config_file:
-            content = self.initial_config_content
+        if self.startup_config_file:
+            content = self.startup_config_content
             content = content.replace(self._name, new_name)
-            self.initial_config_content = content
+            self.startup_config_content = content
 
         super(IOUVM, IOUVM).name.__set__(self, new_name)
 
@@ -422,6 +428,36 @@ class IOUVM(BaseVM):
                                                                                                          self.iourc_path,
                                                                                                          hostname))
 
+    def _push_configs_to_nvram(self):
+        """
+        Push the startup-config and private-config content to the NVRAM.
+        """
+
+        startup_config_content = self.startup_config_content
+        if startup_config_content:
+            nvram_file = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+            try:
+                if not os.path.exists(nvram_file):
+                    open(nvram_file, "a").close()
+                with open(nvram_file, "rb") as file:
+                    nvram_content = file.read()
+            except OSError as e:
+                raise IOUError("Cannot read nvram file {}: {}".format(nvram_file, e))
+
+            startup_config_content = startup_config_content.encode("utf-8")
+            private_config_content = self.private_config_content
+            if private_config_content is not None:
+                private_config_content = private_config_content.encode("utf-8")
+            try:
+                nvram_content = nvram_import(nvram_content, startup_config_content, private_config_content, self.nvram)
+            except ValueError as e:
+                raise IOUError("Cannot push configs to nvram {}: {}".format(nvram_file, e))
+            try:
+                with open(nvram_file, "wb") as file:
+                    file.write(nvram_content)
+            except OSError as e:
+                raise IOUError("Cannot write nvram file {}: {}".format(nvram_file, e))
+
     @asyncio.coroutine
     def start(self):
         """
@@ -450,6 +486,8 @@ class IOUVM(BaseVM):
                 raise IOUError("iouyap is necessary to start IOU")
 
             self._create_netmap_config()
+            self._push_configs_to_nvram()
+
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
 
@@ -747,9 +785,11 @@ class IOUVM(BaseVM):
             command.extend(["-m", str(self._ram)])
         command.extend(["-L"])  # disable local console, use remote console
 
-        initial_config_file = self.initial_config_file
-        if initial_config_file:
-            command.extend(["-c", os.path.basename(initial_config_file)])
+        # do not let IOU create the NVRAM anymore
+        #startup_config_file = self.startup_config_file
+        #if startup_config_file:
+        #    command.extend(["-c", os.path.basename(startup_config_file)])
+
         if self._l1_keepalives:
             yield from self._enable_l1_keepalives(command)
         command.extend([str(self.application_id)])
@@ -962,12 +1002,12 @@ class IOUVM(BaseVM):
             log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
 
     @property
-    def initial_config_content(self):
+    def startup_config_content(self):
         """
-        Returns the content of the current initial-config file.
+        Returns the content of the current startup-config file.
         """
 
-        config_file = self.initial_config_file
+        config_file = self.startup_config_file
         if config_file is None:
             return None
 
@@ -975,63 +1015,189 @@ class IOUVM(BaseVM):
             with open(config_file, "rb") as f:
                 return f.read().decode("utf-8", errors="replace")
         except OSError as e:
-            raise IOUError("Can't read configuration file '{}': {}".format(config_file, e))
+            raise IOUError("Can't read startup-config file '{}': {}".format(config_file, e))
 
-    @initial_config_content.setter
-    def initial_config_content(self, initial_config):
+    @startup_config_content.setter
+    def startup_config_content(self, startup_config):
         """
-        Update the initial config
+        Update the startup config
 
-        :param initial_config: content of the initial configuration file
+        :param startup_config: content of the startup configuration file
         """
 
         try:
-            initial_config_path = os.path.join(self.working_dir, "initial-config.cfg")
+            startup_config_path = os.path.join(self.working_dir, "startup-config.cfg")
 
-            if initial_config is None:
-                initial_config = ''
+            if startup_config is None:
+                startup_config = ''
 
-            # We disallow erasing the initial config file
-            if len(initial_config) == 0 and os.path.exists(initial_config_path):
+            # We disallow erasing the startup config file
+            if len(startup_config) == 0 and os.path.exists(startup_config_path):
                 return
 
-            with open(initial_config_path, 'w+', encoding='utf-8') as f:
-                if len(initial_config) == 0:
+            with open(startup_config_path, 'w+', encoding='utf-8') as f:
+                if len(startup_config) == 0:
                     f.write('')
                 else:
-                    initial_config = initial_config.replace("%h", self._name)
-                    f.write(initial_config)
+                    startup_config = startup_config.replace("%h", self._name)
+                    f.write(startup_config)
         except OSError as e:
-            raise IOUError("Can't write initial configuration file '{}': {}".format(initial_config_path, e))
+            raise IOUError("Can't write startup-config file '{}': {}".format(startup_config_path, e))
 
     @property
-    def initial_config_file(self):
+    def private_config_content(self):
         """
-        Returns the initial config file for this IOU VM.
+        Returns the content of the current private-config file.
+        """
+
+        config_file = self.private_config_file
+        if config_file is None:
+            return None
+
+        try:
+            with open(config_file, "rb") as f:
+                return f.read().decode("utf-8", errors="replace")
+        except OSError as e:
+            raise IOUError("Can't read private-config file '{}': {}".format(config_file, e))
+
+    @private_config_content.setter
+    def private_config_content(self, private_config):
+        """
+        Update the private config
+
+        :param private_config: content of the private configuration file
+        """
+
+        try:
+            private_config_path = os.path.join(self.working_dir, "private-config.cfg")
+
+            if private_config is None:
+                private_config = ''
+
+            # We disallow erasing the startup config file
+            if len(private_config) == 0 and os.path.exists(private_config_path):
+                return
+
+            with open(private_config_path, 'w+', encoding='utf-8') as f:
+                if len(private_config) == 0:
+                    f.write('')
+                else:
+                    private_config = private_config.replace("%h", self._name)
+                    f.write(private_config)
+        except OSError as e:
+            raise IOUError("Can't write private-config file '{}': {}".format(private_config_path, e))
+
+    @property
+    def startup_config_file(self):
+        """
+        Returns the startup-config file for this IOU VM.
 
         :returns: path to config file. None if the file doesn't exist
         """
 
-        path = os.path.join(self.working_dir, 'initial-config.cfg')
+        path = os.path.join(self.working_dir, 'startup-config.cfg')
         if os.path.exists(path):
             return path
         else:
             return None
 
     @property
-    def relative_initial_config_file(self):
+    def private_config_file(self):
         """
-        Returns the initial config file relative to the project directory.
-        It's compatible with pre 1.3 projects.
+        Returns the private-config file for this IOU VM.
 
         :returns: path to config file. None if the file doesn't exist
         """
 
-        path = os.path.join(self.working_dir, 'initial-config.cfg')
+        path = os.path.join(self.working_dir, 'private-config.cfg')
         if os.path.exists(path):
-            return 'initial-config.cfg'
+            return path
         else:
             return None
+
+    @property
+    def relative_startup_config_file(self):
+        """
+        Returns the startup-config file relative to the project directory.
+        It's compatible with pre 1.3 projects.
+
+        :returns: path to startup-config file. None if the file doesn't exist
+        """
+
+        path = os.path.join(self.working_dir, 'startup-config.cfg')
+        if os.path.exists(path):
+            return 'startup-config.cfg'
+        else:
+            return None
+
+    @property
+    def relative_private_config_file(self):
+        """
+        Returns the private-config file relative to the project directory.
+
+        :returns: path to private-config file. None if the file doesn't exist
+        """
+
+        path = os.path.join(self.working_dir, 'private-config.cfg')
+        if os.path.exists(path):
+            return 'private-config.cfg'
+        else:
+            return None
+
+    def extract_configs(self):
+        """
+        Gets the contents of the config files
+        startup-config and private-config from NVRAM.
+
+        :returns: tuple (startup-config, private-config)
+        """
+
+        nvram_file = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+        if not os.path.exists(nvram_file):
+            return None, None
+        try:
+            with open(nvram_file, "rb") as file:
+                nvram_content = file.read()
+        except OSError as e:
+            log.warning("Cannot read nvram file {}: {}".format(nvram_file, e))
+            return None, None
+
+        try:
+            startup_config_content, private_config_content = nvram_export(nvram_content)
+        except ValueError as e:
+            log.warning("Could not export configs from nvram file".format(nvram_file, e))
+            return None, None
+
+        return startup_config_content, private_config_content
+
+    def save_configs(self):
+        """
+        Saves the startup-config and private-config to files.
+        """
+
+        if self.startup_config_content or self.private_config_content:
+            startup_config_content, private_config_content = self.extract_configs()
+            if startup_config_content:
+                config_path = os.path.join(self.working_dir, "startup-config.cfg")
+                try:
+                    config = startup_config_content.decode("utf-8", errors="replace")
+                    config = "!\n" + config.replace("\r", "")
+                    with open(config_path, "wb") as f:
+                        log.info("saving startup-config to {}".format(config_path))
+                        f.write(config.encode("utf-8"))
+                except (binascii.Error, OSError) as e:
+                    raise IOUError("Could not save the startup configuration {}: {}".format(config_path, e))
+
+            if private_config_content:
+                config_path = os.path.join(self.working_dir, "private-config.cfg")
+                try:
+                    config = private_config_content.decode("utf-8", errors="replace")
+                    config = "!\n" + config.replace("\r", "")
+                    with open(config_path, "wb") as f:
+                        log.info("saving private-config to {}".format(config_path))
+                        f.write(config.encode("utf-8"))
+                except (binascii.Error, OSError) as e:
+                    raise IOUError("Could not save the private configuration {}: {}".format(config_path, e))
 
     @asyncio.coroutine
     def start_capture(self, adapter_number, port_number, output_file, data_link_type="DLT_EN10MB"):
