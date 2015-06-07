@@ -355,13 +355,19 @@ class TelnetServer(Console):
 
     def __enter__(self):
         # Open a socket and start listening
-        sock_fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock_fd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            sock_fd.bind((self.addr, self.port))
-        except OSError:
-            raise TelnetServerError("Cannot bind to {}:{}"
-                                    .format(self.addr, self.port))
+
+        info = socket.getaddrinfo(self.addr, self.port, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        if not info:
+            raise TelnetServerError("getaddrinfo returns an empty list on {}:{}".format(self.addr, self.port))
+        for res in info:
+            af, socktype, proto, _, sa = res
+            sock_fd = socket.socket(af, socktype, proto)
+            sock_fd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                sock_fd.bind(sa)
+            except OSError:
+                raise TelnetServerError("Cannot bind to {}:{}"
+                                        .format(self.addr, self.port))
 
         sock_fd.listen(socket.SOMAXCONN)
         self.sock_fd = sock_fd

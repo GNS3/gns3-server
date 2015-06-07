@@ -331,10 +331,16 @@ class Dynamips(BaseManager):
         server_host = server_config.get("host")
 
         try:
-            # let the OS find an unused port for the Dynamips hypervisor
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.bind((server_host, 0))
-                port = sock.getsockname()[1]
+            info = socket.getaddrinfo(server_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+            if not info:
+                raise DynamipsError("getaddrinfo returns an empty list on {}".format(server_host))
+            for res in info:
+                af, socktype, proto, _, sa = res
+                # let the OS find an unused port for the Dynamips hypervisor
+                with socket.socket(af, socktype, proto) as sock:
+                    sock.bind(sa)
+                    port = sock.getsockname()[1]
+                    break
         except OSError as e:
             raise DynamipsError("Could not find free port for the Dynamips hypervisor: {}".format(e))
 
@@ -375,9 +381,13 @@ class Dynamips(BaseManager):
             rhost = nio_settings["rhost"]
             rport = nio_settings["rport"]
             try:
-                # TODO: handle IPv6
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                    sock.connect((rhost, rport))
+                info = socket.getaddrinfo(rhost, rport, 0, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
+                if not info:
+                    raise DynamipsError("getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
+                for res in info:
+                    af, socktype, proto, _, sa = res
+                    with socket.socket(af, socktype, proto) as sock:
+                        sock.connect(sa)
             except OSError as e:
                 raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             nio = NIOUDP(node.hypervisor, lport, rhost, rport)

@@ -357,9 +357,13 @@ class BaseManager:
             rhost = nio_settings["rhost"]
             rport = nio_settings["rport"]
             try:
-                # TODO: handle IPv6
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                    sock.connect((rhost, rport))
+                info = socket.getaddrinfo(rhost, rport, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
+                if not info:
+                    raise aiohttp.web.HTTPInternalServerError(text="getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
+                for res in info:
+                    af, socktype, proto, _, sa = res
+                    with socket.socket(af, socktype, proto) as sock:
+                        sock.connect(sa)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             nio = NIOUDP(lport, rhost, rport)

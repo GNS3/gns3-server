@@ -615,10 +615,15 @@ class QemuVM(BaseVM):
 
             if self._manager.config.get_section_config("Qemu").getboolean("monitor", True):
                 try:
-                    # let the OS find an unused port for the Qemu monitor
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                        sock.bind((self._monitor_host, 0))
-                        self._monitor = sock.getsockname()[1]
+                    info = socket.getaddrinfo(self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+                    if not info:
+                        raise QemuError("getaddrinfo returns an empty list on {}".format(self._monitor_host))
+                    for res in info:
+                        af, socktype, proto, _, sa = res
+                        # let the OS find an unused port for the Qemu monitor
+                        with socket.socket(af, socktype, proto) as sock:
+                            sock.bind(sa)
+                            self._monitor = sock.getsockname()[1]
                 except OSError as e:
                     raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
 
