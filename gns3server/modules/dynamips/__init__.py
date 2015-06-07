@@ -32,7 +32,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from gns3server.utils.interfaces import get_windows_interfaces
+from gns3server.utils.interfaces import get_windows_interfaces, is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor
 from pkg_resources import parse_version
 from uuid import UUID, uuid4
@@ -404,6 +404,8 @@ class Dynamips(BaseManager):
                     raise DynamipsError("Could not find interface {} on this host".format(ethernet_device))
                 else:
                     ethernet_device = npf_interface
+            if not is_interface_up(ethernet_device):
+                raise aiohttp.web.HTTPConflict(text="Ethernet interface {} is down".format(ethernet_device))
             nio = NIOGenericEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_linux_ethernet":
             if sys.platform.startswith("win"):
@@ -412,6 +414,8 @@ class Dynamips(BaseManager):
             nio = NIOLinuxEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
+            if not is_interface_up(tap_device):
+                raise aiohttp.web.HTTPConflict(text="TAP interface {} is down".format(tap_device))
             nio = NIOTAP(node.hypervisor, tap_device)
         elif nio_settings["type"] == "nio_unix":
             local_file = nio_settings["local_file"]

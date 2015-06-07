@@ -18,6 +18,8 @@
 
 import sys
 import aiohttp
+import socket
+import struct
 
 import logging
 log = logging.getLogger(__name__)
@@ -77,6 +79,31 @@ def get_windows_interfaces():
 
     return interfaces
 
+
+def is_interface_up(interface):
+    """
+    Checks if an interface is up.
+
+    :param interface: interface name
+
+    :returns: boolean
+    """
+
+    if sys.platform.startswith("linux"):
+        import fcntl
+        SIOCGIFFLAGS = 0x8913
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                result = fcntl.ioctl(s.fileno(), SIOCGIFFLAGS, interface + '\0' * 256)
+                flags, = struct.unpack('H', result[16:18])
+                if flags & 1:  # check if the up bit is set
+                    return True
+            return False
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Exception when checking if {} is up: {}".format(interface, e))
+    else:
+        #TODO: Windows & OSX support
+        return True
 
 def interfaces():
     """
