@@ -381,7 +381,7 @@ class Dynamips(BaseManager):
             rhost = nio_settings["rhost"]
             rport = nio_settings["rport"]
             try:
-                info = socket.getaddrinfo(rhost, rport, 0, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
+                info = socket.getaddrinfo(rhost, rport, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
                 if not info:
                     raise DynamipsError("getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
                 for res in info:

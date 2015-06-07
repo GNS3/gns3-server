@@ -356,7 +356,7 @@ class TelnetServer(Console):
     def __enter__(self):
         # Open a socket and start listening
 
-        info = socket.getaddrinfo(self.addr, self.port, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        info = socket.getaddrinfo(self.addr, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
         if not info:
             raise TelnetServerError("getaddrinfo returns an empty list on {}:{}".format(self.addr, self.port))
         for res in info:
