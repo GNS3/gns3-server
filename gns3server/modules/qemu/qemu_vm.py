@@ -84,6 +84,7 @@ class QemuVM(BaseVM):
         self._kernel_image = ""
         self._kernel_command_line = ""
         self._legacy_networking = False
+        self._kvm = True
         self._acpi_shutdown = False
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
@@ -353,6 +354,30 @@ class QemuVM(BaseVM):
         else:
             log.info('QEMU VM "{name}" [{id}] has disabled ACPI shutdown'.format(name=self._name, id=self._id))
         self._acpi_shutdown = acpi_shutdown
+
+    @property
+    def kvm(self):
+        """
+        Returns either this QEMU VM uses KVM acceleration.
+
+        :returns: boolean
+        """
+
+        return self._kvm
+
+    @kvm.setter
+    def kvm(self, kvm):
+        """
+        Sets either this QEMU VM uses KVM acceleration.
+
+        :param kvm: boolean
+        """
+
+        if kvm:
+            log.info('QEMU VM "{name}" [{id}] has enabled KVM acceleration'.format(name=self._name, id=self._id))
+        else:
+            log.info('QEMU VM "{name}" [{id}] has disabled KVM acceleration'.format(name=self._name, id=self._id))
+        self._kvm = kvm
 
     @property
     def cpu_throttling(self):
@@ -1127,6 +1152,8 @@ class QemuVM(BaseVM):
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", str(self._ram)])
+        if sys.platform.startswith("linux") and self._kvm:
+            command.extend(["-enable-kvm"])
         disk_options = yield from self._disk_options()
         command.extend(disk_options)
         command.extend(self._linux_boot_options())

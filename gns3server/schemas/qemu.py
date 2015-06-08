@@ -104,6 +104,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "ACPI shutdown support",
             "type": ["boolean", "null"],
         },
+        "kvm": {
+            "description": "KVM support",
+            "type": ["boolean", "null"],
+        },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
             "minimum": 0,
@@ -205,6 +209,10 @@ QEMU_UPDATE_SCHEMA = {
         },
         "acpi_shutdown": {
             "description": "ACPI shutdown support",
+            "type": ["boolean", "null"],
+        },
+        "kvm": {
+            "description": "KVM support",
             "type": ["boolean", "null"],
         },
         "cpu_throttling": {
@@ -319,6 +327,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "ACPI shutdown support",
             "type": "boolean",
         },
+        "kvm": {
+            "description": "KVM support",
+            "type": ["boolean", "null"],
+        },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
             "minimum": 0,
@@ -342,7 +354,7 @@ QEMU_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image", "hdb_disk_image",
                  "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "mac_address", "console",
-                 "initrd", "kernel_image", "kernel_command_line", "legacy_networking", "acpi_shutdown",
+                 "initrd", "kernel_image", "kernel_command_line", "legacy_networking", "acpi_shutdown", "kvm",
                  "cpu_throttling", "process_priority", "options"]
 }
 
