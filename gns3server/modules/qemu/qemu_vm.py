@@ -75,7 +75,7 @@ class QemuVM(BaseVM):
         self._hdb_disk_image = ""
         self._hdc_disk_image = ""
         self._hdd_disk_image = ""
-        self._mac_address = "00:00:ab:%s:%s:00" % (self.id[-4:-2], self.id[-2:])
+        self._mac_address = ""
         self._options = ""
         self._ram = 256
         self._ethernet_adapters = []
@@ -88,6 +88,7 @@ class QemuVM(BaseVM):
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
 
+        self.mac_address = ""  # this will generate a MAC address
         self.adapters = 1  # creates 1 adapter by default
         log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
@@ -295,7 +296,10 @@ class QemuVM(BaseVM):
         :param mac_address: MAC address
         """
 
-        self._mac_address = mac_address
+        if not mac_address:
+            self._mac_address = "00:00:ab:%s:%s:00" % (self.id[-4:-2], self.id[-2:])
+        else:
+            self._mac_address = mac_address
 
         log.info('QEMU VM "{name}" [{id}]: MAC address changed to {mac_addr}'.format(name=self._name,
                                                                                      id=self._id,
