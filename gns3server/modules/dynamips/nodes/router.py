@@ -1499,6 +1499,9 @@ class Router(BaseVM):
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             startup_config_base64, private_config_base64 = yield from self.extract_config()
             if startup_config_base64:
+                if not self.startup_config:
+                    self._startup_config = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
+
                 try:
                     config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
                     config = "!\n" + config.replace("\r", "")
@@ -1510,6 +1513,9 @@ class Router(BaseVM):
                     raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
             if private_config_base64:
+                if not self.private_config:
+                    self._private_config = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
+
                 try:
                     config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
                     config = "!\n" + config.replace("\r", "")
