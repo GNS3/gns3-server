@@ -37,7 +37,6 @@ optional arguments:
 
 import argparse
 import sys
-from array import array
 
 
 # extract 16 bit unsigned int from data
@@ -96,15 +95,20 @@ def nvram_import(nvram, startup, private, size):
     BASE_ADDRESS = 0x10000000
     DEFAULT_IOS  = 0x0F04               # IOS 15.4
 
-    if size is None:
-        nvram = array('B', nvram)
+    # check size parameter
+    if size is not None and (size < 8 or size > 1024):
+        raise ValueError('invalid size')
+
+    # create new nvram if nvram is empty or has wrong size
+    if nvram is None or (size is not None and len(nvram) != size*1024):
+        nvram = bytearray([0] * (size*1024))
     else:
-        nvram = array('B', [0] * (size*1024))
+        nvram = bytearray(nvram)
 
     # check nvram size
     nvram_len = len(nvram)
     if nvram_len < 8*1024 or nvram_len > 1024*1024 or nvram_len % 1024 != 0:
-        raise ValueError('invalid length')
+        raise ValueError('invalid NVRAM length')
     nvram_len = nvram_len // 2
 
     # get size of current config
@@ -125,7 +129,7 @@ def nvram_import(nvram, startup, private, size):
     # calculate max. config size
     max_config = nvram_len - 2*1024             # reserve 2k for files
     idx = max_config
-    empty_sector = array('B', [0] * 1024)
+    empty_sector = bytearray([0] * 1024)
     while True:
         idx -= 1024
         if idx < config_len:
@@ -139,14 +143,14 @@ def nvram_import(nvram, startup, private, size):
             break
 
     # import startup config
-    startup = array('B', startup)
+    startup = bytearray(startup)
     if ios is None:
         # Target IOS version is unknown. As some IOU don't work nicely with
         # the padding of a different version, the startup config is padded
         # with '\n' to the alignment of 4.
         ios = DEFAULT_IOS
         startup.extend([ord('\n')] * ((4 - len(startup) % 4) % 4))
-    new_nvram = array('B', [0] * 36)                            # startup hdr
+    new_nvram = bytearray([0] * 36)                             # startup hdr
     put_uint16(new_nvram,  0, 0xABCD)                           # magic
     put_uint16(new_nvram,  2, 1)                                # raw data
     put_uint16(new_nvram,  6, ios)                              # IOS version
@@ -158,9 +162,9 @@ def nvram_import(nvram, startup, private, size):
 
     # import private config
     if private is None:
-        private = array('B')
+        private = bytearray()
     else:
-        private = array('B', private)
+        private = bytearray(private)
     offset = len(new_nvram)
     new_nvram.extend([0] * 16)                                  # private hdr
     put_uint16(new_nvram,  0 + offset, 0xFEDC)                  # magic
@@ -180,7 +184,7 @@ def nvram_import(nvram, startup, private, size):
 
     checksum(new_nvram, 0, nvram_len)
 
-    return new_nvram.tostring()
+    return new_nvram
 
 
 if __name__ == '__main__':

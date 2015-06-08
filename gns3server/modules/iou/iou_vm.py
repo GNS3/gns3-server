@@ -439,8 +439,10 @@ class IOUVM(BaseVM):
             try:
                 if not os.path.exists(nvram_file):
                     open(nvram_file, "a").close()
-                with open(nvram_file, "rb") as file:
-                    nvram_content = file.read()
+                    nvram_content = None
+                else:
+                    with open(nvram_file, "rb") as file:
+                        nvram_content = file.read()
             except OSError as e:
                 raise IOUError("Cannot read nvram file {}: {}".format(nvram_file, e))
 

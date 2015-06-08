@@ -39,7 +39,6 @@ optional arguments:
 
 import argparse
 import sys
-from array import array
 
 
 # Uncompress data in .Z file format.
@@ -49,12 +48,12 @@ def uncompress_LZC(data):
     LZC_NUM_BITS_MIN = 9
     LZC_NUM_BITS_MAX = 16
 
-    in_data  = array('B', data)
+    in_data  = bytearray(data)
     in_len   = len(in_data)
-    out_data = array('B')
+    out_data = bytearray()
 
     if in_len == 0:
-        return out_data.tostring()
+        return out_data
     if in_len < 3:
         raise ValueError('invalid length')
     if in_data[0] != 0x1F or in_data[1] != 0x9D:
@@ -66,9 +65,8 @@ def uncompress_LZC(data):
     if maxbits < LZC_NUM_BITS_MIN or maxbits > LZC_NUM_BITS_MAX:
         raise ValueError('not supported')
 
-    parents  = array('H', [0] * numItems)
-    suffixes = array('B', [0] * numItems)
-    stack    = array('B', [0] * numItems)
+    parents  = [0] * numItems
+    suffixes = [0] * numItems
 
     in_pos  = 3
     numBits = LZC_NUM_BITS_MIN
@@ -83,7 +81,7 @@ def uncompress_LZC(data):
     parents[256]  = 0
     suffixes[256] = 0
 
-    buf_extend = array('B', [0] * 3)
+    buf_extend = bytearray([0] * 3)
 
     while True:
         # fill buffer, when empty
@@ -114,19 +112,18 @@ def uncompress_LZC(data):
             continue
 
         # convert symbol to string
+        stack = []
         cur = symbol
-        i = len(stack)
         while cur >= 256:
-            i -= 1
-            stack[i] = suffixes[cur]
+            stack.append(suffixes[cur])
             cur = parents[cur]
-        i -= 1
-        stack[i] = cur
+        stack.append(cur)
         if needPrev:
             suffixes[head - 1] = cur
             if symbol == head - 1:
-                stack[-1] = cur
-        out_data.extend(stack[i:])
+                stack[0] = cur
+        stack.reverse()
+        out_data.extend(stack)
 
         # update parents, check for numBits change
         if head < numItems:
@@ -140,7 +137,7 @@ def uncompress_LZC(data):
         else:
             needPrev = 0
 
-    return out_data.tostring()
+    return out_data
 
 
 # extract 16 bit unsigned int from data
@@ -155,7 +152,7 @@ def get_uint32(data, off):
 
 # export IOU NVRAM
 def nvram_export(nvram):
-    nvram = array('B', nvram)
+    nvram = bytearray(nvram)
 
     # extract startup config
     offset = 0
@@ -168,7 +165,7 @@ def nvram_export(nvram):
     offset += 36
     if len(nvram) < offset + length:
         raise ValueError('invalid length')
-    startup = nvram[offset:offset+length].tostring()
+    startup = nvram[offset:offset+length]
 
     # compressed startup config
     if format == 2:
@@ -192,7 +189,7 @@ def nvram_export(nvram):
         length = get_uint32(nvram, offset + 12)
         offset += 16
         if len(nvram) >= offset + length:
-            private = nvram[offset:offset+length].tostring()
+            private = nvram[offset:offset+length]
 
     return (startup, private)
 
