@@ -1,0 +1,14 @@
+[Unit]
+Description=GNS3 server
+
+[Service]
+Type=forking
+Environment=statedir=/var/cache/gns3
+PIDFile=/var/run/gns3.pid
+ExecStart=/usr/local/bin/gns3server --log /var/log/gns3.log \
+ --pid /var/run/gns3.pid --daemon
+Restart=on-abort
+User=gns3
+
+[Install]
+WantedBy=multi-user.target

@@ -23,6 +23,7 @@ from setuptools.command.test import test as TestCommand
 if sys.version_info < (3, 4):
     raise SystemExit("Python 3.4 or higher is required")
 
+
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -38,6 +39,7 @@ class PyTest(TestCommand):
 
 
 dependencies = [
+    "netifaces>=0.10.4",
     "jsonschema>=2.4.0",
     "aiohttp>=0.15.1",
     "Jinja2>=2.7.3",

@@ -42,7 +42,7 @@ You must be connected to the Internet in order to install the dependencies.
 
 Dependencies:
 
-- Python 3.3 or above
+- Python 3.4 or above
 - aiohttp
 - setuptools
 - netifaces
@@ -53,7 +53,6 @@ The following commands will install some of these dependencies:
 .. code:: bash
 
    sudo apt-get install python3-setuptools
-   sudo apt-get install python3-netifaces
 
 Finally these commands will install the server as well as the rest of the dependencies:
 
@@ -82,6 +81,12 @@ Usefull options:
 * --log logfile: store output in a logfile
 * --pid pidfile: store the pid of the running process in a file and prevent double execution
 
+All the init script require the creation of a GNS3 user. You can change it to another user.
+
+.. code:: bash
+
+    sudo adduser gns3
+
 upstart
 ~~~~~~~
 
@@ -94,6 +99,15 @@ You need to copy init/gns3.conf.upstart to /etc/init/gns3.conf
     sudo chown root /etc/init/gns3.conf
     sudo service gns3 start
 
+
+systemd
+~~~~~~~~
+You need to copy init/gns3.service.systemd to /lib/systemd/system/gns3.service
+
+.. code:: bash
+
+    sudo chown root /lib/systemd/system/gns3.service
+    sudo 
 
 Windows
 -------
