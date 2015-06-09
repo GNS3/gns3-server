@@ -100,10 +100,12 @@ def is_interface_up(interface):
                     return True
             return False
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Exception when checking if {} is up: {}".format(interface, e))
+            raise e
+            #raise aiohttp.web.HTTPInternalServerError(text="Exception when checking if {} is up: {}".format(interface, e))
     else:
-        #TODO: Windows & OSX support
+        # TODO: Windows & OSX support
         return True
+
 
 def interfaces():
     """

@@ -15,6 +15,7 @@ install:
   - pip install -rdev-requirements.txt
 
 script:
+    - ifconfig
     - py.test -v -s tests --cov gns3server --cov-report term-missing
 
 #branches:
