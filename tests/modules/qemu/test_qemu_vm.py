@@ -278,6 +278,17 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
         ]
 
 
+def test_build_command_with_kvm(vm, loop, fake_qemu_binary):
+
+    vm.kvm = True
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        if sys.platform.startswith("linux"):
+            assert "-enable-kvm" in cmd
+        else:
+            assert "-enable-kvm" not in cmd
+
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_build_command_without_display(vm, loop, fake_qemu_binary):
 
