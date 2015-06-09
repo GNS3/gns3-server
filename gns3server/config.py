@@ -45,7 +45,9 @@ class Config(object):
         # Monitor configuration files for changes
         self._watched_files = {}
 
-        if sys.platform.startswith("win"):
+        if hasattr(sys, "_called_from_test"):
+            self._files = files
+        elif sys.platform.startswith("win"):
 
             appname = "GNS3"
 
@@ -87,6 +89,8 @@ class Config(object):
                                os.path.join("/etc/xdg", appname + ".conf"),
                                filename]
 
+        if self._files is None:
+            self._files = []
         self.clear()
         self._watch_config_file()
 
