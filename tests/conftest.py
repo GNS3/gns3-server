@@ -128,6 +128,12 @@ def free_console_port(request, port_manager, project):
     return port
 
 
+@pytest.fixture
+def ethernet_device():
+    import netifaces
+    return netifaces.interfaces()[0]
+
+
 @pytest.yield_fixture(autouse=True)
 def run_around_tests(monkeypatch):
     """

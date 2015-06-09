@@ -204,32 +204,32 @@ def test_iou_nio_create_udp(server, vm):
     assert response.json["type"] == "nio_udp"
 
 
-def test_iou_nio_create_ethernet(server, vm):
+def test_iou_nio_create_ethernet(server, vm, ethernet_device):
     response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
-                                                                                                                                                    "ethernet_device": "eth0",
+                                                                                                                                                    "ethernet_device": ethernet_device,
                                                                                                                                                     },
                            example=True)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_generic_ethernet"
-    assert response.json["ethernet_device"] == "eth0"
+    assert response.json["ethernet_device"] == ethernet_device
 
 
-def test_iou_nio_create_ethernet_different_port(server, vm):
+def test_iou_nio_create_ethernet_different_port(server, vm, ethernet_device):
     response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
-                                                                                                                                                    "ethernet_device": "eth0",
+                                                                                                                                                    "ethernet_device": ethernet_device,
                                                                                                                                                     },
                            example=False)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_generic_ethernet"
-    assert response.json["ethernet_device"] == "eth0"
+    assert response.json["ethernet_device"] == ethernet_device
 
 
-def test_iou_nio_create_tap(server, vm):
+def test_iou_nio_create_tap(server, vm, ethernet_device):
     with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
         response = server.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
-                                                                                                                                                        "tap_device": "test"})
+                                                                                                                                                        "tap_device": ethernet_device})
         assert response.status == 201
         assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
         assert response.json["type"] == "nio_tap"

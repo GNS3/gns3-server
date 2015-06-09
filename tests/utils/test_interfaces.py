@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+import netifaces
 
 from gns3server.utils.interfaces import interfaces, is_interface_up
 
@@ -25,6 +27,10 @@ def test_interfaces():
 
 
 def test_is_interface_up():
-    assert is_interface_up("eth0") is True
-
-
+    if sys.platform.startswith("win"):
+        assert is_interface_up(netifaces.interfaces[0]) is True
+    elif sys.platform.startswith("darwin"):
+        assert is_interface_up("lo0") is True
+    else:
+        assert is_interface_up("lo") is True
+    assert is_interface_up("fake0") is False

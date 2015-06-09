@@ -20,6 +20,7 @@ import sys
 import aiohttp
 import socket
 import struct
+import netifaces
 
 import logging
 log = logging.getLogger(__name__)
@@ -89,6 +90,9 @@ def is_interface_up(interface):
     :returns: boolean
     """
 
+    if interface not in netifaces.interfaces():
+        return False
+
     if sys.platform.startswith("linux"):
         import fcntl
         SIOCGIFFLAGS = 0x8913
@@ -100,8 +104,7 @@ def is_interface_up(interface):
                     return True
             return False
         except OSError as e:
-            raise e
-            #raise aiohttp.web.HTTPInternalServerError(text="Exception when checking if {} is up: {}".format(interface, e))
+            raise aiohttp.web.HTTPInternalServerError(text="Exception when checking if {} is up: {}".format(interface, e))
     else:
         # TODO: Windows & OSX support
         return True
@@ -116,13 +119,9 @@ def interfaces():
 
     results = []
     if not sys.platform.startswith("win"):
-        try:
-            import netifaces
-            for interface in netifaces.interfaces():
-                results.append({"id": interface,
-                                "name": interface})
-        except ImportError:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not import netifaces module")
+        for interface in netifaces.interfaces():
+            results.append({"id": interface,
+                            "name": interface})
     else:
         try:
             results = get_windows_interfaces()
