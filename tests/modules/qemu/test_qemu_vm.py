@@ -259,6 +259,7 @@ def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
 def test_build_command(vm, loop, fake_qemu_binary, port_manager):
 
     os.environ["DISPLAY"] = "0:0"
+    vm.kvm = False
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
         assert cmd == [
