@@ -16,9 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.utils.interfaces import interfaces
+from gns3server.utils.interfaces import interfaces, is_interface_up
 
 
 def test_interfaces():
     # This test should pass on all platforms without crash
     assert isinstance(interfaces(), list)
+
+
+def test_is_interface_up():
+    assert is_interface_up("eth0") is True
+
+
