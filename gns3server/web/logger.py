@@ -34,7 +34,7 @@ class ColouredFormatter(logging.Formatter):
 
         message = super().format(record)
 
-        if not colour:
+        if not colour or sys.platform.startswith("win"):
             return message.replace("#RESET#", "")
 
         level_no = record.levelno
@@ -90,7 +90,7 @@ class WinStreamHandler(logging.StreamHandler):
 
         stream = self.stream
         try:
-            msg =  self.formatter.format(record, stream.isatty())
+            msg = self.formatter.format(record, stream.isatty())
             stream.write(msg.encode(stream.encoding, errors="replace").decode(stream.encoding))
             stream.write(self.terminator)
             self.flush()
