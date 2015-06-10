@@ -90,6 +90,9 @@ class Route(object):
 
         :returns: Response if you need to auth the user otherwise None
         """
+        if not server_config.getboolean("auth", False):
+            return
+
         user = server_config.get("user", "").strip()
         password = server_config.get("password", "").strip()
 
