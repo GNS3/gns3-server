@@ -25,6 +25,7 @@ if sys.version_info < (3, 4):
 
 
 class PyTest(TestCommand):
+
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
@@ -39,12 +40,13 @@ class PyTest(TestCommand):
 
 
 dependencies = [
-    "netifaces>=0.10.4",
+    "gns3-netifaces>=0.10.4.1",
     "jsonschema>=2.4.0",
     "aiohttp>=0.15.1",
     "Jinja2>=2.7.3",
     "raven>=5.2.0"
 ]
+
 
 setup(
     name="gns3-server",
