@@ -31,8 +31,10 @@ def test_index_upload(server):
 
 def test_upload(server, tmpdir):
 
+    content = ''.join(['a' for _ in range(0, 1025)])
+
     with open(str(tmpdir / "test"), "w+") as f:
-        f.write("TEST")
+        f.write(content)
     body = aiohttp.FormData()
     body.add_field("type", "QEMU")
     body.add_field("file", open(str(tmpdir / "test"), "rb"), content_type="application/iou", filename="test2")
@@ -41,6 +43,6 @@ def test_upload(server, tmpdir):
         response = server.post('/upload', api_version=None, body=body, raw=True)
 
     with open(str(tmpdir / "QEMU" / "test2")) as f:
-        assert f.read() == "TEST"
+        assert f.read() == content
 
     assert "test2" in response.body.decode("utf-8")
