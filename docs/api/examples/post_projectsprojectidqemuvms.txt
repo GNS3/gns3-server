@@ -1,23 +1,24 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms' -d '{"hda_disk_image": "/tmp/hda", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpnb5_wdn4/qemu_x42", "ram": 1024}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms' -d '{"hda_disk_image": "/tmp/hda", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2vvnz4z_/qemu_x42", "ram": 1024}'
 
 POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms HTTP/1.1
 {
     "hda_disk_image": "/tmp/hda",
     "name": "PC TEST 1",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpnb5_wdn4/qemu_x42",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2vvnz4z_/qemu_x42",
     "ram": 1024
 }
 
 
 HTTP/1.1 201
 CONNECTION: keep-alive
-CONTENT-LENGTH: 606
+CONTENT-LENGTH: 691
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
 X-ROUTE: /v1/projects/{project_id}/qemu/vms
 
 {
+    "acpi_shutdown": false,
     "adapter_type": "e1000",
     "adapters": 1,
     "console": 2000,
@@ -29,12 +30,14 @@ X-ROUTE: /v1/projects/{project_id}/qemu/vms
     "initrd": "",
     "kernel_command_line": "",
     "kernel_image": "",
+    "kvm": true,
     "legacy_networking": false,
+    "mac_address": "00:00:ab:27:46:00",
     "name": "PC TEST 1",
     "options": "",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpnb5_wdn4/qemu_x42",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2vvnz4z_/qemu_x42",
     "ram": 1024,
-    "vm_id": "c0fd0a60-1952-47e7-a293-7a233c83ce8e"
+    "vm_id": "3aabf5a2-3367-4863-afeb-4a3197d32746"
 }

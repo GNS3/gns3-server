@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/b5d32250-bacf-4594-be35-e2d2d814a45c/adapters/0/ports/0/nio' -d '{"lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/08dc7b7e-dc5a-44cc-bc80-8e71ce7c5973/adapters/0/ports/0/nio' -d '{"lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/b5d32250-bacf-4594-be35-e2d2d814a45c/adapters/0/ports/0/nio HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/08dc7b7e-dc5a-44cc-bc80-8e71ce7c5973/adapters/0/ports/0/nio HTTP/1.1
 {
     "lport": 4242,
     "rhost": "127.0.0.1",

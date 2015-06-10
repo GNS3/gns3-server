@@ -1,0 +1,19 @@
+curl -i -X GET 'http://localhost:8000/v1/iou/vms'
+
+GET /v1/iou/vms HTTP/1.1
+
+
+
+HTTP/1.1 200
+CONNECTION: keep-alive
+CONTENT-LENGTH: 45
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.4 GNS3/1.4.0.dev1
+X-ROUTE: /v1/iou/vms
+
+[
+    {
+        "filename": "iou.bin"
+    }
+]

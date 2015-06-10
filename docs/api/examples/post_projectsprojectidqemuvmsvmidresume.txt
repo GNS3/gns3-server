@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/f112cd1e-d307-4f95-ab6b-8d2387d520d5/resume' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/167972e8-aa39-4894-9346-fca6db989043/resume' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/f112cd1e-d307-4f95-ab6b-8d2387d520d5/resume HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/167972e8-aa39-4894-9346-fca6db989043/resume HTTP/1.1
 {}
 
 

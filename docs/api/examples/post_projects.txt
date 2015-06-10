@@ -15,9 +15,9 @@ SERVER: Python/3.4 GNS3/1.4.0.dev1
 X-ROUTE: /v1/projects
 
 {
-    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpue5qtaa2",
+    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpreddb0ft",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpue5qtaa2/abc875ab-6e67-484c-8db0-4e05de5f00b0",
-    "project_id": "abc875ab-6e67-484c-8db0-4e05de5f00b0",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpreddb0ft/de3bdbbe-3f13-461b-9b1f-5fe764004670",
+    "project_id": "de3bdbbe-3f13-461b-9b1f-5fe764004670",
     "temporary": false
 }

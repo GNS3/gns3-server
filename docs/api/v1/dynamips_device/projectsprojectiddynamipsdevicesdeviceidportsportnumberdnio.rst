@@ -9,9 +9,9 @@ Add a NIO to a Dynamips device instance
 
 Parameters
 **********
+- **project_id**: UUID for the project
 - **device_id**: UUID for the instance
 - **port_number**: Port on the device
-- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -45,6 +45,17 @@ Linux Ethernet Network Input/Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>ethernet_device</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Ethernet device name e.g. eth0</td>                     </tr>
     <tr><td>type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: nio_linux_ethernet</td>                     </tr>
+    </table>
+
+NAT
+^^^^^^^^^^^^^^^^^^^^^^
+NAT Network Input/Output
+
+.. raw:: html
+
+    <table>
+    <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: nio_nat</td>                     </tr>
     </table>
 
 NULL
@@ -117,7 +128,7 @@ Body
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>mappings</td>                    <td> </td>                     <td>object</td>                     <td></td>                     </tr>
-    <tr><td>nio</td>                    <td>&#10004;</td>                     <td>UDP, Ethernet, LinuxEthernet, TAP, UNIX, VDE, NULL</td>                     <td></td>                     </tr>
+    <tr><td>nio</td>                    <td>&#10004;</td>                     <td>UDP, Ethernet, LinuxEthernet, NAT, TAP, UNIX, VDE, NULL</td>                     <td></td>                     </tr>
     <tr><td>port_settings</td>                    <td> </td>                     <td>object</td>                     <td>Ethernet switch</td>                     </tr>
     </table>
 
@@ -128,9 +139,9 @@ Remove a NIO from a Dynamips device instance
 
 Parameters
 **********
+- **project_id**: UUID for the project
 - **device_id**: UUID for the instance
 - **port_number**: Port on the device
-- **project_id**: UUID for the project
 
 Response status codes
 **********************

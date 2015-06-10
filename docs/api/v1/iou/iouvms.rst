@@ -11,3 +11,9 @@ Response status codes
 **********************
 - **200**: List of IOU VM retrieved
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../examples/get_iouvms.txt
+

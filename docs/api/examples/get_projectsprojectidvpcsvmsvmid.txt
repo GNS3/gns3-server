@@ -1,12 +1,12 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/3d70ec8d-d4af-4bb3-9bc2-1e7833f44a3e'
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/bd6c3ed5-b279-4c51-bab2-4bd7a78fa6f7'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/3d70ec8d-d4af-4bb3-9bc2-1e7833f44a3e HTTP/1.1
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/bd6c3ed5-b279-4c51-bab2-4bd7a78fa6f7 HTTP/1.1
 
 
 
 HTTP/1.1 200
 CONNECTION: keep-alive
-CONTENT-LENGTH: 220
+CONTENT-LENGTH: 245
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -18,5 +18,6 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": null,
     "startup_script_path": null,
-    "vm_id": "3d70ec8d-d4af-4bb3-9bc2-1e7833f44a3e"
+    "status": "stopped",
+    "vm_id": "bd6c3ed5-b279-4c51-bab2-4bd7a78fa6f7"
 }

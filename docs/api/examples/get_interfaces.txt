@@ -30,16 +30,16 @@ X-ROUTE: /v1/interfaces
         "name": "en1"
     },
     {
+        "id": "en0",
+        "name": "en0"
+    },
+    {
         "id": "fw0",
         "name": "fw0"
     },
     {
         "id": "en2",
         "name": "en2"
-    },
-    {
-        "id": "en0",
-        "name": "en0"
     },
     {
         "id": "p2p0",

@@ -23,6 +23,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>auto_delete_disks</td>                    <td> </td>                     <td>boolean</td>                     <td>automatically delete nvram and disk files</td>                     </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
@@ -73,6 +74,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>auto_delete_disks</td>                    <td> </td>                     <td>boolean</td>                     <td>automatically delete nvram and disk files</td>                     </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>

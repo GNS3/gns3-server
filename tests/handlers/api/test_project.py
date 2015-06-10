@@ -233,7 +233,7 @@ def test_get_file(server, tmpdir):
     with open(os.path.join(project.path, "hello"), "w+") as f:
         f.write("world")
 
-    response = server.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True, example=True)
+    response = server.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
     assert response.status == 200
     assert response.body == b"world"
 
