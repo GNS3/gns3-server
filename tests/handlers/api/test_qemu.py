@@ -25,7 +25,7 @@ from unittest.mock import patch
 @pytest.fixture
 def fake_qemu_bin():
 
-    bin_path = os.path.join(os.environ["PATH"], "qemu_x42")
+    bin_path = os.path.join(os.environ["PATH"], "qemu_x86_64")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -51,7 +51,7 @@ def base_params(tmpdir, fake_qemu_bin):
 @pytest.fixture
 def fake_qemu_bin():
 
-    bin_path = os.path.join(os.environ["PATH"], "qemu_x42")
+    bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -65,12 +65,27 @@ def vm(server, project, base_params):
     return response.json
 
 
-def test_qemu_create(server, project, base_params):
+def test_qemu_create(server, project, base_params, fake_qemu_bin):
     response = server.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), base_params)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/qemu/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
+    assert response.json["qemu_path"] == fake_qemu_bin
+    assert response.json["platform"] == "x86_64"
+
+
+def test_qemu_create_platform(server, project, base_params, fake_qemu_bin):
+    base_params["qemu_path"] = None
+    base_params["platform"] = "x86_64"
+
+    response = server.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), base_params)
+    assert response.status == 201
+    assert response.route == "/projects/{project_id}/qemu/vms"
+    assert response.json["name"] == "PC TEST 1"
+    assert response.json["project_id"] == project.id
+    assert response.json["qemu_path"] == fake_qemu_bin
+    assert response.json["platform"] == "x86_64"
 
 
 def test_qemu_create_with_params(server, project, base_params):

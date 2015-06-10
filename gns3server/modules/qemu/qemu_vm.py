@@ -22,6 +22,7 @@ order to run a QEMU VM.
 
 import sys
 import os
+import re
 import shutil
 import subprocess
 import shlex
@@ -35,11 +36,14 @@ from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..nios.nio_nat import NIONAT
 from ..base_vm import BaseVM
-from ...schemas.qemu import QEMU_OBJECT_SCHEMA
+from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 
 import logging
 log = logging.getLogger(__name__)
+
+
+
 
 
 class QemuVM(BaseVM):
@@ -54,10 +58,11 @@ class QemuVM(BaseVM):
     :param manager: Manager instance
     :param console: TCP console port
     :param qemu_path: path to the QEMU binary
+    :param platform: Platform to emulate
     :param console: TCP console port
     """
 
-    def __init__(self, name, vm_id, project, manager, qemu_path=None, console=None):
+    def __init__(self, name, vm_id, project, manager, qemu_path=None, console=None, platform=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
         server_config = manager.config.get_section_config("Server")
@@ -70,7 +75,18 @@ class QemuVM(BaseVM):
         self._stdout_file = ""
 
         # QEMU VM settings
-        self.qemu_path = qemu_path
+
+        if qemu_path:
+            try:
+                self.qemu_path = qemu_path
+            except QemuError as e:
+                if platform:
+                    self.platform = platform
+                else:
+                    raise e
+        else:
+            self.platform = platform
+
         self._hda_disk_image = ""
         self._hdb_disk_image = ""
         self._hdc_disk_image = ""
@@ -124,6 +140,20 @@ class QemuVM(BaseVM):
         if qemu_path and os.pathsep not in qemu_path:
             qemu_path = shutil.which(qemu_path)
 
+        self._check_qemu_path(qemu_path)
+        self._qemu_path = qemu_path
+        self._platform = os.path.basename(qemu_path)
+        if self._platform == "qemu-kvm":
+            self._platform = "x86_64"
+        else:
+            self._platform = re.sub(r'^qemu-system-(.*)(w.exe)?$', r'\1', os.path.basename(qemu_path), re.IGNORECASE)
+        if self._platform not in QEMU_PLATFORMS:
+            raise QemuError("Platform {} is unknown".format(self._platform))
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(name=self._name,
+                                                                                       id=self._id,
+                                                                                       qemu_path=qemu_path))
+
+    def _check_qemu_path(self, qemu_path):
         if qemu_path is None:
             raise QemuError("QEMU binary path is not set or not found in the path")
         if not os.path.exists(qemu_path):
@@ -131,10 +161,20 @@ class QemuVM(BaseVM):
         if not os.access(qemu_path, os.X_OK):
             raise QemuError("QEMU binary '{}' is not executable".format(qemu_path))
 
-        self._qemu_path = qemu_path
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(name=self._name,
-                                                                                       id=self._id,
-                                                                                       qemu_path=qemu_path))
+    @property
+    def platform(self):
+        """
+        Return the current platform
+        """
+        return self._platform
+
+    @platform.setter
+    def platform(self, platform):
+        self._platform = platform
+        if sys.platform.startswith("win"):
+            self.qemu_path = "qemu-system-{}w.exe".format(platform)
+        else:
+            self.qemu_path = "qemu-system-{}".format(platform)
 
     @property
     def hda_disk_image(self):

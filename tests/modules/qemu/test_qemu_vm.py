@@ -52,9 +52,9 @@ def fake_qemu_img_binary():
 def fake_qemu_binary():
 
     if sys.platform.startswith("win"):
-        bin_path = os.path.join(os.environ["PATH"], "qemu_x42.EXE")
+        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64.EXE")
     else:
-        bin_path = os.path.join(os.environ["PATH"], "qemu_x42")
+        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -171,7 +171,9 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
         vm.qemu_path = None
 
     # Should not crash with unicode characters
-    path = str(tmpdir / "bla\u62FF")
+    path = str(tmpdir / "\u62FF" / "qemu-system-mips")
+
+    os.makedirs( str(tmpdir / "\u62FF") )
 
     # Raise because file doesn't exists
     with pytest.raises(QemuError):
@@ -189,14 +191,45 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
 
     vm.qemu_path = path
     assert vm.qemu_path == path
+    assert vm.platform == "mips"
 
 
 def test_set_qemu_path_environ(vm, tmpdir, fake_qemu_binary):
 
     # It should find the binary in the path
-    vm.qemu_path = "qemu_x42"
+    vm.qemu_path = "qemu-system-x86_64"
 
     assert vm.qemu_path == fake_qemu_binary
+    assert vm.platform == "x86_64"
+
+
+@pytest.mark.skipif(sys.platform.startswith("linux") is False, reason="Supported only on linux")
+def test_set_qemu_path_kvm_binary(vm, tmpdir, fake_qemu_binary):
+
+    bin_path = os.path.join(os.environ["PATH"], "qemu-kvm")
+    with open(bin_path, "w+") as f:
+        f.write("1")
+    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    return bin_path
+
+    # It should find the binary in the path
+    vm.qemu_path = "qemu-kvm"
+
+    assert vm.qemu_path == fake_qemu_binary
+    assert vm.platform == "x86_64"
+
+
+def test_set_platform(project, manager):
+
+    with patch("shutil.which", return_value="/bin/qemu-system-x86_64") as which_mock:
+        with patch("gns3server.modules.qemu.QemuVM._check_qemu_path"):
+            vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, platform="x86_64")
+            if sys.platform.startswith("win"):
+                which_mock.assert_called_with("qemu-system-x86_64w.exe")
+            else:
+                which_mock.assert_called_with("qemu-system-x86_64")
+    assert vm.platform == "x86_64"
+    assert vm.qemu_path == "/bin/qemu-system-x86_64"
 
 
 def test_disk_options(vm, loop, fake_qemu_img_binary):

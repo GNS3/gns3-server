@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+QEMU_PLATFORMS = ["aarch64", "alpha", "arm", "cris", "i386", "lm32", "m68k", "microblaze", "microblazeel", "mips", "mips64", "mips64el", "mipsel", "moxie", "or32", "ppc", "ppc64", "ppcemb", "s390x", "sh4", "sh4eb", "sparc", "sparc64", "tricore", "unicore32", "x86_64", "xtensa", "xtensaeb"]
+
 
 QEMU_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -38,8 +40,12 @@ QEMU_CREATE_SCHEMA = {
         },
         "qemu_path": {
             "description": "Path to QEMU",
-            "type": "string",
+            "type": ["string", "null"],
             "minLength": 1,
+        },
+        "platform": {
+            "description": "Platform to emulate",
+            "enum": QEMU_PLATFORMS + ["null"]
         },
         "console": {
             "description": "console TCP port",
@@ -130,7 +136,7 @@ QEMU_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "qemu_path"],
+    "required": ["name"],
 }
 
 QEMU_UPDATE_SCHEMA = {
@@ -147,6 +153,10 @@ QEMU_UPDATE_SCHEMA = {
             "description": "Path to QEMU",
             "type": ["string", "null"],
             "minLength": 1,
+        },
+        "platform": {
+            "description": "Platform to emulate",
+            "enum": QEMU_PLATFORMS + ["null"]
         },
         "console": {
             "description": "console TCP port",
@@ -264,6 +274,10 @@ QEMU_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "platform": {
+            "description": "Platform to emulate",
+            "enum": QEMU_PLATFORMS
+        },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
             "type": "string",
@@ -352,7 +366,7 @@ QEMU_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id", "name", "qemu_path", "hda_disk_image", "hdb_disk_image",
+    "required": ["vm_id", "project_id", "name", "qemu_path", "platform", "hda_disk_image", "hdb_disk_image",
                  "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "mac_address", "console",
                  "initrd", "kernel_image", "kernel_command_line", "legacy_networking", "acpi_shutdown", "kvm",
                  "cpu_throttling", "process_priority", "options"]
