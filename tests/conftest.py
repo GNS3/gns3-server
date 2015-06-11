@@ -145,6 +145,7 @@ def run_around_tests(monkeypatch):
     config = Config.instance()
     config.clear()
     config.set("Server", "project_directory", tmppath)
+    config.set("Server", "auth", False)
 
     # Prevent exectuions of the VM if we forgot to mock something
     config.set("VirtualBox", "vboxmanage_path", tmppath)
