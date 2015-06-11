@@ -163,6 +163,7 @@ class Server:
         except ssl.SSLError as e:
             log.critical("SSL error: {}".format(e))
             raise SystemExit
+        log.info("SSL is enabled")
         return ssl_context
 
     @asyncio.coroutine

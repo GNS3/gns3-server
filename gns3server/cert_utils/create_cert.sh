@@ -17,27 +17,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Bash shell script for generating self-signed certs. Run this in a folder, as it
-# generates a few files. Large portions of this script were taken from the
-# following artcile:
-#
-# http://usrportage.de/archives/919-Batch-generating-SSL-certificates.html
-#
-# Additional alterations by: Brad Landers
-# Date: 2012-01-27
-# https://gist.github.com/bradland/1690807
+# Bash shell script for generating self-signed certs.
+# The certicate is automaticaly put in your GNS3 config
 
-# Script accepts a single argument, the fqdn for the cert
-
-DST_DIR="$HOME/.config/GNS3Certs/"
-OLD_DIR=`pwd`
-
-#GNS3 Server expects to find certs with the default FQDN below. If you create
-#different certs you will need to update server.py
-DOMAIN="$1"
-if [ -z "$DOMAIN" ]; then
-  DOMAIN="gns3server.localdomain.com"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    DST_DIR="$HOME/.config/gns3.net/ssl"
+else
+    DST_DIR="$HOME/.config/gns3/ssl"
 fi
+OLD_DIR=`pwd`
 
 fail_if_error() {
   [ $1 != 0 ] && {
@@ -52,48 +40,6 @@ mkdir -p $DST_DIR
 fail_if_error $?
 cd $DST_DIR
 
+SUBJ="/C=CA/ST=Alberta/O=GNS3SELF/localityName=Calgary/commonName=localhost/organizationalUnitName=GNS3Server/emailAddress=gns3cert@gns3.com"
 
-# Generate a passphrase
-export PASSPHRASE=$(head -c 500 /dev/urandom | tr -dc a-z0-9A-Z | head -c 128; echo)
-
-# Certificate details; replace items in angle brackets with your own info
-subj="
-C=CA
-ST=Alberta
-O=GNS3
-localityName=Calgary
-commonName=$DOMAIN
-organizationalUnitName=GNS3Server
-emailAddress=gns3cert@gns3.com
-"
-
-# Generate the server private key
-openssl genrsa -aes256 -out $DOMAIN.key -passout env:PASSPHRASE 2048
-fail_if_error $?
-
-#openssl rsa -outform der -in $DOMAIN.pem -out $DOMAIN.key -passin env:PASSPHRASE
-
-# Generate the CSR
-openssl req \
-    -new \
-    -batch \
-    -subj "$(echo -n "$subj" | tr "\n" "/")" \
-    -key $DOMAIN.key \
-    -out $DOMAIN.csr \
-    -passin env:PASSPHRASE
-fail_if_error $?
-cp $DOMAIN.key $DOMAIN.key.org
-fail_if_error $?
-
-# Strip the password so we don't have to type it every time we restart Apache
-openssl rsa -in $DOMAIN.key.org -out $DOMAIN.key -passin env:PASSPHRASE
-fail_if_error $?
-
-# Generate the cert (good for 10 years)
-openssl x509 -req -days 3650 -in $DOMAIN.csr -signkey $DOMAIN.key -out $DOMAIN.crt
-fail_if_error $?
-
-echo "${DST_DIR}${DOMAIN}.key"
-echo "${DST_DIR}${DOMAIN}.crt"
-
-cd $OLD_DIR
+openssl req -nodes -new -x509 -keyout server.key -out server.cert -subj "$SUBJ"

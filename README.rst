@@ -107,7 +107,7 @@ You need to copy init/gns3.service.systemd to /lib/systemd/system/gns3.service
 .. code:: bash
 
     sudo chown root /lib/systemd/system/gns3.service
-    sudo 
+    sudo systemctl start gns3
 
 Windows
 -------
@@ -164,3 +164,29 @@ and homebrew: http://brew.sh/.
    gns3server
 
 
+SSL
+---
+
+If you want enable SSL support on GNS3 you can generate a self signed certificate:
+
+.. code:: bash
+
+    bassh gns3server/cert_utils/create_cert.sh
+
+This command will put the files in ~/.config/gns3/ssl on Linux and  ~/.config/gns3.net/ssl on MacOSX.
+
+After you can start the server in SSL mode with:
+
+.. code:: bash
+
+    python gns3server/main.py --certfile ~/.config/gns3.net/ssl/server.cert --certkey ~/.config/gns3.net/ssl/server.key --ssl
+
+
+Or in your gns3_server.conf by adding in the Server section:
+
+.. code:: ini
+    
+    [Server]
+    certfile=/Users/noplay/.config/gns3.net/ssl/server.cert
+    certkey=/Users/noplay/.config/gns3.net/ssl/server.key
+    ssl=True
