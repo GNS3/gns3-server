@@ -19,7 +19,7 @@
 import aiohttp
 import os
 from unittest.mock import patch
-
+from gns3server.config import Config
 
 def test_index_upload(server):
     response = server.get('/upload', api_version=None)
@@ -37,8 +37,8 @@ def test_upload(server, tmpdir):
     body.add_field("type", "QEMU")
     body.add_field("file", open(str(tmpdir / "test"), "rb"), content_type="application/iou", filename="test2")
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        response = server.post('/upload', api_version=None, body=body, raw=True)
+    Config.instance().set("Server", "images_path", str(tmpdir))
+    response = server.post('/upload', api_version=None, body=body, raw=True)
 
     with open(str(tmpdir / "QEMU" / "test2")) as f:
         assert f.read() == "TEST"
