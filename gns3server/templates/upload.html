@@ -1,8 +1,25 @@
 {% extends "layout.html" %}
+{% block script %}
+function onSubmit() {
+    if (document.getElementById("uploadInput").files == undefined) {
+        //OLD browser
+        return true;
+    }
+
+    max_size = 200;
+    var file = document.getElementById("uploadInput").files[0];
+    var size = Math.round(file.size / 1000000);
+    if (size > max_size) {
+        alert("The file is too big (" + size +  " MB). The max upload size is " + max_size + " MB. Please Upload your file with the GNS3 GUI");
+        return false;
+    }
+    return true;
+}
+{% endblock %}
 {% block body %}
     <h1>Select & Upload an image for GNS3</h1>
-    <form enctype="multipart/form-data" action="/upload" method="post">
-    File path: <input type="file" name="file" /><br>
+    <form enctype="multipart/form-data" action="/upload" method="post" onSubmit="return onSubmit()">
+    File path: <input type="file" name="file" id="uploadInput" /><br>
     File type: <select name="type" />
         <option value="IOU">IOU</option>
         <option value="IOURC">IOU licence (iourc)</option>
