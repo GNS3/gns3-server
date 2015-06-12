@@ -141,6 +141,8 @@ class ProjectHandler:
         if ProjectHandler._notifications_listening == 0:
             yield from project.close()
             pm.remove_project(project.id)
+        else:
+            log.info("Skip project closing, another client is listening for project informations")
         response.set_status(204)
 
     @classmethod
