@@ -30,6 +30,9 @@ def _get_windows_interfaces_from_registry():
 
     import winreg
 
+
+    #HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces
+
     interfaces = []
     try:
         hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkCards")
@@ -37,12 +40,26 @@ def _get_windows_interfaces_from_registry():
             network_card_id = winreg.EnumKey(hkey, index)
             hkeycard = winreg.OpenKey(hkey, network_card_id)
             guid, _ = winreg.QueryValueEx(hkeycard, "ServiceName")
+            netcard, _ = winreg.QueryValueEx(hkeycard, "Description")
             connection = r"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}" + "\{}\Connection".format(guid)
             hkeycon = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, connection)
             name, _ = winreg.QueryValueEx(hkeycon, "Name")
+            interface = r"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{}".format(guid)
+            hkeyinterface = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, interface)
+            is_dhcp_enabled, _ = winreg.QueryValueEx(hkeyinterface, "EnableDHCP")
+            if is_dhcp_enabled:
+                ip_address, _ = winreg.QueryValueEx(hkeyinterface, "DhcpIPAddress")
+            else:
+                ip_address, _ = winreg.QueryValueEx(hkeyinterface, "IPAddress")
+                if ip_address:
+                    # get the first IPv4 address only
+                    ip_address = ip_address[0]
             npf_interface = "\\Device\\NPF_{guid}".format(guid=guid)
             interfaces.append({"id": npf_interface,
-                               "name": name})
+                               "name": name,
+                               "ip_address": ip_address,
+                               "netcard": netcard})
+            winreg.CloseKey(hkeyinterface)
             winreg.CloseKey(hkeycon)
             winreg.CloseKey(hkeycard)
         winreg.CloseKey(hkey)
@@ -70,9 +87,17 @@ def get_windows_interfaces():
         for adapter in service.InstancesOf("Win32_NetworkAdapter"):
             if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
                 # adapter is connected or media disconnected
+                ip_address = ""
+                for network_config in service.InstancesOf("Win32_NetworkAdapterConfiguration"):
+                    if network_config.InterfaceIndex == adapter.InterfaceIndex:
+                        if network_config.IPAddress:
+                            # get the first IPv4 address only
+                            ip_address = network_config.IPAddress[0]
+                        break
                 npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
                 interfaces.append({"id": npf_interface,
                                    "name": adapter.NetConnectionID,
+                                   "ip_address": ip_address,
                                    "netcard": adapter.name})
     except (AttributeError, pywintypes.com_error):
         log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")
@@ -120,8 +145,14 @@ def interfaces():
     results = []
     if not sys.platform.startswith("win"):
         for interface in netifaces.interfaces():
+            ip_address = ""
+            ip_addresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in ip_addresses and ip_addresses[netifaces.AF_INET]:
+                # get the first IPv4 address only
+                ip_address = ip_addresses[netifaces.AF_INET][0]["addr"]
             results.append({"id": interface,
-                            "name": interface})
+                            "name": interface,
+                            "ip_address": ip_address})
     else:
         try:
             results = get_windows_interfaces()
