@@ -43,9 +43,6 @@ import logging
 log = logging.getLogger(__name__)
 
 
-
-
-
 class QemuVM(BaseVM):
     module_name = 'qemu'
 
@@ -346,7 +343,6 @@ class QemuVM(BaseVM):
                                                                                      id=self._id,
                                                                                      mac_addr=mac_address))
 
-
     @property
     def legacy_networking(self):
         """
@@ -510,7 +506,11 @@ class QemuVM(BaseVM):
         log.info('QEMU VM "{name}" [{id}] has set the QEMU options to {options}'.format(name=self._name,
                                                                                         id=self._id,
                                                                                         options=options))
-        self._options = options
+        if "-enable-kvm" in options:
+            self.kvm = True
+            options = options.replace("-enable-kvm", "")
+
+        self._options = options.strip()
 
     @property
     def initrd(self):

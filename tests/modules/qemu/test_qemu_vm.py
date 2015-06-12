@@ -173,7 +173,7 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
     # Should not crash with unicode characters
     path = str(tmpdir / "\u62FF" / "qemu-system-mips")
 
-    os.makedirs( str(tmpdir / "\u62FF") )
+    os.makedirs(str(tmpdir / "\u62FF"))
 
     # Raise because file doesn't exists
     with pytest.raises(QemuError):
@@ -375,3 +375,17 @@ def test_hdd_disk_image(vm, tmpdir):
         assert vm.hdd_disk_image == "/tmp/test"
         vm.hdd_disk_image = "test"
         assert vm.hdd_disk_image == str(tmpdir / "QEMU" / "test")
+
+
+def test_options(vm):
+    vm.kvm = False
+    vm.options = "-usb"
+    assert vm.options == "-usb"
+    assert vm.kvm is False
+
+
+def test_options_kvm(vm):
+    vm.kvm = False
+    vm.options = "-usb -enable-kvm"
+    assert vm.options == "-usb"
+    assert vm.kvm is True
