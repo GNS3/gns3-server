@@ -38,15 +38,19 @@ class PyTest(TestCommand):
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
-
 dependencies = [
-    "gns3-netifaces>=0.10.4.1",
     "jsonschema>=2.4.0",
     "aiohttp>=0.15.1",
     "Jinja2>=2.7.3",
     "raven>=5.2.0"
 ]
 
+try:
+    import netifaces
+except ImportError:
+    # add gns3-netifaces only if netifaces isn't already installed
+    # for instance via a Debian package.
+    dependencies.append("gns3-netifaces>=0.10.4.1")
 
 setup(
     name="gns3-server",
