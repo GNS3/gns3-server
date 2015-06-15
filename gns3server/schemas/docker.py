@@ -42,6 +42,11 @@ DOCKER_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "console": {
+            "description": "console name",
+            "type": "string",
+            "minLength": 1,
+        },
     },
     "additionalProperties": False,
 }

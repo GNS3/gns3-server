@@ -128,7 +128,7 @@ class Container(BaseVM):
     def stop(self):
         """Stops this Docker container."""
         result = yield from self.manager.execute(
-            "stop", {"container": self._id})
+            "kill", {"container": self._id})
         log.info("Docker container '{name}' [{image}] stopped".format(
             name=self._name, image=self._image))
 

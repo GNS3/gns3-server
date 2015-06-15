@@ -25,6 +25,7 @@ import shutil
 import asyncio
 import subprocess
 import logging
+import aiohttp
 import docker
 
 log = logging.getLogger(__name__)
@@ -126,7 +127,7 @@ class Docker(BaseManager):
 
         if cid not in self._vms:
             raise aiohttp.web.HTTPNotFound(
-                text="Docker container with ID {} doesn't exist".format(vm_id))
+                text="Docker container with ID {} doesn't exist".format(cid))
 
         container = self._vms[cid]
         if project_id:
