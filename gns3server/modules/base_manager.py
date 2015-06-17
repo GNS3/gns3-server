@@ -37,6 +37,7 @@ from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
 from .nios.nio_nat import NIONAT
 from .nios.nio_generic_ethernet import NIOGenericEthernet
+from ..utils.images import md5sum, remove_checksum
 
 
 class BaseManager:
@@ -444,7 +445,7 @@ class BaseManager:
         files.sort()
         images = []
         for filename in files:
-            if filename[0] != ".":
+            if filename[0] != "." and not filename.endswith(".md5sum"):
                 images.append({"filename": filename})
         return images
 
@@ -461,6 +462,7 @@ class BaseManager:
         path = os.path.join(directory, os.path.basename(filename))
         log.info("Writting image file %s", path)
         try:
+            remove_checksum(path)
             os.makedirs(directory, exist_ok=True)
             with open(path, 'wb+') as f:
                 while True:
@@ -469,5 +471,6 @@ class BaseManager:
                         break
                     f.write(packet)
             os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+            md5sum(path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Could not write image: {} to {}".format(filename, e))

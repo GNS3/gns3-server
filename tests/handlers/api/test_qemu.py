@@ -88,10 +88,10 @@ def test_qemu_create_platform(server, project, base_params, fake_qemu_bin):
     assert response.json["platform"] == "x86_64"
 
 
-def test_qemu_create_with_params(server, project, base_params):
+def test_qemu_create_with_params(server, project, base_params, fake_qemu_vm):
     params = base_params
     params["ram"] = 1024
-    params["hda_disk_image"] = "/tmp/hda"
+    params["hda_disk_image"] = fake_qemu_vm
 
     response = server.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -99,7 +99,7 @@ def test_qemu_create_with_params(server, project, base_params):
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["ram"] == 1024
-    assert response.json["hda_disk_image"] == "/tmp/hda"
+    assert response.json["hda_disk_image"] == fake_qemu_vm
 
 
 def test_qemu_get(server, project, vm):
@@ -152,18 +152,18 @@ def test_qemu_delete(server, vm):
         assert response.status == 204
 
 
-def test_qemu_update(server, vm, tmpdir, free_console_port, project):
+def test_qemu_update(server, vm, tmpdir, free_console_port, project, fake_qemu_vm):
     params = {
         "name": "test",
         "console": free_console_port,
         "ram": 1024,
-        "hdb_disk_image": "/tmp/hdb"
+        "hdb_disk_image": fake_qemu_vm
     }
     response = server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
-    assert response.json["hdb_disk_image"] == "/tmp/hdb"
+    assert response.json["hdb_disk_image"] == fake_qemu_vm
     assert response.json["ram"] == 1024
 
 
@@ -224,6 +224,10 @@ def test_upload_vm(server, tmpdir):
 
     with open(str(tmpdir / "test2")) as f:
         assert f.read() == "TEST"
+
+    with open(str(tmpdir / "test2.md5sum")) as f:
+        checksum = f.read()
+        assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
 def test_upload_vm_permission_denied(server, tmpdir):

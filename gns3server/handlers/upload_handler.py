@@ -21,6 +21,7 @@ import stat
 
 from ..config import Config
 from ..web.route import Route
+from ..utils.images import remove_checksum, md5sum
 
 
 class UploadHandler:
@@ -36,7 +37,7 @@ class UploadHandler:
         try:
             for root, _, files in os.walk(UploadHandler.image_directory()):
                 for filename in files:
-                    if not filename.startswith("."):
+                    if not filename.startswith(".") and not filename.endswith(".md5sum"):
                         image_file = os.path.join(root, filename)
                         uploaded_files.append(image_file)
         except OSError:
@@ -70,12 +71,14 @@ class UploadHandler:
             destination_path = os.path.join(destination_dir, data["file"].filename)
         try:
             os.makedirs(destination_dir, exist_ok=True)
+            remove_checksum(destination_path)
             with open(destination_path, "wb+") as f:
                 while True:
                     chunk = data["file"].file.read(512)
                     if not chunk:
                         break
                     f.write(chunk)
+            md5sum(destination_path)
             st = os.stat(destination_path)
             os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         except OSError as e:

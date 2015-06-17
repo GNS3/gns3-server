@@ -189,6 +189,10 @@ IOU_OBJECT_SCHEMA = {
             "description": "Path of iou binary",
             "type": "string"
         },
+        "md5sum": {
+            "description": "Checksum of iou binary",
+            "type": "string"
+        },
         "serial_adapters": {
             "description": "How many serial adapters are connected to the IOU",
             "type": "integer"
@@ -227,7 +231,7 @@ IOU_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "path", "serial_adapters", "ethernet_adapters",
+    "required": ["name", "vm_id", "console", "project_id", "path", "md5sum", "serial_adapters", "ethernet_adapters",
                  "ram", "nvram", "l1_keepalives", "startup_config", "private_config", "use_default_iou_values"]
 }
 

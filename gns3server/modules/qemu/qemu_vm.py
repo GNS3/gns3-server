@@ -38,6 +38,7 @@ from ..nios.nio_nat import NIONAT
 from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
+from ...utils.images import md5sum
 
 import logging
 log = logging.getLogger(__name__)
@@ -1217,13 +1218,23 @@ class QemuVM(BaseVM):
         # Qemu has a long list of options. The JSON schema is the single source of information
         for field in QEMU_OBJECT_SCHEMA["required"]:
             if field not in answer:
-                answer[field] = getattr(self, field)
+                try:
+                    answer[field] = getattr(self, field)
+                except AttributeError:
+                    pass
 
         answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image)
+        answer["hda_disk_image_md5sum"] = md5sum(self._hda_disk_image)
         answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image)
+        answer["hdb_disk_image_md5sum"] = md5sum(self._hdb_disk_image)
         answer["hdc_disk_image"] = self.manager.get_relative_image_path(self._hdc_disk_image)
+        answer["hdc_disk_image_md5sum"] = md5sum(self._hdc_disk_image)
         answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image)
+        answer["hdd_disk_image_md5sum"] = md5sum(self._hdd_disk_image)
         answer["initrd"] = self.manager.get_relative_image_path(self._initrd)
+        answer["initrd_md5sum"] = md5sum(self._initrd)
+
         answer["kernel_image"] = self.manager.get_relative_image_path(self._kernel_image)
+        answer["kernel_image_md5sum"] = md5sum(self._kernel_image)
 
         return answer

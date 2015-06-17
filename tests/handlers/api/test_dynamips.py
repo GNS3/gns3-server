@@ -156,6 +156,10 @@ def test_upload_vm(server, tmpdir):
     with open(str(tmpdir / "test2")) as f:
         assert f.read() == "TEST"
 
+    with open(str(tmpdir / "test2.md5sum")) as f:
+        checksum = f.read()
+        assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
+
 
 def test_upload_vm_permission_denied(server, tmpdir):
     with open(str(tmpdir / "test2"), "w+") as f:

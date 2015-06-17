@@ -301,6 +301,7 @@ def test_get_configs_without_configs_file(server, vm):
     assert "startup_config" not in response.json
     assert "private_config" not in response.json
 
+
 def test_get_configs_with_startup_config_file(server, project, vm):
 
     path = startup_config_file(project, vm)
@@ -327,6 +328,10 @@ def test_upload_vm(server, tmpdir):
 
     with open(str(tmpdir / "test2")) as f:
         assert f.read() == "TEST"
+
+    with open(str(tmpdir / "test2.md5sum")) as f:
+        checksum = f.read()
+        assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
 def test_upload_vm_permission_denied(server, tmpdir):

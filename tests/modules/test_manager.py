@@ -125,7 +125,7 @@ def test_get_relative_image_path(qemu, tmpdir):
 
 def test_list_images(loop, qemu, tmpdir):
 
-    fake_images = ["a.bin", "b.bin", ".blu.bin"]
+    fake_images = ["a.bin", "b.bin", ".blu.bin", "a.bin.md5sum"]
     for image in fake_images:
         with open(str(tmpdir / image), "w+") as f:
             f.write("1")

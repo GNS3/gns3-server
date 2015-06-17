@@ -37,6 +37,7 @@ from ..nios.nio_udp import NIOUDP
 
 from gns3server.config import Config
 from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
+from gns3server.utils.images import md5sum
 
 
 class Router(BaseVM):
@@ -134,6 +135,7 @@ class Router(BaseVM):
                        "dynamips_id": self._dynamips_id,
                        "platform": self._platform,
                        "image": self._image,
+                       "image_md5sum": md5sum(self._image),
                        "startup_config": self._startup_config,
                        "private_config": self._private_config,
                        "ram": self._ram,

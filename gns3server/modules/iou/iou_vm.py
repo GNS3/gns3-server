@@ -46,6 +46,7 @@ from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
 from .ioucon import start_ioucon
 import gns3server.utils.asyncio
+import gns3server.utils.images
 
 
 import logging
@@ -208,6 +209,7 @@ class IOUVM(BaseVM):
                        "console": self._console,
                        "project_id": self.project.id,
                        "path": self.path,
+                       "md5sum": gns3server.utils.images.md5sum(self.path),
                        "ethernet_adapters": len(self._ethernet_adapters),
                        "serial_adapters": len(self._serial_adapters),
                        "ram": self._ram,
@@ -789,7 +791,7 @@ class IOUVM(BaseVM):
 
         # do not let IOU create the NVRAM anymore
         #startup_config_file = self.startup_config_file
-        #if startup_config_file:
+        # if startup_config_file:
         #    command.extend(["-c", os.path.basename(startup_config_file)])
 
         if self._l1_keepalives:

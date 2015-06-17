@@ -282,17 +282,33 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU hda disk image path",
             "type": "string",
         },
+        "hda_disk_image_md5sum": {
+            "description": "QEMU hda disk image checksum",
+            "type": ["string", "null"]
+        },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
             "type": "string",
+        },
+        "hdb_disk_image_md5sum": {
+            "description": "QEMU hdb disk image checksum",
+            "type": ["string", "null"],
         },
         "hdc_disk_image": {
             "description": "QEMU hdc disk image path",
             "type": "string",
         },
+        "hdc_disk_image_md5sum": {
+            "description": "QEMU hdc disk image checksum",
+            "type": ["string", "null"],
+        },
         "hdd_disk_image": {
             "description": "QEMU hdd disk image path",
             "type": "string",
+        },
+        "hdd_disk_image_md5sum": {
+            "description": "QEMU hdd disk image checksum",
+            "type": ["string", "null"],
         },
         "ram": {
             "description": "amount of RAM in MB",
@@ -325,9 +341,17 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU initrd path",
             "type": "string",
         },
+        "initrd_md5sum": {
+            "description": "QEMU initrd path",
+            "type": ["string", "null"],
+        },
         "kernel_image": {
             "description": "QEMU kernel image path",
             "type": "string",
+        },
+        "kernel_image_md5sum": {
+            "description": "QEMU kernel image checksum",
+            "type": ["string", "null"],
         },
         "kernel_command_line": {
             "description": "QEMU kernel command line",
@@ -367,9 +391,10 @@ QEMU_OBJECT_SCHEMA = {
     },
     "additionalProperties": False,
     "required": ["vm_id", "project_id", "name", "qemu_path", "platform", "hda_disk_image", "hdb_disk_image",
-                 "hdc_disk_image", "hdd_disk_image", "ram", "adapters", "adapter_type", "mac_address", "console",
-                 "initrd", "kernel_image", "kernel_command_line", "legacy_networking", "acpi_shutdown", "kvm",
-                 "cpu_throttling", "process_priority", "options"]
+                 "hdc_disk_image", "hdd_disk_image", "hda_disk_image_md5sum", "hdb_disk_image_md5sum",
+                 "hdc_disk_image_md5sum", "hdd_disk_image_md5sum", "ram", "adapters", "adapter_type", "mac_address",
+                 "console", "initrd", "kernel_image", "initrd_md5sum", "kernel_image_md5sum", "kernel_command_line",
+                 "legacy_networking", "acpi_shutdown", "kvm", "cpu_throttling", "process_priority", "options"]
 }
 
 QEMU_BINARY_LIST_SCHEMA = {
