@@ -45,27 +45,12 @@ dependencies = [
     "raven>=5.2.0"
 ]
 
-<< << << < HEAD
 try:
     import netifaces
 except ImportError:
     # add gns3-netifaces only if netifaces isn't already installed
     # for instance via a Debian package.
     dependencies.append("gns3-netifaces>=0.10.4.1")
-== == == =
-dependencies = [
-    # "gns3-netifaces>=0.10.4.1",
-    "aiohttp>=0.14.4",
-    "jsonschema>=2.4.0",
-    "Jinja2>=2.7.3",
-    "raven>=5.2.0"]
-
-# if not sys.platform.startswith("win"):
-#    dependencies.append("netifaces==0.10.4")
-
-if sys.version_info == (3, 3):
-    dependencies.append("asyncio>=3.4.2")
->>>>>> > master
 
 setup(
     name="gns3-server",
