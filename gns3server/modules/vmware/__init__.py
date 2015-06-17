@@ -74,7 +74,14 @@ class VMware(BaseManager):
         vmrun_path = self.config.get_section_config("VMware").get("vmrun_path")
         if not vmrun_path:
             if sys.platform.startswith("win"):
-                pass  # TODO: use registry to find vmrun or search for default location
+                vmrun_path = shutil.which("vmrun")
+                if vmrun_path is None:
+                    vmrun_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vmrun.exe")
+                    vmrun_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vmrun.exe")
+                    if os.path.exists(vmrun_ws):
+                        vmrun_path = vmrun_ws
+                    elif os.path.exist(vmrun_vix):
+                        vmrun_path = vmrun_vix
             elif sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
@@ -177,7 +184,8 @@ class VMware(BaseManager):
 
             command = [vmrun_path, "-T", host_type, subcommand]
             command.extend(args)
-            log.debug("Executing vmrun with command: {}".format(command))
+            command_string = " ".join(command)
+            log.info("Executing vmrun with command: {}".format(command_string))
             try:
                 process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             except (OSError, subprocess.SubprocessError) as e:

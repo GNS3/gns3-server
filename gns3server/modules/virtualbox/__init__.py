@@ -92,7 +92,8 @@ class VirtualBox(BaseManager):
                 vboxmanage_path = self.find_vboxmanage()
             command = [vboxmanage_path, "--nologo", subcommand]
             command.extend(args)
-            log.debug("Executing VBoxManage with command: {}".format(command))
+            command_string = " ".join(command)
+            log.info("Executing VBoxManage with command: {}".format(command_string))
             try:
                 vbox_user = self.config.get_section_config("VirtualBox").get("vbox_user")
                 if vbox_user:
