@@ -19,6 +19,10 @@ import sys
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
+# we only support Python 3 version >= 3.3
+if sys.version_info < (3, 3):
+    raise SystemExit("Python 3.3 or higher is required")
+
 
 class PyTest(TestCommand):
 
@@ -35,13 +39,13 @@ class PyTest(TestCommand):
 
 
 dependencies = [
-                #"gns3-netifaces>=0.10.4.1",
-                "aiohttp>=0.14.4",
-                "jsonschema>=2.4.0",
-                "Jinja2>=2.7.3",
-                "raven>=5.2.0"]
+    # "gns3-netifaces>=0.10.4.1",
+    "aiohttp>=0.14.4",
+    "jsonschema>=2.4.0",
+    "Jinja2>=2.7.3",
+    "raven>=5.2.0"]
 
-#if not sys.platform.startswith("win"):
+# if not sys.platform.startswith("win"):
 #    dependencies.append("netifaces==0.10.4")
 
 if sys.version_info == (3, 3):
