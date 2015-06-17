@@ -21,8 +21,23 @@ DOCKER_CREATE_SCHEMA = {
     "description": "Request validation to create a new Docker container",
     "type": "object",
     "properties": {
+        "vm_id": {
+            "description": "Docker VM instance identifier",
+            "oneOf": [
+                {"type": "string",
+                 "minLength": 36,
+                 "maxLength": 36,
+                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"},
+                {"type": "integer"}  # for legacy projects
+            ]
+        },
         "name": {
             "description": "Docker container name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "startcmd": {
+            "description": "Docker CMD entry",
             "type": "string",
             "minLength": 1,
         },
@@ -38,7 +53,7 @@ DOCKER_CREATE_SCHEMA = {
             "maximum": 64,
         },
         "adapter_type": {
-            "description": "VirtualBox adapter type",
+            "description": "Docker adapter type",
             "type": "string",
             "minLength": 1,
         },
@@ -73,7 +88,7 @@ DOCKER_UPDATE_SCHEMA = {
             "maximum": 64,
         },
         "adapter_type": {
-            "description": "VirtualBox adapter type",
+            "description": "Docker adapter type",
             "type": "string",
             "minLength": 1,
         },
@@ -106,7 +121,14 @@ DOCKER_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "id": {
+        "vm_id": {
+            "description": "Docker container instance UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "cid": {
             "description": "Docker container ID",
             "type": "string",
             "minLength": 64,
@@ -132,11 +154,11 @@ DOCKER_OBJECT_SCHEMA = {
             "maximum": 64,
         },
         "adapter_type": {
-            "description": "VirtualBox adapter type",
+            "description": "Docker adapter type",
             "type": "string",
             "minLength": 1,
         },
     },
     "additionalProperties": False,
-    "required": ["id", "project_id"]
+    "required": ["vm_id", "project_id"]
 }
