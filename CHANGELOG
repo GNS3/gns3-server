@@ -1,5 +1,21 @@
 # Change Log
 
+## 1.3.6 16/06/2015
+
+* Fix an issue with 1.4dev compatibility
+
+## 1.3.5 16/06/15
+
+* Ignore invalid characters when reading the output of a process
+* Turn on / off authentication
+* Ensure no colored output on Windows
+* Do not stop saving IOS router configs when there is an exception while a project is committed.
+* Create a private config file if expected
+* Distribute our own version of netifaces working with python 3
+* Fix crash if a private config exist in IOS but no private config file
+* Basic Auth support
+* Fix crash when virtualbox list of VMS return an empty line
+
 ## 1.3.4 02/06/15
 
 * Drop useless dependencie dateutil
