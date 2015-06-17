@@ -27,6 +27,7 @@ import configparser
 import shutil
 import asyncio
 import tempfile
+import signal
 
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
@@ -107,6 +108,9 @@ class VMwareVM(BaseVM):
 
     @asyncio.coroutine
     def create(self):
+        """
+        Creates this VM and handle linked clones.
+        """
 
         if self._linked_clone and not os.path.exists(os.path.join(self.working_dir, os.path.basename(self._vmx_path))):
             # create the base snapshot for linked clones
@@ -181,6 +185,9 @@ class VMwareVM(BaseVM):
         return None
 
     def _set_network_options(self):
+        """
+        Set up VMware networking.
+        """
 
         # first do some sanity checks
         for adapter_number in range(0, self._adapters):
@@ -537,11 +544,13 @@ class VMwareVM(BaseVM):
         if self._linked_clone:
             # clean the VMware inventory path from this linked clone
             inventory_path = self.manager.get_vmware_inventory_path()
+            inventory_pairs = {}
             if os.path.exists(inventory_path):
                 try:
                     inventory_pairs = self.manager.parse_vmware_file(inventory_path)
                 except OSError as e:
                     log.warning('Could not read VMware inventory file "{}": {}'.format(inventory_path, e))
+                    return
 
                 vmlist_entry = None
                 for name, value in inventory_pairs.items():
@@ -712,6 +721,20 @@ class VMwareVM(BaseVM):
             log.info("VMware VM '{name}' [{id}] is not allowed to use any adapter".format(name=self.name, id=self.id))
         self._use_any_adapter = use_any_adapter
 
+    def _reload_ubridge(self):
+        """
+        Reloads ubridge.
+        """
+
+        if self.is_ubridge_running():
+            self._update_ubridge_config()
+            if not sys.platform.startswith("win"):
+                os.kill(self._ubridge_process.pid, signal.SIGHUP)
+            else:
+                # Windows doesn't support SIGHUP...
+                self._terminate_process_ubridge()
+                self._start_ubridge()
+
     def adapter_add_nio_binding(self, adapter_number, nio):
         """
         Adds an adapter NIO binding.
@@ -731,6 +754,8 @@ class VMwareVM(BaseVM):
                                                                                              id=self.id,
                                                                                              nio=nio,
                                                                                              adapter_number=adapter_number))
+
+        self._reload_ubridge()
 
     def adapter_remove_nio_binding(self, adapter_number):
         """
@@ -756,6 +781,8 @@ class VMwareVM(BaseVM):
                                                                                                  id=self.id,
                                                                                                  nio=nio,
                                                                                                  adapter_number=adapter_number))
+
+        self._reload_ubridge()
         return nio
 
     def _get_pipe_name(self):
