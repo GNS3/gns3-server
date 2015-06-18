@@ -13,6 +13,7 @@ before_install:
 install:
   - python setup.py install
   - pip install -rdev-requirements.txt
+  - pip install coveralls
 
 script:
     - ifconfig
