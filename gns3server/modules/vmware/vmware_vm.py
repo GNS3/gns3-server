@@ -178,6 +178,7 @@ class VMwareVM(BaseVM):
 
     def _get_vmx_setting(self, name, value=None):
 
+        name = name.lower()
         if name in self._vmx_pairs:
             if value is not None:
                 if self._vmx_pairs[name] == value:
@@ -271,7 +272,7 @@ class VMwareVM(BaseVM):
                 bridge_name = "bridge{}".format(adapter_number)
 
                 vnet = "ethernet{}.vnet".format(adapter_number)
-                if not vnet in self._vmx_pairs:
+                if vnet not in self._vmx_pairs:
                     continue
 
                 vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
@@ -330,7 +331,7 @@ class VMwareVM(BaseVM):
         """
 
         try:
-            #self._update_ubridge_config()
+            # self._update_ubridge_config()
             command = [self.ubridge_path]
             log.info("starting ubridge: {}".format(command))
             self._ubridge_stdout_file = os.path.join(self.working_dir, "ubridge.log")
