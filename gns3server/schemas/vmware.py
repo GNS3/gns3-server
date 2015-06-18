@@ -56,6 +56,10 @@ VMWARE_CREATE_SCHEMA = {
             "description": "headless mode",
             "type": "boolean"
         },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown",
+            "type": "boolean"
+        },
         "adapters": {
             "description": "number of adapters",
             "type": "integer",
@@ -103,6 +107,10 @@ VMWARE_UPDATE_SCHEMA = {
         },
         "headless": {
             "description": "headless mode",
+            "type": "boolean"
+        },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown",
             "type": "boolean"
         },
         "adapters": {
@@ -159,6 +167,10 @@ VMWARE_OBJECT_SCHEMA = {
         },
         "headless": {
             "description": "headless mode",
+            "type": "boolean"
+        },
+        "acpi_shutdown": {
+            "description": "ACPI shutdown",
             "type": "boolean"
         },
         "adapters": {

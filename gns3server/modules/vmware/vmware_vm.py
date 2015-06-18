@@ -71,6 +71,7 @@ class VMwareVM(BaseVM):
         self._headless = False
         self._vmx_path = vmx_path
         self._enable_remote_console = False
+        self._acpi_shutdown = False
         self._adapters = 0
         self._ethernet_adapters = {}
         self._adapter_type = "e1000"
@@ -87,6 +88,7 @@ class VMwareVM(BaseVM):
                 "project_id": self.project.id,
                 "vmx_path": self.vmx_path,
                 "headless": self.headless,
+                "acpi_shutdown": self.acpi_shutdown,
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
@@ -451,7 +453,11 @@ class VMwareVM(BaseVM):
             self._ubridge_process = None
 
         try:
-            yield from self._control_vm("stop")
+            if self.acpi_shutdown:
+                # use ACPI to shutdown the VM
+                yield from self._control_vm("stop", ["soft"])
+            else:
+                yield from self._control_vm("stop")
         finally:
             self._started = False
             self._vmnets.clear()
@@ -537,6 +543,7 @@ class VMwareVM(BaseVM):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         try:
+            self.acpi_shutdown = False
             yield from self.stop()
         except VMwareError:
             pass
@@ -594,6 +601,30 @@ class VMwareVM(BaseVM):
         else:
             log.info("VMware VM '{name}' [{id}] has disabled the headless mode".format(name=self.name, id=self.id))
         self._headless = headless
+
+    @property
+    def acpi_shutdown(self):
+        """
+        Returns either the VM will use ACPI shutdown
+
+        :returns: boolean
+        """
+
+        return self._acpi_shutdown
+
+    @acpi_shutdown.setter
+    def acpi_shutdown(self, acpi_shutdown):
+        """
+        Sets either the VM will use ACPI shutdown
+
+        :param acpi_shutdown: boolean
+        """
+
+        if acpi_shutdown:
+            log.info("VMware VM '{name}' [{id}] has enabled the ACPI shutdown mode".format(name=self.name, id=self.id))
+        else:
+            log.info("VMware VM '{name}' [{id}] has disabled the ACPI shutdown mode".format(name=self.name, id=self.id))
+        self._acpi_shutdown = acpi_shutdown
 
     @property
     def vmx_path(self):
