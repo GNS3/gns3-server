@@ -178,7 +178,6 @@ class VMwareVM(BaseVM):
 
     def _get_vmx_setting(self, name, value=None):
 
-        name = name.lower()
         if name in self._vmx_pairs:
             if value is not None:
                 if self._vmx_pairs[name] == value:
@@ -200,7 +199,7 @@ class VMwareVM(BaseVM):
 
             # check if any vmnet interface managed by GNS3 is being used on existing VMware adapters
             if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
-                connection_type = "ethernet{}.connectionType".format(adapter_number)
+                connection_type = "ethernet{}.connectiontype".format(adapter_number)
                 if self._vmx_pairs[connection_type] in ("hostonly", "custom"):
                     vnet = "ethernet{}.vnet".format(adapter_number)
                     if vnet in self._vmx_pairs:
@@ -210,7 +209,7 @@ class VMwareVM(BaseVM):
 
             # check for adapter type
             if self._adapter_type != "default":
-                adapter_type = "ethernet{}.virtualDev".format(adapter_number)
+                adapter_type = "ethernet{}.virtualdev".format(adapter_number)
                 if adapter_type in self._vmx_pairs and self._vmx_pairs[adapter_type] != self._adapter_type:
                     raise VMwareError("Network adapter {} is not of type {}, please fix or remove it".format(self._adapter_type))
 
@@ -218,7 +217,7 @@ class VMwareVM(BaseVM):
             if self._ethernet_adapters[adapter_number].get_nio(0) and not self._use_any_adapter:
                 if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
                     # check for the connection type
-                    connection_type = "ethernet{}.connectionType".format(adapter_number)
+                    connection_type = "ethernet{}.connectiontype".format(adapter_number)
                     if connection_type in self._vmx_pairs:
                         if self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
                             raise VMwareError("Attachment ({}) already configured on network adapter {}. "
@@ -229,13 +228,13 @@ class VMwareVM(BaseVM):
         self.manager.refresh_vmnet_list()
         for adapter_number in range(0, self._adapters):
             ethernet_adapter = {"ethernet{}.present".format(adapter_number): "TRUE",
-                                "ethernet{}.addressType".format(adapter_number): "generated",
-                                "ethernet{}.generatedAddressOffset".format(adapter_number): "0"}
+                                "ethernet{}.addresstype".format(adapter_number): "generated",
+                                "ethernet{}.generatedaddressoffset".format(adapter_number): "0"}
             self._vmx_pairs.update(ethernet_adapter)
             if self._adapter_type != "default":
-                self._vmx_pairs["ethernet{}.virtualDev".format(adapter_number)] = self._adapter_type
+                self._vmx_pairs["ethernet{}.virtualdev".format(adapter_number)] = self._adapter_type
 
-            connection_type = "ethernet{}.connectionType".format(adapter_number)
+            connection_type = "ethernet{}.connectiontype".format(adapter_number)
             if not self._use_any_adapter and connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
                 continue
 
@@ -248,14 +247,14 @@ class VMwareVM(BaseVM):
                 finally:
                     self._vmnets.clear()
             self._vmnets.append(vmnet)
-            self._vmx_pairs["ethernet{}.connectionType".format(adapter_number)] = "custom"
+            self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
             self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
 
         # disable remaining network adapters
         for adapter_number in range(self._adapters, self._maximum_adapters):
             if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
                 log.debug("disabling remaining adapter {}".format(adapter_number))
-                self._vmx_pairs["ethernet{}.startConnected".format(adapter_number)] = "FALSE"
+                self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "FALSE"
 
         self._update_ubridge_config()
 
@@ -456,7 +455,7 @@ class VMwareVM(BaseVM):
         try:
             if self.acpi_shutdown:
                 # use ACPI to shutdown the VM
-                yield from self._control_vm("stop", ["soft"])
+                yield from self._control_vm("stop", "soft")
             else:
                 yield from self._control_vm("stop")
         finally:
@@ -470,7 +469,7 @@ class VMwareVM(BaseVM):
             # remove the adapters managed by GNS3
             for adapter_number in range(0, self._adapters):
                 if self._get_vmx_setting("ethernet{}.vnet".format(adapter_number)) or \
-                   self._get_vmx_setting("ethernet{}.connectionType".format(adapter_number)) is None:
+                   self._get_vmx_setting("ethernet{}.connectiontype".format(adapter_number)) is None:
                     vnet = "ethernet{}.vnet".format(adapter_number)
                     if vnet in self._vmx_pairs:
                         vmnet = os.path.basename(self._vmx_pairs[vnet])
@@ -485,7 +484,7 @@ class VMwareVM(BaseVM):
             for adapter_number in range(self._adapters, self._maximum_adapters):
                 if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
                     log.debug("enabling remaining adapter {}".format(adapter_number))
-                    self._vmx_pairs["ethernet{}.startConnected".format(adapter_number)] = "TRUE"
+                    self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "TRUE"
 
             self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
 
@@ -841,9 +840,9 @@ class VMwareVM(BaseVM):
 
         pipe_name = self._get_pipe_name()
         serial_port = {"serial0.present": "TRUE",
-                       "serial0.fileType": "pipe",
-                       "serial0.fileName": pipe_name,
-                       "serial0.pipe.endPoint": "server"}
+                       "serial0.filetype": "pipe",
+                       "serial0.filename": pipe_name,
+                       "serial0.pipe.endpoint": "server"}
         self._vmx_pairs.update(serial_port)
 
     def _start_remote_console(self):
