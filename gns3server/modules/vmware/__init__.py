@@ -218,7 +218,7 @@ class VMware(BaseManager):
             for line in f.read().splitlines():
                 try:
                     key, value = line.split('=', 1)
-                    pairs[key.strip()] = value.strip('" ')
+                    pairs[key.strip().lower()] = value.strip('" ')
                 except ValueError:
                     continue
         return pairs
@@ -276,16 +276,16 @@ class VMware(BaseManager):
                         vm_entry, variable_name = key.split('.', 1)
                     except ValueError:
                         continue
-                    if not vm_entry in vm_entries:
+                    if vm_entry not in vm_entries:
                         vm_entries[vm_entry] = {}
                     vm_entries[vm_entry][variable_name.strip()] = value
         except OSError as e:
             log.warning("Could not read VMware inventory file {}: {}".format(inventory_path, e))
 
         for vm_settings in vm_entries.values():
-            if "DisplayName" in vm_settings and "config" in vm_settings:
-                log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["DisplayName"], vm_settings["config"]))
-                vms.append({"vmname": vm_settings["DisplayName"], "vmx_path": vm_settings["config"]})
+            if "displayname" in vm_settings and "config" in vm_settings:
+                log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["displayname"], vm_settings["config"]))
+                vms.append({"vmname": vm_settings["displayname"], "vmx_path": vm_settings["config"]})
         return vms
 
     def _get_vms_from_directory(self, directory):
@@ -305,9 +305,9 @@ class VMware(BaseManager):
                     log.debug('Reading VMware VMX file "{}"'.format(vmx_path))
                     try:
                         pairs = self.parse_vmware_file(vmx_path)
-                        if "displayName" in pairs:
-                            log.debug('Found VM named "{}"'.format(pairs["displayName"]))
-                            vms.append({"vmname": pairs["displayName"], "vmx_path": vmx_path})
+                        if "displayname" in pairs:
+                            log.debug('Found VM named "{}"'.format(pairs["displayname"]))
+                            vms.append({"vmname": pairs["displayname"], "vmx_path": vmx_path})
                     except OSError as e:
                         log.warning('Could not read VMware VMX file "{}": {}'.format(vmx_path, e))
                         continue
@@ -341,7 +341,7 @@ class VMware(BaseManager):
         elif sys.platform.startswith("darwin"):
             return os.path.expanduser("~/Library/Preferences/VMware Fusion/preferences")
         else:
-            return  os.path.expanduser("~/.vmware/preferences")
+            return os.path.expanduser("~/.vmware/preferences")
 
     @staticmethod
     def get_vmware_default_vm_path():
