@@ -48,7 +48,7 @@ IOU_CREATE_SCHEMA = {
         },
         "md5sum": {
             "description": "Checksum of iou binary",
-            "type": "string"
+            "type": ["string", "null"]
         },
         "serial_adapters": {
             "description": "How many serial adapters are connected to the IOU",
@@ -121,7 +121,7 @@ IOU_UPDATE_SCHEMA = {
         },
         "md5sum": {
             "description": "Checksum of iou binary",
-            "type": "string"
+            "type": ["string", "null"]
         },
         "serial_adapters": {
             "description": "How many serial adapters are connected to the IOU",
@@ -199,7 +199,7 @@ IOU_OBJECT_SCHEMA = {
         },
         "md5sum": {
             "description": "Checksum of iou binary",
-            "type": "string"
+            "type": ["string", "null"]
         },
         "serial_adapters": {
             "description": "How many serial adapters are connected to the IOU",
