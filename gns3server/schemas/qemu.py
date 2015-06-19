@@ -55,18 +55,34 @@ QEMU_CREATE_SCHEMA = {
         },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
-            "type": ["string", "null"],
+            "type": "string",
+        },
+        "hda_disk_image_md5sum": {
+            "description": "QEMU hda disk image checksum",
+            "type": ["string", "null"]
         },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
+            "type": "string",
+        },
+        "hdb_disk_image_md5sum": {
+            "description": "QEMU hdb disk image checksum",
             "type": ["string", "null"],
         },
         "hdc_disk_image": {
             "description": "QEMU hdc disk image path",
+            "type": "string",
+        },
+        "hdc_disk_image_md5sum": {
+            "description": "QEMU hdc disk image checksum",
             "type": ["string", "null"],
         },
         "hdd_disk_image": {
             "description": "QEMU hdd disk image path",
+            "type": "string",
+        },
+        "hdd_disk_image_md5sum": {
+            "description": "QEMU hdd disk image checksum",
             "type": ["string", "null"],
         },
         "ram": {
@@ -92,10 +108,18 @@ QEMU_CREATE_SCHEMA = {
         },
         "initrd": {
             "description": "QEMU initrd path",
+            "type": "string",
+        },
+        "initrd_md5sum": {
+            "description": "QEMU initrd path",
             "type": ["string", "null"],
         },
         "kernel_image": {
             "description": "QEMU kernel image path",
+            "type": "string",
+        },
+        "kernel_image_md5sum": {
+            "description": "QEMU kernel image checksum",
             "type": ["string", "null"],
         },
         "kernel_command_line": {
@@ -166,18 +190,34 @@ QEMU_UPDATE_SCHEMA = {
         },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
-            "type": ["string", "null"],
+            "type": "string",
+        },
+        "hda_disk_image_md5sum": {
+            "description": "QEMU hda disk image checksum",
+            "type": ["string", "null"]
         },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
+            "type": "string",
+        },
+        "hdb_disk_image_md5sum": {
+            "description": "QEMU hdb disk image checksum",
             "type": ["string", "null"],
         },
         "hdc_disk_image": {
             "description": "QEMU hdc disk image path",
+            "type": "string",
+        },
+        "hdc_disk_image_md5sum": {
+            "description": "QEMU hdc disk image checksum",
             "type": ["string", "null"],
         },
         "hdd_disk_image": {
             "description": "QEMU hdd disk image path",
+            "type": "string",
+        },
+        "hdd_disk_image_md5sum": {
+            "description": "QEMU hdd disk image checksum",
             "type": ["string", "null"],
         },
         "ram": {
@@ -203,10 +243,18 @@ QEMU_UPDATE_SCHEMA = {
         },
         "initrd": {
             "description": "QEMU initrd path",
+            "type": "string",
+        },
+        "initrd_md5sum": {
+            "description": "QEMU initrd path",
             "type": ["string", "null"],
         },
         "kernel_image": {
             "description": "QEMU kernel image path",
+            "type": "string",
+        },
+        "kernel_image_md5sum": {
+            "description": "QEMU kernel image checksum",
             "type": ["string", "null"],
         },
         "kernel_command_line": {

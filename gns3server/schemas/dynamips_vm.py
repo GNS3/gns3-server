@@ -57,6 +57,11 @@ VM_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "image_md5sum": {
+            "description": "checksum of the IOS image",
+            "type": "string",
+            "minLength": 1,
+        },
         "startup_config": {
             "description": "path to the IOS startup configuration file",
             "type": "string",
@@ -285,6 +290,11 @@ VM_UPDATE_SCHEMA = {
         },
         "image": {
             "description": "path to the IOS image",
+            "type": "string",
+            "minLength": 1,
+        },
+        "image_md5sum": {
+            "description": "checksum of the IOS image",
             "type": "string",
             "minLength": 1,
         },
