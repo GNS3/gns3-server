@@ -34,10 +34,22 @@ def test_md5sum(tmpdir):
 def test_md5sum_existing_digest(tmpdir):
     fake_img = str(tmpdir / 'hello')
 
+    with open(fake_img, 'w+') as f:
+        f.write('hello')
+
     with open(str(tmpdir / 'hello.md5sum'), 'w+') as f:
         f.write('aaaaa02abc4b2a76b9719d911017c592')
 
     assert md5sum(fake_img) == 'aaaaa02abc4b2a76b9719d911017c592'
+
+
+def test_md5sum_existing_digest_but_missing_image(tmpdir):
+    fake_img = str(tmpdir / 'hello')
+
+    with open(str(tmpdir / 'hello.md5sum'), 'w+') as f:
+        f.write('aaaaa02abc4b2a76b9719d911017c592')
+
+    assert md5sum(fake_img) is None
 
 
 def test_md5sum_none(tmpdir):

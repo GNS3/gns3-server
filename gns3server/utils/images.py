@@ -27,7 +27,7 @@ def md5sum(path):
     :returns: Digest of the image
     """
 
-    if path is None or len(path) == 0:
+    if path is None or len(path) == 0 or not os.path.exists(path):
         return None
 
     try:
@@ -36,14 +36,18 @@ def md5sum(path):
     except OSError:
         pass
 
-    m = hashlib.md5()
-    with open(path, 'rb') as f:
-        while True:
-            buf = f.read(128)
-            if not buf:
-                break
-            m.update(buf)
-    digest = m.hexdigest()
+    try:
+        m = hashlib.md5()
+        with open(path, 'rb') as f:
+            while True:
+                buf = f.read(128)
+                if not buf:
+                    break
+                m.update(buf)
+        digest = m.hexdigest()
+    except OSError as e:
+        log.error("Can't create digest of %s: %s", path, str(e))
+        return None
 
     try:
         with open('{}.md5sum'.format(path), 'w+') as f:
