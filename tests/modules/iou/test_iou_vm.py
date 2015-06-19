@@ -96,9 +96,10 @@ def test_vm_startup_config_content(project, manager):
 
 
 @patch("gns3server.config.Config.get_section_config", return_value={"iouyap_path": "/bin/test_fake"})
-def test_vm_invalid_iouyap_path(project, manager, loop):
+def test_vm_invalid_iouyap_path(project, manager, loop, fake_iou_bin):
     with pytest.raises(IOUError):
         vm = IOUVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
+        vm.path = fake_iou_bin
         loop.run_until_complete(asyncio.async(vm.start()))
 
 
@@ -231,12 +232,14 @@ def test_path_invalid_bin(vm, tmpdir):
     path = str(tmpdir / "test.bin")
     with pytest.raises(IOUError):
         vm.path = path
+        vm._check_requirements()
 
     with open(path, "w+") as f:
         f.write("BUG")
 
     with pytest.raises(IOUError):
         vm.path = path
+        vm._check_requirements()
 
 
 def test_create_netmap_config(vm):
@@ -254,6 +257,7 @@ def test_create_netmap_config(vm):
 def test_build_command(vm, loop):
 
     assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", str(vm.application_id)]
+
 
 def test_get_startup_config(vm):
 

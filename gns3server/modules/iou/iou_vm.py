@@ -142,27 +142,6 @@ class IOUVM(BaseVM):
             if os.path.isfile(fix_path):
                 self._path = fix_path
 
-        if not os.path.isfile(self._path) or not os.path.exists(self._path):
-            if os.path.islink(self._path):
-                raise IOUError("IOU image '{}' linked to '{}' is not accessible".format(self._path, os.path.realpath(self._path)))
-            else:
-                raise IOUError("IOU image '{}' is not accessible".format(self._path))
-
-        try:
-            with open(self._path, "rb") as f:
-                # read the first 7 bytes of the file.
-                elf_header_start = f.read(7)
-        except OSError as e:
-            raise IOUError("Cannot read ELF header for IOU image '{}': {}".format(self._path, e))
-
-        # IOU images must start with the ELF magic number, be 32-bit, little endian
-        # and have an ELF version of 1 normal IOS image are big endian!
-        if elf_header_start != b'\x7fELF\x01\x01\x01':
-            raise IOUError("'{}' is not a valid IOU image".format(self._path))
-
-        if not os.access(self._path, os.X_OK):
-            raise IOUError("IOU image '{}' is not executable".format(self._path))
-
     @property
     def use_default_iou_values(self):
         """
@@ -189,8 +168,29 @@ class IOUVM(BaseVM):
 
     def _check_requirements(self):
         """
-        Checks if IOUYAP executable is available.
+        Checks if IOUYAP executable is available and if image is accessible.
         """
+
+        if not os.path.isfile(self._path) or not os.path.exists(self._path):
+            if os.path.islink(self._path):
+                raise IOUError("IOU image '{}' linked to '{}' is not accessible".format(self._path, os.path.realpath(self._path)))
+            else:
+                raise IOUError("IOU image '{}' is not accessible".format(self._path))
+
+        try:
+            with open(self._path, "rb") as f:
+                # read the first 7 bytes of the file.
+                elf_header_start = f.read(7)
+        except OSError as e:
+            raise IOUError("Cannot read ELF header for IOU image '{}': {}".format(self._path, e))
+
+        # IOU images must start with the ELF magic number, be 32-bit, little endian
+        # and have an ELF version of 1 normal IOS image are big endian!
+        if elf_header_start != b'\x7fELF\x01\x01\x01':
+            raise IOUError("'{}' is not a valid IOU image".format(self._path))
+
+        if not os.access(self._path, os.X_OK):
+            raise IOUError("IOU image '{}' is not executable".format(self._path))
 
         path = self.iouyap_path
         if not path:
