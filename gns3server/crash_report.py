@@ -64,6 +64,13 @@ class CrashReport:
     def __init__(self):
         self._client = None
 
+        # We don't want sentry making noise if an error is catched when you don't have internet
+        sentry_errors = logging.getLogger('sentry.errors')
+        sentry_errors.disabled = True
+
+        sentry_uncaught = logging.getLogger('sentry.errors.uncaught')
+        sentry_uncaught.disabled = True
+
     def capture_exception(self, request=None):
         if not RAVEN_AVAILABLE:
             return
