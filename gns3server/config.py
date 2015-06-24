@@ -76,10 +76,7 @@ class Config(object):
             # 4: /etc/xdg/GNS3.conf
             # 5: server.conf in the current working directory
 
-            if sys.platform.startswith("darwin"):
-                appname = "gns3.net"
-            else:
-                appname = "GNS3"
+            appname = "GNS3"
             home = os.path.expanduser("~")
             filename = "gns3_server.conf"
             if self._files is None:

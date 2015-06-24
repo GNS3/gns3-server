@@ -20,11 +20,7 @@
 # Bash shell script for generating self-signed certs.
 # The certicate is automaticaly put in your GNS3 config
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    DST_DIR="$HOME/.config/gns3.net/ssl"
-else
-    DST_DIR="$HOME/.config/gns3/ssl"
-fi
+DST_DIR="$HOME/.config/GNS3/ssl"
 OLD_DIR=`pwd`
 
 fail_if_error() {
