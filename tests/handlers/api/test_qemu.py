@@ -108,6 +108,7 @@ def test_qemu_get(server, project, vm):
     assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
+    assert response.json["vm_directory"] == os.path.join(project.path, "project-files", "qemu", vm["vm_id"])
 
 
 def test_qemu_start(server, vm):

@@ -358,6 +358,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU hdd disk image checksum",
             "type": ["string", "null"],
         },
+        "vm_directory": {
+            "decription": "Path to the VM working directory",
+            "type": "string"
+        },
         "ram": {
             "description": "amount of RAM in MB",
             "type": "integer"
@@ -442,7 +446,7 @@ QEMU_OBJECT_SCHEMA = {
                  "hdc_disk_image", "hdd_disk_image", "hda_disk_image_md5sum", "hdb_disk_image_md5sum",
                  "hdc_disk_image_md5sum", "hdd_disk_image_md5sum", "ram", "adapters", "adapter_type", "mac_address",
                  "console", "initrd", "kernel_image", "initrd_md5sum", "kernel_image_md5sum", "kernel_command_line",
-                 "legacy_networking", "acpi_shutdown", "cpu_throttling", "process_priority", "options"]
+                 "legacy_networking", "acpi_shutdown", "cpu_throttling", "process_priority", "options","vm_directory"]
 }
 
 QEMU_BINARY_LIST_SCHEMA = {

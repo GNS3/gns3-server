@@ -1229,7 +1229,8 @@ class QemuVM(BaseVM):
     def __json__(self):
         answer = {
             "project_id": self.project.id,
-            "vm_id": self.id
+            "vm_id": self.id,
+            "vm_directory": self.working_dir
         }
         # Qemu has a long list of options. The JSON schema is the single source of information
         for field in QEMU_OBJECT_SCHEMA["required"]:
