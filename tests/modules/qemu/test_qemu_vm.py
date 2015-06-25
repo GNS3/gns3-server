@@ -382,10 +382,3 @@ def test_options(vm):
     vm.options = "-usb"
     assert vm.options == "-usb"
     assert vm.kvm is False
-
-
-def test_options_kvm(vm):
-    vm.kvm = False
-    vm.options = "-usb -enable-kvm"
-    assert vm.options == "-usb"
-    assert vm.kvm is True
