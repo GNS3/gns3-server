@@ -91,6 +91,7 @@ class QemuVM(BaseVM):
         self._hdd_disk_image = ""
         self._mac_address = ""
         self._options = ""
+        self._console_type = "telnet"
         self._ram = 256
         self._ethernet_adapters = []
         self._adapter_type = "e1000"
@@ -512,6 +513,33 @@ class QemuVM(BaseVM):
             options = options.replace("-enable-kvm", "")
 
         self._options = options.strip()
+
+    @property
+    def console_type(self):
+        """
+        Returns the console type for this QEMU VM.
+
+        :returns: console type (string)
+        """
+
+        return self._console_type
+
+    @console_type.setter
+    def console_type(self, console_type):
+        """
+        Sets the console type for this QEMU VM.
+
+        :param console_type: console type (string)
+        """
+
+        log.info('QEMU VM "{name}" [{id}] has set the console type to {console_type}'.format(name=self._name,
+                                                                                             id=self._id,
+                                                                                             console_type=console_type))
+
+        if self.is_running() and console_type != self._console_type:
+            raise QemuError("Sorry, changing the console type on a running Qemu VM is not supported.")
+
+        self._console_type = console_type
 
     @property
     def initrd(self):
@@ -1003,6 +1031,14 @@ class QemuVM(BaseVM):
         else:
             return []
 
+    def _vnc_options(self):
+
+        if self._console:
+            vnc_port = self._console - 5900
+            return ["-vnc", "{}:{}".format(self._manager.port_manager.console_host, vnc_port)]
+        else:
+            return []
+
     def _monitor_options(self):
 
         if self._monitor:
@@ -1199,14 +1235,19 @@ class QemuVM(BaseVM):
         disk_options = yield from self._disk_options()
         command.extend(disk_options)
         command.extend(self._linux_boot_options())
-        command.extend(self._serial_options())
+        if self._console_type == "telnet":
+            command.extend(self._serial_options())
+        elif self._console_type == "vnc":
+            command.extend(self._vnc_options())
+        else:
+            raise QemuError("Console type {} is unknown".format(self._console_type))
         command.extend(self._monitor_options())
         additional_options = self._options.strip()
         if additional_options:
             try:
                 command.extend(shlex.split(additional_options))
             except ValueError as e:
-                QemuError("Invalid additional options: {} error {}".format(additional_options, e))
+                raise QemuError("Invalid additional options: {} error {}".format(additional_options, e))
         command.extend(self._network_options())
         command.extend(self._graphic())
         return command

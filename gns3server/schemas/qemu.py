@@ -53,6 +53,10 @@ QEMU_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet", "vnc"]
+        },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
             "type": "string",
@@ -187,6 +191,10 @@ QEMU_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
+        },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet", "vnc"]
         },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
@@ -385,6 +393,10 @@ QEMU_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet", "vnc"]
+        },
         "initrd": {
             "description": "QEMU initrd path",
             "type": "string",
@@ -438,7 +450,7 @@ QEMU_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id", "name", "qemu_path", "platform", "hda_disk_image", "hdb_disk_image",
+    "required": ["vm_id", "project_id", "name", "qemu_path", "platform", "console_type", "hda_disk_image", "hdb_disk_image",
                  "hdc_disk_image", "hdd_disk_image", "hda_disk_image_md5sum", "hdb_disk_image_md5sum",
                  "hdc_disk_image_md5sum", "hdd_disk_image_md5sum", "ram", "adapters", "adapter_type", "mac_address",
                  "console", "initrd", "kernel_image", "initrd_md5sum", "kernel_image_md5sum", "kernel_command_line",
