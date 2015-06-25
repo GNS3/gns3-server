@@ -1203,6 +1203,8 @@ class QemuVM(BaseVM):
         command.extend(["-name", self._name])
         command.extend(["-m", str(self._ram)])
         if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True):
+            if not os.path.exists("/dev/kvm"):
+                raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist)")
             command.extend(["-enable-kvm"])
         disk_options = yield from self._disk_options()
         command.extend(disk_options)
