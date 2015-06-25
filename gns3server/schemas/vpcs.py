@@ -92,6 +92,10 @@ VPCS_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "vm_directory": {
+            "decription": "Path to the VM working directory",
+            "type": "string"
+        },
         "status": {
             "description": "VM status",
             "enum": ["started", "stopped"]

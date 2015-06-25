@@ -206,6 +206,7 @@ class IOUVM(BaseVM):
 
         iou_vm_info = {"name": self.name,
                        "vm_id": self.id,
+                       "vm_directory": self.working_dir,
                        "console": self._console,
                        "project_id": self.project.id,
                        "path": self.path,

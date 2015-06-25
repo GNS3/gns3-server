@@ -131,6 +131,7 @@ class Router(BaseVM):
 
         router_info = {"name": self.name,
                        "vm_id": self.id,
+                       "vm_directory": os.path.join(self.project.module_working_directory(self.manager.module_name.lower())),
                        "project_id": self.project.id,
                        "dynamips_id": self._dynamips_id,
                        "platform": self._platform,
