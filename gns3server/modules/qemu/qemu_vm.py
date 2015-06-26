@@ -734,7 +734,7 @@ class QemuVM(BaseVM):
             self.status = "stopped"
             self._process = None
             if returncode != 0:
-                self.project.emit("log.error", "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout()))
+                self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
 
     @asyncio.coroutine
     def stop(self):

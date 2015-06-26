@@ -148,7 +148,7 @@ def test_termination_callback_error(vm, tmpdir):
 
     (action, event) = queue.get_nowait()
     assert action == "log.error"
-    assert event == "QEMU process has stopped, return code: 1\nBOOMM"
+    assert event["message"] == "QEMU process has stopped, return code: 1\nBOOMM"
 
 
 def test_reload(loop, vm):
