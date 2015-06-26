@@ -147,9 +147,14 @@ def run_around_tests(monkeypatch):
     config.set("Server", "project_directory", tmppath)
     config.set("Server", "auth", False)
 
-    # Prevent exectuions of the VM if we forgot to mock something
+    # Prevent executions of the VM if we forgot to mock something
     config.set("VirtualBox", "vboxmanage_path", tmppath)
     config.set("VPCS", "vpcs_path", tmppath)
+    config.set("VMware", "vmrun_path", tmppath)
+
+    # Force turn off KVM because it's not available on CI
+    config.set("Qemu", "enable_kvm", False)
+
 
     monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: tmppath)
 
