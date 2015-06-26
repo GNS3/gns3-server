@@ -74,7 +74,7 @@ class VirtualBoxVM(BaseVM):
 
     def __json__(self):
 
-        return {"name": self.name,
+        json = {"name": self.name,
                 "vm_id": self.id,
                 "console": self.console,
                 "project_id": self.project.id,
@@ -86,6 +86,11 @@ class VirtualBoxVM(BaseVM):
                 "adapter_type": self.adapter_type,
                 "ram": self.ram,
                 "use_any_adapter": self.use_any_adapter}
+        if self._linked_clone:
+            json["vm_directory"] = self.working_dir
+        else:
+            json["vm_directory"] = None
+        return json
 
     @asyncio.coroutine
     def _get_system_properties(self):

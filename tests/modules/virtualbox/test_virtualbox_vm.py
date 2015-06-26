@@ -60,3 +60,10 @@ def test_vm_adapter_add_nio_binding_adapter_not_exist(loop, vm, manager, free_co
     nio = manager.create_nio(manager.vboxmanage_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "192.168.1.2"})
     with pytest.raises(VirtualBoxError):
         loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(15, nio)))
+
+
+def test_json(vm, tmpdir, project):
+    assert vm.__json__()["vm_directory"] is None
+    project._path = str(tmpdir)
+    vm._linked_clone = True
+    assert vm.__json__()["vm_directory"] is not None

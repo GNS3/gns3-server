@@ -191,6 +191,10 @@ VBOX_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "vm_directory": {
+            "decription": "Path to the VM working directory",
+            "type": ["string", "null"]
+        },
         "enable_remote_console": {
             "description": "enable the remote console",
             "type": "boolean"
@@ -232,5 +236,5 @@ VBOX_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "project_id"]
+    "required": ["name", "vm_id", "project_id", "vm_directory"]
 }

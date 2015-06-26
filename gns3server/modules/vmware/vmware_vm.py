@@ -78,11 +78,11 @@ class VMwareVM(BaseVM):
         self._use_any_adapter = False
 
         if not os.path.exists(vmx_path):
-            raise VMwareError('VMware VM "{name}" [{id}]: could not find VMX file "{}"'.format(name, vmx_path))
+            raise VMwareError('VMware VM "{name}" [{id}]: could not find VMX file "{vmx_path}"'.format(name=name, id=vm_id, vmx_path=vmx_path))
 
     def __json__(self):
 
-        return {"name": self.name,
+        json = {"name": self.name,
                 "vm_id": self.id,
                 "console": self.console,
                 "project_id": self.project.id,
@@ -93,6 +93,11 @@ class VMwareVM(BaseVM):
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "use_any_adapter": self.use_any_adapter}
+        if self._linked_clone:
+            json["vm_directory"] = self.working_dir
+        else:
+            json["vm_directory"] = None
+        return json
 
     @property
     def vmnets(self):
