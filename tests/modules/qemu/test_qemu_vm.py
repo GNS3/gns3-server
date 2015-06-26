@@ -114,6 +114,43 @@ def test_stop(loop, vm, running_subprocess_mock):
         process.terminate.assert_called_with()
 
 
+def test_termination_callback(vm):
+
+    vm.status = "started"
+    queue = vm.project.get_listen_queue()
+
+    vm._termination_callback(0)
+    assert vm.status == "stopped"
+
+    (action, event) = queue.get_nowait()
+    assert action == "vm.stopped"
+    assert event == vm
+
+    with pytest.raises(asyncio.queues.QueueEmpty):
+        queue.get_nowait()
+
+
+def test_termination_callback_error(vm, tmpdir):
+
+    with open(str(tmpdir / "qemu.log"), "w+") as f:
+        f.write("BOOMM")
+
+    vm.status = "started"
+    vm._stdout_file = str(tmpdir / "qemu.log")
+    queue = vm.project.get_listen_queue()
+
+    vm._termination_callback(1)
+    assert vm.status == "stopped"
+
+    (action, event) = queue.get_nowait()
+    assert action == "vm.stopped"
+    assert event == vm
+
+    (action, event) = queue.get_nowait()
+    assert action == "log.error"
+    assert event == "QEMU process has stopped, return code: 1\nBOOMM"
+
+
 def test_reload(loop, vm):
 
     with asyncio_patch("gns3server.modules.qemu.QemuVM._control_vm") as mock:

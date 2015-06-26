@@ -704,6 +704,7 @@ class QemuVM(BaseVM):
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
                 log.info("logging to {}".format(self._stdout_file))
                 with open(self._stdout_file, "w", encoding="utf-8") as fd:
+                    fd.write("Start QEMU with {}\n\nExecution log:\n".format(command_string))
                     self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
@@ -732,6 +733,8 @@ class QemuVM(BaseVM):
             log.info("QEMU process has stopped, return code: %d", returncode)
             self.status = "stopped"
             self._process = None
+            if returncode != 0:
+                self.project.emit("log.error", "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout()))
 
     @asyncio.coroutine
     def stop(self):
