@@ -361,14 +361,6 @@ class Dynamips(BaseManager):
         return hypervisor
 
     @asyncio.coroutine
-    def ghost_ios_support(self, vm):
-
-        ghost_ios_support = self.config.get_section_config("Dynamips").getboolean("ghost_ios_support", True)
-        if ghost_ios_support:
-            with (yield from Dynamips._ghost_ios_lock):
-                yield from self._set_ghost_ios(vm)
-
-    @asyncio.coroutine
     def create_nio(self, node, nio_settings):
         """
         Creates a new NIO.
@@ -436,6 +428,14 @@ class Dynamips(BaseManager):
 
         yield from nio.create()
         return nio
+
+    @asyncio.coroutine
+    def ghost_ios_support(self, vm):
+
+        ghost_ios_support = self.config.get_section_config("Dynamips").getboolean("ghost_ios_support", True)
+        if ghost_ios_support:
+            with (yield from Dynamips._ghost_ios_lock):
+                yield from self._set_ghost_ios(vm)
 
     @asyncio.coroutine
     def _set_ghost_ios(self, vm):

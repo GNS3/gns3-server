@@ -74,7 +74,6 @@ class DynamipsVMHandler:
                                                    chassis=request.json.pop("chassis", default_chassis))
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
-        yield from dynamips_manager.ghost_ios_support(vm)
         response.set_status(201)
         response.json(vm)
 
@@ -120,7 +119,6 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
-        yield from dynamips_manager.ghost_ios_support(vm)
         response.json(vm)
 
     @classmethod
@@ -161,6 +159,7 @@ class DynamipsVMHandler:
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        yield from dynamips_manager.ghost_ios_support(vm)
         yield from vm.start()
         response.set_status(204)
 
