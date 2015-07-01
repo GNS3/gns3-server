@@ -62,7 +62,8 @@ class Config(object):
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
             filename = "gns3_server.ini"
             if self._files is None:
-                self._files = [os.path.join(appdata, appname, filename),
+                self._files = [os.path.join(os.getcwd(), filename),
+                               os.path.join(appdata, appname, filename),
                                os.path.join(appdata, appname + ".ini"),
                                os.path.join(common_appdata, appname, filename),
                                os.path.join(common_appdata, appname + ".ini"),
@@ -80,7 +81,8 @@ class Config(object):
             home = os.path.expanduser("~")
             filename = "gns3_server.conf"
             if self._files is None:
-                self._files = [os.path.join(home, ".config", appname, filename),
+                self._files = [os.path.join(os.getcwd(), filename),
+                               os.path.join(home, ".config", appname, filename),
                                os.path.join(home, ".config", appname + ".conf"),
                                os.path.join("/etc/xdg", appname, filename),
                                os.path.join("/etc/xdg", appname + ".conf"),
