@@ -66,8 +66,7 @@ class Config(object):
                                os.path.join(appdata, appname, filename),
                                os.path.join(appdata, appname + ".ini"),
                                os.path.join(common_appdata, appname, filename),
-                               os.path.join(common_appdata, appname + ".ini"),
-                               filename]
+                               os.path.join(common_appdata, appname + ".ini")]
         else:
 
             # On UNIX-like platforms, the configuration file location can be one of the following:
@@ -85,8 +84,7 @@ class Config(object):
                                os.path.join(home, ".config", appname, filename),
                                os.path.join(home, ".config", appname + ".conf"),
                                os.path.join("/etc/xdg", appname, filename),
-                               os.path.join("/etc/xdg", appname + ".conf"),
-                               filename]
+                               os.path.join("/etc/xdg", appname + ".conf")]
 
         if self._files is None:
             self._files = []
