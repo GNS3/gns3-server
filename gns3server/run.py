@@ -78,14 +78,37 @@ def locale_check():
         log.info("Current locale is {}.{}".format(language, encoding))
 
 
-def parse_arguments(argv, config):
+def parse_arguments(argv):
     """
     Parse command line arguments and override local configuration
 
     :params args: Array of command line arguments
-    :params config: ConfigParser with default variable from configuration
     """
 
+    parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
+    parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
+    parser.add_argument("--host", help="run on the given host/IP address")
+    parser.add_argument("--port", help="run on the given port", type=int)
+    parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
+    parser.add_argument("--config", help="Configuration file")
+    parser.add_argument("--certfile", help="SSL cert file")
+    parser.add_argument("--certkey", help="SSL key file")
+    parser.add_argument("--record", help="save curl requests into a file (for developers)")
+    parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
+    parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
+    parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
+    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
+    parser.add_argument("--live", action="store_true", help="enable code live reload")
+    parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
+    parser.add_argument("--log", help="send output to logfile instead of console")
+    parser.add_argument("--daemon", action="store_true", help="start as a daemon")
+    parser.add_argument("--pid", help="store process pid")
+
+    args = parser.parse_args(argv)
+    if args.config:
+        Config.instance(files=[args.config])
+
+    config = Config.instance().get_section_config("Server")
     defaults = {
         "host": config.get("host", "0.0.0.0"),
         "port": config.get("port", 8000),
@@ -101,25 +124,7 @@ def parse_arguments(argv, config):
         "logfile": config.getboolean("logfile", ""),
     }
 
-    parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
     parser.set_defaults(**defaults)
-    parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
-    parser.add_argument("--host", help="run on the given host/IP address")
-    parser.add_argument("--port", help="run on the given port", type=int)
-    parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
-    parser.add_argument("--certfile", help="SSL cert file")
-    parser.add_argument("--certkey", help="SSL key file")
-    parser.add_argument("--record", help="save curl requests into a file")
-    parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
-    parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
-    parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
-    parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
-    parser.add_argument("--live", action="store_true", help="enable code live reload")
-    parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
-    parser.add_argument("--log", help="send output to logfile instead of console")
-    parser.add_argument("--daemon", action="store_true", help="start as a daemon")
-    parser.add_argument("--pid", help="store process pid")
-
     return parser.parse_args(argv)
 
 
@@ -173,7 +178,7 @@ def pid_lock(path):
 
 
 def run():
-    args = parse_arguments(sys.argv[1:], Config.instance().get_section_config("Server"))
+    args = parse_arguments(sys.argv[1:])
 
     if args.daemon and sys.platform.startswith("win"):
         log.critical("Daemon is not supported on Windows")

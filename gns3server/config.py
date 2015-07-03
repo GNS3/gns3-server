@@ -36,9 +36,10 @@ class Config(object):
     Configuration file management using configparser.
 
     :params files: Array of configuration files (optional)
+    :params config_directory: Path of the configuration directory. If None default OS directory
     """
 
-    def __init__(self, files=None):
+    def __init__(self, files=None, config_directory=None):
 
         self._files = files
 
