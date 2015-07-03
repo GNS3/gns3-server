@@ -150,6 +150,7 @@ def fake_file(tmpdir):
     os.chmod(path, stat.S_IREAD)
     return path
 
+
 def test_vms(server, tmpdir, fake_dynamips, fake_file):
 
     with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
