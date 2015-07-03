@@ -171,15 +171,15 @@ If you want enable SSL support on GNS3 you can generate a self signed certificat
 
 .. code:: bash
 
-    bassh gns3server/cert_utils/create_cert.sh
+    bash gns3server/cert_utils/create_cert.sh
 
-This command will put the files in ~/.config/gns3/ssl on Linux and  ~/.config/gns3.net/ssl on MacOSX.
+This command will put the files in ~/.config/GNS3/ssl
 
 After you can start the server in SSL mode with:
 
 .. code:: bash
 
-    python gns3server/main.py --certfile ~/.config/gns3.net/ssl/server.cert --certkey ~/.config/gns3.net/ssl/server.key --ssl
+    python gns3server/main.py --certfile ~/.config/GNS3/ssl/server.cert --certkey ~/.config/GNS3/ssl/server.key --ssl
 
 
 Or in your gns3_server.conf by adding in the Server section:
@@ -187,6 +187,6 @@ Or in your gns3_server.conf by adding in the Server section:
 .. code:: ini
     
     [Server]
-    certfile=/Users/noplay/.config/gns3.net/ssl/server.cert
-    certkey=/Users/noplay/.config/gns3.net/ssl/server.key
+    certfile=/Users/noplay/.config/GNS3/ssl/server.cert
+    certkey=/Users/noplay/.config/GNS3/ssl/server.key
     ssl=True
