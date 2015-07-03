@@ -131,16 +131,26 @@ from tests.utils import asyncio_patch
 
 @pytest.fixture
 def fake_dynamips(tmpdir):
-    """Create a fake IOU image on disk"""
+    """Create a fake Dynamips image on disk"""
 
     path = str(tmpdir / "7200.bin")
+    with open(path, "wb+") as f:
+        f.write(b'\x7fELF\x01\x02\x01')
+    os.chmod(path, stat.S_IREAD)
+    return path
+
+
+@pytest.fixture
+def fake_file(tmpdir):
+    """Create a fake file disk"""
+
+    path = str(tmpdir / "7200.txt")
     with open(path, "w+") as f:
         f.write('1')
     os.chmod(path, stat.S_IREAD)
     return path
 
-
-def test_vms(server, tmpdir, fake_dynamips):
+def test_vms(server, tmpdir, fake_dynamips, fake_file):
 
     with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
         response = server.get("/dynamips/vms")
