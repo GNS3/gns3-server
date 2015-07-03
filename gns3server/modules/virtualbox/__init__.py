@@ -95,13 +95,7 @@ class VirtualBox(BaseManager):
             command_string = " ".join(command)
             log.info("Executing VBoxManage with command: {}".format(command_string))
             try:
-                vbox_user = self.config.get_section_config("VirtualBox").get("vbox_user")
-                if vbox_user:
-                    # TODO: test & review this part
-                    sudo_command = "sudo -i -u {} ".format(vbox_user) + " ".join(command)
-                    process = yield from asyncio.create_subprocess_shell(sudo_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-                else:
-                    process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             except (OSError, subprocess.SubprocessError) as e:
                 raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
 
