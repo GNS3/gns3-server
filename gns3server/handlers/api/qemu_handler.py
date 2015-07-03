@@ -53,8 +53,9 @@ class QEMUHandler:
                                        request.match_info["project_id"],
                                        request.json.pop("vm_id", None),
                                        qemu_path=request.json.pop("qemu_path", None),
-                                       platform=request.json.pop("platform", None),
-                                       console=request.json.pop("console", None))
+                                       console=request.json.pop("console", None),
+                                       console_type=request.json.pop("console_type", "telnet"),
+                                       platform=request.json.pop("platform", None))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:

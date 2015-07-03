@@ -40,20 +40,25 @@ class BaseVM:
     :param console: TCP console port
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None):
+    def __init__(self, name, vm_id, project, manager, console=None, console_type="telnet"):
 
         self._name = name
         self._id = vm_id
         self._project = project
         self._manager = manager
         self._console = console
+        self._console_type = console_type
         self._temporary_directory = None
         self._vm_status = "stopped"
 
         if self._console is not None:
             self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
         else:
-            self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+            if console_type == "vnc":
+                # VNC is a special case and the range must be 5900-6000
+                self._console = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
+            else:
+                self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
         log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(module=self.manager.module_name,
                                                                                        name=self.name,
@@ -196,7 +201,7 @@ class BaseVM:
     @property
     def console(self):
         """
-        Returns the console port of this VPCS vm.
+        Returns the console port of this VM.
 
         :returns: console port
         """
@@ -220,3 +225,40 @@ class BaseVM:
                                                                                 name=self.name,
                                                                                 id=self.id,
                                                                                 port=console))
+
+    @property
+    def console_type(self):
+        """
+        Returns the console type for this VM.
+
+        :returns: console type (string)
+        """
+
+        return self._console_type
+
+    @console_type.setter
+    def console_type(self, console_type):
+        """
+        Sets the console type for this VM.
+
+        :param console_type: console type (string)
+        """
+
+        log.info('QEMU VM "{name}" [{id}] has set the console type to {console_type}'.format(name=self._name,
+                                                                                             id=self._id,
+                                                                                             console_type=console_type))
+
+        if console_type != self._console_type:
+            # get a new port if the console type change
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
+            if console_type == "vnc":
+                # VNC is a special case and the range must be 5900-6000
+                self._console = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
+            else:
+                self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+
+        self._console_type = console_type
+        log.info("{module}: '{name}' [{id}]: console type set to {console_type}".format(module=self.manager.module_name,
+                                                                                        name=self.name,
+                                                                                        id=self.id,
+                                                                                        console_type=console_type))
