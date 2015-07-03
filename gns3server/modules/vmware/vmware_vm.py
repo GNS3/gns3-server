@@ -32,6 +32,7 @@ import signal
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.telnet_server import TelnetServer
+from gns3server.utils.interfaces import get_windows_interfaces
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
@@ -283,7 +284,7 @@ class VMwareVM(BaseVM):
                 if sys.platform.startswith("linux"):
                     config[bridge_name] = {"source_linux_raw": vmnet_interface}
                 elif sys.platform.startswith("win"):
-                    windows_interfaces = self.manager.get_vmnet_interfaces()
+                    windows_interfaces = get_windows_interfaces()
                     npf = None
                     for interface in windows_interfaces:
                         if "netcard" in interface and vmnet_interface in interface["netcard"]:
