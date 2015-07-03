@@ -22,10 +22,11 @@ import logging
 import sys
 import jinja2
 
+from ..utils.get_resource import get_resource
 from ..version import __version__
 
 log = logging.getLogger(__name__)
-renderer = jinja2.Environment(loader=jinja2.PackageLoader('gns3server', 'templates'))
+renderer = jinja2.Environment(loader=jinja2.FileSystemLoader(get_resource('templates')))
 
 
 class Response(aiohttp.web.Response):
