@@ -362,6 +362,8 @@ class VMwareVM(BaseVM):
         """
 
         log.info("uBridge process has stopped, return code: %d", returncode)
+        if returncode != 0:
+            self.project.emit("log.error", {"message": "uBridge process has stopped, return code: {}\n{}".format(returncode, self.read_ubridge_stdout())})
 
     def is_ubridge_running(self):
         """

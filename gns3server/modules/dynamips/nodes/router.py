@@ -279,8 +279,11 @@ class Router(BaseVM):
         :param returncode: Process returncode
         """
 
-        self.status = "stopped"
-        log.info("Dynamips hypervisor process has stopped, return code: %d", returncode)
+        if self.status == "started":
+            self.status = "stopped"
+            log.info("Dynamips hypervisor process has stopped, return code: %d", returncode)
+            if returncode != 0:
+                self.project.emit("log.error", {"message": "Dynamips hypervisor process has stopped, return code: {}\n{}".format(returncode, self._hypervisor.read_stdout())})
 
     @asyncio.coroutine
     def stop(self):

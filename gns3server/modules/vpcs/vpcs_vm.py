@@ -255,6 +255,8 @@ class VPCSVM(BaseVM):
             self._started = False
             self.status = "stopped"
             self._process = None
+            if returncode != 0:
+                self.project.emit("log.error", {"message": "VPCS process has stopped, return code: {}\n{}".format(returncode, self.read_vpcs_stdout())})
 
     @asyncio.coroutine
     def stop(self):
