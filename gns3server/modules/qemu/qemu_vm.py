@@ -483,6 +483,8 @@ class QemuVM(BaseVM):
                                                                                         id=self._id,
                                                                                         options=options))
 
+        if not sys.platform.startswith("linux") and "-no-kvm" in options:
+            options = options.replace("-no-kvm")
         self._options = options.strip()
 
     @property
@@ -1177,7 +1179,8 @@ class QemuVM(BaseVM):
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", str(self._ram)])
-        if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True):
+        if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
+                and "-no-kvm" not in self._options:
             if not os.path.exists("/dev/kvm"):
                 raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist)")
             command.extend(["-enable-kvm"])
