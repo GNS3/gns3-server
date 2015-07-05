@@ -42,76 +42,76 @@ def test_parse_arguments(capsys, tmpdir):
     server_config = config.get_section_config("Server")
 
     with pytest.raises(SystemExit):
-        run.parse_arguments(["--fail"], server_config)
+        run.parse_arguments(["--fail"])
     out, err = capsys.readouterr()
     assert "usage" in err
     assert "fail" in err
     assert "unrecognized arguments" in err
 
     with pytest.raises(SystemExit):
-        run.parse_arguments(["-v"], server_config)
+        run.parse_arguments(["-v"])
     out, err = capsys.readouterr()
     assert __version__ in "{}{}".format(out, err)  # Depending of the Python version the location of the version change
 
     with pytest.raises(SystemExit):
-        run.parse_arguments(["--version"], server_config)
+        run.parse_arguments(["--version"])
     out, err = capsys.readouterr()
     assert __version__ in "{}{}".format(out, err)  # Depending of the Python version the location of the version change
 
     with pytest.raises(SystemExit):
-        run.parse_arguments(["-h"], server_config)
+        run.parse_arguments(["-h"])
     out, err = capsys.readouterr()
     assert __version__ in out
     assert "optional arguments" in out
 
     with pytest.raises(SystemExit):
-        run.parse_arguments(["--help"], server_config)
+        run.parse_arguments(["--help"])
     out, err = capsys.readouterr()
     assert __version__ in out
     assert "optional arguments" in out
 
-    assert run.parse_arguments(["--host", "192.168.1.1"], server_config).host == "192.168.1.1"
-    assert run.parse_arguments([], server_config).host == "0.0.0.0"
+    assert run.parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
+    assert run.parse_arguments([]).host == "0.0.0.0"
     server_config["host"] = "192.168.1.2"
-    assert run.parse_arguments(["--host", "192.168.1.1"], server_config).host == "192.168.1.1"
-    assert run.parse_arguments([], server_config).host == "192.168.1.2"
+    assert run.parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
+    assert run.parse_arguments([]).host == "192.168.1.2"
 
-    assert run.parse_arguments(["--port", "8002"], server_config).port == 8002
-    assert run.parse_arguments([], server_config).port == 8000
+    assert run.parse_arguments(["--port", "8002"]).port == 8002
+    assert run.parse_arguments([]).port == 8000
     server_config["port"] = "8003"
-    assert run.parse_arguments([], server_config).port == 8003
+    assert run.parse_arguments([]).port == 8003
 
-    assert run.parse_arguments(["--ssl"], server_config).ssl
-    assert run.parse_arguments([], server_config).ssl is False
+    assert run.parse_arguments(["--ssl"]).ssl
+    assert run.parse_arguments([]).ssl is False
     server_config["ssl"] = "True"
-    assert run.parse_arguments([], server_config).ssl
+    assert run.parse_arguments([]).ssl
 
-    assert run.parse_arguments(["--certfile", "bla"], server_config).certfile == "bla"
-    assert run.parse_arguments([], server_config).certfile == ""
+    assert run.parse_arguments(["--certfile", "bla"]).certfile == "bla"
+    assert run.parse_arguments([]).certfile == ""
 
-    assert run.parse_arguments(["--certkey", "blu"], server_config).certkey == "blu"
-    assert run.parse_arguments([], server_config).certkey == ""
+    assert run.parse_arguments(["--certkey", "blu"]).certkey == "blu"
+    assert run.parse_arguments([]).certkey == ""
 
-    assert run.parse_arguments(["-L"], server_config).local
-    assert run.parse_arguments(["--local"], server_config).local
-    assert run.parse_arguments([], server_config).local is False
+    assert run.parse_arguments(["-L"]).local
+    assert run.parse_arguments(["--local"]).local
+    assert run.parse_arguments([]).local is False
     server_config["local"] = "True"
-    assert run.parse_arguments([], server_config).local
+    assert run.parse_arguments([]).local
 
-    assert run.parse_arguments(["-A"], server_config).allow
-    assert run.parse_arguments(["--allow"], server_config).allow
-    assert run.parse_arguments([], server_config).allow is False
+    assert run.parse_arguments(["-A"]).allow
+    assert run.parse_arguments(["--allow"]).allow
+    assert run.parse_arguments([]).allow is False
     server_config["allow_remote_console"] = "True"
-    assert run.parse_arguments([], server_config).allow
+    assert run.parse_arguments([]).allow
 
-    assert run.parse_arguments(["-q"], server_config).quiet
-    assert run.parse_arguments(["--quiet"], server_config).quiet
-    assert run.parse_arguments([], server_config).quiet is False
+    assert run.parse_arguments(["-q"]).quiet
+    assert run.parse_arguments(["--quiet"]).quiet
+    assert run.parse_arguments([]).quiet is False
 
-    assert run.parse_arguments(["-d"], server_config).debug
-    assert run.parse_arguments([], server_config).debug is False
+    assert run.parse_arguments(["-d"]).debug
+    assert run.parse_arguments([]).debug is False
     server_config["debug"] = "True"
-    assert run.parse_arguments([], server_config).debug
+    assert run.parse_arguments([]).debug
 
 
 def test_set_config_with_args():
@@ -128,8 +128,7 @@ def test_set_config_with_args():
                                 "bla",
                                 "--certkey",
                                 "blu",
-                                "--debug"],
-                               config.get_section_config("Server"))
+                                "--debug"])
     run.set_config(args)
     server_config = config.get_section_config("Server")
 
