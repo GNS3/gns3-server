@@ -75,7 +75,8 @@ class Qemu(BaseManager):
             paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
             if hasattr(sys, "frozen"):
                 try:
-                    paths.add(os.path.abspath(os.path.join(os.getcwd(), "../../../qemu/bin/")))
+                    exec_dir = os.path.dirname(os.path.abspath(sys.executable))
+                    paths.add(os.path.abspath(os.path.join(exec_dir, "../Resources/qemu/bin/")))
                 # If the user run the server by hand from outside
                 except FileNotFoundError:
                     paths.add("/Applications/GNS3.app/Contents/Resources/qemu/bin")
