@@ -292,7 +292,7 @@ class VMwareVM(BaseVM):
                         elif vmnet_interface in interface["name"]:
                             npf = interface["id"]
                     if npf:
-                        config[bridge_name] = {"source_ethernet": npf}
+                        config[bridge_name] = {"source_ethernet": '"' + npf + '"'}
                     else:
                         raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
                 else:
