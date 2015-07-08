@@ -347,7 +347,7 @@ class VMwareVM(BaseVM):
                                                                                   stderr=subprocess.STDOUT,
                                                                                   cwd=self.working_dir)
 
-                monitor_process(self._ubridge_process, self._termination_callback)
+                #monitor_process(self._ubridge_process, self._termination_callback)
             log.info("ubridge started PID={}".format(self._ubridge_process.pid))
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_ubridge_stdout()
