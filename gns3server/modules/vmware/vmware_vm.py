@@ -93,11 +93,8 @@ class VMwareVM(BaseVM):
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
-                "use_any_adapter": self.use_any_adapter}
-        if self._linked_clone:
-            json["vm_directory"] = self.working_dir
-        else:
-            json["vm_directory"] = None
+                "use_any_adapter": self.use_any_adapter,
+                "vm_directory": self.working_dir}
         return json
 
     @property
