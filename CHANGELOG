@@ -1,5 +1,47 @@
 # Change Log
 
+## 1.4.0alpha1 09/07/2015
+
+* Update API documentation
+* Allow to send the iourc when starting the VM
+* Return stdout when a process crash for IOU, Dynamips, uBridge and VPCS.
+* Adds -no-kvm to the ASA template and ignore -no-kvm on platforms other than Linux. Should resolve #472.
+* Allow user to change the configuration file
+* Fix double loading of config from working directory
+* CORS support
+* Support server config in current working directory
+* List only valid existing IOS images (for IOS router wizard).
+* Checks if IOS image exist at startup and not during node creation. Fixes #240.
+* When a qemu VM crash send the log to the client.
+* Add a vm_directory field
+* Check for /dev/kvm. Fixes #245.
+* Moves KVM setting to Qemu server preferences. Fixes #244.
+* VNC console support for Qemu VMs.
+* Test all IOU requirements at VM startup
+* ACPI shutdown support for VMware VMs. Fixes #436.
+* Compute a md5sum of images for futur purpose
+* Adds gns3-netifaces to dependencies only if netifaces isn't already installed otherwise this requires a compilation and therefore the Python development files.
+* Adds an IP address for each interface returned by the interfaces API method.
+* Add log when we didn't close a project due to another client
+* Limit file size during upload
+* Convert old -enable-kvm to kvm settings for Qemu
+* Cleanup SSL certificate support
+* Improve memory consumption of file upload with the HTML form
+* systemd start script 
+* Enable KVM acceleration option.
+* Check interface is up before connecting a NIO (Linux only). Fixes #277.
+* IPv6 support.
+* Import/Export support for IOU nvrams.
+* Install qt5 for travis
+* Option to drop nvram & disk files for IOS routers in order to save disk space.
+* Drop python 3.3
+* Support for base MAC address for Qemu VMs.
+* ACPI shutdown support for Qemu VMs.
+* ACPI shutdown support for VirtualBox VMs.
+* Upload images API
+* A notification stream with process monitoring
+* VMware support 
+
 ## 1.3.7 22/06/2015
 
 * Prevent install on Python 2
