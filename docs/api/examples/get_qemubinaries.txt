@@ -5,6 +5,7 @@ GET /v1/qemu/binaries HTTP/1.1
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 134
 CONTENT-TYPE: application/json

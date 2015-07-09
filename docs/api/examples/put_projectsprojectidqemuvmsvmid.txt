@@ -1,17 +1,18 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/552a08c8-811f-4a20-97f7-8ada2a36f0a5' -d '{"console": 2001, "hdb_disk_image": "/tmp/hdb", "name": "test", "ram": 1024}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/4e9e2bd5-6cba-4d64-a3f5-7d689f51d151' -d '{"console": 2001, "hdb_disk_image": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-22/test_qemu_update0/linux.img", "name": "test", "ram": 1024}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/552a08c8-811f-4a20-97f7-8ada2a36f0a5 HTTP/1.1
+PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/4e9e2bd5-6cba-4d64-a3f5-7d689f51d151 HTTP/1.1
 {
     "console": 2001,
-    "hdb_disk_image": "/tmp/hdb",
+    "hdb_disk_image": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-22/test_qemu_update0/linux.img",
     "name": "test",
     "ram": 1024
 }
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 686
+CONTENT-LENGTH: 1228
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -22,22 +23,30 @@ X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
     "adapter_type": "e1000",
     "adapters": 1,
     "console": 2001,
+    "console_type": "telnet",
     "cpu_throttling": 0,
     "hda_disk_image": "",
-    "hdb_disk_image": "/tmp/hdb",
+    "hda_disk_image_md5sum": null,
+    "hdb_disk_image": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-22/test_qemu_update0/linux.img",
+    "hdb_disk_image_md5sum": "c4ca4238a0b923820dcc509a6f75849b",
     "hdc_disk_image": "",
+    "hdc_disk_image_md5sum": null,
     "hdd_disk_image": "",
+    "hdd_disk_image_md5sum": null,
     "initrd": "",
+    "initrd_md5sum": null,
     "kernel_command_line": "",
     "kernel_image": "",
-    "kvm": true,
+    "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:00:ab:f0:a5:00",
+    "mac_address": "00:00:ab:d1:51:00",
     "name": "test",
     "options": "",
+    "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2vvnz4z_/qemu_x42",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpg645q6gq/qemu-system-x86_64",
     "ram": 1024,
-    "vm_id": "552a08c8-811f-4a20-97f7-8ada2a36f0a5"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1454taw7/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/4e9e2bd5-6cba-4d64-a3f5-7d689f51d151",
+    "vm_id": "4e9e2bd5-6cba-4d64-a3f5-7d689f51d151"
 }

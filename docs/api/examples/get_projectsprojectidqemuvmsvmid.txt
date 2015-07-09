@@ -1,12 +1,13 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/5a34dba5-d6e4-4fd7-8ee0-63174bbb144a'
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/05e0937d-dc0c-4b31-bd01-b7befae466ff'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/5a34dba5-d6e4-4fd7-8ee0-63174bbb144a HTTP/1.1
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/05e0937d-dc0c-4b31-bd01-b7befae466ff HTTP/1.1
 
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 682
+CONTENT-LENGTH: 1108
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -17,22 +18,30 @@ X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
     "adapter_type": "e1000",
     "adapters": 1,
     "console": 2000,
+    "console_type": "telnet",
     "cpu_throttling": 0,
     "hda_disk_image": "",
+    "hda_disk_image_md5sum": null,
     "hdb_disk_image": "",
+    "hdb_disk_image_md5sum": null,
     "hdc_disk_image": "",
+    "hdc_disk_image_md5sum": null,
     "hdd_disk_image": "",
+    "hdd_disk_image_md5sum": null,
     "initrd": "",
+    "initrd_md5sum": null,
     "kernel_command_line": "",
     "kernel_image": "",
-    "kvm": true,
+    "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:00:ab:14:4a:00",
+    "mac_address": "00:00:ab:66:ff:00",
     "name": "PC TEST 1",
     "options": "",
+    "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2vvnz4z_/qemu_x42",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpg645q6gq/qemu-system-x86_64",
     "ram": 256,
-    "vm_id": "5a34dba5-d6e4-4fd7-8ee0-63174bbb144a"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1454taw7/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/05e0937d-dc0c-4b31-bd01-b7befae466ff",
+    "vm_id": "05e0937d-dc0c-4b31-bd01-b7befae466ff"
 }

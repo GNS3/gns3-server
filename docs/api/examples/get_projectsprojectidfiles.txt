@@ -5,6 +5,7 @@ GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/files HTTP/1.1
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 204
 CONTENT-TYPE: application/json

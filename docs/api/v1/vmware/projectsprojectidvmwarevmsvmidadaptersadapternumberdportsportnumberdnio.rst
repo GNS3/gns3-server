@@ -9,9 +9,9 @@ Add a NIO to a VMware VM instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
-- **project_id**: UUID for the project
 - **adapter_number**: Adapter where the nio should be added
+- **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes
@@ -27,9 +27,9 @@ Remove a NIO from a VMware VM instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
-- **project_id**: UUID for the project
 - **adapter_number**: Adapter from where the nio should be removed
+- **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes

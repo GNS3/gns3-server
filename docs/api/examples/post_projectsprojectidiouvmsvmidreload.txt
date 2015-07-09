@@ -1,10 +1,11 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/ff11bb56-5bc4-4cca-8800-95c2d04b3d9e/reload' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/86c16543-b464-4963-9f76-635da1321b42/reload' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/ff11bb56-5bc4-4cca-8800-95c2d04b3d9e/reload HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/86c16543-b464-4963-9f76-635da1321b42/reload HTTP/1.1
 {}
 
 
 HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT

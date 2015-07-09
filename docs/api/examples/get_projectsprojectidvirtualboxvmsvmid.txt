@@ -1,12 +1,13 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/e70eb611-1587-450c-a9af-6d10f33d73a6'
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/7bb5a150-67a0-433b-80c9-95f6fce979f4'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/e70eb611-1587-450c-a9af-6d10f33d73a6 HTTP/1.1
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/7bb5a150-67a0-433b-80c9-95f6fce979f4 HTTP/1.1
 
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 389
+CONTENT-LENGTH: 415
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -23,6 +24,7 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms/{vm_id}
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "use_any_adapter": false,
-    "vm_id": "e70eb611-1587-450c-a9af-6d10f33d73a6",
+    "vm_directory": null,
+    "vm_id": "7bb5a150-67a0-433b-80c9-95f6fce979f4",
     "vmname": "VMTEST"
 }

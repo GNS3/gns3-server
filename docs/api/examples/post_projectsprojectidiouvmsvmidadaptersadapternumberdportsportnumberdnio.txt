@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/0f0f340a-7d25-4020-96f8-5d615437d173/adapters/1/ports/0/nio' -d '{"ethernet_device": "lo0", "type": "nio_generic_ethernet"}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/cd4760c6-fbfc-44ba-a21e-5d3eeab66452/adapters/1/ports/0/nio' -d '{"ethernet_device": "lo0", "type": "nio_generic_ethernet"}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/0f0f340a-7d25-4020-96f8-5d615437d173/adapters/1/ports/0/nio HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/cd4760c6-fbfc-44ba-a21e-5d3eeab66452/adapters/1/ports/0/nio HTTP/1.1
 {
     "ethernet_device": "lo0",
     "type": "nio_generic_ethernet"
@@ -8,6 +8,7 @@ POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/0f0f340a-7d25-402
 
 
 HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 68
 CONTENT-TYPE: application/json

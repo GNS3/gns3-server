@@ -1,10 +1,11 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/fd5203df-48c2-4185-b266-8bcf512dca51/suspend' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/2be5e4a8-f5ef-4b3c-b496-729d61c66beb/suspend' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/fd5203df-48c2-4185-b266-8bcf512dca51/suspend HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/2be5e4a8-f5ef-4b3c-b496-729d61c66beb/suspend HTTP/1.1
 {}
 
 
 HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT

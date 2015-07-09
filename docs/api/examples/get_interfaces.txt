@@ -5,8 +5,9 @@ GET /v1/interfaces HTTP/1.1
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 718
+CONTENT-LENGTH: 1253
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -15,50 +16,72 @@ X-ROUTE: /v1/interfaces
 [
     {
         "id": "lo0",
+        "ip_address": "127.0.0.1",
         "name": "lo0"
     },
     {
         "id": "gif0",
+        "ip_address": "",
         "name": "gif0"
     },
     {
         "id": "stf0",
+        "ip_address": "",
         "name": "stf0"
     },
     {
-        "id": "en1",
-        "name": "en1"
-    },
-    {
         "id": "en0",
+        "ip_address": "192.168.84.118",
         "name": "en0"
     },
     {
+        "id": "en1",
+        "ip_address": "",
+        "name": "en1"
+    },
+    {
         "id": "fw0",
+        "ip_address": "",
         "name": "fw0"
     },
     {
         "id": "en2",
+        "ip_address": "",
         "name": "en2"
     },
     {
         "id": "p2p0",
+        "ip_address": "",
         "name": "p2p0"
     },
     {
         "id": "bridge0",
+        "ip_address": "",
         "name": "bridge0"
     },
     {
         "id": "vboxnet0",
+        "ip_address": "",
         "name": "vboxnet0"
     },
     {
         "id": "vboxnet1",
+        "ip_address": "",
         "name": "vboxnet1"
     },
     {
         "id": "vboxnet2",
+        "ip_address": "",
         "name": "vboxnet2"
+    },
+    {
+        "id": "vmnet1",
+        "ip_address": "172.16.16.1",
+        "name": "vmnet1"
+    },
+    {
+        "id": "vmnet8",
+        "ip_address": "192.168.229.1",
+        "name": "vmnet8"
     }
 ]

@@ -1,10 +1,11 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/4f23d204-379b-4403-a369-747315c67df6/adapters/0/ports/0/stop_capture' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/d3b24c51-1c3d-4e5f-9048-f778e8cd57f0/adapters/0/ports/0/stop_capture' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/4f23d204-379b-4403-a369-747315c67df6/adapters/0/ports/0/stop_capture HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/d3b24c51-1c3d-4e5f-9048-f778e8cd57f0/adapters/0/ports/0/stop_capture HTTP/1.1
 {}
 
 
 HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT

@@ -1,10 +1,11 @@
-curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/4eb051c3-ac81-4768-8e26-d04a1dc3e540/adapters/1/ports/0/nio'
+curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/8105baad-5569-4955-867f-2b1ee01f6f9c/adapters/1/ports/0/nio'
 
-DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/4eb051c3-ac81-4768-8e26-d04a1dc3e540/adapters/1/ports/0/nio HTTP/1.1
+DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/8105baad-5569-4955-867f-2b1ee01f6f9c/adapters/1/ports/0/nio HTTP/1.1
 
 
 
 HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT

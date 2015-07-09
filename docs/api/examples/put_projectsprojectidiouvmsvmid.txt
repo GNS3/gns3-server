@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/65baee88-6b5f-4f4c-94d4-a4b37b74e701' -d '{"console": 2001, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/cf340f09-e768-493d-ab47-ba3455cebc3d' -d '{"console": 2001, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/65baee88-6b5f-4f4c-94d4-a4b37b74e701 HTTP/1.1
+PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/cf340f09-e768-493d-ab47-ba3455cebc3d HTTP/1.1
 {
     "console": 2001,
     "ethernet_adapters": 4,
@@ -16,8 +16,9 @@ PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/65baee88-6b5f-4f4c
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 573
+CONTENT-LENGTH: 799
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -26,16 +27,18 @@ X-ROUTE: /v1/projects/{project_id}/iou/vms/{vm_id}
 {
     "console": 2001,
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpbum1ehij/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpbeqacsc5/iourc",
     "l1_keepalives": true,
+    "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
     "nvram": 2048,
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-10/test_iou_update0/iou.bin",
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-22/test_iou_update0/iou.bin",
     "private_config": null,
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 512,
     "serial_adapters": 0,
     "startup_config": "startup-config.cfg",
     "use_default_iou_values": true,
-    "vm_id": "65baee88-6b5f-4f4c-94d4-a4b37b74e701"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpjb4sz6y3/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/cf340f09-e768-493d-ab47-ba3455cebc3d",
+    "vm_id": "cf340f09-e768-493d-ab47-ba3455cebc3d"
 }

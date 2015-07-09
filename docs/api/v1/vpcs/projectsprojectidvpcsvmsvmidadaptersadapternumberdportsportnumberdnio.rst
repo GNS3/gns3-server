@@ -9,9 +9,9 @@ Add a NIO to a VPCS instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
-- **project_id**: UUID for the project
 - **adapter_number**: Network adapter where the nio is located
+- **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 - **port_number**: Port where the nio should be added
 
 Response status codes
@@ -33,9 +33,9 @@ Remove a NIO from a VPCS instance
 
 Parameters
 **********
-- **vm_id**: UUID for the instance
-- **project_id**: UUID for the project
 - **adapter_number**: Network adapter where the nio is located
+- **project_id**: UUID for the project
+- **vm_id**: UUID for the instance
 - **port_number**: Port from where the nio should be removed
 
 Response status codes

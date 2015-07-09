@@ -1,10 +1,11 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/053713a7-614a-488f-be8c-572f434d991b/configs'
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/8ec89813-950e-4b4d-b43d-7448104a0893/configs'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/053713a7-614a-488f-be8c-572f434d991b/configs HTTP/1.1
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/8ec89813-950e-4b4d-b43d-7448104a0893/configs HTTP/1.1
 
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 40
 CONTENT-TYPE: application/json

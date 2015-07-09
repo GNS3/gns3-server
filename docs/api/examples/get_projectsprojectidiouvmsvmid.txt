@@ -1,12 +1,13 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/1f04d468-329c-44d1-b46f-9fa1a916aa70'
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/600a3562-f8b7-4748-a4fc-ef58f7721241'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/1f04d468-329c-44d1-b46f-9fa1a916aa70 HTTP/1.1
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/600a3562-f8b7-4748-a4fc-ef58f7721241 HTTP/1.1
 
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 495
+CONTENT-LENGTH: 721
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -17,14 +18,16 @@ X-ROUTE: /v1/projects/{project_id}/iou/vms/{vm_id}
     "ethernet_adapters": 2,
     "iourc_path": null,
     "l1_keepalives": false,
+    "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
     "nvram": 128,
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-10/test_iou_get0/iou.bin",
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-22/test_iou_get0/iou.bin",
     "private_config": null,
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 256,
     "serial_adapters": 2,
     "startup_config": null,
     "use_default_iou_values": true,
-    "vm_id": "1f04d468-329c-44d1-b46f-9fa1a916aa70"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpjb4sz6y3/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/600a3562-f8b7-4748-a4fc-ef58f7721241",
+    "vm_id": "600a3562-f8b7-4748-a4fc-ef58f7721241"
 }

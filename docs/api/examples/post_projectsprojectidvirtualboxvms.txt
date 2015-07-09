@@ -9,8 +9,9 @@ POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms HTTP/1.1
 
 
 HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 383
+CONTENT-LENGTH: 409
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.4 GNS3/1.4.0.dev1
@@ -27,6 +28,7 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "use_any_adapter": false,
-    "vm_id": "de50008a-0f46-481b-99c0-9788618faa06",
+    "vm_directory": null,
+    "vm_id": "bee2cbbc-07a3-4f27-98c3-db5001a01a0d",
     "vmname": "VM1"
 }

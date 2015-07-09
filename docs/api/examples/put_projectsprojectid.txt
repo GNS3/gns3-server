@@ -1,13 +1,14 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/3df5ad8b-1d2a-4204-b8b2-3c14048f765c' -d '{"name": "second_name", "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-10/test_update_path_project_non_l0"}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/f839d9a0-4f42-402c-a7c9-62c962785607' -d '{"name": "second_name", "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-22/test_update_path_project_non_l0"}'
 
-PUT /v1/projects/3df5ad8b-1d2a-4204-b8b2-3c14048f765c HTTP/1.1
+PUT /v1/projects/f839d9a0-4f42-402c-a7c9-62c962785607 HTTP/1.1
 {
     "name": "second_name",
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-10/test_update_path_project_non_l0"
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-22/test_update_path_project_non_l0"
 }
 
 
 HTTP/1.1 403
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 100
 CONTENT-TYPE: application/json

@@ -1,10 +1,13 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/0754f25c-e62c-4823-91a8-b7a7c81baee0/start' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/f6f53adc-16a9-4fac-8f70-b8c7aedefa8d/start' -d '{"iourc_content": "test"}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/0754f25c-e62c-4823-91a8-b7a7c81baee0/start HTTP/1.1
-{}
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/f6f53adc-16a9-4fac-8f70-b8c7aedefa8d/start HTTP/1.1
+{
+    "iourc_content": "test"
+}
 
 
 HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
