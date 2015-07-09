@@ -21,6 +21,7 @@ from aiohttp.web import HTTPConflict
 from ...web.route import Route
 from ...schemas.nio import NIO_SCHEMA
 from ...schemas.iou import IOU_CREATE_SCHEMA
+from ...schemas.iou import IOU_START_SCHEMA
 from ...schemas.iou import IOU_UPDATE_SCHEMA
 from ...schemas.iou import IOU_OBJECT_SCHEMA
 from ...schemas.iou import IOU_CAPTURE_SCHEMA
@@ -151,11 +152,19 @@ class IOUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
+        input=IOU_START_SCHEMA,
         description="Start a IOU instance")
     def start(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+
+        for name, value in request.json.items():
+            if hasattr(vm, name) and getattr(vm, name) != value:
+                setattr(vm, name, value)
+                print(name)
+                print(vm.iourc_path)
+
         yield from vm.start()
         response.set_status(204)
 

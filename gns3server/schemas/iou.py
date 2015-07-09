@@ -91,7 +91,7 @@ IOU_CREATE_SCHEMA = {
             "type": ["string", "null"]
         },
         "iourc_content": {
-            "description": "Content of the iourc file, if a file exist on servers this variable is ignored. It's mostly for compatibility with < 1.3 releases",
+            "description": "Content of the iourc file. Ignored if Null",
             "type": ["string", "null"]
         }
     },
@@ -156,12 +156,26 @@ IOU_UPDATE_SCHEMA = {
             "type": ["boolean", "null"]
         },
         "iourc_content": {
-            "description": "Content of the iourc file, if a file exist on servers this variable is ignored. It's mostly for compatibility with < 1.3 releases",
+            "description": "Content of the iourc file. Ignored if Null",
             "type": ["string", "null"]
         }
     },
     "additionalProperties": False,
 }
+
+
+IOU_START_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start an IOU instance",
+    "type": "object",
+    "properties": {
+        "iourc_content": {
+            "description": "Content of the iourc file. Ignored if Null",
+            "type": ["string", "null"]
+        }
+    }
+}
+
 
 IOU_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
