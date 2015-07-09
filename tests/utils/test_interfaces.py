@@ -33,4 +33,4 @@ def test_is_interface_up():
         assert is_interface_up("lo0") is True
     else:
         assert is_interface_up("lo") is True
-    assert is_interface_up("fake0") is False
+        assert is_interface_up("fake0") is False

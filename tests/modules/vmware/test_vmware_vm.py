@@ -45,7 +45,7 @@ def test_vm(project, manager, vm):
 
 
 def test_json(vm, tmpdir, project):
-    assert vm.__json__()["vm_directory"] is None
+    assert vm.__json__()["vm_directory"] is not None
     project._path = str(tmpdir)
     vm._linked_clone = True
     assert vm.__json__()["vm_directory"] is not None
