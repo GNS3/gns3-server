@@ -149,7 +149,7 @@ class VirtualBoxVM(BaseVM):
 
         yield from self._get_system_properties()
         if "API version" not in self._system_properties:
-            raise VirtualBoxError("Can't access to VirtualBox API Version")
+            raise VirtualBoxError("Can't access to VirtualBox API version:\n{}".format(self._system_properties))
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))
