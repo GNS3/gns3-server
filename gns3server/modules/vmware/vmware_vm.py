@@ -93,11 +93,8 @@ class VMwareVM(BaseVM):
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
-                "use_any_adapter": self.use_any_adapter}
-        if self._linked_clone:
-            json["vm_directory"] = self.working_dir
-        else:
-            json["vm_directory"] = None
+                "use_any_adapter": self.use_any_adapter,
+                "vm_directory": self.working_dir}
         return json
 
     @property
@@ -347,7 +344,7 @@ class VMwareVM(BaseVM):
                                                                                   stderr=subprocess.STDOUT,
                                                                                   cwd=self.working_dir)
 
-                monitor_process(self._ubridge_process, self._termination_callback)
+                #monitor_process(self._ubridge_process, self._termination_callback)
             log.info("ubridge started PID={}".format(self._ubridge_process.pid))
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_ubridge_stdout()

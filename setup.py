@@ -45,12 +45,14 @@ dependencies = [
     "raven>=5.2.0"
 ]
 
-try:
-    import netifaces
-except ImportError:
-    # add gns3-netifaces only if netifaces isn't already installed
-    # for instance via a Debian package.
-    dependencies.append("gns3-netifaces>=0.10.4.1")
+if not sys.platform.startswith("win"):
+    # netifaces if not used on Windows
+    try:
+        import netifaces
+    except ImportError:
+        # add gns3-netifaces only if netifaces isn't already installed
+        # for instance via a Debian package.
+        dependencies.append("gns3-netifaces>=0.10.4.1")
 
 setup(
     name="gns3-server",

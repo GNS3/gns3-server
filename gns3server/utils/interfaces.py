@@ -20,7 +20,6 @@ import sys
 import aiohttp
 import socket
 import struct
-import netifaces
 
 import logging
 log = logging.getLogger(__name__)
@@ -115,10 +114,12 @@ def is_interface_up(interface):
     :returns: boolean
     """
 
-    if interface not in netifaces.interfaces():
-        return False
-
     if sys.platform.startswith("linux"):
+
+        import netifaces
+        if interface not in netifaces.interfaces():
+            return False
+
         import fcntl
         SIOCGIFFLAGS = 0x8913
         try:
@@ -144,6 +145,7 @@ def interfaces():
 
     results = []
     if not sys.platform.startswith("win"):
+        import netifaces
         for interface in netifaces.interfaces():
             ip_address = ""
             ip_addresses = netifaces.ifaddresses(interface)
