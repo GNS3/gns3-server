@@ -190,7 +190,7 @@ class Route(object):
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
                 except aiohttp.ClientDisconnectedError:
-                    log.error("Client disconnected")
+                    log.warn("Client disconnected")
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Client disconnected", "status": 408})
