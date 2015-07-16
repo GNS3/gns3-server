@@ -18,6 +18,8 @@
 import os
 import hashlib
 
+import logging
+log = logging.getLogger(__name__)
 
 def md5sum(path):
     """
