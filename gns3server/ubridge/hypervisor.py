@@ -16,60 +16,63 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Represents a Dynamips hypervisor and starts/stops the associated Dynamips process.
+Represents a uBridge hypervisor and starts/stops the associated uBridge process.
 """
 
 import os
 import subprocess
-import tempfile
 import asyncio
+import socket
 
 from gns3server.utils.asyncio import wait_for_process_termination
-from .dynamips_hypervisor import DynamipsHypervisor
-from .dynamips_error import DynamipsError
+from gns3server.utils.asyncio import monitor_process
+from .ubridge_hypervisor import UBridgeHypervisor
+from .ubridge_error import UbridgeError
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class Hypervisor(DynamipsHypervisor):
+class Hypervisor(UBridgeHypervisor):
 
     """
     Hypervisor.
 
-    :param path: path to Dynamips executable
+    :param project: Project instance
+    :param path: path to uBridge executable
     :param working_dir: working directory
     :param host: host/address for this hypervisor
     :param port: port for this hypervisor
-    :param console_host: host/address for console connections
     """
 
     _instance_count = 1
 
-    def __init__(self, path, working_dir, host, port, console_host):
+    def __init__(self, project, path, working_dir, host, port=None):
 
-        super().__init__(working_dir, host, port)
+        if port is None:
+            try:
+                port = None
+                info = socket.getaddrinfo(host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+                if not info:
+                    raise UbridgeError("getaddrinfo returns an empty list on {}".format(host))
+                for res in info:
+                    af, socktype, proto, _, sa = res
+                    # let the OS find an unused port for the uBridge hypervisor
+                    with socket.socket(af, socktype, proto) as sock:
+                        sock.bind(sa)
+                        port = sock.getsockname()[1]
+                        break
+            except OSError as e:
+                raise UbridgeError("Could not find free port for the uBridge hypervisor: {}".format(e))
 
-        # create an unique ID
-        self._id = Hypervisor._instance_count
-        Hypervisor._instance_count += 1
-
-        self._console_host = console_host
+        super().__init__(host, port)
+        self._project = project
         self._path = path
+        self._working_dir = working_dir
         self._command = []
         self._process = None
         self._stdout_file = ""
         self._started = False
-
-    @property
-    def id(self):
-        """
-        Returns the unique ID for this hypervisor.
-
-        :returns: id (integer)
-        """
-
-        return self._id
 
     @property
     def process(self):
@@ -94,9 +97,9 @@ class Hypervisor(DynamipsHypervisor):
     @property
     def path(self):
         """
-        Returns the path to the Dynamips executable.
+        Returns the path to the uBridge executable.
 
-        :returns: path to Dynamips
+        :returns: path to uBridge
         """
 
         return self._path
@@ -104,9 +107,9 @@ class Hypervisor(DynamipsHypervisor):
     @path.setter
     def path(self, path):
         """
-        Sets the path to the Dynamips executable.
+        Sets the path to the uBridge executable.
 
-        :param path: path to Dynamips
+        :param path: path to uBridge
         """
 
         self._path = path
@@ -114,55 +117,65 @@ class Hypervisor(DynamipsHypervisor):
     @asyncio.coroutine
     def start(self):
         """
-        Starts the Dynamips hypervisor process.
+        Starts the uBridge hypervisor process.
         """
 
-        self._command = self._build_command()
         try:
-            log.info("Starting Dynamips: {}".format(self._command))
-
-            with tempfile.NamedTemporaryFile(delete=False) as fd:
-                self._stdout_file = fd.name
-                log.info("Dynamips process logging to {}".format(fd.name))
-                self._process = yield from asyncio.create_subprocess_exec(*self._command,
+            # self._update_ubridge_config()
+            command = self._build_command()
+            log.info("starting ubridge: {}".format(command))
+            self._stdout_file = os.path.join(self._working_dir, "ubridge.log")
+            log.info("logging to {}".format(self._stdout_file))
+            with open(self._stdout_file, "w", encoding="utf-8") as fd:
+                self._process = yield from asyncio.create_subprocess_exec(*command,
                                                                           stdout=fd,
                                                                           stderr=subprocess.STDOUT,
                                                                           cwd=self._working_dir)
-            log.info("Dynamips process started PID={}".format(self._process.pid))
-            self._started = True
+
+                monitor_process(self._process, self._termination_callback)
+            log.info("ubridge started PID={}".format(self._process.pid))
         except (OSError, subprocess.SubprocessError) as e:
-            log.error("Could not start Dynamips: {}".format(e))
-            raise DynamipsError("Could not start Dynamips: {}".format(e))
+            ubridge_stdout = self.read_stdout()
+            log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
+            raise UBridgeHypervisor("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
+
+    def _termination_callback(self, returncode):
+        """
+        Called when the process has stopped.
+
+        :param returncode: Process returncode
+        """
+
+        log.info("uBridge process has stopped, return code: %d", returncode)
+        if returncode != 0:
+            self._project.emit("log.error", {"message": "uBridge process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
 
     @asyncio.coroutine
     def stop(self):
         """
-        Stops the Dynamips hypervisor process.
+        Stops the uBridge hypervisor process.
         """
 
         if self.is_running():
-            log.info("Stopping Dynamips process PID={}".format(self._process.pid))
-            yield from DynamipsHypervisor.stop(self)
-            # give some time for the hypervisor to properly stop.
-            # time to delete UNIX NIOs for instance.
-            yield from asyncio.sleep(0.01)
+            log.info("Stopping uBridge process PID={}".format(self._process.pid))
+            yield from UBridgeHypervisor.stop(self)
             try:
                 yield from wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process.returncode is None:
-                    log.warn("Dynamips process {} is still running... killing it".format(self._process.pid))
+                    log.warn("uBridge process {} is still running... killing it".format(self._process.pid))
                     self._process.kill()
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:
                 os.remove(self._stdout_file)
             except OSError as e:
-                log.warning("could not delete temporary Dynamips log file: {}".format(e))
+                log.warning("could not delete temporary uBridge log file: {}".format(e))
         self._started = False
 
     def read_stdout(self):
         """
-        Reads the standard output of the Dynamips process.
+        Reads the standard output of the uBridge process.
         Only use when the process has been stopped or has crashed.
         """
 
@@ -188,18 +201,10 @@ class Hypervisor(DynamipsHypervisor):
 
     def _build_command(self):
         """
-        Command to start the Dynamips hypervisor process.
+        Command to start the uBridge hypervisor process.
         (to be passed to subprocess.Popen())
         """
 
         command = [self._path]
-        command.extend(["-N1"])  # use instance IDs for filenames
-        command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
-        # Dynamips cannot listen for hypervisor commands and for console connections on
-        # 2 different IP addresses.
-        # See https://github.com/GNS3/dynamips/issues/62
-        if self._console_host != "0.0.0.0" and self._console_host != "::":
-            command.extend(["-H", "{}:{}".format(self._host, self._port)])
-        else:
-            command.extend(["-H", str(self._port)])
+        command.extend(["-H", "{}:{}".format(self._host, self._port)])
         return command

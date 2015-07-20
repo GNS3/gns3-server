@@ -22,15 +22,12 @@ VMware VM instance.
 import sys
 import os
 import socket
-import subprocess
-import configparser
 import shutil
 import asyncio
 import tempfile
-import signal
 
-from gns3server.utils.asyncio import wait_for_process_termination
-from gns3server.utils.asyncio import monitor_process
+from pkg_resources import parse_version
+from gns3server.ubridge.hypervisor import Hypervisor
 from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.interfaces import get_windows_interfaces
 from collections import OrderedDict
@@ -59,8 +56,7 @@ class VMwareVM(BaseVM):
 
         self._linked_clone = linked_clone
         self._vmx_pairs = OrderedDict()
-        self._ubridge_process = None
-        self._ubridge_stdout_file = ""
+        self._ubridge_hypervisor = None
         self._telnet_server_thread = None
         self._serial_pipe = None
         self._vmnets = []
@@ -259,59 +255,64 @@ class VMwareVM(BaseVM):
                 log.debug("disabling remaining adapter {}".format(adapter_number))
                 self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "FALSE"
 
-        self._update_ubridge_config()
-
-    def _update_ubridge_config(self):
+    @asyncio.coroutine
+    def _add_ubridge_connection(self, nio, adapter_number):
         """
-        Updates the ubrige.ini file.
+        Creates a connection in uBridge.
+
+        :param nio: NIO instance
+        :param adapter_number: adapter number
         """
 
-        ubridge_ini = os.path.join(self.working_dir, "ubridge.ini")
-        config = configparser.ConfigParser()
-        for adapter_number in range(0, self._adapters):
-            nio = self._ethernet_adapters[adapter_number].get_nio(0)
-            if nio:
-                bridge_name = "bridge{}".format(adapter_number)
+        vnet = "ethernet{}.vnet".format(adapter_number)
+        if vnet not in self._vmx_pairs:
+            raise VMwareError("vnet {} not in VMX file".format(vnet))
+        yield from self._ubridge_hypervisor.send("bridge create {name}".format(name=vnet))
+        vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
+        if sys.platform.startswith("linux"):
+            yield from self._ubridge_hypervisor.send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet,
+                                                                                                            interface=vmnet_interface))
+        elif sys.platform.startswith("win"):
+            windows_interfaces = get_windows_interfaces()
+            npf = None
+            for interface in windows_interfaces:
+                if "netcard" in interface and vmnet_interface in interface["netcard"]:
+                    npf = interface["id"]
+                elif vmnet_interface in interface["name"]:
+                    npf = interface["id"]
+            if npf:
+                yield from self._ubridge_hypervisor.send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
+                                                                                                               interface=npf))
+            else:
+                raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
+        else:
+            yield from self._ubridge_hypervisor.send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
+                                                                                                           interface=vmnet_interface))
 
-                vnet = "ethernet{}.vnet".format(adapter_number)
-                if vnet not in self._vmx_pairs:
-                    continue
+        if isinstance(nio, NIOUDP):
+            yield from self._ubridge_hypervisor.send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
+                                                                                                                lport=nio.lport,
+                                                                                                                rhost=nio.rhost,
+                                                                                                                rport=nio.rport))
 
-                vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
-                if sys.platform.startswith("linux"):
-                    config[bridge_name] = {"source_linux_raw": vmnet_interface}
-                elif sys.platform.startswith("win"):
-                    windows_interfaces = get_windows_interfaces()
-                    npf = None
-                    for interface in windows_interfaces:
-                        if "netcard" in interface and vmnet_interface in interface["netcard"]:
-                            npf = interface["id"]
-                        elif vmnet_interface in interface["name"]:
-                            npf = interface["id"]
-                    if npf:
-                        config[bridge_name] = {"source_ethernet": '"' + npf + '"'}
-                    else:
-                        raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
-                else:
-                    config[bridge_name] = {"source_ethernet": vmnet_interface}
+        if nio.capturing:
+            yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet,
+                                                                                                        pcap_file=nio.pcap_output_file))
 
-                if isinstance(nio, NIOUDP):
-                    udp_tunnel_info = {"destination_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
-                                                                                           rhost=nio.rhost,
-                                                                                           rport=nio.rport)}
-                    config[bridge_name].update(udp_tunnel_info)
+        yield from self._ubridge_hypervisor.send('bridge start {name}'.format(name=vnet))
 
-                if nio.capturing:
-                    capture_info = {"pcap_file": "{pcap_file}".format(pcap_file=nio.pcap_output_file)}
-                    config[bridge_name].update(capture_info)
+    @asyncio.coroutine
+    def _delete_ubridge_connection(self, adapter_number):
+        """
+        Deletes a connection in uBridge.
 
-        try:
-            with open(ubridge_ini, "w", encoding="utf-8") as config_file:
-                config.write(config_file)
-            log.info('VMware VM "{name}" [id={id}]: ubridge.ini updated'.format(name=self._name,
-                                                                                id=self._id))
-        except OSError as e:
-            raise VMwareError("Could not create {}: {}".format(ubridge_ini, e))
+        :param adapter_number: adapter number
+        """
+
+        vnet = "ethernet{}.vnet".format(adapter_number)
+        if vnet not in self._vmx_pairs:
+            raise VMwareError("vnet {} not in VMX file".format(vnet))
+        yield from self._ubridge_hypervisor.send("bridge delete {name}".format(name=vnet))
 
     @property
     def ubridge_path(self):
@@ -332,74 +333,16 @@ class VMwareVM(BaseVM):
         Starts uBridge (handles connections to and from this VMware VM).
         """
 
-        try:
-            # self._update_ubridge_config()
-            command = [self.ubridge_path]
-            log.info("starting ubridge: {}".format(command))
-            self._ubridge_stdout_file = os.path.join(self.working_dir, "ubridge.log")
-            log.info("logging to {}".format(self._ubridge_stdout_file))
-            with open(self._ubridge_stdout_file, "w", encoding="utf-8") as fd:
-                self._ubridge_process = yield from asyncio.create_subprocess_exec(*command,
-                                                                                  stdout=fd,
-                                                                                  stderr=subprocess.STDOUT,
-                                                                                  cwd=self.working_dir)
+        server_config = self._manager.config.get_section_config("Server")
+        server_host = server_config.get("host")
+        self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
 
-                #monitor_process(self._ubridge_process, self._termination_callback)
-            log.info("ubridge started PID={}".format(self._ubridge_process.pid))
-        except (OSError, subprocess.SubprocessError) as e:
-            ubridge_stdout = self.read_ubridge_stdout()
-            log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
-            raise VMwareError("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
-
-    def _termination_callback(self, returncode):
-        """
-        Called when the process has stopped.
-
-        :param returncode: Process returncode
-        """
-
-        log.info("uBridge process has stopped, return code: %d", returncode)
-        if returncode != 0:
-            self.project.emit("log.error", {"message": "uBridge process has stopped, return code: {}\n{}".format(returncode, self.read_ubridge_stdout())})
-
-    def is_ubridge_running(self):
-        """
-        Checks if the ubridge process is running
-
-        :returns: True or False
-        """
-
-        if self._ubridge_process and self._ubridge_process.returncode is None:
-            return True
-        return False
-
-    def read_ubridge_stdout(self):
-        """
-        Reads the standard output of the uBridge process.
-        Only use when the process has been stopped or has crashed.
-        """
-
-        output = ""
-        if self._ubridge_stdout_file:
-            try:
-                with open(self._ubridge_stdout_file, "rb") as file:
-                    output = file.read().decode("utf-8", errors="replace")
-            except OSError as e:
-                log.warn("could not read {}: {}".format(self._ubridge_stdout_file, e))
-        return output
-
-    def _terminate_process_ubridge(self):
-        """
-        Terminate the ubridge process if running.
-        """
-
-        if self._ubridge_process:
-            log.info('Stopping uBridge process for VMware VM "{}" PID={}'.format(self.name, self._ubridge_process.pid))
-            try:
-                self._ubridge_process.terminate()
-            # Sometime the process can already be dead when we garbage collect
-            except ProcessLookupError:
-                pass
+        log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
+        yield from self._ubridge_hypervisor.start()
+        log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
+        yield from self._ubridge_hypervisor.connect()
+        if parse_version(self._ubridge_hypervisor.version) < parse_version('0.9.1'):
+            raise VMwareError("uBridge version must be >= 0.9.1, detected version is {}".format(self._ubridge_hypervisor.version))
 
     @asyncio.coroutine
     def start(self):
@@ -427,11 +370,16 @@ class VMwareVM(BaseVM):
         except OSError as e:
             raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
-        yield from self._start_ubridge()
         if self._headless:
             yield from self._control_vm("start", "nogui")
         else:
             yield from self._control_vm("start")
+
+        yield from self._start_ubridge()
+        for adapter_number in range(0, self._adapters):
+            nio = self._ethernet_adapters[adapter_number].get_nio(0)
+            if nio:
+                yield from self._add_ubridge_connection(nio, adapter_number)
 
         if self._enable_remote_console and self._console is not None:
             yield from asyncio.sleep(1)  # give some time to VMware to create the pipe file.
@@ -447,15 +395,8 @@ class VMwareVM(BaseVM):
         """
 
         self._stop_remote_console()
-        if self.is_ubridge_running():
-            self._terminate_process_ubridge()
-            try:
-                yield from wait_for_process_termination(self._ubridge_process, timeout=3)
-            except asyncio.TimeoutError:
-                if self._ubridge_process.returncode is None:
-                    log.warn("uBridge process {} is still running... killing it".format(self._ubridge_process.pid))
-                    self._ubridge_process.kill()
-            self._ubridge_process = None
+        if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+            yield from self._ubridge_hypervisor.stop()
 
         try:
             if self.acpi_shutdown:
@@ -697,7 +638,7 @@ class VMwareVM(BaseVM):
         :param adapters: number of adapters
         """
 
-        # VMware VMs are limit to 10 adapters
+        # VMware VMs are limited to 10 adapters
         if adapters > 10:
             raise VMwareError("Number of adapters above the maximum supported of 10")
 
@@ -757,20 +698,7 @@ class VMwareVM(BaseVM):
             log.info("VMware VM '{name}' [{id}] is not allowed to use any adapter".format(name=self.name, id=self.id))
         self._use_any_adapter = use_any_adapter
 
-    def _reload_ubridge(self):
-        """
-        Reloads ubridge.
-        """
-
-        if self.is_ubridge_running():
-            self._update_ubridge_config()
-            if not sys.platform.startswith("win"):
-                os.kill(self._ubridge_process.pid, signal.SIGHUP)
-            else:
-                # Windows doesn't support SIGHUP...
-                self._terminate_process_ubridge()
-                self._start_ubridge()
-
+    @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, nio):
         """
         Adds an adapter NIO binding.
@@ -786,13 +714,16 @@ class VMwareVM(BaseVM):
                                                                                                     adapter_number=adapter_number))
 
         adapter.add_nio(0, nio)
+        if self._started:
+            yield from self._add_ubridge_connection(nio, adapter_number)
+
         log.info("VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
                                                                                              id=self.id,
                                                                                              nio=nio,
                                                                                              adapter_number=adapter_number))
 
-        self._reload_ubridge()
 
+    @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
         """
         Removes an adapter NIO binding.
@@ -812,13 +743,14 @@ class VMwareVM(BaseVM):
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
+        if self._started:
+            yield from self._delete_ubridge_connection(adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
                                                                                                  id=self.id,
                                                                                                  nio=nio,
                                                                                                  adapter_number=adapter_number))
 
-        self._reload_ubridge()
         return nio
 
     def _get_pipe_name(self):

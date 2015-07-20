@@ -267,7 +267,7 @@ class VMwareHandler:
         if nio_type != "nio_udp":
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vmware_manager.create_nio(None, request.json)
-        vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
+        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -290,5 +290,5 @@ class VMwareHandler:
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
+        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
