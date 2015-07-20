@@ -210,7 +210,7 @@ class VMwareVM(BaseVM):
             if self._adapter_type != "default":
                 adapter_type = "ethernet{}.virtualdev".format(adapter_number)
                 if adapter_type in self._vmx_pairs and self._vmx_pairs[adapter_type] != self._adapter_type:
-                    raise VMwareError("Network adapter {} is not of type {}, please fix or remove it".format(self._adapter_type))
+                    raise VMwareError("Network adapter {} is not of type {}, please fix or remove it".format(adapter_number, self._adapter_type))
 
             # check if connected to an adapter configured for nat or bridge
             if self._ethernet_adapters[adapter_number].get_nio(0) and not self._use_any_adapter:
