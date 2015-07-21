@@ -1011,31 +1011,23 @@ class QemuVM(BaseVM):
         if not qemu_img_path:
             raise QemuError("Could not find qemu-img in {}".format(qemu_path_dir))
 
-        try:
-            if self._hda_disk_image:
-                if not os.path.isfile(self._hda_disk_image) or not os.path.exists(self._hda_disk_image):
-                    if os.path.islink(self._hda_disk_image):
-                        raise QemuError("hda disk image '{}' linked to '{}' is not accessible".format(self._hda_disk_image, os.path.realpath(self._hda_disk_image)))
-                    else:
-                        raise QemuError("hda disk image '{}' is not accessible".format(self._hda_disk_image))
-                hda_disk = os.path.join(self.working_dir, "hda_disk.qcow2")
-                if not os.path.exists(hda_disk):
+        if self._hda_disk_image:
+            if not os.path.isfile(self._hda_disk_image) or not os.path.exists(self._hda_disk_image):
+                if os.path.islink(self._hda_disk_image):
+                    raise QemuError("hda disk image '{}' linked to '{}' is not accessible".format(self._hda_disk_image, os.path.realpath(self._hda_disk_image)))
+                else:
+                    raise QemuError("hda disk image '{}' is not accessible".format(self._hda_disk_image))
+            hda_disk = os.path.join(self.working_dir, "hda_disk.qcow2")
+            if not os.path.exists(hda_disk):
+                try:
                     process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
                                                                         "backing_file={}".format(self._hda_disk_image),
                                                                         "-f", "qcow2", hda_disk)
                     retcode = yield from process.wait()
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
-            else:
-                # create a "FLASH" with 256MB if no disk image has been specified
-                hda_disk = os.path.join(self.working_dir, "flash.qcow2")
-                if not os.path.exists(hda_disk):
-                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-f", "qcow2", hda_disk, "256M")
-                    retcode = yield from process.wait()
-                    log.info("{} returned with {}".format(qemu_img_path, retcode))
-
-        except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError("Could not create hda disk image {}".format(e))
-        options.extend(["-hda", hda_disk])
+                except (OSError, subprocess.SubprocessError) as e:
+                    raise QemuError("Could not create hda disk image {}".format(e))
+            options.extend(["-hda", hda_disk])
 
         if self._hdb_disk_image:
             if not os.path.isfile(self._hdb_disk_image) or not os.path.exists(self._hdb_disk_image):
