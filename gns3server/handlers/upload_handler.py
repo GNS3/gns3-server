@@ -84,7 +84,6 @@ class UploadHandler:
                     st = os.stat(destination_path)
                     os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         except OSError as e:
-            print(e)
             response.html("Could not upload file: {}".format(e))
             response.set_status(200)
             return
@@ -156,4 +155,4 @@ class UploadHandler:
     @staticmethod
     def project_directory():
         server_config = Config.instance().get_section_config("Server")
-        return os.path.expanduser(server_config.get("projects_path", "~/GNS3/images"))
+        return os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
