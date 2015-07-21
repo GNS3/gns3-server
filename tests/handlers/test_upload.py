@@ -17,9 +17,14 @@
 
 
 import aiohttp
+import asyncio
 import os
+import tarfile
 from unittest.mock import patch
+
+
 from gns3server.config import Config
+
 
 def test_index_upload(server):
     response = server.get('/upload', api_version=None)
@@ -44,3 +49,66 @@ def test_upload(server, tmpdir):
         assert f.read() == "TEST"
 
     assert "test2" in response.body.decode("utf-8")
+
+
+def test_backup_images(server, tmpdir, loop):
+    Config.instance().set('Server', 'images_path', str(tmpdir))
+
+    os.makedirs(str(tmpdir / 'QEMU'))
+    with open(str(tmpdir / 'QEMU' / 'a.img'), 'w+') as f:
+        f.write('hello')
+    with open(str(tmpdir / 'QEMU' / 'b.img'), 'w+') as f:
+        f.write('world')
+
+    response = server.get('/upload/backup/images.tar', api_version=None, raw=True)
+    assert response.status == 200
+    assert response.headers['CONTENT-TYPE'] == 'application/x-gtar'
+
+    with open(str(tmpdir / 'images.tar'), 'wb+') as f:
+        print(len(response.body))
+        f.write(response.body)
+
+    tar = tarfile.open(str(tmpdir / 'images.tar'), 'r')
+    os.makedirs(str(tmpdir / 'extract'))
+    os.chdir(str(tmpdir / 'extract'))
+    # Extract to current working directory
+    tar.extractall()
+    tar.close()
+
+    assert os.path.exists(os.path.join('QEMU', 'a.img'))
+    open(os.path.join('QEMU', 'a.img')).read() == 'hello'
+
+    assert os.path.exists(os.path.join('QEMU', 'b.img'))
+    open(os.path.join('QEMU', 'b.img')).read() == 'world'
+
+
+def test_backup_projects(server, tmpdir, loop):
+    Config.instance().set('Server', 'projects_path', str(tmpdir))
+
+    os.makedirs(str(tmpdir / 'a'))
+    with open(str(tmpdir / 'a' / 'a.gns3'), 'w+') as f:
+        f.write('hello')
+    os.makedirs(str(tmpdir / 'b'))
+    with open(str(tmpdir / 'b' / 'b.gns3'), 'w+') as f:
+        f.write('world')
+
+    response = server.get('/upload/backup/projects.tar', api_version=None, raw=True)
+    assert response.status == 200
+    assert response.headers['CONTENT-TYPE'] == 'application/x-gtar'
+
+    with open(str(tmpdir / 'projects.tar'), 'wb+') as f:
+        print(len(response.body))
+        f.write(response.body)
+
+    tar = tarfile.open(str(tmpdir / 'projects.tar'), 'r')
+    os.makedirs(str(tmpdir / 'extract'))
+    os.chdir(str(tmpdir / 'extract'))
+    # Extract to current working directory
+    tar.extractall()
+    tar.close()
+
+    assert os.path.exists(os.path.join('a', 'a.gns3'))
+    open(os.path.join('a', 'a.gns3')).read() == 'hello'
+
+    assert os.path.exists(os.path.join('b', 'b.gns3'))
+    open(os.path.join('b', 'b.gns3')).read() == 'world'

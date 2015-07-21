@@ -18,6 +18,9 @@
 import os
 import aiohttp
 import stat
+import io
+import tarfile
+import asyncio
 
 from ..config import Config
 from ..web.route import Route
@@ -81,7 +84,52 @@ class UploadHandler:
             return
         response.redirect("/upload")
 
+    @classmethod
+    @Route.get(
+        r"/upload/backup/images.tar",
+        description="Backup GNS3 images",
+        api_version=None
+    )
+    def backup_images(request, response):
+        yield from UploadHandler._backup_directory(request, response, UploadHandler.image_directory())
+
+    @classmethod
+    @Route.get(
+        r"/upload/backup/projects.tar",
+        description="Backup GNS3 projects",
+        api_version=None
+    )
+    def backup_images(request, response):
+        yield from UploadHandler._backup_directory(request, response, UploadHandler.project_directory())
+
+    @staticmethod
+    @asyncio.coroutine
+    def _backup_directory(request, response, directory):
+        response.content_type = 'application/x-gtar'
+        response.set_status(200)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        response.content_length = None
+        response.start(request)
+
+        buffer = io.BytesIO()
+        with tarfile.open('arch.tar', 'w', fileobj=buffer) as tar:
+            for root, dirs, files in os.walk(directory):
+                for file in files:
+                    path = os.path.join(root, file)
+                    tar.add(os.path.join(root, file), arcname=os.path.relpath(path, directory))
+                    response.write(buffer.getvalue())
+                    yield from response.drain()
+                    buffer.truncate(0)
+                    buffer.seek(0)
+        yield from response.write_eof()
+
     @staticmethod
     def image_directory():
         server_config = Config.instance().get_section_config("Server")
         return os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+
+    @staticmethod
+    def project_directory():
+        server_config = Config.instance().get_section_config("Server")
+        return os.path.expanduser(server_config.get("projects_path", "~/GNS3/images"))

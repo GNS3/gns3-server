@@ -88,7 +88,10 @@ class Query:
                 except ValueError:
                     response.json = None
             else:
-                response.html = response.body.decode("utf-8")
+                try:
+                    response.html = response.body.decode("utf-8")
+                except UnicodeDecodeError:
+                    response.html = None
         else:
             response.json = {}
             response.html = ""
