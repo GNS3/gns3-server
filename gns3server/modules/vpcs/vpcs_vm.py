@@ -27,16 +27,16 @@ import signal
 import re
 import asyncio
 import shutil
-import gns3server.utils.asyncio
 
+from gns3server.utils.asyncio import wait_for_process_termination
+from gns3server.utils.asyncio import monitor_process
+from gns3server.utils.asyncio import subprocess_check_output
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..base_vm import BaseVM
-from ...utils.asyncio import subprocess_check_output, monitor_process
-
 
 import logging
 log = logging.getLogger(__name__)
@@ -268,7 +268,7 @@ class VPCSVM(BaseVM):
             self._terminate_process()
             if self._process.returncode is None:
                 try:
-                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                    yield from wait_for_process_termination(self._process, timeout=3)
                 except asyncio.TimeoutError:
                     if self._process.returncode is None:
                         log.warn("VPCS process {} is still running... killing it".format(self._process.pid))

@@ -28,6 +28,7 @@ import tempfile
 
 from pkg_resources import parse_version
 from gns3server.ubridge.hypervisor import Hypervisor
+from gns3server.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.interfaces import get_windows_interfaces
 from collections import OrderedDict
@@ -357,6 +358,8 @@ class VMwareVM(BaseVM):
         if not ubridge_path or not os.path.isfile(ubridge_path):
             raise VMwareError("ubridge is necessary to start a VMware VM")
 
+        yield from self._start_ubridge()
+
         try:
             self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
         except OSError as e:
@@ -375,7 +378,6 @@ class VMwareVM(BaseVM):
         else:
             yield from self._control_vm("start")
 
-        yield from self._start_ubridge()
         for adapter_number in range(0, self._adapters):
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:

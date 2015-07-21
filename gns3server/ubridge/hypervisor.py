@@ -23,9 +23,12 @@ import os
 import subprocess
 import asyncio
 import socket
+import re
 
+from pkg_resources import parse_version
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
+from gns3server.utils.asyncio import subprocess_check_output
 from .ubridge_hypervisor import UBridgeHypervisor
 from .ubridge_error import UbridgeError
 
@@ -115,13 +118,30 @@ class Hypervisor(UBridgeHypervisor):
         self._path = path
 
     @asyncio.coroutine
+    def _check_ubridge_version(self):
+        """
+        Checks if the ubridge executable version is >= 0.9.1
+        """
+        try:
+            output = yield from subprocess_check_output(self._path, "-v", cwd=self._working_dir)
+            match = re.search("ubridge version ([0-9a-z\.]+)", output)
+            if match:
+                version = match.group(1)
+                if parse_version(version) < parse_version("0.9.1"):
+                    raise UbridgeError("uBridge executable version must be >= 0.9.1")
+            else:
+                raise UbridgeError("Could not determine uBridge version for {}".format(self._path))
+        except (OSError, subprocess.SubprocessError) as e:
+            raise UbridgeError("Error while looking for uBridge version: {}".format(e))
+
+    @asyncio.coroutine
     def start(self):
         """
         Starts the uBridge hypervisor process.
         """
 
+        yield from self._check_ubridge_version()
         try:
-            # self._update_ubridge_config()
             command = self._build_command()
             log.info("starting ubridge: {}".format(command))
             self._stdout_file = os.path.join(self._working_dir, "ubridge.log")
