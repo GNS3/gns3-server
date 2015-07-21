@@ -33,8 +33,9 @@ class PortManager:
     def __init__(self, host="127.0.0.1"):
 
         self._console_host = host
-        self._udp_host = host
 
+        # UDP host must be 0.0.0.0, reason: https://github.com/GNS3/gns3-server/issues/265
+        self._udp_host = "0.0.0.0"
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
 

@@ -1247,10 +1247,20 @@ class Router(BaseVM):
             raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
-        yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
-                                                                                                                     slot_number=slot_number,
-                                                                                                                     port_number=port_number,
-                                                                                                                     nio=nio))
+        try:
+            yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
+                                                                                                                         slot_number=slot_number,
+                                                                                                                         port_number=port_number,
+                                                                                                                         nio=nio))
+        except DynamipsError:
+            # in case of error try to remove and add the nio binding
+            yield from self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(name=self._name,
+                                                                                                                      slot_number=slot_number,
+                                                                                                                      port_number=port_number))
+            yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
+                                                                                                                         slot_number=slot_number,
+                                                                                                                         port_number=port_number,
+                                                                                                                         nio=nio))
 
         log.info('Router "{name}" [{id}]: NIO {nio_name} bound to port {slot_number}/{port_number}'.format(name=self._name,
                                                                                                            id=self._id,
