@@ -5,7 +5,7 @@ start on filesystem or runlevel [2345]
 stop on shutdown
 
 script
-    exec start-stop-daemon --start -c gns3 --exec /usr/local/bin/gns3server --log /var/log/gns3.log --pid /var/run/gns3.pid --daemon
+    exec start-stop-daemon --start -c gns3 --exec /usr/local/bin/gns3server -- --log /var/log/gns3.log --pid /var/run/gns3.pid --daemon
 end script
 
 pre-start script
