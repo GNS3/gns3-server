@@ -62,23 +62,29 @@ class UploadHandler:
             response.redirect("/upload")
             return
 
-        if data["type"] not in ["IOU", "IOURC", "QEMU", "IOS"]:
-            raise aiohttp.web.HTTPForbidden("You are not authorized to upload this kind of image {}".format(data["type"]))
+        if data["type"] not in ["IOU", "IOURC", "QEMU", "IOS", "IMAGES", "PROJECTS"]:
+            raise aiohttp.web.HTTPForbidden(text="You are not authorized to upload this kind of image {}".format(data["type"]))
 
-        if data["type"] == "IOURC":
-            destination_dir = os.path.expanduser("~/")
-            destination_path = os.path.join(destination_dir, ".iourc")
-        else:
-            destination_dir = os.path.join(UploadHandler.image_directory(), data["type"])
-            destination_path = os.path.join(destination_dir, data["file"].filename)
         try:
-            os.makedirs(destination_dir, exist_ok=True)
-            with open(destination_path, "wb+") as f:
-                chunk = data["file"].file.read()
-                f.write(chunk)
-            st = os.stat(destination_path)
-            os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
+            if data["type"] == "IMAGES":
+                UploadHandler._restore_directory(data["file"], UploadHandler.image_directory())
+            elif data["type"] == "PROJECTS":
+                UploadHandler._restore_directory(data["file"], UploadHandler.project_directory())
+            else:
+                if data["type"] == "IOURC":
+                    destination_dir = os.path.expanduser("~/")
+                    destination_path = os.path.join(destination_dir, ".iourc")
+                else:
+                    destination_dir = os.path.join(UploadHandler.image_directory(), data["type"])
+                    destination_path = os.path.join(destination_dir, data["file"].filename)
+                    os.makedirs(destination_dir, exist_ok=True)
+                    with open(destination_path, "wb+") as f:
+                        chunk = data["file"].file.read()
+                        f.write(chunk)
+                    st = os.stat(destination_path)
+                    os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         except OSError as e:
+            print(e)
             response.html("Could not upload file: {}".format(e))
             response.set_status(200)
             return
@@ -86,7 +92,7 @@ class UploadHandler:
 
     @classmethod
     @Route.get(
-        r"/upload/backup/images.tar",
+        r"/backup/images.tar",
         description="Backup GNS3 images",
         api_version=None
     )
@@ -95,7 +101,7 @@ class UploadHandler:
 
     @classmethod
     @Route.get(
-        r"/upload/backup/projects.tar",
+        r"/backup/projects.tar",
         description="Backup GNS3 projects",
         api_version=None
     )
@@ -103,8 +109,26 @@ class UploadHandler:
         yield from UploadHandler._backup_directory(request, response, UploadHandler.project_directory())
 
     @staticmethod
+    def _restore_directory(file, directory):
+        """
+        Extract from HTTP stream the content of a tar
+        """
+        destination_path = os.path.join(directory, "archive.tar")
+        os.makedirs(directory, exist_ok=True)
+        with open(destination_path, "wb+") as f:
+            chunk = file.file.read()
+            f.write(chunk)
+        t = tarfile.open(destination_path)
+        t.extractall(directory)
+        t.close()
+        os.remove(destination_path)
+
+    @staticmethod
     @asyncio.coroutine
     def _backup_directory(request, response, directory):
+        """
+        Return a tar archive from a directory
+        """
         response.content_type = 'application/x-gtar'
         response.set_status(200)
         response.enable_chunked_encoding()
