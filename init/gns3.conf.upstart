@@ -6,7 +6,7 @@ stop on shutdown
 
 script
     echo $$ > /var/run/gns3.pid
-    exec start-stop-daemon --start -c gns3 --exec /usr/local/bin/gns3server --log /var/log/gns3.log
+    exec start-stop-daemon --start -c gns3 --exec /usr/local/bin/gns3server -- --log /var/log/gns3.log
 end script
 
 pre-start script
