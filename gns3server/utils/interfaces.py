@@ -29,9 +29,7 @@ def _get_windows_interfaces_from_registry():
 
     import winreg
 
-
     #HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces
-
     interfaces = []
     try:
         hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkCards")
