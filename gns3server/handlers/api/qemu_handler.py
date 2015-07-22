@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 from aiohttp.web import HTTPConflict
 from ...web.route import Route
+from ...modules.project_manager import ProjectManager
 from ...schemas.nio import NIO_SCHEMA
 from ...schemas.qemu import QEMU_CREATE_SCHEMA
 from ...schemas.qemu import QEMU_UPDATE_SCHEMA
@@ -146,6 +148,11 @@ class QEMUHandler:
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        if sys.platform.startswith("linux") and qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
+                and "-no-kvm" not in vm.options:
+            pm = ProjectManager.instance()
+            if pm.check_hardware_virtualization(vm) is False:
+                raise HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization is already used by another software like VMware or VirtualBox")
         yield from vm.start()
         response.set_status(204)
 

@@ -49,6 +49,7 @@ class BaseVM:
         self._console = console
         self._console_type = console_type
         self._temporary_directory = None
+        self._hw_virtualization = False
         self._vm_status = "stopped"
 
         if self._console is not None:
@@ -262,3 +263,13 @@ class BaseVM:
                                                                                         name=self.name,
                                                                                         id=self.id,
                                                                                         console_type=console_type))
+
+    @property
+    def hw_virtualization(self):
+        """
+        Returns either the VM is using hardware virtualization or not.
+
+        :return: boolean
+        """
+
+        return self._hw_virtualization

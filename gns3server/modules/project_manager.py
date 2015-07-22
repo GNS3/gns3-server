@@ -95,3 +95,27 @@ class ProjectManager:
         if project_id not in self._projects:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
         del self._projects[project_id]
+
+    def check_hardware_virtualization(self, source_vm):
+        """
+        Checks if hardware virtualization can be used.
+
+        :returns: boolean
+        """
+
+        from .qemu import QemuVM
+        from .virtualbox import VirtualBoxVM
+        from .vmware import VMwareVM
+        for project in self._projects.values():
+            for vm in project.vms:
+                if vm == source_vm:
+                    continue
+                if vm.hw_virtualization:
+                    if isinstance(source_vm, QemuVM) and not isinstance(vm, QemuVM):
+                        # A Qemu VM won't start if any other virtualization software uses hardware virtualization
+                        return False
+                    elif isinstance(source_vm, VirtualBoxVM) and not isinstance(vm, VirtualBoxVM) and not isinstance(vm, VMwareVM):
+                        # A VirtualBox VM won't start if KVM is being used
+                        return False
+                    # VMware doesn't seem to be bothered by any other virtualization software.
+        return True

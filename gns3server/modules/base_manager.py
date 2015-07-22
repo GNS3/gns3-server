@@ -372,7 +372,7 @@ class BaseManager:
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
             if not is_interface_up(tap_device):
-                raise aiohttp.web.HTTPConflict(text="TAP interface {} is down".format(tap_device))
+                raise aiohttp.web.HTTPConflict(text="TAP interface {} does not exist or is down".format(tap_device))
             # FIXME: check for permissions on tap device
             # if not self._has_privileged_access(executable):
             #    raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
@@ -380,7 +380,7 @@ class BaseManager:
         elif nio_settings["type"] == "nio_generic_ethernet":
             ethernet_device = nio_settings["ethernet_device"]
             if not is_interface_up(ethernet_device):
-                raise aiohttp.web.HTTPConflict(text="Ethernet interface {} is down".format(ethernet_device))
+                raise aiohttp.web.HTTPConflict(text="Ethernet interface {} does not exist or is down".format(ethernet_device))
             nio = NIOGenericEthernet(ethernet_device)
         elif nio_settings["type"] == "nio_nat":
             nio = NIONAT()

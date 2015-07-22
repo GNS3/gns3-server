@@ -28,7 +28,6 @@ import tempfile
 
 from pkg_resources import parse_version
 from gns3server.ubridge.hypervisor import Hypervisor
-from gns3server.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.interfaces import get_windows_interfaces
 from collections import OrderedDict
@@ -387,6 +386,9 @@ class VMwareVM(BaseVM):
             yield from asyncio.sleep(1)  # give some time to VMware to create the pipe file.
             self._start_remote_console()
 
+        if self._get_vmx_setting("vhv.enable", "TRUE"):
+            self._hw_virtualization = True
+
         self._started = True
         log.info("VMware VM '{name}' [{id}] started".format(name=self.name, id=self.id))
 
@@ -396,6 +398,7 @@ class VMwareVM(BaseVM):
         Stops this VMware VM.
         """
 
+        self._hw_virtualization = False
         self._stop_remote_console()
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             yield from self._ubridge_hypervisor.stop()

@@ -73,7 +73,6 @@ class QemuVM(BaseVM):
         self._stdout_file = ""
 
         # QEMU VM settings
-
         if qemu_path:
             try:
                 self.qemu_path = qemu_path
@@ -483,8 +482,11 @@ class QemuVM(BaseVM):
                                                                                         id=self._id,
                                                                                         options=options))
 
-        if not sys.platform.startswith("linux") and "-no-kvm" in options:
-            options = options.replace("-no-kvm")
+        if not sys.platform.startswith("linux"):
+            if "-no-kvm" in options:
+                options = options.replace("-no-kvm")
+            if "-enable-kvm" in options:
+                options = options.replace("-enable-kvm")
         self._options = options.strip()
 
     @property
@@ -696,6 +698,9 @@ class QemuVM(BaseVM):
             if self._cpu_throttling:
                 self._set_cpu_throttling()
 
+            if "-enable-kvm" in command_string:
+                self._hw_virtualization = True
+
     def _termination_callback(self, returncode):
         """
         Called when the process has stopped.
@@ -706,6 +711,7 @@ class QemuVM(BaseVM):
         if self.started:
             log.info("QEMU process has stopped, return code: %d", returncode)
             self.status = "stopped"
+            self._hw_virtualization = False
             self._process = None
             if returncode != 0:
                 self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
@@ -717,6 +723,7 @@ class QemuVM(BaseVM):
         """
 
         # stop the QEMU process
+        self._hw_virtualization = False
         if self.is_running():
             log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
             try:
