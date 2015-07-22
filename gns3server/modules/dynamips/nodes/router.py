@@ -87,6 +87,7 @@ class Router(BaseVM):
             self._exec_area = 64  # 64 MB on other systems
         self._disk0 = 0  # Megabytes
         self._disk1 = 0  # Megabytes
+        self._auto_delete_disks = False
         self._aux = aux
         self._mac_addr = ""
         self._system_id = "FTX0945W0MY"  # processor board ID in IOS
@@ -145,6 +146,7 @@ class Router(BaseVM):
                        "exec_area": self._exec_area,
                        "disk0": self._disk0,
                        "disk1": self._disk1,
+                       "auto_delete_disks": self._auto_delete_disks,
                        "console": self._console,
                        "aux": self._aux,
                        "mac_addr": self._mac_addr,
@@ -181,6 +183,16 @@ class Router(BaseVM):
 
     @asyncio.coroutine
     def create(self):
+
+        # delete any previous file with same Dynamips identifier
+        project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
+        for file in glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_i{}_*".format(self._dynamips_id))):
+            try:
+                log.debug("Deleting file {}".format(file))
+                yield from wait_run_in_executor(os.remove, file)
+            except OSError as e:
+                log.warn("Could not delete file {}: {}".format(file, e))
+                continue
 
         if not self._hypervisor:
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
@@ -342,6 +354,20 @@ class Router(BaseVM):
                 pass
             yield from self.hypervisor.stop()
 
+        if self._auto_delete_disks:
+            # delete nvram and disk files
+            project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
+            files = glob.glob(os.path.join(project_dir, "{}_i{}_disk[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(project_dir, "{}_i{}_slot[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(project_dir, "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(project_dir, "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
+            for file in files:
+                try:
+                    log.debug("Deleting file {}".format(file))
+                    yield from wait_run_in_executor(os.remove, file)
+                except OSError as e:
+                    log.warn("Could not delete file {}: {}".format(file, e))
+                    continue
         self._closed = True
 
     @property
@@ -850,6 +876,30 @@ class Router(BaseVM):
                                                                                                     old_disk1=self._disk1,
                                                                                                     new_disk1=disk1))
         self._disk1 = disk1
+
+    @property
+    def auto_delete_disks(self):
+        """
+        Returns True if auto delete disks is enabled on this router.
+
+        :returns: boolean either auto delete disks is activated or not
+        """
+
+        return self._auto_delete_disks
+
+    @asyncio.coroutine
+    def set_auto_delete_disks(self, auto_delete_disks):
+        """
+        Enable/disable use of auto delete disks
+
+        :param auto_delete_disks: activate/deactivate auto delete disks (boolean)
+        """
+
+        if auto_delete_disks:
+            log.info('Router "{name}" [{id}]: auto delete disks enabled'.format(name=self._name, id=self._id))
+        else:
+            log.info('Router "{name}" [{id}]: auto delete disks disabled'.format(name=self._name, id=self._id))
+        self._auto_delete_disks = auto_delete_disks
 
     @asyncio.coroutine
     def set_console(self, console):
