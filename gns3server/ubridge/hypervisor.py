@@ -152,7 +152,7 @@ class Hypervisor(UBridgeHypervisor):
                                                                           stderr=subprocess.STDOUT,
                                                                           cwd=self._working_dir)
 
-                monitor_process(self._process, self._termination_callback)
+                #monitor_process(self._process, self._termination_callback)
             log.info("ubridge started PID={}".format(self._process.pid))
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()
