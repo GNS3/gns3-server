@@ -1,5 +1,18 @@
 # Change Log
 
+## 1.4.0alpha2 22/07/2015
+
+* Deactivate uBridge process monitoring (process returns 1 on Windows when stopping).
+* Prevent using different hypervisors that leverage hardware virtualization. - Implemented for Qemu when a VMware or VirtualBox VM with hardware virtualization is already running. - Implemented for VirtualBox only when a Qemu VM with KVM is already running.
+* Check for uBridge version and catch uBridge errors.
+* Remove default FLASH when no hda disk for Qemu VMs. Fixes  #535.
+* Use the registry to find vmrun if the default VMware install path does not exist.
+* Bind host on 0.0.0.0 when checking for a free UDP port.
+* Fixes RuntimeError: Event loop is closed. Fixes #266.
+* Update gns3.conf.upstart
+* Implements uBridge hypervisor.
+* Take VMware file encoding into account. Fixes #261.
+
 ## 1.4.0alpha1 09/07/2015
 
 * Update API documentation
