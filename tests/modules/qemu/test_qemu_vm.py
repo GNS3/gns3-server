@@ -269,13 +269,16 @@ def test_set_platform(project, manager):
     assert vm.qemu_path == "/bin/qemu-system-x86_64"
 
 
-def test_disk_options(vm, loop, fake_qemu_img_binary):
+def test_disk_options(vm, tmpdir, loop, fake_qemu_img_binary):
+
+    vm._hda_disk_image = str(tmpdir / "test.qcow2")
+    open(vm._hda_disk_image, "w+").close()
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         loop.run_until_complete(asyncio.async(vm._disk_options()))
         assert process.called
         args, kwargs = process.call_args
-        assert args == (fake_qemu_img_binary, "create", "-f", "qcow2", os.path.join(vm.working_dir, "flash.qcow2"), "256M")
+        assert args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hda_disk_image), "-f", "qcow2", os.path.join(vm.working_dir, "hda_disk.qcow2"))
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
@@ -337,8 +340,6 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "test",
             "-m",
             "256",
-            "-hda",
-            os.path.join(vm.working_dir, "flash.qcow2"),
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
             "-net",

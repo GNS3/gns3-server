@@ -1004,7 +1004,6 @@ class QemuVM(BaseVM):
 
     @asyncio.coroutine
     def _disk_options(self):
-
         options = []
         qemu_img_path = ""
         qemu_path_dir = os.path.dirname(self.qemu_path)
