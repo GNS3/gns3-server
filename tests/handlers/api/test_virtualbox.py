@@ -17,6 +17,7 @@
 
 import pytest
 from tests.utils import asyncio_patch
+from unittest.mock import patch
 
 
 @pytest.yield_fixture(scope="function")
@@ -31,7 +32,7 @@ def vm(server, project, monkeypatch):
     assert mock.called
     assert response.status == 201
 
-    with asyncio_patch("gns3server.modules.virtualbox.VirtualBox.find_vboxmanage", return_value=vboxmanage_path):
+    with patch("gns3server.modules.virtualbox.VirtualBox.find_vboxmanage", return_value=vboxmanage_path):
         yield response.json
 
 
@@ -56,10 +57,11 @@ def test_vbox_get(server, project, vm):
 
 
 def test_vbox_start(server, vm):
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
-        response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
-        assert mock.called
-        assert response.status == 204
+    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.check_hw_virtualization", return_value=True) as mock:
+        with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
+            response = server.post("/projects/{project_id}/virtualbox/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+            assert mock.called
+            assert response.status == 204
 
 
 def test_vbox_stop(server, vm):
