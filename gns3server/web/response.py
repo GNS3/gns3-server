@@ -87,6 +87,13 @@ class Response(aiohttp.web.Response):
         self.content_type = "application/json"
         if hasattr(answer, '__json__'):
             answer = answer.__json__()
+        elif isinstance(answer, list):
+            newanswer = []
+            for elem in answer:
+                if hasattr(elem, '__json__'):
+                    elem = elem.__json__()
+                newanswer.append(elem)
+            answer = newanswer
         if self._output_schema is not None:
             try:
                 jsonschema.validate(answer, self._output_schema)

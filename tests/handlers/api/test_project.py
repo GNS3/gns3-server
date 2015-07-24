@@ -82,6 +82,23 @@ def test_show_project_invalid_uuid(server):
     assert response.status == 404
 
 
+def test_list_projects(server):
+    ProjectManager.instance()._projects = {}
+
+    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
+    response = server.post("/projects", query)
+    assert response.status == 201
+    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0b"}
+    response = server.post("/projects", query)
+    assert response.status == 201
+
+    response = server.get("/projects", example=True)
+    assert response.status == 200
+    print(response.json)
+    assert len(response.json) == 2
+    assert response.json[0]["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0b" or response.json[1]["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0b"
+
+
 def test_update_temporary_project(server):
     query = {"name": "test", "temporary": True}
     response = server.post("/projects", query)

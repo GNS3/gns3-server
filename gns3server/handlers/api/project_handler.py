@@ -21,7 +21,7 @@ import json
 import os
 
 from ...web.route import Route
-from ...schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA
+from ...schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA, PROJECT_LIST_SCHEMA
 from ...modules.project_manager import ProjectManager
 from ...modules import MODULES
 from ...utils.asyncio import wait_run_in_executor
@@ -34,6 +34,21 @@ class ProjectHandler:
 
     # How many clients has subcribe to notifications
     _notifications_listening = 0
+
+    @classmethod
+    @Route.get(
+        r"/projects",
+        description="List projects opened on the server",
+        status_codes={
+            200: "Project list",
+        }
+        # output=PROJECT_LIST_SCHEMA)
+    )
+    def list_projects(request, response):
+
+        pm = ProjectManager.instance()
+        response.set_status(200)
+        response.json(list(pm.projects))
 
     @classmethod
     @Route.post(

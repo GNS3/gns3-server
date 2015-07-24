@@ -104,6 +104,13 @@ PROJECT_OBJECT_SCHEMA = {
     "required": ["location", "project_id", "temporary"]
 }
 
+PROJECT_LIST_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "List of projects",
+    "type": "array",
+    "items": PROJECT_OBJECT_SCHEMA
+}
+
 PROJECT_FILE_LIST_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "List files in the project",
