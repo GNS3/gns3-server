@@ -64,6 +64,22 @@ class VMware(BaseManager):
 
         return self._vmrun_path
 
+    @staticmethod
+    def _find_vmrun_registry(regkey):
+
+        import winreg
+        try:
+            # default path not used, let's look in the registry
+            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
+            ws_install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
+            vmrun_path = os.path.join(ws_install_path, "vmrun.exe")
+            winreg.CloseKey(hkey)
+            if os.path.exists(vmrun_path):
+                return vmrun_path
+        except OSError:
+            pass
+        return None
+
     def find_vmrun(self):
         """
         Searches for vmrun.
@@ -77,28 +93,21 @@ class VMware(BaseManager):
             if sys.platform.startswith("win"):
                 vmrun_path = shutil.which("vmrun")
                 if vmrun_path is None:
-                    import winreg
-                    try:
-                        vmrun_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vmrun.exe")
-                        if not os.path.exists(vmrun_ws):
-                            # default path not used, let's look in the registry
-                            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
-                            ws_install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
-                            vmrun_ws = os.path.join(ws_install_path, "vmrun.exe")
-                            winreg.CloseKey(hkey)
-                        if os.path.exists(vmrun_ws):
-                            vmrun_path = vmrun_ws
-                    except OSError:
-                        pass
+                    # look for vmrun.exe in default VMware Workstation directory
+                    vmrun_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vmrun.exe")
+                    if os.path.exists(vmrun_ws):
+                        vmrun_path = vmrun_ws
                     else:
+                        # look for vmrun.exe using the directory listed in the registry
+                        vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
+                    if vmrun_path is None:
+                        # look for vmrun.exe in default VMware VIX directory
                         vmrun_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vmrun.exe")
-                        if not os.path.exists(vmrun_vix):
-                            # default path not used, let's look in the registry
-                            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware VIX")
-                            ws_install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
-                            vmrun_vix = os.path.join(ws_install_path, "vmrun.exe")
                         if os.path.exists(vmrun_vix):
                             vmrun_path = vmrun_vix
+                        else:
+                            # look for vmrun.exe using the directory listed in the registry
+                            vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware VIX")
             elif sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
