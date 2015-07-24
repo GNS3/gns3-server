@@ -18,12 +18,20 @@
 
 import aiohttp
 import asyncio
+import pytest
 import os
 import tarfile
 from unittest.mock import patch
 
 
 from gns3server.config import Config
+
+
+@pytest.yield_fixture(autouse=True)
+def restore_working_dir():
+    directory = os.getcwd()
+    yield
+    os.chdir(directory)
 
 
 def test_index_upload(server, tmpdir):

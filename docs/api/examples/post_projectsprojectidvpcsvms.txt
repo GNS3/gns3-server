@@ -12,7 +12,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 422
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/projects/{project_id}/vpcs/vms
 
 {
@@ -22,6 +22,6 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms
     "startup_script": null,
     "startup_script_path": null,
     "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1454taw7/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/8b66a930-f1bb-49e8-98c9-09d02bb45aa7",
-    "vm_id": "8b66a930-f1bb-49e8-98c9-09d02bb45aa7"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpjtnbwbkt/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/230eaad0-6e20-46cb-8903-83b870ae91b3",
+    "vm_id": "230eaad0-6e20-46cb-8903-83b870ae91b3"
 }

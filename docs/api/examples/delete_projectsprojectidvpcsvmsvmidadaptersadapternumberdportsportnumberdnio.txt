@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/9f197704-d8f6-45b3-affd-0f9579878077/adapters/0/ports/0/nio'
+curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f19c6a0-c705-493c-8ed8-bbce923ef60b/adapters/0/ports/0/nio'
 
-DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/9f197704-d8f6-45b3-affd-0f9579878077/adapters/0/ports/0/nio HTTP/1.1
+DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f19c6a0-c705-493c-8ed8-bbce923ef60b/adapters/0/ports/0/nio HTTP/1.1
 
 
 
@@ -9,6 +9,6 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 

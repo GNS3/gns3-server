@@ -9,6 +9,6 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/config/reload
 

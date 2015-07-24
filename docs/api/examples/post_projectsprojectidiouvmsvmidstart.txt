@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/f6f53adc-16a9-4fac-8f70-b8c7aedefa8d/start' -d '{"iourc_content": "test"}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/0e16aefc-8fa8-4123-8497-1190b8366c7c/start' -d '{"iourc_content": "test"}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/f6f53adc-16a9-4fac-8f70-b8c7aedefa8d/start HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/0e16aefc-8fa8-4123-8497-1190b8366c7c/start HTTP/1.1
 {
     "iourc_content": "test"
 }
@@ -11,6 +11,6 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/projects/{project_id}/iou/vms/{vm_id}/start
 

@@ -14,7 +14,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 409
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/projects/{project_id}/virtualbox/vms
 
 {
@@ -29,6 +29,6 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "bee2cbbc-07a3-4f27-98c3-db5001a01a0d",
+    "vm_id": "d8a2de3e-a907-4d66-97fc-1e60c160fc89",
     "vmname": "VM1"
 }

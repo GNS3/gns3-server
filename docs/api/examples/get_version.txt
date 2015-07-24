@@ -7,13 +7,13 @@ GET /v1/version HTTP/1.1
 HTTP/1.1 200
 ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 50
+CONTENT-LENGTH: 49
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/version
 
 {
     "local": true,
-    "version": "1.4.0.dev1"
+    "version": "1.4.0dev3"
 }

@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/f46f9884-594c-4426-a46d-7699410ec0b1' -d '{"console": 2011, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/efb44969-3abd-40ab-9cae-fc0e46d8f221' -d '{"console": 2011, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/f46f9884-594c-4426-a46d-7699410ec0b1 HTTP/1.1
+PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/efb44969-3abd-40ab-9cae-fc0e46d8f221 HTTP/1.1
 {
     "console": 2011,
     "name": "test",
@@ -14,7 +14,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 438
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
 
 {
@@ -24,6 +24,6 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",
     "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1454taw7/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/f46f9884-594c-4426-a46d-7699410ec0b1",
-    "vm_id": "f46f9884-594c-4426-a46d-7699410ec0b1"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpjtnbwbkt/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/efb44969-3abd-40ab-9cae-fc0e46d8f221",
+    "vm_id": "efb44969-3abd-40ab-9cae-fc0e46d8f221"
 }

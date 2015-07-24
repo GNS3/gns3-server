@@ -1,20 +1,20 @@
-curl -i -X POST 'http://localhost:8000/v1/version' -d '{"version": "1.4.0.dev1"}'
+curl -i -X POST 'http://localhost:8000/v1/version' -d '{"version": "1.4.0dev3"}'
 
 POST /v1/version HTTP/1.1
 {
-    "version": "1.4.0.dev1"
+    "version": "1.4.0dev3"
 }
 
 
 HTTP/1.1 200
 ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 31
+CONTENT-LENGTH: 30
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev1
+SERVER: Python/3.4 GNS3/1.4.0dev3
 X-ROUTE: /v1/version
 
 {
-    "version": "1.4.0.dev1"
+    "version": "1.4.0dev3"
 }
