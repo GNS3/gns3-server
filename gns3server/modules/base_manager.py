@@ -115,7 +115,7 @@ class BaseManager:
             for future in done:
                 try:
                     future.result()
-                except Exception as e:
+                except (Exception, GeneratorExit) as e:
                     log.error("Could not close VM {}".format(e), exc_info=1)
                     continue
 

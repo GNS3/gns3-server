@@ -367,7 +367,7 @@ class Project:
             for future in done:
                 try:
                     future.result()
-                except Exception as e:
+                except (Exception, GeneratorExit) as e:
                     log.error("Could not close VM or device {}".format(e), exc_info=1)
 
         if cleanup and os.path.exists(self.path):
