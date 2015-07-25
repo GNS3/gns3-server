@@ -77,12 +77,12 @@ class UploadHandler:
                 else:
                     destination_dir = os.path.join(UploadHandler.image_directory(), data["type"])
                     destination_path = os.path.join(destination_dir, data["file"].filename)
-                    os.makedirs(destination_dir, exist_ok=True)
-                    with open(destination_path, "wb+") as f:
-                        chunk = data["file"].file.read()
-                        f.write(chunk)
-                    st = os.stat(destination_path)
-                    os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
+                os.makedirs(destination_dir, exist_ok=True)
+                with open(destination_path, "wb+") as f:
+                    chunk = data["file"].file.read()
+                    f.write(chunk)
+                st = os.stat(destination_path)
+                os.chmod(destination_path, st.st_mode | stat.S_IXUSR)
         except OSError as e:
             response.html("Could not upload file: {}".format(e))
             response.set_status(200)
