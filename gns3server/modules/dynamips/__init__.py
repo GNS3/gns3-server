@@ -130,7 +130,7 @@ class Dynamips(BaseManager):
             for future in done:
                 try:
                     future.result()
-                except Exception as e:
+                except (Exception, GeneratorExit) as e:
                     log.error("Could not stop device hypervisor {}".format(e), exc_info=1)
                     continue
 
@@ -154,7 +154,7 @@ class Dynamips(BaseManager):
             for future in done:
                 try:
                     future.result()
-                except Exception as e:
+                except (Exception, GeneratorExit) as e:
                     log.error("Could not delete device {}".format(e), exc_info=1)
 
     @asyncio.coroutine
