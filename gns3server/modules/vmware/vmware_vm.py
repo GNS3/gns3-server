@@ -437,7 +437,10 @@ class VMwareVM(BaseVM):
                     log.debug("enabling remaining adapter {}".format(adapter_number))
                     self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "TRUE"
 
-            self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
+            try:
+                self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
+            except OSError as e:
+                raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
         log.info("VMware VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
 
