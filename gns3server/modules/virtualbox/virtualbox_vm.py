@@ -574,10 +574,11 @@ class VirtualBoxVM(BaseVM):
 
         # check the maximum number of adapters supported by the VM
         vm_info = yield from self._get_vm_info()
-        chipset = vm_info["chipset"]
         maximum_adapters = 8
-        if chipset == "ich9":
-            maximum_adapters = int(self._system_properties["Maximum ICH9 Network Adapter count"])
+        if "chipset" in vm_info:
+            chipset = vm_info["chipset"]
+            if chipset == "ich9":
+                maximum_adapters = int(self._system_properties["Maximum ICH9 Network Adapter count"])
         return maximum_adapters
 
     def _get_pipe_name(self):
