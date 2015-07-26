@@ -46,7 +46,6 @@ class Qemu(BaseManager):
         :returns: List of folders where Qemu binaries MAY reside.
         """
 
-        qemus = []
         paths = set()
         try:
             paths.add(os.getcwd())
