@@ -160,7 +160,7 @@ class Router(BaseVM):
         for slot in self._slots:
             if slot:
                 slot = str(slot)
-                router_info["slot" + str(slot_number)] = slot
+            router_info["slot" + str(slot_number)] = slot
             slot_number += 1
 
         # add the wics
@@ -168,6 +168,8 @@ class Router(BaseVM):
             for wic_slot_number in range(0, len(self._slots[0].wics)):
                 if self._slots[0].wics[wic_slot_number]:
                     router_info["wic" + str(wic_slot_number)] = str(self._slots[0].wics[wic_slot_number])
+                else:
+                    router_info["wic" + str(wic_slot_number)] = None
 
         return router_info
 
