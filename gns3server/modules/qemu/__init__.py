@@ -187,3 +187,32 @@ class Qemu(BaseManager):
         """
         return os.path.join(os.path.expanduser(self.config.get_section_config("Server").get("images_path", "~/GNS3/images")), "QEMU")
 
+    @asyncio.coroutine
+    def create_disk(self, qemu_img, path, options):
+        """
+        Create a qemu disk with qemu-img
+
+        :param qemu_img: qemu-img binary path
+        :param path: Image path
+        :param options: Disk image creation options
+        """
+
+        try:
+            img_format = options.pop("format")
+            img_size = options.pop("size")
+
+            if not os.path.isabs(path):
+                directory = self.get_images_directory()
+                os.makedirs(directory, exist_ok=True)
+                path = os.path.join(directory, os.path.basename(path))
+
+            command = [qemu_img, "create", "-f", img_format]
+            for option in sorted(options.keys()):
+                command.extend(["-o", "{}={}".format(option, options[option])])
+            command.append(path)
+            command.append("{}M".format(img_size))
+
+            process = yield from asyncio.create_subprocess_exec(*command)
+            yield from process.wait()
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError("Could create disk image {}:{}".format(path, e))

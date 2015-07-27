@@ -424,34 +424,3 @@ def test_get_qemu_img_not_exist(vm, tmpdir):
     vm._qemu_path = str(tmpdir / "qemu-sytem-x86_64")
     with pytest.raises(QemuError):
         vm._get_qemu_img()
-
-
-def test_create_image(vm, loop, fake_qemu_img_binary):
-    options = {
-        "format": "qcow2",
-        "preallocation": "metadata",
-        "cluster_size": 64,
-        "refcount_bits": 12,
-        "lazy_refcounts": "off",
-        "size": 100
-    }
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
-        filename = loop.run_until_complete(asyncio.async(vm._create_disk("hda", options)))
-        args, kwargs = process.call_args
-        assert args == (
-            fake_qemu_img_binary,
-            "create",
-            "-f",
-            "qcow2",
-            "-o",
-            "cluster_size=64",
-            "-o",
-            "lazy_refcounts=off",
-            "-o",
-            "preallocation=metadata",
-            "-o",
-            "refcount_bits=12",
-            os.path.join(vm.working_dir, "hda.qcow2"),
-            "100M"
-        )
-    assert filename == "hda.qcow2"

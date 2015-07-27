@@ -316,6 +316,21 @@ class QEMUHandler:
         binaries = yield from Qemu.img_binary_list()
         response.json(binaries)
 
+    @classmethod
+    @Route.post(
+        r"/qemu/img",
+        status_codes={
+            201: "Image created",
+        },
+        description="Create a Qemu image"
+    )
+    def create_img(request, response):
+
+        qemu_img = request.json.pop("qemu_img")
+        path = request.json.pop("path")
+        yield from Qemu.instance().create_disk(qemu_img, path, request.json)
+        response.set_status(201)
+
     @Route.get(
         r"/qemu/vms",
         status_codes={
