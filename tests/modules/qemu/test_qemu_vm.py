@@ -415,7 +415,7 @@ def test_get_qemu_img(vm, tmpdir):
     open(str(tmpdir / "qemu-sytem-x86_64"), "w+").close()
     open(str(tmpdir / "qemu-img"), "w+").close()
     vm._qemu_path = str(tmpdir / "qemu-sytem-x86_64")
-    assert vm._get_qemu_img() ==  str(tmpdir / "qemu-img")
+    assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
 
 
 def test_get_qemu_img_not_exist(vm, tmpdir):
@@ -428,7 +428,7 @@ def test_get_qemu_img_not_exist(vm, tmpdir):
 
 def test_create_image(vm, loop, fake_qemu_img_binary):
     options = {
-        "type": "qcow2",
+        "format": "qcow2",
         "preallocation": "metadata",
         "cluster_size": 64,
         "refcount_bits": 12,

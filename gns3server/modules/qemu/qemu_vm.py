@@ -1253,12 +1253,12 @@ class QemuVM(BaseVM):
         :returns: Image name with the extensions
         """
 
-        img_type = options.pop("type")
+        img_format = options.pop("format")
         img_size = options.pop("size")
-        img_name = "{}.{}".format(name, img_type)
+        img_name = "{}.{}".format(name, img_format)
 
         qemu_img = self._get_qemu_img()
-        command = [qemu_img, "create", "-f", img_type]
+        command = [qemu_img, "create", "-f", img_format]
         for option in sorted(options.keys()):
             command.extend(["-o", "{}={}".format(option, options[option])])
         command.append(os.path.join(self.working_dir, img_name))
