@@ -199,7 +199,7 @@ class VMwareVM(BaseVM):
             # check if any vmnet interface managed by GNS3 is being used on existing VMware adapters
             if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
                 connection_type = "ethernet{}.connectiontype".format(adapter_number)
-                if self._vmx_pairs[connection_type] in ("hostonly", "custom"):
+                if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("hostonly", "custom"):
                     vnet = "ethernet{}.vnet".format(adapter_number)
                     if vnet in self._vmx_pairs:
                         vmnet = os.path.basename(self._vmx_pairs[vnet])
@@ -217,11 +217,10 @@ class VMwareVM(BaseVM):
                 if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
                     # check for the connection type
                     connection_type = "ethernet{}.connectiontype".format(adapter_number)
-                    if connection_type in self._vmx_pairs:
-                        if self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
-                            raise VMwareError("Attachment ({}) already configured on network adapter {}. "
-                                              "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
-                                                                                                          adapter_number))
+                    if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
+                        raise VMwareError("Attachment ({}) already configured on network adapter {}. "
+                                          "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
+                                                                                                      adapter_number))
 
         # now configure VMware network adapters
         self.manager.refresh_vmnet_list()
