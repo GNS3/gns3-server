@@ -106,6 +106,8 @@ def main():
         raise SystemExit(e)
 
     vmnet_range = args.range if args.range is not None else DEFAULT_RANGE
+    if not os.path.exists(VMWARE_NETWORKING_FILE):
+        raise SystemExit("VMware Player or Workstation is not installed")
     if not os.access(VMWARE_NETWORKING_FILE, os.W_OK):
         raise SystemExit("You must run this script as root")
 
