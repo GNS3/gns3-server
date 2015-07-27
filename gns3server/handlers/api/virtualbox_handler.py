@@ -192,10 +192,10 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        if sys.platform.startswith("linux") and (yield from vm.check_hw_virtualization()):
+        if (yield from vm.check_hw_virtualization()):
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
-                raise HTTPConflict(text="Cannot start VM because KVM is being used by a Qemu VM")
+                raise HTTPConflict(text="Cannot start VM because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or KVM (on Linux)")
         yield from vm.start()
         response.set_status(204)
 

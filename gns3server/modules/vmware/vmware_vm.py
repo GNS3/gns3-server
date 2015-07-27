@@ -344,6 +344,22 @@ class VMwareVM(BaseVM):
         if parse_version(self._ubridge_hypervisor.version) < parse_version('0.9.1'):
             raise VMwareError("uBridge version must be >= 0.9.1, detected version is {}".format(self._ubridge_hypervisor.version))
 
+    def check_hw_virtualization(self):
+        """
+        Returns either hardware virtualization is activated or not.
+
+        :returns: boolean
+        """
+
+        try:
+            self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
+        except OSError as e:
+            raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
+
+        if self._get_vmx_setting("vhv.enable", "TRUE"):
+            return True
+        return False
+
     @asyncio.coroutine
     def start(self):
         """

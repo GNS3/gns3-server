@@ -152,7 +152,7 @@ class QEMUHandler:
                 and "-no-kvm" not in vm.options:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
-                raise HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization is already used by another software like VMware or VirtualBox")
+                raise HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
         yield from vm.start()
         response.set_status(204)
 
