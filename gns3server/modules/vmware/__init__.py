@@ -242,11 +242,11 @@ class VMware(BaseManager):
         pairs = OrderedDict()
         encoding = "utf-8"
         # get the first line to read the .encoding value
-        with open(path, encoding=encoding) as f:
-            line = f.readline()
+        with open(path, "rb") as f:
+            line = f.readline().decode(encoding, errors="ignore")
             if line.startswith("#!"):
                 # skip the shebang
-                line = f.readline()
+                line = f.readline().decode(encoding, errors="ignore")
             try:
                 key, value = line.split('=', 1)
                 if key.strip().lower() == ".encoding":
