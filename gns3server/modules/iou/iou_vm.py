@@ -862,7 +862,10 @@ class IOUVM(BaseVM):
                                                                                              port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
-            os.kill(self._iouyap_process.pid, signal.SIGHUP)
+            try:
+                os.kill(self._iouyap_process.pid, signal.SIGHUP)
+            except ProcessLookupError:
+                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
 
     def adapter_remove_nio_binding(self, adapter_number, port_number):
         """
@@ -894,8 +897,10 @@ class IOUVM(BaseVM):
                                                                                                  port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
-            os.kill(self._iouyap_process.pid, signal.SIGHUP)
-
+            try:
+                os.kill(self._iouyap_process.pid, signal.SIGHUP)
+            except ProcessLookupError:
+                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
         return nio
 
     @property
@@ -1052,7 +1057,10 @@ class IOUVM(BaseVM):
 
         if self.is_iouyap_running():
             self._update_iouyap_config()
-            os.kill(self._iouyap_process.pid, signal.SIGHUP)
+            try:
+                os.kill(self._iouyap_process.pid, signal.SIGHUP)
+            except ProcessLookupError:
+                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
 
     @asyncio.coroutine
     def stop_capture(self, adapter_number, port_number):
@@ -1085,4 +1093,7 @@ class IOUVM(BaseVM):
                                                                                                          port_number=port_number))
         if self.is_iouyap_running():
             self._update_iouyap_config()
-            os.kill(self._iouyap_process.pid, signal.SIGHUP)
+            try:
+                os.kill(self._iouyap_process.pid, signal.SIGHUP)
+            except ProcessLookupError:
+                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
