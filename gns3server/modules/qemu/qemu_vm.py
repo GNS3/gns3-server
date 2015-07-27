@@ -1002,9 +1002,13 @@ class QemuVM(BaseVM):
         else:
             return []
 
-    @asyncio.coroutine
-    def _disk_options(self):
-        options = []
+    def _get_qemu_img(self):
+        """
+        Search the qemu-img binary in the same binary of the qemu binary
+        for avoiding version incompatibily.
+
+        :returns: qemu-img path or raise an error
+        """
         qemu_img_path = ""
         qemu_path_dir = os.path.dirname(self.qemu_path)
         try:
@@ -1016,6 +1020,13 @@ class QemuVM(BaseVM):
 
         if not qemu_img_path:
             raise QemuError("Could not find qemu-img in {}".format(qemu_path_dir))
+
+        return qemu_img_path
+
+    @asyncio.coroutine
+    def _disk_options(self):
+        options = []
+        qemu_img_path = self._get_qemu_img()
 
         if self._hda_disk_image:
             if not os.path.isfile(self._hda_disk_image) or not os.path.exists(self._hda_disk_image):
@@ -1231,3 +1242,31 @@ class QemuVM(BaseVM):
         answer["kernel_image_md5sum"] = md5sum(self._kernel_image)
 
         return answer
+
+    @asyncio.coroutine
+    def _create_disk(self, name, options):
+        """
+        Create a qemu disk with qemu-img
+
+        :param name: Image name without the extension
+        :param options: Disk image creation options
+        :returns: Image name with the extensions
+        """
+
+        img_type = options.pop("type")
+        img_size = options.pop("size")
+        img_name = "{}.{}".format(name, img_type)
+
+        qemu_img = self._get_qemu_img()
+        command = [qemu_img, "create", "-f", img_type]
+        for option in sorted(options.keys()):
+            command.extend(["-o", "{}={}".format(option, options[option])])
+        command.append(os.path.join(self.working_dir, img_name))
+        command.append("{}M".format(img_size))
+        try:
+            process = yield from asyncio.create_subprocess_exec(*command)
+            yield from process.wait()
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError("Could create disk image {}:{}".format(name, e))
+
+        return img_name

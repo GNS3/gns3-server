@@ -186,3 +186,4 @@ class Qemu(BaseManager):
         Return the full path of the images directory on disk
         """
         return os.path.join(os.path.expanduser(self.config.get_section_config("Server").get("images_path", "~/GNS3/images")), "QEMU")
+
