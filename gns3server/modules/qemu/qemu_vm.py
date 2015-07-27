@@ -483,9 +483,9 @@ class QemuVM(BaseVM):
 
         if not sys.platform.startswith("linux"):
             if "-no-kvm" in options:
-                options = options.replace("-no-kvm")
+                options = options.replace("-no-kvm", "")
             if "-enable-kvm" in options:
-                options = options.replace("-enable-kvm")
+                options = options.replace("-enable-kvm", "")
         self._options = options.strip()
 
     @property
