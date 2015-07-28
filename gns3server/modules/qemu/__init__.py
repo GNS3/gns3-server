@@ -205,6 +205,8 @@ class Qemu(BaseManager):
                 directory = self.get_images_directory()
                 os.makedirs(directory, exist_ok=True)
                 path = os.path.join(directory, os.path.basename(path))
+            if os.path.exists(path):
+                raise QemuError("Could not create disk image {} already exist".format(path))
 
             command = [qemu_img, "create", "-f", img_format]
             for option in sorted(options.keys()):
@@ -215,4 +217,4 @@ class Qemu(BaseManager):
             process = yield from asyncio.create_subprocess_exec(*command)
             yield from process.wait()
         except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError("Could create disk image {}:{}".format(path, e))
+            raise QemuError("Could not create disk image {}:{}".format(path, e))

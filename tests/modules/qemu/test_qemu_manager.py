@@ -22,6 +22,7 @@ import sys
 import pytest
 
 from gns3server.modules.qemu import Qemu
+from gns3server.modules.qemu.qemu_error import QemuError
 from tests.utils import asyncio_patch
 from unittest.mock import patch, MagicMock
 
@@ -145,3 +146,17 @@ def test_create_image_relative_path(loop, tmpdir, fake_qemu_img_binary):
                 str(tmpdir / "hda.qcow2"),
                 "100M"
             )
+
+
+def test_create_image_exist(loop, tmpdir, fake_qemu_img_binary):
+    open(str(tmpdir / "hda.qcow2"), "w+").close()
+
+    options = {
+        "format": "raw",
+        "size": 100
+    }
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        with patch("gns3server.modules.qemu.Qemu.get_images_directory", return_value=str(tmpdir)):
+            with pytest.raises(QemuError):
+                loop.run_until_complete(asyncio.async(Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)))
+                assert not process.called
