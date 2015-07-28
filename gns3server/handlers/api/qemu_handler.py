@@ -27,6 +27,7 @@ from ...schemas.qemu import QEMU_UPDATE_SCHEMA
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 from ...schemas.qemu import QEMU_BINARY_LIST_SCHEMA
 from ...schemas.qemu import QEMU_LIST_IMAGES_SCHEMA
+from ...schemas.qemu import QEMU_IMAGE_CREATE_SCHEMA
 from ...modules.qemu import Qemu
 from ...config import Config
 
@@ -325,7 +326,8 @@ class QEMUHandler:
         status_codes={
             201: "Image created",
         },
-        description="Create a Qemu image"
+        description="Create a Qemu image",
+        input=QEMU_IMAGE_CREATE_SCHEMA
     )
     def create_img(request, response):
 

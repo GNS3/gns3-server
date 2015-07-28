@@ -484,10 +484,74 @@ QEMU_LIST_IMAGES_SCHEMA = {
             "properties": {
                 "filename": {
                     "description": "Image filename",
-                    "type": ["string"]
+                    "type": "string"
                 },
             },
+            "additionalProperties": False
         }
     ],
     "additionalProperties": False,
+}
+
+QEMU_IMAGE_CREATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Create a new qemu image. Options can be specific to a format. Read qemu-img manual for more informations.",
+    "type": "object",
+    "properties": {
+        "qemu_img": {
+            "description": "Path to the qemu-img binary",
+            "type": "string"
+        },
+        "path": {
+            "description": "Absolute or relative path of the image",
+            "type": "string"
+        },
+        "format": {
+            "description": "Image format type",
+            "enum": ["qcow2", "qcow", "vpc", "vdi", "vmdk", "raw"]
+        },
+        "size": {
+            "description": "Image size in M",
+            "type": "integer"
+        },
+        "preallocation": {
+            "enum": ["off", "metadata", "falloc", "full"]
+        },
+        "cluster_size": {
+            "type": "integer"
+        },
+        "refcount_bits": {
+            "type": "integer"
+        },
+        "lazy_refcounts": {
+            "enum": ["on", "off"]
+        },
+        "subformat": {
+            "enum": [
+                "dynamic",
+                "fixed",
+                "streamOptimized",
+                "twoGbMaxExtentSparse",
+                "twoGbMaxExtentFlat",
+                "monolithicSparse",
+                "monolithicFlat",
+            ]
+        },
+        "static": {
+            "enum": ["on", "off"]
+        },
+        "zeroed_grain": {
+            "enum": ["on", "off"]
+        },
+        "adapter_type": {
+            "enum": [
+                "ide",
+                "lsilogic",
+                "buslogic",
+                "legacyESX"
+            ]
+        }
+    },
+    "required": ["qemu_img", "path", "format", "size"],
+    "additionalProperties": False
 }
