@@ -1,5 +1,22 @@
 # Change Log
 
+## 1.3.8 27/07/2015
+
+* Catch ProcessLookupError when updating iouyap config. Fixes #255.
+* Fixes IOS adapters and WICS cannot be removed. Fixes #282.
+* Makes sure the loop is running when closing the app.
+* Catch GeneratorExit exception. Fixes #231.
+* Fixes missing chipset info for VirtualBox VM. Fixes #254.
+* Fixes IOURC upload.
+* Restore images & projects tarballs
+* Allow users to backup projects and images.
+* Update gns3.conf.upstart.
+* Fix incorrect vboxmanage sudo command.
+* Backport from 1.4: option to drop nvram & disk files for IOS routers in order to save disk space.
+* Backport from 1.4: Remove timeout to wait for connections to finish.
+* Backport from 1.4: Fixes RuntimeError: Event loop is closed.
+* Backport from 1.4: Bind host on 0.0.0.0 when checking for a free UDP port.
+
 ## 1.4.0alpha2 22/07/2015
 
 * Deactivate uBridge process monitoring (process returns 1 on Windows when stopping).
