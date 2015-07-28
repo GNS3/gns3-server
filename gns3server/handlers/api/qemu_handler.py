@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import os.path
+
 from aiohttp.web import HTTPConflict
 from ...web.route import Route
 from ...modules.project_manager import ProjectManager
@@ -26,6 +28,7 @@ from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 from ...schemas.qemu import QEMU_BINARY_LIST_SCHEMA
 from ...schemas.qemu import QEMU_LIST_IMAGES_SCHEMA
 from ...modules.qemu import Qemu
+from ...config import Config
 
 
 class QEMUHandler:
@@ -328,6 +331,12 @@ class QEMUHandler:
 
         qemu_img = request.json.pop("qemu_img")
         path = request.json.pop("path")
+        if os.path.isabs(path):
+            config = Config.instance()
+            if config.get_section_config("Server").getboolean("local", False) is False:
+                response.set_status(403)
+                return
+
         yield from Qemu.instance().create_disk(qemu_img, path, request.json)
         response.set_status(201)
 

@@ -20,6 +20,7 @@ import os
 import stat
 from tests.utils import asyncio_patch
 from unittest.mock import patch
+from gns3server.config import Config
 
 
 @pytest.fixture
@@ -241,10 +242,52 @@ def test_upload_vm_permission_denied(server, tmpdir):
         assert response.status == 409
 
 
-def test_create_img(server):
+def test_create_img_relative(server):
     body = {
         "qemu_img": "/tmp/qemu-img",
         "path": "hda.qcow2",
+        "format": "qcow2",
+        "preallocation": "metadata",
+        "cluster_size": 64,
+        "refcount_bits": 12,
+        "lazy_refcounts": "off",
+        "size": 100
+    }
+    with asyncio_patch("gns3server.modules.Qemu.create_disk"):
+        response = server.post("/qemu/img", body=body, example=True)
+
+    assert response.status == 201
+
+
+def test_create_img_absolute_non_local(server):
+
+    config = Config.instance()
+    config.set("Server", "local", "false")
+
+    body = {
+        "qemu_img": "/tmp/qemu-img",
+        "path": "/tmp/hda.qcow2",
+        "format": "qcow2",
+        "preallocation": "metadata",
+        "cluster_size": 64,
+        "refcount_bits": 12,
+        "lazy_refcounts": "off",
+        "size": 100
+    }
+    with asyncio_patch("gns3server.modules.Qemu.create_disk"):
+        response = server.post("/qemu/img", body=body, example=True)
+
+    assert response.status == 403
+
+
+def test_create_img_absolute_local(server):
+
+    config = Config.instance()
+    config.set("Server", "local", "true")
+
+    body = {
+        "qemu_img": "/tmp/qemu-img",
+        "path": "/tmp/hda.qcow2",
         "format": "qcow2",
         "preallocation": "metadata",
         "cluster_size": 64,
