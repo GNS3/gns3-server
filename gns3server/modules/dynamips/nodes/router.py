@@ -186,16 +186,6 @@ class Router(BaseVM):
     @asyncio.coroutine
     def create(self):
 
-        # delete any previous file with same Dynamips identifier
-        project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
-        for file in glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_i{}_*".format(self._dynamips_id))):
-            try:
-                log.debug("Deleting file {}".format(file))
-                yield from wait_run_in_executor(os.remove, file)
-            except OSError as e:
-                log.warn("Could not delete file {}: {}".format(file, e))
-                continue
-
         if not self._hypervisor:
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=module_workdir)
