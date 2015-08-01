@@ -159,7 +159,10 @@ class DynamipsVMHandler:
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        yield from dynamips_manager.ghost_ios_support(vm)
+        try:
+            yield from dynamips_manager.ghost_ios_support(vm)
+        except GeneratorExit:
+            pass
         yield from vm.start()
         response.set_status(204)
 
