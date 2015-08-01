@@ -41,7 +41,7 @@ class VMwareHandler:
     def show(request, response):
 
         vmware_manager = VMware.instance()
-        vms = vmware_manager.list_vms()
+        vms = yield from vmware_manager.list_vms()
         response.json(vms)
 
     @classmethod

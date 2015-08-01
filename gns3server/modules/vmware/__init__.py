@@ -30,6 +30,7 @@ import codecs
 
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
+from gns3server.utils.asyncio import subprocess_check_output
 
 log = logging.getLogger(__name__)
 
@@ -124,6 +125,72 @@ class VMware(BaseManager):
 
         self._vmrun_path = vmrun_path
         return vmrun_path
+
+    @staticmethod
+    def _find_vmware_version_registry(regkey):
+
+        import winreg
+        version = None
+        try:
+            # default path not used, let's look in the registry
+            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
+            version, _ = winreg.QueryValueEx(hkey, "ProductVersion")
+            winreg.CloseKey(hkey)
+        except OSError:
+            pass
+        if version is not None:
+            match = re.search("([0-9]+)\.", version)
+            if match:
+                version = match.group(1)
+        return version
+
+    @asyncio.coroutine
+    def check_vmware_version(self):
+        """
+        Check VMware version
+        """
+
+        if sys.platform.startswith("win"):
+            # look for vmrun.exe using the directory listed in the registry
+            ws_version = self._find_vmware_version_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
+            if ws_version is None:
+                player_version = self._find_vmware_version_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
+                if player_version:
+                    log.debug("VMware Player version {} detected".format(player_version))
+                    if int(player_version) < 7:
+                        raise VMwareError("Using VMware Player requires version 7 or above")
+                else:
+                    log.warning("Could not find VMware version")
+            else:
+                log.debug("VMware Workstation version {} detected".format(ws_version))
+                if int(ws_version) < 11:
+                    raise VMwareError("Using VMware Workstation requires version 11 or above")
+            return
+        else:
+            if sys.platform.startswith("darwin"):
+                return  # FIXME: no version checking on Mac OS X
+            else:
+                vmware_path = shutil.which("vmware")
+
+            try:
+                output = yield from subprocess_check_output(vmware_path, "-v")
+                match = re.search("VMware Workstation ([0-9]+)\.", output)
+                version = None
+                if match:
+                    version = match.group(1)
+                    log.debug("VMware Workstation version {} detected".format(version))
+                    if int(version) < 11:
+                        raise VMwareError("Using VMware Workstation requires version 11 or above")
+                match = re.search("VMware Player ([0-9]+)\.", output)
+                if match:
+                    version = match.group(1)
+                    log.debug("VMware Player version {} detected".format(version))
+                    if int(version) < 7:
+                        raise VMwareError("Using VMware Player requires version 11 or above")
+                if version is None:
+                    log.warning("Could not find VMware version")
+            except (OSError, subprocess.SubprocessError) as e:
+                log.error("Error while looking for the VMware version: {}".format(e))
 
     @staticmethod
     def get_vmnet_interfaces():
@@ -420,10 +487,14 @@ class VMware(BaseManager):
         else:
             return os.path.expanduser("~/vmware")
 
+    @asyncio.coroutine
     def list_vms(self):
         """
         Gets VMware VM list.
         """
+
+        # check for the right VMware version
+        yield from self.check_vmware_version()
 
         inventory_path = self.get_vmware_inventory_path()
         if os.path.exists(inventory_path):
