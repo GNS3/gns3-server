@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.9 03/08/2015
+
+* Backport: removes code that deletes IOS router instance files.
+
 ## 1.4.0alpha3 28/07/2015
 
 * Raise error if qemu image already exist when creating disk
