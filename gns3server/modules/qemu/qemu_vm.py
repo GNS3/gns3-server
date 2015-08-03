@@ -88,6 +88,12 @@ class QemuVM(BaseVM):
         self._hdb_disk_image = ""
         self._hdc_disk_image = ""
         self._hdd_disk_image = ""
+        self._hda_disk_interface = "ide"
+        self._hdb_disk_interface = "ide"
+        self._hdc_disk_interface = "ide"
+        self._hdd_disk_interface = "ide"
+        self._cdrom_image = ""
+        self._boot_priority = "c"
         self._mac_address = ""
         self._options = ""
         self._ram = 256
@@ -263,6 +269,143 @@ class QemuVM(BaseVM):
         log.info('QEMU VM "{name}" [{id}] has set the QEMU hdd disk image path to {disk_image}'.format(name=self._name,
                                                                                                        id=self._id,
                                                                                                        disk_image=self._hdd_disk_image))
+
+    @property
+    def hda_disk_interface(self):
+        """
+        Returns the hda disk interface this QEMU VM.
+
+        :returns: QEMU hda disk interface
+        """
+
+        return self._hda_disk_interface
+
+    @hda_disk_interface.setter
+    def hda_disk_interface(self, hda_disk_interface):
+        """
+        Sets the hda disk interface for this QEMU VM.
+
+        :param hda_disk_interface: QEMU hda disk interface
+        """
+
+        self._hda_disk_interface = hda_disk_interface
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hda disk interface to {interface}'.format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     interface=self._hda_disk_interface))
+
+    @property
+    def hdb_disk_interface(self):
+        """
+        Returns the hdb disk interface this QEMU VM.
+
+        :returns: QEMU hdb disk interface
+        """
+
+        return self._hda_disk_interface
+
+    @hdb_disk_interface.setter
+    def hdb_disk_interface(self, hdb_disk_interface):
+        """
+        Sets the hda disk interface for this QEMU VM.
+
+        :param hdb_disk_interface: QEMU hdb disk interface
+        """
+
+        self._hdb_disk_interface = hdb_disk_interface
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdb disk interface to {interface}'.format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     interface=self._hdb_disk_interface))
+
+    @property
+    def hdc_disk_interface(self):
+        """
+        Returns the hdc disk interface this QEMU VM.
+
+        :returns: QEMU hdc disk interface
+        """
+
+        return self._hdc_disk_interface
+
+    @hdc_disk_interface.setter
+    def hdc_disk_interface(self, hdc_disk_interface):
+        """
+        Sets the hdc disk interface for this QEMU VM.
+
+        :param hdc_disk_interface: QEMU hdc disk interface
+        """
+
+        self._hdc_disk_interface = hdc_disk_interface
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdc disk interface to {interface}'.format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     interface=self._hdc_disk_interface))
+
+    @property
+    def hdd_disk_interface(self):
+        """
+        Returns the hda disk interface this QEMU VM.
+
+        :returns: QEMU hda disk interface
+        """
+
+        return self._hdd_disk_interface
+
+    @hdd_disk_interface.setter
+    def hdd_disk_interface(self, hdd_disk_interface):
+        """
+        Sets the hdd disk interface for this QEMU VM.
+
+        :param hdd_disk_interface: QEMU hdd disk interface
+        """
+
+        self._hdd_disk_interface = hdd_disk_interface
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdd disk interface to {interface}'.format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     interface=self._hdd_disk_interface))
+
+    @property
+    def cdrom_image(self):
+        """
+        Returns the cdrom image path for this QEMU VM.
+
+        :returns: QEMU cdrom image path
+        """
+
+        return self._cdrom_image
+
+    @cdrom_image.setter
+    def cdrom_image(self, cdrom_image):
+        """
+        Sets the cdrom image for this QEMU VM.
+
+        :param cdrom_image: QEMU cdrom image path
+        """
+        self._cdrom_image = self.manager.get_abs_image_path(cdrom_image)
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
+                                                                                                     id=self._id,
+                                                                                                     cdrom_image=self._cdrom_image))
+
+    @property
+    def boot_priority(self):
+        """
+        Returns the boot priority for this QEMU VM.
+
+        :returns: QEMU boot priority
+        """
+
+        return self._boot_priority
+
+    @boot_priority.setter
+    def boot_priority(self, boot_priority):
+        """
+        Sets the boot priority for this QEMU VM.
+
+        :param boot_priority: QEMU boot priority
+        """
+
+        self._boot_priority = boot_priority
+        log.info('QEMU VM "{name}" [{id}] has set the boot priority to {boot_priority}'.format(name=self._name,
+                                                                                               id=self._id,
+                                                                                               boot_priority=self._boot_priority))
 
     @property
     def adapters(self):
@@ -1043,7 +1186,7 @@ class QemuVM(BaseVM):
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
                 except (OSError, subprocess.SubprocessError) as e:
                     raise QemuError("Could not create hda disk image {}".format(e))
-            options.extend(["-hda", hda_disk])
+            options.extend(["-drive", 'file={},if={},index=0,media=disk'.format(hda_disk, self.hda_disk_interface)])
 
         if self._hdb_disk_image:
             if not os.path.isfile(self._hdb_disk_image) or not os.path.exists(self._hdb_disk_image):
@@ -1061,7 +1204,7 @@ class QemuVM(BaseVM):
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
                 except (OSError, subprocess.SubprocessError) as e:
                     raise QemuError("Could not create hdb disk image {}".format(e))
-            options.extend(["-hdb", hdb_disk])
+            options.extend(["-drive", 'file={},if={},index=1,media=disk'.format(hdb_disk, self.hdb_disk_interface)])
 
         if self._hdc_disk_image:
             if not os.path.isfile(self._hdc_disk_image) or not os.path.exists(self._hdc_disk_image):
@@ -1079,7 +1222,7 @@ class QemuVM(BaseVM):
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
                 except (OSError, subprocess.SubprocessError) as e:
                     raise QemuError("Could not create hdc disk image {}".format(e))
-            options.extend(["-hdc", hdc_disk])
+            options.extend(["-drive", 'file={},if={},index=2,media=disk'.format(hdc_disk, self.hdc_disk_interface)])
 
         if self._hdd_disk_image:
             if not os.path.isfile(self._hdd_disk_image) or not os.path.exists(self._hdd_disk_image):
@@ -1097,8 +1240,22 @@ class QemuVM(BaseVM):
                     log.info("{} returned with {}".format(qemu_img_path, retcode))
                 except (OSError, subprocess.SubprocessError) as e:
                     raise QemuError("Could not create hdd disk image {}".format(e))
-            options.extend(["-hdd", hdd_disk])
+            options.extend(["-drive", 'file={},if={},index=3,media=disk'.format(hdd_disk, self.hdd_disk_interface)])
 
+        return options
+
+    def _cdrom_option(self):
+
+        options = []
+        if self._cdrom_image:
+            if not os.path.isfile(self._cdrom_image) or not os.path.exists(self._cdrom_image):
+                if os.path.islink(self._cdrom_image):
+                    raise QemuError("cdrom image '{}' linked to '{}' is not accessible".format(self._cdrom_image, os.path.realpath(self._cdrom_image)))
+                else:
+                    raise QemuError("cdrom image '{}' is not accessible".format(self._cdrom_image))
+            if self._hdc_disk_image:
+                raise QemuError("You cannot use a disk image on hdc disk and a CDROM image at the same time")
+            options.extend(["-cdrom", self._cdrom_image])
         return options
 
     def _linux_boot_options(self):
@@ -1192,8 +1349,11 @@ class QemuVM(BaseVM):
             if not os.path.exists("/dev/kvm"):
                 raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist)")
             command.extend(["-enable-kvm"])
+        command.extend(["-boot", "order={}".format(self._boot_priority)])
         disk_options = yield from self._disk_options()
         command.extend(disk_options)
+        cdrom_option = self._cdrom_option()
+        command.extend(cdrom_option)
         command.extend(self._linux_boot_options())
         if self._console_type == "telnet":
             command.extend(self._serial_options())
@@ -1234,6 +1394,8 @@ class QemuVM(BaseVM):
         answer["hdc_disk_image_md5sum"] = md5sum(self._hdc_disk_image)
         answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image)
         answer["hdd_disk_image_md5sum"] = md5sum(self._hdd_disk_image)
+        answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image)
+        answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image)
         answer["initrd"] = self.manager.get_relative_image_path(self._initrd)
         answer["initrd_md5sum"] = md5sum(self._initrd)
 

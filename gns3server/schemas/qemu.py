@@ -61,12 +61,20 @@ QEMU_CREATE_SCHEMA = {
             "description": "QEMU hda disk image path",
             "type": "string",
         },
+        "hda_disk_interface": {
+            "description": "QEMU hda interface",
+            "type": "string",
+        },
         "hda_disk_image_md5sum": {
             "description": "QEMU hda disk image checksum",
             "type": ["string", "null"]
         },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
+            "type": "string",
+        },
+        "hdb_disk_interface": {
+            "description": "QEMU hdb interface",
             "type": "string",
         },
         "hdb_disk_image_md5sum": {
@@ -77,6 +85,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "QEMU hdc disk image path",
             "type": "string",
         },
+        "hdc_disk_interface": {
+            "description": "QEMU hdc interface",
+            "type": "string",
+        },
         "hdc_disk_image_md5sum": {
             "description": "QEMU hdc disk image checksum",
             "type": ["string", "null"],
@@ -85,9 +97,25 @@ QEMU_CREATE_SCHEMA = {
             "description": "QEMU hdd disk image path",
             "type": "string",
         },
+        "hdd_disk_interface": {
+            "description": "QEMU hdd interface",
+            "type": "string",
+        },
         "hdd_disk_image_md5sum": {
             "description": "QEMU hdd disk image checksum",
             "type": ["string", "null"],
+        },
+        "cdrom_image": {
+            "description": "QEMU cdrom image path",
+            "type": "string",
+        },
+        "cdrom_image_md5sum": {
+            "description": "QEMU cdrom image checksum",
+            "type": ["string", "null"],
+        },
+        "boot_priority": {
+            "description": "QEMU boot priority",
+            "enum": ["c", "d"]
         },
         "ram": {
             "description": "amount of RAM in MB",
@@ -196,12 +224,20 @@ QEMU_UPDATE_SCHEMA = {
             "description": "QEMU hda disk image path",
             "type": "string",
         },
+        "hda_disk_interface": {
+            "description": "QEMU hda interface",
+            "type": "string",
+        },
         "hda_disk_image_md5sum": {
             "description": "QEMU hda disk image checksum",
             "type": ["string", "null"]
         },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
+            "type": "string",
+        },
+        "hdb_disk_interface": {
+            "description": "QEMU hdb interface",
             "type": "string",
         },
         "hdb_disk_image_md5sum": {
@@ -212,6 +248,10 @@ QEMU_UPDATE_SCHEMA = {
             "description": "QEMU hdc disk image path",
             "type": "string",
         },
+        "hdc_disk_interface": {
+            "description": "QEMU hdc interface",
+            "type": "string",
+        },
         "hdc_disk_image_md5sum": {
             "description": "QEMU hdc disk image checksum",
             "type": ["string", "null"],
@@ -220,9 +260,25 @@ QEMU_UPDATE_SCHEMA = {
             "description": "QEMU hdd disk image path",
             "type": "string",
         },
+        "hdd_disk_interface": {
+            "description": "QEMU hdd interface",
+            "type": "string",
+        },
         "hdd_disk_image_md5sum": {
             "description": "QEMU hdd disk image checksum",
             "type": ["string", "null"],
+        },
+        "cdrom_image": {
+            "description": "QEMU cdrom image path",
+            "type": "string",
+        },
+        "cdrom_image_md5sum": {
+            "description": "QEMU cdrom image checksum",
+            "type": ["string", "null"],
+        },
+        "boot_priority": {
+            "description": "QEMU boot priority",
+            "enum": ["c", "d"]
         },
         "ram": {
             "description": "amount of RAM in MB",
@@ -330,12 +386,20 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU hda disk image path",
             "type": "string",
         },
+        "hda_disk_interface": {
+            "description": "QEMU hda interface",
+            "type": "string",
+        },
         "hda_disk_image_md5sum": {
             "description": "QEMU hda disk image checksum",
             "type": ["string", "null"]
         },
         "hdb_disk_image": {
             "description": "QEMU hdb disk image path",
+            "type": "string",
+        },
+        "hdb_disk_interface": {
+            "description": "QEMU hdb interface",
             "type": "string",
         },
         "hdb_disk_image_md5sum": {
@@ -346,6 +410,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU hdc disk image path",
             "type": "string",
         },
+        "hdc_disk_interface": {
+            "description": "QEMU hdc interface",
+            "type": "string",
+        },
         "hdc_disk_image_md5sum": {
             "description": "QEMU hdc disk image checksum",
             "type": ["string", "null"],
@@ -354,9 +422,25 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU hdd disk image path",
             "type": "string",
         },
+        "hdd_disk_interface": {
+            "description": "QEMU hdd interface",
+            "type": "string",
+        },
         "hdd_disk_image_md5sum": {
             "description": "QEMU hdd disk image checksum",
             "type": ["string", "null"],
+        },
+        "cdrom_image": {
+            "description": "QEMU cdrom image path",
+            "type": "string",
+        },
+        "cdrom_image_md5sum": {
+            "description": "QEMU cdrom image checksum",
+            "type": ["string", "null"],
+        },
+        "boot_priority": {
+            "description": "QEMU boot priority",
+            "enum": ["c", "d"]
         },
         "vm_directory": {
             "decription": "Path to the VM working directory",
@@ -444,8 +528,9 @@ QEMU_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["vm_id", "project_id", "name", "qemu_path", "platform", "console_type", "hda_disk_image", "hdb_disk_image",
                  "hdc_disk_image", "hdd_disk_image", "hda_disk_image_md5sum", "hdb_disk_image_md5sum",
-                 "hdc_disk_image_md5sum", "hdd_disk_image_md5sum", "ram", "adapters", "adapter_type", "mac_address",
-                 "console", "initrd", "kernel_image", "initrd_md5sum", "kernel_image_md5sum", "kernel_command_line",
+                 "hdc_disk_image_md5sum", "hdd_disk_image_md5sum", "hda_disk_interface", "hdb_disk_interface", "hdc_disk_interface",
+                 "hdd_disk_interface", "cdrom_image", "cdrom_image_md5sum", "boot_priority", "ram", "adapters", "adapter_type",
+                 "mac_address", "console", "initrd", "kernel_image", "initrd_md5sum", "kernel_image_md5sum", "kernel_command_line",
                  "legacy_networking", "acpi_shutdown", "cpu_throttling", "process_priority", "options", "vm_directory"]
 }
 
@@ -495,7 +580,7 @@ QEMU_LIST_IMAGES_SCHEMA = {
 
 QEMU_IMAGE_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Create a new qemu image. Options can be specific to a format. Read qemu-img manual for more informations.",
+    "description": "Create a new qemu image. Options can be specific to a format. Read qemu-img manual for more information",
     "type": "object",
     "properties": {
         "qemu_img": {
