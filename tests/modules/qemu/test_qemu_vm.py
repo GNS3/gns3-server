@@ -340,6 +340,8 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "test",
             "-m",
             "256",
+            "-boot",
+            "order=c",
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
             "-net",
