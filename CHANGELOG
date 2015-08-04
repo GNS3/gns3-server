@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.4.0alpha4 04/08/2015
+
+* Quote command in qemu debug logs so you can copy/paste them
+* Support for Qemu disk interfaces, cd/dvd-rom image and boot priority. Fixes #278.
+* Check for VMware Player version >= 7 and VMware Workstation >= 11. Fixes #286.
+* Catch GeneratorExit exception when trying to create a Ghost IOS image.
+* Backport: removes code that deletes IOS router instance files.
+
 ## 1.3.9 03/08/2015
 
 * Backport: removes code that deletes IOS router instance files.
