@@ -816,7 +816,7 @@ class QemuVM(BaseVM):
                     raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
 
             self._command = yield from self._build_command()
-            command_string = " ".join(self._command)
+            command_string = " ".join(shlex.quote(s) for s in self._command)
             try:
                 log.info("Starting QEMU with: {}".format(command_string))
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
