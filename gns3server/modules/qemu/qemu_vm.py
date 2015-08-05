@@ -97,6 +97,7 @@ class QemuVM(BaseVM):
         self._mac_address = ""
         self._options = ""
         self._ram = 256
+        self._cpus = 1
         self._ethernet_adapters = []
         self._adapter_type = "e1000"
         self._initrd = ""
@@ -601,6 +602,27 @@ class QemuVM(BaseVM):
 
         log.info('QEMU VM "{name}" [{id}] has set the RAM to {ram}'.format(name=self._name, id=self._id, ram=ram))
         self._ram = ram
+
+    @property
+    def cpus(self):
+        """
+        Returns the number of vCPUs this QEMU VM.
+
+        :returns: number of vCPUs.
+        """
+
+        return self._cpus
+
+    @cpus.setter
+    def cpus(self, cpus):
+        """
+        Sets the number of vCPUs this QEMU VM.
+
+        :param cpus: number of vCPUs.
+        """
+
+        log.info('QEMU VM "{name}" [{id}] has set the number of vCPUs to {cpus}'.format(name=self._name, id=self._id, cpus=cpus))
+        self._cpus = cpus
 
     @property
     def options(self):
@@ -1344,6 +1366,7 @@ class QemuVM(BaseVM):
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", str(self._ram)])
+        command.extend(["-smp", "cpus={}".format(self._cpus)])
         if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
                 and "-no-kvm" not in self._options:
             if not os.path.exists("/dev/kvm"):

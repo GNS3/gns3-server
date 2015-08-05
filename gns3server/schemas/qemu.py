@@ -121,6 +121,12 @@ QEMU_CREATE_SCHEMA = {
             "description": "amount of RAM in MB",
             "type": ["integer", "null"]
         },
+        "cpus": {
+            "description": "number of vCPUs",
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 255,
+        },
         "adapters": {
             "description": "number of adapters",
             "type": ["integer", "null"],
@@ -283,6 +289,12 @@ QEMU_UPDATE_SCHEMA = {
         "ram": {
             "description": "amount of RAM in MB",
             "type": ["integer", "null"]
+        },
+        "cpus": {
+            "description": "number of vCPUs",
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 255,
         },
         "adapters": {
             "description": "number of adapters",
@@ -450,6 +462,12 @@ QEMU_OBJECT_SCHEMA = {
             "description": "amount of RAM in MB",
             "type": "integer"
         },
+        "cpus": {
+            "description": "number of vCPUs",
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 255,
+        },
         "adapters": {
             "description": "number of adapters",
             "type": "integer",
@@ -529,7 +547,7 @@ QEMU_OBJECT_SCHEMA = {
     "required": ["vm_id", "project_id", "name", "qemu_path", "platform", "console_type", "hda_disk_image", "hdb_disk_image",
                  "hdc_disk_image", "hdd_disk_image", "hda_disk_image_md5sum", "hdb_disk_image_md5sum",
                  "hdc_disk_image_md5sum", "hdd_disk_image_md5sum", "hda_disk_interface", "hdb_disk_interface", "hdc_disk_interface",
-                 "hdd_disk_interface", "cdrom_image", "cdrom_image_md5sum", "boot_priority", "ram", "adapters", "adapter_type",
+                 "hdd_disk_interface", "cdrom_image", "cdrom_image_md5sum", "boot_priority", "ram", "cpus", "adapters", "adapter_type",
                  "mac_address", "console", "initrd", "kernel_image", "initrd_md5sum", "kernel_image_md5sum", "kernel_command_line",
                  "legacy_networking", "acpi_shutdown", "cpu_throttling", "process_priority", "options", "vm_directory"]
 }
