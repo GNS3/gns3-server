@@ -172,6 +172,9 @@ class VMware(BaseManager):
             else:
                 vmware_path = shutil.which("vmware")
 
+            if vmware_path is None:
+                raise VMwareError("VMware is not installed (vmware executable could not be found in $PATH)")
+
             try:
                 output = yield from subprocess_check_output(vmware_path, "-v")
                 match = re.search("VMware Workstation ([0-9]+)\.", output)
