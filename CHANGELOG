@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.4.0beta1 07/08/2015
+
+* Fix ram setting for Qemu
+* Explicit set qemu memory as MB
+* Turn off KVM for non x86 architectures
+* Send an error when vmware executable cannot be found on Linux. Fixes #288.
+* Support for CPUs setting for Qemu VMs.
+
 ## 1.4.0alpha4 04/08/2015
 
 * Quote command in qemu debug logs so you can copy/paste them
