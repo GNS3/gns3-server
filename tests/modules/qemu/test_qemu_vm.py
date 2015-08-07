@@ -339,7 +339,7 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-name",
             "test",
             "-m",
-            "256",
+            "256M",
             "-smp",
             "cpus=1",
             "-boot",
@@ -436,7 +436,6 @@ def test_run_with_kvm_darwin(darwin_platform, vm):
         assert vm._run_with_kvm("qemu-system-x86_64", "") is False
 
 
-
 def test_run_with_kvm_windows(windows_platform, vm):
 
     with patch("configparser.SectionProxy.getboolean", return_value=True):
@@ -470,7 +469,6 @@ def test_run_with_kvm_not_x86(linux_platform, vm):
     with patch("os.path.exists", return_value=True) as os_path:
         with patch("configparser.SectionProxy.getboolean", return_value=True):
             assert vm._run_with_kvm("qemu-system-arm", "") is False
-
 
 
 def test_run_with_kvm_linux_dev_kvm_missing(linux_platform, vm):

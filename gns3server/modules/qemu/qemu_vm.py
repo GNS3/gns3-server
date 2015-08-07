@@ -1386,7 +1386,7 @@ class QemuVM(BaseVM):
 
         command = [self.qemu_path]
         command.extend(["-name", self._name])
-        command.extend(["-m", str(self._ram)])
+        command.extend(["-m {}M".format(self._ram)])
         command.extend(["-smp", "cpus={}".format(self._cpus)])
         if self._run_with_kvm(self.qemu_path, self._options):
             command.extend(["-enable-kvm"])
