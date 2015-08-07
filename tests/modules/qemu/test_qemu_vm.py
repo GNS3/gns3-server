@@ -340,6 +340,8 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "test",
             "-m",
             "256",
+            "-smp",
+            "cpus=1",
             "-boot",
             "order=c",
             "-serial",
