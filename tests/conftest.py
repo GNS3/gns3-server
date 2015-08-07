@@ -165,3 +165,35 @@ def run_around_tests(monkeypatch):
         shutil.rmtree(tmppath)
     except:
         pass
+
+@pytest.yield_fixture
+def darwin_platform():
+    """
+    Change sys.plaform to Darwin
+    """
+    old_platform = sys.platform
+    sys.platform = "darwin10.10"
+    yield
+    sys.plaform = old_platform
+
+
+@pytest.yield_fixture
+def windows_platform():
+    """
+    Change sys.plaform to Windows
+    """
+    old_platform = sys.platform
+    sys.platform = "win10"
+    yield
+    sys.plaform = old_platform
+
+
+@pytest.yield_fixture
+def linux_platform():
+    """
+    Change sys.plaform to Linux
+    """
+    old_platform = sys.platform
+    sys.platform = "linuxdebian"
+    yield
+    sys.plaform = old_platform

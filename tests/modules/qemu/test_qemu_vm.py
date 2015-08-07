@@ -428,3 +428,54 @@ def test_get_qemu_img_not_exist(vm, tmpdir):
     vm._qemu_path = str(tmpdir / "qemu-sytem-x86_64")
     with pytest.raises(QemuError):
         vm._get_qemu_img()
+
+
+def test_run_with_kvm_darwin(darwin_platform, vm):
+
+    with patch("configparser.SectionProxy.getboolean", return_value=True):
+        assert vm._run_with_kvm("qemu-system-x86_64", "") is False
+
+
+
+def test_run_with_kvm_windows(windows_platform, vm):
+
+    with patch("configparser.SectionProxy.getboolean", return_value=True):
+        assert vm._run_with_kvm("qemu-system-x86_64.exe", "") is False
+
+
+def test_run_with_kvm_linux(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=True) as os_path:
+        with patch("configparser.SectionProxy.getboolean", return_value=True):
+            assert vm._run_with_kvm("qemu-system-x86_64", "") is True
+            os_path.assert_called_with("/dev/kvm")
+
+
+def test_run_with_kvm_linux_config_desactivated(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=True) as os_path:
+        with patch("configparser.SectionProxy.getboolean", return_value=False):
+            assert vm._run_with_kvm("qemu-system-x86_64", "") is False
+
+
+def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=True) as os_path:
+        with patch("configparser.SectionProxy.getboolean", return_value=True):
+            assert vm._run_with_kvm("qemu-system-x86_64", "-no-kvm") is False
+
+
+def test_run_with_kvm_not_x86(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=True) as os_path:
+        with patch("configparser.SectionProxy.getboolean", return_value=True):
+            assert vm._run_with_kvm("qemu-system-arm", "") is False
+
+
+
+def test_run_with_kvm_linux_dev_kvm_missing(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=False) as os_path:
+        with patch("configparser.SectionProxy.getboolean", return_value=True):
+            with pytest.raises(QemuError):
+                vm._run_with_kvm("qemu-system-x86_64", "")

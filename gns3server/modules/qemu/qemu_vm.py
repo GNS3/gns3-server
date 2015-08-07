@@ -150,7 +150,7 @@ class QemuVM(BaseVM):
             self._platform = "x86_64"
         else:
             self._platform = re.sub(r'^qemu-system-(.*)(w.exe)?$', r'\1', os.path.basename(qemu_path), re.IGNORECASE)
-        if self._platform not in QEMU_PLATFORMS:
+        if self._platform.split(".")[0] not in QEMU_PLATFORMS:
             raise QemuError("Platform {} is unknown".format(self._platform))
         log.info('QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(name=self._name,
                                                                                        id=self._id,
@@ -1356,6 +1356,27 @@ class QemuVM(BaseVM):
             return []
         return ["-nographic"]
 
+    def _run_with_kvm(self, qemu_path, options):
+        """
+        Check if we could run qemu with KVM
+
+        :param qemu_path: Path to qemu
+        :param options: String of qemu user options
+        :returns: Boolean True if we need to enable KVM
+        """
+
+        if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
+                and "-no-kvm" not in options:
+
+            # Turn OFF kvm for non x86 architectures
+            if os.path.basename(qemu_path) not in ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]:
+                return False
+
+            if not os.path.exists("/dev/kvm"):
+                raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist)")
+            return True
+        return False
+
     @asyncio.coroutine
     def _build_command(self):
         """
@@ -1367,10 +1388,7 @@ class QemuVM(BaseVM):
         command.extend(["-name", self._name])
         command.extend(["-m", str(self._ram)])
         command.extend(["-smp", "cpus={}".format(self._cpus)])
-        if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
-                and "-no-kvm" not in self._options:
-            if not os.path.exists("/dev/kvm"):
-                raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist)")
+        if self._run_with_kvm(self.qemu_path, self._options):
             command.extend(["-enable-kvm"])
         command.extend(["-boot", "order={}".format(self._boot_priority)])
         disk_options = yield from self._disk_options()
