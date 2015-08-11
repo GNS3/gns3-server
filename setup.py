@@ -53,6 +53,8 @@ if not sys.platform.startswith("win"):
         # add gns3-netifaces only if netifaces isn't already installed
         # for instance via a Debian package.
         dependencies.append("gns3-netifaces>=0.10.4.1")
+else:
+    dependencies.append("pywin32>=219")
 
 setup(
     name="gns3-server",
