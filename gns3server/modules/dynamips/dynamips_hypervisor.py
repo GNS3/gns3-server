@@ -285,7 +285,7 @@ class DynamipsHypervisor:
                     if not chunk:
                         raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
                                             .format(host=self._host, port=self._port, run=self.is_running()))
-                    buf += chunk.decode("utf-8")
+                    buf += chunk.decode("utf-8", errors="ignore")
                 except OSError as e:
                     raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
                                         .format(host=self._host, port=self._port, error=e, run=self.is_running()))
