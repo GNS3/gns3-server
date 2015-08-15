@@ -1337,7 +1337,7 @@ class QemuVM(BaseVM):
                                                                                                                 self._host,
                                                                                                                 nio.lport)])
                     elif isinstance(nio, NIOTAP):
-                        network_options.extend(["-netdev", "tap,id=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
+                        network_options.extend(["-netdev", "tap,id=gns3-{},ifname={},script=no,downscript=no".format(adapter_number, nio.tap_device)])
                     elif isinstance(nio, NIONAT):
                         network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_number)])
                 else:
