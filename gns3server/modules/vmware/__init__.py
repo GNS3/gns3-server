@@ -157,14 +157,14 @@ class VMware(BaseManager):
                 player_version = self._find_vmware_version_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
                 if player_version:
                     log.debug("VMware Player version {} detected".format(player_version))
-                    if int(player_version) < 7:
-                        raise VMwareError("Using VMware Player requires version 7 or above")
+                    if int(player_version) < 6:
+                        raise VMwareError("Using VMware Player requires version 6 or above")
                 else:
                     log.warning("Could not find VMware version")
             else:
                 log.debug("VMware Workstation version {} detected".format(ws_version))
-                if int(ws_version) < 11:
-                    raise VMwareError("Using VMware Workstation requires version 11 or above")
+                if int(ws_version) < 10:
+                    raise VMwareError("Using VMware Workstation requires version 10 or above")
             return
         else:
             if sys.platform.startswith("darwin"):
@@ -182,14 +182,14 @@ class VMware(BaseManager):
                 if match:
                     version = match.group(1)
                     log.debug("VMware Workstation version {} detected".format(version))
-                    if int(version) < 11:
-                        raise VMwareError("Using VMware Workstation requires version 11 or above")
+                    if int(version) < 10:
+                        raise VMwareError("Using VMware Workstation requires version 10 or above")
                 match = re.search("VMware Player ([0-9]+)\.", output)
                 if match:
                     version = match.group(1)
                     log.debug("VMware Player version {} detected".format(version))
-                    if int(version) < 7:
-                        raise VMwareError("Using VMware Player requires version 11 or above")
+                    if int(version) < 6:
+                        raise VMwareError("Using VMware Player requires version 6 or above")
                 if version is None:
                     log.warning("Could not find VMware version")
             except (OSError, subprocess.SubprocessError) as e:
