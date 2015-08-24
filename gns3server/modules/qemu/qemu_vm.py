@@ -853,7 +853,7 @@ class QemuVM(BaseVM):
 
                 self.status = "started"
                 monitor_process(self._process, self._termination_callback)
-            except (OSError, subprocess.SubprocessError) as e:
+            except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
                 stdout = self.read_stdout()
                 log.error("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
                 raise QemuError("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
