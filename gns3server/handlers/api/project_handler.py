@@ -272,19 +272,15 @@ class ProjectHandler:
         response.content_length = None
 
         try:
-            yield from wait_run_in_executor(ProjectHandler._read_file, path, request, response)
+            with open(path, "rb") as f:
+                response.start(request)
+                while True:
+                    data = f.read(4096)
+                    if not data:
+                        break
+                    yield from response.write(data)
+
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
             raise aiohttp.web.HTTPForbidden
-
-    @staticmethod
-    def _read_file(path, request, response):
-
-        with open(path, "rb") as f:
-            response.start(request)
-            while True:
-                data = f.read(4096)
-                if not data:
-                    break
-                response.write(data)
