@@ -28,6 +28,8 @@ from unittest.mock import patch
 
 
 sys._called_from_test = True
+sys.original_platform = sys.platform
+
 # Prevent execution of external binaries
 os.environ["PATH"] = tempfile.mkdtemp()
 
@@ -157,6 +159,9 @@ def run_around_tests(monkeypatch):
 
 
     monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: tmppath)
+
+    # Force sys.platform to the original value. Because it seem not be restore correctly at each tests
+    sys.platform = sys.original_platform
 
     yield
 
