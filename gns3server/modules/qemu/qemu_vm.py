@@ -892,6 +892,7 @@ class QemuVM(BaseVM):
         self._hw_virtualization = False
         if self.is_running():
             log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
+            self.status = "stopped"
             try:
                 if self.acpi_shutdown:
                     yield from self._control_vm("system_powerdown")
@@ -903,7 +904,6 @@ class QemuVM(BaseVM):
                 self._process.kill()
                 if self._process.returncode is None:
                     log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
-        self.status = "stopped"
         self._process = None
         self._stop_cpulimit()
 
