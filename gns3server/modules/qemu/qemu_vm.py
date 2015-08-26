@@ -1375,7 +1375,7 @@ class QemuVM(BaseVM):
                 return False
 
             if not os.path.exists("/dev/kvm"):
-                raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist)")
+                raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). You can turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
             return True
         return False
 
