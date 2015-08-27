@@ -142,7 +142,10 @@ class QemuVM(BaseVM):
         """
 
         if qemu_path and os.pathsep not in qemu_path:
-            qemu_path = shutil.which(qemu_path)
+            new_qemu_path = shutil.which(qemu_path, path=os.pathsep.join(self._manager.paths_list()))
+            if new_qemu_path is None:
+                raise QemuError("QEMU binary path {} is not found in the path".format(qemu_path))
+            qemu_path = new_qemu_path
 
         self._check_qemu_path(qemu_path)
         self._qemu_path = qemu_path
@@ -161,7 +164,7 @@ class QemuVM(BaseVM):
 
     def _check_qemu_path(self, qemu_path):
         if qemu_path is None:
-            raise QemuError("QEMU binary path is not set or not found in the path")
+            raise QemuError("QEMU binary path is not set")
         if not os.path.exists(qemu_path):
             raise QemuError("QEMU binary '{}' is not accessible".format(qemu_path))
         if not os.access(qemu_path, os.X_OK):

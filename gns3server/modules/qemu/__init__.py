@@ -70,9 +70,9 @@ class Qemu(BaseManager):
             if "PROGRAMFILES" in os.environ and os.path.exists(os.environ["PROGRAMFILES"]):
                 paths.add(os.path.join(os.environ["PROGRAMFILES"], "qemu"))
         elif sys.platform.startswith("darwin"):
-            # add specific locations on Mac OS X regardless of what's in $PATH
-            paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
             if hasattr(sys, "frozen"):
+                # add specific locations on Mac OS X regardless of what's in $PATH
+                paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
                 try:
                     exec_dir = os.path.dirname(os.path.abspath(sys.executable))
                     paths.add(os.path.abspath(os.path.join(exec_dir, "../Resources/qemu/bin/")))

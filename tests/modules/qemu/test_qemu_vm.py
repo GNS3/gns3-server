@@ -25,7 +25,9 @@ import re
 from tests.utils import asyncio_patch
 
 
+from unittest import mock
 from unittest.mock import patch, MagicMock
+
 from gns3server.modules.qemu.qemu_vm import QemuVM
 from gns3server.modules.qemu.qemu_error import QemuError
 from gns3server.modules.qemu import Qemu
@@ -276,9 +278,9 @@ def test_set_platform(project, manager):
         with patch("gns3server.modules.qemu.QemuVM._check_qemu_path"):
             vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, platform="x86_64")
             if sys.platform.startswith("win"):
-                which_mock.assert_called_with("qemu-system-x86_64w.exe")
+                which_mock.assert_called_with("qemu-system-x86_64w.exe", path=mock.ANY)
             else:
-                which_mock.assert_called_with("qemu-system-x86_64")
+                which_mock.assert_called_with("qemu-system-x86_64", path=mock.ANY)
     assert vm.platform == "x86_64"
     assert vm.qemu_path == "/bin/qemu-system-x86_64"
 
