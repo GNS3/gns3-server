@@ -104,6 +104,8 @@ class Route(object):
             if request.headers["AUTHORIZATION"] == aiohttp.helpers.BasicAuth(user, password).encode():
                 return
 
+        log.error("Invalid auth. Username should %s", user)
+
         response = Response(request=request, route=route)
         response.set_status(401)
         response.headers["WWW-Authenticate"] = 'Basic realm="GNS3 server"'

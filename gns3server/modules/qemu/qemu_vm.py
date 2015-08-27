@@ -71,6 +71,7 @@ class QemuVM(BaseVM):
         self._cpulimit_process = None
         self._monitor = None
         self._stdout_file = ""
+        self._execute_lock = asyncio.Lock()
 
         # QEMU VM settings
         if qemu_path:
@@ -818,54 +819,55 @@ class QemuVM(BaseVM):
         Starts this QEMU VM.
         """
 
-        if self.is_running():
-            # resume the VM if it is paused
-            yield from self.resume()
-            return
+        with (yield from self._execute_lock):
+            if self.is_running():
+                # resume the VM if it is paused
+                yield from self.resume()
+                return
 
-        else:
+            else:
 
-            if self._manager.config.get_section_config("Qemu").getboolean("monitor", True):
+                if self._manager.config.get_section_config("Qemu").getboolean("monitor", True):
+                    try:
+                        info = socket.getaddrinfo(self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+                        if not info:
+                            raise QemuError("getaddrinfo returns an empty list on {}".format(self._monitor_host))
+                        for res in info:
+                            af, socktype, proto, _, sa = res
+                            # let the OS find an unused port for the Qemu monitor
+                            with socket.socket(af, socktype, proto) as sock:
+                                sock.bind(sa)
+                                self._monitor = sock.getsockname()[1]
+                    except OSError as e:
+                        raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
+
+                self._command = yield from self._build_command()
+                command_string = " ".join(shlex.quote(s) for s in self._command)
                 try:
-                    info = socket.getaddrinfo(self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
-                    if not info:
-                        raise QemuError("getaddrinfo returns an empty list on {}".format(self._monitor_host))
-                    for res in info:
-                        af, socktype, proto, _, sa = res
-                        # let the OS find an unused port for the Qemu monitor
-                        with socket.socket(af, socktype, proto) as sock:
-                            sock.bind(sa)
-                            self._monitor = sock.getsockname()[1]
-                except OSError as e:
-                    raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
+                    log.info("Starting QEMU with: {}".format(command_string))
+                    self._stdout_file = os.path.join(self.working_dir, "qemu.log")
+                    log.info("logging to {}".format(self._stdout_file))
+                    with open(self._stdout_file, "w", encoding="utf-8") as fd:
+                        fd.write("Start QEMU with {}\n\nExecution log:\n".format(command_string))
+                        self._process = yield from asyncio.create_subprocess_exec(*self._command,
+                                                                                  stdout=fd,
+                                                                                  stderr=subprocess.STDOUT,
+                                                                                  cwd=self.working_dir)
+                    log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
 
-            self._command = yield from self._build_command()
-            command_string = " ".join(shlex.quote(s) for s in self._command)
-            try:
-                log.info("Starting QEMU with: {}".format(command_string))
-                self._stdout_file = os.path.join(self.working_dir, "qemu.log")
-                log.info("logging to {}".format(self._stdout_file))
-                with open(self._stdout_file, "w", encoding="utf-8") as fd:
-                    fd.write("Start QEMU with {}\n\nExecution log:\n".format(command_string))
-                    self._process = yield from asyncio.create_subprocess_exec(*self._command,
-                                                                              stdout=fd,
-                                                                              stderr=subprocess.STDOUT,
-                                                                              cwd=self.working_dir)
-                log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
+                    self.status = "started"
+                    monitor_process(self._process, self._termination_callback)
+                except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
+                    stdout = self.read_stdout()
+                    log.error("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
+                    raise QemuError("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
 
-                self.status = "started"
-                monitor_process(self._process, self._termination_callback)
-            except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
-                stdout = self.read_stdout()
-                log.error("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
-                raise QemuError("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
+                self._set_process_priority()
+                if self._cpu_throttling:
+                    self._set_cpu_throttling()
 
-            self._set_process_priority()
-            if self._cpu_throttling:
-                self._set_cpu_throttling()
-
-            if "-enable-kvm" in command_string:
-                self._hw_virtualization = True
+                if "-enable-kvm" in command_string:
+                    self._hw_virtualization = True
 
     def _termination_callback(self, returncode):
         """
@@ -888,24 +890,25 @@ class QemuVM(BaseVM):
         Stops this QEMU VM.
         """
 
-        # stop the QEMU process
-        self._hw_virtualization = False
-        if self.is_running():
-            log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
-            self.status = "stopped"
-            try:
-                if self.acpi_shutdown:
-                    yield from self._control_vm("system_powerdown")
-                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=30)
-                else:
-                    self._process.terminate()
-                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
-            except asyncio.TimeoutError:
-                self._process.kill()
-                if self._process.returncode is None:
-                    log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
-        self._process = None
-        self._stop_cpulimit()
+        with (yield from self._execute_lock):
+            # stop the QEMU process
+            self._hw_virtualization = False
+            if self.is_running():
+                log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
+                self.status = "stopped"
+                try:
+                    if self.acpi_shutdown:
+                        yield from self._control_vm("system_powerdown")
+                        yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=30)
+                    else:
+                        self._process.terminate()
+                        yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                except asyncio.TimeoutError:
+                    self._process.kill()
+                    if self._process.returncode is None:
+                        log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
+            self._process = None
+            self._stop_cpulimit()
 
     @asyncio.coroutine
     def _control_vm(self, command, expected=None):
