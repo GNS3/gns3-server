@@ -253,11 +253,12 @@ class VPCSVM(BaseVM):
                     yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
                 except asyncio.TimeoutError:
                     if self._process.returncode is None:
-                        log.warn("VPCS process {} is still running... killing it".format(self._process.pid))
                         try:
                             self._process.kill()
                         except OSError as e:
-                            raise VPCSError("Can not stop the VPCS process: {}".format(e))
+                            log.error("Cannot stop the VPCS process: {}".format(e))
+                        if self._process.returncode is None:
+                            log.warn('VPCS VM "{}" with PID={} is still running'.format(self._name, self._process.pid))
 
         self._process = None
         self._started = False

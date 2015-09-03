@@ -604,9 +604,12 @@ class QemuVM(BaseVM):
                 self._process.terminate()
                 self._process.wait()
             except subprocess.TimeoutExpired:
-                self._process.kill()
+                try:
+                    self._process.kill()
+                except OSError as e:
+                    log.error("Cannot stop the Qemu process: {}".format(e))
                 if self._process.returncode is None:
-                    log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
+                    log.warn('QEMU VM "{}" with PID={} is still running'.format(self._name, self._process.pid))
         self._process = None
         self._started = False
         self._stop_cpulimit()
