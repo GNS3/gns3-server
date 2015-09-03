@@ -153,7 +153,7 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        if ProjectHandler._notifications_listening == 0:
+        if ProjectHandler._notifications_listening <= 1:
             yield from project.close()
             pm.remove_project(project.id)
         else:

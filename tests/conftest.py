@@ -137,13 +137,14 @@ def ethernet_device():
 
 
 @pytest.yield_fixture(autouse=True)
-def run_around_tests(monkeypatch):
+def run_around_tests(monkeypatch, port_manager):
     """
     This setup a temporay project file environnement around tests
     """
 
     tmppath = tempfile.mkdtemp()
 
+    port_manager._instance = port_manager
     config = Config.instance()
     config.clear()
     config.set("Server", "project_directory", tmppath)
@@ -157,7 +158,6 @@ def run_around_tests(monkeypatch):
     # Force turn off KVM because it's not available on CI
     config.set("Qemu", "enable_kvm", False)
 
-
     monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: tmppath)
 
     # Force sys.platform to the original value. Because it seem not be restore correctly at each tests
@@ -170,6 +170,7 @@ def run_around_tests(monkeypatch):
         shutil.rmtree(tmppath)
     except:
         pass
+
 
 @pytest.yield_fixture
 def darwin_platform():
