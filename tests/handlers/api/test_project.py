@@ -190,7 +190,7 @@ def test_close_project(server, project):
 
 def test_close_project_two_client_connected(server, project):
 
-    ProjectHandler._notifications_listening = 2
+    ProjectHandler._notifications_listening = {project.id: 2}
 
     with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
         response = server.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
