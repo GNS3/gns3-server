@@ -75,9 +75,9 @@ def write_networking_file(version, pairs):
     if sys.platform.startswith("darwin"):
         if not os.path.exists("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli"):
             raise SystemExit("VMware Fusion is not installed in Applications")
-        os.system("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli --configure")
-        os.system("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli --stop")
-        os.system("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli --start")
+        os.system(r"/Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --configure")
+        os.system(r"/Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --stop")
+        os.system(r"/Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --start")
     else:
         os.system("vmware-networks --stop")
         os.system("vmware-networks --start")
