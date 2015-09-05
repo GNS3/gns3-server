@@ -23,7 +23,12 @@ import argparse
 
 from collections import OrderedDict
 
-VMWARE_NETWORKING_FILE = "/etc/vmware/networking"
+if sys.platform.startswith("darwin"):
+    VMWARE_NETWORKING_FILE = "/Library/Preferences/VMware Fusion/networking"
+else:
+    # location on Linux
+    VMWARE_NETWORKING_FILE = "/etc/vmware/networking"
+
 DEFAULT_RANGE = [10, 100]
 
 
@@ -67,8 +72,15 @@ def write_networking_file(version, pairs):
         raise SystemExit("Cannot open {}: {}".format(VMWARE_NETWORKING_FILE, e))
 
     # restart VMware networking service
-    os.system("vmware-networks --stop")
-    os.system("vmware-networks --start")
+    if sys.platform.startswith("darwin"):
+        if not os.path.exists("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli"):
+            raise SystemExit("VMware Fusion is not installed in Applications")
+        os.system("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli --configure")
+        os.system("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli --stop")
+        os.system("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli --start")
+    else:
+        os.system("vmware-networks --stop")
+        os.system("vmware-networks --start")
 
 
 def parse_vmnet_range(start, end):
@@ -91,8 +103,8 @@ def main():
     Entry point for the VMNET tool.
     """
 
-    if not sys.platform.startswith("linux"):
-        raise SystemExit("This program can only be used on Linux")
+    if not sys.platform.startswith("linux") and not sys.platform.startswith("darwin"):
+        raise SystemExit("This program can only be used on Linux or Mac OS X")
 
     parser = argparse.ArgumentParser(description='%(prog)s add/remove vmnet interfaces')
     parser.add_argument('-r', "--range", nargs='+', action=parse_vmnet_range(1, 255),
@@ -107,7 +119,7 @@ def main():
 
     vmnet_range = args.range if args.range is not None else DEFAULT_RANGE
     if not os.path.exists(VMWARE_NETWORKING_FILE):
-        raise SystemExit("VMware Player or Workstation is not installed")
+        raise SystemExit("VMware Player, Workstation or Fusion is not installed")
     if not os.access(VMWARE_NETWORKING_FILE, os.W_OK):
         raise SystemExit("You must run this script as root")
 
