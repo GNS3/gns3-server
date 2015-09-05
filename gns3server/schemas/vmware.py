@@ -71,6 +71,10 @@ VMWARE_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "use_ubridge": {
+            "description": "use uBridge for network connections",
+            "type": "boolean",
+        },
         "use_any_adapter": {
             "description": "allow GNS3 to use any VMware adapter",
             "type": "boolean",
@@ -123,6 +127,10 @@ VMWARE_UPDATE_SCHEMA = {
             "description": "VMware adapter type",
             "type": "string",
             "minLength": 1,
+        },
+        "use_ubridge": {
+            "description": "use uBridge for network connections",
+            "type": "boolean",
         },
         "use_any_adapter": {
             "description": "allow GNS3 to use any VMware adapter",
@@ -187,6 +195,10 @@ VMWARE_OBJECT_SCHEMA = {
             "description": "VMware adapter type",
             "type": "string",
             "minLength": 1,
+        },
+        "use_ubridge": {
+            "description": "use uBridge for network connections",
+            "type": "boolean",
         },
         "use_any_adapter": {
             "description": "allow GNS3 to use any VMware adapter",

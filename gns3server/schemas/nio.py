@@ -143,6 +143,21 @@ NIO_SCHEMA = {
             "required": ["type", "control_file", "local_file"],
             "additionalProperties": False
         },
+        "VMNET": {
+            "description": "VMNET Network Input/Output",
+            "properties": {
+                "type": {
+                    "enum": ["nio_vmnet"]
+                },
+                "vmnet": {
+                    "description": "VMnet interface name e.g. vmnet12",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["type", "vmnet"],
+            "additionalProperties": False
+        },
         "NULL": {
             "description": "NULL Network Input/Output",
             "properties": {
@@ -162,6 +177,7 @@ NIO_SCHEMA = {
         {"$ref": "#/definitions/TAP"},
         {"$ref": "#/definitions/UNIX"},
         {"$ref": "#/definitions/VDE"},
+        {"$ref": "#/definitions/VMNET"},
         {"$ref": "#/definitions/NULL"},
     ],
     "additionalProperties": True,

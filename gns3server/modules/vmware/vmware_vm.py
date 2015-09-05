@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ from gns3server.utils.interfaces import get_windows_interfaces
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
+from .nio_vmnet import NIOVMNET
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_vm import BaseVM
 
@@ -72,6 +73,7 @@ class VMwareVM(BaseVM):
         self._adapters = 0
         self._ethernet_adapters = {}
         self._adapter_type = "e1000"
+        self._use_ubridge = True
         self._use_any_adapter = False
 
         if not os.path.exists(vmx_path):
@@ -89,6 +91,7 @@ class VMwareVM(BaseVM):
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
+                "use_ubridge": self.use_ubridge,
                 "use_any_adapter": self.use_any_adapter,
                 "vm_directory": self.working_dir}
         return json
@@ -106,6 +109,26 @@ class VMwareVM(BaseVM):
         result = yield from self.manager.execute(subcommand, args)
         log.debug("Control VM '{}' result: {}".format(subcommand, result))
         return result
+
+    def _read_vmx_file(self):
+        """
+        Reads from the VMware VMX file corresponding to this VM.
+        """
+
+        try:
+            self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
+        except OSError as e:
+            raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
+
+    def _write_vmx_file(self):
+        """
+        Writes pairs to the VMware VMX file corresponding to this VM.
+        """
+
+        try:
+            self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
+        except OSError as e:
+            raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
     @asyncio.coroutine
     def create(self):
@@ -190,41 +213,37 @@ class VMwareVM(BaseVM):
         Set up VMware networking.
         """
 
-        # first do some sanity checks
+        # first some sanity checks
         for adapter_number in range(0, self._adapters):
+
+            # we want the vmnet interface to be connected when starting the VM
             connected = "ethernet{}.startConnected".format(adapter_number)
             if self._get_vmx_setting(connected):
                 del self._vmx_pairs[connected]
-
-            # check if any vmnet interface managed by GNS3 is being used on existing VMware adapters
-            if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
-                connection_type = "ethernet{}.connectiontype".format(adapter_number)
-                if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("hostonly", "custom"):
-                    vnet = "ethernet{}.vnet".format(adapter_number)
-                    if vnet in self._vmx_pairs:
-                        vmnet = os.path.basename(self._vmx_pairs[vnet])
-                        if self.manager.is_managed_vmnet(vmnet):
-                            raise VMwareError("Network adapter {} is already associated with VMnet interface {} which is managed by GNS3, please remove".format(adapter_number, vmnet))
 
             # check for adapter type
             if self._adapter_type != "default":
                 adapter_type = "ethernet{}.virtualdev".format(adapter_number)
                 if adapter_type in self._vmx_pairs and self._vmx_pairs[adapter_type] != self._adapter_type:
-                    raise VMwareError("Network adapter {} is not of type {}, please fix or remove it".format(adapter_number, self._adapter_type))
+                    raise VMwareError("Existing VMware network adapter {} is not of type {}, please fix or set adapter type to default in GNS3".format(adapter_number,
+                                                                                                                                                       self._adapter_type))
 
-            # check if connected to an adapter configured for nat or bridge
-            if self._ethernet_adapters[adapter_number].get_nio(0) and not self._use_any_adapter:
-                if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
-                    # check for the connection type
-                    connection_type = "ethernet{}.connectiontype".format(adapter_number)
-                    if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
-                        raise VMwareError("Attachment ({}) already configured on network adapter {}. "
-                                          "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
-                                                                                                      adapter_number))
+            # # check if any vmnet interface managed by GNS3 is being used on existing VMware adapters
+            # if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
+            #     connection_type = "ethernet{}.connectiontype".format(adapter_number)
+            #     if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("hostonly", "custom"):
+            #         vnet = "ethernet{}.vnet".format(adapter_number)
+            #         if vnet in self._vmx_pairs:
+            #             vmnet = os.path.basename(self._vmx_pairs[vnet])
+            #             #nio = self._ethernet_adapters[adapter_number].get_nio(0)
+            #             if self.manager.is_managed_vmnet(vmnet):
+            #                 raise VMwareError("Network adapter {} is already associated with VMnet interface {} which is managed by GNS3, please remove".format(adapter_number, vmnet))
 
-        # now configure VMware network adapters
+        # then configure VMware network adapters
         self.manager.refresh_vmnet_list()
         for adapter_number in range(0, self._adapters):
+
+            # add/update the interface
             ethernet_adapter = {"ethernet{}.present".format(adapter_number): "TRUE",
                                 "ethernet{}.addresstype".format(adapter_number): "generated",
                                 "ethernet{}.generatedaddressoffset".format(adapter_number): "0"}
@@ -235,18 +254,35 @@ class VMwareVM(BaseVM):
             connection_type = "ethernet{}.connectiontype".format(adapter_number)
             if not self._use_any_adapter and connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
                 continue
-
-            vnet = "ethernet{}.vnet".format(adapter_number)
-            if vnet in self._vmx_pairs:
-                vmnet = os.path.basename(self._vmx_pairs[vnet])
-            else:
-                try:
-                    vmnet = self.manager.allocate_vmnet()
-                finally:
-                    self._vmnets.clear()
-            self._vmnets.append(vmnet)
             self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
-            self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
+
+            if self._use_ubridge:
+                # make sure we have a vmnet per adapter if we use uBridge
+                allocate_vmnet = False
+
+                # first check if a vmnet is already assigned to the adapter
+                vnet = "ethernet{}.vnet".format(adapter_number)
+                if vnet in self._vmx_pairs:
+                    vmnet = os.path.basename(self._vmx_pairs[vnet])
+                    if vmnet in self.manager.is_managed_vmnet(vmnet):
+                        # vmnet already managed, try to allocate a new one
+                        allocate_vmnet = True
+                else:
+                    # otherwise allocate a new one
+                    allocate_vmnet = True
+
+                if allocate_vmnet:
+                    try:
+                        vmnet = self.manager.allocate_vmnet()
+                    except:
+                        # clear everything up in case of error (e.g. no enough vmnets)
+                        self._vmnets.clear()
+                        raise
+
+                # mark the vmnet managed by us
+                if not vmnet in self._vmnets:
+                    self._vmnets.append(vmnet)
+                self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
 
         # disable remaining network adapters
         for adapter_number in range(self._adapters, self._maximum_adapters):
@@ -350,11 +386,7 @@ class VMwareVM(BaseVM):
         :returns: boolean
         """
 
-        try:
-            self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
-        except OSError as e:
-            raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
-
+        self._read_vmx_file()
         if self._get_vmx_setting("vhv.enable", "TRUE"):
             return True
         return False
@@ -372,30 +404,24 @@ class VMwareVM(BaseVM):
         if not ubridge_path or not os.path.isfile(ubridge_path):
             raise VMwareError("ubridge is necessary to start a VMware VM")
 
-        yield from self._start_ubridge()
+        if self._use_ubridge:
+            yield from self._start_ubridge()
 
-        try:
-            self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
-        except OSError as e:
-            raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
-
+        self._read_vmx_file()
         self._set_network_options()
         self._set_serial_console()
-
-        try:
-            self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
-        except OSError as e:
-            raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
+        self._write_vmx_file()
 
         if self._headless:
             yield from self._control_vm("start", "nogui")
         else:
             yield from self._control_vm("start")
 
-        for adapter_number in range(0, self._adapters):
-            nio = self._ethernet_adapters[adapter_number].get_nio(0)
-            if nio:
-                yield from self._add_ubridge_connection(nio, adapter_number)
+        if self._use_ubridge:
+            for adapter_number in range(0, self._adapters):
+                nio = self._ethernet_adapters[adapter_number].get_nio(0)
+                if nio:
+                    yield from self._add_ubridge_connection(nio, adapter_number)
 
         if self._enable_remote_console and self._console is not None:
             yield from asyncio.sleep(1)  # give some time to VMware to create the pipe file.
@@ -426,36 +452,30 @@ class VMwareVM(BaseVM):
                 yield from self._control_vm("stop")
         finally:
             self._started = False
-            self._vmnets.clear()
-            try:
-                self._vmx_pairs = self.manager.parse_vmware_file(self._vmx_path)
-            except OSError as e:
-                raise VMwareError('Could not read VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
-            # remove the adapters managed by GNS3
-            for adapter_number in range(0, self._adapters):
-                if self._get_vmx_setting("ethernet{}.vnet".format(adapter_number)) or \
-                   self._get_vmx_setting("ethernet{}.connectiontype".format(adapter_number)) is None:
-                    vnet = "ethernet{}.vnet".format(adapter_number)
-                    if vnet in self._vmx_pairs:
-                        vmnet = os.path.basename(self._vmx_pairs[vnet])
-                        if not self.manager.is_managed_vmnet(vmnet):
-                            continue
-                    log.debug("removing adapter {}".format(adapter_number))
-                    for key in self._vmx_pairs.keys():
-                        if key.startswith("ethernet{}.".format(adapter_number)):
-                            del self._vmx_pairs[key]
+            self._read_vmx_file()
+            if self._use_ubridge:
+                self._vmnets.clear()
+                # remove the adapters managed by GNS3
+                for adapter_number in range(0, self._adapters):
+                    if self._get_vmx_setting("ethernet{}.vnet".format(adapter_number)) or \
+                       self._get_vmx_setting("ethernet{}.connectiontype".format(adapter_number)) is None:
+                        vnet = "ethernet{}.vnet".format(adapter_number)
+                        if vnet in self._vmx_pairs:
+                            vmnet = os.path.basename(self._vmx_pairs[vnet])
+                            if not self.manager.is_managed_vmnet(vmnet):
+                                continue
+                        log.debug("removing adapter {}".format(adapter_number))
+                        for key in self._vmx_pairs.keys():
+                            if key.startswith("ethernet{}.".format(adapter_number)):
+                                del self._vmx_pairs[key]
 
             # re-enable any remaining network adapters
             for adapter_number in range(self._adapters, self._maximum_adapters):
                 if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
                     log.debug("enabling remaining adapter {}".format(adapter_number))
                     self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "TRUE"
-
-            try:
-                self.manager.write_vmx_file(self._vmx_path, self._vmx_pairs)
-            except OSError as e:
-                raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
+            self._write_vmx_file()
 
         log.info("VMware VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
 
@@ -493,7 +513,7 @@ class VMwareVM(BaseVM):
     @asyncio.coroutine
     def close(self):
         """
-        Closes this VirtualBox VM.
+        Closes this VMware VM.
         """
 
         if self._closed:
@@ -510,7 +530,8 @@ class VMwareVM(BaseVM):
                 for nio in adapter.ports.values():
                     if nio and isinstance(nio, NIOUDP):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
-
+                    if nio and isinstance(nio, NIOVMNET) and nio.vmnet in self._vmnets:
+                        self._vmnets.remove(nio.vmnet)
         try:
             self.acpi_shutdown = False
             yield from self.stop()
@@ -698,6 +719,30 @@ class VMwareVM(BaseVM):
                                                                                             adapter_type=adapter_type))
 
     @property
+    def use_ubridge(self):
+        """
+        Returns either GNS3 can use uBridge for network connections.
+
+        :returns: boolean
+        """
+
+        return self._use_ubridge
+
+    @use_ubridge.setter
+    def use_ubridge(self, use_ubridge):
+        """
+        Allows GNS3 to use uBridge for network connections.
+
+        :param use_ubridge: boolean
+        """
+
+        if use_ubridge:
+            log.info("VMware VM '{name}' [{id}] will use uBridge for network connections".format(name=self.name, id=self.id))
+        else:
+            log.info("VMware VM '{name}' [{id}] will not use uBridge for network connections".format(name=self.name, id=self.id))
+        self._use_ubridge = use_ubridge
+
+    @property
     def use_any_adapter(self):
         """
         Returns either GNS3 can use any VMware adapter on this instance.
@@ -736,8 +781,25 @@ class VMwareVM(BaseVM):
             raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
                                                                                                     adapter_number=adapter_number))
 
+        self._read_vmx_file()
+        # check if trying to connect to a nat, bridged or host-only adapter
+        if self._ethernet_adapters[adapter_number].get_nio(0) and not self._use_any_adapter:
+            if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
+                # check for the connection type
+                connection_type = "ethernet{}.connectiontype".format(adapter_number)
+                if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
+                    raise VMwareError("Attachment ({}) already configured on network adapter {}. "
+                                      "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
+                                                                                                  adapter_number))
+
+        if isinstance(nio, NIOVMNET):
+            if self._started:
+                raise VMwareError("Sorry, adding a link to a started VMware VM is not supported without uBridge enabled")
+            self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = nio.vmnet
+            self._write_vmx_file()
+            self._vmnets.append(nio.vmnet)
         adapter.add_nio(0, nio)
-        if self._started:
+        if self._started and self._use_ubridge:
             yield from self._add_ubridge_connection(nio, adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -765,8 +827,16 @@ class VMwareVM(BaseVM):
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
+        if isinstance(nio, NIOVMNET):
+            self._read_vmx_file()
+            vnet = "ethernet{}.vnet".format(adapter_number)
+            if vnet in self._vmx_pairs:
+                del self._vmx_pairs[vnet]
+                self._write_vmx_file()
+            if nio.vmnet in self._vmnets:
+                self._vmnets.remove(nio.vmnet)
         adapter.remove_nio(0)
-        if self._started:
+        if self._started and self._use_ubridge:
             yield from self._delete_ubridge_connection(adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,

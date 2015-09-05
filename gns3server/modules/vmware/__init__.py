@@ -37,6 +37,7 @@ log = logging.getLogger(__name__)
 from ..base_manager import BaseManager
 from .vmware_vm import VMwareVM
 from .vmware_error import VMwareError
+from .nio_vmnet import NIOVMNET
 
 
 class VMware(BaseManager):
@@ -230,7 +231,8 @@ class VMware(BaseManager):
     def allocate_vmnet(self):
 
         if not self._vmnets:
-            raise VMwareError("No more VMnet interfaces available")
+            raise VMwareError("No VMnet interface available between vmnet{} and vmnet{}".format(self._vmnet_start_range,
+                                                                                                self._vmnet_end_range))
         return self._vmnets.pop(0)
 
     def refresh_vmnet_list(self):
@@ -250,6 +252,13 @@ class VMware(BaseManager):
                 vmnet_interfaces.remove(vmnet)
 
         self._vmnets = vmnet_interfaces
+
+    def create_nio(self, executable, nio_settings):
+
+        if nio_settings["type"] == "nio_vmnet":
+            return NIOVMNET(nio_settings["vmnet"])
+        else:
+            return super().create_nio(None, nio_settings)
 
     @property
     def host_type(self):
@@ -501,6 +510,7 @@ class VMware(BaseManager):
 
         inventory_path = self.get_vmware_inventory_path()
         if os.path.exists(inventory_path):
+            #FIXME: inventory may exist if VMware workstation has not been fully uninstalled, therefore VMware player VMs are not searched
             return self._get_vms_from_inventory(inventory_path)
         else:
             # VMware player has no inventory file, let's search the default location for VMs.

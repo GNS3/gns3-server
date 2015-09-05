@@ -268,7 +268,7 @@ class VMwareHandler:
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
-        if nio_type != "nio_udp":
+        if nio_type not in ("nio_udp", "nio_vmnet"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vmware_manager.create_nio(None, request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
@@ -296,3 +296,21 @@ class VMwareHandler:
         vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/vmware/interfaces/vmnet",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        status_codes={
+            201: "VMnet interface allocated",
+        },
+        description="Allocate a VMware VMnet interface on the server")
+    def allocate_vmnet(request, response):
+
+        vmware_manager = VMware.instance()
+        vmware_manager.refresh_vmnet_list()
+        vmnet = vmware_manager.allocate_vmnet()
+        response.set_status(201)
+        response.json({"vmnet": vmnet})
