@@ -196,15 +196,15 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def _check_vpcs_version(self):
         """
-        Checks if the VPCS executable version is >= 0.5b1.
+        Checks if the VPCS executable version is >= 0.8b1.
         """
         try:
             output = yield from subprocess_check_output(self.vpcs_path, "-v", cwd=self.working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
-                if parse_version(version) < parse_version("0.5b1"):
-                    raise VPCSError("VPCS executable version must be >= 0.5b1")
+                if parse_version(version) < parse_version("0.8b1"):
+                    raise VPCSError("VPCS executable version must be >= 0.8b1")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
         except (OSError, subprocess.SubprocessError) as e:
@@ -415,6 +415,7 @@ class VPCSVM(BaseVM):
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
+        command.extend(["-R"])  # disable relay feature of VPCS (starting with VPCS 0.8)
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:
