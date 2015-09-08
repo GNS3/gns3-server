@@ -63,10 +63,15 @@ DEVICE_UPDATE_SCHEMA = {
                     "description": "Port type",
                     "enum": ["access", "dot1q", "qinq"],
                 },
+
                 "vlan": {"description": "VLAN number",
                          "type": "integer",
                          "minimum": 1
                          },
+                "ethertype": {
+                    "description": "QinQ Ethertype",
+                    "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
+                },
             },
             "required": ["port", "type", "vlan"],
             "additionalProperties": False
@@ -112,6 +117,10 @@ DEVICE_OBJECT_SCHEMA = {
                          "type": "integer",
                          "minimum": 1
                          },
+                "ethertype": {
+                    "description": "QinQ Ethertype",
+                    "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
+                },
             },
             "required": ["port", "type", "vlan"],
             "additionalProperties": False
@@ -321,6 +330,10 @@ DEVICE_NIO_SCHEMA = {
                          "type": "integer",
                          "minimum": 1
                          },
+                "ethertype": {
+                    "description": "QinQ Ethertype",
+                    "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
+                },
             },
             "required": ["type", "vlan"],
             "additionalProperties": False
