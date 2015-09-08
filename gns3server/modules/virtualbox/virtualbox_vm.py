@@ -194,9 +194,9 @@ class VirtualBoxVM(BaseVM):
             yield from self.resume()
             return
 
-        # VM must be powered off and in saved state to start it
-        if vm_state != "poweroff" and vm_state != "saved":
-            raise VirtualBoxError("VirtualBox VM not powered off or saved")
+        # VM must be powered off to start it
+        if vm_state != "poweroff":
+            raise VirtualBoxError("VirtualBox VM not powered off")
 
         yield from self._set_network_options()
         yield from self._set_serial_console()
