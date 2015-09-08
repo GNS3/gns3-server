@@ -227,7 +227,6 @@ class PortManager:
 
         :param project: Project instance
         """
-
         port = self.find_unused_port(self._udp_port_range[0],
                                      self._udp_port_range[1],
                                      host=self._udp_host,
