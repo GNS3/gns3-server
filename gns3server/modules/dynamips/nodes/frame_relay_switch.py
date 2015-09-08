@@ -50,10 +50,14 @@ class FrameRelaySwitch(Device):
 
     def __json__(self):
 
+        mappings = {}
+        for source, destination in self._mappings.items():
+            mappings[str(source)] = str(destination)
+
         return {"name": self.name,
                 "device_id": self.id,
                 "project_id": self.project.id,
-                "mappings": self._mappings}
+                "mappings": mappings}
 
     @asyncio.coroutine
     def create(self):
@@ -191,6 +195,8 @@ class FrameRelaySwitch(Device):
         """
 
         for source, destination in mappings.items():
+            if not isinstance(source, str) or not isinstance(destination, str):
+                raise DynamipsError("Invalid Frame-Relay mappings")
             source_port, source_dlci = map(int, source.split(':'))
             destination_port, destination_dlci = map(int, destination.split(':'))
             if self.has_port(destination_port):
