@@ -20,6 +20,7 @@ import sys
 import os
 import ipaddress
 import argparse
+import shutil
 
 from collections import OrderedDict
 
@@ -29,7 +30,10 @@ else:
     # location on Linux
     VMWARE_NETWORKING_FILE = "/etc/vmware/networking"
 
-DEFAULT_RANGE = [10, 100]
+if sys.platform.startswith("win"):
+    DEFAULT_RANGE = [1, 19]
+else:
+    DEFAULT_RANGE = [10, 100]
 
 
 def parse_networking_file():
@@ -98,34 +102,81 @@ def parse_vmnet_range(start, end):
     return Range
 
 
-def main():
-    """
-    Entry point for the VMNET tool.
-    """
+def find_vnetlib_registry(regkey):
 
-    if not sys.platform.startswith("linux") and not sys.platform.startswith("darwin"):
-        raise SystemExit("This program can only be used on Linux or Mac OS X")
-
-    parser = argparse.ArgumentParser(description='%(prog)s add/remove vmnet interfaces')
-    parser.add_argument('-r', "--range", nargs='+', action=parse_vmnet_range(1, 255),
-                        type=int, help="vmnet range to add (default is {} {})".format(DEFAULT_RANGE[0], DEFAULT_RANGE[1]))
-    parser.add_argument("-C", "--clean", action="store_true", help="remove all vmnets excepting vmnet1 and vmnet8")
-    parser.add_argument("-l", "--list", action="store_true", help="list all existing vmnets")
-
+    import winreg
     try:
-        args = parser.parse_args()
-    except argparse.ArgumentTypeError as e:
-        raise SystemExit(e)
+        # default path not used, let's look in the registry
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
+        install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
+        vnetlib_path = os.path.join(install_path, "vnetlib.exe")
+        winreg.CloseKey(hkey)
+        if os.path.exists(vnetlib_path):
+            return vnetlib_path
+    except OSError:
+        pass
+    return None
 
-    vmnet_range = args.range if args.range is not None else DEFAULT_RANGE
+
+def find_vnetlib_on_windows():
+
+    vnetlib_path = shutil.which("vnetlib")
+    if vnetlib_path is None:
+        # look for vnetlib.exe in default VMware Workstation directory
+        vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib.exe")
+        if os.path.exists(vnetlib_ws):
+            vnetlib_path = vnetlib_ws
+        else:
+            # look for vnetlib.exe using the directory listed in the registry
+            vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
+        if vnetlib_path is None:
+            # look for vnetlib.exe in default VMware VIX directory
+            vnetlib_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vnetlib.exe")
+            if os.path.exists(vnetlib_vix):
+                vnetlib_path = vnetlib_vix
+            else:
+                # look for vnetlib.exe using the directory listed in the registry
+                vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
+    return vnetlib_path
+
+
+def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
+
+    vnetlib_path = find_vnetlib_on_windows()
+    if not vnetlib_path:
+        raise SystemExit("VMware is not installed, could not find vnetlib.exe")
+    from win32com.shell import shell
+    if not shell.IsUserAnAdmin():
+        raise SystemExit("You must run this script as an administrator")
+
+    if args.list:
+        raise SystemExit("Not implemented")
+
+    if args.clean:
+        # clean all vmnets but vmnet1 and vmnet8
+        for vmnet_number in range(1, 20):
+            if vmnet_number in (1, 8):
+                continue
+            os.system('"{}" -- remove adapter vmnet{}'.format(vnetlib_path, vmnet_number))
+    else:
+        for vmnet_number in range(vmnet_range_start, vmnet_range_end + 1):
+            if vmnet_number in (1, 8):
+                continue
+            os.system('"{}" -- add adapter vmnet{}'.format(vnetlib_path, vmnet_number))
+
+
+def vmnet_unix(args, vmnet_range_start, vmnet_range_end):
+    """
+    Implementation on Linux and Mac OS X.
+    """
+
     if not os.path.exists(VMWARE_NETWORKING_FILE):
         raise SystemExit("VMware Player, Workstation or Fusion is not installed")
     if not os.access(VMWARE_NETWORKING_FILE, os.W_OK):
         raise SystemExit("You must run this script as root")
 
     version, pairs, allocated_subnets = parse_networking_file()
-
-    if args.list:
+    if args.list and not sys.platform.startswith("win"):
         for vmnet_number in range(1, 256):
             vmnet_name = "VNET_{}_VIRTUAL_ADAPTER".format(vmnet_number)
             if vmnet_name in pairs:
@@ -139,7 +190,7 @@ def main():
                 continue
             del pairs[key]
     else:
-        for vmnet_number in range(vmnet_range[0], vmnet_range[1]):
+        for vmnet_number in range(vmnet_range_start, vmnet_range_end + 1):
             vmnet_name = "VNET_{}_VIRTUAL_ADAPTER".format(vmnet_number)
             if vmnet_name in pairs:
                 continue
@@ -161,6 +212,29 @@ def main():
             pairs["VNET_{}_VIRTUAL_ADAPTER".format(vmnet_number)] = "yes"
 
     write_networking_file(version, pairs)
+
+
+def main():
+    """
+    Entry point for the VMNET tool.
+    """
+
+    parser = argparse.ArgumentParser(description='%(prog)s add/remove vmnet interfaces')
+    parser.add_argument('-r', "--range", nargs='+', action=parse_vmnet_range(1, 255),
+                        type=int, help="vmnet range to add (default is {} {})".format(DEFAULT_RANGE[0], DEFAULT_RANGE[1]))
+    parser.add_argument("-C", "--clean", action="store_true", help="remove all vmnets excepting vmnet1 and vmnet8")
+    parser.add_argument("-l", "--list", action="store_true", help="list all existing vmnets (UNIX only)")
+
+    try:
+        args = parser.parse_args()
+    except argparse.ArgumentTypeError as e:
+        raise SystemExit(e)
+
+    vmnet_range = args.range if args.range is not None else DEFAULT_RANGE
+    if sys.platform.startswith("win"):
+        vmnet_windows(args, vmnet_range[0], vmnet_range[1])
+    else:
+        vmnet_unix(args, vmnet_range[0], vmnet_range[1])
 
 if __name__ == '__main__':
     main()

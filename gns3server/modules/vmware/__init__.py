@@ -73,8 +73,8 @@ class VMware(BaseManager):
         try:
             # default path not used, let's look in the registry
             hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
-            ws_install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
-            vmrun_path = os.path.join(ws_install_path, "vmrun.exe")
+            install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
+            vmrun_path = os.path.join(install_path, "vmrun.exe")
             winreg.CloseKey(hkey)
             if os.path.exists(vmrun_path):
                 return vmrun_path
