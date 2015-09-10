@@ -320,6 +320,9 @@ class VMwareVM(BaseVM):
                                                                                                                interface=npf))
             else:
                 raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
+        elif sys.platform.startswith("darwin"):
+            yield from self._ubridge_hypervisor.send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet,
+                                                                                                               interface=vmnet_interface))
         else:
             yield from self._ubridge_hypervisor.send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
                                                                                                            interface=vmnet_interface))
