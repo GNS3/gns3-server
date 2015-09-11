@@ -3,4 +3,4 @@ aiohttp>=0.15.1
 Jinja2>=2.7.3
 raven>=5.2.0
 gns3-netifaces==0.10.4.1
-docker-py==1.2.3
+docker-py==1.4.0
