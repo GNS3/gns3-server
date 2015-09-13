@@ -22,8 +22,11 @@ import shutil
 import asyncio
 import tempfile
 
+from pkg_resources import parse_version
 from ..utils.asyncio import wait_run_in_executor
+from ..ubridge.hypervisor import Hypervisor
 from .vm_error import VMError
+
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +53,7 @@ class BaseVM:
         self._console_type = console_type
         self._temporary_directory = None
         self._hw_virtualization = False
+        self._ubridge_hypervisor = None
         self._vm_status = "stopped"
 
         if self._console is not None:
@@ -263,6 +267,36 @@ class BaseVM:
                                                                                         name=self.name,
                                                                                         id=self.id,
                                                                                         console_type=console_type))
+
+    @property
+    def ubridge_path(self):
+        """
+        Returns the uBridge executable path.
+
+        :returns: path to uBridge
+        """
+
+        path = self._manager.config.get_section_config("Server").get("ubridge_path", "ubridge")
+        if path == "ubridge":
+            path = shutil.which("ubridge")
+        return path
+
+    @asyncio.coroutine
+    def _start_ubridge(self):
+        """
+        Starts uBridge (handles connections to and from this VMware VM).
+        """
+
+        server_config = self._manager.config.get_section_config("Server")
+        server_host = server_config.get("host")
+        self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
+
+        log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
+        yield from self._ubridge_hypervisor.start()
+        log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
+        yield from self._ubridge_hypervisor.connect()
+        if parse_version(self._ubridge_hypervisor.version) < parse_version('0.9.2'):
+            raise VMError("uBridge version must be >= 0.9.2, detected version is {}".format(self._ubridge_hypervisor.version))
 
     @property
     def hw_virtualization(self):

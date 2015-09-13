@@ -22,12 +22,9 @@ VMware VM instance.
 import sys
 import os
 import socket
-import shutil
 import asyncio
 import tempfile
 
-from pkg_resources import parse_version
-from gns3server.ubridge.hypervisor import Hypervisor
 from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.interfaces import get_windows_interfaces
 from collections import OrderedDict
@@ -57,7 +54,6 @@ class VMwareVM(BaseVM):
 
         self._linked_clone = linked_clone
         self._vmx_pairs = OrderedDict()
-        self._ubridge_hypervisor = None
         self._telnet_server_thread = None
         self._serial_pipe = None
         self._vmnets = []
@@ -283,6 +279,11 @@ class VMwareVM(BaseVM):
                 if not vmnet in self._vmnets:
                     self._vmnets.append(vmnet)
                 self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
+            else:
+                # not connected to anything...
+                vnet = "ethernet{}.vnet".format(adapter_number)
+                if vnet not in self._vmx_pairs:
+                    self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "FALSE"
 
         # disable remaining network adapters
         for adapter_number in range(self._adapters, self._maximum_adapters):
@@ -379,36 +380,6 @@ class VMwareVM(BaseVM):
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=vnet))
-
-    @property
-    def ubridge_path(self):
-        """
-        Returns the uBridge executable path.
-
-        :returns: path to uBridge
-        """
-
-        path = self._manager.config.get_section_config("Server").get("ubridge_path", "ubridge")
-        if path == "ubridge":
-            path = shutil.which("ubridge")
-        return path
-
-    @asyncio.coroutine
-    def _start_ubridge(self):
-        """
-        Starts uBridge (handles connections to and from this VMware VM).
-        """
-
-        server_config = self._manager.config.get_section_config("Server")
-        server_host = server_config.get("host")
-        self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
-
-        log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
-        yield from self._ubridge_hypervisor.start()
-        log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
-        yield from self._ubridge_hypervisor.connect()
-        if parse_version(self._ubridge_hypervisor.version) < parse_version('0.9.1'):
-            raise VMwareError("uBridge version must be >= 0.9.1, detected version is {}".format(self._ubridge_hypervisor.version))
 
     def check_hw_virtualization(self):
         """

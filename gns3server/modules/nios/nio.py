@@ -19,6 +19,8 @@
 Base interface for NIOs.
 """
 
+import uuid
+
 
 class NIO(object):
 
@@ -28,6 +30,8 @@ class NIO(object):
 
     def __init__(self):
 
+        # create an unique name
+        self._name = 'nio-{}'.format(uuid.uuid4())
         self._capturing = False
         self._pcap_output_file = ""
         self._pcap_data_link_type = ""
@@ -74,3 +78,23 @@ class NIO(object):
         """
 
         return self._pcap_data_link_type
+
+
+    def __str__(self):
+        """
+        NIO string representation.
+
+        :returns: NIO name
+        """
+
+        return self._name
+
+    @property
+    def name(self):
+        """
+        Returns the NIO name.
+
+        :returns: NIO name
+        """
+
+        return self._name
