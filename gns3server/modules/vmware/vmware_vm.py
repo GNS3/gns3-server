@@ -352,6 +352,34 @@ class VMwareVM(BaseVM):
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         yield from self._ubridge_hypervisor.send("bridge delete {name}".format(name=vnet))
 
+    @asyncio.coroutine
+    def _start_ubridge_capture(self, adapter_number, output_file):
+        """
+        Start a packet capture in uBridge.
+
+        :param adapter_number: adapter number
+        :param output_file: PCAP destination file for the capture
+        """
+
+        vnet = "ethernet{}.vnet".format(adapter_number)
+        if vnet not in self._vmx_pairs:
+            raise VMwareError("vnet {} not in VMX file".format(vnet))
+        yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
+                                                                                                      output_file=output_file))
+
+    @asyncio.coroutine
+    def _stop_ubridge_capture(self, adapter_number):
+        """
+        Stop a packet capture in uBridge.
+
+        :param adapter_number: adapter number
+        """
+
+        vnet = "ethernet{}.vnet".format(adapter_number)
+        if vnet not in self._vmx_pairs:
+            raise VMwareError("vnet {} not in VMX file".format(vnet))
+        yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=vnet))
+
     @property
     def ubridge_path(self):
         """
@@ -927,3 +955,65 @@ class VMwareVM(BaseVM):
             else:
                 self._serial_pipe.close()
             self._serial_pipe = None
+
+    @asyncio.coroutine
+    def start_capture(self, adapter_number, output_file):
+        """
+        Starts a packet capture.
+
+        :param adapter_number: adapter number
+        :param output_file: PCAP destination file for the capture
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except KeyError:
+            raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+
+        if isinstance(nio, NIOVMNET):
+            raise VMwareError("Sorry, packet capture is not supported without uBridge enabled")
+
+        if not nio:
+            raise VMwareError("Adapter {} is not connected".format(adapter_number))
+
+        if nio.capturing:
+            raise VMwareError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
+
+        nio.startPacketCapture(output_file)
+
+        if self._started:
+            yield from self._start_ubridge_capture(adapter_number, output_file)
+
+        log.info("VMware VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                         id=self.id,
+                                                                                                         adapter_number=adapter_number))
+
+    def stop_capture(self, adapter_number):
+        """
+        Stops a packet capture.
+
+        :param adapter_number: adapter number
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except KeyError:
+            raise VMwareError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                        adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+
+        if not nio:
+            raise VMwareError("Adapter {} is not connected".format(adapter_number))
+
+        nio.stopPacketCapture()
+
+        if self._started:
+            yield from self._stop_ubridge_capture(adapter_number)
+
+        log.info("VMware VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                         id=self.id,
+                                                                                                         adapter_number=adapter_number))
