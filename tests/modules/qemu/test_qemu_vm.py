@@ -176,7 +176,7 @@ def test_add_nio_binding_udp(vm, loop):
 
 
 def test_add_nio_binding_ethernet(vm, loop, ethernet_device):
-    with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
+    with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
         nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_generic_ethernet", "ethernet_device": ethernet_device})
         loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
         assert nio.ethernet_device == ethernet_device

@@ -77,7 +77,7 @@ def test_vpcs_nio_create_udp(server, vm):
 
 
 def test_vpcs_nio_create_tap(server, vm, ethernet_device):
-    with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
+    with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
         response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
                                                                                                                                                          "tap_device": ethernet_device})
         assert response.status == 201
