@@ -311,7 +311,7 @@ class BaseManager:
         return vm
 
     @staticmethod
-    def _has_privileged_access(executable):
+    def has_privileged_access(executable):
         """
         Check if an executable can access Ethernet and TAP devices in
         RAW mode.
@@ -328,19 +328,20 @@ class BaseManager:
         if os.geteuid() == 0:
             # we are root, so we should have privileged access.
             return True
-        if os.stat(executable).st_mode & stat.S_ISUID or os.stat(executable).st_mode & stat.S_ISGID:
+
+        if os.stat(executable).st_uid == 0 and (os.stat(executable).st_mode & stat.S_ISUID or os.stat(executable).st_mode & stat.S_ISGID):
             # the executable has set UID bit.
             return True
 
         # test if the executable has the CAP_NET_RAW capability (Linux only)
-        if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
-            try:
+        try:
+            if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
                 caps = os.getxattr(executable, "security.capability")
                 # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
                 if struct.unpack("<IIIII", caps)[1] & 1 << 13:
                     return True
-            except Exception as e:
-                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
+        except OSError as e:
+            log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
 
         return False
 
@@ -374,7 +375,7 @@ class BaseManager:
             if not is_interface_up(tap_device):
                 raise aiohttp.web.HTTPConflict(text="TAP interface {} does not exist or is down".format(tap_device))
             # FIXME: check for permissions on tap device
-            # if not self._has_privileged_access(executable):
+            # if not self.has_privileged_access(executable):
             #    raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
             nio = NIOTAP(tap_device)
         elif nio_settings["type"] == "nio_generic_ethernet":

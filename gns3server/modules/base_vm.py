@@ -287,6 +287,9 @@ class BaseVM:
         Starts uBridge (handles connections to and from this VMware VM).
         """
 
+        if not self._manager.has_privileged_access(self.ubridge_path):
+            raise VMError("uBridge requires root access or capability to interact with network adapters")
+
         server_config = self._manager.config.get_section_config("Server")
         server_host = server_config.get("host")
         self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
