@@ -352,6 +352,8 @@ class Router(BaseVM):
             files += glob.glob(os.path.join(project_dir, "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
             files += glob.glob(os.path.join(project_dir, "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
             files += glob.glob(os.path.join(project_dir, "{}_i{}_rom".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(project_dir, "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(project_dir, "{}_i{}_ssa").format(self.platform, self.dynamips_id))
             for file in files:
                 try:
                     log.debug("Deleting file {}".format(file))
