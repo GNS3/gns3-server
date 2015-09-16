@@ -157,11 +157,13 @@ def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
         for vmnet_number in range(1, 20):
             if vmnet_number in (1, 8):
                 continue
+            print("Removing vmnet{}...".format(vmnet_number))
             os.system('"{}" -- remove adapter vmnet{}'.format(vnetlib_path, vmnet_number))
     else:
         for vmnet_number in range(vmnet_range_start, vmnet_range_end + 1):
             if vmnet_number in (1, 8):
                 continue
+            print("Adding vmnet{}...".format(vmnet_number))
             os.system('"{}" -- add adapter vmnet{}'.format(vnetlib_path, vmnet_number))
 
 
@@ -232,7 +234,11 @@ def main():
 
     vmnet_range = args.range if args.range is not None else DEFAULT_RANGE
     if sys.platform.startswith("win"):
-        vmnet_windows(args, vmnet_range[0], vmnet_range[1])
+        try:
+            vmnet_windows(args, vmnet_range[0], vmnet_range[1])
+        except SystemExit:
+            os.system("pause")
+            raise
     else:
         vmnet_unix(args, vmnet_range[0], vmnet_range[1])
 
