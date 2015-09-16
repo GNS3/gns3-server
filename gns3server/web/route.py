@@ -109,6 +109,9 @@ class Route(object):
         response = Response(request=request, route=route)
         response.set_status(401)
         response.headers["WWW-Authenticate"] = 'Basic realm="GNS3 server"'
+        # Force close the keep alive. Work around a Qt issue where Qt timeout instead of handling the 401
+        # this happen only for the first query send by the client.
+        response.force_close()
         return response
 
     @classmethod
