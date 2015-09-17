@@ -1,5 +1,49 @@
 # Change Log
 
+## 1.4.0beta2 17/09/2015
+
+* Fix a crash at vmware stop
+* Fix a crash when starting a VMware vm
+* Add how to add vmnet interfaces explantion in the error message
+* Fix path of VMinventory for fusion
+* Force close the keep alive when sending a 401
+* Do not automatically delete Dynamips bootflash file because they are necessary to restore VLANs on the c3600 platform.
+* Wait that an user press a key to stop gns3vmnet.exe on Windows.
+* Throw an error if ubridge as incorrect permissions. Fixes #312.
+* This may fix "The semaphore timeout period has expired" error on Windows. #311.
+* Fixes bug with VMware VM connections + moves some uBridge code to BaseVM.
+* Support for packet capture on VMware VM links.
+* Fix ProcessLookupError on _checkAlive Qemu
+* VMware Fusion support with uBridge.
+* Updates vmnet script to support Windows.
+* Do not block on .lock for VMware OSX
+* Require Dynamips version 0.2.16 to change the default QinQ Ethernet type.
+* Initial Docker support from Google Summer of Code (not enabled)
+* Check for valid FR or ATM switch mappings. Fixes #300.
+* VirtualBox VMs can only be started if powered off. Fixes #299.
+* Support of VPCS 0.8
+* Allows VMware VMs to use vmnet interfaces for connections without using uBridge. Fixes #295.
+* Fixes path to vmnet-cli on Mac OS X.
+* Updates vmnet script to support Mac OS X.
+* Fix closing project when multiple project is open
+* Fix project not closing
+* Qemu user options are at the end. It's allow user to add his own net interfaces
+* Change the way we look for Qemu path
+* Lock qemu vm during start / stop operations
+* In the error message explain how to turn off KVM support
+* Fix when you stop qemu on windows you have an error
+* Fix Qemu cannot be used on Windows
+* Allow to start server with python -m gns3server
+* Should solve the BufferError by avoiding using thread
+* Catch UnicodeEncodeError when passing unicode char as qemu options
+* EthernetSwitch: Allow to choose ethertype for QinQ outer tag.
+* Backport: fixes NAT NIO for Qemu VMs (do not launch any legacy scripts)
+* Fixes NAT NIO for Qemu VMs (do not launch any legacy scripts)
+* Lower VMware requirements to Workstation version 10 and Player version 6.
+* Fixes Unicode error. Fixes #290.
+* Don't delete Dynamips ROM files. They are used to restore the nvram.
+* Adds pywin32 dependency in setup.py for Windows.
+
 ## 1.4.0beta1 07/08/2015
 
 * Fix ram setting for Qemu
