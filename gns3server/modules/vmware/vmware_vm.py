@@ -260,7 +260,7 @@ class VMwareVM(BaseVM):
                 vnet = "ethernet{}.vnet".format(adapter_number)
                 if vnet in self._vmx_pairs:
                     vmnet = os.path.basename(self._vmx_pairs[vnet])
-                    if vmnet in self.manager.is_managed_vmnet(vmnet):
+                    if self.manager.is_managed_vmnet(vmnet):
                         # vmnet already managed, try to allocate a new one
                         allocate_vmnet = True
                 else:
@@ -276,7 +276,7 @@ class VMwareVM(BaseVM):
                         raise
 
                 # mark the vmnet managed by us
-                if not vmnet in self._vmnets:
+                if vmnet not in self._vmnets:
                     self._vmnets.append(vmnet)
                 self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
             else:
@@ -809,7 +809,6 @@ class VMwareVM(BaseVM):
                                                                                              id=self.id,
                                                                                              nio=nio,
                                                                                              adapter_number=adapter_number))
-
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
