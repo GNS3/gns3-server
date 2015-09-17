@@ -469,7 +469,7 @@ class VMwareVM(BaseVM):
                             if not self.manager.is_managed_vmnet(vmnet):
                                 continue
                         log.debug("removing adapter {}".format(adapter_number))
-                        for key in self._vmx_pairs.keys():
+                        for key in list(self._vmx_pairs.keys()):
                             if key.startswith("ethernet{}.".format(adapter_number)):
                                 del self._vmx_pairs[key]
 
