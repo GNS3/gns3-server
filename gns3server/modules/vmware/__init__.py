@@ -231,8 +231,7 @@ class VMware(BaseManager):
     def allocate_vmnet(self):
 
         if not self._vmnets:
-            raise VMwareError("No VMnet interface available between vmnet{} and vmnet{}".format(self._vmnet_start_range,
-                                                                                                self._vmnet_end_range))
+            raise VMwareError("No VMnet interface available between vmnet{} and vmnet{}. Go to preferences VMware / Network / Configure to add more interfaces.".format(self._vmnet_start_range, self._vmnet_end_range))
         return self._vmnets.pop(0)
 
     def refresh_vmnet_list(self):
