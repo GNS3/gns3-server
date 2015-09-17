@@ -465,7 +465,7 @@ class VMware(BaseManager):
         if sys.platform.startswith("win"):
             return os.path.expandvars(r"%APPDATA%\Vmware\Inventory.vmls")
         elif sys.platform.startswith("darwin"):
-            return os.path.expanduser("~/Library/Application\ Support/VMware Fusion/vmInventory")
+            return os.path.expanduser("~/Library/Application Support/VMware Fusion/vmInventory")
         else:
             return os.path.expanduser("~/.vmware/inventory.vmls")
 
