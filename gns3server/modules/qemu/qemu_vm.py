@@ -657,6 +657,10 @@ class QemuVM(BaseVM):
                 options = options.replace("-no-kvm", "")
             if "-enable-kvm" in options:
                 options = options.replace("-enable-kvm", "")
+        elif "-icount" in options:
+            # automatically add the -no-kvm option if -icount is detected
+            # to help with the migration of ASA VMs created before version 1.4
+            options = "-no-kvm " + options
         self._options = options.strip()
 
     @property
