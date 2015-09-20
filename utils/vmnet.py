@@ -33,7 +33,7 @@ else:
 if sys.platform.startswith("win"):
     DEFAULT_RANGE = [1, 19]
 else:
-    DEFAULT_RANGE = [10, 100]
+    DEFAULT_RANGE = [10, 99]
 
 
 def parse_networking_file():

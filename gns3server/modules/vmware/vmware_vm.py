@@ -236,7 +236,7 @@ class VMwareVM(BaseVM):
             #                 raise VMwareError("Network adapter {} is already associated with VMnet interface {} which is managed by GNS3, please remove".format(adapter_number, vmnet))
 
         # then configure VMware network adapters
-        self.manager.refresh_vmnet_list()
+        self.manager.refresh_vmnet_list(ubridge=self._use_ubridge)
         for adapter_number in range(0, self._adapters):
 
             # add/update the interface

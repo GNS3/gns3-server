@@ -359,7 +359,7 @@ class VMwareHandler:
     def allocate_vmnet(request, response):
 
         vmware_manager = VMware.instance()
-        vmware_manager.refresh_vmnet_list()
+        vmware_manager.refresh_vmnet_list(ubridge=False)
         vmnet = vmware_manager.allocate_vmnet()
         response.set_status(201)
         response.json({"vmnet": vmnet})

@@ -197,7 +197,52 @@ class VMware(BaseManager):
                 log.error("Error while looking for the VMware version: {}".format(e))
 
     @staticmethod
-    def get_vmnet_interfaces():
+    def _get_vmnet_interfaces_registry():
+
+        import winreg
+        vmnet_interfaces = []
+        regkey = r"SOFTWARE\Wow6432Node\VMware, Inc.\VMnetLib\VMnetConfig"
+        try:
+            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
+            for index in range(winreg.QueryInfoKey(hkey)[0]):
+                vmnet = winreg.EnumKey(hkey, index)
+                hkeyvmnet = winreg.OpenKey(hkey, vmnet)
+                if winreg.QueryInfoKey(hkeyvmnet)[1]:
+                    # the vmnet has not been configure if the key has no values
+                    vmnet = vmnet.replace("vm", "VM")
+                    if vmnet not in ("VMnet1", "VMnet8"):
+                        vmnet_interfaces.append(vmnet)
+                winreg.CloseKey(hkeyvmnet)
+            winreg.CloseKey(hkey)
+        except OSError as e:
+            raise VMwareError("Could not read registry key {}: {}".format(regkey, e))
+        return vmnet_interfaces
+
+    @staticmethod
+    def _get_vmnet_interfaces():
+
+        if sys.platform.startswith("win"):
+            return VMware._get_vmnet_interfaces_registry()
+        elif sys.platform.startswith("darwin"):
+            vmware_networking_file = "/Library/Preferences/VMware Fusion/networking"
+        else:
+            # location on Linux
+            vmware_networking_file = "/etc/vmware/networking"
+        vmnet_interfaces = []
+        try:
+            with open(vmware_networking_file, "r", encoding="utf-8") as f:
+                for line in f.read().splitlines():
+                    match = re.search("VNET_([0-9]+)_VIRTUAL_ADAPTER", line)
+                    if match:
+                        vmnet = "vmnet{}".format(match.group(1))
+                        if vmnet not in ("vmnet1", "vmnet8"):
+                            vmnet_interfaces.append(vmnet)
+        except OSError as e:
+            raise VMwareError("Cannot open {}: {}".format(vmware_networking_file, e))
+        return vmnet_interfaces
+
+    @staticmethod
+    def _get_vmnet_interfaces_ubridge():
 
         vmnet_interfaces = []
         for interface in interfaces():
@@ -234,9 +279,13 @@ class VMware(BaseManager):
             raise VMwareError("No VMnet interface available between vmnet{} and vmnet{}. Go to preferences VMware / Network / Configure to add more interfaces.".format(self._vmnet_start_range, self._vmnet_end_range))
         return self._vmnets.pop(0)
 
-    def refresh_vmnet_list(self):
+    def refresh_vmnet_list(self, ubridge=True):
 
-        vmnet_interfaces = self.get_vmnet_interfaces()
+        if ubridge:
+            # VMnet host adapters must be present when uBridge is used
+            vmnet_interfaces = self._get_vmnet_interfaces_ubridge()
+        else:
+            vmnet_interfaces = self._get_vmnet_interfaces()
 
         # remove vmnets already in use
         for vm in self._vms.values():
