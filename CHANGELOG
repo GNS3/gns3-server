@@ -44,6 +44,13 @@
 * Don't delete Dynamips ROM files. They are used to restore the nvram.
 * Adds pywin32 dependency in setup.py for Windows.
 
+## 1.3.10 04/09/2015
+
+* Catch exception when a process cannot be killed. Fixes #296.
+* Backport: fixes NAT NIO for Qemu VMs (do not launch any legacy scripts)
+* Fixes Unicode error. Fixes #290.
+* Don't delete Dynamips ROM files. They are used to restore the nvram.
+
 ## 1.4.0beta1 07/08/2015
 
 * Fix ram setting for Qemu
