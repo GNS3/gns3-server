@@ -1,5 +1,16 @@
 # Change Log
 
+
+## 1.4.0b3 22/09/2015
+
+* Fix dynamips configuration lost when you delete a node
+* Clarify error message when we got UTF-8 chars in the iourc file
+* Use custom VMnet interfaces without host adapter when uBridge is not used. Fixes #673.
+* Automatically add the -no-kvm option if -icount is detected to help with the migration of ASA VMs created before version 1.4
+* Check for valid FR or ATM switch mappings. Fixes #300.
+* Catch exception when a process cannot be killed. Fixes #296.
+
+
 ## 1.4.0beta2 17/09/2015
 
 * Fix a crash at vmware stop
