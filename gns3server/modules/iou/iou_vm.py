@@ -394,7 +394,7 @@ class IOUVM(BaseVM):
         except configparser.Error as e:
             raise IOUError("Could not parse iourc file {}: {}".format(self.iourc_path, e))
         except UnicodeDecodeError as e:
-            raise IOUError("Invalid iourc file {}: {}".format(self.iourc_path, e))
+            raise IOUError("Non ascii characters in iourc file {}, please remove them: {}".format(self.iourc_path, e))
         if "license" not in config:
             raise IOUError("License section not found in iourc file {}".format(self.iourc_path))
         hostname = socket.gethostname()
