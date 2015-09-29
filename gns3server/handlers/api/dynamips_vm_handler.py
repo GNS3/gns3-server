@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import base64
 
 from ...web.route import Route
@@ -317,6 +318,14 @@ class DynamipsVMHandler:
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
+
+        if sys.platform.startswith('win'):
+            #FIXME: Dynamips (Cygwin actually) doesn't like non ascii paths on Windows
+            try:
+                pcap_file_path.encode('ascii')
+            except UnicodeEncodeError:
+                raise DynamipsError('The capture file path "{}" must only contain ASCII (English) characters'.format(pcap_file_path))
+
         yield from vm.start_capture(slot_number, port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": pcap_file_path})
 
