@@ -318,8 +318,6 @@ class Router(BaseVM):
             return
 
         log.debug('Router "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
-        if self._dynamips_id in self._dynamips_ids[self._project.id]:
-            self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
@@ -354,6 +352,8 @@ class Router(BaseVM):
             files += glob.glob(os.path.join(project_dir, "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
             files += glob.glob(os.path.join(project_dir, "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
             files += glob.glob(os.path.join(project_dir, "{}_i{}_rom".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(project_dir, "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(project_dir, "{}_i{}_ssa").format(self.platform, self.dynamips_id))
             for file in files:
                 try:
                     log.debug("Deleting file {}".format(file))
@@ -1607,6 +1607,9 @@ class Router(BaseVM):
             except OSError as e:
                 log.warn("Could not delete file {}: {}".format(file, e))
                 continue
+
+        if self._dynamips_id in self._dynamips_ids[self._project.id]:
+            self._dynamips_ids[self._project.id].remove(self._dynamips_id)
 
     @asyncio.coroutine
     def clean_delete(self):
