@@ -357,7 +357,10 @@ class Dynamips(BaseManager):
         ghost_ios_support = self.config.get_section_config("Dynamips").getboolean("ghost_ios_support", True)
         if ghost_ios_support:
             with (yield from Dynamips._ghost_ios_lock):
-                yield from self._set_ghost_ios(vm)
+                try:
+                    yield from self._set_ghost_ios(vm)
+                except GeneratorExit:
+                    log.warning("Could not create ghost IOS image {} (GeneratorExit)".format(vm.name))
 
     @asyncio.coroutine
     def create_nio(self, node, nio_settings):

@@ -279,7 +279,7 @@ class VirtualBoxVM(BaseVM):
         try:
             with open(hdd_info_file, "r", encoding="utf-8") as f:
                 hdd_table = json.load(f)
-        except OSError as e:
+        except (ValueError, OSError) as e:
             raise VirtualBoxError("Could not read HDD info file: {}".format(e))
 
         for hdd_info in hdd_table:

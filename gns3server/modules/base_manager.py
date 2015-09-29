@@ -237,7 +237,7 @@ class BaseManager:
     @asyncio.coroutine
     def close_vm(self, vm_id):
         """
-        Delete a VM
+        Close a VM
 
         :param vm_id: VM identifier
 
@@ -305,7 +305,8 @@ class BaseManager:
 
         vm = yield from self.close_vm(vm_id)
         vm.project.mark_vm_for_destruction(vm)
-        del self._vms[vm.id]
+        if vm.id in self._vms:
+            del self._vms[vm.id]
         return vm
 
     @staticmethod
