@@ -171,7 +171,7 @@ class VMware(BaseManager):
             if sys.platform.startswith("darwin"):
                 return  # FIXME: no version checking on Mac OS X
             else:
-                vmware_path = self._get_linux_vmware_binary()
+                vmware_path = VMware._get_linux_vmware_binary()
 
             if vmware_path is None:
                 raise VMwareError("VMware is not installed (vmware executable could not be found in $PATH)")
@@ -438,7 +438,7 @@ class VMware(BaseManager):
         with open(path, "w", encoding=encoding, errors="ignore") as f:
             if sys.platform.startswith("linux"):
                 # write the shebang on the first line on Linux
-                vmware_path = self._get_linux_vmware_binary()
+                vmware_path = VMware._get_linux_vmware_binary()
                 if vmware_path:
                     f.write("#!{}\n".format(vmware_path))
             for key, value in pairs.items():
@@ -578,7 +578,8 @@ class VMware(BaseManager):
                 raise VMwareError('Could not find the default VM directory: "{}"'.format(default_vm_path))
             return self._get_vms_from_directory(default_vm_path)
 
-    def _get_linux_vmware_binary(self):
+    @staticmethod
+    def _get_linux_vmware_binary():
         """
         Return the path of the vmware binary on Linux or None
         """
