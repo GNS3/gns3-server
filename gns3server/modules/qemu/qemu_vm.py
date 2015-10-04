@@ -28,6 +28,7 @@ import shlex
 import asyncio
 import socket
 
+from pkg_resources import parse_version
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
@@ -990,6 +991,14 @@ class QemuVM(BaseVM):
 
         network_options = []
         network_options.extend(["-net", "none"])  # we do not want any user networking back-end if no adapter is connected.
+
+        patched_qemu = False
+        if self._legacy_networking:
+            version = yield from self.manager.get_qemu_version(self.qemu_path)
+            if version and parse_version(version) < parse_version("1.1.0"):
+                # this is a patched Qemu if version is below 1.1.0
+                patched_qemu = True
+
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             # TODO: let users specify a base mac address
             mac = "00:00:ab:%s:%s:%02x" % (self.id[-4:-2], self.id[-2:], adapter_number)
@@ -999,11 +1008,21 @@ class QemuVM(BaseVM):
                 if nio:
                     network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
                     if isinstance(nio, NIOUDP):
-                        network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
-                                                                                                                     adapter_number,
-                                                                                                                     nio.lport,
-                                                                                                                     nio.rport,
-                                                                                                                     nio.rhost)])
+                        if patched_qemu:
+                            # use patched Qemu syntax
+                            network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
+                                                                                                                         adapter_number,
+                                                                                                                         nio.lport,
+                                                                                                                         nio.rport,
+                                                                                                                         nio.rhost)])
+                        else:
+                            # use UDP tunnel support added in Qemu 1.1.0
+                            network_options.extend(["-net", "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
+                                                                                                                           adapter_number,
+                                                                                                                           nio.rhost,
+                                                                                                                           nio.rport,
+                                                                                                                           self._host,
+                                                                                                                           nio.lport)])
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
                     elif isinstance(nio, NIONAT):

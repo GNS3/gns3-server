@@ -86,7 +86,7 @@ class Qemu(BaseManager):
                             os.access(os.path.join(path, f), os.X_OK) and \
                             os.path.isfile(os.path.join(path, f)):
                         qemu_path = os.path.join(path, f)
-                        version = yield from Qemu._get_qemu_version(qemu_path)
+                        version = yield from Qemu.get_qemu_version(qemu_path)
                         qemus.append({"path": qemu_path, "version": version})
             except OSError:
                 continue
@@ -95,7 +95,7 @@ class Qemu(BaseManager):
 
     @staticmethod
     @asyncio.coroutine
-    def _get_qemu_version(qemu_path):
+    def get_qemu_version(qemu_path):
         """
         Gets the Qemu version.
 
@@ -103,17 +103,30 @@ class Qemu(BaseManager):
         """
 
         if sys.platform.startswith("win"):
+            # Qemu on Windows doesn't return anything with parameter -version
+            # look for a version number in version.txt file in the same directory instead
+            version_file = os.path.join(os.path.dirname(qemu_path), "version.txt")
+            if os.path.isfile(version_file):
+                try:
+                    with open(version_file, "rb") as file:
+                        version = file.read().decode("utf-8").strip()
+                        match = re.search("[0-9\.]+", version)
+                        if match:
+                            return version
+                except (UnicodeDecodeError, OSError) as e:
+                    log.warn("could not read {}: {}".format(version_file, e))
             return ""
-        try:
-            output = yield from subprocess_check_output(qemu_path, "-version")
-            match = re.search("version\s+([0-9a-z\-\.]+)", output)
-            if match:
-                version = match.group(1)
-                return version
-            else:
-                raise QemuError("Could not determine the Qemu version for {}".format(qemu_path))
-        except subprocess.SubprocessError as e:
-            raise QemuError("Error while looking for the Qemu version: {}".format(e))
+        else:
+            try:
+                output = yield from subprocess_check_output(qemu_path, "-version")
+                match = re.search("version\s+([0-9a-z\-\.]+)", output)
+                if match:
+                    version = match.group(1)
+                    return version
+                else:
+                    raise QemuError("Could not determine the Qemu version for {}".format(qemu_path))
+            except subprocess.SubprocessError as e:
+                raise QemuError("Error while looking for the Qemu version: {}".format(e))
 
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):
