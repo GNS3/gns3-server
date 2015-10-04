@@ -987,6 +987,7 @@ class QemuVM(BaseVM):
 
         return options
 
+    @asyncio.coroutine
     def _network_options(self):
 
         network_options = []
@@ -1070,8 +1071,7 @@ class QemuVM(BaseVM):
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", str(self._ram)])
-        disk_options = yield from self._disk_options()
-        command.extend(disk_options)
+        command.extend((yield from self._disk_options()))
         command.extend(self._linux_boot_options())
         command.extend(self._serial_options())
         command.extend(self._monitor_options())
@@ -1081,7 +1081,7 @@ class QemuVM(BaseVM):
                 command.extend(shlex.split(additional_options))
             except ValueError as e:
                 QemuError("Invalid additional options: {} error {}".format(additional_options, e))
-        command.extend(self._network_options())
+        command.extend((yield from self._network_options()))
         command.extend(self._graphic())
         return command
 
