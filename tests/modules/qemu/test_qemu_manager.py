@@ -27,7 +27,7 @@ from tests.utils import asyncio_patch
 def test_get_qemu_version(loop):
 
     with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
-        version = loop.run_until_complete(asyncio.async(Qemu._get_qemu_version("/tmp/qemu-test")))
+        version = loop.run_until_complete(asyncio.async(Qemu.get_qemu_version("/tmp/qemu-test")))
         if sys.platform.startswith("win"):
             assert version == ""
         else:
