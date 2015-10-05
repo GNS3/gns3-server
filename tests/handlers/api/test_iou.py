@@ -332,7 +332,7 @@ def test_vms(server, tmpdir, fake_iou_bin):
     with patch("gns3server.modules.IOU.get_images_directory", return_value=str(tmpdir)):
         response = server.get("/iou/vms", example=True)
     assert response.status == 200
-    assert response.json == [{"filename": "iou.bin"}]
+    assert response.json == [{"filename": "iou.bin", "path": "iou.bin"}]
 
 
 def test_upload_vm(server, tmpdir):

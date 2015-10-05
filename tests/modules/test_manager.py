@@ -132,8 +132,28 @@ def test_list_images(loop, qemu, tmpdir):
 
     with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir)):
         assert loop.run_until_complete(qemu.list_images()) == [
-            {"filename": "a.bin"},
-            {"filename": "b.bin"}
+            {"filename": "a.bin", "path": "a.bin"},
+            {"filename": "b.bin", "path": "b.bin"}
+        ]
+
+
+def test_list_images_recursives(loop, qemu, tmpdir):
+
+    fake_images = ["a.bin", "b.bin", ".blu.bin", "a.bin.md5sum"]
+    for image in fake_images:
+        with open(str(tmpdir / image), "w+") as f:
+            f.write("1")
+    os.makedirs(str(tmpdir / "c"))
+    fake_images = ["c.bin", "c.bin.md5sum"]
+    for image in fake_images:
+        with open(str(tmpdir / "c" / image), "w+") as f:
+            f.write("1")
+
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir)):
+        assert loop.run_until_complete(qemu.list_images()) == [
+            {"filename": "a.bin", "path": "a.bin"},
+            {"filename": "b.bin", "path": "b.bin"},
+            {"filename": "c.bin", "path": os.path.sep.join(["c", "c.bin"])}
         ]
 
 

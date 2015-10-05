@@ -777,21 +777,3 @@ VM_CONFIGS_SCHEMA = {
     },
     "additionalProperties": False,
 }
-
-VMS_LIST_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "List available Dynamips images",
-    "type": "array",
-    "items": [
-        {
-            "type": "object",
-            "properties": {
-                "filename": {
-                    "description": "Image filename",
-                    "type": ["string"]
-                },
-            },
-        }
-    ],
-    "additionalProperties": False,
-}

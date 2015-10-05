@@ -26,7 +26,7 @@ from ...schemas.iou import IOU_UPDATE_SCHEMA
 from ...schemas.iou import IOU_OBJECT_SCHEMA
 from ...schemas.iou import IOU_CAPTURE_SCHEMA
 from ...schemas.iou import IOU_CONFIGS_SCHEMA
-from ...schemas.iou import IOU_LIST_VMS_SCHEMA
+from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ...modules.iou import IOU
 
 
@@ -373,7 +373,7 @@ class IOUHandler:
             200: "List of IOU VM retrieved",
         },
         description="Retrieve the list of IOU VMS",
-        output=IOU_LIST_VMS_SCHEMA)
+        output=VM_LIST_IMAGES_SCHEMA)
     def list_vms(request, response):
 
         iou_manager = IOU.instance()
@@ -382,7 +382,7 @@ class IOUHandler:
         response.json(vms)
 
     @Route.post(
-        r"/iou/vms/{filename}",
+        r"/iou/vms/{path}",
         status_codes={
             204: "Image uploaded",
         },
@@ -391,5 +391,5 @@ class IOUHandler:
     def upload_vm(request, response):
 
         iou_manager = IOU.instance()
-        yield from iou_manager.write_image(request.match_info["filename"], request.content)
+        yield from iou_manager.write_image(request.match_info["path"], request.content)
         response.set_status(204)

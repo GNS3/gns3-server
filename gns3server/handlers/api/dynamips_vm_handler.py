@@ -20,12 +20,12 @@ import base64
 
 from ...web.route import Route
 from ...schemas.nio import NIO_SCHEMA
+from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ...schemas.dynamips_vm import VM_CREATE_SCHEMA
 from ...schemas.dynamips_vm import VM_UPDATE_SCHEMA
 from ...schemas.dynamips_vm import VM_CAPTURE_SCHEMA
 from ...schemas.dynamips_vm import VM_OBJECT_SCHEMA
 from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
-from ...schemas.dynamips_vm import VMS_LIST_SCHEMA
 from ...modules.dynamips import Dynamips
 from ...modules.dynamips.dynamips_error import DynamipsError
 from ...modules.project_manager import ProjectManager
@@ -460,7 +460,7 @@ class DynamipsVMHandler:
             200: "List of Dynamips VM retrieved",
         },
         description="Retrieve the list of Dynamips VMS",
-        output=VMS_LIST_SCHEMA)
+        output=VM_LIST_IMAGES_SCHEMA)
     def list_vms(request, response):
 
         dynamips_manager = Dynamips.instance()
@@ -469,7 +469,7 @@ class DynamipsVMHandler:
         response.json(vms)
 
     @Route.post(
-        r"/dynamips/vms/{filename}",
+        r"/dynamips/vms/{path}",
         status_codes={
             204: "Image uploaded",
         },
@@ -478,5 +478,5 @@ class DynamipsVMHandler:
     def upload_vm(request, response):
 
         dynamips_manager = Dynamips.instance()
-        yield from dynamips_manager.write_image(request.match_info["filename"], request.content)
+        yield from dynamips_manager.write_image(request.match_info["path"], request.content)
         response.set_status(204)

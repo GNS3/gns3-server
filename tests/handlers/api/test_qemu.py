@@ -216,7 +216,7 @@ def test_vms(server, tmpdir, fake_qemu_vm):
     with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir), example=True):
         response = server.get("/qemu/vms")
     assert response.status == 200
-    assert response.json == [{"filename": "linux.img"}]
+    assert response.json == [{"filename": "linux.img", "path": "linux.img"}]
 
 
 def test_upload_vm(server, tmpdir):

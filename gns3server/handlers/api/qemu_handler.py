@@ -26,8 +26,8 @@ from ...schemas.qemu import QEMU_CREATE_SCHEMA
 from ...schemas.qemu import QEMU_UPDATE_SCHEMA
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
 from ...schemas.qemu import QEMU_BINARY_LIST_SCHEMA
-from ...schemas.qemu import QEMU_LIST_IMAGES_SCHEMA
 from ...schemas.qemu import QEMU_IMAGE_CREATE_SCHEMA
+from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ...modules.qemu import Qemu
 from ...config import Config
 
@@ -348,7 +348,7 @@ class QEMUHandler:
             200: "List of Qemu images retrieved",
         },
         description="Retrieve the list of Qemu images",
-        output=QEMU_LIST_IMAGES_SCHEMA)
+        output=VM_LIST_IMAGES_SCHEMA)
     def list_vms(request, response):
 
         qemu_manager = Qemu.instance()
@@ -357,7 +357,7 @@ class QEMUHandler:
         response.json(vms)
 
     @Route.post(
-        r"/qemu/vms/{filename}",
+        r"/qemu/vms/{path}",
         status_codes={
             204: "Image uploaded",
         },
@@ -366,5 +366,5 @@ class QEMUHandler:
     def upload_vm(request, response):
 
         qemu_manager = Qemu.instance()
-        yield from qemu_manager.write_image(request.match_info["filename"], request.content)
+        yield from qemu_manager.write_image(request.match_info["path"], request.content)
         response.set_status(204)

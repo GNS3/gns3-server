@@ -439,15 +439,15 @@ class BaseManager:
         :returns: Array of hash
         """
 
-        try:
-            files = os.listdir(self.get_images_directory())
-        except FileNotFoundError:
-            return []
-        files.sort()
         images = []
-        for filename in files:
-            if filename[0] != "." and not filename.endswith(".md5sum"):
-                images.append({"filename": filename})
+        img_dir = self.get_images_directory()
+        for root, dirs, files in os.walk(img_dir):
+            for filename in files:
+                if filename[0] != "." and not filename.endswith(".md5sum"):
+                    path = os.path.relpath(os.path.join(root, filename), img_dir)
+                    images.append({
+                        "filename": filename,
+                        "path": path})
         return images
 
     def get_images_directory(self):
