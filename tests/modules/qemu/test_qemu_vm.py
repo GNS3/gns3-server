@@ -396,6 +396,13 @@ def test_hda_disk_image(vm, tmpdir):
         assert vm.hda_disk_image == str(tmpdir / "QEMU" / "test")
 
 
+def test_hda_disk_image_ova(vm, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        vm.hda_disk_image = "test.ovf/test.vmdk"
+        assert vm.hda_disk_image == str(tmpdir / "QEMU" / "test.ovf" / "test.vmdk")
+
+
 def test_hdb_disk_image(vm, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):

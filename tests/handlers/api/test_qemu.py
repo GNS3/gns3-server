@@ -232,6 +232,25 @@ def test_upload_vm(server, tmpdir):
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
+def test_upload_vm_ova(server, tmpdir):
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/qemu/vms/test2.ova/test2.vmdk", body="TEST", raw=True)
+        assert response.status == 204
+
+    with open(str(tmpdir / "test2.ova" / "test2.vmdk")) as f:
+        assert f.read() == "TEST"
+
+    with open(str(tmpdir / "test2.ova" / "test2.vmdk.md5sum")) as f:
+        checksum = f.read()
+        assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
+
+
+def test_upload_vm_forbiden_location(server, tmpdir):
+    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/qemu/vms/../../test2", body="TEST", raw=True)
+        assert response.status == 403
+
+
 def test_upload_vm_permission_denied(server, tmpdir):
     with open(str(tmpdir / "test2"), "w+") as f:
         f.write("")

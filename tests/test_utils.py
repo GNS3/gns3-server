@@ -16,13 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import posixpath
+from gns3server.utils import force_unix_path
 
 
-def force_unix_path(path):
-    """
-    :param path: Path to convert
-    """
-
-    path = path.replace("\\", "/")
-    return posixpath.normpath(path)
+def test_force_unix_path():
+    assert force_unix_path("a/b") == "a/b"
+    assert force_unix_path("a\\b") == "a/b"
+    assert force_unix_path("a\\b\\..\\c") == "a/c"

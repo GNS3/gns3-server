@@ -357,7 +357,7 @@ class QEMUHandler:
         response.json(vms)
 
     @Route.post(
-        r"/qemu/vms/{path}",
+        r"/qemu/vms/{path:.+}",
         status_codes={
             204: "Image uploaded",
         },

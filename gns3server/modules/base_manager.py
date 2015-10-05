@@ -31,6 +31,7 @@ from uuid import UUID, uuid4
 from gns3server.utils.interfaces import is_interface_up
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
+from ..utils import force_unix_path
 from .project_manager import ProjectManager
 
 from .nios.nio_udp import NIOUDP
@@ -372,7 +373,7 @@ class BaseManager:
             nio = NIOUDP(lport, rhost, rport)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
-            #if not is_interface_up(tap_device):
+            # if not is_interface_up(tap_device):
             #    raise aiohttp.web.HTTPConflict(text="TAP interface {} does not exist or is down".format(tap_device))
             # FIXME: check for permissions on tap device
             # if not self.has_privileged_access(executable):
@@ -408,10 +409,10 @@ class BaseManager:
             if not os.path.exists(path):
                 old_path = os.path.normpath(os.path.join(img_directory, '..', *s))
                 if os.path.exists(old_path):
-                    return old_path
+                    return force_unix_path(old_path)
 
-            return path
-        return path
+            return force_unix_path(path)
+        return force_unix_path(path)
 
     def get_relative_image_path(self, path):
         """
@@ -427,8 +428,8 @@ class BaseManager:
             return ""
         img_directory = self.get_images_directory()
         path = self.get_abs_image_path(path)
-        if os.path.dirname(path) == img_directory:
-            return os.path.basename(path)
+        if os.path.commonprefix([img_directory, path]) == img_directory:
+            return os.path.relpath(path, img_directory)
         return path
 
     @asyncio.coroutine
@@ -460,11 +461,13 @@ class BaseManager:
     @asyncio.coroutine
     def write_image(self, filename, stream):
         directory = self.get_images_directory()
-        path = os.path.join(directory, os.path.basename(filename))
+        path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
+        if os.path.commonprefix([directory, path]) != directory:
+            raise aiohttp.web.HTTPForbidden(text="Could not write image: {}, {} is forbiden".format(filename, path))
         log.info("Writting image file %s", path)
         try:
             remove_checksum(path)
-            os.makedirs(directory, exist_ok=True)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb+') as f:
                 while True:
                     packet = yield from stream.read(512)
@@ -474,4 +477,4 @@ class BaseManager:
             os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
             md5sum(path)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Could not write image: {} to {}".format(filename, e))
+            raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))

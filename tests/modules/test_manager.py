@@ -123,6 +123,16 @@ def test_get_relative_image_path(qemu, tmpdir):
         assert qemu.get_relative_image_path("../test1.bin") == path1
 
 
+def test_get_relative_image_path_ova(qemu, tmpdir):
+    os.makedirs(str(tmpdir / "QEMU" / "test.ovf"))
+    path = str(tmpdir / "QEMU" / "test.ovf" / "test.bin")
+    open(path, 'w+').close()
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
+        assert qemu.get_relative_image_path(path) == os.path.join("test.ovf", "test.bin")
+        assert qemu.get_relative_image_path(os.path.join("test.ovf", "test.bin")) == os.path.join("test.ovf", "test.bin")
+
+
 def test_list_images(loop, qemu, tmpdir):
 
     fake_images = ["a.bin", "b.bin", ".blu.bin", "a.bin.md5sum"]
