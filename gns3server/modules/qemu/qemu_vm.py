@@ -30,6 +30,7 @@ import asyncio
 import socket
 import gns3server
 
+from pkg_resources import parse_version
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
@@ -1317,10 +1318,19 @@ class QemuVM(BaseVM):
 
         return options
 
+    @asyncio.coroutine
     def _network_options(self):
 
         network_options = []
         network_options.extend(["-net", "none"])  # we do not want any user networking back-end if no adapter is connected.
+
+        patched_qemu = False
+        if self._legacy_networking:
+            version = yield from self.manager.get_qemu_version(self.qemu_path)
+            if version and parse_version(version) < parse_version("1.1.0"):
+                # this is a patched Qemu if version is below 1.1.0
+                patched_qemu = True
+
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = "%s%02x" % (self._mac_address[:-2], (int(self._mac_address[-2:]) + adapter_number) % 255)
             nio = adapter.get_nio(0)
@@ -1329,11 +1339,21 @@ class QemuVM(BaseVM):
                 if nio:
                     network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
                     if isinstance(nio, NIOUDP):
-                        network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
-                                                                                                                     adapter_number,
-                                                                                                                     nio.lport,
-                                                                                                                     nio.rport,
-                                                                                                                     nio.rhost)])
+                        if patched_qemu:
+                            # use patched Qemu syntax
+                            network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
+                                                                                                                         adapter_number,
+                                                                                                                         nio.lport,
+                                                                                                                         nio.rport,
+                                                                                                                         nio.rhost)])
+                        else:
+                            # use UDP tunnel support added in Qemu 1.1.0
+                            network_options.extend(["-net", "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
+                                                                                                                           adapter_number,
+                                                                                                                           nio.rhost,
+                                                                                                                           nio.rport,
+                                                                                                                           self._host,
+                                                                                                                           nio.lport)])
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
                     elif isinstance(nio, NIONAT):
@@ -1407,9 +1427,9 @@ class QemuVM(BaseVM):
             command.extend(["-enable-kvm"])
         command.extend(["-boot", "order={}".format(self._boot_priority)])
         disk_options = yield from self._disk_options()
-        command.extend(disk_options)
         cdrom_option = self._cdrom_option()
         command.extend(cdrom_option)
+        command.extend((yield from self._disk_options()))
         command.extend(self._linux_boot_options())
         if self._console_type == "telnet":
             command.extend(self._serial_options())
