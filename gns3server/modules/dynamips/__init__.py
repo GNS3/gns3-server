@@ -27,13 +27,14 @@ import socket
 import time
 import asyncio
 import tempfile
-import glob
 import logging
+import glob
 
 log = logging.getLogger(__name__)
 
 from gns3server.utils.interfaces import get_windows_interfaces, is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor
+from gns3server.utils.glob import glob_escape
 from pkg_resources import parse_version
 from uuid import UUID, uuid4
 from ..base_manager import BaseManager
@@ -168,11 +169,11 @@ class Dynamips(BaseManager):
         yield from super().project_closed(project)
         # delete useless Dynamips files
         project_dir = project.module_working_path(self.module_name.lower())
-        files = glob.glob(os.path.join(project_dir, "*.ghost"))
-        files += glob.glob(os.path.join(project_dir, "*_lock"))
-        files += glob.glob(os.path.join(project_dir, "ilt_*"))
-        files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_i[0-9]*_rommon_vars"))
-        files += glob.glob(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_i[0-9]*_log.txt"))
+        files = glob.glob(glob_escape(os.path.join(project_dir, "*.ghost")))
+        files += glob.glob(glob_escape(os.path.join(project_dir, "*_lock")))
+        files += glob.glob(glob_escape(os.path.join(project_dir, "ilt_*")))
+        files += glob.glob(glob_escape(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_i[0-9]*_rommon_vars")))
+        files += glob.glob(glob_escape(os.path.join(project_dir, "c[0-9][0-9][0-9][0-9]_i[0-9]*_log.txt")))
         for file in files:
             try:
                 log.debug("Deleting file {}".format(file))
