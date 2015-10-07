@@ -1438,7 +1438,7 @@ class QemuVM(BaseVM):
         else:
             raise QemuError("Console type {} is unknown".format(self._console_type))
         command.extend(self._monitor_options())
-        command.extend(self._network_options())
+        command.extend((yield from self._network_options()))
         command.extend(self._graphic())
         additional_options = self._options.strip()
         if additional_options:
