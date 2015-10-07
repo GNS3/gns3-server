@@ -19,6 +19,9 @@
 import pytest
 import tempfile
 import sys
+import uuid
+import os
+import asyncio
 
 from gns3server.modules.dynamips import Dynamips
 from gns3server.modules.dynamips.dynamips_error import DynamipsError
@@ -37,9 +40,57 @@ def test_vm_invalid_dynamips_path(manager):
         with pytest.raises(DynamipsError):
             manager.find_dynamips()
 
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported by Windows")
 def test_vm_non_executable_dynamips_path(manager):
     tmpfile = tempfile.NamedTemporaryFile()
     with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": tmpfile.name}):
         with pytest.raises(DynamipsError):
             manager.find_dynamips()
+
+
+def test_get_dynamips_id(manager):
+    project_1 = str(uuid.uuid4())
+    project_2 = str(uuid.uuid4())
+    project_3 = str(uuid.uuid4())
+
+    assert manager.get_dynamips_id(project_1) == 1
+    assert manager.get_dynamips_id(project_1) == 2
+    assert manager.get_dynamips_id(project_2) == 1
+    with pytest.raises(DynamipsError):
+        for dynamips_id in range(1, 4098):
+            manager.get_dynamips_id(project_3)
+
+
+def test_take_dynamips_id(manager):
+    project_1 = str(uuid.uuid4())
+
+    manager.take_dynamips_id(project_1, 1)
+    assert manager.get_dynamips_id(project_1) == 2
+    with pytest.raises(DynamipsError):
+        manager.take_dynamips_id(project_1, 1)
+
+
+def test_release_dynamips_id(manager):
+    project_1 = str(uuid.uuid4())
+    project_2 = str(uuid.uuid4())
+
+    manager.take_dynamips_id(project_1, 1)
+    manager.release_dynamips_id(project_1, 1)
+    assert manager.get_dynamips_id(project_1) == 1
+    # Should not crash for 0 id
+    manager.release_dynamips_id(project_2, 0)
+
+
+def test_project_closed(manager, project, loop):
+
+    manager._dynamips_ids[project.id] = set([1, 2, 3])
+
+    project_dir = project.module_working_path(manager.module_name.lower())
+    os.makedirs(project_dir)
+    open(os.path.join(project_dir, "test.ghost"), "w+").close()
+
+    loop.run_until_complete(asyncio.async(manager.project_closed(project)))
+
+    assert not os.path.exists(os.path.join(project_dir, "test.ghost"))
+    assert project.id not in manager._dynamips_ids
