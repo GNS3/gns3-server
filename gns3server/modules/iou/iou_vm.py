@@ -41,6 +41,7 @@ from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..nios.nio_generic_ethernet import NIOGenericEthernet
 from ..base_vm import BaseVM
+from ...utils.glob import glob_escape
 from .ioucon import start_ioucon
 import gns3server.utils.asyncio
 
@@ -486,10 +487,10 @@ class IOUVM(BaseVM):
         """
 
         destination = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
-        for file_path in glob.glob(os.path.join(self.working_dir, "nvram_*")):
+        for file_path in glob.glob(os.path.join(glob_escape(self.working_dir), "nvram_*")):
             shutil.move(file_path, destination)
         destination = os.path.join(self.working_dir, "vlan.dat-{:05d}".format(self.application_id))
-        for file_path in glob.glob(os.path.join(self.working_dir, "vlan.dat-*")):
+        for file_path in glob.glob(os.path.join(glob_escape(self.working_dir), "vlan.dat-*")):
             shutil.move(file_path, destination)
 
     @asyncio.coroutine
