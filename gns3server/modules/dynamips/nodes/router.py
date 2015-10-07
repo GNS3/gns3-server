@@ -357,13 +357,13 @@ class Router(BaseVM):
         if self._auto_delete_disks:
             # delete nvram and disk files
             project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
-            files = glob.glob(os.path.join(project_dir, "{}_i{}_disk[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(project_dir, "{}_i{}_slot[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(project_dir, "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(project_dir, "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(project_dir, "{}_i{}_rom".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(project_dir, "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(project_dir, "{}_i{}_ssa").format(self.platform, self.dynamips_id))
+            files = glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_disk[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_slot[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_rom".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_ssa").format(self.platform, self.dynamips_id))
             for file in files:
                 try:
                     log.debug("Deleting file {}".format(file))
