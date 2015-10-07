@@ -54,7 +54,6 @@ class Router(BaseVM):
     :param platform: Platform of this router
     """
 
-    _dynamips_ids = {}
     _status = {0: "inactive",
                1: "shutting down",
                2: "running",
@@ -96,20 +95,11 @@ class Router(BaseVM):
         self._ghost_flag = ghost_flag
 
         if not ghost_flag:
-            self._dynamips_ids.setdefault(project.id, list())
             if not dynamips_id:
-                # find a Dynamips ID if none is provided (0 < id <= 4096)
-                self._dynamips_id = 0
-                for identifier in range(1, 4097):
-                    if identifier not in self._dynamips_ids[project.id]:
-                        self._dynamips_id = identifier
-                        break
-                if self._dynamips_id == 0:
-                    raise DynamipsError("Maximum number of Dynamips instances reached")
+                self._dynamips_id = manager.get_dynamips_id(project.id)
             else:
-                if dynamips_id in self._dynamips_ids[project.id]:
-                    raise DynamipsError("Dynamips identifier {} is already used by another router".format(dynamips_id))
-            self._dynamips_ids[project.id].append(self._dynamips_id)
+                self._dynamips_id = dynamips_id
+                manager.take_dynamips_id(project.id, dynamips_id)
 
             if self._aux is not None:
                 self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
@@ -1626,8 +1616,7 @@ class Router(BaseVM):
                 log.warn("Could not delete file {}: {}".format(file, e))
                 continue
 
-        if self._dynamips_id in self._dynamips_ids[self._project.id]:
-            self._dynamips_ids[self._project.id].remove(self._dynamips_id)
+        self.manager.release_dynamips_id(self._project.id, self._dynamips_id)
 
     @asyncio.coroutine
     def clean_delete(self):
