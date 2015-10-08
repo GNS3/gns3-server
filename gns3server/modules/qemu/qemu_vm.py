@@ -665,10 +665,18 @@ class QemuVM(BaseVM):
         """
 
         log.debug('QEMU VM "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
-        yield from self.stop()
+
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
+
+        for adapter in self._ethernet_adapters:
+            if adapter is not None:
+                for nio in adapter.ports.values():
+                    if nio and isinstance(nio, NIOUDP):
+                        self.manager.port_manager.release_udp_port(nio.lport, self._project)
+
+        yield from self.stop()
 
     @asyncio.coroutine
     def _get_vm_status(self):
