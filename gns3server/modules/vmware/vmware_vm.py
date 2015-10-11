@@ -128,6 +128,14 @@ class VMwareVM(BaseVM):
             raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
     @asyncio.coroutine
+    def is_running(self):
+
+        result = yield from self.manager.execute("list", [])
+        if self._vmx_path in result:
+            return True
+        return False
+
+    @asyncio.coroutine
     def create(self):
         """
         Creates this VM and handle linked clones.
@@ -400,9 +408,8 @@ class VMwareVM(BaseVM):
         Starts this VMware VM.
         """
 
-        # The lock dection is not working on OSX the .lck is never deleted
-        if os.path.exists(self._vmx_path + ".lck") and not sys.platform.startswith("darwin"):
-            raise VMwareError("VM locked, it is either running or being edited in VMware")
+        if (yield from self.is_running()):
+            raise VMwareError("The VM is already running in VMware")
 
         ubridge_path = self.ubridge_path
         if not ubridge_path or not os.path.isfile(ubridge_path):
