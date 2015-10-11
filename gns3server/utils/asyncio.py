@@ -18,6 +18,7 @@
 
 import asyncio
 import sys
+import os
 
 
 @asyncio.coroutine
@@ -96,3 +97,14 @@ def monitor_process(process, termination_callback):
     """Call termination_callback when a process dies"""
 
     asyncio.async(_check_process(process, termination_callback))
+
+
+@asyncio.coroutine
+def wait_for_file_creation(path, timeout=10):
+
+    while timeout > 0:
+        if os.path.exists(path):
+            return
+        yield from asyncio.sleep(0.5)
+        timeout -= 0.5
+    raise asyncio.TimeoutError()
