@@ -103,10 +103,9 @@ class Server:
 
     def _signal_handling(self):
 
-        @asyncio.coroutine
         def signal_handler(signame):
             log.warning("Server has got signal {}, exiting...".format(signame))
-            yield from self.shutdown_server()
+            asyncio.async(self.shutdown_server())
 
         signals = ["SIGTERM", "SIGINT"]
         if sys.platform.startswith("win"):
@@ -115,7 +114,7 @@ class Server:
             signals.extend(["SIGHUP", "SIGQUIT"])
 
         for signal_name in signals:
-            callback = functools.partial(asyncio.async, signal_handler(signal_name))
+            callback = functools.partial(signal_handler, signal_name)
             if sys.platform.startswith("win"):
                 # add_signal_handler() is not yet supported on Windows
                 signal.signal(getattr(signal, signal_name), callback)
