@@ -419,6 +419,9 @@ class VMwareVM(BaseVM):
             yield from self._start_ubridge()
 
         self._read_vmx_file()
+        # check if there is enough RAM to run
+        if "memsize" in self._vmx_pairs:
+            self.check_available_ram(int(self._vmx_pairs["memsize"]))
         self._set_network_options()
         self._set_serial_console()
         self._write_vmx_file()

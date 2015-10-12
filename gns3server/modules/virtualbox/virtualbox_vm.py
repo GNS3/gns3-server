@@ -202,6 +202,9 @@ class VirtualBoxVM(BaseVM):
         yield from self._set_network_options()
         yield from self._set_serial_console()
 
+        # check if there is enough RAM to run
+        self.check_available_ram(self.ram)
+
         args = [self._vmname]
         if self._headless:
             args.extend(["--type", "headless"])

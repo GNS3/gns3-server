@@ -247,6 +247,10 @@ class Router(BaseVM):
             if elf_header_start != b'\x7fELF\x01\x02\x01':
                 raise DynamipsError('"{}" is not a valid IOS image'.format(self._image))
 
+            # check if there is enough RAM to run
+            if not self._ghost_flag:
+                self.check_available_ram(self.ram)
+
             yield from self._hypervisor.send('vm start "{name}"'.format(name=self._name))
             self.status = "started"
             log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))

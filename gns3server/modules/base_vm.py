@@ -21,6 +21,8 @@ import aiohttp
 import shutil
 import asyncio
 import tempfile
+import psutil
+import platform
 
 from pkg_resources import parse_version
 from ..utils.asyncio import wait_run_in_executor
@@ -309,3 +311,20 @@ class BaseVM:
         """
 
         return self._hw_virtualization
+
+    def check_available_ram(self, requested_ram):
+        """
+        Sends a warning notification if there is not enough RAM on the system to allocate requested RAM.
+
+        :param requested_ram: requested amount of RAM in MB
+        """
+
+        available_ram = int(psutil.virtual_memory().available / (1024 * 1024))
+        percentage_left = psutil.virtual_memory().percent
+        if requested_ram > available_ram:
+            message = '"{}" requires {}MB of RAM to run but there is only {}MB - {}% of RAM left on "{}"'.format(self.name,
+                                                                                                                 requested_ram,
+                                                                                                                 available_ram,
+                                                                                                                 percentage_left,
+                                                                                                                 platform.node())
+            self.project.emit("log.warning", {"message": message})

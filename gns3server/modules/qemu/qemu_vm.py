@@ -849,6 +849,9 @@ class QemuVM(BaseVM):
                     except OSError as e:
                         raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
 
+                # check if there is enough RAM to run
+                self.check_available_ram(self.ram)
+
                 self._command = yield from self._build_command()
                 command_string = " ".join(shlex.quote(s) for s in self._command)
                 try:

@@ -492,6 +492,9 @@ class IOUVM(BaseVM):
             self._create_netmap_config()
             self._push_configs_to_nvram()
 
+            # check if there is enough RAM to run
+            self.check_available_ram(self.ram)
+
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
 
