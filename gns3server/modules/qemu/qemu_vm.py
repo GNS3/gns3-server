@@ -588,7 +588,7 @@ class QemuVM(BaseVM):
                 log.error("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
                 raise QemuError("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
 
-            self._set_process_priority()
+            yield from self._set_process_priority()
             if self._cpu_throttling:
                 self._set_cpu_throttling()
 
@@ -603,7 +603,7 @@ class QemuVM(BaseVM):
             log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
             try:
                 self._process.terminate()
-                self._process.wait()
+                yield from self._process.wait()
             except subprocess.TimeoutExpired:
                 try:
                     self._process.kill()
