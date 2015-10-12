@@ -221,6 +221,9 @@ class Server:
             ssl_context = self._create_ssl_context(server_config)
 
         self._loop = asyncio.get_event_loop()
+        # Asyncio will raise error if coroutine is not called
+        self._loop.set_debug(True)
+
         app = aiohttp.web.Application()
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))
