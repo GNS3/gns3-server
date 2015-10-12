@@ -170,11 +170,10 @@ class VMware(BaseManager):
         else:
             if sys.platform.startswith("darwin"):
                 return  # FIXME: no version checking on Mac OS X
-            else:
-                vmware_path = VMware._get_linux_vmware_binary()
 
+            vmware_path = VMware._get_linux_vmware_binary()
             if vmware_path is None:
-                raise VMwareError("VMware is not installed (vmware executable could not be found in $PATH)")
+                raise VMwareError("VMware is not installed (vmware or vmplayer executable could not be found in $PATH)")
 
             try:
                 output = yield from subprocess_check_output(vmware_path, "-v")
