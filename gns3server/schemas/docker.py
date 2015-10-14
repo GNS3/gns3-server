@@ -23,58 +23,26 @@ DOCKER_CREATE_SCHEMA = {
     "properties": {
         "vm_id": {
             "description": "Docker VM instance identifier",
-            "oneOf": [
-                {"type": "string",
-                 "minLength": 36,
-                 "maxLength": 36,
-                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"},
-                {"type": "integer"}  # for legacy projects
-            ]
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "name": {
             "description": "Docker container name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "startcmd": {
-            "description": "Docker CMD entry",
-            "type": "string",
-            "minLength": 1,
-        },
-        "imagename": {
-            "description": "Docker image name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "adapters": {
-            "description": "number of adapters",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 64,
-        },
-        "adapter_type": {
-            "description": "Docker adapter type",
             "type": "string",
             "minLength": 1,
         },
         "console": {
-            "description": "console name",
-            "type": "string",
-            "minLength": 1,
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
         },
-    },
-    "additionalProperties": False,
-}
-
-DOCKER_UPDATE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to update a Docker container",
-    "type": "object",
-    "properties": {
-        "name": {
-            "description": "Docker container name",
-            "type": "string",
-            "minLength": 1,
+        "start_command": {
+            "description": "Docker CMD entry",
+            "type": ["string", "null"],
+            "minLength": 0,
         },
         "image": {
             "description": "Docker image name",
@@ -83,32 +51,50 @@ DOCKER_UPDATE_SCHEMA = {
         },
         "adapters": {
             "description": "number of adapters",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 0,
-            "maximum": 64,
+            "maximum": 99,
         },
-        "adapter_type": {
-            "description": "Docker adapter type",
-            "type": "string",
-            "minLength": 1,
-        },
+        "environment": {
+            "description": "Docker environment",
+            "type": ["string", "null"],
+            "minLength": 0,
+        }
+
     },
     "additionalProperties": False,
 }
 
-DOCKER_CAPTURE_SCHEMA = {
+
+DOCKER_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start a packet capture on a Docker container port",
+    "description": "Request validation to create a new Docker container",
     "type": "object",
     "properties": {
-        "capture_file_name": {
-            "description": "Capture file name",
+        "name": {
+            "description": "Docker container name",
             "type": "string",
             "minLength": 1,
         },
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "start_command": {
+            "description": "Docker CMD entry",
+            "type": ["string", "null"],
+            "minLength": 0,
+        },
+        "environment": {
+            "description": "Docker environment",
+            "type": ["string", "null"],
+            "minLength": 0,
+        }
+
     },
     "additionalProperties": False,
-    "required": ["capture_file_name"]
 }
 
 DOCKER_OBJECT_SCHEMA = {
@@ -128,12 +114,18 @@ DOCKER_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "cid": {
+        "console": {
+            "description": "console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "container_id": {
             "description": "Docker container ID",
             "type": "string",
-            "minLength": 64,
+            "minLength": 12,
             "maxLength": 64,
-            "pattern": "^[a-zA-Z0-9_.-]{64}$"
+            "pattern": "^[a-f0-9]+$"
         },
         "project_id": {
             "description": "Project UUID",
@@ -149,16 +141,40 @@ DOCKER_OBJECT_SCHEMA = {
         },
         "adapters": {
             "description": "number of adapters",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 0,
-            "maximum": 64,
+            "maximum": 99,
         },
-        "adapter_type": {
-            "description": "Docker adapter type",
-            "type": "string",
-            "minLength": 1,
+        "start_command": {
+            "description": "Docker CMD entry",
+            "type": ["string", "null"],
+            "minLength": 0,
         },
+        "environment": {
+            "description": "Docker environment",
+            "type": ["string", "null"],
+            "minLength": 0,
+        }
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id"]
+    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "console", "start_command", "environment"]
+}
+
+
+DOCKER_LIST_IMAGES_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Docker list of images",
+    "type": "array",
+    "items": [
+        {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "description": "Docker image name",
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        }
+    ]
 }

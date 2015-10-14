@@ -27,6 +27,7 @@ class EthernetAdapter(Adapter):
     def __init__(self, interfaces=1):
 
         super().__init__(interfaces)
+        self.host_ifc = None
 
     def __str__(self):
 

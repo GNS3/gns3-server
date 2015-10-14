@@ -200,7 +200,7 @@ class Server:
         """
 
         logger = logging.getLogger("asyncio")
-        logger.setLevel(logging.WARNING)
+        logger.setLevel(logging.ERROR)
 
         server_config = Config.instance().get_section_config("Server")
         if sys.platform.startswith("win"):
@@ -248,6 +248,9 @@ class Server:
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
+
+        from gns3server.modules.docker import Docker
+        asyncio.async(Docker.instance().query("GET", "info"))
 
         try:
             self._loop.run_forever()

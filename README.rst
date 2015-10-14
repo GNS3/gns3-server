@@ -203,4 +203,4 @@ If you want test coverage:
 
 .. code:: bash
 
-    py.test --cov=gns3server
+    py.test --cov-report term-missing --cov=gns3server
