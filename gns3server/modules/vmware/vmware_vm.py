@@ -820,7 +820,8 @@ class VMwareVM(BaseVM):
                     raise VMwareError("Sorry, adding a link to a started VMware VM is not supported without uBridge enabled")
                 self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = nio.vmnet
                 self._write_vmx_file()
-                self._vmnets.append(nio.vmnet)
+                if nio.vmnet not in self._vmnets:
+                    self._vmnets.append(nio.vmnet)
             adapter.add_nio(0, nio)
             if self._started and self._use_ubridge:
                 yield from self._add_ubridge_connection(nio, adapter_number)

@@ -348,9 +348,10 @@ class VMwareHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/interfaces/vmnet",
+        r"/projects/{project_id}/vmware/vms/{vm_id}/interfaces/vmnet",
         parameters={
             "project_id": "The UUID of the project",
+            "vm_id": "UUID for the instance",
         },
         status_codes={
             201: "VMnet interface allocated",
@@ -359,7 +360,9 @@ class VMwareHandler:
     def allocate_vmnet(request, response):
 
         vmware_manager = VMware.instance()
+        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         vmware_manager.refresh_vmnet_list(ubridge=False)
         vmnet = vmware_manager.allocate_vmnet()
+        vm.vmnets.append(vmnet)
         response.set_status(201)
         response.json({"vmnet": vmnet})
