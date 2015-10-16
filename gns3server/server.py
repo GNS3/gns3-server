@@ -99,6 +99,9 @@ class Server:
         if self._port_manager.udp_ports:
             log.warning("UDP ports are still used {}".format(self._port_manager.udp_ports))
 
+        for task in asyncio.Task.all_tasks():
+            task.cancel()
+
         self._loop.stop()
 
     def _signal_handling(self):
