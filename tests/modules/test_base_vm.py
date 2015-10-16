@@ -48,12 +48,12 @@ def test_temporary_directory(project, manager):
 
 def test_console(project, manager):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    vm.console = 2001
-    assert vm.console == 2001
+    vm.console = 2011
+    assert vm.console == 2011
 
 
 def test_console_vnc_invalid(project, manager):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     vm.console_type = "vnc"
     with pytest.raises(VMError):
-        vm.console = 2002
+        vm.console = 2012

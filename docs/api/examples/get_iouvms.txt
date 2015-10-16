@@ -7,14 +7,15 @@ GET /v1/iou/vms HTTP/1.1
 HTTP/1.1 200
 ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 45
+CONTENT-LENGTH: 72
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0dev3
+SERVER: Python/3.4 GNS3/1.4.0.dev9
 X-ROUTE: /v1/iou/vms
 
 [
     {
-        "filename": "iou.bin"
+        "filename": "iou.bin",
+        "path": "iou.bin"
     }
 ]

@@ -12,13 +12,13 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 297
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0dev3
+SERVER: Python/3.4 GNS3/1.4.0.dev9
 X-ROUTE: /v1/projects
 
 {
-    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpa178xv0w",
+    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz4njup0u",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpa178xv0w/d6a59a61-52e7-471a-8930-ef27a313e606",
-    "project_id": "d6a59a61-52e7-471a-8930-ef27a313e606",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz4njup0u/2547d75b-6059-4cff-a2ff-ac78ad5b98c7",
+    "project_id": "2547d75b-6059-4cff-a2ff-ac78ad5b98c7",
     "temporary": false
 }

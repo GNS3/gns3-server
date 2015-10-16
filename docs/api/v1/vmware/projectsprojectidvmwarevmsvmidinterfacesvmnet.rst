@@ -1,13 +1,18 @@
-/v1/iou/vms/{filename}
+/v1/projects/{project_id}/vmware/vms/{vm_id}/interfaces/vmnet
 ----------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v1/iou/vms/**{filename}**
+POST /v1/projects/**{project_id}**/vmware/vms/**{vm_id}**/interfaces/vmnet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Upload IOU image.
+Allocate a VMware VMnet interface on the server
+
+Parameters
+**********
+- **project_id**: The UUID of the project
+- **vm_id**: UUID for the instance
 
 Response status codes
 **********************
-- **204**: Image uploaded
+- **201**: VMnet interface allocated
 

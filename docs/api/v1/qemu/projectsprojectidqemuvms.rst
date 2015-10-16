@@ -26,17 +26,25 @@ Input
     <tr><td>acpi_shutdown</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>ACPI shutdown support</td>                     </tr>
     <tr><td>adapter_type</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>number of adapters</td>                     </tr>
+    <tr><td>boot_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: c, d</td>                     </tr>
+    <tr><td>cdrom_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU cdrom image path</td>                     </tr>
+    <tr><td>cdrom_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc</td>                     </tr>
     <tr><td>cpu_throttling</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
+    <tr><td>cpus</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>number of vCPUs</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
     <tr><td>hda_disk_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hda disk image checksum</td>                     </tr>
+    <tr><td>hda_disk_interface</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hda interface</td>                     </tr>
     <tr><td>hdb_disk_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hdb disk image path</td>                     </tr>
     <tr><td>hdb_disk_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hdb disk image checksum</td>                     </tr>
+    <tr><td>hdb_disk_interface</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hdb interface</td>                     </tr>
     <tr><td>hdc_disk_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hdc disk image path</td>                     </tr>
     <tr><td>hdc_disk_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hdc disk image checksum</td>                     </tr>
+    <tr><td>hdc_disk_interface</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hdc interface</td>                     </tr>
     <tr><td>hdd_disk_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hdd disk image path</td>                     </tr>
     <tr><td>hdd_disk_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hdd disk image checksum</td>                     </tr>
+    <tr><td>hdd_disk_interface</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hdd interface</td>                     </tr>
     <tr><td>initrd</td>                    <td> </td>                     <td>string</td>                     <td>QEMU initrd path</td>                     </tr>
     <tr><td>initrd_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU initrd path</td>                     </tr>
     <tr><td>kernel_command_line</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU kernel command line</td>                     </tr>
@@ -62,17 +70,25 @@ Output
     <tr><td>acpi_shutdown</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>ACPI shutdown support</td>                     </tr>
     <tr><td>adapter_type</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>number of adapters</td>                     </tr>
+    <tr><td>boot_priority</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: c, d</td>                     </tr>
+    <tr><td>cdrom_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU cdrom image path</td>                     </tr>
+    <tr><td>cdrom_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
     <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, vnc</td>                     </tr>
     <tr><td>cpu_throttling</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
+    <tr><td>cpus</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>number of vCPUs</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
     <tr><td>hda_disk_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU hda disk image checksum</td>                     </tr>
+    <tr><td>hda_disk_interface</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda interface</td>                     </tr>
     <tr><td>hdb_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdb disk image path</td>                     </tr>
     <tr><td>hdb_disk_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU hdb disk image checksum</td>                     </tr>
+    <tr><td>hdb_disk_interface</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdb interface</td>                     </tr>
     <tr><td>hdc_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdc disk image path</td>                     </tr>
     <tr><td>hdc_disk_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU hdc disk image checksum</td>                     </tr>
+    <tr><td>hdc_disk_interface</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdc interface</td>                     </tr>
     <tr><td>hdd_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdd disk image path</td>                     </tr>
     <tr><td>hdd_disk_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU hdd disk image checksum</td>                     </tr>
+    <tr><td>hdd_disk_interface</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hdd interface</td>                     </tr>
     <tr><td>initrd</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU initrd path</td>                     </tr>
     <tr><td>initrd_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU initrd path</td>                     </tr>
     <tr><td>kernel_command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU kernel command line</td>                     </tr>

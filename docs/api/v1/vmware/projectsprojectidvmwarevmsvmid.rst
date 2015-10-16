@@ -33,6 +33,7 @@ Output
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VMware VM instance name</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>allow GNS3 to use any VMware adapter</td>                     </tr>
+    <tr><td>use_ubridge</td>                    <td> </td>                     <td>boolean</td>                     <td>use uBridge for network connections</td>                     </tr>
     <tr><td>vm_directory</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VMware VM instance UUID</td>                     </tr>
     <tr><td>vmx_path</td>                    <td> </td>                     <td>string</td>                     <td>path to the vmx file</td>                     </tr>
@@ -69,6 +70,7 @@ Input
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>headless mode</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>VMware VM instance name</td>                     </tr>
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>allow GNS3 to use any VMware adapter</td>                     </tr>
+    <tr><td>use_ubridge</td>                    <td> </td>                     <td>boolean</td>                     <td>use uBridge for network connections</td>                     </tr>
     <tr><td>vmx_path</td>                    <td> </td>                     <td>string</td>                     <td>path to the vmx file</td>                     </tr>
     </table>
 
@@ -87,6 +89,7 @@ Output
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VMware VM instance name</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>allow GNS3 to use any VMware adapter</td>                     </tr>
+    <tr><td>use_ubridge</td>                    <td> </td>                     <td>boolean</td>                     <td>use uBridge for network connections</td>                     </tr>
     <tr><td>vm_directory</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VMware VM instance UUID</td>                     </tr>
     <tr><td>vmx_path</td>                    <td> </td>                     <td>string</td>                     <td>path to the vmx file</td>                     </tr>

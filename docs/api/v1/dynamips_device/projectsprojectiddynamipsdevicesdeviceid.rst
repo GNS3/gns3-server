@@ -60,10 +60,10 @@ Ethernet switch port
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>ethertype</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: , 0x8100, 0x88A8, 0x9100, 0x9200</td>                     </tr>
     <tr><td>port</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Port number</td>                     </tr>
     <tr><td>type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: access, dot1q, qinq</td>                     </tr>
     <tr><td>vlan</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>VLAN number</td>                     </tr>
-    <tr><td>ethertype</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: 0x8100, 0x88A8, 0x9100, 0x9200</td>                     </tr>
     </table>
 
 Body
@@ -104,3 +104,4 @@ Response status codes
 - **400**: Invalid request
 - **404**: Instance doesn't exist
 - **204**: Instance deleted
+

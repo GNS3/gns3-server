@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/f567fd70-ecbc-4fde-9b58-3639810def3f'
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/521f3776-d6d0-42a3-ac6d-7dc0c19d7fad'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/f567fd70-ecbc-4fde-9b58-3639810def3f HTTP/1.1
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/521f3776-d6d0-42a3-ac6d-7dc0c19d7fad HTTP/1.1
 
 
 
@@ -10,7 +10,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 422
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0dev3
+SERVER: Python/3.4 GNS3/1.4.0.dev9
 X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
 
 {
@@ -20,6 +20,6 @@ X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
     "startup_script": null,
     "startup_script_path": null,
     "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpjtnbwbkt/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/f567fd70-ecbc-4fde-9b58-3639810def3f",
-    "vm_id": "f567fd70-ecbc-4fde-9b58-3639810def3f"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpbbmb6tc1/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/521f3776-d6d0-42a3-ac6d-7dc0c19d7fad",
+    "vm_id": "521f3776-d6d0-42a3-ac6d-7dc0c19d7fad"
 }
