@@ -25,6 +25,7 @@ from tests.utils import asyncio_patch
 from unittest.mock import patch, MagicMock
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 from gns3server.modules.vpcs.vpcs_error import VPCSError
+from gns3server.modules.vm_error import VMError
 from gns3server.modules.vpcs import VPCS
 
 
@@ -43,3 +44,16 @@ def vm(project, manager):
 def test_temporary_directory(project, manager):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     assert isinstance(vm.temporary_directory, str)
+
+
+def test_console(project, manager):
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    vm.console = 2001
+    assert vm.console == 2001
+
+
+def test_console_vnc_invalid(project, manager):
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    vm.console_type = "vnc"
+    with pytest.raises(VMError):
+        vm.console = 2002

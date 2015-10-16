@@ -224,6 +224,10 @@ class BaseVM:
 
         if console == self._console:
             return
+
+        if self._console_type == "vnc" and console < 5900:
+            raise VMError("VNC console require a port superior or equal to 5900")
+
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
         self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
