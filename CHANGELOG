@@ -1,5 +1,34 @@
 # Change Log
 
+## 1.4.0b4 19/10/2015
+
+* Support for modifications to a base Qemu VM (not a linked clone).
+* Force canceling all task when shutdown server
+* Update api documentation
+* Enforce console port for VNC
+* Fixes issue when loading a project using VMware vmnet interfaces. Fixes #319.
+* Support for NAT connection with cloud for VMware VMs. Fixes #322.
+* Change message when VMware is not installed on Linux. Ref #326.
+* Send a warning notification if there is not enough RAM left to start a VM. Implements #329.
+* Asyncio Qemu fix and raise error if coroutine not used
+* Fix asyncio error when closing the app
+* Removes VMware lock check. Fixes #328.
+* Wait for pipe file to be created before starting the remote console for VMware and VirtualBox VMs. Fixes #331.
+* Release UDP ports when closing a Qemu VM. Fixes #323.
+* Escape other usage of glob
+* Fix Dynamips identifier is already used by another router
+* Protect Dynamips against bad glob.
+* Fix issue with Qemu networking following merge.
+* OVA file support
+* Support listing images in subdirectories.
+* Catch ProcessLookupError in Qemu VM.
+* Fixes uncalled coroutine.
+* Use the correct UDP tunnel Qemu syntax for version > 1.1.0 when legacy networking is enabled.
+* VMware player linux support.
+* Prevent launching a packet capture with a non-ASCII path when using Dynamips.
+* Do not require a TAP interface to already exist. Fixes #321.
+* Do not automatically delete Dynamips bootflash file because they are necessary to restore VLANs on the c3600 platform.
+
 # 1.3.11 07/10/2015
 
 * Escape other usage of glob
