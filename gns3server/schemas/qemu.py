@@ -38,6 +38,10 @@ QEMU_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "linked_clone": {
+            "description": "either the VM is a linked clone or not",
+            "type": "boolean"
+        },
         "qemu_path": {
             "description": "Path to QEMU",
             "type": ["string", "null"],

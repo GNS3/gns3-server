@@ -61,12 +61,13 @@ class QemuVM(BaseVM):
     :param console: TCP console port
     """
 
-    def __init__(self, name, vm_id, project, manager, qemu_path=None, console=None, console_type="telnet", platform=None):
+    def __init__(self, name, vm_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
 
         super().__init__(name, vm_id, project, manager, console=console, console_type=console_type)
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
+        self._linked_clone = linked_clone
         self._command = []
         self._process = None
         self._cpulimit_process = None
@@ -1226,16 +1227,20 @@ class QemuVM(BaseVM):
                     raise QemuError("hda disk image '{}' linked to '{}' is not accessible".format(self._hda_disk_image, os.path.realpath(self._hda_disk_image)))
                 else:
                     raise QemuError("hda disk image '{}' is not accessible".format(self._hda_disk_image))
-            hda_disk = os.path.join(self.working_dir, "hda_disk.qcow2")
-            if not os.path.exists(hda_disk):
-                try:
-                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
-                                                                        "backing_file={}".format(self._hda_disk_image),
-                                                                        "-f", "qcow2", hda_disk)
-                    retcode = yield from process.wait()
-                    log.info("{} returned with {}".format(qemu_img_path, retcode))
-                except (OSError, subprocess.SubprocessError) as e:
-                    raise QemuError("Could not create hda disk image {}".format(e))
+            if self._linked_clone:
+                hda_disk = os.path.join(self.working_dir, "hda_disk.qcow2")
+                if not os.path.exists(hda_disk):
+                    # create the disk
+                    try:
+                        process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
+                                                                            "backing_file={}".format(self._hda_disk_image),
+                                                                            "-f", "qcow2", hda_disk)
+                        retcode = yield from process.wait()
+                        log.info("{} returned with {}".format(qemu_img_path, retcode))
+                    except (OSError, subprocess.SubprocessError) as e:
+                        raise QemuError("Could not create hda disk image {}".format(e))
+            else:
+                hda_disk = self._hda_disk_image
             options.extend(["-drive", 'file={},if={},index=0,media=disk'.format(hda_disk, self.hda_disk_interface)])
 
         if self._hdb_disk_image:
@@ -1244,16 +1249,19 @@ class QemuVM(BaseVM):
                     raise QemuError("hdb disk image '{}' linked to '{}' is not accessible".format(self._hdb_disk_image, os.path.realpath(self._hdb_disk_image)))
                 else:
                     raise QemuError("hdb disk image '{}' is not accessible".format(self._hdb_disk_image))
-            hdb_disk = os.path.join(self.working_dir, "hdb_disk.qcow2")
-            if not os.path.exists(hdb_disk):
-                try:
-                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
-                                                                        "backing_file={}".format(self._hdb_disk_image),
-                                                                        "-f", "qcow2", hdb_disk)
-                    retcode = yield from process.wait()
-                    log.info("{} returned with {}".format(qemu_img_path, retcode))
-                except (OSError, subprocess.SubprocessError) as e:
-                    raise QemuError("Could not create hdb disk image {}".format(e))
+            if self._linked_clone:
+                hdb_disk = os.path.join(self.working_dir, "hdb_disk.qcow2")
+                if not os.path.exists(hdb_disk):
+                    try:
+                        process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
+                                                                            "backing_file={}".format(self._hdb_disk_image),
+                                                                            "-f", "qcow2", hdb_disk)
+                        retcode = yield from process.wait()
+                        log.info("{} returned with {}".format(qemu_img_path, retcode))
+                    except (OSError, subprocess.SubprocessError) as e:
+                        raise QemuError("Could not create hdb disk image {}".format(e))
+            else:
+                hdb_disk = self._hdb_disk_image
             options.extend(["-drive", 'file={},if={},index=1,media=disk'.format(hdb_disk, self.hdb_disk_interface)])
 
         if self._hdc_disk_image:
@@ -1262,16 +1270,19 @@ class QemuVM(BaseVM):
                     raise QemuError("hdc disk image '{}' linked to '{}' is not accessible".format(self._hdc_disk_image, os.path.realpath(self._hdc_disk_image)))
                 else:
                     raise QemuError("hdc disk image '{}' is not accessible".format(self._hdc_disk_image))
-            hdc_disk = os.path.join(self.working_dir, "hdc_disk.qcow2")
-            if not os.path.exists(hdc_disk):
-                try:
-                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
-                                                                        "backing_file={}".format(self._hdc_disk_image),
-                                                                        "-f", "qcow2", hdc_disk)
-                    retcode = yield from process.wait()
-                    log.info("{} returned with {}".format(qemu_img_path, retcode))
-                except (OSError, subprocess.SubprocessError) as e:
-                    raise QemuError("Could not create hdc disk image {}".format(e))
+            if self._linked_clone:
+                hdc_disk = os.path.join(self.working_dir, "hdc_disk.qcow2")
+                if not os.path.exists(hdc_disk):
+                    try:
+                        process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
+                                                                            "backing_file={}".format(self._hdc_disk_image),
+                                                                            "-f", "qcow2", hdc_disk)
+                        retcode = yield from process.wait()
+                        log.info("{} returned with {}".format(qemu_img_path, retcode))
+                    except (OSError, subprocess.SubprocessError) as e:
+                        raise QemuError("Could not create hdc disk image {}".format(e))
+            else:
+                hdc_disk = self._hdc_disk_image
             options.extend(["-drive", 'file={},if={},index=2,media=disk'.format(hdc_disk, self.hdc_disk_interface)])
 
         if self._hdd_disk_image:
@@ -1280,16 +1291,19 @@ class QemuVM(BaseVM):
                     raise QemuError("hdd disk image '{}' linked to '{}' is not accessible".format(self._hdd_disk_image, os.path.realpath(self._hdd_disk_image)))
                 else:
                     raise QemuError("hdd disk image '{}' is not accessible".format(self._hdd_disk_image))
-            hdd_disk = os.path.join(self.working_dir, "hdd_disk.qcow2")
-            if not os.path.exists(hdd_disk):
-                try:
-                    process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
-                                                                        "backing_file={}".format(self._hdd_disk_image),
-                                                                        "-f", "qcow2", hdd_disk)
-                    retcode = yield from process.wait()
-                    log.info("{} returned with {}".format(qemu_img_path, retcode))
-                except (OSError, subprocess.SubprocessError) as e:
-                    raise QemuError("Could not create hdd disk image {}".format(e))
+            if self._linked_clone:
+                hdd_disk = os.path.join(self.working_dir, "hdd_disk.qcow2")
+                if not os.path.exists(hdd_disk):
+                    try:
+                        process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
+                                                                            "backing_file={}".format(self._hdd_disk_image),
+                                                                            "-f", "qcow2", hdd_disk)
+                        retcode = yield from process.wait()
+                        log.info("{} returned with {}".format(qemu_img_path, retcode))
+                    except (OSError, subprocess.SubprocessError) as e:
+                        raise QemuError("Could not create hdd disk image {}".format(e))
+            else:
+                hdd_disk = self._hdd_disk_image
             options.extend(["-drive", 'file={},if={},index=3,media=disk'.format(hdd_disk, self.hdd_disk_interface)])
 
         return options
