@@ -43,6 +43,7 @@ from ..nios.nio_tap import NIOTAP
 from ..nios.nio_generic_ethernet import NIOGenericEthernet
 from ..base_vm import BaseVM
 from .utils.iou_import import nvram_import
+from .utils.iou_export import nvram_export
 from .ioucon import start_ioucon
 import gns3server.utils.asyncio
 import gns3server.utils.images

@@ -22,6 +22,8 @@ import os
 import stat
 import socket
 import sys
+import uuid
+import shutil
 from tests.utils import asyncio_patch
 
 
@@ -50,7 +52,7 @@ def vm(project, manager, tmpdir, fake_iou_bin, iourc_file):
     with open(fake_file, "w+") as f:
         f.write("1")
 
-    vm = IOUVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    vm = IOUVM("test", str(uuid.uuid4()), project, manager)
     config = manager.config.get_section_config("IOU")
     config["iouyap_path"] = fake_file
     config["iourc_path"] = iourc_file
@@ -406,3 +408,21 @@ def test_iourc_content(vm):
 
     with open(os.path.join(vm.temporary_directory, "iourc")) as f:
         assert f.read() == "test"
+
+
+def test_extract_configs(vm):
+    assert vm.extract_configs() == (None, None)
+
+    with open(os.path.join(vm.working_dir, "nvram_00001"), "w+") as f:
+        f.write("CORRUPTED")
+        assert vm.extract_configs() == (None, None)
+
+    with open(os.path.join(vm.working_dir, "nvram_00001"), "w+") as f:
+        f.write("CORRUPTED")
+        assert vm.extract_configs() == (None, None)
+
+    shutil.copy("tests/resources/nvram_iou", os.path.join(vm.working_dir, "nvram_00001"))
+
+    startup_config, private_config = vm.extract_configs()
+    assert len(startup_config) == 1392
+    assert len(private_config) == 0
