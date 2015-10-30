@@ -203,6 +203,8 @@ class PortManager:
 
         if port in self._used_tcp_ports:
             raise HTTPConflict(text="TCP port {} already in use on host".format(port, self._console_host))
+        if port < self._console_port_range[0] or port > self._console_port_range[1]:
+            raise HTTPConflict(text="TCP port {} is outside the range {}-{}".format(port, self._console_port_range[0], self._console_port_range[1]))
         self._used_tcp_ports.add(port)
         project.record_tcp_port(port)
         log.debug("TCP port {} has been reserved".format(port))
@@ -249,6 +251,8 @@ class PortManager:
 
         if port in self._used_udp_ports:
             raise HTTPConflict(text="UDP port {} already in use on host".format(port, self._console_host))
+        if port < self._udp_port_range[0] or port > self._udp_port_range[1]:
+            raise HTTPConflict(text="UDP port {} is outside the range {}-{}".format(port, self._udp_port_range[0], self._udp_port_range[1]))
         self._used_udp_ports.add(port)
         project.record_udp_port(port)
         log.debug("UDP port {} has been reserved".format(port))
