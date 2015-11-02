@@ -77,7 +77,7 @@ def _get_unused_port():
     return port
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def server(request, loop, port_manager, monkeypatch):
     """A GNS3 server"""
 

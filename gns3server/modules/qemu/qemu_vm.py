@@ -1426,6 +1426,8 @@ class QemuVM(BaseVM):
         :returns: Boolean True if we need to enable KVM
         """
 
+        print(sys.platform.startswith("linux"))
+        print(self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True))
         if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
                 and "-no-kvm" not in options:
 

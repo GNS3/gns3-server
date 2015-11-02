@@ -1,7 +1,7 @@
 -rrequirements.txt
 
 sphinx==1.2.3
-pytest==2.6.4
+pytest==2.8.2
 pep8==1.5.7
 pytest-timeout
 pytest-capturelog
