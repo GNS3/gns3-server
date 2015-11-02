@@ -111,13 +111,15 @@ def wait_for_file_creation(path, timeout=10):
 
 
 @asyncio.coroutine
-def wait_for_named_pipe_creation(pipe_path, timeout=10):
+def wait_for_named_pipe_creation(pipe_path, timeout=60):
+
+    import win32pipe
+    import pywintypes
 
     while timeout > 0:
         try:
-            with open(pipe_path, "a+b"):
-                pass
-        except OSError:
+            win32pipe.WaitNamedPipe(pipe_path, 1)
+        except pywintypes.error:
             yield from asyncio.sleep(0.5)
             timeout -= 0.5
         else:
