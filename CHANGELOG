@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.4.0b5 02/11/2015
+
+* Freeze requirements for aiohttp because 0.18 doesn't support Python 3.4.
+* Fix crash in IOU config export.
+* Raise an error when you use a port outside the ranges. Fixes #739.
+* Fixes Windows named pipe issue. Fixes #340.
+
 ## 1.4.0b4 19/10/2015
 
 * Support for modifications to a base Qemu VM (not a linked clone).
