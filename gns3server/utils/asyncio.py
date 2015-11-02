@@ -108,3 +108,18 @@ def wait_for_file_creation(path, timeout=10):
         yield from asyncio.sleep(0.5)
         timeout -= 0.5
     raise asyncio.TimeoutError()
+
+
+@asyncio.coroutine
+def wait_for_named_pipe_creation(pipe_path, timeout=10):
+
+    while timeout > 0:
+        try:
+            with open(pipe_path, "a+b"):
+                pass
+        except OSError:
+            yield from asyncio.sleep(0.5)
+            timeout -= 0.5
+        else:
+            return
+    raise asyncio.TimeoutError()

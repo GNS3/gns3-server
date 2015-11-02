@@ -27,7 +27,7 @@ import tempfile
 
 from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.interfaces import get_windows_interfaces
-from gns3server.utils.asyncio import wait_for_file_creation
+from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
@@ -440,7 +440,10 @@ class VMwareVM(BaseVM):
 
         if self._enable_remote_console and self._console is not None:
             try:
-                yield from wait_for_file_creation(self._get_pipe_name())  # wait for VMware to create the pipe file.
+                if sys.platform.startswith("win"):
+                    yield from wait_for_named_pipe_creation(self._get_pipe_name())
+                else:
+                    yield from wait_for_file_creation(self._get_pipe_name())  # wait for VMware to create the pipe file.
             except asyncio.TimeoutError:
                 raise VMwareError('Pipe file "{}" for remote console has not been created by VMware'.format(self._get_pipe_name()))
             self._start_remote_console()

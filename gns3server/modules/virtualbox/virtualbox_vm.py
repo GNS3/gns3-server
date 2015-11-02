@@ -30,7 +30,7 @@ import asyncio
 
 from pkg_resources import parse_version
 from gns3server.utils.telnet_server import TelnetServer
-from gns3server.utils.asyncio import wait_for_file_creation
+from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
 from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_nat import NIONAT
@@ -219,7 +219,11 @@ class VirtualBoxVM(BaseVM):
 
         if self._enable_remote_console and self._console is not None:
             try:
-                yield from wait_for_file_creation(self._get_pipe_name())  # wait for VirtualBox to create the pipe file.
+                # wait for VirtualBox to create the pipe file.
+                if sys.platform.startswith("win"):
+                    yield from wait_for_named_pipe_creation(self._get_pipe_name())
+                else:
+                    yield from wait_for_file_creation(self._get_pipe_name())
             except asyncio.TimeoutError:
                 raise VirtualBoxError('Pipe file "{}" for remote console has not been created by VirtualBox'.format(self._get_pipe_name()))
             self._start_remote_console()
