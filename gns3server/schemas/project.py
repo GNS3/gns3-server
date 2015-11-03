@@ -75,7 +75,7 @@ PROJECT_OBJECT_SCHEMA = {
     "properties": {
         "name": {
             "description": "Project name",
-            "type": "string",
+            "type": ["string", "null"],
             "minLength": 1
         },
         "location": {
