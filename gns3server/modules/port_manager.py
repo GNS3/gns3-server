@@ -90,7 +90,7 @@ class PortManager:
 
         return self._console_port_range
 
-    @console_host.setter
+    @console_port_range.setter
     def console_port_range(self, new_range):
 
         assert isinstance(new_range, tuple)
@@ -111,7 +111,7 @@ class PortManager:
 
         return self._udp_port_range
 
-    @udp_host.setter
+    @udp_port_range.setter
     def udp_port_range(self, new_range):
 
         assert isinstance(new_range, tuple)

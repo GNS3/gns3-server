@@ -94,7 +94,6 @@ class WinStreamHandler(logging.StreamHandler):
             stream.write(msg.encode(stream.encoding, errors="replace").decode(stream.encoding))
             stream.write(self.terminator)
             self.flush()
-            pass
         except Exception:
             self.handleError(record)
 

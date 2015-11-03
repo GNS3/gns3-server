@@ -197,10 +197,10 @@ def test_backup_images(server, tmpdir, loop):
     tar.close()
 
     assert os.path.exists(os.path.join('QEMU', 'a.img'))
-    open(os.path.join('QEMU', 'a.img')).read() == 'hello'
+    assert open(os.path.join('QEMU', 'a.img')).read() == 'hello'
 
     assert os.path.exists(os.path.join('QEMU', 'b.img'))
-    open(os.path.join('QEMU', 'b.img')).read() == 'world'
+    assert open(os.path.join('QEMU', 'b.img')).read() == 'world'
 
 
 def test_backup_projects(server, tmpdir, loop):
@@ -229,7 +229,7 @@ def test_backup_projects(server, tmpdir, loop):
     tar.close()
 
     assert os.path.exists(os.path.join('a', 'a.gns3'))
-    open(os.path.join('a', 'a.gns3')).read() == 'hello'
+    assert open(os.path.join('a', 'a.gns3')).read() == 'hello'
 
     assert os.path.exists(os.path.join('b', 'b.gns3'))
-    open(os.path.join('b', 'b.gns3')).read() == 'world'
+    assert open(os.path.join('b', 'b.gns3')).read() == 'world'

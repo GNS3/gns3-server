@@ -163,7 +163,6 @@ and homebrew: http://brew.sh/.
    python3 setup.py install
    gns3server
 
-
 SSL
 ---
 
@@ -190,3 +189,18 @@ Or in your gns3_server.conf by adding in the Server section:
     certfile=/Users/noplay/.config/GNS3/ssl/server.cert
     certkey=/Users/noplay/.config/GNS3/ssl/server.key
     ssl=True
+
+Running tests
+*************
+
+Just run:
+
+.. code:: bash
+
+    py.test -vv
+
+If you want test coverage:
+
+.. code:: bash
+
+    py.test --cov=gns3server
