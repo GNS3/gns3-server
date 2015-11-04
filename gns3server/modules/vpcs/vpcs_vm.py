@@ -196,15 +196,15 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def _check_vpcs_version(self):
         """
-        Checks if the VPCS executable version is >= 0.8b1.
+        Checks if the VPCS executable version is >= 0.8b.
         """
         try:
             output = yield from subprocess_check_output(self.vpcs_path, "-v", cwd=self.working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
-                if parse_version(version) < parse_version("0.8b1"):
-                    raise VPCSError("VPCS executable version must be >= 0.8b1")
+                if parse_version(version) < parse_version("0.8b"):
+                    raise VPCSError("VPCS executable version must be >= 0.8b")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
         except (OSError, subprocess.SubprocessError) as e:
