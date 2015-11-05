@@ -26,13 +26,16 @@ VM_LIST_IMAGES_SCHEMA = {
             "properties": {
                 "filename": {
                     "description": "Image filename",
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "path": {
                     "description": "Image path",
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 }
             },
+            "required": ["filename", "path"],
             "additionalProperties": False
         }
     ],

@@ -156,7 +156,7 @@ def test_vms(server, tmpdir, fake_dynamips, fake_file):
     with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
         response = server.get("/dynamips/vms")
     assert response.status == 200
-    assert response.json == [{"filename": "7200.bin"}]
+    assert response.json == [{"filename": "7200.bin", "path": str(tmpdir / "7200.bin")}]
 
 
 def test_upload_vm(server, tmpdir):
