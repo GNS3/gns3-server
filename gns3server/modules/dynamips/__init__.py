@@ -733,5 +733,6 @@ class Dynamips(BaseManager):
                     continue
                 # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
                 if elf_header_start == b'\x7fELF\x01\x02\x01':
+                    path = os.path.relpath(path, image_dir)
                     images.append({"filename": filename, "path": path})
         return images
