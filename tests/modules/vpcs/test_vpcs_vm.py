@@ -171,15 +171,6 @@ def test_update_startup_script(vm):
         assert f.read() == content
 
 
-def test_update_startup_script(vm):
-    content = "echo GNS3 VPCS\nip 192.168.1.2\n"
-    vm.startup_script = content
-    filepath = os.path.join(vm.working_dir, 'startup.vpc')
-    assert os.path.exists(filepath)
-    with open(filepath) as f:
-        assert f.read() == content
-
-
 def test_update_startup_script_h(vm):
     content = "setname %h\n"
     vm.name = "pc1"

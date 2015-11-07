@@ -26,25 +26,39 @@ from gns3server.modules.project import Project
 def test_reserve_tcp_port():
     pm = PortManager()
     project = Project()
-    pm.reserve_tcp_port(4242, project)
+    pm.reserve_tcp_port(2001, project)
     with pytest.raises(aiohttp.web.HTTPConflict):
-        pm.reserve_tcp_port(4242, project)
+        pm.reserve_tcp_port(2001, project)
+
+
+def test_reserve_tcp_port_outside_range():
+    pm = PortManager()
+    project = Project()
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        pm.reserve_tcp_port(80, project)
 
 
 def test_reserve_udp_port():
     pm = PortManager()
     project = Project()
-    pm.reserve_udp_port(4242, project)
+    pm.reserve_udp_port(10000, project)
     with pytest.raises(aiohttp.web.HTTPConflict):
-        pm.reserve_udp_port(4242, project)
+        pm.reserve_udp_port(10000, project)
+
+
+def test_reserve_udp_port_outside_range():
+    pm = PortManager()
+    project = Project()
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        pm.reserve_udp_port(80, project)
 
 
 def test_release_udp_port():
     pm = PortManager()
     project = Project()
-    pm.reserve_udp_port(4242, project)
-    pm.release_udp_port(4242, project)
-    pm.reserve_udp_port(4242, project)
+    pm.reserve_udp_port(10000, project)
+    pm.release_udp_port(10000, project)
+    pm.reserve_udp_port(10000, project)
 
 
 def test_find_unused_port():

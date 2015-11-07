@@ -113,4 +113,17 @@ and homebrew: http://brew.sh/.
    python3 setup.py install
    gns3server
 
+Running tests
+*************
 
+Just run:
+
+.. code:: bash
+
+    py.test -vv
+
+If you want test coverage:
+
+.. code:: bash
+
+    py.test --cov=gns3server
