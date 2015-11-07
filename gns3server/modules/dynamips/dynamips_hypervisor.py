@@ -267,8 +267,8 @@ class DynamipsHypervisor:
                 self._writer.write(command.encode())
                 yield from self._writer.drain()
             except OSError as e:
-                raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
-                                    .format(host=self._host, port=self._port, error=e, run=self.is_running()))
+                raise DynamipsError("Could not send Dynamips command '{command}' to {host}:{port}: {error}, process running: {run}"
+                                    .format(command=command, host=self._host, port=self._port, error=e, run=self.is_running()))
 
             # Now retrieve the result
             data = []
@@ -282,13 +282,19 @@ class DynamipsHypervisor:
                         # task has been canceled but continue to read
                         # any remaining data sent by the hypervisor
                         continue
+                    except ConnectionResetError as e:
+                        # Sometimes WinError 64 (ERROR_NETNAME_DELETED) is returned here on Windows.
+                        # These happen if connection reset is received before IOCP could complete
+                        # a previous operation. Ignore and try again....
+                        log.warning("Connection reset received while reading Dynamips response: {}".format(e))
+                        continue
                     if not chunk:
                         raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
                                             .format(host=self._host, port=self._port, run=self.is_running()))
                     buf += chunk.decode("utf-8", errors="ignore")
                 except OSError as e:
-                    raise DynamipsError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
-                                        .format(host=self._host, port=self._port, error=e, run=self.is_running()))
+                    raise DynamipsError("Could not read response for '{command}' from {host}:{port}: {error}, process running: {run}"
+                                        .format(command=command, host=self._host, port=self._port, error=e, run=self.is_running()))
 
                 # If the buffer doesn't end in '\n' then we can't be done
                 try:
