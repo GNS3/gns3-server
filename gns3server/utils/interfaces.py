@@ -20,6 +20,7 @@ import sys
 import aiohttp
 import socket
 import struct
+import psutil
 
 import logging
 log = logging.getLogger(__name__)
@@ -114,8 +115,7 @@ def is_interface_up(interface):
 
     if sys.platform.startswith("linux"):
 
-        import netifaces
-        if interface not in netifaces.interfaces():
+        if interface not in psutil.net_if_addrs():
             return False
 
         import fcntl
@@ -143,13 +143,13 @@ def interfaces():
 
     results = []
     if not sys.platform.startswith("win"):
-        import netifaces
-        for interface in netifaces.interfaces():
+        for interface in sorted(psutil.net_if_addrs().keys()):
             ip_address = ""
-            ip_addresses = netifaces.ifaddresses(interface)
-            if netifaces.AF_INET in ip_addresses and ip_addresses[netifaces.AF_INET]:
-                # get the first IPv4 address only
-                ip_address = ip_addresses[netifaces.AF_INET][0]["addr"]
+            for addr in psutil.net_if_addrs()[interface]:
+                # get the first available IPv4 address only
+                if addr.family == socket.AF_INET:
+                    ip_address = addr.address
+                    break
             results.append({"id": interface,
                             "name": interface,
                             "ip_address": ip_address})

@@ -45,7 +45,7 @@ Dependencies:
 - Python 3.4 or above
 - aiohttp
 - setuptools
-- netifaces
+- psutil
 - jsonschema
 
 The following commands will install some of these dependencies:

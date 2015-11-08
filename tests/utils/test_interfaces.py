@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import netifaces
 
 from gns3server.utils.interfaces import interfaces, is_interface_up
 
@@ -28,7 +27,8 @@ def test_interfaces():
 
 def test_is_interface_up():
     if sys.platform.startswith("win"):
-        assert is_interface_up(netifaces.interfaces[0]) is True
+        # is_interface_up() always returns True on Windows
+        pass
     elif sys.platform.startswith("darwin"):
         assert is_interface_up("lo0") is True
     else:

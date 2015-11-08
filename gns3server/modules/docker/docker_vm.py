@@ -21,8 +21,7 @@ Docker container instance.
 
 import asyncio
 import shutil
-import docker
-import netifaces
+import psutil
 
 from docker.utils import create_host_config
 from gns3server.ubridge.hypervisor import Hypervisor
@@ -271,10 +270,8 @@ class Container(BaseVM):
                     name=self.name, adapter_number=adapter_number))
 
         if nio and isinstance(nio, NIOUDP):
-            ifcs = netifaces.interfaces()
             for index in range(128):
-                ifcs = netifaces.interfaces()
-                if "gns3-veth{}ext".format(index) not in ifcs:
+                if "gns3-veth{}ext".format(index) not in psutil.net_if_addrs():
                     adapter.ifc = "eth{}".format(str(index))
                     adapter.host_ifc = "gns3-veth{}ext".format(str(index))
                     adapter.guest_ifc = "gns3-veth{}int".format(str(index))

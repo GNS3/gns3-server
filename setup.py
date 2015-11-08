@@ -44,18 +44,10 @@ dependencies = [
     "Jinja2>=2.7.3",
     "raven>=5.2.0",
     "docker-py>=1.4.0",
-    "psutil>=2.2.1"
+    "psutil>=3.0.0"
 ]
 
-if not sys.platform.startswith("win"):
-    # netifaces if not used on Windows
-    try:
-        import netifaces
-    except ImportError:
-        # add gns3-netifaces only if netifaces isn't already installed
-        # for instance via a Debian package.
-        dependencies.append("gns3-netifaces>=0.10.4.1")
-else:
+if sys.platform.startswith("win"):
     dependencies.append("pywin32>=219")
 
 setup(

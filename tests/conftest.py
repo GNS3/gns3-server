@@ -132,8 +132,8 @@ def free_console_port(request, port_manager, project):
 
 @pytest.fixture
 def ethernet_device():
-    import netifaces
-    return netifaces.interfaces()[0]
+    import psutil
+    return sorted(psutil.net_if_addrs().keys())[0]
 
 
 @pytest.yield_fixture(autouse=True)
