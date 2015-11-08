@@ -268,7 +268,7 @@ class DynamipsHypervisor:
                 yield from self._writer.drain()
             except OSError as e:
                 raise DynamipsError("Could not send Dynamips command '{command}' to {host}:{port}: {error}, process running: {run}"
-                                    .format(command=command, host=self._host, port=self._port, error=e, run=self.is_running()))
+                                    .format(command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()))
 
             # Now retrieve the result
             data = []
@@ -294,7 +294,7 @@ class DynamipsHypervisor:
                     buf += chunk.decode("utf-8", errors="ignore")
                 except OSError as e:
                     raise DynamipsError("Could not read response for '{command}' from {host}:{port}: {error}, process running: {run}"
-                                        .format(command=command, host=self._host, port=self._port, error=e, run=self.is_running()))
+                                        .format(command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()))
 
                 # If the buffer doesn't end in '\n' then we can't be done
                 try:
