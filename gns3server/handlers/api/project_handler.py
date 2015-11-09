@@ -217,7 +217,7 @@ class ProjectHandler:
                 response.write(("{}\n".format(msg)).encode("utf-8"))
             except asyncio.futures.CancelledError as e:
                 break
-            except asyncio.futures.TimeoutError as e:
+            except asyncio.futures.TimeoutError:
                 response.write("{\"action\": \"ping\"}\n".encode("utf-8"))
         project.stop_listen_queue(queue)
         if project.id in ProjectHandler._notifications_listening:

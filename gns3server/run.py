@@ -173,7 +173,7 @@ def pid_lock(path):
         with open(path, 'w+') as f:
             f.write(str(os.getpid()))
     except OSError as e:
-        log.critical("Can't write pid file %s: %s", args.pid, str(e))
+        log.critical("Can't write pid file %s: %s", path, str(e))
         sys.exit(1)
 
 

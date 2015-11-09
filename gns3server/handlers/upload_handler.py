@@ -104,15 +104,6 @@ class UploadHandler:
     def backup_images(request, response):
         yield from UploadHandler._backup_directory(request, response, UploadHandler.image_directory())
 
-    @classmethod
-    @Route.get(
-        r"/backup/projects.tar",
-        description="Backup GNS3 projects",
-        api_version=None
-    )
-    def backup_images(request, response):
-        yield from UploadHandler._backup_directory(request, response, UploadHandler.project_directory())
-
     @staticmethod
     def _restore_directory(file, directory):
         """
