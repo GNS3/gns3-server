@@ -23,6 +23,7 @@ from unittest.mock import patch
 
 from gns3server.modules.vpcs import VPCS
 from gns3server.modules.qemu import Qemu
+from gns3server.modules.vm_error import VMError
 
 
 @pytest.fixture(scope="function")
@@ -101,10 +102,26 @@ def test_get_abs_image_path(qemu, tmpdir):
         assert qemu.get_abs_image_path("test2.bin") == path2
         assert qemu.get_abs_image_path("../test1.bin") == path1
 
-        # We look at first in new location
-        path2 = str(tmpdir / "QEMU" / "test1.bin")
-        open(path2, 'w+').close()
-        assert qemu.get_abs_image_path("test1.bin") == path2
+
+def test_get_abs_image_path_non_local(qemu, tmpdir):
+    path1 = tmpdir / "images" / "QEMU" / "test1.bin"
+    path1.write("1", ensure=True)
+    path1 = str(path1)
+
+    path2 = tmpdir / "private" / "QEMU" / "test2.bin"
+    path2.write("1", ensure=True)
+    path2 = str(path2)
+
+    # If non local we can't use path outside images directory
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": False}):
+        assert qemu.get_abs_image_path(path1) == path1
+        with pytest.raises(VMError):
+            qemu.get_abs_image_path(path2)
+        # with pytest.raises(VMError):
+        #     qemu.get_abs_image_path("C:\\test2.bin")
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": True}):
+        assert qemu.get_abs_image_path(path2) == path2
 
 
 def test_get_relative_image_path(qemu, tmpdir):

@@ -39,6 +39,7 @@ from .nios.nio_tap import NIOTAP
 from .nios.nio_nat import NIONAT
 from .nios.nio_generic_ethernet import NIOGenericEthernet
 from ..utils.images import md5sum, remove_checksum
+from .vm_error import VMError
 
 
 class BaseManager:
@@ -413,6 +414,13 @@ class BaseManager:
                     return force_unix_path(old_path)
 
             return force_unix_path(path)
+        else:
+            # For non local server we disallow using absolute path outside image directory
+            if Config.instance().get_section_config("Server").get("local", False) is False:
+                img_directory = self.config.get_section_config("Server").get("images_path", "~/GNS3/images")
+                if len(os.path.commonprefix([img_directory, path])) < len(img_directory):
+                    raise VMError("%s is not allowed on this remote server. Please use only the image filename.".format(path))
+
         return force_unix_path(path)
 
     def get_relative_image_path(self, path):
