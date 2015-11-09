@@ -261,7 +261,6 @@ def test_set_qemu_path_kvm_binary(vm, tmpdir, fake_qemu_binary):
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    return bin_path
 
     # It should find the binary in the path
     vm.qemu_path = "qemu-kvm"
