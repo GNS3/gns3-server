@@ -254,7 +254,6 @@ def test_set_qemu_path_windows(vm, tmpdir):
     assert vm.platform == "x86_64"
 
 
-@pytest.mark.skipif(sys.platform.startswith("linux") is False, reason="Supported only on linux")
 def test_set_qemu_path_kvm_binary(vm, tmpdir, fake_qemu_binary):
 
     bin_path = os.path.join(os.environ["PATH"], "qemu-kvm")
@@ -265,7 +264,7 @@ def test_set_qemu_path_kvm_binary(vm, tmpdir, fake_qemu_binary):
     # It should find the binary in the path
     vm.qemu_path = "qemu-kvm"
 
-    assert vm.qemu_path == fake_qemu_binary
+    assert vm.qemu_path.endswith("qemu-kvm")
     assert vm.platform == "x86_64"
 
 
