@@ -242,7 +242,6 @@ def test_set_qemu_path_environ(vm, tmpdir, fake_qemu_binary):
     assert vm.platform == "x86_64"
 
 
-
 def test_set_qemu_path_windows(vm, tmpdir):
 
     bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.EXE")
@@ -253,7 +252,6 @@ def test_set_qemu_path_windows(vm, tmpdir):
 
     assert vm.qemu_path == bin_path
     assert vm.platform == "x86_64"
-
 
 
 @pytest.mark.skipif(sys.platform.startswith("linux") is False, reason="Supported only on linux")

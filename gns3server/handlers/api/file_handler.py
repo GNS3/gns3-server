@@ -57,4 +57,3 @@ class FileHandler:
             raise aiohttp.web.HTTPNotFound()
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text=str(e))
-

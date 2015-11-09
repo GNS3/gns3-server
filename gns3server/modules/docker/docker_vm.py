@@ -44,6 +44,7 @@ class Container(BaseVM):
     :param manager: Manager instance
     :param image: Docker image
     """
+
     def __init__(self, name, vm_id, project, manager, image, startcmd=None):
         self._name = name
         self._id = vm_id

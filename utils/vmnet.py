@@ -93,6 +93,7 @@ def parse_vmnet_range(start, end):
     """
 
     class Range(argparse.Action):
+
         def __call__(self, parser, args, values, option_string=None):
             if len(values) != 2:
                 raise argparse.ArgumentTypeError("vmnet range must consist of 2 numbers")

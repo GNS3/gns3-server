@@ -557,7 +557,7 @@ class VMware(BaseManager):
 
         inventory_path = self.get_vmware_inventory_path()
         if os.path.exists(inventory_path):
-            #FIXME: inventory may exist if VMware workstation has not been fully uninstalled, therefore VMware player VMs are not searched
+            # FIXME: inventory may exist if VMware workstation has not been fully uninstalled, therefore VMware player VMs are not searched
             return self._get_vms_from_inventory(inventory_path)
         else:
             # VMware player has no inventory file, let's search the default location for VMs.

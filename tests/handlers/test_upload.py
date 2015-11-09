@@ -104,6 +104,7 @@ def test_upload_previous_checksum(server, tmpdir):
         checksum = f.read()
         assert checksum == "ae187e1febee2a150b64849c32d566ca"
 
+
 def test_upload_images_backup(server, tmpdir):
     Config.instance().set("Server", "images_path", str(tmpdir / 'images'))
     os.makedirs(str(tmpdir / 'images' / 'IOU'))

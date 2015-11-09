@@ -193,7 +193,7 @@ class EthernetSwitch(Device):
         elif settings["type"] == "dot1q":
             yield from self.set_dot1q_port(port_number, settings["vlan"])
         elif settings["type"] == "qinq":
-            yield from self.set_qinq_port(port_number, settings["vlan"], settings["ethertype"] )
+            yield from self.set_qinq_port(port_number, settings["vlan"], settings["ethertype"])
 
     @asyncio.coroutine
     def set_access_port(self, port_number, vlan_id):

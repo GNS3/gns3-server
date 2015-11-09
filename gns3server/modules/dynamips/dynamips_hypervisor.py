@@ -276,7 +276,7 @@ class DynamipsHypervisor:
             while True:
                 try:
                     try:
-                        #line = yield from self._reader.readline()  # this can lead to ValueError: Line is too long
+                        # line = yield from self._reader.readline()  # this can lead to ValueError: Line is too long
                         chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
                     except asyncio.CancelledError:
                         # task has been canceled but continue to read

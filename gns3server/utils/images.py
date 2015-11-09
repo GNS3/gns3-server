@@ -21,6 +21,7 @@ import hashlib
 import logging
 log = logging.getLogger(__name__)
 
+
 def md5sum(path):
     """
     Return the md5sum of an image and cache it on disk

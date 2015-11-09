@@ -16,7 +16,9 @@
 
 from ..web.route import Route
 
+
 class IndexHandler:
+
     @classmethod
     @Route.get(
         r"/",

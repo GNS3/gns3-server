@@ -48,8 +48,8 @@ def uncompress_LZC(data):
     LZC_NUM_BITS_MIN = 9
     LZC_NUM_BITS_MAX = 16
 
-    in_data  = bytearray(data)
-    in_len   = len(in_data)
+    in_data = bytearray(data)
+    in_len = len(in_data)
     out_data = bytearray()
 
     if in_len == 0:
@@ -59,26 +59,26 @@ def uncompress_LZC(data):
     if in_data[0] != 0x1F or in_data[1] != 0x9D:
         raise ValueError('invalid header')
 
-    maxbits   = in_data[2] & 0x1F
-    numItems  = 1 << maxbits
+    maxbits = in_data[2] & 0x1F
+    numItems = 1 << maxbits
     blockMode = (in_data[2] & 0x80) != 0
     if maxbits < LZC_NUM_BITS_MIN or maxbits > LZC_NUM_BITS_MAX:
         raise ValueError('not supported')
 
-    parents  = [0] * numItems
+    parents = [0] * numItems
     suffixes = [0] * numItems
 
-    in_pos  = 3
+    in_pos = 3
     numBits = LZC_NUM_BITS_MIN
-    head    = 256
+    head = 256
     if blockMode:
         head += 1
 
-    needPrev   = 0
-    bitPos     = 0
+    needPrev = 0
+    bitPos = 0
     numBufBits = 0
 
-    parents[256]  = 0
+    parents[256] = 0
     suffixes[256] = 0
 
     buf_extend = bytearray([0] * 3)
@@ -87,7 +87,7 @@ def uncompress_LZC(data):
         # fill buffer, when empty
         if numBufBits == bitPos:
             buf_len = min(in_len - in_pos, numBits)
-            buf = in_data[in_pos:in_pos+buf_len] + buf_extend
+            buf = in_data[in_pos:in_pos + buf_len] + buf_extend
             numBufBits = buf_len << 3
             bitPos = 0
             in_pos += buf_len
@@ -142,12 +142,12 @@ def uncompress_LZC(data):
 
 # extract 16 bit unsigned int from data
 def get_uint16(data, off):
-    return data[off] << 8 | data[off+1]
+    return data[off] << 8 | data[off + 1]
 
 
 # extract 32 bit unsigned int from data
 def get_uint32(data, off):
-    return data[off] << 24 | data[off+1] << 16 | data[off+2] << 8 | data[off+3]
+    return data[off] << 24 | data[off + 1] << 16 | data[off + 2] << 8 | data[off + 3]
 
 
 # export IOU NVRAM
@@ -165,7 +165,7 @@ def nvram_export(nvram):
     offset += 36
     if len(nvram) < offset + length:
         raise ValueError('invalid length')
-    startup = nvram[offset:offset+length]
+    startup = nvram[offset:offset + length]
 
     # compressed startup config
     if format == 2:
@@ -176,7 +176,7 @@ def nvram_export(nvram):
 
     offset += length
     # alignment to multiple of 4
-    offset = (offset+3) & ~3
+    offset = (offset + 3) & ~3
     # check for additonal offset of 4
     if len(nvram) >= offset + 8 and \
        get_uint16(nvram, offset + 4) == 0xFEDC and \
@@ -189,7 +189,7 @@ def nvram_export(nvram):
         length = get_uint32(nvram, offset + 12)
         offset += 16
         if len(nvram) >= offset + length:
-            private = nvram[offset:offset+length]
+            private = nvram[offset:offset + length]
 
     return (startup, private)
 

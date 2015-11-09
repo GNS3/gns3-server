@@ -323,7 +323,7 @@ class DynamipsVMHandler:
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
 
         if sys.platform.startswith('win'):
-            #FIXME: Dynamips (Cygwin actually) doesn't like non ascii paths on Windows
+            # FIXME: Dynamips (Cygwin actually) doesn't like non ascii paths on Windows
             try:
                 pcap_file_path.encode('ascii')
             except UnicodeEncodeError:
