@@ -28,9 +28,9 @@ import re
 import asyncio
 import shutil
 
-from gns3server.utils.asyncio import wait_for_process_termination
-from gns3server.utils.asyncio import monitor_process
-from gns3server.utils.asyncio import subprocess_check_output
+from ...utils.asyncio import wait_for_process_termination
+from ...utils.asyncio import monitor_process
+from ...utils.asyncio import subprocess_check_output
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -62,6 +62,7 @@ class VPCSVM(BaseVM):
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
+        self._vpcs_version = None
         self._started = False
 
         # VPCS settings
@@ -203,7 +204,8 @@ class VPCSVM(BaseVM):
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
-                if parse_version(version) < parse_version("0.8b"):
+                self._vpcs_version = parse_version(version)
+                if self._vpcs_version < parse_version("0.8b"):
                     raise VPCSError("VPCS executable version must be >= 0.8b")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
@@ -416,7 +418,8 @@ class VPCSVM(BaseVM):
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
-        command.extend(["-R"])  # disable relay feature of VPCS (starting with VPCS 0.8)
+        if self._vpcs_version > parse_version("0.8"):
+            command.extend(["-R"])  # disable relay feature of VPCS (starting with VPCS 0.8)
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:

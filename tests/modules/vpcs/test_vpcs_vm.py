@@ -20,10 +20,11 @@ import aiohttp
 import asyncio
 import os
 import sys
+
 from tests.utils import asyncio_patch
-
-
+from pkg_resources import parse_version
 from unittest.mock import patch, MagicMock
+
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM
 from gns3server.modules.vpcs.vpcs_error import VPCSError
 from gns3server.modules.vpcs import VPCS
@@ -38,7 +39,9 @@ def manager(port_manager):
 
 @pytest.fixture(scope="function")
 def vm(project, manager):
-    return VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    vm._vpcs_version = parse_version("0.9")
+    return vm
 
 
 def test_vm(project, manager):
@@ -47,26 +50,30 @@ def test_vm(project, manager):
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_vm_invalid_vpcs_version(loop, project, manager):
-    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
+def test_vm_check_vpcs_version(loop, vm, manager):
+    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.9"):
+        loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
+        assert vm._vpcs_version == parse_version("0.9")
+
+
+def test_vm_invalid_vpcs_version(loop, manager, vm):
+    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
         with pytest.raises(VPCSError):
-            vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
             nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
-            loop.run_until_complete(asyncio.async(vm.start()))
+            loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
             assert vm.name == "test"
             assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-@patch("gns3server.config.Config.get_section_config", return_value={"vpcs_path": "/bin/test_fake"})
-def test_vm_invalid_vpcs_path(project, manager, loop):
-    with pytest.raises(VPCSError):
-        vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
-        nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-        vm.port_add_nio_binding(0, nio)
-        loop.run_until_complete(asyncio.async(vm.start()))
-        assert vm.name == "test"
-        assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
+def test_vm_invalid_vpcs_path(vm, manager, loop):
+    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.vpcs_path", return_value="/tmp/fake/path/vpcs"):
+        with pytest.raises(VPCSError):
+            nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            vm.port_add_nio_binding(0, nio)
+            loop.run_until_complete(asyncio.async(vm.start()))
+            assert vm.name == "test"
+            assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
 
 
 def test_start(loop, vm):
@@ -75,10 +82,58 @@ def test_start(loop, vm):
     queue = vm.project.get_listen_queue()
 
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm.start()))
+            assert mock_exec.call_args[0] == (vm.vpcs_path,
+                                              '-p',
+                                              str(vm.console),
+                                              '-m', '1',
+                                              '-i',
+                                              '1',
+                                              '-F',
+                                              '-R',
+                                              '-s',
+                                              '4242',
+                                              '-c',
+                                              '4243',
+                                              '-t',
+                                              '127.0.0.1')
+            assert vm.is_running()
+    (action, event) = queue.get_nowait()
+    assert action == "vm.started"
+    assert event == vm
+
+
+def test_start_0_6_1(loop, vm):
+    """
+    Version 0.6.1 doesn't have the -R options. It's not require
+    because GNS3 provide a patch for this.
+    """
+    process = MagicMock()
+    process.returncode = None
+    queue = vm.project.get_listen_queue()
+    vm._vpcs_version = parse_version("0.6.1")
+
+    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
+            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            vm.port_add_nio_binding(0, nio)
+            loop.run_until_complete(asyncio.async(vm.start()))
+            assert mock_exec.call_args[0] == (vm.vpcs_path,
+                                              '-p',
+                                              str(vm.console),
+                                              '-m', '1',
+                                              '-i',
+                                              '1',
+                                              '-F',
+                                              '-s',
+                                              '4242',
+                                              '-c',
+                                              '4243',
+                                              '-t',
+                                              '127.0.0.1')
             assert vm.is_running()
     (action, event) = queue.get_nowait()
     assert action == "vm.started"
