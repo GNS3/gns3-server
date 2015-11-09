@@ -19,8 +19,6 @@
 Base interface for NIOs.
 """
 
-import uuid
-
 
 class NIO(object):
 

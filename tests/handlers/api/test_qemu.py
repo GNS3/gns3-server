@@ -50,16 +50,6 @@ def base_params(tmpdir, fake_qemu_bin):
 
 
 @pytest.fixture
-def fake_qemu_bin():
-
-    bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
-    with open(bin_path, "w+") as f:
-        f.write("1")
-    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    return bin_path
-
-
-@pytest.fixture
 def vm(server, project, base_params):
     response = server.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), base_params)
     assert response.status == 201

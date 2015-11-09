@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 
 from aiohttp.web import HTTPConflict
 from ...web.route import Route
@@ -42,7 +41,7 @@ class VirtualBoxHandler:
             200: "Success",
         },
         description="Get all VirtualBox VMs available")
-    def show(request, response):
+    def index(request, response):
 
         vbox_manager = VirtualBox.instance()
         vms = yield from vbox_manager.list_images()

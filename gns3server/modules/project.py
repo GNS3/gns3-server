@@ -143,10 +143,6 @@ class Project:
             if path != self._path and self.is_local() is False:
                 raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
 
-        old_path = None
-        if hasattr(self, "_path"):
-            old_path = self._path
-
         self._path = path
         self._update_temporary_file()
 

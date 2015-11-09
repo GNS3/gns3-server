@@ -27,7 +27,6 @@ import re
 
 from pkg_resources import parse_version
 from gns3server.utils.asyncio import wait_for_process_termination
-from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.asyncio import subprocess_check_output
 from .ubridge_hypervisor import UBridgeHypervisor
 from .ubridge_error import UbridgeError
@@ -152,7 +151,6 @@ class Hypervisor(UBridgeHypervisor):
                                                                           stderr=subprocess.STDOUT,
                                                                           cwd=self._working_dir)
 
-                #monitor_process(self._process, self._termination_callback)
             log.info("ubridge started PID={}".format(self._process.pid))
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()

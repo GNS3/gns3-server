@@ -1454,7 +1454,6 @@ class QemuVM(BaseVM):
         if self._run_with_kvm(self.qemu_path, self._options):
             command.extend(["-enable-kvm"])
         command.extend(["-boot", "order={}".format(self._boot_priority)])
-        disk_options = yield from self._disk_options()
         cdrom_option = self._cdrom_option()
         command.extend(cdrom_option)
         command.extend((yield from self._disk_options()))

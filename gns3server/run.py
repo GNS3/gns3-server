@@ -162,7 +162,7 @@ def pid_lock(path):
                 except OSError:
                     pid = None
         except OSError as e:
-            log.critical("Can't open pid file %s: %s", args.pid, str(e))
+            log.critical("Can't open pid file %s: %s", pid, str(e))
             sys.exit(1)
 
         if pid:

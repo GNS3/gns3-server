@@ -41,7 +41,7 @@ class VMwareHandler:
             200: "Success",
         },
         description="Get all VMware VMs available")
-    def show(request, response):
+    def index(request, response):
 
         vmware_manager = VMware.instance()
         vms = yield from vmware_manager.list_vms()
