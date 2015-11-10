@@ -82,7 +82,7 @@ def test_qemu_create_platform(server, project, base_params, fake_qemu_bin):
 def test_qemu_create_with_params(server, project, base_params, fake_qemu_vm):
     params = base_params
     params["ram"] = 1024
-    params["hda_disk_image"] = fake_qemu_vm
+    params["hda_disk_image"] = "linux.img"
 
     response = server.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -90,7 +90,7 @@ def test_qemu_create_with_params(server, project, base_params, fake_qemu_vm):
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["ram"] == 1024
-    assert response.json["hda_disk_image"] == fake_qemu_vm
+    assert response.json["hda_disk_image"] == "linux.img"
 
 
 def test_qemu_get(server, project, vm):
@@ -149,13 +149,13 @@ def test_qemu_update(server, vm, tmpdir, free_console_port, project, fake_qemu_v
         "name": "test",
         "console": free_console_port,
         "ram": 1024,
-        "hdb_disk_image": fake_qemu_vm
+        "hdb_disk_image": "linux.img"
     }
     response = server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
-    assert response.json["hdb_disk_image"] == fake_qemu_vm
+    assert response.json["hdb_disk_image"] == "linux.img"
     assert response.json["ram"] == 1024
 
 

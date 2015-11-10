@@ -58,7 +58,7 @@ def vm(project, manager, tmpdir, fake_iou_bin, iourc_file):
     config["iourc_path"] = iourc_file
     manager.config.set_section_config("IOU", config)
 
-    vm.path = fake_iou_bin
+    vm.path = "iou.bin"
     return vm
 
 
@@ -101,7 +101,7 @@ def test_vm_startup_config_content(project, manager):
 def test_vm_invalid_iouyap_path(project, manager, loop, fake_iou_bin):
     with pytest.raises(IOUError):
         vm = IOUVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
-        vm.path = fake_iou_bin
+        vm.path = "iou.bin"
         loop.run_until_complete(asyncio.async(vm.start()))
 
 
@@ -207,9 +207,9 @@ def test_close(vm, port_manager, loop):
 
 
 def test_path(vm, fake_iou_bin):
-
-    vm.path = fake_iou_bin
-    assert vm.path == fake_iou_bin
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        vm.path = fake_iou_bin
+        assert vm.path == fake_iou_bin
 
 
 def test_path_12_location(vm, fake_iou_bin):
@@ -217,8 +217,9 @@ def test_path_12_location(vm, fake_iou_bin):
     # In 1.2 users uploaded images to the images roots
     # after the migration their images are inside images/IOU
     # but old topologies use old path
-    vm.path = fake_iou_bin.replace("/IOU", "")
-    assert vm.path == fake_iou_bin
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        vm.path = fake_iou_bin.replace("/IOU", "")
+        assert vm.path == fake_iou_bin
 
 
 def test_path_relative(vm, fake_iou_bin, tmpdir):
@@ -231,17 +232,18 @@ def test_path_relative(vm, fake_iou_bin, tmpdir):
 
 def test_path_invalid_bin(vm, tmpdir):
 
-    path = str(tmpdir / "test.bin")
-    with pytest.raises(IOUError):
-        vm.path = path
-        vm._check_requirements()
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        path = str(tmpdir / "test.bin")
+        with pytest.raises(IOUError):
+            vm.path = path
+            vm._check_requirements()
 
-    with open(path, "w+") as f:
-        f.write("BUG")
+        with open(path, "w+") as f:
+            f.write("BUG")
 
-    with pytest.raises(IOUError):
-        vm.path = path
-        vm._check_requirements()
+        with pytest.raises(IOUError):
+            vm.path = path
+            vm._check_requirements()
 
 
 def test_create_netmap_config(vm):

@@ -387,8 +387,8 @@ def test_hda_disk_image(vm, tmpdir):
 
     vm.manager.config.set("Server", "images_path", str(tmpdir))
 
-    vm.hda_disk_image = "/tmp/test"
-    assert vm.hda_disk_image == "/tmp/test"
+    vm.hda_disk_image = str(tmpdir / "test")
+    assert vm.hda_disk_image == str(tmpdir / "test")
     vm.hda_disk_image = "test"
     assert vm.hda_disk_image == str(tmpdir / "QEMU" / "test")
 
@@ -405,8 +405,8 @@ def test_hdb_disk_image(vm, tmpdir):
 
     vm.manager.config.set("Server", "images_path", str(tmpdir))
 
-    vm.hdb_disk_image = "/tmp/test"
-    assert vm.hdb_disk_image == "/tmp/test"
+    vm.hdb_disk_image = str(tmpdir / "test")
+    assert vm.hdb_disk_image == str(tmpdir / "test")
     vm.hdb_disk_image = "test"
     assert vm.hdb_disk_image == str(tmpdir / "QEMU" / "test")
 
@@ -415,8 +415,8 @@ def test_hdc_disk_image(vm, tmpdir):
 
     vm.manager.config.set("Server", "images_path", str(tmpdir))
 
-    vm.hdc_disk_image = "/tmp/test"
-    assert vm.hdc_disk_image == "/tmp/test"
+    vm.hdc_disk_image = str(tmpdir / "test")
+    assert vm.hdc_disk_image == str(tmpdir / "test")
     vm.hdc_disk_image = "test"
     assert vm.hdc_disk_image == str(tmpdir / "QEMU" / "test")
 
@@ -425,8 +425,8 @@ def test_hdd_disk_image(vm, tmpdir):
 
     vm.manager.config.set("Server", "images_path", str(tmpdir))
 
-    vm.hdd_disk_image = "/tmp/test"
-    assert vm.hdd_disk_image == "/tmp/test"
+    vm.hdd_disk_image = str(tmpdir / "test")
+    assert vm.hdd_disk_image == str(tmpdir / "test")
     vm.hdd_disk_image = "test"
     assert vm.hdd_disk_image == str(tmpdir / "QEMU" / "test")
 
