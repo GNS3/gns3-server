@@ -431,11 +431,31 @@ def test_hdd_disk_image(vm, tmpdir):
     assert vm.hdd_disk_image == str(tmpdir / "QEMU" / "test")
 
 
-def test_options(vm):
+def test_options(linux_platform, vm):
     vm.kvm = False
     vm.options = "-usb"
     assert vm.options == "-usb"
     assert vm.kvm is False
+
+    vm.options = "-no-kvm"
+    assert vm.options == "-no-kvm"
+
+    vm.options = "-enable-kvm"
+    assert vm.options == "-enable-kvm"
+
+    vm.options = "-icount 12"
+    assert vm.options == "-no-kvm -icount 12"
+
+    vm.options = "-icount 12 -no-kvm"
+    assert vm.options == "-icount 12 -no-kvm"
+
+
+def test_options_windows(windows_platform, vm):
+    vm.options = "-no-kvm"
+    assert vm.options == ""
+
+    vm.options = "-enable-kvm"
+    assert vm.options == ""
 
 
 def test_get_qemu_img(vm, tmpdir):
