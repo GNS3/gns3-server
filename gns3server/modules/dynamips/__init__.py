@@ -52,8 +52,6 @@ from .nios.nio_vde import NIOVDE
 from .nios.nio_tap import NIOTAP
 from .nios.nio_generic_ethernet import NIOGenericEthernet
 from .nios.nio_linux_ethernet import NIOLinuxEthernet
-from .nios.nio_fifo import NIOFIFO
-from .nios.nio_mcast import NIOMcast
 from .nios.nio_null import NIONull
 
 # Adapters
