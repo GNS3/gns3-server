@@ -197,7 +197,7 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def _check_vpcs_version(self):
         """
-        Checks if the VPCS executable version is >= 0.8b.
+        Checks if the VPCS executable version is >= 0.8b or == 0.6.1.
         """
         try:
             output = yield from subprocess_check_output(self.vpcs_path, "-v", cwd=self.working_dir)
@@ -205,8 +205,8 @@ class VPCSVM(BaseVM):
             if match:
                 version = match.group(1)
                 self._vpcs_version = parse_version(version)
-                if self._vpcs_version < parse_version("0.8b"):
-                    raise VPCSError("VPCS executable version must be >= 0.8b")
+                if self._vpcs_version < parse_version("0.8b") and self._vpcs_version != parse_version("0.6.1"):
+                    raise VPCSError("VPCS executable version must be >= 0.8b or 0.6.1")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
         except (OSError, subprocess.SubprocessError) as e:
