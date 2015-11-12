@@ -1,5 +1,27 @@
 # Change Log
 
+## 1.4.0rc1 12/11/2015
+
+* Raise error if server received windows path
+* Update sentry key
+* Remove NIO FIFO and Mcast (unused). Fixes #348.
+* Support VPCS 0.6.1
+* Fix duplicate of -no-kvm options
+* Raise an error if user send a non local path to remote server
+* Fix minor issues
+* Apply pep8 fix
+* Sets console end port to 7000. Fixes #343.
+* Drop netifaces (replaced by psutil). Fixes #344.
+* Correctly display log messages.
+* Tentative fix for "WinError 64 The specified network name is no longer available" issues.
+* Return relative path for dynamips images
+* Fix add existing IOS not working
+* Correctly enable faulthandler for dev version
+* Avoid test crash if GNS3 is running on the same computer
+* Allow to return an empty project name because it's allowed in creation
+* Test with python 3.5
+* Add doc on how to got code coverage
+
 ## 1.4.0b5 02/11/2015
 
 * Freeze requirements for aiohttp because 0.18 doesn't support Python 3.4.
