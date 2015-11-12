@@ -23,6 +23,7 @@ import asyncio
 import aiohttp
 import socket
 import shutil
+import re
 
 import logging
 log = logging.getLogger(__name__)
@@ -401,7 +402,14 @@ class BaseManager:
 
         if not path:
             return ""
+
         img_directory = self.get_images_directory()
+
+        # Windows path should not be send to a unix server
+        if not sys.platform.startswith("win"):
+            if re.match(r"^[A-Z]:", path) is not None:
+                raise VMError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
+
         if not os.path.isabs(path):
             s = os.path.split(path)
             path = os.path.normpath(os.path.join(img_directory, *s))

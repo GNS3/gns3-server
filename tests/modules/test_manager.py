@@ -117,8 +117,8 @@ def test_get_abs_image_path_non_local(qemu, tmpdir):
         assert qemu.get_abs_image_path(path1) == path1
         with pytest.raises(VMError):
             qemu.get_abs_image_path(path2)
-        # with pytest.raises(VMError):
-        #     qemu.get_abs_image_path("C:\\test2.bin")
+        with pytest.raises(VMError):
+            qemu.get_abs_image_path("C:\\test2.bin")
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": True}):
         assert qemu.get_abs_image_path(path2) == path2
