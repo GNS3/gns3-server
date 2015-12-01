@@ -22,6 +22,9 @@ import socket
 import struct
 import psutil
 
+if psutil.version_info < (3, 0, 0):
+    raise Exception("psutil version should >= 3.0.0. If you are under ubuntu/debian install gns3 via apt instead of pip")
+
 import logging
 log = logging.getLogger(__name__)
 
