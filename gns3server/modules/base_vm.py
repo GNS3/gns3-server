@@ -48,6 +48,7 @@ class BaseVM:
     def __init__(self, name, vm_id, project, manager, console=None, console_type="telnet"):
 
         self._name = name
+        self._usage = ""
         self._id = vm_id
         self._project = project
         self._manager = manager
@@ -123,6 +124,26 @@ class BaseVM:
                                                                         id=self.id,
                                                                         new_name=new_name))
         self._name = new_name
+
+    @property
+    def usage(self):
+        """
+        Returns the usage for this VM.
+
+        :returns: usage
+        """
+
+        return self._usage
+
+    @usage.setter
+    def usage(self, new_usage):
+        """
+        Sets the usage of this VM.
+
+        :param new_usage: usage
+        """
+
+        self._usage = new_usage
 
     @property
     def id(self):
