@@ -125,9 +125,7 @@ def test_vbox_delete_nio(server, vm):
 
 
 def test_vbox_update(server, vm, free_console_port):
-    response = server.put("/projects/{project_id}/virtualbox/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
-                                                                                                                                   "console": free_console_port},
+    response = server.put("/projects/{project_id}/virtualbox/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test"},
                           example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port

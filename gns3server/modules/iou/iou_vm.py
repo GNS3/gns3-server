@@ -64,12 +64,11 @@ class IOUVM(BaseVM):
     :param vm_id: IOU VM identifier
     :param project: Project instance
     :param manager: Manager instance
-    :param console: TCP console port
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None):
+    def __init__(self, name, vm_id, project, manager):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, vm_id, project, manager)
 
         self._command = []
         self._iouyap_process = None
@@ -99,9 +98,7 @@ class IOUVM(BaseVM):
 
         log.debug('IOU "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
 
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        super().close()
 
         adapters = self._ethernet_adapters + self._serial_adapters
         for adapter in adapters:

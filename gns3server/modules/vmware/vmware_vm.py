@@ -50,9 +50,9 @@ class VMwareVM(BaseVM):
     VMware VM implementation.
     """
 
-    def __init__(self, name, vm_id, project, manager, vmx_path, linked_clone, console=None):
+    def __init__(self, name, vm_id, project, manager, vmx_path, linked_clone):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, vm_id, project, manager)
 
         self._linked_clone = linked_clone
         self._vmx_pairs = OrderedDict()
@@ -542,9 +542,7 @@ class VMwareVM(BaseVM):
             return
 
         log.debug("VMware VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        super().close()
 
         for adapter in self._ethernet_adapters.values():
             if adapter is not None:

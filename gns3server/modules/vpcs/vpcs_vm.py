@@ -52,13 +52,12 @@ class VPCSVM(BaseVM):
     :param vm_id: VPCS VM identifier
     :param project: Project instance
     :param manager: Manager instance
-    :param console: TCP console port
     :param startup_script: content of the startup script file
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None, startup_script=None):
+    def __init__(self, name, vm_id, project, manager, startup_script=None):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, vm_id, project, manager)
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
@@ -77,9 +76,7 @@ class VPCSVM(BaseVM):
         """
 
         log.debug('VPCS "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        super().close()
 
         nio = self._ethernet_adapter.get_nio(0)
         if isinstance(nio, NIOUDP):

@@ -70,7 +70,6 @@ class DynamipsVMHandler:
                                                    request.json.get("vm_id"),
                                                    request.json.get("dynamips_id"),
                                                    platform,
-                                                   console=request.json.get("console"),
                                                    aux=request.json.get("aux"),
                                                    chassis=request.json.pop("chassis", default_chassis))
 

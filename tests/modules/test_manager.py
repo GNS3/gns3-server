@@ -51,10 +51,10 @@ def test_create_vm_new_topology(loop, project, vpcs):
 def test_create_twice_same_vm_new_topology(loop, project, vpcs):
     project._vms = set()
     vm_id = str(uuid.uuid4())
-    vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id, console=2222))
+    vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id))
     assert vm in project.vms
     assert len(project.vms) == 1
-    vm = loop.run_until_complete(vpcs.create_vm("PC 2", project.id, vm_id, console=2222))
+    vm = loop.run_until_complete(vpcs.create_vm("PC 2", project.id, vm_id))
     assert len(project.vms) == 1
 
 

@@ -51,9 +51,9 @@ class VirtualBoxVM(BaseVM):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, vm_id, project, manager, vmname, linked_clone, console=None, adapters=0):
+    def __init__(self, name, vm_id, project, manager, vmname, linked_clone, adapters=0):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, vm_id, project, manager)
 
         self._maximum_adapters = 8
         self._linked_clone = linked_clone
@@ -349,9 +349,7 @@ class VirtualBoxVM(BaseVM):
             return
 
         log.debug("VirtualBox VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        super.close()
 
         for adapter in self._ethernet_adapters.values():
             if adapter is not None:

@@ -55,15 +55,14 @@ class QemuVM(BaseVM):
     :param vm_id: Qemu VM identifier
     :param project: Project instance
     :param manager: Manager instance
-    :param console: TCP console port
     :param qemu_path: path to the QEMU binary
     :param platform: Platform to emulate
     :param console: TCP console port
     """
 
-    def __init__(self, name, vm_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
+    def __init__(self, name, vm_id, project, manager, linked_clone=True, qemu_path=None, console_type="telnet", platform=None):
 
-        super().__init__(name, vm_id, project, manager, console=console, console_type=console_type)
+        super().__init__(name, vm_id, project, manager, console_type=console_type)
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
@@ -973,12 +972,10 @@ class QemuVM(BaseVM):
         """
 
         log.debug('QEMU VM "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
+        super().close()
+
         self.acpi_shutdown = False
         yield from self.stop()
-
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
 
         for adapter in self._ethernet_adapters:
             if adapter is not None:

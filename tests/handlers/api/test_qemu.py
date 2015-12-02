@@ -147,14 +147,12 @@ def test_qemu_delete(server, vm):
 def test_qemu_update(server, vm, tmpdir, free_console_port, project, fake_qemu_vm):
     params = {
         "name": "test",
-        "console": free_console_port,
         "ram": 1024,
         "hdb_disk_image": "linux.img"
     }
     response = server.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port
     assert response.json["hdb_disk_image"] == "linux.img"
     assert response.json["ram"] == 1024
 
