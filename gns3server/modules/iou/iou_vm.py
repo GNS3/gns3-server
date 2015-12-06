@@ -34,6 +34,7 @@ import struct
 import hashlib
 import glob
 import binascii
+import functools
 
 from .iou_error import IOUError
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -515,7 +516,8 @@ class IOUVM(BaseVM):
                 log.info("IOU instance {} started PID={}".format(self._id, self._iou_process.pid))
                 self._started = True
                 self.status = "started"
-                gns3server.utils.asyncio.monitor_process(self._iou_process, self._termination_callback)
+                callback = functools.partial(self._termination_callback, "IOU")
+                gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
             except FileNotFoundError as e:
                 raise IOUError("Could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
             except (OSError, subprocess.SubprocessError) as e:
@@ -528,19 +530,21 @@ class IOUVM(BaseVM):
             # connections support
             yield from self._start_iouyap()
 
-    def _termination_callback(self, returncode):
+    def _termination_callback(self, process_name, returncode):
         """
         Called when the process has stopped.
 
         :param returncode: Process returncode
         """
 
-        log.info("IOU process has stopped, return code: %d", returncode)
+        log.info("{} process has stopped, return code: {}".format(process_name, returncode))
         self._terminate_process_iou()
         self._terminate_process_iouyap()
         self._ioucon_thread_stop_event.set()
         if returncode != 0:
-            self.project.emit("log.error", {"message": "IOU process has stopped, return code: {}\n{}".format(returncode, self.read_iou_stdout())})
+            self.project.emit("log.error", {"message": "{} process has stopped, return code: {}\n{}".format(process_name,
+                                                                                                            returncode,
+                                                                                                            self.read_iou_stdout())})
 
     def _rename_nvram_file(self):
         """
@@ -572,7 +576,8 @@ class IOUVM(BaseVM):
                                                                                  stderr=subprocess.STDOUT,
                                                                                  cwd=self.working_dir)
 
-                gns3server.utils.asyncio.monitor_process(self._iouyap_process, self._termination_callback)
+                callback = functools.partial(self._termination_callback, "iouyap")
+                gns3server.utils.asyncio.monitor_process(self._iouyap_process, callback)
             log.info("iouyap started PID={}".format(self._iouyap_process.pid))
         except (OSError, subprocess.SubprocessError) as e:
             iouyap_stdout = self.read_iouyap_stdout()
