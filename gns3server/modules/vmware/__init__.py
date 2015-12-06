@@ -325,7 +325,7 @@ class VMware(BaseManager):
         return host_type
 
     @asyncio.coroutine
-    def execute(self, subcommand, args, timeout=60, host_type=None):
+    def execute(self, subcommand, args, timeout=120, host_type=None):
 
         with (yield from self._execute_lock):
             vmrun_path = self.vmrun_path
