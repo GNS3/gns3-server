@@ -432,7 +432,7 @@ class VMwareVM(BaseVM):
         else:
             yield from self._control_vm("start")
 
-        if self._use_ubridge:
+        if self._use_ubridge and self._ubridge_hypervisor:
             for adapter_number in range(0, self._adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
                 if nio:
@@ -826,7 +826,7 @@ class VMwareVM(BaseVM):
                 if nio.vmnet not in self._vmnets:
                     self._vmnets.append(nio.vmnet)
             adapter.add_nio(0, nio)
-            if self._started and self._use_ubridge:
+            if self._started and self._use_ubridge and self._ubridge_hypervisor:
                 yield from self._add_ubridge_connection(nio, adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -862,7 +862,7 @@ class VMwareVM(BaseVM):
             if nio.vmnet in self._vmnets:
                 self._vmnets.remove(nio.vmnet)
         adapter.remove_nio(0)
-        if self._started and self._use_ubridge:
+        if self._started and self._use_ubridge and self._ubridge_hypervisor:
             yield from self._delete_ubridge_connection(adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
