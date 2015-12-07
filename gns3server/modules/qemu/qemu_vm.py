@@ -915,6 +915,8 @@ class QemuVM(BaseVM):
                     else:
                         self._process.terminate()
                         yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                except ProcessLookupError:
+                    pass
                 except asyncio.TimeoutError:
                     try:
                         self._process.kill()
