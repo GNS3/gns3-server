@@ -60,11 +60,14 @@ class BaseVM:
         self._vm_status = "stopped"
 
         if self._console is not None:
-            self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
+            if console_type == "vnc":
+                self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project, port_range_start=5900, port_range_end=6000)
+            else:
+                self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
         else:
             if console_type == "vnc":
                 # VNC is a special case and the range must be 5900-6000
-                self._console = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
+                self._console = self._manager.port_manager.get_free_tcp_port(self._project, port_range_start=5900, port_range_end=6000)
             else:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
