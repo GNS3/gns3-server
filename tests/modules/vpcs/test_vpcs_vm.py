@@ -271,17 +271,6 @@ def test_get_startup_script_using_default_script(vm):
     assert vm.script_file == filepath
 
 
-def test_change_console_port(vm, port_manager):
-    port1 = port_manager.get_free_tcp_port(vm.project)
-    port2 = port_manager.get_free_tcp_port(vm.project)
-    port_manager.release_tcp_port(port1, vm.project)
-    port_manager.release_tcp_port(port2, vm.project)
-    vm.console = port1
-    vm.console = port2
-    assert vm.console == port2
-    port_manager.reserve_tcp_port(port1, vm.project)
-
-
 def test_change_name(vm, tmpdir):
     path = os.path.join(vm.working_dir, 'startup.vpc')
     vm.name = "world"

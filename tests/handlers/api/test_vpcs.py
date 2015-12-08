@@ -124,12 +124,10 @@ def test_vpcs_delete(server, vm):
         assert response.status == 204
 
 
-def test_vpcs_update(server, vm, tmpdir, free_console_port):
+def test_vpcs_update(server, vm, tmpdir):
     response = server.put("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
-                                                                                                                             "console": free_console_port,
                                                                                                                              "startup_script": "ip 192.168.1.1"},
                           example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port
     assert response.json["startup_script"] == "ip 192.168.1.1"

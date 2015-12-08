@@ -49,7 +49,6 @@ class Router(BaseVM):
     :param project: Project instance
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
-    :param console: console port
     :param aux: auxiliary console port
     :param platform: Platform of this router
     """
@@ -59,9 +58,9 @@ class Router(BaseVM):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
+    def __init__(self, name, vm_id, project, manager, dynamips_id=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, vm_id, project, manager)
 
         self._hypervisor = hypervisor
         self._dynamips_id = dynamips_id
@@ -333,9 +332,7 @@ class Router(BaseVM):
 
         log.debug('Router "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
 
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        super().close()
 
         if self._aux:
             self._manager.port_manager.release_tcp_port(self._aux, self._project)

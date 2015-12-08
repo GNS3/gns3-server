@@ -60,7 +60,6 @@ class QEMUHandler:
                                        request.json.pop("vm_id", None),
                                        linked_clone=request.json.get("linked_clone", True),
                                        qemu_path=request.json.pop("qemu_path", None),
-                                       console=request.json.pop("console", None),
                                        console_type=request.json.pop("console_type", "telnet"),
                                        platform=request.json.pop("platform", None))
 

@@ -45,28 +45,24 @@ class BaseVM:
     :param console: TCP console port
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None, console_type="telnet"):
+    def __init__(self, name, vm_id, project, manager, console_type="telnet"):
 
         self._name = name
         self._usage = ""
         self._id = vm_id
         self._project = project
         self._manager = manager
-        self._console = console
         self._console_type = console_type
         self._temporary_directory = None
         self._hw_virtualization = False
         self._ubridge_hypervisor = None
         self._vm_status = "stopped"
 
-        if self._console is not None:
-            self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
+        if console_type == "vnc":
+            # VNC is a special case and the range must be 5900-6000
+            self._console = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
         else:
-            if console_type == "vnc":
-                # VNC is a special case and the range must be 5900-6000
-                self._console = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
-            else:
-                self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+            self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
         log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(module=self.manager.module_name,
                                                                                        name=self.name,
@@ -223,7 +219,9 @@ class BaseVM:
         Close the VM process.
         """
 
-        raise NotImplementedError
+        if self._console:
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
+            self._console = None
 
     @property
     def console(self):
@@ -236,26 +234,9 @@ class BaseVM:
         return self._console
 
     @console.setter
-    def console(self, console):
-        """
-        Changes the console port
-
-        :params console: Console port (integer)
-        """
-
-        if console == self._console:
-            return
-
-        if self._console_type == "vnc" and console < 5900:
-            raise VMError("VNC console require a port superior or equal to 5900")
-
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-        self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
-        log.info("{module}: '{name}' [{id}]: console port set to {port}".format(module=self.manager.module_name,
-                                                                                name=self.name,
-                                                                                id=self.id,
-                                                                                port=console))
+    def console(self, port):
+        # Ignore console port for compatibility with old GNS3 version
+        pass
 
     @property
     def console_type(self):

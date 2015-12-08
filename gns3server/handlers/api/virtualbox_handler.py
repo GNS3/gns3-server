@@ -69,7 +69,6 @@ class VirtualBoxHandler:
                                                request.json.get("vm_id"),
                                                request.json.pop("vmname"),
                                                request.json.pop("linked_clone"),
-                                               console=request.json.get("console", None),
                                                adapters=request.json.get("adapters", 0))
 
         if "enable_remote_console" in request.json:

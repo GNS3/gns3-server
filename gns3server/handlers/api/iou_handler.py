@@ -55,8 +55,7 @@ class IOUHandler:
         iou = IOU.instance()
         vm = yield from iou.create_vm(request.json.pop("name"),
                                       request.match_info["project_id"],
-                                      request.json.get("vm_id"),
-                                      console=request.json.get("console"))
+                                      request.json.get("vm_id"))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:

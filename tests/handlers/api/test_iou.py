@@ -177,10 +177,9 @@ def test_iou_delete(server, vm):
         assert response.status == 204
 
 
-def test_iou_update(server, vm, tmpdir, free_console_port, project):
+def test_iou_update(server, vm, tmpdir, project):
     params = {
         "name": "test",
-        "console": free_console_port,
         "ram": 512,
         "nvram": 2048,
         "ethernet_adapters": 4,
@@ -193,7 +192,6 @@ def test_iou_update(server, vm, tmpdir, free_console_port, project):
     response = server.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port
     assert response.json["ethernet_adapters"] == 4
     assert response.json["serial_adapters"] == 0
     assert response.json["ram"] == 512

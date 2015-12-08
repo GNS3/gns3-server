@@ -48,12 +48,7 @@ def test_temporary_directory(project, manager):
 
 def test_console(project, manager):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    old_console = vm.console
     vm.console = 2111
-    assert vm.console == 2111
-
-
-def test_console_vnc_invalid(project, manager):
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    vm.console_type = "vnc"
-    with pytest.raises(VMError):
-        vm.console = 2012
+    # The console port should not change
+    assert vm.console == old_console
