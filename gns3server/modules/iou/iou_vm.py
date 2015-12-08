@@ -1250,10 +1250,11 @@ class IOUVM(BaseVM):
                                                                                                           port_number=port_number))
 
         nio.startPacketCapture(output_file, data_link_type)
-        log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number}'.format(name=self._name,
+        log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number} to {output_file}'.format(name=self._name,
                                                                                                          id=self._id,
                                                                                                          adapter_number=adapter_number,
-                                                                                                         port_number=port_number))
+                                                                                                         port_number=port_number,
+                                                                                                         output_file=output_file))
 
         if self.is_iouyap_running():
             self._update_iouyap_config()
