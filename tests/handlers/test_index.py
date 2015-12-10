@@ -27,5 +27,5 @@ def test_index(server):
     response = server.get('/', api_version=None)
     assert response.status == 200
     html = response.html
-    assert "Community" in html
+    assert "Website" in html
     assert __version__ in html
