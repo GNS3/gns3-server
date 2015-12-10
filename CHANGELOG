@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.4.0rc2 10/12/2015
+
+* Add log about wher iou capture packet
+* Replace by another TCP port if port is already used
+* Fix ProcessLookupError in Qemu
+* Increase vmrun timeout to 120 seconds. Ref #360.
+* Fixes termination notification to indicate the right process name (IOU vs iouyap). Ref #359.
+* Fixes error with non initialized uBridge. Fixes #367.
+* Remove debug that can crash qemu
+* Support VM usage for qemu
+* Raise an error if psutil version is invalid
+
 ## 1.4.0rc1 12/11/2015
 
 * Raise error if server received windows path
