@@ -1,6 +1,17 @@
 # Change Log
 
-# 1.3.11 07/10/2015
+## 1.3.12 11/12/2015
+
+* Contributing instructions
+* Correctly display log messages.
+* Tentative fix for "WinError 64 The specified network name is no longer available" issues.
+* Fix minor errors reported by codacy.com
+* Add doc on how to got code coverage
+* Raise an error when you use a port outside the ranges
+* Fix asyncio error when closing the app
+* Release UDP ports when closing a Qemu VM. Fixes #323.
+
+## 1.3.11 07/10/2015
 
 * Escape other usage of glob
 * Fix Dynamips identifier is already used by another router
