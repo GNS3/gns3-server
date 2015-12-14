@@ -24,6 +24,7 @@ from unittest.mock import patch
 from gns3server.modules.vpcs import VPCS
 from gns3server.modules.qemu import Qemu
 from gns3server.modules.vm_error import VMError
+from gns3server.utils import force_unix_path
 
 
 @pytest.fixture(scope="function")
@@ -89,10 +90,10 @@ def test_create_vm_old_topology(loop, project, tmpdir, vpcs):
 
 def test_get_abs_image_path(qemu, tmpdir):
     os.makedirs(str(tmpdir / "QEMU"))
-    path1 = str(tmpdir / "test1.bin")
+    path1 = force_unix_path(str(tmpdir / "test1.bin"))
     open(path1, 'w+').close()
 
-    path2 = str(tmpdir / "QEMU" / "test2.bin")
+    path2 = force_unix_path(str(tmpdir / "QEMU" / "test2.bin"))
     open(path2, 'w+').close()
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
@@ -106,11 +107,11 @@ def test_get_abs_image_path(qemu, tmpdir):
 def test_get_abs_image_path_non_local(qemu, tmpdir):
     path1 = tmpdir / "images" / "QEMU" / "test1.bin"
     path1.write("1", ensure=True)
-    path1 = str(path1)
+    path1 = force_unix_path(str(path1))
 
     path2 = tmpdir / "private" / "QEMU" / "test2.bin"
     path2.write("1", ensure=True)
-    path2 = str(path2)
+    path2 = force_unix_path(str(path2))
 
     # If non local we can't use path outside images directory
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": False}):
@@ -126,10 +127,10 @@ def test_get_abs_image_path_non_local(qemu, tmpdir):
 
 def test_get_relative_image_path(qemu, tmpdir):
     os.makedirs(str(tmpdir / "QEMU"))
-    path1 = str(tmpdir / "test1.bin")
+    path1 = force_unix_path(str(tmpdir / "test1.bin"))
     open(path1, 'w+').close()
 
-    path2 = str(tmpdir / "QEMU" / "test2.bin")
+    path2 = force_unix_path(str(tmpdir / "QEMU" / "test2.bin"))
     open(path2, 'w+').close()
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):

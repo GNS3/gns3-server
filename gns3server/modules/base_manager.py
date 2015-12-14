@@ -426,6 +426,8 @@ class BaseManager:
             # For non local server we disallow using absolute path outside image directory
             if Config.instance().get_section_config("Server").get("local", False) is False:
                 img_directory = self.config.get_section_config("Server").get("images_path", os.path.expanduser("~/GNS3/images"))
+                img_directory = force_unix_path(img_directory)
+                path = force_unix_path(path)
                 if len(os.path.commonprefix([img_directory, path])) < len(img_directory):
                     raise VMError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
 
@@ -443,8 +445,8 @@ class BaseManager:
 
         if not path:
             return ""
-        img_directory = self.get_images_directory()
-        path = self.get_abs_image_path(path)
+        img_directory = force_unix_path(self.get_images_directory())
+        path = force_unix_path(self.get_abs_image_path(path))
         if os.path.commonprefix([img_directory, path]) == img_directory:
             return os.path.relpath(path, img_directory)
         return path
