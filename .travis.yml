@@ -9,8 +9,8 @@ before_install:
   - sudo apt-get install dynamips
     
 install:
-  - python setup.py install
   - pip install -rdev-requirements.txt
+  - python setup.py install
 
 script:
     - py.test -v -s tests --cov gns3server --cov-report term-missing
