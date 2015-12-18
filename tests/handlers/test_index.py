@@ -29,3 +29,8 @@ def test_index(server):
     html = response.html
     assert "Website" in html
     assert __version__ in html
+
+
+def test_status(server):
+    response = server.get('/status', api_version=None)
+    assert response.status == 200
