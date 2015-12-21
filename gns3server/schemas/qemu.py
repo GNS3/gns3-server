@@ -123,7 +123,7 @@ QEMU_CREATE_SCHEMA = {
         },
         "boot_priority": {
             "description": "QEMU boot priority",
-            "enum": ["c", "d"]
+            "enum": ["c", "d", "n", "cn", "cd"]
         },
         "ram": {
             "description": "amount of RAM in MB",
