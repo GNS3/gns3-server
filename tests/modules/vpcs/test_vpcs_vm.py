@@ -211,6 +211,7 @@ def test_add_nio_binding_udp(vm):
     assert nio.lport == 4242
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_add_nio_binding_tap(vm, ethernet_device):
     with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
         nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_tap", "tap_device": ethernet_device})

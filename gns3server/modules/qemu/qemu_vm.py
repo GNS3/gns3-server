@@ -748,6 +748,9 @@ class QemuVM(BaseVM):
         Changes the process priority
         """
 
+        if self._process_priority == "normal":
+            return
+
         if sys.platform.startswith("win"):
             try:
                 import win32api
@@ -756,7 +759,7 @@ class QemuVM(BaseVM):
             except ImportError:
                 log.error("pywin32 must be installed to change the priority class for QEMU VM {}".format(self._name))
             else:
-                log.info("setting QEMU VM {} priority class to BELOW_NORMAL".format(self._name))
+                log.info("Setting QEMU VM {} priority class to {}".format(self._name, self._process_priority))
                 handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0, self._process.pid)
                 if self._process_priority == "realtime":
                     priority = win32process.REALTIME_PRIORITY_CLASS
