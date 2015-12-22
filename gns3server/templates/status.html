@@ -6,11 +6,23 @@
 The purpose of this page is to help for GNS3 debug.
 
 <h2>Opened projects</h2>
-<ul>
+<table border="1">
+    <tr>
+        <th>Name</th>
+        <th>ID</td>
+        <th>VMs</th>
+        <th>Clients connected</th>
+    </tr>
 {% for project in project_manager.projects %}
-    <li>{{project.name}} ({{project.id}})</li>
+<tr>
+    <td>{{project.name}}</td>
+    <td>{{project.id}}</td>
+    <td>{{project.vms|length}}</td>    
+    <td>{{project.listeners|length}}</td>
+</tr>
 {% endfor %}
-</ul>
+</table>
+
 
 <h2>Ports reserved by GNS3</h2>
 <h3>TCP</h3>
