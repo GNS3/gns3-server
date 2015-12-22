@@ -22,8 +22,10 @@ master
 master is the next stable release, you can test it in your day to day activities.
 Bug fixes or small improvements pull requests go here.
 
-unstable
+1.x (1.4 for example)
 ********
+Next major release
+
 *Never* use this branch for production. Pull requests for major new features go here.
 
 Linux

@@ -459,6 +459,13 @@ class Project:
 
         self._listeners.remove(queue)
 
+    @property
+    def listeners(self):
+        """
+        List of current clients listening for event in this projects
+        """
+        return self._listeners
+
     @asyncio.coroutine
     def list_files(self):
         """
