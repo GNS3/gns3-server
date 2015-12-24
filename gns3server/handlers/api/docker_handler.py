@@ -21,8 +21,10 @@ from ...web.route import Route
 from ...modules.docker import Docker
 
 from ...schemas.docker import (
-    DOCKER_CREATE_SCHEMA, DOCKER_UPDATE_SCHEMA, DOCKER_CAPTURE_SCHEMA,
-    DOCKER_OBJECT_SCHEMA
+    DOCKER_CREATE_SCHEMA,
+    DOCKER_OBJECT_SCHEMA,
+    DOCKER_UPDATE_SCHEMA,
+    DOCKER_LIST_IMAGES_SCHEMA
 )
 from ...schemas.nio import NIO_SCHEMA
 
@@ -36,6 +38,7 @@ class DockerHandler:
         status_codes={
             200: "Success",
         },
+        output=DOCKER_LIST_IMAGES_SCHEMA,
         description="Get all available Docker images")
     def show(request, response):
         docker_manager = Docker.instance()
@@ -44,7 +47,7 @@ class DockerHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/docker/images",
+        r"/projects/{project_id}/docker/vms",
         parameters={
             "project_id": "UUID for the project"
         },
@@ -61,11 +64,12 @@ class DockerHandler:
         container = yield from docker_manager.create_vm(
             request.json.pop("name"),
             request.match_info["project_id"],
-            request.json.get("id"),
-            image=request.json.pop("imagename"),
-            startcmd=request.json.get("startcmd")
+            request.json.get("vm_id"),
+            image=request.json.pop("image"),
+            start_command=request.json.get("start_command"),
+            environment=request.json.get("environment"),
+            adapters=request.json.get("adapters")
         )
-        # FIXME: DO WE NEED THIS?
         for name, value in request.json.items():
             if name != "_vm_id":
                 if hasattr(container, name) and getattr(container, name) != value:
@@ -76,7 +80,7 @@ class DockerHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/docker/images/{id}/start",
+        r"/projects/{project_id}/docker/vms/{id}/start",
         parameters={
             "project_id": "UUID of the project",
             "id": "ID of the container"
@@ -91,7 +95,7 @@ class DockerHandler:
         output=DOCKER_OBJECT_SCHEMA)
     def start(request, response):
         docker_manager = Docker.instance()
-        container = docker_manager.get_container(
+        container = docker_manager.get_vm(
             request.match_info["id"],
             project_id=request.match_info["project_id"])
         yield from container.start()
@@ -99,7 +103,7 @@ class DockerHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/docker/images/{id}/stop",
+        r"/projects/{project_id}/docker/vms/{id}/stop",
         parameters={
             "project_id": "UUID of the project",
             "id": "ID of the container"
@@ -114,7 +118,7 @@ class DockerHandler:
         output=DOCKER_OBJECT_SCHEMA)
     def stop(request, response):
         docker_manager = Docker.instance()
-        container = docker_manager.get_container(
+        container = docker_manager.get_vm(
             request.match_info["id"],
             project_id=request.match_info["project_id"])
         yield from container.stop()
@@ -122,7 +126,7 @@ class DockerHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/docker/images/{id}/reload",
+        r"/projects/{project_id}/docker/vms/{id}/reload",
         parameters={
             "project_id": "UUID of the project",
             "id": "ID of the container"
@@ -137,7 +141,7 @@ class DockerHandler:
         output=DOCKER_OBJECT_SCHEMA)
     def reload(request, response):
         docker_manager = Docker.instance()
-        container = docker_manager.get_container(
+        container = docker_manager.get_vm(
             request.match_info["id"],
             project_id=request.match_info["project_id"])
         yield from container.restart()
@@ -145,7 +149,7 @@ class DockerHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/docker/images/{id}",
+        r"/projects/{project_id}/docker/vms/{id}",
         parameters={
             "id": "ID for the container",
             "project_id": "UUID for the project"
@@ -158,7 +162,7 @@ class DockerHandler:
         description="Delete a Docker container")
     def delete(request, response):
         docker_manager = Docker.instance()
-        container = docker_manager.get_container(
+        container = docker_manager.get_vm(
             request.match_info["id"],
             project_id=request.match_info["project_id"])
         yield from container.remove()
@@ -166,7 +170,7 @@ class DockerHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/docker/images/{id}/suspend",
+        r"/projects/{project_id}/docker/vms/{id}/suspend",
         parameters={
             "project_id": "UUID of the project",
             "id": "ID of the container"
@@ -181,14 +185,14 @@ class DockerHandler:
         output=DOCKER_OBJECT_SCHEMA)
     def suspend(request, response):
         docker_manager = Docker.instance()
-        container = docker_manager.get_container(
+        container = docker_manager.get_vm(
             request.match_info["id"],
             project_id=request.match_info["project_id"])
         yield from container.pause()
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/docker/images/{id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/docker/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "id": "ID of the container",
@@ -205,8 +209,8 @@ class DockerHandler:
         output=NIO_SCHEMA)
     def create_nio(request, response):
         docker_manager = Docker.instance()
-        container = docker_manager.get_container(
-            request.match_info["id"],
+        container = docker_manager.get_vm(
+            request.match_info["vm_id"],
             project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp"):
@@ -217,14 +221,14 @@ class DockerHandler:
         adapter = container._ethernet_adapters[
             int(request.match_info["adapter_number"])
         ]
-        container.adapter_add_nio_binding(
+        yield from container.adapter_add_nio_binding(
             int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/docker/images/{id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/docker/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
             "id": "ID of the container",
@@ -239,9 +243,36 @@ class DockerHandler:
         description="Remove a NIO from a Docker container")
     def delete_nio(request, response):
         docker_manager = Docker.instance()
-        container = docker_manager.get_container(
-            request.match_info["id"],
+        container = docker_manager.get_vm(
+            request.match_info["vm_id"],
             project_id=request.match_info["project_id"])
         yield from container.adapter_remove_nio_binding(
             int(request.match_info["adapter_number"]))
         response.set_status(204)
+
+    @classmethod
+    @Route.put(
+        r"/projects/{project_id}/docker/vms/{vm_id}",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance"
+        },
+        status_codes={
+            200: "Instance updated",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+            409: "Conflict"
+        },
+        description="Update a Docker instance",
+        input=DOCKER_UPDATE_SCHEMA,
+        output=DOCKER_OBJECT_SCHEMA)
+    def update(request, response):
+
+        docker_manager = Docker.instance()
+        vm = docker_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm.name = request.json.get("name", vm.name)
+        vm.console = request.json.get("console", vm.console)
+        vm.start_command = request.json.get("start_command", vm.start_command)
+        vm.environment = request.json.get("environment", vm.environment)
+        yield from vm.update()
+        response.json(vm)

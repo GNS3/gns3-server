@@ -22,51 +22,92 @@ Docker server module.
 import asyncio
 import logging
 import aiohttp
-import docker
-from requests.exceptions import ConnectionError
+import urllib
+import json
 
 log = logging.getLogger(__name__)
 
 from ..base_manager import BaseManager
 from ..project_manager import ProjectManager
-from .docker_vm import Container
+from .docker_vm import DockerVM
 from .docker_error import DockerError
 
 
 class Docker(BaseManager):
 
-    _VM_CLASS = Container
+    _VM_CLASS = DockerVM
 
     def __init__(self):
         super().__init__()
-        # FIXME: make configurable and start docker before trying
-        self._server_url = 'unix://var/run/docker.sock'
-        self._client = docker.Client(base_url=self._server_url)
-        self._execute_lock = asyncio.Lock()
-
-    @property
-    def server_url(self):
-        """Returns the Docker server url.
-
-        :returns: url
-        :rtype: string
-        """
-        return self._server_url
-
-    @server_url.setter
-    def server_url(self, value):
-        self._server_url = value
-        self._client = docker.Client(base_url=value)
+        self._server_url = '/var/run/docker.sock'
+        self._connector = aiohttp.connector.UnixConnector(self._server_url)
+        # Allow locking during ubridge operations
+        self.ubridge_lock = asyncio.Lock()
 
     @asyncio.coroutine
-    def execute(self, command, kwargs, timeout=60):
-        command = getattr(self._client, command)
-        log.debug("Executing Docker with command: {}".format(command))
-        try:
-            result = command(**kwargs)
-        except Exception as error:
-            raise DockerError("Docker has returned an error: {}".format(error))
-        return result
+    def query(self, method, path, data={}, params={}):
+        """
+        Make a query to the docker daemon and decode the request
+
+        :param method: HTTP method
+        :param path: Endpoint in API
+        :param data: Dictionnary with the body. Will be transformed to a JSON
+        :param params: Parameters added as a query arg
+        """
+        response = yield from self.http_query(method, path, data=data, params=params)
+        body = yield from response.read()
+        if len(body):
+            body = json.loads(body.decode("utf-8"))
+        log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
+        return body
+
+    @asyncio.coroutine
+    def http_query(self, method, path, data={}, params={}):
+        """
+        Make a query to the docker daemon
+
+        :param method: HTTP method
+        :param path: Endpoint in API
+        :param data: Dictionnary with the body. Will be transformed to a JSON
+        :param params: Parameters added as a query arg
+        :returns: HTTP response
+        """
+        data = json.dumps(data)
+        url = "http://docker/" + path
+        response = yield from aiohttp.request(
+            method,
+            url,
+            connector=self._connector,
+            params=params,
+            data=data,
+            headers={"content-type": "application/json", },
+        )
+        if response.status >= 300:
+            body = yield from response.read()
+            try:
+                body = json.loads(body.decode("utf-8"))["message"]
+            except ValueError:
+                pass
+            log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
+            raise DockerError("Docker has returned an error: {}".format(body))
+        return response
+
+    @asyncio.coroutine
+    def websocket_query(self, path, params={}):
+        """
+        Open a websocket connection
+
+        :param path: Endpoint in API
+        :param params: Parameters added as a query arg
+        :returns: Websocket
+        """
+
+        url = "http://docker/" + path
+        connection = yield from aiohttp.ws_connect(url,
+                                                   connector=self._connector,
+                                                   origin="http://docker",
+                                                   autoping=True)
+        return connection
 
     @asyncio.coroutine
     def list_images(self):
@@ -76,44 +117,8 @@ class Docker(BaseManager):
         :rtype: list
         """
         images = []
-        try:
-            for image in self._client.images():
-                for tag in image['RepoTags']:
-                    images.append({'imagename': tag})
-            return images
-        except ConnectionError as error:
-            raise DockerError(
-                """Docker couldn't list images and returned an error: {}
-Is the Docker service running?""".format(error))
-
-    @asyncio.coroutine
-    def list_containers(self):
-        """Gets Docker container list.
-
-        :returns: list of dicts
-        :rtype: list
-        """
-        return self._client.containers()
-
-    def get_container(self, cid, project_id=None):
-        """Returns a Docker container.
-
-        :param id: Docker container identifier
-        :param project_id: Project identifier
-
-        :returns: Docker container
-        """
-        if project_id:
-            project = ProjectManager.instance().get_project(project_id)
-
-        if cid not in self._vms:
-            raise aiohttp.web.HTTPNotFound(
-                text="Docker container with ID {} doesn't exist".format(cid))
-
-        container = self._vms[cid]
-        if project_id:
-            if container.project.id != project.id:
-                raise aiohttp.web.HTTPNotFound(
-                    text="Project ID {} doesn't belong to container {}".format(
-                        project_id, container.name))
-        return container
+        for image in (yield from self.query("GET", "images/json", params={"all": 0})):
+            for tag in image['RepoTags']:
+                if tag != "<none>:<none>":
+                    images.append({'image': tag})
+        return sorted(images, key=lambda i: i['image'])
