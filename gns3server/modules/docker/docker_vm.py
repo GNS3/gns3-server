@@ -248,20 +248,25 @@ class DockerVM(BaseVM):
     def stop(self):
         """Stops this Docker container."""
 
-        if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            yield from self._ubridge_hypervisor.stop()
+        try:
+            if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+                yield from self._ubridge_hypervisor.stop()
 
-        state = yield from self._get_container_state()
-        if state == "paused":
-            yield from self.unpause()
+            state = yield from self._get_container_state()
+            if state == "paused":
+                yield from self.unpause()
 
-        if self._telnet_server:
-            self._telnet_server.close()
-            self._telnet_server = None
-        # t=5 number of seconds to wait before killing the container
-        yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
-        log.info("Docker container '{name}' [{image}] stopped".format(
-            name=self._name, image=self._image))
+            if self._telnet_server:
+                self._telnet_server.close()
+                self._telnet_server = None
+            # t=5 number of seconds to wait before killing the container
+            yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
+            log.info("Docker container '{name}' [{image}] stopped".format(
+                name=self._name, image=self._image))
+        # Ignore runtime error because when closing the server
+        except RuntimeError as e:
+            log.debug("Docker runtime error when closing: {}".format(str(e)))
+            return
 
     @asyncio.coroutine
     def pause(self):
@@ -282,24 +287,30 @@ class DockerVM(BaseVM):
     @asyncio.coroutine
     def remove(self):
         """Removes this Docker container."""
-        state = yield from self._get_container_state()
-        if state == "paused":
-            yield from self.unpause()
-        if state == "running":
-            yield from self.stop()
-        yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1})
-        log.info("Docker container '{name}' [{image}] removed".format(
-            name=self._name, image=self._image))
 
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        try:
+            state = yield from self._get_container_state()
+            if state == "paused":
+                yield from self.unpause()
+            if state == "running":
+                yield from self.stop()
+            yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1})
+            log.info("Docker container '{name}' [{image}] removed".format(
+                name=self._name, image=self._image))
 
-        for adapter in self._ethernet_adapters:
-            if adapter is not None:
-                for nio in adapter.ports.values():
-                    if nio and isinstance(nio, NIOUDP):
-                        self.manager.port_manager.release_udp_port(nio.lport, self._project)
+            if self._console:
+                self._manager.port_manager.release_tcp_port(self._console, self._project)
+                self._console = None
+
+            for adapter in self._ethernet_adapters:
+                if adapter is not None:
+                    for nio in adapter.ports.values():
+                        if nio and isinstance(nio, NIOUDP):
+                            self.manager.port_manager.release_udp_port(nio.lport, self._project)
+        # Ignore runtime error because when closing the server
+        except RuntimeError as e:
+            log.debug("Docker runtime error when closing: {}".format(str(e)))
+            return
 
     @asyncio.coroutine
     def close(self):

@@ -44,6 +44,9 @@ class Docker(BaseManager):
         # Allow locking during ubridge operations
         self.ubridge_lock = asyncio.Lock()
 
+    def __del__(self):
+        self._connector.close()
+
     @asyncio.coroutine
     def query(self, method, path, data={}, params={}):
         """
