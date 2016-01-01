@@ -310,7 +310,7 @@ class QemuVM(BaseVM):
         :returns: QEMU hdb disk interface
         """
 
-        return self._hda_disk_interface
+        return self._hdb_disk_interface
 
     @hdb_disk_interface.setter
     def hdb_disk_interface(self, hdb_disk_interface):
