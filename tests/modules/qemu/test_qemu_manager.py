@@ -58,15 +58,29 @@ def test_binary_list(loop):
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
-        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list()))
-
         if sys.platform.startswith("win"):
             version = ""
         else:
             version = "2.2.0"
 
+        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list()))
+
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
+
+        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list(["x86"])))
+
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
+
+        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list(["x86", "x42"])))
+
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} not in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
 
