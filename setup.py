@@ -40,7 +40,7 @@ class PyTest(TestCommand):
 
 dependencies = [
     "jsonschema>=2.4.0",
-    "aiohttp>=0.15.1",
+    "aiohttp>=0.19.0",
     "Jinja2>=2.7.3",
     "raven>=5.2.0",
     "docker-py>=1.4.0",
