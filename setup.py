@@ -38,13 +38,7 @@ class PyTest(TestCommand):
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
-dependencies = [
-    "jsonschema>=2.4.0",
-    "aiohttp>=0.19.0",
-    "Jinja2>=2.7.3",
-    "raven>=5.2.0",
-    "psutil>=3.0.0"
-]
+dependencies = open("requirements.txt", "r").read().splitlines()
 
 if sys.platform.startswith("win"):
     dependencies.append("pywin32>=219")
