@@ -773,7 +773,10 @@ class QemuVM(BaseVM):
                     priority = win32process.IDLE_PRIORITY_CLASS
                 else:
                     priority = win32process.NORMAL_PRIORITY_CLASS
-                win32process.SetPriorityClass(handle, priority)
+                try:
+                    win32process.SetPriorityClass(handle, priority)
+                except win32process.error as e:
+                    log.error('Could not change process priority for QEMU VM "{}": {}'.format(self._name, e))
         else:
             if self._process_priority == "realtime":
                 priority = -20
