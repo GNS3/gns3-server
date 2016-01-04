@@ -310,7 +310,7 @@ class QemuVM(BaseVM):
         :returns: QEMU hdb disk interface
         """
 
-        return self._hda_disk_interface
+        return self._hdb_disk_interface
 
     @hdb_disk_interface.setter
     def hdb_disk_interface(self, hdb_disk_interface):
@@ -773,7 +773,10 @@ class QemuVM(BaseVM):
                     priority = win32process.IDLE_PRIORITY_CLASS
                 else:
                     priority = win32process.NORMAL_PRIORITY_CLASS
-                win32process.SetPriorityClass(handle, priority)
+                try:
+                    win32process.SetPriorityClass(handle, priority)
+                except win32process.error as e:
+                    log.error('Could not change process priority for QEMU VM "{}": {}'.format(self._name, e))
         else:
             if self._process_priority == "realtime":
                 priority = -20
