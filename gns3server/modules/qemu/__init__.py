@@ -21,6 +21,7 @@ Qemu server module.
 
 import asyncio
 import os
+import platform
 import sys
 import re
 import subprocess
@@ -37,6 +38,27 @@ log = logging.getLogger(__name__)
 class Qemu(BaseManager):
 
     _VM_CLASS = QemuVM
+
+    @staticmethod
+    def get_kvm_archs():
+        """
+        Gets a list of architectures for which KVM is available on this server.
+
+        :returns: List of architectures for which KVM is available on this server.
+        """
+        kvm = []
+        x86_64_aliases = ["x86_64", "x86-64", "x64", "AMD64", "amd64", "Intel 64", "EM64T"]
+        i386_aliases = ["i386", "x86", "x32"]
+        if sys.platform.startswith("linux") and subprocess.call("kvm-ok") == 0:
+            arch = platform.machine()
+            if arch in x86_64_aliases:
+                kvm.append("x86_64")
+                kvm.append("i386")
+            elif arch in i386_aliases:
+                kvm.append("i386")
+            else:
+                kvm.append(platform.machine())
+        return kvm
 
     @staticmethod
     def paths_list():
@@ -82,7 +104,7 @@ class Qemu(BaseManager):
         return paths
 
     @staticmethod
-    def binary_list():
+    def binary_list(archs=None):
         """
         Gets QEMU binaries list available on the host.
 
@@ -96,9 +118,17 @@ class Qemu(BaseManager):
                     if (f.startswith("qemu-system") or f.startswith("qemu-kvm") or f == "qemu" or f == "qemu.exe") and \
                             os.access(os.path.join(path, f), os.X_OK) and \
                             os.path.isfile(os.path.join(path, f)):
-                        qemu_path = os.path.join(path, f)
-                        version = yield from Qemu.get_qemu_version(qemu_path)
-                        qemus.append({"path": qemu_path, "version": version})
+                        if archs is not None:
+                            for arch in archs:
+                                if f.endswith(arch) or f.endswith("{}.exe".format(arch)) or f.endswith("{}w.exe".format(arch)):
+                                    qemu_path = os.path.join(path, f)
+                                    version = yield from Qemu.get_qemu_version(qemu_path)
+                                    qemus.append({"path": qemu_path, "version": version})
+                        else:
+                            qemu_path = os.path.join(path, f)
+                            version = yield from Qemu.get_qemu_version(qemu_path)
+                            qemus.append({"path": qemu_path, "version": version})
+
             except OSError:
                 continue
 
