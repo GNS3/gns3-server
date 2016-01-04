@@ -306,7 +306,7 @@ class QEMUHandler:
         output=QEMU_BINARY_LIST_SCHEMA)
     def list_binaries(request, response):
 
-        binaries = yield from Qemu.binary_list(request.json["archs"] if "archs" in request.json else None)
+        binaries = yield from Qemu.binary_list(request.json.get("archs", None))
         response.json(binaries)
 
     @classmethod
@@ -333,8 +333,8 @@ class QEMUHandler:
         output=QEMU_CAPABILITY_LIST_SCHEMA
     )
     def get_capabilities(request, response):
-        capabilities = {}
-        kvms = Qemu.get_kvm_archs()
+        capabilities = {"kvm": []}
+        kvms = yield from Qemu.get_kvm_archs()
         if kvms:
             capabilities["kvm"] = kvms
         response.json(capabilities)

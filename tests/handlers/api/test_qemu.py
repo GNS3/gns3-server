@@ -200,8 +200,21 @@ def test_qemu_list_binaries(server, vm):
            {"path": "/tmp/2", "version": "2.1.0"}]
     with asyncio_patch("gns3server.modules.qemu.Qemu.binary_list", return_value=ret) as mock:
         response = server.get("/qemu/binaries".format(project_id=vm["project_id"]), example=True)
-        assert mock.called
+        assert mock.called_with(None)
         assert response.status == 200
+        assert response.json == ret
+
+
+def test_qemu_list_binaries_filter(server, vm):
+    ret = [
+        {"path": "/tmp/x86_64", "version": "2.2.0"},
+        {"path": "/tmp/alpha", "version": "2.1.0"},
+        {"path": "/tmp/i386", "version": "2.1.0"}
+    ]
+    with asyncio_patch("gns3server.modules.qemu.Qemu.binary_list", return_value=ret) as mock:
+        response = server.get("/qemu/binaries".format(project_id=vm["project_id"]), body={"archs": ["i386"]}, example=True)
+        assert response.status == 200
+        assert mock.called_with(["i386"])
         assert response.json == ret
 
 
@@ -312,3 +325,9 @@ def test_create_img_absolute_local(server):
         response = server.post("/qemu/img", body=body, example=True)
 
     assert response.status == 201
+
+
+def test_capabilities(server):
+    with asyncio_patch("gns3server.modules.Qemu.get_kvm_archs", return_value=["x86_64"]):
+        response = server.get("/qemu/capabilities", example=True)
+        assert response.json["kvm"] == ["x86_64"]

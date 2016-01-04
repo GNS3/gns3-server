@@ -40,6 +40,7 @@ class Qemu(BaseManager):
     _VM_CLASS = QemuVM
 
     @staticmethod
+    @asyncio.coroutine
     def get_kvm_archs():
         """
         Gets a list of architectures for which KVM is available on this server.
@@ -47,14 +48,19 @@ class Qemu(BaseManager):
         :returns: List of architectures for which KVM is available on this server.
         """
         kvm = []
-        x86_64_aliases = ["x86_64", "x86-64", "x64", "AMD64", "amd64", "Intel 64", "EM64T"]
-        i386_aliases = ["i386", "x86", "x32"]
-        if sys.platform.startswith("linux") and subprocess.call("kvm-ok") == 0:
+
+        try:
+            process = yield from asyncio.create_subprocess_exec("kvm-ok")
+            yield from process.wait()
+        except OSError:
+            return kvm
+
+        if process.returncode == 0:
             arch = platform.machine()
-            if arch in x86_64_aliases:
+            if arch == "x86_64":
                 kvm.append("x86_64")
                 kvm.append("i386")
-            elif arch in i386_aliases:
+            elif arch == "i386":
                 kvm.append("i386")
             else:
                 kvm.append(platform.machine())

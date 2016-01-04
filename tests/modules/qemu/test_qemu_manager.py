@@ -20,6 +20,7 @@ import stat
 import asyncio
 import sys
 import pytest
+import platform
 
 from gns3server.modules.qemu import Qemu
 from gns3server.modules.qemu.qemu_error import QemuError
@@ -174,3 +175,21 @@ def test_create_image_exist(loop, tmpdir, fake_qemu_img_binary):
             with pytest.raises(QemuError):
                 loop.run_until_complete(asyncio.async(Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)))
                 assert not process.called
+
+
+def test_get_kvm_archs_no_kvm(loop):
+    with asyncio_patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError('kvm-ok')):
+        archs = loop.run_until_complete(asyncio.async(Qemu.get_kvm_archs()))
+        assert archs == []
+
+
+def test_get_kvm_archs_kvm_ok(loop):
+
+    process = MagicMock()
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        process.returncode = 0
+        archs = loop.run_until_complete(asyncio.async(Qemu.get_kvm_archs()))
+        if platform.machine() == 'x86_64':
+            assert archs == ['x86_64', 'i386']
+        else:
+            assert archs == platform.machine()
