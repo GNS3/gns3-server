@@ -121,10 +121,9 @@ def test_list_images(loop):
     with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
         images = loop.run_until_complete(asyncio.async(Docker.instance().list_images()))
         mock.assert_called_with("GET", "images/json", params={"all": 0})
-    assert images == [
-        {"image": "ubuntu:12.04"},
-        {"image": "ubuntu:precise"},
-        {"image": "ubuntu:latest"},
-        {"image": "ubuntu:12.10"},
-        {"image": "ubuntu:quantal"}
-    ]
+    assert len(images) == 5
+    assert {"image": "ubuntu:12.04"} in images
+    assert {"image": "ubuntu:precise"} in images
+    assert {"image": "ubuntu:latest"} in images
+    assert {"image": "ubuntu:12.10"} in images
+    assert {"image": "ubuntu:quantal"} in images
