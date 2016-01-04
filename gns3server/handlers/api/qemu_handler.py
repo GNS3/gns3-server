@@ -25,7 +25,9 @@ from ...schemas.nio import NIO_SCHEMA
 from ...schemas.qemu import QEMU_CREATE_SCHEMA
 from ...schemas.qemu import QEMU_UPDATE_SCHEMA
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
+from ...schemas.qemu import QEMU_BINARY_FILTER_SCHEMA
 from ...schemas.qemu import QEMU_BINARY_LIST_SCHEMA
+from ...schemas.qemu import QEMU_CAPABILITY_LIST_SCHEMA
 from ...schemas.qemu import QEMU_IMAGE_CREATE_SCHEMA
 from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ...modules.qemu import Qemu
@@ -300,10 +302,11 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Get a list of available Qemu binaries",
+        input=QEMU_BINARY_FILTER_SCHEMA,
         output=QEMU_BINARY_LIST_SCHEMA)
     def list_binaries(request, response):
 
-        binaries = yield from Qemu.binary_list()
+        binaries = yield from Qemu.binary_list(request.json.get("archs", None))
         response.json(binaries)
 
     @classmethod
@@ -320,6 +323,21 @@ class QEMUHandler:
 
         binaries = yield from Qemu.img_binary_list()
         response.json(binaries)
+
+    @Route.get(
+        r"/qemu/capabilities",
+        status_codes={
+            200: "Success"
+        },
+        description="Get a list of Qemu capabilities on this server",
+        output=QEMU_CAPABILITY_LIST_SCHEMA
+    )
+    def get_capabilities(request, response):
+        capabilities = {"kvm": []}
+        kvms = yield from Qemu.get_kvm_archs()
+        if kvms:
+            capabilities["kvm"] = kvms
+        response.json(capabilities)
 
     @classmethod
     @Route.post(

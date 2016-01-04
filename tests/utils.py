@@ -50,6 +50,11 @@ class _asyncio_patch:
         future = asyncio.Future()
         if "return_value" in self.kwargs:
             future.set_result(self.kwargs["return_value"])
+        elif "side_effect" in self.kwargs:
+            if isinstance(self.kwargs["side_effect"], Exception):
+                future.set_exception(self.kwargs["side_effect"])
+            else:
+                raise NotImplementedError
         else:
             future.set_result(True)
         return future
