@@ -1,30 +1,28 @@
-/v1/qemu/binaries
+/v1/qemu/capabilities
 ----------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v1/qemu/binaries
+GET /v1/qemu/capabilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get a list of available Qemu binaries
+Get a list of Qemu capabilities on this server
 
 Response status codes
 **********************
 - **200**: Success
-- **400**: Invalid request
-- **404**: Instance doesn't exist
 
-Input
+Output
 *******
 .. raw:: html
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>archs</td>                    <td> </td>                     <td>array</td>                     <td>Architectures to filter binaries by</td>                     </tr>
+    <tr><td>kvm</td>                    <td> </td>                     <td>array</td>                     <td>Architectures that KVM is enabled for</td>                     </tr>
     </table>
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../examples/get_qemubinaries.txt
+.. literalinclude:: ../../examples/get_qemucapabilities.txt
 

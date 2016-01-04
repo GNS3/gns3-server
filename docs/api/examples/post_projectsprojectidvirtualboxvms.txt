@@ -14,14 +14,14 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 409
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev9
+SERVER: Python/3.5 GNS3/1.4.0dev13
 X-ROUTE: /v1/projects/{project_id}/virtualbox/vms
 
 {
     "acpi_shutdown": false,
     "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
     "adapters": 0,
-    "console": 2000,
+    "console": 2001,
     "enable_remote_console": false,
     "headless": false,
     "name": "VM1",
@@ -29,6 +29,6 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "7d54caf7-ab92-4a5f-8795-1ebdfcc6994b",
+    "vm_id": "39cc5964-d0be-487b-9f0c-8fbea600e452",
     "vmname": "VM1"
 }
