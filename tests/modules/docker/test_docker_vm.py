@@ -407,7 +407,7 @@ def test_add_ubridge_connection(loop, vm):
 
     calls = [
         call.send("docker create_veth gns3-veth0ext gns3-veth0int"),
-        call.send('docker move_to_ns gns3-veth0int 0'),
+        call.send('docker move_to_ns gns3-veth0int 42 eth0'),
         call.send('bridge create bridge0'),
         call.send('bridge add_nio_linux_raw bridge0 gns3-veth0ext'),
         call.send('bridge add_nio_udp bridge0 4242 127.0.0.1 4343'),
