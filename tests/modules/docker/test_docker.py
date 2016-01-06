@@ -27,6 +27,7 @@ from gns3server.modules.docker.docker_error import DockerError
 def test_query_success(loop):
 
     vm = Docker()
+    vm._connector = MagicMock()
     response = MagicMock()
     response.status = 200
 
@@ -50,6 +51,8 @@ def test_query_success(loop):
 def test_query_error(loop):
 
     vm = Docker()
+    vm._connected = True
+    vm._connector = MagicMock()
     response = MagicMock()
     response.status = 404
 
@@ -72,6 +75,8 @@ def test_query_error(loop):
 def test_query_error_json(loop):
 
     vm = Docker()
+    vm._connected = True
+    vm._connector = MagicMock()
     response = MagicMock()
     response.status = 404
 

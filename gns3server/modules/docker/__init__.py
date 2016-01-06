@@ -40,12 +40,25 @@ class Docker(BaseManager):
     def __init__(self):
         super().__init__()
         self._server_url = '/var/run/docker.sock'
-        self._connector = aiohttp.connector.UnixConnector(self._server_url)
+        self._connected = False
         # Allow locking during ubridge operations
         self.ubridge_lock = asyncio.Lock()
 
+    @asyncio.coroutine
+    def connector(self):
+        if not self._connected:
+            try:
+                self._connector = aiohttp.connector.UnixConnector(self._server_url)
+                self._connected = True
+                yield from self.query("GET", "info")
+            except (aiohttp.errors.ClientOSError, FileNotFoundError):
+                self._connected = False
+                raise DockerError("Can't connect to docker daemon")
+        return self._connector
+
     def __del__(self):
-        self._connector.close()
+        if self._connected:
+            self._connector.close()
 
     @asyncio.coroutine
     def query(self, method, path, data={}, params={}):
@@ -80,7 +93,7 @@ class Docker(BaseManager):
         response = yield from aiohttp.request(
             method,
             url,
-            connector=self._connector,
+            connector=(yield from self.connector()),
             params=params,
             data=data,
             headers={"content-type": "application/json", },
@@ -107,7 +120,7 @@ class Docker(BaseManager):
 
         url = "http://docker/" + path
         connection = yield from aiohttp.ws_connect(url,
-                                                   connector=self._connector,
+                                                   connector=(yield from self.connector()),
                                                    origin="http://docker",
                                                    autoping=True)
         return connection

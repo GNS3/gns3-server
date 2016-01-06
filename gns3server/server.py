@@ -249,9 +249,6 @@ class Server:
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
 
-        from gns3server.modules.docker import Docker
-        asyncio.async(Docker.instance().query("GET", "info"))
-
         try:
             self._loop.run_forever()
         except TypeError as e:
