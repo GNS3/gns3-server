@@ -7,27 +7,17 @@ GET /v1/interfaces HTTP/1.1
 HTTP/1.1 200
 ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 6181
+CONTENT-LENGTH: 1012
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev9
+SERVER: Python/3.5 GNS3/1.4.0dev13
 X-ROUTE: /v1/interfaces
 
 [
     {
-        "id": "lo0",
-        "ip_address": "127.0.0.1",
-        "name": "lo0"
-    },
-    {
-        "id": "gif0",
+        "id": "bridge0",
         "ip_address": "",
-        "name": "gif0"
-    },
-    {
-        "id": "stf0",
-        "ip_address": "",
-        "name": "stf0"
+        "name": "bridge0"
     },
     {
         "id": "en0",
@@ -40,14 +30,19 @@ X-ROUTE: /v1/interfaces
         "name": "en1"
     },
     {
+        "id": "en2",
+        "ip_address": "",
+        "name": "en2"
+    },
+    {
         "id": "fw0",
         "ip_address": "",
         "name": "fw0"
     },
     {
-        "id": "en2",
-        "ip_address": "",
-        "name": "en2"
+        "id": "lo0",
+        "ip_address": "127.0.0.1",
+        "name": "lo0"
     },
     {
         "id": "p2p0",
@@ -55,18 +50,13 @@ X-ROUTE: /v1/interfaces
         "name": "p2p0"
     },
     {
-        "id": "bridge0",
-        "ip_address": "",
-        "name": "bridge0"
-    },
-    {
         "id": "vboxnet0",
-        "ip_address": "",
+        "ip_address": "172.16.43.1",
         "name": "vboxnet0"
     },
     {
         "id": "vboxnet1",
-        "ip_address": "",
+        "ip_address": "192.168.59.3",
         "name": "vboxnet1"
     },
     {
@@ -78,255 +68,5 @@ X-ROUTE: /v1/interfaces
         "id": "vboxnet3",
         "ip_address": "192.168.99.1",
         "name": "vboxnet3"
-    },
-    {
-        "id": "vmnet1",
-        "ip_address": "172.16.16.1",
-        "name": "vmnet1"
-    },
-    {
-        "id": "vmnet2",
-        "ip_address": "172.16.0.1",
-        "name": "vmnet2"
-    },
-    {
-        "id": "vmnet3",
-        "ip_address": "172.16.1.1",
-        "name": "vmnet3"
-    },
-    {
-        "id": "vmnet4",
-        "ip_address": "172.16.2.1",
-        "name": "vmnet4"
-    },
-    {
-        "id": "vmnet5",
-        "ip_address": "172.16.3.1",
-        "name": "vmnet5"
-    },
-    {
-        "id": "vmnet6",
-        "ip_address": "172.16.4.1",
-        "name": "vmnet6"
-    },
-    {
-        "id": "vmnet7",
-        "ip_address": "172.16.5.1",
-        "name": "vmnet7"
-    },
-    {
-        "id": "vmnet8",
-        "ip_address": "192.168.229.1",
-        "name": "vmnet8"
-    },
-    {
-        "id": "vmnet9",
-        "ip_address": "172.16.6.1",
-        "name": "vmnet9"
-    },
-    {
-        "id": "vmnet10",
-        "ip_address": "172.16.7.1",
-        "name": "vmnet10"
-    },
-    {
-        "id": "vmnet11",
-        "ip_address": "172.16.8.1",
-        "name": "vmnet11"
-    },
-    {
-        "id": "vmnet12",
-        "ip_address": "172.16.9.1",
-        "name": "vmnet12"
-    },
-    {
-        "id": "vmnet13",
-        "ip_address": "172.16.10.1",
-        "name": "vmnet13"
-    },
-    {
-        "id": "vmnet14",
-        "ip_address": "172.16.11.1",
-        "name": "vmnet14"
-    },
-    {
-        "id": "vmnet15",
-        "ip_address": "172.16.12.1",
-        "name": "vmnet15"
-    },
-    {
-        "id": "vmnet16",
-        "ip_address": "172.16.13.1",
-        "name": "vmnet16"
-    },
-    {
-        "id": "vmnet17",
-        "ip_address": "172.16.14.1",
-        "name": "vmnet17"
-    },
-    {
-        "id": "vmnet18",
-        "ip_address": "172.16.15.1",
-        "name": "vmnet18"
-    },
-    {
-        "id": "vmnet19",
-        "ip_address": "172.16.17.1",
-        "name": "vmnet19"
-    },
-    {
-        "id": "vmnet20",
-        "ip_address": "172.16.18.1",
-        "name": "vmnet20"
-    },
-    {
-        "id": "vmnet21",
-        "ip_address": "172.16.19.1",
-        "name": "vmnet21"
-    },
-    {
-        "id": "vmnet22",
-        "ip_address": "172.16.20.1",
-        "name": "vmnet22"
-    },
-    {
-        "id": "vmnet23",
-        "ip_address": "172.16.21.1",
-        "name": "vmnet23"
-    },
-    {
-        "id": "vmnet24",
-        "ip_address": "172.16.22.1",
-        "name": "vmnet24"
-    },
-    {
-        "id": "vmnet25",
-        "ip_address": "172.16.23.1",
-        "name": "vmnet25"
-    },
-    {
-        "id": "vmnet26",
-        "ip_address": "172.16.24.1",
-        "name": "vmnet26"
-    },
-    {
-        "id": "vmnet27",
-        "ip_address": "172.16.25.1",
-        "name": "vmnet27"
-    },
-    {
-        "id": "vmnet28",
-        "ip_address": "172.16.26.1",
-        "name": "vmnet28"
-    },
-    {
-        "id": "vmnet29",
-        "ip_address": "172.16.27.1",
-        "name": "vmnet29"
-    },
-    {
-        "id": "vmnet30",
-        "ip_address": "172.16.28.1",
-        "name": "vmnet30"
-    },
-    {
-        "id": "vmnet31",
-        "ip_address": "172.16.29.1",
-        "name": "vmnet31"
-    },
-    {
-        "id": "vmnet32",
-        "ip_address": "172.16.30.1",
-        "name": "vmnet32"
-    },
-    {
-        "id": "vmnet33",
-        "ip_address": "172.16.31.1",
-        "name": "vmnet33"
-    },
-    {
-        "id": "vmnet34",
-        "ip_address": "172.16.32.1",
-        "name": "vmnet34"
-    },
-    {
-        "id": "vmnet35",
-        "ip_address": "172.16.33.1",
-        "name": "vmnet35"
-    },
-    {
-        "id": "vmnet36",
-        "ip_address": "172.16.34.1",
-        "name": "vmnet36"
-    },
-    {
-        "id": "vmnet37",
-        "ip_address": "172.16.35.1",
-        "name": "vmnet37"
-    },
-    {
-        "id": "vmnet38",
-        "ip_address": "172.16.36.1",
-        "name": "vmnet38"
-    },
-    {
-        "id": "vmnet39",
-        "ip_address": "172.16.37.1",
-        "name": "vmnet39"
-    },
-    {
-        "id": "vmnet40",
-        "ip_address": "172.16.38.1",
-        "name": "vmnet40"
-    },
-    {
-        "id": "vmnet41",
-        "ip_address": "172.16.39.1",
-        "name": "vmnet41"
-    },
-    {
-        "id": "vmnet42",
-        "ip_address": "172.16.40.1",
-        "name": "vmnet42"
-    },
-    {
-        "id": "vmnet43",
-        "ip_address": "172.16.41.1",
-        "name": "vmnet43"
-    },
-    {
-        "id": "vmnet44",
-        "ip_address": "172.16.42.1",
-        "name": "vmnet44"
-    },
-    {
-        "id": "vmnet45",
-        "ip_address": "172.16.43.1",
-        "name": "vmnet45"
-    },
-    {
-        "id": "vmnet46",
-        "ip_address": "172.16.44.1",
-        "name": "vmnet46"
-    },
-    {
-        "id": "vmnet47",
-        "ip_address": "172.16.45.1",
-        "name": "vmnet47"
-    },
-    {
-        "id": "vmnet48",
-        "ip_address": "172.16.46.1",
-        "name": "vmnet48"
-    },
-    {
-        "id": "vmnet49",
-        "ip_address": "172.16.47.1",
-        "name": "vmnet49"
-    },
-    {
-        "id": "vmnet50",
-        "ip_address": "172.16.48.1",
-        "name": "vmnet50"
     }
 ]

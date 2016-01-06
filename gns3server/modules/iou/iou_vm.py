@@ -676,7 +676,10 @@ class IOUVM(BaseVM):
             except asyncio.TimeoutError:
                 if self._iouyap_process.returncode is None:
                     log.warn("IOUYAP process {} is still running... killing it".format(self._iouyap_process.pid))
-                    self._iouyap_process.kill()
+                    try:
+                        self._iouyap_process.kill()
+                    except ProcessLookupError:
+                        pass
             self._iouyap_process = None
 
         self._started = False

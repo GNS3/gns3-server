@@ -20,6 +20,7 @@ import stat
 import asyncio
 import sys
 import pytest
+import platform
 
 from gns3server.modules.qemu import Qemu
 from gns3server.modules.qemu.qemu_error import QemuError
@@ -58,15 +59,29 @@ def test_binary_list(loop):
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     with asyncio_patch("gns3server.modules.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
-        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list()))
-
         if sys.platform.startswith("win"):
             version = ""
         else:
             version = "2.2.0"
 
+        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list()))
+
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
+
+        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list(["x86"])))
+
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} not in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
+
+        qemus = loop.run_until_complete(asyncio.async(Qemu.binary_list(["x86", "x42"])))
+
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
+        assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} not in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
 
@@ -160,3 +175,21 @@ def test_create_image_exist(loop, tmpdir, fake_qemu_img_binary):
             with pytest.raises(QemuError):
                 loop.run_until_complete(asyncio.async(Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)))
                 assert not process.called
+
+
+def test_get_kvm_archs_no_kvm(loop):
+    with asyncio_patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError('kvm-ok')):
+        archs = loop.run_until_complete(asyncio.async(Qemu.get_kvm_archs()))
+        assert archs == []
+
+
+def test_get_kvm_archs_kvm_ok(loop):
+
+    process = MagicMock()
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        process.returncode = 0
+        archs = loop.run_until_complete(asyncio.async(Qemu.get_kvm_archs()))
+        if platform.machine() == 'x86_64':
+            assert archs == ['x86_64', 'i386']
+        else:
+            assert archs == platform.machine()

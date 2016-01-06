@@ -1,9 +1,9 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/51887c6f-8fde-40e7-8904-d4e54fcdb7b4' -d '{"name": "second_name", "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-54/test_update_path_project_non_l0"}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/9d7dccbb-0fc0-40d0-9420-912733dcbf74' -d '{"name": "second_name", "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-110/test_update_path_project_non_l0"}'
 
-PUT /v1/projects/51887c6f-8fde-40e7-8904-d4e54fcdb7b4 HTTP/1.1
+PUT /v1/projects/9d7dccbb-0fc0-40d0-9420-912733dcbf74 HTTP/1.1
 {
     "name": "second_name",
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-54/test_update_path_project_non_l0"
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-110/test_update_path_project_non_l0"
 }
 
 
@@ -13,7 +13,7 @@ CONNECTION: keep-alive
 CONTENT-LENGTH: 100
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev9
+SERVER: Python/3.5 GNS3/1.4.0dev13
 X-ROUTE: /v1/projects/{project_id}
 
 {

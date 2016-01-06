@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/c8f5fb77-a38c-44dc-8cc3-effc463c96b4'
+curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f9f4ab8-1b77-4eee-b0fb-e8d299b843a7'
 
-DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/c8f5fb77-a38c-44dc-8cc3-effc463c96b4 HTTP/1.1
+DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f9f4ab8-1b77-4eee-b0fb-e8d299b843a7 HTTP/1.1
 
 
 
@@ -9,6 +9,6 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.4.0.dev9
+SERVER: Python/3.5 GNS3/1.4.0dev13
 X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
 

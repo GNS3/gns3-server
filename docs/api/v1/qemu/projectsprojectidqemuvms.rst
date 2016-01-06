@@ -26,7 +26,7 @@ Input
     <tr><td>acpi_shutdown</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>ACPI shutdown support</td>                     </tr>
     <tr><td>adapter_type</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>number of adapters</td>                     </tr>
-    <tr><td>boot_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: c, d</td>                     </tr>
+    <tr><td>boot_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: c, d, n, cn, cd</td>                     </tr>
     <tr><td>cdrom_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU cdrom image path</td>                     </tr>
     <tr><td>cdrom_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>console TCP port</td>                     </tr>
@@ -51,6 +51,7 @@ Input
     <tr><td>kernel_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU kernel image path</td>                     </tr>
     <tr><td>kernel_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU kernel image checksum</td>                     </tr>
     <tr><td>legacy_networking</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Use QEMU legagy networking commands (-net syntax)</td>                     </tr>
+    <tr><td>linked_clone</td>                    <td> </td>                     <td>boolean</td>                     <td>either the VM is a linked clone or not</td>                     </tr>
     <tr><td>mac_address</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU MAC address</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU VM instance name</td>                     </tr>
     <tr><td>options</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Additional QEMU options</td>                     </tr>
@@ -58,6 +59,7 @@ Input
     <tr><td>process_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: realtime, very high, high, normal, low, very low, null</td>                     </tr>
     <tr><td>qemu_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>amount of RAM in MB</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     <tr><td>vm_id</td>                    <td> </td>                     <td></td>                     <td>QEMU VM identifier</td>                     </tr>
     </table>
 
@@ -103,6 +105,7 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project uuid</td>                     </tr>
     <tr><td>qemu_path</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>amount of RAM in MB</td>                     </tr>
+    <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     <tr><td>vm_directory</td>                    <td>&#10004;</td>                     <td>string</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU VM uuid</td>                     </tr>
     </table>

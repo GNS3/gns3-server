@@ -601,6 +601,21 @@ QEMU_OBJECT_SCHEMA = {
                  "vm_directory"]
 }
 
+QEMU_BINARY_FILTER_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation for a list of qemu capabilities",
+    "properties": {
+        "archs": {
+            "description": "Architectures to filter binaries by",
+            "type": "array",
+            "items": {
+                "enum": QEMU_PLATFORMS
+            }
+        }
+    },
+    "additionalProperties": False,
+}
+
 QEMU_BINARY_LIST_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation for a list of qemu binaries",
@@ -621,6 +636,21 @@ QEMU_BINARY_LIST_SCHEMA = {
                     "type": "string",
                 },
             },
+        }
+    },
+    "additionalProperties": False,
+}
+
+QEMU_CAPABILITY_LIST_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation for a list of qemu capabilities",
+    "properties": {
+        "kvm": {
+            "description": "Architectures that KVM is enabled for",
+            "type": "array",
+            "items": {
+                "enum": QEMU_PLATFORMS
+            }
         }
     },
     "additionalProperties": False,

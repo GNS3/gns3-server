@@ -60,6 +60,7 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project uuid</td>                     </tr>
     <tr><td>qemu_path</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>amount of RAM in MB</td>                     </tr>
+    <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     <tr><td>vm_directory</td>                    <td>&#10004;</td>                     <td>string</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU VM uuid</td>                     </tr>
     </table>
@@ -128,6 +129,7 @@ Input
     <tr><td>process_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: realtime, very high, high, normal, low, very low, null</td>                     </tr>
     <tr><td>qemu_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>amount of RAM in MB</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     </table>
 
 Output
@@ -172,6 +174,7 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project uuid</td>                     </tr>
     <tr><td>qemu_path</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>amount of RAM in MB</td>                     </tr>
+    <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     <tr><td>vm_directory</td>                    <td>&#10004;</td>                     <td>string</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU VM uuid</td>                     </tr>
     </table>
