@@ -232,7 +232,7 @@ class IOUHandler:
         if nio_type not in ("nio_udp", "nio_tap", "nio_generic_ethernet"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = iou_manager.create_nio(vm.iouyap_path, request.json)
-        vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
+        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -255,7 +255,7 @@ class IOUHandler:
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
-        vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]))
+        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]))
         response.set_status(204)
 
     @Route.post(

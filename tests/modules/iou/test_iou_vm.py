@@ -341,7 +341,7 @@ def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio(vm.iouyap_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    vm.adapter_add_nio_binding(0, 0, nio)
+    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, 0, nio)))
     loop.run_until_complete(asyncio.async(vm.start_capture(0, 0, output_file)))
     assert vm._adapters[0].get_nio(0).capturing
 
@@ -350,7 +350,7 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio(vm.iouyap_path, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    vm.adapter_add_nio_binding(0, 0, nio)
+    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, 0, nio)))
     loop.run_until_complete(vm.start_capture(0, 0, output_file))
     assert vm._adapters[0].get_nio(0).capturing
     loop.run_until_complete(asyncio.async(vm.stop_capture(0, 0)))

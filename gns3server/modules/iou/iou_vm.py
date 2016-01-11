@@ -912,6 +912,7 @@ class IOUVM(BaseVM):
 
         self._adapters = self._ethernet_adapters + self._serial_adapters
 
+    @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, port_number, nio):
         """
         Adds a adapter NIO binding.
@@ -944,6 +945,7 @@ class IOUVM(BaseVM):
             except ProcessLookupError:
                 log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
 
+    @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number, port_number):
         """
         Removes an adapter NIO binding.
