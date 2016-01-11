@@ -49,8 +49,8 @@ class Docker(BaseManager):
         if not self._connected:
             try:
                 self._connector = aiohttp.connector.UnixConnector(self._server_url)
-                self._connected = True
                 yield from self.query("GET", "info")
+                self._connected = True
             except (aiohttp.errors.ClientOSError, FileNotFoundError):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
