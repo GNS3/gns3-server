@@ -28,6 +28,7 @@ def test_query_success(loop):
 
     vm = Docker()
     vm._connector = MagicMock()
+    vm._connected = True
     response = MagicMock()
     response.status = 200
 
