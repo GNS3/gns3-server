@@ -17,6 +17,8 @@
 
 
 import asyncio
+import sys
+import os
 
 
 @asyncio.coroutine
@@ -78,4 +80,48 @@ def wait_for_process_termination(process, timeout=10):
             return
         yield from asyncio.sleep(0.1)
         timeout -= 0.1
+    raise asyncio.TimeoutError()
+
+
+@asyncio.coroutine
+def _check_process(process, termination_callback):
+    if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+        returncode = yield from process.wait()
+        if asyncio.iscoroutinefunction(termination_callback):
+            yield from termination_callback(returncode)
+        else:
+            termination_callback(returncode)
+
+
+def monitor_process(process, termination_callback):
+    """Call termination_callback when a process dies"""
+
+    asyncio.async(_check_process(process, termination_callback))
+
+
+@asyncio.coroutine
+def wait_for_file_creation(path, timeout=10):
+
+    while timeout > 0:
+        if os.path.exists(path):
+            return
+        yield from asyncio.sleep(0.5)
+        timeout -= 0.5
+    raise asyncio.TimeoutError()
+
+
+@asyncio.coroutine
+def wait_for_named_pipe_creation(pipe_path, timeout=60):
+
+    import win32pipe
+    import pywintypes
+
+    while timeout > 0:
+        try:
+            win32pipe.WaitNamedPipe(pipe_path, 1)
+        except pywintypes.error:
+            yield from asyncio.sleep(0.5)
+            timeout -= 0.5
+        else:
+            return
     raise asyncio.TimeoutError()

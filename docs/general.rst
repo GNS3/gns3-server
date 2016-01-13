@@ -199,3 +199,15 @@ to the nature of the multiple supported VM it's easy for an user to
 upload and run code on your machine.
 
 
+Notifications
+=============
+
+You can receive notification from the server if you listen the HTTP stream /notifications.
+
+The available notification are:
+* ping
+* vm.created
+* vm.started
+* vm.stopped
+* log.error
+

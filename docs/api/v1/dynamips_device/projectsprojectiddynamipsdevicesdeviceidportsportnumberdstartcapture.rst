@@ -9,9 +9,9 @@ Start a packet capture on a Dynamips device instance
 
 Parameters
 **********
+- **device_id**: UUID for the instance
 - **project_id**: UUID for the project
 - **port_number**: Port on the device
-- **device_id**: UUID for the instance
 
 Response status codes
 **********************

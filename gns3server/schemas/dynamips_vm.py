@@ -57,6 +57,11 @@ VM_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "image_md5sum": {
+            "description": "checksum of the IOS image",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
         "startup_config": {
             "description": "path to the IOS startup configuration file",
             "type": "string",
@@ -288,6 +293,11 @@ VM_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "image_md5sum": {
+            "description": "checksum of the IOS image",
+            "type": ["string", "null"],
+            "minLength": 1,
+        },
         "startup_config_content": {
             "description": "Content of IOS startup configuration file",
             "type": "string",
@@ -517,6 +527,10 @@ VM_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "vm_directory": {
+            "decription": "Path to the VM working directory",
+            "type": "string"
+        },
         "project_id": {
             "description": "Project UUID",
             "type": "string",
@@ -544,6 +558,11 @@ VM_OBJECT_SCHEMA = {
         "image": {
             "description": "path to the IOS image",
             "type": "string",
+            "minLength": 1,
+        },
+        "image_md5sum": {
+            "description": "checksum of the IOS image",
+            "type": ["string", "null"],
             "minLength": 1,
         },
         "startup_config": {

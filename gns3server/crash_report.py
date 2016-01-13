@@ -28,15 +28,16 @@ except ImportError:
     # raven is not installed with deb package in order to simplify packaging
     RAVEN_AVAILABLE = False
 
-from .version import __version__
+from .version import __version__, __version_info__
 from .config import Config
+from .utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
 
 
 # Dev build
-if __version__[4] != 0:
+if __version_info__[3] != 0:
     import faulthandler
 
     # Display a traceback in case of segfault crash. Usefull when frozen
@@ -51,10 +52,10 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "sync+https://e47fab7019fe4fb3b699609bb9f4fefc:d1d3008a6c8a443ba34f336434c2da34@app.getsentry.com/38482"
+    DSN = "sync+https://119ddececccd43b69951ac87d4859870:2a982a50bbbb49ddb33c87ef3720026e@app.getsentry.com/38482"
     if hasattr(sys, "frozen"):
-        cacert = os.path.join(os.getcwd(), "cacert.pem")
-        if os.path.isfile(cacert):
+        cacert = get_resource("cacert.pem")
+        if cacert is not None and os.path.isfile(cacert):
             DSN += "?ca_certs={}".format(cacert)
         else:
             log.warning("The SSL certificate bundle file '{}' could not be found".format(cacert))
@@ -62,6 +63,13 @@ class CrashReport:
 
     def __init__(self):
         self._client = None
+
+        # We don't want sentry making noise if an error is catched when you don't have internet
+        sentry_errors = logging.getLogger('sentry.errors')
+        sentry_errors.disabled = True
+
+        sentry_uncaught = logging.getLogger('sentry.errors.uncaught')
+        sentry_uncaught.disabled = True
 
     def capture_exception(self, request=None):
         if not RAVEN_AVAILABLE:

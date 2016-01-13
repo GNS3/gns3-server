@@ -15,14 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+import os.path
+
 from aiohttp.web import HTTPConflict
 from ...web.route import Route
+from ...modules.project_manager import ProjectManager
 from ...schemas.nio import NIO_SCHEMA
 from ...schemas.qemu import QEMU_CREATE_SCHEMA
 from ...schemas.qemu import QEMU_UPDATE_SCHEMA
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA
+from ...schemas.qemu import QEMU_BINARY_FILTER_SCHEMA
 from ...schemas.qemu import QEMU_BINARY_LIST_SCHEMA
+from ...schemas.qemu import QEMU_CAPABILITY_LIST_SCHEMA
+from ...schemas.qemu import QEMU_IMAGE_CREATE_SCHEMA
+from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ...modules.qemu import Qemu
+from ...config import Config
 
 
 class QEMUHandler:
@@ -50,9 +59,12 @@ class QEMUHandler:
         qemu = Qemu.instance()
         vm = yield from qemu.create_vm(request.json.pop("name"),
                                        request.match_info["project_id"],
-                                       request.json.get("vm_id"),
-                                       qemu_path=request.json.get("qemu_path"),
-                                       console=request.json.get("console"))
+                                       request.json.pop("vm_id", None),
+                                       linked_clone=request.json.get("linked_clone", True),
+                                       qemu_path=request.json.pop("qemu_path", None),
+                                       console=request.json.pop("console", None),
+                                       console_type=request.json.pop("console_type", "telnet"),
+                                       platform=request.json.pop("platform", None))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
@@ -143,6 +155,11 @@ class QEMUHandler:
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        if sys.platform.startswith("linux") and qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
+                and "-no-kvm" not in vm.options:
+            pm = ProjectManager.instance()
+            if pm.check_hardware_virtualization(vm) is False:
+                raise HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
         yield from vm.start()
         response.set_status(204)
 
@@ -285,8 +302,88 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Get a list of available Qemu binaries",
+        input=QEMU_BINARY_FILTER_SCHEMA,
         output=QEMU_BINARY_LIST_SCHEMA)
     def list_binaries(request, response):
 
-        binaries = yield from Qemu.binary_list()
+        binaries = yield from Qemu.binary_list(request.json.get("archs", None))
         response.json(binaries)
+
+    @classmethod
+    @Route.get(
+        r"/qemu/img-binaries",
+        status_codes={
+            200: "Success",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Get a list of available Qemu-img binaries",
+        output=QEMU_BINARY_LIST_SCHEMA)
+    def list_img_binaries(request, response):
+
+        binaries = yield from Qemu.img_binary_list()
+        response.json(binaries)
+
+    @Route.get(
+        r"/qemu/capabilities",
+        status_codes={
+            200: "Success"
+        },
+        description="Get a list of Qemu capabilities on this server",
+        output=QEMU_CAPABILITY_LIST_SCHEMA
+    )
+    def get_capabilities(request, response):
+        capabilities = {"kvm": []}
+        kvms = yield from Qemu.get_kvm_archs()
+        if kvms:
+            capabilities["kvm"] = kvms
+        response.json(capabilities)
+
+    @classmethod
+    @Route.post(
+        r"/qemu/img",
+        status_codes={
+            201: "Image created",
+        },
+        description="Create a Qemu image",
+        input=QEMU_IMAGE_CREATE_SCHEMA
+    )
+    def create_img(request, response):
+
+        qemu_img = request.json.pop("qemu_img")
+        path = request.json.pop("path")
+        if os.path.isabs(path):
+            config = Config.instance()
+            if config.get_section_config("Server").getboolean("local", False) is False:
+                response.set_status(403)
+                return
+
+        yield from Qemu.instance().create_disk(qemu_img, path, request.json)
+        response.set_status(201)
+
+    @Route.get(
+        r"/qemu/vms",
+        status_codes={
+            200: "List of Qemu images retrieved",
+        },
+        description="Retrieve the list of Qemu images",
+        output=VM_LIST_IMAGES_SCHEMA)
+    def list_vms(request, response):
+
+        qemu_manager = Qemu.instance()
+        vms = yield from qemu_manager.list_images()
+        response.set_status(200)
+        response.json(vms)
+
+    @Route.post(
+        r"/qemu/vms/{path:.+}",
+        status_codes={
+            204: "Image uploaded",
+        },
+        raw=True,
+        description="Upload Qemu image.")
+    def upload_vm(request, response):
+
+        qemu_manager = Qemu.instance()
+        yield from qemu_manager.write_image(request.match_info["path"], request.content)
+        response.set_status(204)

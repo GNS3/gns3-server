@@ -23,6 +23,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>acpi_shutdown</td>                    <td> </td>                     <td>boolean</td>                     <td>ACPI shutdown</td>                     </tr>
     <tr><td>adapter_type</td>                    <td> </td>                     <td>string</td>                     <td>VirtualBox adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>integer</td>                     <td>number of adapters</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
@@ -42,6 +43,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>acpi_shutdown</td>                    <td> </td>                     <td>boolean</td>                     <td>ACPI shutdown</td>                     </tr>
     <tr><td>adapter_type</td>                    <td> </td>                     <td>string</td>                     <td>VirtualBox adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>integer</td>                     <td>number of adapters</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
@@ -51,6 +53,7 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>integer</td>                     <td>Amount of RAM</td>                     </tr>
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>allow GNS3 to use any VirtualBox adapter</td>                     </tr>
+    <tr><td>vm_directory</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VirtualBox VM instance UUID</td>                     </tr>
     <tr><td>vmname</td>                    <td> </td>                     <td>string</td>                     <td>VirtualBox VM name (in VirtualBox itself)</td>                     </tr>
     </table>

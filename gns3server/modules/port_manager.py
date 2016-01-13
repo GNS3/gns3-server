@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-import sys
 import ipaddress
 from aiohttp.web import HTTPConflict
 from gns3server.config import Config
@@ -43,8 +42,8 @@ class PortManager:
         server_config = Config.instance().get_section_config("Server")
         remote_console_connections = server_config.getboolean("allow_remote_console")
 
-        console_start_port_range = server_config.getint("console_start_port_range", 2000)
-        console_end_port_range = server_config.getint("console_end_port_range", 5000)
+        console_start_port_range = server_config.getint("console_start_port_range", 2001)
+        console_end_port_range = server_config.getint("console_end_port_range", 7000)
         self._console_port_range = (console_start_port_range, console_end_port_range)
         log.debug("Console port range is {}-{}".format(console_start_port_range, console_end_port_range))
 
@@ -143,26 +142,16 @@ class PortManager:
         if end_port < start_port:
             raise HTTPConflict(text="Invalid port range {}-{}".format(start_port, end_port))
 
-        if socket_type == "UDP":
-            socket_type = socket.SOCK_DGRAM
-        else:
-            socket_type = socket.SOCK_STREAM
 
         last_exception = None
         for port in range(start_port, end_port + 1):
             if port in ignore_ports:
                 continue
+
+            last_exception
             try:
-                if ":" in host:
-                    # IPv6 address support
-                    with socket.socket(socket.AF_INET6, socket_type) as s:
-                        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                        s.bind((host, port))  # the port is available if bind is a success
-                else:
-                    with socket.socket(socket.AF_INET, socket_type) as s:
-                        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                        s.bind((host, port))  # the port is available if bind is a success
-                return port
+                 PortManager._check_port(host, port, socket_type)
+                 return port
             except OSError as e:
                 last_exception = e
                 if port + 1 == end_port:
@@ -174,16 +163,40 @@ class PortManager:
                                                                                                                      end_port,
                                                                                                                      host,
                                                                                                                      last_exception))
+    @staticmethod
+    def _check_port(host, port, socket_type):
+        """
+        Check if an a port is available and raise an OSError if port is not available
 
-    def get_free_tcp_port(self, project):
+        :returns: boolean
+        """
+        if socket_type == "UDP":
+            socket_type = socket.SOCK_DGRAM
+        else:
+            socket_type = socket.SOCK_STREAM
+
+        for res in socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket_type, 0, socket.AI_PASSIVE):
+            af, socktype, proto, _, sa = res
+            with socket.socket(af, socktype, proto) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(sa)  # the port is available if bind is a success
+            return True
+
+
+    def get_free_tcp_port(self, project, port_range_start=None, port_range_end=None):
         """
         Get an available TCP port and reserve it
 
         :param project: Project instance
         """
 
-        port = self.find_unused_port(self._console_port_range[0],
-                                     self._console_port_range[1],
+        # use the default range is not specific one is given
+        if port_range_start is None and port_range_end is None:
+            port_range_start = self._console_port_range[0]
+            port_range_end = self._console_port_range[1]
+
+        port = self.find_unused_port(port_range_start,
+                                     port_range_end,
                                      host=self._console_host,
                                      socket_type="TCP",
                                      ignore_ports=self._used_tcp_ports)
@@ -193,18 +206,47 @@ class PortManager:
         log.debug("TCP port {} has been allocated".format(port))
         return port
 
-    def reserve_tcp_port(self, port, project):
+    def reserve_tcp_port(self, port, project, port_range_start=None, port_range_end=None):
         """
-        Reserve a specific TCP port number
+        Reserve a specific TCP port number. If not available replace it
+        by another.
 
         :param port: TCP port number
         :param project: Project instance
+        :param port_range_start: Port range to use
+        :param port_range_end: Port range to use
+        :returns: The TCP port
         """
 
+        # use the default range is not specific one is given
+        if port_range_start is None and port_range_end is None:
+            port_range_start = self._console_port_range[0]
+            port_range_end = self._console_port_range[1]
+
         if port in self._used_tcp_ports:
-            raise HTTPConflict(text="TCP port {} already in use on host".format(port, self._console_host))
+            old_port = port
+            port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
+            msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
+            log.warning(msg)
+            project.emit("log.warning", {"message": msg})
+            return port
         if port < self._console_port_range[0] or port > self._console_port_range[1]:
-            raise HTTPConflict(text="TCP port {} is outside the range {}-{}".format(port, self._console_port_range[0], self._console_port_range[1]))
+            old_port = port
+            port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
+            msg = "TCP port {} is outside the range {}-{} on host {}. Port has been replaced by {}".format(old_port, port_range_start, port_range_end, self._console_host, port)
+            log.warning(msg)
+            project.emit("log.warning", {"message": msg})
+            return port
+        try:
+            PortManager._check_port(self._console_host, port, "TCP")
+        except OSError:
+            old_port = port
+            port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
+            msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
+            log.warning(msg)
+            project.emit("log.warning", {"message": msg})
+            return port
+
         self._used_tcp_ports.add(port)
         project.record_tcp_port(port)
         log.debug("TCP port {} has been reserved".format(port))
@@ -229,7 +271,6 @@ class PortManager:
 
         :param project: Project instance
         """
-
         port = self.find_unused_port(self._udp_port_range[0],
                                      self._udp_port_range[1],
                                      host=self._udp_host,

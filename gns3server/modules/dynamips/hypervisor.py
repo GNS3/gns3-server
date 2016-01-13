@@ -24,6 +24,7 @@ import subprocess
 import tempfile
 import asyncio
 
+from gns3server.utils.asyncio import wait_for_process_termination
 from .dynamips_hypervisor import DynamipsHypervisor
 from .dynamips_error import DynamipsError
 
@@ -69,6 +70,16 @@ class Hypervisor(DynamipsHypervisor):
         """
 
         return self._id
+
+    @property
+    def process(self):
+        """
+        Returns the subprocess of the Hypervisor
+
+        :returns: subprocess
+        """
+
+        return self._process
 
     @property
     def started(self):
@@ -136,7 +147,7 @@ class Hypervisor(DynamipsHypervisor):
             # time to delete UNIX NIOs for instance.
             yield from asyncio.sleep(0.01)
             try:
-                yield from asyncio.wait_for(self._process.wait(), timeout=3)
+                yield from wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process.returncode is None:
                     log.warn("Dynamips process {} is still running... killing it".format(self._process.pid))

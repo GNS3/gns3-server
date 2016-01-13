@@ -1,13 +1,14 @@
-curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/b54e4616-058f-413d-a589-0b7c5da20aa3/adapters/1/ports/0/nio'
+curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/b5c23125-ea22-4008-a89e-72565ae9f746/adapters/1/ports/0/nio'
 
-DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/b54e4616-058f-413d-a589-0b7c5da20aa3/adapters/1/ports/0/nio HTTP/1.1
+DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/b5c23125-ea22-4008-a89e-72565ae9f746/adapters/1/ports/0/nio HTTP/1.1
 
 
 
 HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.1.rc2
+SERVER: Python/3.5 GNS3/1.4.0dev13
 X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 

@@ -1,5 +1,26 @@
 # Change Log
 
+## 1.4.0 12/01/2016
+* Release 1.4.0
+
+## 1.4.0rc3 05/01/2016
+
+* API documentation update
+* Fix race condition when killing iouyap
+* Catch exception if we can't change process priority on Windows
+* Adds a handler for getting the Qemu related capabilities of the server. Currently includes just a check for KVM architectures.
+* Fixed showing of Qemu hdb_disk_interface - it showed hda_disk_interface instead, which resulted in an odd visual glitch in the GUI.
+* Made the gns3server.bat successfully start the server independent of the CWD at the time of running. It's now relative to the location of the .bat file itself.
+* Add more informations in the debug status page
+* Fix status link in GNS3 homepage
+* Fix tests on Windows
+* Fix missing boot priority order
+* A debug status page embed in the server
+* Fix test on Windows
+* Update links for new website.
+* Contributing instructions
+
+
 ## 1.3.13 11/12/2015
 
 * Update links for new website.
@@ -15,6 +36,76 @@
 * Fix asyncio error when closing the app
 * Release UDP ports when closing a Qemu VM. Fixes #323.
 
+## 1.4.0rc2 10/12/2015
+
+* Add log about wher iou capture packet
+* Replace by another TCP port if port is already used
+* Fix ProcessLookupError in Qemu
+* Increase vmrun timeout to 120 seconds. Ref #360.
+* Fixes termination notification to indicate the right process name (IOU vs iouyap). Ref #359.
+* Fixes error with non initialized uBridge. Fixes #367.
+* Remove debug that can crash qemu
+* Support VM usage for qemu
+* Raise an error if psutil version is invalid
+
+## 1.4.0rc1 12/11/2015
+
+* Raise error if server received windows path
+* Update sentry key
+* Remove NIO FIFO and Mcast (unused). Fixes #348.
+* Support VPCS 0.6.1
+* Fix duplicate of -no-kvm options
+* Raise an error if user send a non local path to remote server
+* Fix minor issues
+* Apply pep8 fix
+* Sets console end port to 7000. Fixes #343.
+* Drop netifaces (replaced by psutil). Fixes #344.
+* Correctly display log messages.
+* Tentative fix for "WinError 64 The specified network name is no longer available" issues.
+* Return relative path for dynamips images
+* Fix add existing IOS not working
+* Correctly enable faulthandler for dev version
+* Avoid test crash if GNS3 is running on the same computer
+* Allow to return an empty project name because it's allowed in creation
+* Test with python 3.5
+* Add doc on how to got code coverage
+
+## 1.4.0b5 02/11/2015
+
+* Freeze requirements for aiohttp because 0.18 doesn't support Python 3.4.
+* Fix crash in IOU config export.
+* Raise an error when you use a port outside the ranges. Fixes #739.
+* Fixes Windows named pipe issue. Fixes #340.
+
+## 1.4.0b4 19/10/2015
+
+* Support for modifications to a base Qemu VM (not a linked clone).
+* Force canceling all task when shutdown server
+* Update api documentation
+* Enforce console port for VNC
+* Fixes issue when loading a project using VMware vmnet interfaces. Fixes #319.
+* Support for NAT connection with cloud for VMware VMs. Fixes #322.
+* Change message when VMware is not installed on Linux. Ref #326.
+* Send a warning notification if there is not enough RAM left to start a VM. Implements #329.
+* Asyncio Qemu fix and raise error if coroutine not used
+* Fix asyncio error when closing the app
+* Removes VMware lock check. Fixes #328.
+* Wait for pipe file to be created before starting the remote console for VMware and VirtualBox VMs. Fixes #331.
+* Release UDP ports when closing a Qemu VM. Fixes #323.
+* Escape other usage of glob
+* Fix Dynamips identifier is already used by another router
+* Protect Dynamips against bad glob.
+* Fix issue with Qemu networking following merge.
+* OVA file support
+* Support listing images in subdirectories.
+* Catch ProcessLookupError in Qemu VM.
+* Fixes uncalled coroutine.
+* Use the correct UDP tunnel Qemu syntax for version > 1.1.0 when legacy networking is enabled.
+* VMware player linux support.
+* Prevent launching a packet capture with a non-ASCII path when using Dynamips.
+* Do not require a TAP interface to already exist. Fixes #321.
+* Do not automatically delete Dynamips bootflash file because they are necessary to restore VLANs on the c3600 platform.
+
 ## 1.3.11 07/10/2015
 
 * Escape other usage of glob
@@ -28,6 +119,60 @@
 * Clarify error message when we got UTF-8 chars in the iourc file
 * Check for valid FR or ATM switch mappings. Fixes #300.
 
+## 1.4.0b3 22/09/2015
+
+* Fix dynamips configuration lost when you delete a node
+* Clarify error message when we got UTF-8 chars in the iourc file
+* Use custom VMnet interfaces without host adapter when uBridge is not used. Fixes #673.
+* Automatically add the -no-kvm option if -icount is detected to help with the migration of ASA VMs created before version 1.4
+* Check for valid FR or ATM switch mappings. Fixes #300.
+* Catch exception when a process cannot be killed. Fixes #296.
+
+
+## 1.4.0beta2 17/09/2015
+
+* Fix a crash at vmware stop
+* Fix a crash when starting a VMware vm
+* Add how to add vmnet interfaces explantion in the error message
+* Fix path of VMinventory for fusion
+* Force close the keep alive when sending a 401
+* Do not automatically delete Dynamips bootflash file because they are necessary to restore VLANs on the c3600 platform.
+* Wait that an user press a key to stop gns3vmnet.exe on Windows.
+* Throw an error if ubridge as incorrect permissions. Fixes #312.
+* This may fix "The semaphore timeout period has expired" error on Windows. #311.
+* Fixes bug with VMware VM connections + moves some uBridge code to BaseVM.
+* Support for packet capture on VMware VM links.
+* Fix ProcessLookupError on _checkAlive Qemu
+* VMware Fusion support with uBridge.
+* Updates vmnet script to support Windows.
+* Do not block on .lock for VMware OSX
+* Require Dynamips version 0.2.16 to change the default QinQ Ethernet type.
+* Initial Docker support from Google Summer of Code (not enabled)
+* Check for valid FR or ATM switch mappings. Fixes #300.
+* VirtualBox VMs can only be started if powered off. Fixes #299.
+* Support of VPCS 0.8
+* Allows VMware VMs to use vmnet interfaces for connections without using uBridge. Fixes #295.
+* Fixes path to vmnet-cli on Mac OS X.
+* Updates vmnet script to support Mac OS X.
+* Fix closing project when multiple project is open
+* Fix project not closing
+* Qemu user options are at the end. It's allow user to add his own net interfaces
+* Change the way we look for Qemu path
+* Lock qemu vm during start / stop operations
+* In the error message explain how to turn off KVM support
+* Fix when you stop qemu on windows you have an error
+* Fix Qemu cannot be used on Windows
+* Allow to start server with python -m gns3server
+* Should solve the BufferError by avoiding using thread
+* Catch UnicodeEncodeError when passing unicode char as qemu options
+* EthernetSwitch: Allow to choose ethertype for QinQ outer tag.
+* Backport: fixes NAT NIO for Qemu VMs (do not launch any legacy scripts)
+* Fixes NAT NIO for Qemu VMs (do not launch any legacy scripts)
+* Lower VMware requirements to Workstation version 10 and Player version 6.
+* Fixes Unicode error. Fixes #290.
+* Don't delete Dynamips ROM files. They are used to restore the nvram.
+* Adds pywin32 dependency in setup.py for Windows.
+
 ## 1.3.10 04/09/2015
 
 * Catch exception when a process cannot be killed. Fixes #296.
@@ -35,9 +180,45 @@
 * Fixes Unicode error. Fixes #290.
 * Don't delete Dynamips ROM files. They are used to restore the nvram.
 
+## 1.4.0beta1 07/08/2015
+
+* Fix ram setting for Qemu
+* Explicit set qemu memory as MB
+* Turn off KVM for non x86 architectures
+* Send an error when vmware executable cannot be found on Linux. Fixes #288.
+* Support for CPUs setting for Qemu VMs.
+
+## 1.4.0alpha4 04/08/2015
+
+* Quote command in qemu debug logs so you can copy/paste them
+* Support for Qemu disk interfaces, cd/dvd-rom image and boot priority. Fixes #278.
+* Check for VMware Player version >= 7 and VMware Workstation >= 11. Fixes #286.
+* Catch GeneratorExit exception when trying to create a Ghost IOS image.
+* Backport: removes code that deletes IOS router instance files.
+
 ## 1.3.9 03/08/2015
 
 * Backport: removes code that deletes IOS router instance files.
+
+## 1.4.0alpha3 28/07/2015
+
+* Raise error if qemu image already exist when creating disk
+* Prevent user to create a qemu to a different directory on non local server
+* VMnet manager on Linux: check that VMware has been installed.
+* Fixes UnicodeDecodeError when reading a VMware file.
+* Fixes KeyError: "ethernet0.connectiontype". Fixes #276.
+* Fixes replace errors. Fixes #284.
+* Catch ProcessLookupError when updating iouyap config. Fixes #255.
+* API for creating a qemu disk image
+* Prevent starting different hypervisors that leverage hardware virtualization (VT-x/AMD-V). Fixes #548.
+* Fixes IOS adapters and WICS cannot be removed. Fixes #282.
+* Makes sure the loop is running when closing the app.
+* Catch Permission denied when writing to VMX file while closing VMware VM. Fixes #277.
+* Catch GeneratorExit exception. Fixes #231.
+* Fixes missing chipset info for VirtualBox VM (maybe some older VirtualBox version don't have it). Fixes #254.
+* Changes how to look for the vmrun.exe location.
+* Update documentation
+* API for listing current projects
 
 ## 1.3.8 27/07/2015
 
@@ -55,6 +236,61 @@
 * Backport from 1.4: Remove timeout to wait for connections to finish.
 * Backport from 1.4: Fixes RuntimeError: Event loop is closed.
 * Backport from 1.4: Bind host on 0.0.0.0 when checking for a free UDP port.
+
+## 1.4.0alpha2 22/07/2015
+
+* Deactivate uBridge process monitoring (process returns 1 on Windows when stopping).
+* Prevent using different hypervisors that leverage hardware virtualization. - Implemented for Qemu when a VMware or VirtualBox VM with hardware virtualization is already running. - Implemented for VirtualBox only when a Qemu VM with KVM is already running.
+* Check for uBridge version and catch uBridge errors.
+* Remove default FLASH when no hda disk for Qemu VMs. Fixes  #535.
+* Use the registry to find vmrun if the default VMware install path does not exist.
+* Bind host on 0.0.0.0 when checking for a free UDP port.
+* Fixes RuntimeError: Event loop is closed. Fixes #266.
+* Update gns3.conf.upstart
+* Implements uBridge hypervisor.
+* Take VMware file encoding into account. Fixes #261.
+
+## 1.4.0alpha1 09/07/2015
+
+* Update API documentation
+* Allow to send the iourc when starting the VM
+* Return stdout when a process crash for IOU, Dynamips, uBridge and VPCS.
+* Adds -no-kvm to the ASA template and ignore -no-kvm on platforms other than Linux. Should resolve #472.
+* Allow user to change the configuration file
+* Fix double loading of config from working directory
+* CORS support
+* Support server config in current working directory
+* List only valid existing IOS images (for IOS router wizard).
+* Checks if IOS image exist at startup and not during node creation. Fixes #240.
+* When a qemu VM crash send the log to the client.
+* Add a vm_directory field
+* Check for /dev/kvm. Fixes #245.
+* Moves KVM setting to Qemu server preferences. Fixes #244.
+* VNC console support for Qemu VMs.
+* Test all IOU requirements at VM startup
+* ACPI shutdown support for VMware VMs. Fixes #436.
+* Compute a md5sum of images for futur purpose
+* Adds gns3-netifaces to dependencies only if netifaces isn't already installed otherwise this requires a compilation and therefore the Python development files.
+* Adds an IP address for each interface returned by the interfaces API method.
+* Add log when we didn't close a project due to another client
+* Limit file size during upload
+* Convert old -enable-kvm to kvm settings for Qemu
+* Cleanup SSL certificate support
+* Improve memory consumption of file upload with the HTML form
+* systemd start script 
+* Enable KVM acceleration option.
+* Check interface is up before connecting a NIO (Linux only). Fixes #277.
+* IPv6 support.
+* Import/Export support for IOU nvrams.
+* Install qt5 for travis
+* Option to drop nvram & disk files for IOS routers in order to save disk space.
+* Drop python 3.3
+* Support for base MAC address for Qemu VMs.
+* ACPI shutdown support for Qemu VMs.
+* ACPI shutdown support for VirtualBox VMs.
+* Upload images API
+* A notification stream with process monitoring
+* VMware support 
 
 ## 1.3.7 22/06/2015
 

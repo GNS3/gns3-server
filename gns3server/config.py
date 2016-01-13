@@ -36,16 +36,19 @@ class Config(object):
     Configuration file management using configparser.
 
     :params files: Array of configuration files (optional)
+    :params config_directory: Path of the configuration directory. If None default OS directory
     """
 
-    def __init__(self, files=None):
+    def __init__(self, files=None, config_directory=None):
 
         self._files = files
 
         # Monitor configuration files for changes
         self._watched_files = {}
 
-        if sys.platform.startswith("win"):
+        if hasattr(sys, "_called_from_test"):
+            self._files = files
+        elif sys.platform.startswith("win"):
 
             appname = "GNS3"
 
@@ -60,11 +63,11 @@ class Config(object):
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
             filename = "gns3_server.ini"
             if self._files is None:
-                self._files = [os.path.join(appdata, appname, filename),
+                self._files = [os.path.join(os.getcwd(), filename),
+                               os.path.join(appdata, appname, filename),
                                os.path.join(appdata, appname + ".ini"),
                                os.path.join(common_appdata, appname, filename),
-                               os.path.join(common_appdata, appname + ".ini"),
-                               filename]
+                               os.path.join(common_appdata, appname + ".ini")]
         else:
 
             # On UNIX-like platforms, the configuration file location can be one of the following:
@@ -74,19 +77,18 @@ class Config(object):
             # 4: /etc/xdg/GNS3.conf
             # 5: server.conf in the current working directory
 
-            if sys.platform.startswith("darwin"):
-                appname = "gns3.net"
-            else:
-                appname = "GNS3"
+            appname = "GNS3"
             home = os.path.expanduser("~")
             filename = "gns3_server.conf"
             if self._files is None:
-                self._files = [os.path.join(home, ".config", appname, filename),
+                self._files = [os.path.join(os.getcwd(), filename),
+                               os.path.join(home, ".config", appname, filename),
                                os.path.join(home, ".config", appname + ".conf"),
                                os.path.join("/etc/xdg", appname, filename),
-                               os.path.join("/etc/xdg", appname + ".conf"),
-                               filename]
+                               os.path.join("/etc/xdg", appname + ".conf")]
 
+        if self._files is None:
+            self._files = []
         self.clear()
         self._watch_config_file()
 

@@ -1,17 +1,15 @@
-/v1/projects/{project_id}/iou/vms/{vm_id}/initial_config
+/v1/qemu/capabilities
 ----------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v1/projects/**{project_id}**/iou/vms/**{vm_id}**/initial_config
+GET /v1/qemu/capabilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Retrieve the initial config content
+Get a list of Qemu capabilities on this server
 
 Response status codes
 **********************
-- **200**: Initial config retrieved
-- **400**: Invalid request
-- **404**: Instance doesn't exist
+- **200**: Success
 
 Output
 *******
@@ -19,12 +17,12 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>content</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Content of the initial configuration file</td>                     </tr>
+    <tr><td>kvm</td>                    <td> </td>                     <td>array</td>                     <td>Architectures that KVM is enabled for</td>                     </tr>
     </table>
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../examples/get_projectsprojectidiouvmsvmidinitialconfig.txt
+.. literalinclude:: ../../examples/get_qemucapabilities.txt
 

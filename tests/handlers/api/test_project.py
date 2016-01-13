@@ -21,8 +21,14 @@ This test suite check /project endpoint
 
 import uuid
 import os
+import asyncio
+import aiohttp
+
 from unittest.mock import patch
 from tests.utils import asyncio_patch
+
+from gns3server.handlers.api.project_handler import ProjectHandler
+from gns3server.modules.project_manager import ProjectManager
 
 
 def test_create_project_with_path(server, tmpdir):
@@ -74,6 +80,23 @@ def test_show_project(server):
 def test_show_project_invalid_uuid(server):
     response = server.get("/projects/00010203-0405-0607-0809-0a0b0c0d0e42")
     assert response.status == 404
+
+
+def test_list_projects(server):
+    ProjectManager.instance()._projects = {}
+
+    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
+    response = server.post("/projects", query)
+    assert response.status == 201
+    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0b"}
+    response = server.post("/projects", query)
+    assert response.status == 201
+
+    response = server.get("/projects", example=True)
+    assert response.status == 200
+    print(response.json)
+    assert len(response.json) == 2
+    assert response.json[0]["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0b" or response.json[1]["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0b"
 
 
 def test_update_temporary_project(server):
@@ -165,6 +188,74 @@ def test_close_project(server, project):
         assert mock.called
 
 
+def test_close_project_two_client_connected(server, project):
+
+    ProjectHandler._notifications_listening = {project.id: 2}
+
+    with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
+        response = server.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
+        assert response.status == 204
+        assert not mock.called
+
+
 def test_close_project_invalid_uuid(server):
     response = server.post("/projects/{project_id}/close".format(project_id=uuid.uuid4()))
     assert response.status == 404
+
+
+def test_notification(server, project, loop):
+    @asyncio.coroutine
+    def go(future):
+        response = yield from aiohttp.request("GET", server.get_url("/projects/{project_id}/notifications".format(project_id=project.id), 1))
+        response.body = yield from response.content.read(19)
+        project.emit("vm.created", {"a": "b"})
+        response.body += yield from response.content.read(47)
+        response.close()
+        future.set_result(response)
+
+    future = asyncio.Future()
+    asyncio.async(go(future))
+    response = loop.run_until_complete(future)
+    assert response.status == 200
+    assert response.body == b'{"action": "ping"}\n{"action": "vm.created", "event": {"a": "b"}}\n'
+
+
+def test_notification_invalid_id(server):
+    response = server.get("/projects/{project_id}/notifications".format(project_id=uuid.uuid4()))
+    assert response.status == 404
+
+
+def test_list_files(server, project):
+    files = [
+        {
+            "path": "test.txt",
+            "md5sum": "ad0234829205b9033196ba818f7a872b"
+        },
+        {
+            "path": "vm-1/dynamips/test.bin",
+            "md5sum": "098f6bcd4621d373cade4e832627b4f6"
+        }
+    ]
+    with asyncio_patch("gns3server.modules.project.Project.list_files", return_value=files) as mock:
+        response = server.get("/projects/{project_id}/files".format(project_id=project.id), example=True)
+        assert response.status == 200
+        assert response.json == files
+
+
+def test_get_file(server, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+        project = ProjectManager.instance().create_project()
+
+    with open(os.path.join(project.path, "hello"), "w+") as f:
+        f.write("world")
+
+    response = server.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.body == b"world"
+
+    response = server.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
+    assert response.status == 404
+
+    response = server.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    assert response.status == 403

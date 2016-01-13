@@ -29,11 +29,12 @@ import socket
 import asyncio
 
 from pkg_resources import parse_version
+from gns3server.utils.telnet_server import TelnetServer
+from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
 from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_nat import NIONAT
 from ..adapters.ethernet_adapter import EthernetAdapter
-from .telnet_server import TelnetServer  # TODO: port TelnetServer to asyncio
 from ..base_vm import BaseVM
 
 if sys.platform.startswith('win'):
@@ -65,6 +66,7 @@ class VirtualBoxVM(BaseVM):
         self._adapters = adapters
         self._ethernet_adapters = {}
         self._headless = False
+        self._acpi_shutdown = False
         self._enable_remote_console = False
         self._vmname = vmname
         self._use_any_adapter = False
@@ -73,17 +75,23 @@ class VirtualBoxVM(BaseVM):
 
     def __json__(self):
 
-        return {"name": self.name,
+        json = {"name": self.name,
                 "vm_id": self.id,
                 "console": self.console,
                 "project_id": self.project.id,
                 "vmname": self.vmname,
                 "headless": self.headless,
+                "acpi_shutdown": self.acpi_shutdown,
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "ram": self.ram,
                 "use_any_adapter": self.use_any_adapter}
+        if self._linked_clone:
+            json["vm_directory"] = self.working_dir
+        else:
+            json["vm_directory"] = None
+        return json
 
     @asyncio.coroutine
     def _get_system_properties(self):
@@ -142,7 +150,7 @@ class VirtualBoxVM(BaseVM):
 
         yield from self._get_system_properties()
         if "API version" not in self._system_properties:
-            raise VirtualBoxError("Can't access to VirtualBox API Version")
+            raise VirtualBoxError("Can't access to VirtualBox API version:\n{}".format(self._system_properties))
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))
@@ -163,6 +171,19 @@ class VirtualBoxVM(BaseVM):
             self._ram = int(vm_info["memory"])
 
     @asyncio.coroutine
+    def check_hw_virtualization(self):
+        """
+        Returns either hardware virtualization is activated or not.
+
+        :returns: boolean
+        """
+
+        vm_info = yield from self._get_vm_info()
+        if "hwvirtex" in vm_info and vm_info["hwvirtex"] == "on":
+            return True
+        return False
+
+    @asyncio.coroutine
     def start(self):
         """
         Starts this VirtualBox VM.
@@ -174,12 +195,15 @@ class VirtualBoxVM(BaseVM):
             yield from self.resume()
             return
 
-        # VM must be powered off and in saved state to start it
-        if vm_state != "poweroff" and vm_state != "saved":
-            raise VirtualBoxError("VirtualBox VM not powered off or saved")
+        # VM must be powered off to start it
+        if vm_state != "poweroff":
+            raise VirtualBoxError("VirtualBox VM not powered off")
 
         yield from self._set_network_options()
         yield from self._set_serial_console()
+
+        # check if there is enough RAM to run
+        self.check_available_ram(self.ram)
 
         args = [self._vmname]
         if self._headless:
@@ -194,7 +218,18 @@ class VirtualBoxVM(BaseVM):
         yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
 
         if self._enable_remote_console and self._console is not None:
+            try:
+                # wait for VirtualBox to create the pipe file.
+                if sys.platform.startswith("win"):
+                    yield from wait_for_named_pipe_creation(self._get_pipe_name())
+                else:
+                    yield from wait_for_file_creation(self._get_pipe_name())
+            except asyncio.TimeoutError:
+                raise VirtualBoxError('Pipe file "{}" for remote console has not been created by VirtualBox'.format(self._get_pipe_name()))
             self._start_remote_console()
+
+        if (yield from self.check_hw_virtualization()):
+            self._hw_virtualization = True
 
     @asyncio.coroutine
     def stop(self):
@@ -202,14 +237,20 @@ class VirtualBoxVM(BaseVM):
         Stops this VirtualBox VM.
         """
 
+        self._hw_virtualization = False
         self._stop_remote_console()
         vm_state = yield from self._get_vm_state()
         if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
-            # power off the VM
-            result = yield from self._control_vm("poweroff")
-            log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
-            log.debug("Stop result: {}".format(result))
+            if self.acpi_shutdown:
+                # use ACPI to shutdown the VM
+                result = yield from self._control_vm("acpipowerbutton")
+                log.debug("ACPI shutdown result: {}".format(result))
+            else:
+                # power off the VM
+                result = yield from self._control_vm("poweroff")
+                log.debug("Stop result: {}".format(result))
 
+            log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
             # yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
             try:
                 # deactivate the first serial port
@@ -318,6 +359,7 @@ class VirtualBoxVM(BaseVM):
                     if nio and isinstance(nio, NIOUDP):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
+        self.acpi_shutdown = False
         yield from self.stop()
 
         if self._linked_clone:
@@ -388,6 +430,30 @@ class VirtualBoxVM(BaseVM):
         else:
             log.info("VirtualBox VM '{name}' [{id}] has disabled the headless mode".format(name=self.name, id=self.id))
         self._headless = headless
+
+    @property
+    def acpi_shutdown(self):
+        """
+        Returns either the VM will use ACPI shutdown
+
+        :returns: boolean
+        """
+
+        return self._acpi_shutdown
+
+    @acpi_shutdown.setter
+    def acpi_shutdown(self, acpi_shutdown):
+        """
+        Sets either the VM will use ACPI shutdown
+
+        :param acpi_shutdown: boolean
+        """
+
+        if acpi_shutdown:
+            log.info("VirtualBox VM '{name}' [{id}] has enabled the ACPI shutdown mode".format(name=self.name, id=self.id))
+        else:
+            log.info("VirtualBox VM '{name}' [{id}] has disabled the ACPI shutdown mode".format(name=self.name, id=self.id))
+        self._acpi_shutdown = acpi_shutdown
 
     @property
     def enable_remote_console(self):
@@ -504,7 +570,7 @@ class VirtualBoxVM(BaseVM):
         """
         Returns either GNS3 can use any VirtualBox adapter on this instance.
 
-        :returns: index
+        :returns: boolean
         """
 
         return self._use_any_adapter
@@ -520,7 +586,7 @@ class VirtualBoxVM(BaseVM):
         if use_any_adapter:
             log.info("VirtualBox VM '{name}' [{id}] is allowed to use any adapter".format(name=self.name, id=self.id))
         else:
-            log.info("VirtualBox VM '{name}' [{id}] is not allowd to use any adapter".format(name=self.name, id=self.id))
+            log.info("VirtualBox VM '{name}' [{id}] is not allowed to use any adapter".format(name=self.name, id=self.id))
         self._use_any_adapter = use_any_adapter
 
     @property

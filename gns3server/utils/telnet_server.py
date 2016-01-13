@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# TODO: port TelnetServer to asyncio
 
 import sys
 import time
@@ -59,14 +60,13 @@ class TelnetServer(threading.Thread):
             # we must a thread for reading the pipe on Windows because it is a Named Pipe and it cannot be monitored by select()
             self._use_thread = True
 
-        if ":" in self._host:
-            # IPv6 address support
-            self._server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        else:
-            self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        for res in socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+            af, socktype, proto, _, sa = res
+            self._server_socket = socket.socket(af, socktype, proto)
             self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self._server_socket.bind((self._host, self._port))
+            self._server_socket.bind(sa)
             self._server_socket.listen(socket.SOMAXCONN)
+            break
 
         log.info("Telnet server initialized, waiting for clients on {}:{}".format(self._host, self._port))
 

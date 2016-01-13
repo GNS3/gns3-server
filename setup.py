@@ -19,9 +19,9 @@ import sys
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-# we only support Python 3 version >= 3.3
-if sys.version_info < (3, 3):
-    raise SystemExit("Python 3.3 or higher is required")
+# we only support Python 3 version >= 3.4
+if sys.version_info < (3, 4):
+    raise SystemExit("Python 3.4 or higher is required")
 
 
 class PyTest(TestCommand):
@@ -34,29 +34,28 @@ class PyTest(TestCommand):
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
         import pytest
+
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
-
 dependencies = [
-    # "gns3-netifaces>=0.10.4.1",
-    "aiohttp>=0.14.4",
     "jsonschema>=2.4.0",
+    "aiohttp>=0.15.1",
     "Jinja2>=2.7.3",
-    "raven>=5.2.0"]
+    "raven>=5.2.0",
+    "docker-py>=1.4.0",
+    "psutil>=3.0.0"
+]
 
-# if not sys.platform.startswith("win"):
-#    dependencies.append("netifaces==0.10.4")
-
-if sys.version_info == (3, 3):
-    dependencies.append("asyncio>=3.4.2")
+if sys.platform.startswith("win"):
+    dependencies.append("pywin32>=219")
 
 setup(
     name="gns3-server",
     version=__import__("gns3server").__version__,
     url="http://github.com/GNS3/gns3-server",
     license="GNU General Public License v3 (GPLv3)",
-    tests_require=["pytest"],
+    tests_require=["pytest", "pytest-capturelog"],
     cmdclass={"test": PyTest},
     description="GNS3 server",
     long_description=open("README.rst", "r").read(),
@@ -64,7 +63,7 @@ setup(
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
-            "gns3dms = gns3dms.main:main",
+            "gns3vmnet = utils.vmnet:main",
         ]
     },
     packages=find_packages(".", exclude=["docs", "tests"]),
@@ -81,8 +80,8 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
 )

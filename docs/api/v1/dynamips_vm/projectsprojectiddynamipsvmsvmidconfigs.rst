@@ -19,7 +19,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>private_config_content</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Content of the private configuration file</td>                     </tr>
-    <tr><td>startup_config_content</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Content of the startup configuration file</td>                     </tr>
+    <tr><td>private_config_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the private configuration file</td>                     </tr>
+    <tr><td>startup_config_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the startup configuration file</td>                     </tr>
     </table>
 

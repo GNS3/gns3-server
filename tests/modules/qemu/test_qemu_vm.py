@@ -25,10 +25,13 @@ import re
 from tests.utils import asyncio_patch
 
 
+from unittest import mock
 from unittest.mock import patch, MagicMock
+
 from gns3server.modules.qemu.qemu_vm import QemuVM
 from gns3server.modules.qemu.qemu_error import QemuError
 from gns3server.modules.qemu import Qemu
+from gns3server.utils import force_unix_path
 
 
 @pytest.fixture(scope="module")
@@ -41,8 +44,7 @@ def manager(port_manager):
 @pytest.fixture
 def fake_qemu_img_binary():
 
-    # Should not crash with unicode characters
-    bin_path = os.path.join(os.environ["PATH"], "qemu-img\u62FF")
+    bin_path = os.path.join(os.environ["PATH"], "qemu-img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -53,9 +55,9 @@ def fake_qemu_img_binary():
 def fake_qemu_binary():
 
     if sys.platform.startswith("win"):
-        bin_path = os.path.join(os.environ["PATH"], "qemu_x42.EXE")
+        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64.EXE")
     else:
-        bin_path = os.path.join(os.environ["PATH"], "qemu_x42")
+        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -65,7 +67,9 @@ def fake_qemu_binary():
 @pytest.fixture(scope="function")
 def vm(project, manager, fake_qemu_binary, fake_qemu_img_binary):
     manager.port_manager.console_host = "127.0.0.1"
-    return QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
+    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
+    vm._process_priority = "normal"  # Avoid complexity for Windows tests
+    return vm
 
 
 @pytest.fixture(scope="function")
@@ -115,6 +119,43 @@ def test_stop(loop, vm, running_subprocess_mock):
         process.terminate.assert_called_with()
 
 
+def test_termination_callback(vm):
+
+    vm.status = "started"
+    queue = vm.project.get_listen_queue()
+
+    vm._termination_callback(0)
+    assert vm.status == "stopped"
+
+    (action, event) = queue.get_nowait()
+    assert action == "vm.stopped"
+    assert event == vm
+
+    with pytest.raises(asyncio.queues.QueueEmpty):
+        queue.get_nowait()
+
+
+def test_termination_callback_error(vm, tmpdir):
+
+    with open(str(tmpdir / "qemu.log"), "w+") as f:
+        f.write("BOOMM")
+
+    vm.status = "started"
+    vm._stdout_file = str(tmpdir / "qemu.log")
+    queue = vm.project.get_listen_queue()
+
+    vm._termination_callback(1)
+    assert vm.status == "stopped"
+
+    (action, event) = queue.get_nowait()
+    assert action == "vm.stopped"
+    assert event == vm
+
+    (action, event) = queue.get_nowait()
+    assert action == "log.error"
+    assert event["message"] == "QEMU process has stopped, return code: 1\nBOOMM"
+
+
 def test_reload(loop, vm):
 
     with asyncio_patch("gns3server.modules.qemu.QemuVM._control_vm") as mock:
@@ -137,11 +178,12 @@ def test_add_nio_binding_udp(vm, loop):
     assert nio.lport == 4242
 
 
-def test_add_nio_binding_ethernet(vm, loop):
-    with patch("gns3server.modules.base_manager.BaseManager._has_privileged_access", return_value=True):
-        nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_generic_ethernet", "ethernet_device": "eth0"})
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+def test_add_nio_binding_ethernet(vm, loop, ethernet_device):
+    with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
+        nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_generic_ethernet", "ethernet_device": ethernet_device})
         loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
-        assert nio.ethernet_device == "eth0"
+        assert nio.ethernet_device == ethernet_device
 
 
 def test_port_remove_nio_binding(vm, loop):
@@ -172,7 +214,9 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
         vm.qemu_path = None
 
     # Should not crash with unicode characters
-    path = str(tmpdir / "bla\u62FF")
+    path = str(tmpdir / "\u62FF" / "qemu-system-mips")
+
+    os.makedirs(str(tmpdir / "\u62FF"))
 
     # Raise because file doesn't exists
     with pytest.raises(QemuError):
@@ -190,23 +234,68 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
 
     vm.qemu_path = path
     assert vm.qemu_path == path
+    assert vm.platform == "mips"
 
 
 def test_set_qemu_path_environ(vm, tmpdir, fake_qemu_binary):
 
     # It should find the binary in the path
-    vm.qemu_path = "qemu_x42"
+    vm.qemu_path = "qemu-system-x86_64"
 
     assert vm.qemu_path == fake_qemu_binary
+    assert vm.platform == "x86_64"
 
 
-def test_disk_options(vm, loop, fake_qemu_img_binary):
+def test_set_qemu_path_windows(vm, tmpdir):
+
+    bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.EXE")
+    open(bin_path, "w+").close()
+    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+    vm.qemu_path = bin_path
+
+    assert vm.qemu_path == bin_path
+    assert vm.platform == "x86_64"
+
+
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+def test_set_qemu_path_kvm_binary(vm, tmpdir, fake_qemu_binary):
+
+    bin_path = os.path.join(os.environ["PATH"], "qemu-kvm")
+    with open(bin_path, "w+") as f:
+        f.write("1")
+    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+    # It should find the binary in the path
+    vm.qemu_path = "qemu-kvm"
+
+    assert vm.qemu_path.endswith("qemu-kvm")
+    assert vm.platform == "x86_64"
+
+
+def test_set_platform(project, manager):
+
+    with patch("shutil.which", return_value="/bin/qemu-system-x86_64") as which_mock:
+        with patch("gns3server.modules.qemu.QemuVM._check_qemu_path"):
+            vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, platform="x86_64")
+            if sys.platform.startswith("win"):
+                which_mock.assert_called_with("qemu-system-x86_64w.exe", path=mock.ANY)
+            else:
+                which_mock.assert_called_with("qemu-system-x86_64", path=mock.ANY)
+    assert vm.platform == "x86_64"
+    assert vm.qemu_path == "/bin/qemu-system-x86_64"
+
+
+def test_disk_options(vm, tmpdir, loop, fake_qemu_img_binary):
+
+    vm._hda_disk_image = str(tmpdir / "test.qcow2")
+    open(vm._hda_disk_image, "w+").close()
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         loop.run_until_complete(asyncio.async(vm._disk_options()))
         assert process.called
         args, kwargs = process.call_args
-        assert args == (fake_qemu_img_binary, "create", "-f", "qcow2", os.path.join(vm.working_dir, "flash.qcow2"), "256M")
+        assert args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hda_disk_image), "-f", "qcow2", os.path.join(vm.working_dir, "hda_disk.qcow2"))
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
@@ -215,10 +304,21 @@ def test_set_process_priority(vm, loop, fake_qemu_img_binary):
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         vm._process = MagicMock()
         vm._process.pid = 42
+        vm._process_priority = "low"
         loop.run_until_complete(asyncio.async(vm._set_process_priority()))
         assert process.called
         args, kwargs = process.call_args
         assert args == ("renice", "-n", "5", "-p", "42")
+
+
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+def test_set_process_priority_normal(vm, loop, fake_qemu_img_binary):
+
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        vm._process = MagicMock()
+        vm._process.pid = 42
+        loop.run_until_complete(asyncio.async(vm._set_process_priority()))
+        assert not process.called
 
 
 def test_json(vm, project):
@@ -267,9 +367,11 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-name",
             "test",
             "-m",
-            "256",
-            "-hda",
-            os.path.join(vm.working_dir, "flash.qcow2"),
+            "256M",
+            "-smp",
+            "cpus=1",
+            "-boot",
+            "order=c",
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
             "-net",
@@ -299,35 +401,132 @@ def test_build_command_with_invalid_options(vm, loop, fake_qemu_binary):
 
 def test_hda_disk_image(vm, tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        vm.hda_disk_image = "/tmp/test"
-        assert vm.hda_disk_image == "/tmp/test"
-        vm.hda_disk_image = "test"
-        assert vm.hda_disk_image == str(tmpdir / "QEMU" / "test")
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    vm.hda_disk_image = str(tmpdir / "test")
+    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "test"))
+    vm.hda_disk_image = "test"
+    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
+
+
+def test_hda_disk_image_ova(vm, tmpdir):
+
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    vm.hda_disk_image = "test.ovf/test.vmdk"
+    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test.ovf" / "test.vmdk"))
 
 
 def test_hdb_disk_image(vm, tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        vm.hdb_disk_image = "/tmp/test"
-        assert vm.hdb_disk_image == "/tmp/test"
-        vm.hdb_disk_image = "test"
-        assert vm.hdb_disk_image == str(tmpdir / "QEMU" / "test")
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    vm.hdb_disk_image = str(tmpdir / "test")
+    assert vm.hdb_disk_image == force_unix_path(str(tmpdir / "test"))
+    vm.hdb_disk_image = "test"
+    assert vm.hdb_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
 
 
 def test_hdc_disk_image(vm, tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        vm.hdc_disk_image = "/tmp/test"
-        assert vm.hdc_disk_image == "/tmp/test"
-        vm.hdc_disk_image = "test"
-        assert vm.hdc_disk_image == str(tmpdir / "QEMU" / "test")
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    vm.hdc_disk_image = str(tmpdir / "test")
+    assert vm.hdc_disk_image == force_unix_path(str(tmpdir / "test"))
+    vm.hdc_disk_image = "test"
+    assert vm.hdc_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
 
 
 def test_hdd_disk_image(vm, tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        vm.hdd_disk_image = "/tmp/test"
-        assert vm.hdd_disk_image == "/tmp/test"
-        vm.hdd_disk_image = "test"
-        assert vm.hdd_disk_image == str(tmpdir / "QEMU" / "test")
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    vm.hdd_disk_image = str(tmpdir / "test")
+    assert vm.hdd_disk_image == force_unix_path(str(tmpdir / "test"))
+    vm.hdd_disk_image = "test"
+    assert vm.hdd_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
+
+
+def test_options(linux_platform, vm):
+    vm.kvm = False
+    vm.options = "-usb"
+    assert vm.options == "-usb"
+    assert vm.kvm is False
+
+    vm.options = "-no-kvm"
+    assert vm.options == "-no-kvm"
+
+    vm.options = "-enable-kvm"
+    assert vm.options == "-enable-kvm"
+
+    vm.options = "-icount 12"
+    assert vm.options == "-no-kvm -icount 12"
+
+    vm.options = "-icount 12 -no-kvm"
+    assert vm.options == "-icount 12 -no-kvm"
+
+
+def test_options_windows(windows_platform, vm):
+    vm.options = "-no-kvm"
+    assert vm.options == ""
+
+    vm.options = "-enable-kvm"
+    assert vm.options == ""
+
+
+def test_get_qemu_img(vm, tmpdir):
+
+    open(str(tmpdir / "qemu-sytem-x86_64"), "w+").close()
+    open(str(tmpdir / "qemu-img"), "w+").close()
+    vm._qemu_path = str(tmpdir / "qemu-sytem-x86_64")
+    assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
+
+
+def test_get_qemu_img_not_exist(vm, tmpdir):
+
+    open(str(tmpdir / "qemu-sytem-x86_64"), "w+").close()
+    vm._qemu_path = str(tmpdir / "qemu-sytem-x86_64")
+    with pytest.raises(QemuError):
+        vm._get_qemu_img()
+
+
+def test_run_with_kvm_darwin(darwin_platform, vm):
+
+    vm.manager.config.set("Qemu", "enable_kvm", False)
+    assert vm._run_with_kvm("qemu-system-x86_64", "") is False
+
+
+def test_run_with_kvm_windows(windows_platform, vm):
+
+    vm.manager.config.set("Qemu", "enable_kvm", False)
+    assert vm._run_with_kvm("qemu-system-x86_64.exe", "") is False
+
+
+def test_run_with_kvm_linux(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=True) as os_path:
+        vm.manager.config.set("Qemu", "enable_kvm", True)
+        assert vm._run_with_kvm("qemu-system-x86_64", "") is True
+        os_path.assert_called_with("/dev/kvm")
+
+
+def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=True) as os_path:
+        vm.manager.config.set("Qemu", "enable_kvm", True)
+        assert vm._run_with_kvm("qemu-system-x86_64", "-no-kvm") is False
+
+
+def test_run_with_kvm_not_x86(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=True) as os_path:
+        vm.manager.config.set("Qemu", "enable_kvm", True)
+        assert vm._run_with_kvm("qemu-system-arm", "") is False
+
+
+def test_run_with_kvm_linux_dev_kvm_missing(linux_platform, vm):
+
+    with patch("os.path.exists", return_value=False) as os_path:
+        vm.manager.config.set("Qemu", "enable_kvm", True)
+        with pytest.raises(QemuError):
+            vm._run_with_kvm("qemu-system-x86_64", "")

@@ -1,32 +1,14 @@
 language: python
 python:
-  - "3.3"
-  - "3.4"
-
-before_install:
-  - sudo add-apt-repository ppa:gns3/ppa -y
-  - sudo apt-get update -q
-  - sudo apt-get install dynamips
-    
+- '3.4'
+- '3.5'
+sudo: false
+cache: pip
 install:
-  - pip install -rdev-requirements.txt
-  - python setup.py install
-
+- python setup.py install
+- pip install -rdev-requirements.txt
+- pip install coveralls
 script:
-    - py.test -v -s tests --cov gns3server --cov-report term-missing
-
-#branches:
-#  only:
-#    - master
-
-notifications:
-  email:
-    - julien@gns3.net
-#  irc:
-#    channels:
-#      - "chat.freenode.net#gns3"
-#    on_success: change
-#    on_failure: always
-
+- py.test -v -s tests --cov gns3server --cov-report term-missing
 after_success:
-  - coveralls --data_file .coverage --base_dir gns3server
+- coveralls

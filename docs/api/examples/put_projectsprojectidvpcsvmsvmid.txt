@@ -1,26 +1,29 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/4905e649-6e81-446d-a60b-fd8b058a85e8' -d '{"console": 2011, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/608a4cd0-476c-40ba-95db-0c81effc8e9c' -d '{"console": 2012, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/4905e649-6e81-446d-a60b-fd8b058a85e8 HTTP/1.1
+PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/608a4cd0-476c-40ba-95db-0c81effc8e9c HTTP/1.1
 {
-    "console": 2011,
+    "console": 2012,
     "name": "test",
     "startup_script": "ip 192.168.1.1"
 }
 
 
 HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
-CONTENT-LENGTH: 236
+CONTENT-LENGTH: 438
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.1.rc2
+SERVER: Python/3.5 GNS3/1.4.0dev13
 X-ROUTE: /v1/projects/{project_id}/vpcs/vms/{vm_id}
 
 {
-    "console": 2011,
+    "console": 2012,
     "name": "test",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",
-    "vm_id": "4905e649-6e81-446d-a60b-fd8b058a85e8"
+    "status": "stopped",
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpqqnauky9/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/608a4cd0-476c-40ba-95db-0c81effc8e9c",
+    "vm_id": "608a4cd0-476c-40ba-95db-0c81effc8e9c"
 }

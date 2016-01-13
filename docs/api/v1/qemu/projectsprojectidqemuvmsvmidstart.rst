@@ -5,7 +5,7 @@
 
 POST /v1/projects/**{project_id}**/qemu/vms/**{vm_id}**/start
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Start a Qemu.instance
+Start a Qemu VM instance
 
 Parameters
 **********

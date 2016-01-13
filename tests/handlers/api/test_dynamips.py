@@ -16,6 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import os
+import stat
+from unittest.mock import patch
+
 from tests.utils import asyncio_patch
 
 
@@ -123,3 +127,56 @@ from tests.utils import asyncio_patch
 #     assert response.status == 200
 #     assert response.json["name"] == "test"
 #     assert response.json["console"] == free_console_port
+
+
+@pytest.fixture
+def fake_dynamips(tmpdir):
+    """Create a fake Dynamips image on disk"""
+
+    path = str(tmpdir / "7200.bin")
+    with open(path, "wb+") as f:
+        f.write(b'\x7fELF\x01\x02\x01')
+    os.chmod(path, stat.S_IREAD)
+    return path
+
+
+@pytest.fixture
+def fake_file(tmpdir):
+    """Create a fake file disk"""
+
+    path = str(tmpdir / "7200.txt")
+    with open(path, "w+") as f:
+        f.write('1')
+    os.chmod(path, stat.S_IREAD)
+    return path
+
+
+def test_vms(server, tmpdir, fake_dynamips, fake_file):
+
+    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
+        response = server.get("/dynamips/vms")
+    assert response.status == 200
+    assert response.json == [{"filename": "7200.bin", "path": "7200.bin"}]
+
+
+def test_upload_vm(server, tmpdir):
+    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/dynamips/vms/test2", body="TEST", raw=True)
+        assert response.status == 204
+
+    with open(str(tmpdir / "test2")) as f:
+        assert f.read() == "TEST"
+
+    with open(str(tmpdir / "test2.md5sum")) as f:
+        checksum = f.read()
+        assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
+
+
+def test_upload_vm_permission_denied(server, tmpdir):
+    with open(str(tmpdir / "test2"), "w+") as f:
+        f.write("")
+    os.chmod(str(tmpdir / "test2"), 0)
+
+    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir),):
+        response = server.post("/dynamips/vms/test2", body="TEST", raw=True)
+        assert response.status == 409

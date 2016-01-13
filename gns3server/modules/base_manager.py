@@ -23,19 +23,24 @@ import asyncio
 import aiohttp
 import socket
 import shutil
+import re
 
 import logging
 log = logging.getLogger(__name__)
 
 from uuid import UUID, uuid4
+from gns3server.utils.interfaces import is_interface_up
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
+from ..utils import force_unix_path
 from .project_manager import ProjectManager
 
 from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
 from .nios.nio_nat import NIONAT
 from .nios.nio_generic_ethernet import NIOGenericEthernet
+from ..utils.images import md5sum, remove_checksum
+from .vm_error import VMError
 
 
 class BaseManager:
@@ -310,7 +315,7 @@ class BaseManager:
         return vm
 
     @staticmethod
-    def _has_privileged_access(executable):
+    def has_privileged_access(executable):
         """
         Check if an executable can access Ethernet and TAP devices in
         RAW mode.
@@ -327,19 +332,20 @@ class BaseManager:
         if os.geteuid() == 0:
             # we are root, so we should have privileged access.
             return True
-        if os.stat(executable).st_mode & stat.S_ISUID or os.stat(executable).st_mode & stat.S_ISGID:
+
+        if os.stat(executable).st_uid == 0 and (os.stat(executable).st_mode & stat.S_ISUID or os.stat(executable).st_mode & stat.S_ISGID):
             # the executable has set UID bit.
             return True
 
         # test if the executable has the CAP_NET_RAW capability (Linux only)
-        if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
-            try:
+        try:
+            if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
                 caps = os.getxattr(executable, "security.capability")
                 # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
                 if struct.unpack("<IIIII", caps)[1] & 1 << 13:
                     return True
-            except Exception as e:
-                log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
+        except OSError as e:
+            log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
 
         return False
 
@@ -358,20 +364,29 @@ class BaseManager:
             rhost = nio_settings["rhost"]
             rport = nio_settings["rport"]
             try:
-                # TODO: handle IPv6
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                    sock.connect((rhost, rport))
+                info = socket.getaddrinfo(rhost, rport, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
+                if not info:
+                    raise aiohttp.web.HTTPInternalServerError(text="getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
+                for res in info:
+                    af, socktype, proto, _, sa = res
+                    with socket.socket(af, socktype, proto) as sock:
+                        sock.connect(sa)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             nio = NIOUDP(lport, rhost, rport)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
-            #FIXME: check for permissions on tap device
-            #if not self._has_privileged_access(executable):
+            # if not is_interface_up(tap_device):
+            #    raise aiohttp.web.HTTPConflict(text="TAP interface {} does not exist or is down".format(tap_device))
+            # FIXME: check for permissions on tap device
+            # if not self.has_privileged_access(executable):
             #    raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
             nio = NIOTAP(tap_device)
         elif nio_settings["type"] == "nio_generic_ethernet":
-            nio = NIOGenericEthernet(nio_settings["ethernet_device"])
+            ethernet_device = nio_settings["ethernet_device"]
+            if not is_interface_up(ethernet_device):
+                raise aiohttp.web.HTTPConflict(text="Ethernet interface {} does not exist or is down".format(ethernet_device))
+            nio = NIOGenericEthernet(ethernet_device)
         elif nio_settings["type"] == "nio_nat":
             nio = NIONAT()
         assert nio is not None
@@ -387,7 +402,14 @@ class BaseManager:
 
         if not path:
             return ""
+
         img_directory = self.get_images_directory()
+
+        # Windows path should not be send to a unix server
+        if not sys.platform.startswith("win"):
+            if re.match(r"^[A-Z]:", path) is not None:
+                raise VMError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
+
         if not os.path.isabs(path):
             s = os.path.split(path)
             path = os.path.normpath(os.path.join(img_directory, *s))
@@ -397,10 +419,19 @@ class BaseManager:
             if not os.path.exists(path):
                 old_path = os.path.normpath(os.path.join(img_directory, '..', *s))
                 if os.path.exists(old_path):
-                    return old_path
+                    return force_unix_path(old_path)
 
-            return path
-        return path
+            return force_unix_path(path)
+        else:
+            # For non local server we disallow using absolute path outside image directory
+            if Config.instance().get_section_config("Server").get("local", False) is False:
+                img_directory = self.config.get_section_config("Server").get("images_path", os.path.expanduser("~/GNS3/images"))
+                img_directory = force_unix_path(img_directory)
+                path = force_unix_path(path)
+                if len(os.path.commonprefix([img_directory, path])) < len(img_directory):
+                    raise VMError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
+
+        return force_unix_path(path)
 
     def get_relative_image_path(self, path):
         """
@@ -414,11 +445,30 @@ class BaseManager:
 
         if not path:
             return ""
-        img_directory = self.get_images_directory()
-        path = self.get_abs_image_path(path)
-        if os.path.dirname(path) == img_directory:
-            return os.path.basename(path)
+        img_directory = force_unix_path(self.get_images_directory())
+        path = force_unix_path(self.get_abs_image_path(path))
+        if os.path.commonprefix([img_directory, path]) == img_directory:
+            return os.path.relpath(path, img_directory)
         return path
+
+    @asyncio.coroutine
+    def list_images(self):
+        """
+        Return the list of available images for this VM type
+
+        :returns: Array of hash
+        """
+
+        images = []
+        img_dir = self.get_images_directory()
+        for root, dirs, files in os.walk(img_dir):
+            for filename in files:
+                if filename[0] != "." and not filename.endswith(".md5sum"):
+                    path = os.path.relpath(os.path.join(root, filename), img_dir)
+                    images.append({
+                        "filename": filename,
+                        "path": path})
+        return images
 
     def get_images_directory(self):
         """
@@ -426,3 +476,24 @@ class BaseManager:
         """
 
         raise NotImplementedError
+
+    @asyncio.coroutine
+    def write_image(self, filename, stream):
+        directory = self.get_images_directory()
+        path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
+        if os.path.commonprefix([directory, path]) != directory:
+            raise aiohttp.web.HTTPForbidden(text="Could not write image: {}, {} is forbiden".format(filename, path))
+        log.info("Writting image file %s", path)
+        try:
+            remove_checksum(path)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'wb+') as f:
+                while True:
+                    packet = yield from stream.read(512)
+                    if not packet:
+                        break
+                    f.write(packet)
+            os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+            md5sum(path)
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))

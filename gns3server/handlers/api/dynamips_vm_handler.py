@@ -21,6 +21,7 @@ import base64
 
 from ...web.route import Route
 from ...schemas.nio import NIO_SCHEMA
+from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ...schemas.dynamips_vm import VM_CREATE_SCHEMA
 from ...schemas.dynamips_vm import VM_UPDATE_SCHEMA
 from ...schemas.dynamips_vm import VM_CAPTURE_SCHEMA
@@ -74,7 +75,6 @@ class DynamipsVMHandler:
                                                    chassis=request.json.pop("chassis", default_chassis))
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
-        yield from dynamips_manager.ghost_ios_support(vm)
         response.set_status(201)
         response.json(vm)
 
@@ -120,7 +120,6 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
-        yield from dynamips_manager.ghost_ios_support(vm)
         response.json(vm)
 
     @classmethod
@@ -161,6 +160,10 @@ class DynamipsVMHandler:
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        try:
+            yield from dynamips_manager.ghost_ios_support(vm)
+        except GeneratorExit:
+            pass
         yield from vm.start()
         response.set_status(204)
 
@@ -320,7 +323,7 @@ class DynamipsVMHandler:
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
 
         if sys.platform.startswith('win'):
-            #FIXME: Dynamips (Cygwin actually) doesn't like non ascii paths on Windows
+            # FIXME: Dynamips (Cygwin actually) doesn't like non ascii paths on Windows
             try:
                 pcap_file_path.encode('ascii')
             except UnicodeEncodeError:
@@ -459,3 +462,30 @@ class DynamipsVMHandler:
         idlepc = yield from dynamips_manager.auto_idlepc(vm)
         response.set_status(200)
         response.json({"idlepc": idlepc})
+
+    @Route.get(
+        r"/dynamips/vms",
+        status_codes={
+            200: "List of Dynamips VM retrieved",
+        },
+        description="Retrieve the list of Dynamips VMS",
+        output=VM_LIST_IMAGES_SCHEMA)
+    def list_vms(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vms = yield from dynamips_manager.list_images()
+        response.set_status(200)
+        response.json(vms)
+
+    @Route.post(
+        r"/dynamips/vms/{path}",
+        status_codes={
+            204: "Image uploaded",
+        },
+        raw=True,
+        description="Upload Dynamips image.")
+    def upload_vm(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        yield from dynamips_manager.write_image(request.match_info["path"], request.content)
+        response.set_status(204)

@@ -1,13 +1,14 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/b32c38db-3692-4719-b94f-2b3f664cd06f/reload' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7f23517b-b45e-4e7b-b908-c501c36abe16/reload' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/b32c38db-3692-4719-b94f-2b3f664cd06f/reload HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7f23517b-b45e-4e7b-b908-c501c36abe16/reload HTTP/1.1
 {}
 
 
 HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.4 GNS3/1.3.1.rc2
+SERVER: Python/3.5 GNS3/1.4.0dev13
 X-ROUTE: /v1/projects/{project_id}/iou/vms/{vm_id}/reload
 

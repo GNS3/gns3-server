@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 from aiohttp.web import HTTPConflict
 from ...web.route import Route
 from ...schemas.nio import NIO_SCHEMA
@@ -40,10 +41,10 @@ class VirtualBoxHandler:
             200: "Success",
         },
         description="Get all VirtualBox VMs available")
-    def show(request, response):
+    def index(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vms = yield from vbox_manager.get_list()
+        vms = yield from vbox_manager.list_images()
         response.json(vms)
 
     @classmethod
@@ -190,6 +191,10 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        if (yield from vm.check_hw_virtualization()):
+            pm = ProjectManager.instance()
+            if pm.check_hardware_virtualization(vm) is False:
+                raise HTTPConflict(text="Cannot start VM because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or KVM (on Linux)")
         yield from vm.start()
         response.set_status(204)
 
@@ -246,7 +251,7 @@ class VirtualBoxHandler:
             404: "Instance doesn't exist"
         },
         description="Resume a suspended VirtualBox VM instance")
-    def suspend(request, response):
+    def resume(request, response):
 
         vbox_manager = VirtualBox.instance()
         vm = vbox_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])

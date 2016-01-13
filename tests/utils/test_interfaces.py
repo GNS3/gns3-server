@@ -15,10 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 
-from gns3server.utils.interfaces import interfaces
+from gns3server.utils.interfaces import interfaces, is_interface_up
 
 
 def test_interfaces():
     # This test should pass on all platforms without crash
     assert isinstance(interfaces(), list)
+
+
+def test_is_interface_up():
+    if sys.platform.startswith("win"):
+        # is_interface_up() always returns True on Windows
+        pass
+    elif sys.platform.startswith("darwin"):
+        assert is_interface_up("lo0") is True
+    else:
+        assert is_interface_up("lo") is True
+        assert is_interface_up("fake0") is False

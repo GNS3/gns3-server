@@ -27,16 +27,16 @@ import signal
 import re
 import asyncio
 import shutil
-import gns3server.utils.asyncio
 
+from ...utils.asyncio import wait_for_process_termination
+from ...utils.asyncio import monitor_process
+from ...utils.asyncio import subprocess_check_output
 from pkg_resources import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..base_vm import BaseVM
-from ...utils.asyncio import subprocess_check_output
-
 
 import logging
 log = logging.getLogger(__name__)
@@ -62,6 +62,7 @@ class VPCSVM(BaseVM):
         self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
+        self._vpcs_version = None
         self._started = False
 
         # VPCS settings
@@ -109,6 +110,8 @@ class VPCSVM(BaseVM):
 
         return {"name": self.name,
                 "vm_id": self.id,
+                "vm_directory": self.working_dir,
+                "status": self.status,
                 "console": self._console,
                 "project_id": self.project.id,
                 "startup_script": self.startup_script,
@@ -194,15 +197,16 @@ class VPCSVM(BaseVM):
     @asyncio.coroutine
     def _check_vpcs_version(self):
         """
-        Checks if the VPCS executable version is >= 0.5b1.
+        Checks if the VPCS executable version is >= 0.8b or == 0.6.1.
         """
         try:
             output = yield from subprocess_check_output(self.vpcs_path, "-v", cwd=self.working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
-                if parse_version(version) < parse_version("0.5b1"):
-                    raise VPCSError("VPCS executable version must be >= 0.5b1")
+                self._vpcs_version = parse_version(version)
+                if self._vpcs_version < parse_version("0.8b") and self._vpcs_version != parse_version("0.6.1"):
+                    raise VPCSError("VPCS executable version must be >= 0.8b or 0.6.1")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
         except (OSError, subprocess.SubprocessError) as e:
@@ -233,12 +237,28 @@ class VPCSVM(BaseVM):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir,
                                                                               creationflags=flags)
+                    monitor_process(self._process, self._termination_callback)
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
+                self.status = "started"
             except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
                 log.error("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
                 raise VPCSError("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
+
+    def _termination_callback(self, returncode):
+        """
+        Called when the process has stopped.
+
+        :param returncode: Process returncode
+        """
+        if self._started:
+            log.info("VPCS process has stopped, return code: %d", returncode)
+            self._started = False
+            self.status = "stopped"
+            self._process = None
+            if returncode != 0:
+                self.project.emit("log.error", {"message": "VPCS process has stopped, return code: {}\n{}".format(returncode, self.read_vpcs_stdout())})
 
     @asyncio.coroutine
     def stop(self):
@@ -250,7 +270,7 @@ class VPCSVM(BaseVM):
             self._terminate_process()
             if self._process.returncode is None:
                 try:
-                    yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                    yield from wait_for_process_termination(self._process, timeout=3)
                 except asyncio.TimeoutError:
                     if self._process.returncode is None:
                         try:
@@ -262,6 +282,7 @@ class VPCSVM(BaseVM):
 
         self._process = None
         self._started = False
+        self.status = "stopped"
 
     @asyncio.coroutine
     def reload(self):
@@ -397,6 +418,8 @@ class VPCSVM(BaseVM):
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
+        if self._vpcs_version > parse_version("0.8"):
+            command.extend(["-R"])  # disable relay feature of VPCS (starting with VPCS 0.8)
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:

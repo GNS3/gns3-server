@@ -26,6 +26,9 @@ from ..base_manager import BaseManager
 from .iou_error import IOUError
 from .iou_vm import IOUVM
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class IOU(BaseManager):
 
@@ -67,6 +70,23 @@ class IOU(BaseManager):
             del self._used_application_ids[vm_id]
         yield from super().close_vm(vm_id, *args, **kwargs)
         return vm
+
+    @asyncio.coroutine
+    def project_committed(self, project):
+        """
+        Called when a project has been committed.
+
+        :param project: Project instance
+        """
+
+        # save the configs when the project is committed
+        for vm in self._vms.copy().values():
+            if vm.project.id == project.id:
+                try:
+                    vm.save_configs()
+                except IOUError as e:
+                    log.warning(e)
+                    continue
 
     def get_application_id(self, vm_id):
         """

@@ -5,7 +5,7 @@
 
 POST /v1/projects/**{project_id}**/qemu/vms/**{vm_id}**/resume
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Resume a Qemu.instance
+Resume a Qemu VM instance
 
 Parameters
 **********

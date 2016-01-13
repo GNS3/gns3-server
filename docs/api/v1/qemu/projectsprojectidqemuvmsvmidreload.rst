@@ -5,7 +5,7 @@
 
 POST /v1/projects/**{project_id}**/qemu/vms/**{vm_id}**/reload
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Reload a Qemu.instance
+Reload a Qemu VM instance
 
 Parameters
 **********

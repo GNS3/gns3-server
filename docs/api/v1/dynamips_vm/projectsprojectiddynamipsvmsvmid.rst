@@ -24,6 +24,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>auto_delete_disks</td>                    <td> </td>                     <td>boolean</td>                     <td>automatically delete nvram and disk files</td>                     </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
@@ -36,6 +37,7 @@ Output
     <tr><td>idlepc</td>                    <td> </td>                     <td>string</td>                     <td>Idle-PC value</td>                     </tr>
     <tr><td>idlesleep</td>                    <td> </td>                     <td>integer</td>                     <td>idlesleep value</td>                     </tr>
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS image</td>                     </tr>
+    <tr><td>image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>checksum of the IOS image</td>                     </tr>
     <tr><td>iomem</td>                    <td> </td>                     <td>integer</td>                     <td>I/O memory percentage</td>                     </tr>
     <tr><td>mac_addr</td>                    <td> </td>                     <td>string</td>                     <td>base MAC address</td>                     </tr>
     <tr><td>midplane</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: std, vxr</td>                     </tr>
@@ -61,6 +63,7 @@ Output
     <tr><td>startup_config</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS startup configuration file</td>                     </tr>
     <tr><td>startup_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>startup configuration base64 encoded</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>system ID</td>                     </tr>
+    <tr><td>vm_directory</td>                    <td> </td>                     <td>string</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Dynamips router instance UUID</td>                     </tr>
     <tr><td>wic0</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic1</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
@@ -90,6 +93,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>auto_delete_disks</td>                    <td> </td>                     <td>boolean</td>                     <td>automatically delete nvram and disk files</td>                     </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
@@ -101,6 +105,7 @@ Input
     <tr><td>idlepc</td>                    <td> </td>                     <td>string</td>                     <td>Idle-PC value</td>                     </tr>
     <tr><td>idlesleep</td>                    <td> </td>                     <td>integer</td>                     <td>idlesleep value</td>                     </tr>
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS image</td>                     </tr>
+    <tr><td>image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>checksum of the IOS image</td>                     </tr>
     <tr><td>iomem</td>                    <td> </td>                     <td>integer</td>                     <td>I/O memory percentage</td>                     </tr>
     <tr><td>mac_addr</td>                    <td> </td>                     <td>string</td>                     <td>base MAC address</td>                     </tr>
     <tr><td>midplane</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: std, vxr</td>                     </tr>
@@ -110,7 +115,6 @@ Input
     <tr><td>nvram</td>                    <td> </td>                     <td>integer</td>                     <td>amount of NVRAM in KB</td>                     </tr>
     <tr><td>platform</td>                    <td> </td>                     <td>string</td>                     <td>platform</td>                     </tr>
     <tr><td>power_supplies</td>                    <td> </td>                     <td>array</td>                     <td>Power supplies status</td>                     </tr>
-    <tr><td>private_config</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS private configuration file</td>                     </tr>
     <tr><td>private_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>private configuration base64 encoded</td>                     </tr>
     <tr><td>private_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS private configuration file</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>integer</td>                     <td>amount of RAM in MB</td>                     </tr>
@@ -123,7 +127,6 @@ Input
     <tr><td>slot5</td>                    <td> </td>                     <td></td>                     <td>Network module slot 5</td>                     </tr>
     <tr><td>slot6</td>                    <td> </td>                     <td></td>                     <td>Network module slot 6</td>                     </tr>
     <tr><td>sparsemem</td>                    <td> </td>                     <td>boolean</td>                     <td>sparse memory feature</td>                     </tr>
-    <tr><td>startup_config</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS startup configuration file</td>                     </tr>
     <tr><td>startup_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>startup configuration base64 encoded</td>                     </tr>
     <tr><td>startup_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS startup configuration file</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>system ID</td>                     </tr>
@@ -138,6 +141,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>auto_delete_disks</td>                    <td> </td>                     <td>boolean</td>                     <td>automatically delete nvram and disk files</td>                     </tr>
     <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>clock divisor</td>                     </tr>
@@ -150,6 +154,7 @@ Output
     <tr><td>idlepc</td>                    <td> </td>                     <td>string</td>                     <td>Idle-PC value</td>                     </tr>
     <tr><td>idlesleep</td>                    <td> </td>                     <td>integer</td>                     <td>idlesleep value</td>                     </tr>
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS image</td>                     </tr>
+    <tr><td>image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>checksum of the IOS image</td>                     </tr>
     <tr><td>iomem</td>                    <td> </td>                     <td>integer</td>                     <td>I/O memory percentage</td>                     </tr>
     <tr><td>mac_addr</td>                    <td> </td>                     <td>string</td>                     <td>base MAC address</td>                     </tr>
     <tr><td>midplane</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: std, vxr</td>                     </tr>
@@ -175,6 +180,7 @@ Output
     <tr><td>startup_config</td>                    <td> </td>                     <td>string</td>                     <td>path to the IOS startup configuration file</td>                     </tr>
     <tr><td>startup_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>startup configuration base64 encoded</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>system ID</td>                     </tr>
+    <tr><td>vm_directory</td>                    <td> </td>                     <td>string</td>                     <td></td>                     </tr>
     <tr><td>vm_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Dynamips router instance UUID</td>                     </tr>
     <tr><td>wic0</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic1</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>

@@ -5,7 +5,7 @@
 
 POST /v1/projects/**{project_id}**/qemu/vms/**{vm_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend a Qemu.instance
+Suspend a Qemu VM instance
 
 Parameters
 **********

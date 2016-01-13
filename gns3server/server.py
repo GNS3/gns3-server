@@ -99,6 +99,9 @@ class Server:
         if self._port_manager.udp_ports:
             log.warning("UDP ports are still used {}".format(self._port_manager.udp_ports))
 
+        for task in asyncio.Task.all_tasks():
+            task.cancel()
+
         self._loop.stop()
 
     def _signal_handling(self):
@@ -163,6 +166,7 @@ class Server:
         except ssl.SSLError as e:
             log.critical("SSL error: {}".format(e))
             raise SystemExit
+        log.info("SSL is enabled")
         return ssl_context
 
     @asyncio.coroutine
@@ -219,6 +223,9 @@ class Server:
             ssl_context = self._create_ssl_context(server_config)
 
         self._loop = asyncio.get_event_loop()
+        # Asyncio will raise error if coroutine is not called
+        self._loop.set_debug(True)
+
         app = aiohttp.web.Application()
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))
@@ -233,7 +240,6 @@ class Server:
         server = self._run_application(self._handler, ssl_context)
         self._loop.run_until_complete(server)
         self._signal_handling()
-
         self._exit_handling()
 
         if server_config.getboolean("live"):

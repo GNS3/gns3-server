@@ -15,8 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ..web.route import Route
+from ..modules.port_manager import PortManager
+from ..modules.project_manager import ProjectManager
+
 
 class IndexHandler:
+
     @classmethod
     @Route.get(
         r"/",
@@ -25,3 +29,15 @@ class IndexHandler:
     )
     def index(request, response):
         response.template("index.html")
+
+    @classmethod
+    @Route.get(
+        r"/status",
+        description="Ressources used by GNS3Server",
+        api_version=None
+    )
+    def ports(request, response):
+        response.template("status.html",
+                          port_manager=PortManager.instance(),
+                          project_manager=ProjectManager.instance()
+                          )

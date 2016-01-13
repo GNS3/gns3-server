@@ -22,10 +22,11 @@ import logging
 import sys
 import jinja2
 
+from ..utils.get_resource import get_resource
 from ..version import __version__
 
 log = logging.getLogger(__name__)
-renderer = jinja2.Environment(loader=jinja2.PackageLoader('gns3server', 'templates'))
+renderer = jinja2.Environment(loader=jinja2.FileSystemLoader(get_resource('templates')))
 
 
 class Response(aiohttp.web.Response):
@@ -35,6 +36,7 @@ class Response(aiohttp.web.Response):
         self._route = route
         self._output_schema = output_schema
         self._request = request
+        headers['Access-Control-Allow-Origin'] = '*'
         headers['X-Route'] = self._route
         headers['Server'] = "Python/{0[0]}.{0[1]} GNS3/{1}".format(sys.version_info, __version__)
         super().__init__(headers=headers, **kwargs)
@@ -85,6 +87,13 @@ class Response(aiohttp.web.Response):
         self.content_type = "application/json"
         if hasattr(answer, '__json__'):
             answer = answer.__json__()
+        elif isinstance(answer, list):
+            newanswer = []
+            for elem in answer:
+                if hasattr(elem, '__json__'):
+                    elem = elem.__json__()
+                newanswer.append(elem)
+            answer = newanswer
         if self._output_schema is not None:
             try:
                 jsonschema.validate(answer, self._output_schema)

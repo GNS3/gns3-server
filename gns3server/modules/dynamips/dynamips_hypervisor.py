@@ -81,8 +81,8 @@ class DynamipsHypervisor:
         while time.time() - begin < timeout:
             yield from asyncio.sleep(0.01)
             try:
-                self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
-            except OSError as e:
+                self._reader, self._writer = yield from asyncio.wait_for(asyncio.open_connection(host, self._port), timeout=1)
+            except (asyncio.TimeoutError, OSError) as e:
                 last_exception = e
                 continue
             connection_success = True
@@ -276,7 +276,7 @@ class DynamipsHypervisor:
             while True:
                 try:
                     try:
-                        #line = yield from self._reader.readline()  # this can lead to ValueError: Line is too long
+                        # line = yield from self._reader.readline()  # this can lead to ValueError: Line is too long
                         chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
                     except asyncio.CancelledError:
                         # task has been canceled but continue to read

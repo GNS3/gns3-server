@@ -21,11 +21,11 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 """
 
 import asyncio
+from pkg_resources import parse_version
 
 from .device import Device
 from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
-
 
 import logging
 log = logging.getLogger(__name__)
@@ -59,7 +59,8 @@ class EthernetSwitch(Device):
         for port_number, settings in self._mappings.items():
             ports.append({"port": port_number,
                           "type": settings[0],
-                          "vlan": settings[1]})
+                          "vlan": settings[1],
+                          "ethertype": settings[2] if len(settings) > 2 else ""})
 
         ethernet_switch_info["ports"] = ports
         return ethernet_switch_info
@@ -192,7 +193,7 @@ class EthernetSwitch(Device):
         elif settings["type"] == "dot1q":
             yield from self.set_dot1q_port(port_number, settings["vlan"])
         elif settings["type"] == "qinq":
-            yield from self.set_qinq_port(port_number, settings["vlan"])
+            yield from self.set_qinq_port(port_number, settings["vlan"], settings["ethertype"])
 
     @asyncio.coroutine
     def set_access_port(self, port_number, vlan_id):
@@ -242,7 +243,7 @@ class EthernetSwitch(Device):
         self._mappings[port_number] = ("dot1q", native_vlan)
 
     @asyncio.coroutine
-    def set_qinq_port(self, port_number, outer_vlan):
+    def set_qinq_port(self, port_number, outer_vlan, ethertype):
         """
         Sets the specified port as a trunk (QinQ) port.
 
@@ -254,15 +255,20 @@ class EthernetSwitch(Device):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         nio = self._nios[port_number]
-        yield from self._hypervisor.send('ethsw set_qinq_port "{name}" {nio} {outer_vlan}'.format(name=self._name,
-                                                                                                  nio=nio,
-                                                                                                  outer_vlan=outer_vlan))
+        if ethertype != "0x8100" and parse_version(self.hypervisor.version) < parse_version('0.2.16'):
+            raise DynamipsError("Dynamips version required is >= 0.2.16 to change the default QinQ Ethernet type, detected version is {}".format(self.hypervisor.version))
 
-        log.info('Ethernet switch "{name}" [{id}]: port {port} set as a QinQ port with outer VLAN {vlan_id}'.format(name=self._name,
-                                                                                                                    id=self._id,
-                                                                                                                    port=port_number,
-                                                                                                                    vlan_id=outer_vlan))
-        self._mappings[port_number] = ("qinq", outer_vlan)
+        yield from self._hypervisor.send('ethsw set_qinq_port "{name}" {nio} {outer_vlan} {ethertype}'.format(name=self._name,
+                                                                                                              nio=nio,
+                                                                                                              outer_vlan=outer_vlan,
+                                                                                                              ethertype=ethertype if ethertype != "0x8100" else ""))
+
+        log.info('Ethernet switch "{name}" [{id}]: port {port} set as a QinQ ({ethertype}) port with outer VLAN {vlan_id}'.format(name=self._name,
+                                                                                                                                  id=self._id,
+                                                                                                                                  port=port_number,
+                                                                                                                                  vlan_id=outer_vlan,
+                                                                                                                                  ethertype=ethertype))
+        self._mappings[port_number] = ("qinq", outer_vlan, ethertype)
 
     @asyncio.coroutine
     def get_mac_addr_table(self):

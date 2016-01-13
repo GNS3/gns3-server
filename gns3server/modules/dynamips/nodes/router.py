@@ -34,9 +34,9 @@ log = logging.getLogger(__name__)
 from ...base_vm import BaseVM
 from ..dynamips_error import DynamipsError
 from ..nios.nio_udp import NIOUDP
-from ....utils.glob import glob_escape
 
-from gns3server.utils.asyncio import wait_run_in_executor
+from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
+from gns3server.utils.images import md5sum
 
 
 class Router(BaseVM):
@@ -120,10 +120,12 @@ class Router(BaseVM):
 
         router_info = {"name": self.name,
                        "vm_id": self.id,
+                       "vm_directory": os.path.join(self.project.module_working_directory(self.manager.module_name.lower())),
                        "project_id": self.project.id,
                        "dynamips_id": self._dynamips_id,
                        "platform": self._platform,
                        "image": self._image,
+                       "image_md5sum": md5sum(self._image),
                        "startup_config": self._startup_config,
                        "private_config": self._private_config,
                        "ram": self._ram,
@@ -155,7 +157,7 @@ class Router(BaseVM):
             slot_number += 1
 
         # add the wics
-        if self._slots[0] and self._slots[0].wics:
+        if len(self._slots) > 0 and self._slots[0] and self._slots[0].wics:
             for wic_slot_number in range(0, len(self._slots[0].wics)):
                 if self._slots[0].wics[wic_slot_number]:
                     router_info["wic" + str(wic_slot_number)] = str(self._slots[0].wics[wic_slot_number])
@@ -245,8 +247,28 @@ class Router(BaseVM):
             if elf_header_start != b'\x7fELF\x01\x02\x01':
                 raise DynamipsError('"{}" is not a valid IOS image'.format(self._image))
 
+            # check if there is enough RAM to run
+            if not self._ghost_flag:
+                self.check_available_ram(self.ram)
+
             yield from self._hypervisor.send('vm start "{name}"'.format(name=self._name))
+            self.status = "started"
             log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))
+            monitor_process(self._hypervisor.process, self._termination_callback)
+
+    @asyncio.coroutine
+    def _termination_callback(self, returncode):
+        """
+        Called when the process has stopped.
+
+        :param returncode: Process returncode
+        """
+
+        if self.status == "started":
+            self.status = "stopped"
+            log.info("Dynamips hypervisor process has stopped, return code: %d", returncode)
+            if returncode != 0:
+                self.project.emit("log.error", {"message": "Dynamips hypervisor process has stopped, return code: {}\n{}".format(returncode, self._hypervisor.read_stdout())})
 
     @asyncio.coroutine
     def stop(self):
@@ -257,6 +279,7 @@ class Router(BaseVM):
         status = yield from self.get_status()
         if status != "inactive":
             yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
+            self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
@@ -338,13 +361,13 @@ class Router(BaseVM):
         if self._auto_delete_disks:
             # delete nvram and disk files
             project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
-            files = glob.glob(os.path.join(glob_escape(project_dir), "{}_i{}_disk[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob_escape(project_dir), "{}_i{}_slot[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob_escape(project_dir), "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob_escape(project_dir), "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob_escape(project_dir), "{}_i{}_rom".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob_escape(project_dir), "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob_escape(project_dir), "{}_i{}_ssa").format(self.platform, self.dynamips_id))
+            files = glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_disk[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_slot[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_rom".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_ssa").format(self.platform, self.dynamips_id))
             for file in files:
                 try:
                     log.debug("Deleting file {}".format(file))
@@ -427,9 +450,6 @@ class Router(BaseVM):
         """
 
         image = self.manager.get_abs_image_path(image)
-
-        if not os.path.isfile(image):
-            raise DynamipsError("IOS image '{}' is not accessible".format(image))
 
         yield from self._hypervisor.send('vm set_ios "{name}" "{image}"'.format(name=self._name, image=image))
 
@@ -1212,6 +1232,7 @@ class Router(BaseVM):
         if not adapter.port_exists(port_number):
             raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
+
         try:
             yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
                                                                                                                          slot_number=slot_number,

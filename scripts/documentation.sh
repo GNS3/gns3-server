@@ -29,6 +29,8 @@ rm -Rf docs/api/
 mkdir -p docs/api/examples
 
 py.test -v
+
+export PYTHONPATH=.
 python3 gns3server/web/documentation.py
 cd docs
 make html

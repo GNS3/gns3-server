@@ -32,9 +32,8 @@ import glob
 
 log = logging.getLogger(__name__)
 
-from gns3server.utils.interfaces import get_windows_interfaces
+from gns3server.utils.interfaces import get_windows_interfaces, is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor
-from gns3server.utils.glob import glob_escape
 from pkg_resources import parse_version
 from uuid import UUID, uuid4
 from ..base_manager import BaseManager
@@ -53,8 +52,6 @@ from .nios.nio_vde import NIOVDE
 from .nios.nio_tap import NIOTAP
 from .nios.nio_generic_ethernet import NIOGenericEthernet
 from .nios.nio_linux_ethernet import NIOLinuxEthernet
-from .nios.nio_fifo import NIOFIFO
-from .nios.nio_mcast import NIOMcast
 from .nios.nio_null import NIONull
 
 # Adapters
@@ -205,11 +202,12 @@ class Dynamips(BaseManager):
         yield from super().project_closed(project)
         # delete useless Dynamips files
         project_dir = project.module_working_path(self.module_name.lower())
-        files = glob.glob(os.path.join(glob_escape(project_dir), "*.ghost"))
-        files += glob.glob(os.path.join(glob_escape(project_dir), "*_lock"))
-        files += glob.glob(os.path.join(glob_escape(project_dir), "ilt_*"))
-        files += glob.glob(os.path.join(glob_escape(project_dir), "c[0-9][0-9][0-9][0-9]_i[0-9]*_rommon_vars"))
-        files += glob.glob(os.path.join(glob_escape(project_dir), "c[0-9][0-9][0-9][0-9]_i[0-9]*_log.txt"))
+
+        files = glob.glob(os.path.join(glob.escape(project_dir), "*.ghost"))
+        files += glob.glob(os.path.join(glob.escape(project_dir), "*_lock"))
+        files += glob.glob(os.path.join(glob.escape(project_dir), "ilt_*"))
+        files += glob.glob(os.path.join(glob.escape(project_dir), "c[0-9][0-9][0-9][0-9]_i[0-9]*_rommon_vars"))
+        files += glob.glob(os.path.join(glob.escape(project_dir), "c[0-9][0-9][0-9][0-9]_i[0-9]*_log.txt"))
         for file in files:
             try:
                 log.debug("Deleting file {}".format(file))
@@ -374,10 +372,16 @@ class Dynamips(BaseManager):
         server_host = server_config.get("host")
 
         try:
-            # let the OS find an unused port for the Dynamips hypervisor
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.bind((server_host, 0))
-                port = sock.getsockname()[1]
+            info = socket.getaddrinfo(server_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+            if not info:
+                raise DynamipsError("getaddrinfo returns an empty list on {}".format(server_host))
+            for res in info:
+                af, socktype, proto, _, sa = res
+                # let the OS find an unused port for the Dynamips hypervisor
+                with socket.socket(af, socktype, proto) as sock:
+                    sock.bind(sa)
+                    port = sock.getsockname()[1]
+                    break
         except OSError as e:
             raise DynamipsError("Could not find free port for the Dynamips hypervisor: {}".format(e))
 
@@ -421,9 +425,13 @@ class Dynamips(BaseManager):
             rhost = nio_settings["rhost"]
             rport = nio_settings["rport"]
             try:
-                # TODO: handle IPv6
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                    sock.connect((rhost, rport))
+                info = socket.getaddrinfo(rhost, rport, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
+                if not info:
+                    raise DynamipsError("getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
+                for res in info:
+                    af, socktype, proto, _, sa = res
+                    with socket.socket(af, socktype, proto) as sock:
+                        sock.connect(sa)
             except OSError as e:
                 raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             nio = NIOUDP(node.hypervisor, lport, rhost, rport)
@@ -440,6 +448,8 @@ class Dynamips(BaseManager):
                     raise DynamipsError("Could not find interface {} on this host".format(ethernet_device))
                 else:
                     ethernet_device = npf_interface
+            if not is_interface_up(ethernet_device):
+                raise aiohttp.web.HTTPConflict(text="Ethernet interface {} is down".format(ethernet_device))
             nio = NIOGenericEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_linux_ethernet":
             if sys.platform.startswith("win"):
@@ -448,6 +458,8 @@ class Dynamips(BaseManager):
             nio = NIOLinuxEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
+            if not is_interface_up(tap_device):
+                raise aiohttp.web.HTTPConflict(text="TAP interface {} is down".format(tap_device))
             nio = NIOTAP(node.hypervisor, tap_device)
         elif nio_settings["type"] == "nio_unix":
             local_file = nio_settings["local_file"]
@@ -683,3 +695,34 @@ class Dynamips(BaseManager):
         Return the full path of the images directory on disk
         """
         return os.path.join(os.path.expanduser(self.config.get_section_config("Server").get("images_path", "~/GNS3/images")), "IOS")
+
+    @asyncio.coroutine
+    def list_images(self):
+        """
+        Return the list of available IOS images.
+
+        :returns: Array of hash
+        """
+
+        image_dir = self.get_images_directory()
+        try:
+            files = os.listdir(image_dir)
+        except FileNotFoundError:
+            return []
+        files.sort()
+        images = []
+        for filename in files:
+            if filename[0] != "." and not filename.endswith(".md5sum"):
+                try:
+                    path = os.path.join(image_dir, filename)
+                    with open(path, "rb") as f:
+                        # read the first 7 bytes of the file.
+                        elf_header_start = f.read(7)
+                except OSError as e:
+                    print(e)
+                    continue
+                # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
+                if elf_header_start == b'\x7fELF\x01\x02\x01':
+                    path = os.path.relpath(path, image_dir)
+                    images.append({"filename": filename, "path": path})
+        return images

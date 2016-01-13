@@ -27,15 +27,66 @@ def test_reserve_tcp_port():
     pm = PortManager()
     project = Project()
     pm.reserve_tcp_port(2001, project)
-    with pytest.raises(aiohttp.web.HTTPConflict):
-        pm.reserve_tcp_port(2001, project)
+    with patch("gns3server.modules.project.Project.emit") as mock_emit:
+        port = pm.reserve_tcp_port(2001, project)
+        assert port != 2001
+        assert mock_emit.call_args[0][0] == "log.warning"
 
 
 def test_reserve_tcp_port_outside_range():
     pm = PortManager()
     project = Project()
-    with pytest.raises(aiohttp.web.HTTPConflict):
-        pm.reserve_tcp_port(80, project)
+    with patch("gns3server.modules.project.Project.emit") as mock_emit:
+        port = pm.reserve_tcp_port(80, project)
+        assert port != 80
+        assert mock_emit.call_args[0][0] == "log.warning"
+
+
+def test_reserve_tcp_port_already_used():
+    """
+    This test simulate a scenario where the port is already taken
+    by another programm on the server
+    """
+
+    pm = PortManager()
+    project = Project()
+    with patch("gns3server.modules.port_manager.PortManager._check_port") as mock_check:
+
+        def execute_mock(host, port, *args):
+            if port == 2001:
+                raise OSError("Port is already used")
+            else:
+                return True
+
+        mock_check.side_effect = execute_mock
+
+        with patch("gns3server.modules.project.Project.emit") as mock_emit:
+            port = pm.reserve_tcp_port(2001, project)
+            assert port != 2001
+            assert mock_emit.call_args[0][0] == "log.warning"
+
+def test_reserve_tcp_port_already_used():
+    """
+    This test simulate a scenario where the port is already taken
+    by another programm on the server
+    """
+
+    pm = PortManager()
+    project = Project()
+    with patch("gns3server.modules.port_manager.PortManager._check_port") as mock_check:
+
+        def execute_mock(host, port, *args):
+            if port == 2001:
+                raise OSError("Port is already used")
+            else:
+                return True
+
+        mock_check.side_effect = execute_mock
+
+        with patch("gns3server.modules.project.Project.emit") as mock_emit:
+            port = pm.reserve_tcp_port(2001, project)
+            assert port != 2001
+            assert mock_emit.call_args[0][0] == "log.warning"
 
 
 def test_reserve_udp_port():

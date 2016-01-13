@@ -21,8 +21,9 @@ from .vpcs import VPCS
 from .virtualbox import VirtualBox
 from .dynamips import Dynamips
 from .qemu import Qemu
+from .vmware import VMware
 
-MODULES = [VPCS, VirtualBox, Dynamips, Qemu]
+MODULES = [VPCS, VirtualBox, Dynamips, Qemu, VMware]
 
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
 
