@@ -400,7 +400,7 @@ class IOUVM(BaseVM):
             raise IOUError("License section not found in iourc file {}".format(self.iourc_path))
         hostname = socket.gethostname()
         if hostname not in config["license"]:
-            raise IOUError("Hostname key not found in iourc file {}".format(self.iourc_path))
+            raise IOUError("Hostname \"{}\" not found in iourc file {}".format(hostname, self.iourc_path))
         user_ioukey = config["license"][hostname]
         if user_ioukey[-1:] != ';':
             raise IOUError("IOU key not ending with ; in iourc file".format(self.iourc_path))
