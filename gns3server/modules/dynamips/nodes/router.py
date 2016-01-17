@@ -281,6 +281,7 @@ class Router(BaseVM):
             yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
             self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
+        yield from self.save_configs()
 
     @asyncio.coroutine
     def reload(self):
@@ -352,7 +353,6 @@ class Router(BaseVM):
         if self._hypervisor and not self._hypervisor.devices:
             try:
                 yield from self.stop()
-                yield from self.save_configs()
                 yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
             except DynamipsError:
                 pass
