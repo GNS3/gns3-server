@@ -296,7 +296,7 @@ QEMU_UPDATE_SCHEMA = {
         },
         "boot_priority": {
             "description": "QEMU boot priority",
-            "enum": ["c", "d"]
+            "enum": ["c", "d", "n", "cn", "cd"]
         },
         "ram": {
             "description": "amount of RAM in MB",
@@ -468,7 +468,7 @@ QEMU_OBJECT_SCHEMA = {
         },
         "boot_priority": {
             "description": "QEMU boot priority",
-            "enum": ["c", "d"]
+            "enum": ["c", "d", "n", "cn", "cd"]
         },
         "vm_directory": {
             "decription": "Path to the VM working directory",
