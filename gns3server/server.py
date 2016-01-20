@@ -226,6 +226,9 @@ class Server:
         # Asyncio will raise error if coroutine is not called
         self._loop.set_debug(True)
 
+        for key, val in os.environ.items():
+            log.debug("ENV %s=%s", key, val)
+
         app = aiohttp.web.Application()
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))

@@ -540,7 +540,13 @@ class VMware(BaseManager):
         """
 
         if sys.platform.startswith("win"):
-            return os.path.expandvars(r"%USERPROFILE%\Documents\Virtual Machines")
+            from win32com.shell import shell, shellcon
+            documents_folder = shell.SHGetSpecialFolderPath(None, shellcon.CSIDL_PERSONAL)
+            windows_type = sys.getwindowsversion().product_type
+            if windows_type == 2 or windows_type == 3:
+                return '{}\My Virtual Machines'.format(documents_folder)
+            else:
+                return '{}\Virtual Machines'.format(documents_folder)
         elif sys.platform.startswith("darwin"):
             return os.path.expanduser("~/Documents/Virtual Machines.localized")
         else:

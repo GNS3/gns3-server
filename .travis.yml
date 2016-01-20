@@ -9,8 +9,5 @@ install:
 - pip install coveralls
 script:
 - py.test -v -s tests --cov gns3server --cov-report term-missing
-notifications:
-  slack:
-    secure: gsbGgtNbJ0ElyPawA9DNunVgVD4SHmB/vDeQBMnmnw3g8Z01iNiiFLaaiUo/Vr65Yd0KMujw7ocC5aiSsgPWF3dEC57ntogWcMF2tf9YlbHdY+90HlIs7k7/xf3vRdrE+rNy24svvU7zaxYCL9gO70PQqIT6nI2Dgy4qQFiwr2s=
 after_success:
 - coveralls
