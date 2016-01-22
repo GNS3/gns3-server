@@ -460,6 +460,30 @@ def test_hdd_disk_image(vm, tmpdir):
     assert vm.hdd_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
 
 
+def test_initrd(vm, tmpdir):
+
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    with patch("gns3server.modules.project.Project.emit") as mock:
+        vm.initrd = str(tmpdir / "test")
+        assert vm.initrd == force_unix_path(str(tmpdir / "test"))
+        vm.initrd = "test"
+        assert vm.initrd == force_unix_path(str(tmpdir / "QEMU" / "test"))
+        assert not mock.called
+
+
+def test_initrd_asa(vm, tmpdir):
+
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    with patch("gns3server.modules.project.Project.emit") as mock:
+        vm.initrd = str(tmpdir / "asa842-initrd.gz")
+        assert vm.initrd == force_unix_path(str(tmpdir / "asa842-initrd.gz"))
+        vm.initrd = "asa842-initrd.gz"
+        assert vm.initrd == force_unix_path(str(tmpdir / "QEMU" / "asa842-initrd.gz"))
+        assert mock.called
+
+
 def test_options(linux_platform, vm):
     vm.kvm = False
     vm.options = "-usb"
