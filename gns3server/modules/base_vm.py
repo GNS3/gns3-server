@@ -308,6 +308,9 @@ class BaseVM:
         path = self._manager.config.get_section_config("Server").get("ubridge_path", "ubridge")
         if path == "ubridge":
             path = shutil.which("ubridge")
+
+        if path is None:
+            raise VMError("uBridge is not installed")
         return path
 
     @asyncio.coroutine
