@@ -694,6 +694,8 @@ class QemuVM(BaseVM):
         log.info('QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(name=self._name,
                                                                                            id=self._id,
                                                                                            initrd=initrd))
+        if "asa" in initrd:
+            self.project.emit("log.warning", {"message": "Warning ASA 8 is not officialy supported by GNS3 and Cisco, we recommend to use ASAv. Depending of your hardware this could not work or you could be limited to one instance."})
         self._initrd = initrd
 
     @property
