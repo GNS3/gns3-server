@@ -207,9 +207,9 @@ def test_notification(server, project, loop):
     @asyncio.coroutine
     def go(future):
         response = yield from aiohttp.request("GET", server.get_url("/projects/{project_id}/notifications".format(project_id=project.id), 1))
-        response.body = yield from response.content.read(19)
+        response.body = yield from response.content.read(200)
         project.emit("vm.created", {"a": "b"})
-        response.body += yield from response.content.read(47)
+        response.body += yield from response.content.read(50)
         response.close()
         future.set_result(response)
 
@@ -217,7 +217,9 @@ def test_notification(server, project, loop):
     asyncio.async(go(future))
     response = loop.run_until_complete(future)
     assert response.status == 200
-    assert response.body == b'{"action": "ping"}\n{"action": "vm.created", "event": {"a": "b"}}\n'
+    assert b'"action": "ping"' in response.body
+    assert b'"cpu_usage_percent"' in response.body
+    assert b'{"action": "vm.created", "event": {"a": "b"}}\n' in response.body
 
 
 def test_notification_invalid_id(server):
