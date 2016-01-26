@@ -185,11 +185,13 @@ def test_get_kvm_archs_no_kvm(loop):
 
 def test_get_kvm_archs_kvm_ok(loop):
 
-    process = MagicMock()
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-        process.returncode = 0
+    with patch("os.path.exists", return_value=True):
         archs = loop.run_until_complete(asyncio.async(Qemu.get_kvm_archs()))
         if platform.machine() == 'x86_64':
             assert archs == ['x86_64', 'i386']
         else:
             assert archs == platform.machine()
+
+    with patch("os.path.exists", return_value=False):
+        archs = loop.run_until_complete(asyncio.async(Qemu.get_kvm_archs()))
+        assert archs == []
