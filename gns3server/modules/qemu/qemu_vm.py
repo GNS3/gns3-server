@@ -1500,7 +1500,6 @@ class QemuVM(BaseVM):
                     answer[field] = getattr(self, field)
                 except AttributeError:
                     pass
-
         answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image)
         answer["hda_disk_image_md5sum"] = md5sum(self._hda_disk_image)
         answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image)

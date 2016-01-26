@@ -147,7 +147,9 @@ def run_around_tests(monkeypatch, port_manager):
     port_manager._instance = port_manager
     config = Config.instance()
     config.clear()
-    config.set("Server", "project_directory", tmppath)
+    os.makedirs(os.path.join(tmppath, 'projects'))
+    config.set("Server", "project_directory", os.path.join(tmppath, 'projects'))
+    config.set("Server", "images_path", os.path.join(tmppath, 'images'))
     config.set("Server", "auth", False)
 
     # Prevent executions of the VM if we forgot to mock something
@@ -158,7 +160,7 @@ def run_around_tests(monkeypatch, port_manager):
     # Force turn off KVM because it's not available on CI
     config.set("Qemu", "enable_kvm", False)
 
-    monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: tmppath)
+    monkeypatch.setattr("gns3server.modules.project.Project._get_default_project_directory", lambda *args: os.path.join(tmppath, 'projects'))
 
     # Force sys.platform to the original value. Because it seem not be restore correctly at each tests
     sys.platform = sys.original_platform
