@@ -375,6 +375,8 @@ class VMwareVM(BaseVM):
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
+        if not self._ubridge_hypervisor:
+            raise VMwareError("Cannot start the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
                                                                                                       output_file=output_file))
 
@@ -389,6 +391,8 @@ class VMwareVM(BaseVM):
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
+        if not self._ubridge_hypervisor:
+            raise VMwareError("Cannot stop the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=vnet))
 
     def check_hw_virtualization(self):
