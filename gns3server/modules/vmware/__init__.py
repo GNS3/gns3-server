@@ -48,6 +48,7 @@ class VMware(BaseManager):
 
         super().__init__()
         self._execute_lock = asyncio.Lock()
+        self._vmware_inventory_lock = asyncio.Lock()
         self._vmrun_path = None
         self._vmnets = []
         self._vmnet_start_range = 2
@@ -354,6 +355,39 @@ class VMware(BaseManager):
                 raise VMwareError("vmrun has returned an error: {}".format(vmrun_error))
 
             return stdout_data.decode("utf-8", errors="ignore").splitlines()
+
+    @asyncio.coroutine
+    def remove_from_vmware_inventory(self, vmx_path):
+        """
+        Removes a linked clone from the VMware inventory file.
+
+        :param vmx_path: path of the linked clone VMX file
+        """
+
+        with (yield from self._vmware_inventory_lock):
+            inventory_path = self.get_vmware_inventory_path()
+            if os.path.exists(inventory_path):
+                try:
+                    inventory_pairs = self.parse_vmware_file(inventory_path)
+                except OSError as e:
+                    log.warning('Could not read VMware inventory file "{}": {}'.format(inventory_path, e))
+                    return
+
+                vmlist_entry = None
+                for name, value in inventory_pairs.items():
+                    if value == vmx_path:
+                        vmlist_entry = name.split(".", 1)[0]
+                        break
+
+                if vmlist_entry is not None:
+                    for name in inventory_pairs.keys():
+                        if name.startswith(vmlist_entry):
+                            del inventory_pairs[name]
+
+                try:
+                    self.write_vmware_file(inventory_path, inventory_pairs)
+                except OSError as e:
+                    raise VMwareError('Could not write VMware inventory file "{}": {}'.format(inventory_path, e))
 
     @staticmethod
     def parse_vmware_file(path):
