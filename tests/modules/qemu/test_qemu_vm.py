@@ -85,6 +85,22 @@ def test_vm(project, manager, fake_qemu_binary):
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
+def test_vm_invalid_qemu_with_platform(project, manager, fake_qemu_binary):
+
+    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path="/usr/fake/bin/qemu-system-64", platform="x86_64")
+
+    assert vm.qemu_path == fake_qemu_binary
+    assert vm.platform == "x86_64"
+
+
+def test_vm_invalid_qemu_without_platform(project, manager, fake_qemu_binary):
+
+    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path="/usr/fake/bin/qemu-system-x86_64")
+
+    assert vm.qemu_path == fake_qemu_binary
+    assert vm.platform == "x86_64"
+
+
 def test_is_running(vm, running_subprocess_mock):
 
     vm._process = None
@@ -268,7 +284,6 @@ def test_set_qemu_path_old_windows(vm, tmpdir):
 
     assert vm.qemu_path == bin_path
     assert vm.platform == "i386"
-
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
