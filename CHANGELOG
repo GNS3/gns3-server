@@ -1,5 +1,21 @@
 # Change Log
 
+## 1.4.1 01/02/2016
+* VMware raise error if version is not found
+* For topologies before 1.4 manage qemu missing
+* Fixes issue with packet capture on VMware VMs. Fixes #396.
+* Fixes concurrency issue when closing multiple VMware linked clone VMs. Fixes #410.
+* Fixes "can only use tap interfaces that both already exist and are up". Fixes #399.
+* Send machine stats via the notification stream
+* Check for /dev/kvm instead of kvm-ok
+* Show a warning when starting ASA8
+* Fix error when setting Qemu VM boot to 'cd' (HDD or CD/DVD-ROM)
+* Fixed the VMware default VM location on Windows, so that it doesn't assume the "Documents" folder is within the %USERPROFILE% folder, and also support Windows Server's folder (which is "My Virtual Machines" instead of "Virtual Machines").
+* Improve dynamips startup_config dump
+* Dump environnement to server debug log
+* Fix usage of qemu 0.10 on Windows
+* Show hostname when the hostname is missing in the iourc.txt
+
 ## 1.4.0 12/01/2016
 * Release 1.4.0
 
