@@ -49,21 +49,17 @@ class Qemu(BaseManager):
         """
         kvm = []
 
-        try:
-            process = yield from asyncio.create_subprocess_exec("kvm-ok")
-            yield from process.wait()
-        except OSError:
+        if not os.path.exists("/dev/kvm"):
             return kvm
 
-        if process.returncode == 0:
-            arch = platform.machine()
-            if arch == "x86_64":
-                kvm.append("x86_64")
-                kvm.append("i386")
-            elif arch == "i386":
-                kvm.append("i386")
-            else:
-                kvm.append(platform.machine())
+        arch = platform.machine()
+        if arch == "x86_64":
+            kvm.append("x86_64")
+            kvm.append("i386")
+        elif arch == "i386":
+            kvm.append("i386")
+        else:
+            kvm.append(platform.machine())
         return kvm
 
     @staticmethod

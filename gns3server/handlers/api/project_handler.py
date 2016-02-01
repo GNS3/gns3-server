@@ -19,6 +19,7 @@ import aiohttp
 import asyncio
 import json
 import os
+import psutil
 
 from ...web.route import Route
 from ...schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA, PROJECT_LIST_SCHEMA
@@ -205,7 +206,7 @@ class ProjectHandler:
         queue = project.get_listen_queue()
         ProjectHandler._notifications_listening.setdefault(project.id, 0)
         ProjectHandler._notifications_listening[project.id] += 1
-        response.write("{\"action\": \"ping\"}\n".encode("utf-8"))
+        response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
         while True:
             try:
                 (action, msg) = yield from asyncio.wait_for(queue.get(), 5)
@@ -218,10 +219,25 @@ class ProjectHandler:
             except asyncio.futures.CancelledError as e:
                 break
             except asyncio.futures.TimeoutError:
-                response.write("{\"action\": \"ping\"}\n".encode("utf-8"))
+                response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
         project.stop_listen_queue(queue)
         if project.id in ProjectHandler._notifications_listening:
             ProjectHandler._notifications_listening[project.id] -= 1
+
+    @classmethod
+    def _getPingMessage(cls):
+        """
+        The ping message is regulary send to the client to
+        keep the connection open. We send with it some informations
+        about server load.
+
+        :returns: hash
+        """
+        stats = {}
+        # Non blocking call in order to get cpu usage. First call will return 0
+        stats["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
+        stats["memory_usage_percent"] = psutil.virtual_memory().percent
+        return {"action": "ping", "event": stats}
 
     @classmethod
     @Route.get(

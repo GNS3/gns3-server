@@ -85,6 +85,22 @@ def test_vm(project, manager, fake_qemu_binary):
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
+def test_vm_invalid_qemu_with_platform(project, manager, fake_qemu_binary):
+
+    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path="/usr/fake/bin/qemu-system-64", platform="x86_64")
+
+    assert vm.qemu_path == fake_qemu_binary
+    assert vm.platform == "x86_64"
+
+
+def test_vm_invalid_qemu_without_platform(project, manager, fake_qemu_binary):
+
+    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path="/usr/fake/bin/qemu-system-x86_64")
+
+    assert vm.qemu_path == fake_qemu_binary
+    assert vm.platform == "x86_64"
+
+
 def test_is_running(vm, running_subprocess_mock):
 
     vm._process = None
@@ -457,6 +473,30 @@ def test_hdd_disk_image(vm, tmpdir):
     assert vm.hdd_disk_image == force_unix_path(str(tmpdir / "test"))
     vm.hdd_disk_image = "test"
     assert vm.hdd_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
+
+
+def test_initrd(vm, tmpdir):
+
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    with patch("gns3server.modules.project.Project.emit") as mock:
+        vm.initrd = str(tmpdir / "test")
+        assert vm.initrd == force_unix_path(str(tmpdir / "test"))
+        vm.initrd = "test"
+        assert vm.initrd == force_unix_path(str(tmpdir / "QEMU" / "test"))
+        assert not mock.called
+
+
+def test_initrd_asa(vm, tmpdir):
+
+    vm.manager.config.set("Server", "images_path", str(tmpdir))
+
+    with patch("gns3server.modules.project.Project.emit") as mock:
+        vm.initrd = str(tmpdir / "asa842-initrd.gz")
+        assert vm.initrd == force_unix_path(str(tmpdir / "asa842-initrd.gz"))
+        vm.initrd = "asa842-initrd.gz"
+        assert vm.initrd == force_unix_path(str(tmpdir / "QEMU" / "asa842-initrd.gz"))
+        assert mock.called
 
 
 def test_options(linux_platform, vm):

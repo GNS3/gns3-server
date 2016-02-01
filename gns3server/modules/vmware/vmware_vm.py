@@ -375,6 +375,8 @@ class VMwareVM(BaseVM):
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
+        if not self._ubridge_hypervisor:
+            raise VMwareError("Cannot start the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
                                                                                                       output_file=output_file))
 
@@ -389,6 +391,8 @@ class VMwareVM(BaseVM):
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
+        if not self._ubridge_hypervisor:
+            raise VMwareError("Cannot stop the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=vnet))
 
     def check_hw_virtualization(self):
@@ -560,31 +564,7 @@ class VMwareVM(BaseVM):
             pass
 
         if self._linked_clone:
-            # clean the VMware inventory path from this linked clone
-            inventory_path = self.manager.get_vmware_inventory_path()
-            inventory_pairs = {}
-            if os.path.exists(inventory_path):
-                try:
-                    inventory_pairs = self.manager.parse_vmware_file(inventory_path)
-                except OSError as e:
-                    log.warning('Could not read VMware inventory file "{}": {}'.format(inventory_path, e))
-                    return
-
-                vmlist_entry = None
-                for name, value in inventory_pairs.items():
-                    if value == self._vmx_path:
-                        vmlist_entry = name.split(".", 1)[0]
-                        break
-
-                if vmlist_entry is not None:
-                    for name in inventory_pairs.keys():
-                        if name.startswith(vmlist_entry):
-                            del inventory_pairs[name]
-
-            try:
-                self.manager.write_vmware_file(inventory_path, inventory_pairs)
-            except OSError as e:
-                raise VMwareError('Could not write VMware inventory file "{}": {}'.format(inventory_path, e))
+            yield from self.manager.remove_from_vmware_inventory(self._vmx_path)
 
         log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
         self._closed = True

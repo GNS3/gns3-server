@@ -80,10 +80,12 @@ class QemuVM(BaseVM):
             try:
                 self.qemu_path = qemu_path
             except QemuError as e:
+                # If the binary is not found for topologies 1.4 and later
+                # search via the platform otherwise use the binary name
                 if platform:
                     self.platform = platform
                 else:
-                    raise e
+                    self.qemu_path = os.path.basename(qemu_path)
         else:
             self.platform = platform
 
@@ -694,6 +696,8 @@ class QemuVM(BaseVM):
         log.info('QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(name=self._name,
                                                                                            id=self._id,
                                                                                            initrd=initrd))
+        if "asa" in initrd:
+            self.project.emit("log.warning", {"message": "Warning ASA 8 is not officialy supported by GNS3 and Cisco, we recommend to use ASAv. Depending of your hardware this could not work or you could be limited to one instance."})
         self._initrd = initrd
 
     @property
@@ -1498,7 +1502,6 @@ class QemuVM(BaseVM):
                     answer[field] = getattr(self, field)
                 except AttributeError:
                     pass
-
         answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image)
         answer["hda_disk_image_md5sum"] = md5sum(self._hda_disk_image)
         answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image)

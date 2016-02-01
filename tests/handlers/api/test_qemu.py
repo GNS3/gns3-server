@@ -23,7 +23,6 @@ from tests.utils import asyncio_patch
 from unittest.mock import patch
 from gns3server.config import Config
 
-
 @pytest.fixture
 def fake_qemu_bin():
 
@@ -40,7 +39,10 @@ def fake_qemu_bin():
 @pytest.fixture
 def fake_qemu_vm(tmpdir):
 
-    bin_path = os.path.join(str(tmpdir / "linux.img"))
+    img_dir = Config.instance().get_section_config("Server").get("images_path")
+    img_dir = os.path.join(img_dir, "QEMU")
+    os.makedirs(img_dir)
+    bin_path = os.path.join(img_dir, "linux载.img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -86,15 +88,17 @@ def test_qemu_create_platform(server, project, base_params, fake_qemu_bin):
 def test_qemu_create_with_params(server, project, base_params, fake_qemu_vm):
     params = base_params
     params["ram"] = 1024
-    params["hda_disk_image"] = "linux.img"
+    params["hda_disk_image"] = "linux载.img"
 
     response = server.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), params, example=True)
+
     assert response.status == 201
     assert response.route == "/projects/{project_id}/qemu/vms"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["ram"] == 1024
-    assert response.json["hda_disk_image"] == "linux.img"
+    assert response.json["hda_disk_image"] == "linux载.img"
+    assert response.json["hda_disk_image_md5sum"] == "c4ca4238a0b923820dcc509a6f75849b"
 
 
 def test_qemu_get(server, project, vm):
@@ -220,10 +224,9 @@ def test_qemu_list_binaries_filter(server, vm):
 
 def test_vms(server, tmpdir, fake_qemu_vm):
 
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir), example=True):
-        response = server.get("/qemu/vms")
+    response = server.get("/qemu/vms")
     assert response.status == 200
-    assert response.json == [{"filename": "linux.img", "path": "linux.img"}]
+    assert response.json == [{"filename": "linux载.img", "path": "linux载.img"}]
 
 
 def test_upload_vm(server, tmpdir):
