@@ -192,9 +192,11 @@ class VMware(BaseManager):
                     if int(version) < 6:
                         raise VMwareError("Using VMware Player requires version 6 or above")
                 if version is None:
-                    log.warning("Could not find VMware version")
+                    log.warning("Could not find VMware version. Output of VMware: {}".format(output))
+                    raise VMwareError("Could not find VMware version. Output of VMware: {}".format(output))
             except (OSError, subprocess.SubprocessError) as e:
                 log.error("Error while looking for the VMware version: {}".format(e))
+                raise VMwareError("Error while looking for the VMware version: {}".format(e))
 
     @staticmethod
     def _get_vmnet_interfaces_registry():
