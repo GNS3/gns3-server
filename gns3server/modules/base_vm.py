@@ -330,8 +330,6 @@ class BaseVM:
         yield from self._ubridge_hypervisor.start()
         log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
         yield from self._ubridge_hypervisor.connect()
-        if parse_version(self._ubridge_hypervisor.version) < parse_version('0.9.3'):
-            raise VMError("uBridge version must be >= 0.9.3, detected version is {}".format(self._ubridge_hypervisor.version))
 
     @property
     def hw_virtualization(self):
