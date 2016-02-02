@@ -112,9 +112,10 @@ def test_is_running(vm, running_subprocess_mock):
 
 
 def test_start(loop, vm, running_subprocess_mock):
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock):
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock) as mock:
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.is_running()
+        assert vm.command_line == ' '.join(mock.call_args[0])
 
 
 def test_stop(loop, vm, running_subprocess_mock):

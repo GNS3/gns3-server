@@ -59,7 +59,6 @@ class VPCSVM(BaseVM):
     def __init__(self, name, vm_id, project, manager, console=None, startup_script=None):
 
         super().__init__(name, vm_id, project, manager, console=console)
-        self._command = []
         self._process = None
         self._vpcs_stdout_file = ""
         self._vpcs_version = None
@@ -115,7 +114,8 @@ class VPCSVM(BaseVM):
                 "console": self._console,
                 "project_id": self.project.id,
                 "startup_script": self.startup_script,
-                "startup_script_path": self.relative_startup_script}
+                "startup_script_path": self.relative_startup_script,
+                "command_line": self.command_line}
 
     @property
     def relative_startup_script(self):
@@ -223,16 +223,17 @@ class VPCSVM(BaseVM):
             if not self._ethernet_adapter.get_nio(0):
                 raise VPCSError("This VPCS instance must be connected in order to start")
 
-            self._command = self._build_command()
+            command = self._build_command()
             try:
-                log.info("Starting VPCS: {}".format(self._command))
+                log.info("Starting VPCS: {}".format(command))
                 self._vpcs_stdout_file = os.path.join(self.working_dir, "vpcs.log")
                 log.info("Logging to {}".format(self._vpcs_stdout_file))
                 flags = 0
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
                 with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
-                    self._process = yield from asyncio.create_subprocess_exec(*self._command,
+                    self.command_line = ' '.join(command)
+                    self._process = yield from asyncio.create_subprocess_exec(*command,
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir,

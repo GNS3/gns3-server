@@ -68,7 +68,6 @@ class QemuVM(BaseVM):
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
         self._linked_clone = linked_clone
-        self._command = []
         self._process = None
         self._cpulimit_process = None
         self._monitor = None
@@ -867,15 +866,16 @@ class QemuVM(BaseVM):
                 # check if there is enough RAM to run
                 self.check_available_ram(self.ram)
 
-                self._command = yield from self._build_command()
-                command_string = " ".join(shlex.quote(s) for s in self._command)
+                command = yield from self._build_command()
+                command_string = " ".join(shlex.quote(s) for s in command)
                 try:
                     log.info("Starting QEMU with: {}".format(command_string))
                     self._stdout_file = os.path.join(self.working_dir, "qemu.log")
                     log.info("logging to {}".format(self._stdout_file))
                     with open(self._stdout_file, "w", encoding="utf-8") as fd:
                         fd.write("Start QEMU with {}\n\nExecution log:\n".format(command_string))
-                        self._process = yield from asyncio.create_subprocess_exec(*self._command,
+                        self.command_line = ' '.join(command)
+                        self._process = yield from asyncio.create_subprocess_exec(*command,
                                                                                   stdout=fd,
                                                                                   stderr=subprocess.STDOUT,
                                                                                   cwd=self.working_dir)

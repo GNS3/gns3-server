@@ -254,11 +254,16 @@ IOU_OBJECT_SCHEMA = {
         "iourc_path": {
             "description": "Path of the iourc file used by remote servers",
             "type": ["string", "null"]
+        },
+        "command_line": {
+            "description": "Last command line used by GNS3 to start QEMU",
+            "type": "string"
         }
     },
     "additionalProperties": False,
     "required": ["name", "vm_id", "console", "project_id", "path", "md5sum", "serial_adapters", "ethernet_adapters",
-                 "ram", "nvram", "l1_keepalives", "startup_config", "private_config", "use_default_iou_values"]
+                 "ram", "nvram", "l1_keepalives", "startup_config", "private_config", "use_default_iou_values",
+                 "command_line"]
 }
 
 IOU_CAPTURE_SCHEMA = {

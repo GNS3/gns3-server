@@ -139,7 +139,8 @@ def test_iou_start(server, vm):
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start", return_value=True) as mock:
         response = server.post("/projects/{project_id}/iou/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
-        assert response.status == 204
+        assert response.status == 200
+        assert response.json["name"] == "PC TEST 1"
 
 
 def test_iou_start_with_iourc(server, vm, tmpdir):
@@ -148,7 +149,7 @@ def test_iou_start_with_iourc(server, vm, tmpdir):
     with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start", return_value=True) as mock:
         response = server.post("/projects/{project_id}/iou/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=body, example=True)
         assert mock.called
-        assert response.status == 204
+        assert response.status == 200
 
     response = server.get("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
     assert response.status == 200

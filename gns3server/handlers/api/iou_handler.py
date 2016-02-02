@@ -148,11 +148,12 @@ class IOUHandler:
             "vm_id": "UUID for the instance"
         },
         status_codes={
-            204: "Instance started",
+            200: "Instance started",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
         input=IOU_START_SCHEMA,
+        output=IOU_OBJECT_SCHEMA,
         description="Start a IOU instance")
     def start(request, response):
 
@@ -166,7 +167,7 @@ class IOUHandler:
                 print(vm.iourc_path)
 
         yield from vm.start()
-        response.set_status(204)
+        response.json(vm)
 
     @classmethod
     @Route.post(
