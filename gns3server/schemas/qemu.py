@@ -558,6 +558,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Additional QEMU options",
             "type": "string",
         },
+        "command_line": {
+            "description": "Last command line used by GNS3 to start QEMU",
+            "type": "string"
+        }
     },
     "additionalProperties": False,
     "required": ["vm_id",
@@ -598,7 +602,8 @@ QEMU_OBJECT_SCHEMA = {
                  "cpu_throttling",
                  "process_priority",
                  "options",
-                 "vm_directory"]
+                 "vm_directory",
+                 "command_line"]
 }
 
 QEMU_BINARY_FILTER_SCHEMA = {

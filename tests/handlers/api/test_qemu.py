@@ -114,7 +114,8 @@ def test_qemu_start(server, vm):
     with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.start", return_value=True) as mock:
         response = server.post("/projects/{project_id}/qemu/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
-        assert response.status == 204
+        assert response.status == 200
+        assert response.json["name"] == "PC TEST 1"
 
 
 def test_qemu_stop(server, vm):

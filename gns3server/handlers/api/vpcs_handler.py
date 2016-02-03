@@ -130,13 +130,14 @@ class VPCSHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Start a VPCS instance")
+        description="Start a VPCS instance",
+        output=VPCS_OBJECT_SCHEMA)
     def start(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         yield from vm.start()
-        response.set_status(204)
+        response.json(vm)
 
     @classmethod
     @Route.post(

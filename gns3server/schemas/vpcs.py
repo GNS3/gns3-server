@@ -121,7 +121,11 @@ VPCS_OBJECT_SCHEMA = {
             "description": "Path of the VPCS startup script relative to project directory",
             "type": ["string", "null"]
         },
+        "command_line": {
+            "description": "Last command line used by GNS3 to start QEMU",
+            "type": "string"
+        }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "status", "console", "project_id", "startup_script_path"]
+    "required": ["name", "vm_id", "status", "console", "project_id", "startup_script_path", "command_line"]
 }

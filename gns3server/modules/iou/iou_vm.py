@@ -72,7 +72,6 @@ class IOUVM(BaseVM):
 
         super().__init__(name, vm_id, project, manager, console=console)
 
-        self._command = []
         self._iouyap_process = None
         self._iou_process = None
         self._iou_stdout_file = ""
@@ -220,7 +219,8 @@ class IOUVM(BaseVM):
                        "startup_config": self.relative_startup_config_file,
                        "private_config": self.relative_private_config_file,
                        "iourc_path": self.iourc_path,
-                       "use_default_iou_values": self._use_default_iou_values}
+                       "use_default_iou_values": self._use_default_iou_values,
+                       "command_line": self.command_line}
 
         # return the relative path if the IOU image is in the images_path directory
         iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)
@@ -502,13 +502,14 @@ class IOUVM(BaseVM):
 
             if "IOURC" not in os.environ:
                 env["IOURC"] = iourc_path
-            self._command = yield from self._build_command()
+            command = yield from self._build_command()
             try:
-                log.info("Starting IOU: {}".format(self._command))
+                log.info("Starting IOU: {}".format(command))
                 self._iou_stdout_file = os.path.join(self.working_dir, "iou.log")
                 log.info("Logging to {}".format(self._iou_stdout_file))
                 with open(self._iou_stdout_file, "w", encoding="utf-8") as fd:
-                    self._iou_process = yield from asyncio.create_subprocess_exec(*self._command,
+                    self.command_line = ' '.join(command)
+                    self._iou_process = yield from asyncio.create_subprocess_exec(*command,
                                                                                   stdout=fd,
                                                                                   stderr=subprocess.STDOUT,
                                                                                   cwd=self.working_dir,
