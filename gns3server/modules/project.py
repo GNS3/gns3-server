@@ -141,7 +141,10 @@ class Project:
 
         if hasattr(self, "_path"):
             if path != self._path and self.is_local() is False:
-                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
+                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory path")
+
+        if '"' in path:
+            raise aiohttp.web.HTTPForbidden(text="You are not allowed to use \" in the project directory path. It's not supported by Dynamips.")
 
         self._path = path
         self._update_temporary_file()
