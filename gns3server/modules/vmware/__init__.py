@@ -97,21 +97,11 @@ class VMware(BaseManager):
             if sys.platform.startswith("win"):
                 vmrun_path = shutil.which("vmrun")
                 if vmrun_path is None:
-                    # look for vmrun.exe in default VMware Workstation directory
-                    vmrun_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vmrun.exe")
-                    if os.path.exists(vmrun_ws):
-                        vmrun_path = vmrun_ws
-                    else:
-                        # look for vmrun.exe using the directory listed in the registry
-                        vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
+                    # look for vmrun.exe using the VMware Workstation directory listed in the registry
+                    vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
                     if vmrun_path is None:
-                        # look for vmrun.exe in default VMware VIX directory
-                        vmrun_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vmrun.exe")
-                        if os.path.exists(vmrun_vix):
-                            vmrun_path = vmrun_vix
-                        else:
-                            # look for vmrun.exe using the directory listed in the registry
-                            vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware VIX")
+                        # look for vmrun.exe using the VIX directory listed in the registry
+                        vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware VIX")
             elif sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
