@@ -142,6 +142,7 @@ class VMwareVM(BaseVM):
         Creates this VM and handle linked clones.
         """
 
+        yield from self.manager.check_vmrun_version()
         if self._linked_clone and not os.path.exists(os.path.join(self.working_dir, os.path.basename(self._vmx_path))):
             # create the base snapshot for linked clones
             base_snapshot_name = "GNS3 Linked Base for clones"
