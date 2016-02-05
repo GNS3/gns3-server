@@ -403,9 +403,9 @@ class IOUVM(BaseVM):
             raise IOUError("Hostname \"{}\" not found in iourc file {}".format(hostname, self.iourc_path))
         user_ioukey = config["license"][hostname]
         if user_ioukey[-1:] != ';':
-            raise IOUError("IOU key not ending with ; in iourc file".format(self.iourc_path))
+            raise IOUError("IOU key not ending with ; in iourc file {}".format(self.iourc_path))
         if len(user_ioukey) != 17:
-            raise IOUError("IOU key length is not 16 characters in iourc file".format(self.iourc_path))
+            raise IOUError("IOU key length is not 16 characters in iourc file {}".format(self.iourc_path))
         user_ioukey = user_ioukey[:16]
 
         # We can't test this because it's mean distributing a valid licence key
@@ -1255,10 +1255,10 @@ class IOUVM(BaseVM):
 
         nio.startPacketCapture(output_file, data_link_type)
         log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number} to {output_file}'.format(name=self._name,
-                                                                                                         id=self._id,
-                                                                                                         adapter_number=adapter_number,
-                                                                                                         port_number=port_number,
-                                                                                                         output_file=output_file))
+                                                                                                                          id=self._id,
+                                                                                                                          adapter_number=adapter_number,
+                                                                                                                          port_number=port_number,
+                                                                                                                          output_file=output_file))
 
         if self.is_iouyap_running():
             self._update_iouyap_config()

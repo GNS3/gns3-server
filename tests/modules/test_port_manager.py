@@ -42,7 +42,7 @@ def test_reserve_tcp_port_outside_range():
         assert mock_emit.call_args[0][0] == "log.warning"
 
 
-def test_reserve_tcp_port_already_used():
+def test_reserve_tcp_port_already_used_by_another_program():
     """
     This test simulate a scenario where the port is already taken
     by another programm on the server
@@ -64,6 +64,7 @@ def test_reserve_tcp_port_already_used():
             port = pm.reserve_tcp_port(2001, project)
             assert port != 2001
             assert mock_emit.call_args[0][0] == "log.warning"
+
 
 def test_reserve_tcp_port_already_used():
     """

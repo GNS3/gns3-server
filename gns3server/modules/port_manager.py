@@ -142,16 +142,14 @@ class PortManager:
         if end_port < start_port:
             raise HTTPConflict(text="Invalid port range {}-{}".format(start_port, end_port))
 
-
         last_exception = None
         for port in range(start_port, end_port + 1):
             if port in ignore_ports:
                 continue
 
-            last_exception
             try:
-                 PortManager._check_port(host, port, socket_type)
-                 return port
+                PortManager._check_port(host, port, socket_type)
+                return port
             except OSError as e:
                 last_exception = e
                 if port + 1 == end_port:
@@ -163,6 +161,7 @@ class PortManager:
                                                                                                                      end_port,
                                                                                                                      host,
                                                                                                                      last_exception))
+
     @staticmethod
     def _check_port(host, port, socket_type):
         """
@@ -181,7 +180,6 @@ class PortManager:
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind(sa)  # the port is available if bind is a success
             return True
-
 
     def get_free_tcp_port(self, project, port_range_start=None, port_range_end=None):
         """
@@ -291,7 +289,7 @@ class PortManager:
         """
 
         if port in self._used_udp_ports:
-            raise HTTPConflict(text="UDP port {} already in use on host".format(port, self._console_host))
+            raise HTTPConflict(text="UDP port {} already in use on host {}".format(port, self._console_host))
         if port < self._udp_port_range[0] or port > self._udp_port_range[1]:
             raise HTTPConflict(text="UDP port {} is outside the range {}-{}".format(port, self._udp_port_range[0], self._udp_port_range[1]))
         self._used_udp_ports.add(port)

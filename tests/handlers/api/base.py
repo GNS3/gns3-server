@@ -61,20 +61,20 @@ class Query:
             body = json.dumps(body)
 
         @asyncio.coroutine
-        def go(future):
+        def go_request(future):
             response = yield from aiohttp.request(method, self.get_url(path, api_version), data=body)
             future.set_result(response)
         future = asyncio.Future()
-        asyncio.async(go(future))
+        asyncio.async(go_request(future))
         self._loop.run_until_complete(future)
         response = future.result()
 
         @asyncio.coroutine
-        def go(future, response):
+        def go_read(future, response):
             response = yield from response.read()
             future.set_result(response)
         future = asyncio.Future()
-        asyncio.async(go(future, response))
+        asyncio.async(go_read(future, response))
         self._loop.run_until_complete(future)
         response.body = future.result()
         x_route = response.headers.get('X-Route', None)
