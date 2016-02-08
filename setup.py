@@ -43,7 +43,6 @@ dependencies = [
     "aiohttp>=0.15.1",
     "Jinja2>=2.7.3",
     "raven>=5.2.0",
-    "docker-py>=1.4.0",
     "psutil>=3.0.0"
 ]
 
