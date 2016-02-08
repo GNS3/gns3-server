@@ -710,10 +710,12 @@ class Dynamips(BaseManager):
         """
 
         image_dir = self.get_images_directory()
+        if not os.path.exists(image_dir):
+            return []
         try:
             files = os.listdir(image_dir)
-        except FileNotFoundError:
-            return []
+        except OSError as e:
+            raise DynamipsError("Can not list {}: {}".format(image_dir, str(e)))
         files.sort()
         images = []
         for filename in files:
@@ -724,7 +726,6 @@ class Dynamips(BaseManager):
                         # read the first 7 bytes of the file.
                         elf_header_start = f.read(7)
                 except OSError as e:
-                    print(e)
                     continue
                 # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
                 if elf_header_start == b'\x7fELF\x01\x02\x01':

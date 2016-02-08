@@ -146,11 +146,12 @@ class QEMUHandler:
             "vm_id": "UUID for the instance"
         },
         status_codes={
-            204: "Instance started",
+            200: "Instance started",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Start a Qemu VM instance")
+        description="Start a Qemu VM instance",
+        output=QEMU_OBJECT_SCHEMA)
     def start(request, response):
 
         qemu_manager = Qemu.instance()
@@ -161,7 +162,7 @@ class QEMUHandler:
             if pm.check_hardware_virtualization(vm) is False:
                 raise HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
         yield from vm.start()
-        response.set_status(204)
+        response.json(vm)
 
     @classmethod
     @Route.post(

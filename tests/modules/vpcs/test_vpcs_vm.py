@@ -107,6 +107,7 @@ def test_start(loop, vm):
                                               '-t',
                                               '127.0.0.1')
             assert vm.is_running()
+            assert vm.command_line == ' '.join(mock_exec.call_args[0])
     (action, event) = queue.get_nowait()
     assert action == "vm.started"
     assert event == vm

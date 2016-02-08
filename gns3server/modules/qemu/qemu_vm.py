@@ -68,7 +68,6 @@ class QemuVM(BaseVM):
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
         self._linked_clone = linked_clone
-        self._command = []
         self._process = None
         self._cpulimit_process = None
         self._monitor = None
@@ -867,15 +866,16 @@ class QemuVM(BaseVM):
                 # check if there is enough RAM to run
                 self.check_available_ram(self.ram)
 
-                self._command = yield from self._build_command()
-                command_string = " ".join(shlex.quote(s) for s in self._command)
+                command = yield from self._build_command()
+                command_string = " ".join(shlex.quote(s) for s in command)
                 try:
                     log.info("Starting QEMU with: {}".format(command_string))
                     self._stdout_file = os.path.join(self.working_dir, "qemu.log")
                     log.info("logging to {}".format(self._stdout_file))
                     with open(self._stdout_file, "w", encoding="utf-8") as fd:
                         fd.write("Start QEMU with {}\n\nExecution log:\n".format(command_string))
-                        self._process = yield from asyncio.create_subprocess_exec(*self._command,
+                        self.command_line = ' '.join(command)
+                        self._process = yield from asyncio.create_subprocess_exec(*command,
                                                                                   stdout=fd,
                                                                                   stderr=subprocess.STDOUT,
                                                                                   cwd=self.working_dir)
@@ -1084,24 +1084,24 @@ class QemuVM(BaseVM):
             raise QemuError("Sorry, adding a link to a started Qemu VM is not supported.")
             # FIXME: does the code below work? very undocumented feature...
             # dynamically configure an UDP tunnel on the QEMU VM adapter
-            if nio and isinstance(nio, NIOUDP):
-                if self._legacy_networking:
-                    yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_number, adapter_number))
-                    yield from self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
-                                                                                                                          adapter_number,
-                                                                                                                          nio.lport,
-                                                                                                                          nio.rport,
-                                                                                                                          nio.rhost))
-                else:
-                    # Apparently there is a bug in Qemu...
-                    # netdev_add [user|tap|socket|hubport|netmap],id=str[,prop=value][,...] -- add host network device
-                    # netdev_del id -- remove host network device
-                    yield from self._control_vm("netdev_del gns3-{}".format(adapter_number))
-                    yield from self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
-                                                                                                                nio.rhost,
-                                                                                                                nio.rport,
-                                                                                                                self._host,
-                                                                                                                nio.lport))
+            # if nio and isinstance(nio, NIOUDP):
+            #     if self._legacy_networking:
+            #         yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_number, adapter_number))
+            #         yield from self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
+            #                                                                                                               adapter_number,
+            #                                                                                                               nio.lport,
+            #                                                                                                               nio.rport,
+            #                                                                                                               nio.rhost))
+            #     else:
+            #         # Apparently there is a bug in Qemu...
+            #         # netdev_add [user|tap|socket|hubport|netmap],id=str[,prop=value][,...] -- add host network device
+            #         # netdev_del id -- remove host network device
+            #         yield from self._control_vm("netdev_del gns3-{}".format(adapter_number))
+            #         yield from self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
+            #                                                                                                     nio.rhost,
+            #                                                                                                     nio.rport,
+            #                                                                                                     self._host,
+            #                                                                                                     nio.lport))
 
         adapter.add_nio(0, nio)
         log.info('QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(name=self._name,

@@ -31,6 +31,7 @@ import codecs
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio import subprocess_check_output
+from pkg_resources import parse_version
 
 log = logging.getLogger(__name__)
 
@@ -96,21 +97,11 @@ class VMware(BaseManager):
             if sys.platform.startswith("win"):
                 vmrun_path = shutil.which("vmrun")
                 if vmrun_path is None:
-                    # look for vmrun.exe in default VMware Workstation directory
-                    vmrun_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vmrun.exe")
-                    if os.path.exists(vmrun_ws):
-                        vmrun_path = vmrun_ws
-                    else:
-                        # look for vmrun.exe using the directory listed in the registry
-                        vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
+                    # look for vmrun.exe using the VMware Workstation directory listed in the registry
+                    vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
                     if vmrun_path is None:
-                        # look for vmrun.exe in default VMware VIX directory
-                        vmrun_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vmrun.exe")
-                        if os.path.exists(vmrun_vix):
-                            vmrun_path = vmrun_vix
-                        else:
-                            # look for vmrun.exe using the directory listed in the registry
-                            vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware VIX")
+                        # look for vmrun.exe using the VIX directory listed in the registry
+                        vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware VIX")
             elif sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
@@ -357,6 +348,31 @@ class VMware(BaseManager):
                 raise VMwareError("vmrun has returned an error: {}".format(vmrun_error))
 
             return stdout_data.decode("utf-8", errors="ignore").splitlines()
+
+    @asyncio.coroutine
+    def check_vmrun_version(self):
+
+        with (yield from self._execute_lock):
+            vmrun_path = self.vmrun_path
+            if not vmrun_path:
+                vmrun_path = self.find_vmrun()
+
+            try:
+                output = yield from subprocess_check_output(vmrun_path)
+                match = re.search("vmrun version ([0-9\.]+)", output)
+                version = None
+                if match:
+                    version = match.group(1)
+                    log.debug("VMware vmrun version {} detected".format(version))
+                    if parse_version(version) < parse_version("1.13"):
+                        # VMware VIX library version must be at least >= 1.13
+                        raise VMwareError("VMware vmrun executable version must be >= version 1.13")
+                if version is None:
+                    log.warning("Could not find VMware vmrun version. Output: {}".format(output))
+                    raise VMwareError("Could not find VMware vmrun version. Output: {}".format(output))
+            except (OSError, subprocess.SubprocessError) as e:
+                log.error("Error while looking for the VMware vmrun version: {}".format(e))
+                raise VMwareError("Error while looking for the VMware vmrun version: {}".format(e))
 
     @asyncio.coroutine
     def remove_from_vmware_inventory(self, vmx_path):

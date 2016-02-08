@@ -102,6 +102,13 @@ def test_changing_path_not_allowed(tmpdir):
             p.path = str(tmpdir)
 
 
+def test_changing_path_with_quote_not_allowed(tmpdir):
+    with patch("gns3server.modules.project.Project.is_local", return_value=True):
+        with pytest.raises(aiohttp.web.HTTPForbidden):
+            p = Project()
+            p.path = str(tmpdir / "project\"53")
+
+
 def test_json(tmpdir):
     p = Project()
     assert p.__json__() == {"name": p.name, "location": p.location, "path": p.path, "project_id": p.id, "temporary": False}

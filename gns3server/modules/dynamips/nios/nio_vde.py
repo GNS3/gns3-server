@@ -48,9 +48,9 @@ class NIOVDE(NIO):
     @asyncio.coroutine
     def create(self):
 
-        self._hypervisor.send("nio create_vde {name} {control} {local}".format(name=self._name,
-                                                                               control=self._control_file,
-                                                                               local=self._local_file))
+        yield from self._hypervisor.send("nio create_vde {name} {control} {local}".format(name=self._name,
+                                                                                          control=self._control_file,
+                                                                                          local=self._local_file))
 
         log.info("NIO VDE {name} created with control={control}, local={local}".format(name=self._name,
                                                                                        control=self._control_file,

@@ -112,11 +112,11 @@ def test_start(loop, vm, monkeypatch):
         with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
             with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
                 with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process):
+                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
                         mock_process.returncode = None
                         loop.run_until_complete(asyncio.async(vm.start()))
                         assert vm.is_running()
-
+                        assert vm.command_line == ' '.join(mock_exec.call_args[0])
 
 def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
 

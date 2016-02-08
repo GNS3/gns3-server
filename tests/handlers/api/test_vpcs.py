@@ -102,7 +102,8 @@ def test_vpcs_start(server, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
         response = server.post("/projects/{project_id}/vpcs/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
-        assert response.status == 204
+        assert response.status == 200
+        assert response.json["name"] == "PC TEST 1"
 
 
 def test_vpcs_stop(server, vm):

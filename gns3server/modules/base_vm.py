@@ -58,6 +58,7 @@ class BaseVM:
         self._hw_virtualization = False
         self._ubridge_hypervisor = None
         self._vm_status = "stopped"
+        self._command_line = ""
 
         if self._console is not None:
             if console_type == "vnc":
@@ -93,6 +94,17 @@ class BaseVM:
 
         self._vm_status = status
         self._project.emit("vm.{}".format(status), self)
+
+    @property
+    def command_line(self):
+        """Return command used to start the VM"""
+
+        return self._command_line
+
+    @command_line.setter
+    def command_line(self, command_line):
+
+        self._command_line = command_line
 
     @property
     def project(self):
