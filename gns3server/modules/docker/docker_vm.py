@@ -168,9 +168,8 @@ class DockerVM(BaseVM):
             yield from self._start_ubridge()
             for adapter_number in range(0, self.adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
-                if nio:
-                    with (yield from self.manager.ubridge_lock):
-                        yield from self._add_ubridge_connection(nio, adapter_number)
+                with (yield from self.manager.ubridge_lock):
+                    yield from self._add_ubridge_connection(nio, adapter_number)
 
             yield from self._start_console()
 
@@ -339,7 +338,7 @@ class DockerVM(BaseVM):
         """
         Creates a connection in uBridge.
 
-        :param nio: NIO instance
+        :param nio: NIO instance or None if it's a dummu interface (if an interface is missing in ubridge you can't see it via ifconfig in the container)
         :param adapter_number: adapter number
         """
         try:
@@ -348,19 +347,16 @@ class DockerVM(BaseVM):
             raise DockerError(
                 "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name, adapter_number=adapter_number))
 
-        if nio and isinstance(nio, NIOUDP):
-            for index in range(128):
-                if "gns3-veth{}ext".format(index) not in psutil.net_if_addrs():
-                    adapter.ifc = "eth{}".format(str(index))
-                    adapter.host_ifc = "gns3-veth{}ext".format(str(index))
-                    adapter.guest_ifc = "gns3-veth{}int".format(str(index))
-                    break
-            if not hasattr(adapter, "ifc"):
-                raise DockerError(
-                    "Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(
-                        name=self.name, adapter_number=adapter_number))
-        else:
-            raise ValueError("Invalid NIO")
+        for index in range(128):
+            if "gns3-veth{}ext".format(index) not in psutil.net_if_addrs():
+                adapter.ifc = "eth{}".format(str(index))
+                adapter.host_ifc = "gns3-veth{}ext".format(str(index))
+                adapter.guest_ifc = "gns3-veth{}int".format(str(index))
+                break
+        if not hasattr(adapter, "ifc"):
+            raise DockerError(
+                "Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(
+                    name=self.name, adapter_number=adapter_number))
 
         yield from self._ubridge_hypervisor.send(
             'docker create_veth {hostif} {guestif}'.format(
@@ -372,25 +368,25 @@ class DockerVM(BaseVM):
             'docker move_to_ns {ifc} {ns} eth{adapter}'.format(
                 ifc=adapter.guest_ifc, ns=namespace, adapter=adapter_number))
 
-        yield from self._ubridge_hypervisor.send(
-            'bridge create bridge{}'.format(adapter_number))
-        yield from self._ubridge_hypervisor.send(
-            'bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(
-                ifc=adapter.host_ifc, adapter=adapter_number))
-
         if isinstance(nio, NIOUDP):
+            yield from self._ubridge_hypervisor.send(
+                'bridge create bridge{}'.format(adapter_number))
+            yield from self._ubridge_hypervisor.send(
+                'bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(
+                    ifc=adapter.host_ifc, adapter=adapter_number))
+
             yield from self._ubridge_hypervisor.send(
                 'bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(
                     adapter=adapter_number, lport=nio.lport, rhost=nio.rhost,
                     rport=nio.rport))
 
-        if nio.capturing:
-            yield from self._ubridge_hypervisor.send(
-                'bridge start_capture bridge{adapter} "{pcap_file}"'.format(
-                    adapter=adapter_number, pcap_file=nio.pcap_output_file))
+            if nio.capturing:
+                yield from self._ubridge_hypervisor.send(
+                    'bridge start_capture bridge{adapter} "{pcap_file}"'.format(
+                        adapter=adapter_number, pcap_file=nio.pcap_output_file))
 
-        yield from self._ubridge_hypervisor.send(
-            'bridge start bridge{adapter}'.format(adapter=adapter_number))
+            yield from self._ubridge_hypervisor.send(
+                'bridge start bridge{adapter}'.format(adapter=adapter_number))
 
     def _delete_ubridge_connection(self, adapter_number):
         """Deletes a connection in uBridge.

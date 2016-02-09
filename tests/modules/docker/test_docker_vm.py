@@ -251,6 +251,31 @@ def test_start(loop, vm, manager, free_console_port):
     assert vm.status == "started"
 
 
+def test_start_without_nio(loop, vm, manager, free_console_port):
+    """
+    If no nio exists we will create one.
+    """
+
+    assert vm.status != "started"
+    vm.adapters = 1
+
+    # nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    # loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+
+    with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
+            with asyncio_patch("gns3server.modules.docker.DockerVM._start_ubridge") as mock_start_ubridge:
+                with asyncio_patch("gns3server.modules.docker.DockerVM._add_ubridge_connection") as mock_add_ubridge_connection:
+                    with asyncio_patch("gns3server.modules.docker.DockerVM._start_console") as mock_start_console:
+                        loop.run_until_complete(asyncio.async(vm.start()))
+
+    mock_query.assert_called_with("POST", "containers/e90e34656842/start")
+    assert mock_add_ubridge_connection.called
+    assert mock_start_ubridge.called
+    assert mock_start_console.called
+    assert vm.status == "started"
+
+
 def test_start_unpause(loop, vm, manager, free_console_port):
 
     with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="paused"):
@@ -377,29 +402,6 @@ def test_add_ubridge_connection(loop, vm):
            "rport": 4343,
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(0, nio)
-    vm._ubridge_hypervisor = MagicMock()
-    with asyncio_patch("gns3server.modules.docker.DockerVM._get_namespace", return_value=42):
-        loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
-
-    calls = [
-        call.send("docker create_veth gns3-veth0ext gns3-veth0int"),
-        call.send('docker move_to_ns gns3-veth0int 42'),
-        call.send('bridge create bridge0'),
-        call.send('bridge add_nio_linux_raw bridge0 gns3-veth0ext'),
-        call.send('bridge add_nio_udp bridge0 4242 127.0.0.1 4343'),
-        call.send('bridge start bridge0')
-    ]
-    # We need to check any_order ortherwise mock is confused by asyncio
-    vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
-
-
-def test_add_ubridge_connection(loop, vm):
-
-    nio = {"type": "nio_udp",
-           "lport": 4242,
-           "rport": 4343,
-           "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
     nio.startPacketCapture("/tmp/capture.pcap")
     vm._ubridge_hypervisor = MagicMock()
     with asyncio_patch("gns3server.modules.docker.DockerVM._get_namespace", return_value=42):
@@ -418,10 +420,19 @@ def test_add_ubridge_connection(loop, vm):
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
 
-def test_add_ubridge_connection_invalid_nio(loop, vm):
+def test_add_ubridge_connection_none_nio(loop, vm):
 
-    with pytest.raises(ValueError):
-        loop.run_until_complete(asyncio.async(vm._add_ubridge_connection({}, 0)))
+    nio = None
+    vm._ubridge_hypervisor = MagicMock()
+    with asyncio_patch("gns3server.modules.docker.DockerVM._get_namespace", return_value=42):
+        loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
+
+    calls = [
+        call.send("docker create_veth gns3-veth0ext gns3-veth0int"),
+        call.send('docker move_to_ns gns3-veth0int 42 eth0'),
+    ]
+    # We need to check any_order ortherwise mock is confused by asyncio
+    vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
 
 def test_add_ubridge_connection_invalid_adapter_number(loop, vm):
