@@ -22,7 +22,7 @@ from ...web.route import Route
 from ...schemas.vmware import VMWARE_CREATE_SCHEMA
 from ...schemas.vmware import VMWARE_UPDATE_SCHEMA
 from ...schemas.vmware import VMWARE_OBJECT_SCHEMA
-from ...schemas.vmware import VMWARE_CAPTURE_SCHEMA
+from ...schemas.vm import VM_CAPTURE_SCHEMA
 from ...schemas.nio import NIO_SCHEMA
 from ...modules.vmware import VMware
 from ...modules.project_manager import ProjectManager
@@ -314,7 +314,7 @@ class VMwareHandler:
             404: "Instance doesn't exist",
         },
         description="Start a packet capture on a VMware VM instance",
-        input=VMWARE_CAPTURE_SCHEMA)
+        input=VM_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
         vmware_manager = VMware.instance()

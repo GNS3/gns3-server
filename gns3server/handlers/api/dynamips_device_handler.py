@@ -20,9 +20,9 @@ import asyncio
 from ...web.route import Route
 from ...schemas.dynamips_device import DEVICE_CREATE_SCHEMA
 from ...schemas.dynamips_device import DEVICE_UPDATE_SCHEMA
-from ...schemas.dynamips_device import DEVICE_CAPTURE_SCHEMA
 from ...schemas.dynamips_device import DEVICE_OBJECT_SCHEMA
 from ...schemas.dynamips_device import DEVICE_NIO_SCHEMA
+from ...schemas.vm import VM_CAPTURE_SCHEMA
 from ...modules.dynamips import Dynamips
 
 
@@ -198,7 +198,7 @@ class DynamipsDeviceHandler:
             404: "Instance doesn't exist"
         },
         description="Start a packet capture on a Dynamips device instance",
-        input=DEVICE_CAPTURE_SCHEMA)
+        input=VM_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
         dynamips_manager = Dynamips.instance()

@@ -24,9 +24,9 @@ from ...schemas.iou import IOU_CREATE_SCHEMA
 from ...schemas.iou import IOU_START_SCHEMA
 from ...schemas.iou import IOU_UPDATE_SCHEMA
 from ...schemas.iou import IOU_OBJECT_SCHEMA
-from ...schemas.iou import IOU_CAPTURE_SCHEMA
 from ...schemas.iou import IOU_CONFIGS_SCHEMA
 from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
+from ...schemas.vm import VM_CAPTURE_SCHEMA
 from ...modules.iou import IOU
 
 
@@ -274,7 +274,7 @@ class IOUHandler:
             409: "VM not started"
         },
         description="Start a packet capture on a IOU VM instance",
-        input=IOU_CAPTURE_SCHEMA)
+        input=VM_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
         iou_manager = IOU.instance()

@@ -24,9 +24,9 @@ from ...schemas.nio import NIO_SCHEMA
 from ...schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ...schemas.dynamips_vm import VM_CREATE_SCHEMA
 from ...schemas.dynamips_vm import VM_UPDATE_SCHEMA
-from ...schemas.dynamips_vm import VM_CAPTURE_SCHEMA
 from ...schemas.dynamips_vm import VM_OBJECT_SCHEMA
 from ...schemas.dynamips_vm import VM_CONFIGS_SCHEMA
+from ...schemas.vm import VM_CAPTURE_SCHEMA
 from ...modules.dynamips import Dynamips
 from ...modules.dynamips.dynamips_error import DynamipsError
 from ...modules.project_manager import ProjectManager

@@ -501,3 +501,89 @@ class DockerVM(BaseVM):
             except ValueError:  # Partial JSON
                 pass
         self.project.emit("log.info", {"message": "Success pulling image {}".format(self._image)})
+
+    @asyncio.coroutine
+    def _start_ubridge_capture(self, adapter_number, output_file):
+        """
+        Start a packet capture in uBridge.
+
+        :param adapter_number: adapter number
+        :param output_file: PCAP destination file for the capture
+        """
+
+        adapter = "bridge{}".format(adapter_number)
+        if not self._ubridge_hypervisor:
+            raise VMwareError("Cannot start the packet capture: uBridge is not running")
+        yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=adapter, output_file=output_file))
+
+    @asyncio.coroutine
+    def _stop_ubridge_capture(self, adapter_number):
+        """
+        Stop a packet capture in uBridge.
+
+        :param adapter_number: adapter number
+        """
+
+        adapter = "bridge{}".format(adapter_number)
+        if not self._ubridge_hypervisor:
+            raise VMwareError("Cannot stop the packet capture: uBridge is not running")
+        yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=adapter))
+
+    @asyncio.coroutine
+    def start_capture(self, adapter_number, output_file):
+        """
+        Starts a packet capture.
+
+        :param adapter_number: adapter number
+        :param output_file: PCAP destination file for the capture
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except KeyError:
+            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+
+        if not nio:
+            raise DockerError("Adapter {} is not connected".format(adapter_number))
+
+        if nio.capturing:
+            raise DockerError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
+
+        nio.startPacketCapture(output_file)
+
+        if self.status == "started":
+            yield from self._start_ubridge_capture(adapter_number, output_file)
+
+        log.info("Docker VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                         id=self.id,
+                                                                                                         adapter_number=adapter_number))
+
+    def stop_capture(self, adapter_number):
+        """
+        Stops a packet capture.
+
+        :param adapter_number: adapter number
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except KeyError:
+            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+
+        if not nio:
+            raise DockerError("Adapter {} is not connected".format(adapter_number))
+
+        nio.stopPacketCapture()
+
+        if self.status == "started":
+            yield from self._stop_ubridge_capture(adapter_number)
+
+        log.info("Docker VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                         id=self.id,
+                                                                                                         adapter_number=adapter_number))

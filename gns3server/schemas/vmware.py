@@ -140,20 +140,6 @@ VMWARE_UPDATE_SCHEMA = {
     "additionalProperties": False,
 }
 
-VMWARE_CAPTURE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start a packet capture on a VMware VM instance port",
-    "type": "object",
-    "properties": {
-        "capture_file_name": {
-            "description": "Capture file name",
-            "type": "string",
-            "minLength": 1,
-        },
-    },
-    "additionalProperties": False,
-    "required": ["capture_file_name"]
-}
 
 VMWARE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",

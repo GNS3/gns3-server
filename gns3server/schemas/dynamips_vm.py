@@ -491,25 +491,6 @@ VM_UPDATE_SCHEMA = {
     "additionalProperties": False,
 }
 
-VM_CAPTURE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start a packet capture on a Dynamips VM instance port",
-    "type": "object",
-    "properties": {
-        "capture_file_name": {
-            "description": "Capture file name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "data_link_type": {
-            "description": "PCAP data link type",
-            "type": "string",
-            "minLength": 1,
-        },
-    },
-    "additionalProperties": False,
-    "required": ["capture_file_name", "data_link_type"]
-}
 
 VM_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",

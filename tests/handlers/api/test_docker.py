@@ -123,3 +123,52 @@ def test_docker_update(server, vm, tmpdir, free_console_port):
     assert response.json["console"] == free_console_port
     assert response.json["start_command"] == "yes"
     assert response.json["environment"] == "GNS3=1\nGNS4=0"
+
+
+def test_docker_start_capture(server, vm, tmpdir, project):
+
+    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
+        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.start_capture") as start_capture:
+
+            params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
+            response = server.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params, example=True)
+
+            assert response.status == 200
+
+            assert start_capture.called
+            assert "test.pcap" in response.json["pcap_file_path"]
+
+
+def test_docker_start_capture_not_started(server, vm, tmpdir):
+
+    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=False) as mock:
+        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.start_capture") as start_capture:
+
+            params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
+            response = server.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params)
+
+            assert not start_capture.called
+            assert response.status == 409
+
+
+def test_docker_stop_capture(server, vm, tmpdir, project):
+
+    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
+        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.stop_capture") as stop_capture:
+
+            response = server.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+
+            assert response.status == 204
+
+            assert stop_capture.called
+
+
+def test_docker_stop_capture_not_started(server, vm, tmpdir):
+
+    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=False) as mock:
+        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.stop_capture") as stop_capture:
+
+            response = server.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+
+            assert not stop_capture.called
+            assert response.status == 409

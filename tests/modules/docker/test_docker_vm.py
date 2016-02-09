@@ -133,7 +133,7 @@ def test_create_environment(loop, project, manager):
                 "Env": [
                     "YES=1",
                     "NO=0"
-                ],
+                    ],
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Image": "ubuntu"
@@ -258,9 +258,6 @@ def test_start_without_nio(loop, vm, manager, free_console_port):
 
     assert vm.status != "started"
     vm.adapters = 1
-
-    # nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    # loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
@@ -544,3 +541,23 @@ def test_pull_image(loop, vm):
     with asyncio_patch("gns3server.modules.docker.Docker.http_query", return_value=mock_query) as mock:
         images = loop.run_until_complete(asyncio.async(vm.pull_image("ubuntu")))
         mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"})
+
+
+def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
+
+    output_file = str(tmpdir / "test.pcap")
+    nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.async(vm.start_capture(0, output_file)))
+    assert vm._ethernet_adapters[0].get_nio(0).capturing
+
+
+def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
+
+    output_file = str(tmpdir / "test.pcap")
+    nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(vm.start_capture(0, output_file))
+    assert vm._ethernet_adapters[0].get_nio(0).capturing
+    loop.run_until_complete(asyncio.async(vm.stop_capture(0)))
+    assert vm._ethernet_adapters[0].get_nio(0).capturing is False

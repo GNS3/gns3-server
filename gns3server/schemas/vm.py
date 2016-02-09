@@ -41,3 +41,24 @@ VM_LIST_IMAGES_SCHEMA = {
     ],
     "additionalProperties": False,
 }
+
+
+VM_CAPTURE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a packet capture on a port",
+    "type": "object",
+    "properties": {
+        "capture_file_name": {
+            "description": "Capture file name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "data_link_type": {
+            "description": "PCAP data link type",
+            "type": "string",
+            "minLength": 1,
+        }
+    },
+    "additionalProperties": False,
+    "required": ["capture_file_name"]
+}

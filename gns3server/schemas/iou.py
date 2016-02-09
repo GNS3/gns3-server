@@ -266,25 +266,6 @@ IOU_OBJECT_SCHEMA = {
                  "command_line"]
 }
 
-IOU_CAPTURE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to start a packet capture on a IOU instance",
-    "type": "object",
-    "properties": {
-        "capture_file_name": {
-            "description": "Capture file name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "data_link_type": {
-            "description": "PCAP data link type",
-            "type": "string",
-            "minLength": 1,
-        },
-    },
-    "additionalProperties": False,
-    "required": ["capture_file_name", "data_link_type"]
-}
 
 IOU_CONFIGS_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",

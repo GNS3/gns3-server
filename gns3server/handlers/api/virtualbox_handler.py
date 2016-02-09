@@ -22,8 +22,8 @@ from ...web.route import Route
 from ...schemas.nio import NIO_SCHEMA
 from ...schemas.virtualbox import VBOX_CREATE_SCHEMA
 from ...schemas.virtualbox import VBOX_UPDATE_SCHEMA
-from ...schemas.virtualbox import VBOX_CAPTURE_SCHEMA
 from ...schemas.virtualbox import VBOX_OBJECT_SCHEMA
+from ...schemas.vm import VM_CAPTURE_SCHEMA
 from ...modules.virtualbox import VirtualBox
 from ...modules.project_manager import ProjectManager
 
@@ -342,7 +342,7 @@ class VirtualBoxHandler:
             404: "Instance doesn't exist"
         },
         description="Start a packet capture on a VirtualBox VM instance",
-        input=VBOX_CAPTURE_SCHEMA)
+        input=VM_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
         vbox_manager = VirtualBox.instance()

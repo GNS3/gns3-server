@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from aiohttp.web import HTTPConflict
 
 from ...web.route import Route
@@ -26,6 +27,7 @@ from ...schemas.docker import (
     DOCKER_UPDATE_SCHEMA,
     DOCKER_LIST_IMAGES_SCHEMA
 )
+from ...schemas.vm import VM_CAPTURE_SCHEMA
 from ...schemas.nio import NIO_SCHEMA
 
 
@@ -276,3 +278,60 @@ class DockerHandler:
         vm.environment = request.json.get("environment", vm.environment)
         yield from vm.update()
         response.json(vm)
+
+    @Route.post(
+        r"/projects/{project_id}/docker/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "adapter_number": "Adapter to start a packet capture",
+            "port_number": "Port on the adapter"
+        },
+        status_codes={
+            200: "Capture started",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+            409: "VM not started"
+        },
+        description="Start a packet capture on a IOU VM instance",
+        input=VM_CAPTURE_SCHEMA)
+    def start_capture(request, response):
+
+        iou_manager = Docker.instance()
+        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
+
+        if not vm.is_running():
+            raise HTTPConflict(text="Cannot capture traffic on a non started VM")
+        yield from vm.start_capture(adapter_number, pcap_file_path)
+        response.json({"pcap_file_path": str(pcap_file_path)})
+
+    @Route.post(
+        r"/projects/{project_id}/docker/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the instance",
+            "adapter_number": "Adapter to stop a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            204: "Capture stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+            409: "VM not started"
+        },
+        description="Stop a packet capture on a IOU VM instance")
+    def stop_capture(request, response):
+
+        iou_manager = Docker.instance()
+        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+
+        if not vm.is_running():
+            raise HTTPConflict(text="Cannot capture traffic on a non started VM")
+
+        adapter_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        yield from vm.stop_capture(adapter_number, port_number)
+        response.set_status(204)

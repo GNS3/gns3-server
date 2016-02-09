@@ -976,8 +976,8 @@ class VMwareVM(BaseVM):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except KeyError:
-            raise VMwareError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                        adapter_number=adapter_number))
+            raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
 
         nio = adapter.get_nio(0)
 
