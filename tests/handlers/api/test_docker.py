@@ -24,12 +24,22 @@ import aiohttp
 
 from tests.utils import asyncio_patch
 from unittest.mock import patch, MagicMock, PropertyMock
+from gns3server.modules.docker import Docker
 
 
 @pytest.fixture
 def base_params():
     """Return standard parameters"""
     return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0"}
+
+
+@pytest.yield_fixture(autouse=True)
+def mock_connection():
+    docker = Docker.instance()
+    docker._connected = True
+    docker._connector = MagicMock()
+    yield
+    Docker._instance = None
 
 
 @pytest.fixture
