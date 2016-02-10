@@ -91,8 +91,13 @@ DOCKER_UPDATE_SCHEMA = {
             "description": "Docker environment",
             "type": ["string", "null"],
             "minLength": 0,
+        },
+        "adapters": {
+            "description": "number of adapters",
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 99,
         }
-
     },
     "additionalProperties": False,
 }
