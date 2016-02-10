@@ -398,7 +398,7 @@ class VMware(BaseManager):
                         break
 
                 if vmlist_entry is not None:
-                    for name in inventory_pairs.keys():
+                    for name in inventory_pairs.copy().keys():
                         if name.startswith(vmlist_entry):
                             del inventory_pairs[name]
 
