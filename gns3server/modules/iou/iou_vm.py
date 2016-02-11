@@ -1189,7 +1189,7 @@ class IOUVM(BaseVM):
         try:
             startup_config_content, private_config_content = nvram_export(nvram_content)
         except ValueError as e:
-            log.warning("Could not export configs from nvram file".format(nvram_file, e))
+            log.warning("Could not export configs from nvram file {}: {}".format(nvram_file, e))
             return None, None
 
         return startup_config_content, private_config_content
