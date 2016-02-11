@@ -883,9 +883,9 @@ class VirtualBoxVM(BaseVM):
                 # check if the UDP tunnel has been correctly set
                 vm_info = yield from self._get_vm_info()
                 generic_driver_number = "generic{}".format(adapter_number + 1)
-                if not generic_driver_number in vm_info and vm_info[generic_driver_number] != "UDPTunnel":
-                    log.warning("UDP tunnel has not been set on nic: {}\n{}".format(adapter_number + 1))
-                    self.project.emit("log.warning", {"message": "UDP tunnel has not been set on nic: {}\n{}".format(adapter_number + 1)})
+                if generic_driver_number not in vm_info and vm_info[generic_driver_number] != "UDPTunnel":
+                    log.warning("UDP tunnel has not been set on nic: {}".format(adapter_number + 1))
+                    self.project.emit("log.warning", {"message": "UDP tunnel has not been set on nic: {}".format(adapter_number + 1)})
 
             elif isinstance(nio, NIONAT):
                 yield from self._control_vm("nic{} nat".format(adapter_number + 1))
