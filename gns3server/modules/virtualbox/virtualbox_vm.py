@@ -879,6 +879,14 @@ class VirtualBoxVM(BaseVM):
                 yield from self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
                 yield from self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
                 yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+
+                # check if the UDP tunnel has been correctly set
+                vm_info = yield from self._get_vm_info()
+                generic_driver_number = "generic{}".format(adapter_number + 1)
+                if not generic_driver_number in vm_info and vm_info[generic_driver_number] != "UDPTunnel":
+                    log.warning("UDP tunnel has not been set on nic: {}\n{}".format(adapter_number + 1))
+                    self.project.emit("log.warning", {"message": "UDP tunnel has not been set on nic: {}\n{}".format(adapter_number + 1)})
+
             elif isinstance(nio, NIONAT):
                 yield from self._control_vm("nic{} nat".format(adapter_number + 1))
                 yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
