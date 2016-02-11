@@ -31,6 +31,7 @@ def test_query_success(loop):
     vm._connected = True
     response = MagicMock()
     response.status = 200
+    response.headers = {'CONTENT-TYPE': 'application/json'}
 
     @asyncio.coroutine
     def read():

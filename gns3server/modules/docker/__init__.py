@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 from ..base_manager import BaseManager
 from ..project_manager import ProjectManager
 from .docker_vm import DockerVM
-from .docker_error import DockerError
+from .docker_error import *
 
 
 class Docker(BaseManager):
@@ -70,10 +70,14 @@ class Docker(BaseManager):
         :param data: Dictionnary with the body. Will be transformed to a JSON
         :param params: Parameters added as a query arg
         """
+
         response = yield from self.http_query(method, path, data=data, params=params)
         body = yield from response.read()
         if len(body):
-            body = json.loads(body.decode("utf-8"))
+            if response.headers['CONTENT-TYPE'] == 'application/json':
+                body = json.loads(body.decode("utf-8"))
+            else:
+                body = body.decode("utf-8")
         log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
         return body
 
@@ -105,7 +109,12 @@ class Docker(BaseManager):
             except ValueError:
                 pass
             log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
-            raise DockerError("Docker has returned an error: {} {}".format(response.status, body))
+            if response.status == 304:
+                raise DockerHttp304Error("Docker has returned an error: {} {}".format(response.status, body))
+            elif response.status == 404:
+                raise DockerHttp404Error("Docker has returned an error: {} {}".format(response.status, body))
+            else:
+                raise DockerError("Docker has returned an error: {} {}".format(response.status, body))
         return response
 
     @asyncio.coroutine

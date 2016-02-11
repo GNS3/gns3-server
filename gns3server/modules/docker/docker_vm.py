@@ -27,11 +27,14 @@ import aiohttp
 import json
 
 from ...ubridge.hypervisor import Hypervisor
-from .docker_error import DockerError
+from .docker_error import *
 from ..base_vm import BaseVM
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ...utils.asyncio.telnet_server import AsyncioTelnetServer
+
+from ...ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -165,11 +168,23 @@ class DockerVM(BaseVM):
         else:
             result = yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
 
+            namespace = yield from self._get_namespace()
+
             yield from self._start_ubridge()
+
             for adapter_number in range(0, self.adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
                 with (yield from self.manager.ubridge_lock):
-                    yield from self._add_ubridge_connection(nio, adapter_number)
+                    try:
+                        yield from self._add_ubridge_connection(nio, adapter_number, namespace)
+                    except UbridgeNamespaceError:
+                        yield from self.stop()
+
+                        # The container can crash soon after the start this mean we can not move the interface to the container namespace
+                        logdata = yield from self._get_log()
+                        for line in logdata.split('\n'):
+                            log.error(line)
+                        raise DockerError(logdata)
 
             yield from self._start_console()
 
@@ -258,10 +273,15 @@ class DockerVM(BaseVM):
             if self._telnet_server:
                 self._telnet_server.close()
                 self._telnet_server = None
+
             # t=5 number of seconds to wait before killing the container
-            yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
-            log.info("Docker container '{name}' [{image}] stopped".format(
-                name=self._name, image=self._image))
+            try:
+                yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
+                log.info("Docker container '{name}' [{image}] stopped".format(
+                    name=self._name, image=self._image))
+            except DockerHttp304Error:
+                # Container is already stopped
+                pass
         # Ignore runtime error because when closing the server
         except RuntimeError as e:
             log.debug("Docker runtime error when closing: {}".format(str(e)))
@@ -334,12 +354,13 @@ class DockerVM(BaseVM):
         self._closed = True
 
     @asyncio.coroutine
-    def _add_ubridge_connection(self, nio, adapter_number):
+    def _add_ubridge_connection(self, nio, adapter_number, namespace):
         """
         Creates a connection in uBridge.
 
         :param nio: NIO instance or None if it's a dummu interface (if an interface is missing in ubridge you can't see it via ifconfig in the container)
         :param adapter_number: adapter number
+        :param namespace: Container namespace (pid)
         """
         try:
             adapter = self._ethernet_adapters[adapter_number]
@@ -362,11 +383,13 @@ class DockerVM(BaseVM):
             'docker create_veth {hostif} {guestif}'.format(
                 guestif=adapter.guest_ifc, hostif=adapter.host_ifc))
 
-        namespace = yield from self._get_namespace()
         log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.guest_ifc, namespace)
-        yield from self._ubridge_hypervisor.send(
-            'docker move_to_ns {ifc} {ns} eth{adapter}'.format(
-                ifc=adapter.guest_ifc, ns=namespace, adapter=adapter_number))
+        try:
+            yield from self._ubridge_hypervisor.send(
+                'docker move_to_ns {ifc} {ns} eth{adapter}'.format(
+                    ifc=adapter.guest_ifc, ns=namespace, adapter=adapter_number))
+        except UbridgeError as e:
+            raise UbridgeNamespaceError(e)
 
         if isinstance(nio, NIOUDP):
             yield from self._ubridge_hypervisor.send(
@@ -587,3 +610,14 @@ class DockerVM(BaseVM):
         log.info("Docker VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
                                                                                                          id=self.id,
                                                                                                          adapter_number=adapter_number))
+
+    @asyncio.coroutine
+    def _get_log(self):
+        """
+        Return the log from the container
+
+        :returns: string
+        """
+
+        result = yield from self.manager.query("GET", "containers/{}/logs".format(self._cid), params={"stderr": 1, "stdout": 1})
+        return result

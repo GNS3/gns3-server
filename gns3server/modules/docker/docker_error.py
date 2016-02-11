@@ -24,3 +24,11 @@ from ..vm_error import VMError
 
 class DockerError(VMError):
     pass
+
+
+class DockerHttp304Error(DockerError):
+    pass
+
+
+class DockerHttp404Error(DockerError):
+    pass
