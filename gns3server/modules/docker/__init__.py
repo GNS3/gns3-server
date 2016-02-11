@@ -24,6 +24,7 @@ import logging
 import aiohttp
 import urllib
 import json
+from pkg_resources import parse_version
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ from ..base_manager import BaseManager
 from ..project_manager import ProjectManager
 from .docker_vm import DockerVM
 from .docker_error import *
+
+DOCKER_MINIMUM_API_VERSION = "1.21"
 
 
 class Docker(BaseManager):
@@ -50,10 +53,13 @@ class Docker(BaseManager):
             try:
                 self._connector = aiohttp.connector.UnixConnector(self._server_url)
                 self._connected = True
-                yield from self.query("GET", "info")
+                version = yield from self.query("GET", "version")
             except (aiohttp.errors.ClientOSError, FileNotFoundError):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
+
+            if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
+                raise DockerError("Docker API version is {}. But GNS3 require a minimum API version {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
         return self._connector
 
     def __del__(self):
