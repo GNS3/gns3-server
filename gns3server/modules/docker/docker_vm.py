@@ -359,8 +359,8 @@ class DockerVM(BaseVM):
                         if nio and isinstance(nio, NIOUDP):
                             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         # Ignore runtime error because when closing the server
-        except RuntimeError as e:
-            log.debug("Docker runtime error when closing: {}".format(str(e)))
+        except (DockerHttp404Error, RuntimeError) as e:
+            log.debug("Docker error when closing: {}".format(str(e)))
             return
 
     @asyncio.coroutine
