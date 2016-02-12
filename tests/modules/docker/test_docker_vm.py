@@ -352,6 +352,9 @@ def test_update(loop, vm):
         "Id": "e90e34656806",
         "Warnings": []
     }
+
+    original_console = vm.console
+
     with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
             with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock_query:
@@ -373,6 +376,7 @@ def test_update(loop, vm):
         "Name": "test",
         "Image": "ubuntu"
     })
+    assert vm.console == original_console
 
 
 def test_remove(loop, vm):
