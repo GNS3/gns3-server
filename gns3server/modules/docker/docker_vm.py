@@ -133,7 +133,10 @@ class DockerVM(BaseVM):
         :returns: Return the path that we need to map to local folders
         """
         binds = []
-        for volume in image_infos.get("ContainerConfig", {}).get("Volumes", {}).keys():
+        volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
+        if volumes is None:
+            return binds
+        for volume in volumes.keys():
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
             binds.append("{}:{}".format(source, volume))
