@@ -18,6 +18,7 @@
 import pytest
 import uuid
 import asyncio
+import os
 from tests.utils import asyncio_patch
 
 from gns3server.ubridge.ubridge_error import UbridgeNamespaceError
@@ -54,7 +55,8 @@ def test_json(vm, project):
         'adapters': 1,
         'console': vm.console,
         'start_command': vm.start_command,
-        'environment': vm.environment
+        'environment': vm.environment,
+        'vm_directory': vm.working_dir
     }
 
 
@@ -75,8 +77,10 @@ def test_create(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
+                        "Binds": [],
                         "Privileged": True
                     },
+                "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Image": "ubuntu"
@@ -102,8 +106,10 @@ def test_create_start_cmd(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
+                        "Binds": [],
                         "Privileged": True
                     },
+                "Volumes": {},
                 "Cmd": ["/bin/ls"],
                 "NetworkDisabled": True,
                 "Name": "test",
@@ -130,12 +136,11 @@ def test_create_environment(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
+                        "Binds": [],
                         "Privileged": True
                     },
-                "Env": [
-                    "YES=1",
-                    "NO=0"
-                    ],
+                "Env": ["YES=1", "NO=0"],
+                "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Image": "ubuntu"
@@ -161,8 +166,10 @@ def test_create_image_not_available(loop, project, manager):
                     "HostConfig":
                         {
                             "CapAdd": ["ALL"],
+                            "Binds": [],
                             "Privileged": True
                         },
+                    "Volumes": {},
                     "NetworkDisabled": True,
                     "Name": "test",
                     "Image": "ubuntu"
@@ -358,11 +365,13 @@ def test_update(loop, vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
+            "Binds": [],
             "Privileged": True
         },
-            "NetworkDisabled": True,
-            "Name": "test",
-            "Image": "ubuntu"
+        "Volumes": {},
+        "NetworkDisabled": True,
+        "Name": "test",
+        "Image": "ubuntu"
     })
 
 
@@ -602,3 +611,29 @@ def test_get_log(loop, vm):
     with asyncio_patch("gns3server.modules.docker.Docker.http_query", return_value=mock_query) as mock:
         images = loop.run_until_complete(asyncio.async(vm._get_log()))
         mock.assert_called_with("GET", "containers/e90e34656842/logs", params={"stderr": 1, "stdout": 1}, data={})
+
+
+def test_get_image_informations(project, manager, loop):
+    response = {
+    }
+    with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
+        vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+        loop.run_until_complete(asyncio.async(vm._get_image_informations()))
+        mock.assert_called_with("GET", "images/ubuntu/json")
+
+
+def test_mount_binds(vm, tmpdir):
+    image_infos = {
+        "ContainerConfig": {
+            "Volumes": {
+                "/test/experimental": {}
+            }
+        }
+    }
+
+    dst = os.path.join(vm.working_dir, "test/experimental")
+    assert vm._mount_binds(image_infos) == [
+        "{}:{}".format(dst, "/test/experimental")
+    ]
+
+    assert os.path.exists(dst)

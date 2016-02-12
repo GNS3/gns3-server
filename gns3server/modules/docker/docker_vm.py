@@ -25,6 +25,7 @@ import psutil
 import shlex
 import aiohttp
 import json
+import os
 
 from ...ubridge.hypervisor import Hypervisor
 from .docker_error import *
@@ -84,7 +85,8 @@ class DockerVM(BaseVM):
             "adapters": self.adapters,
             "console": self.console,
             "start_command": self.start_command,
-            "environment": self.environment
+            "environment": self.environment,
+            "vm_directory": self.working_dir
         }
 
     @property
@@ -119,8 +121,30 @@ class DockerVM(BaseVM):
         return "exited"
 
     @asyncio.coroutine
+    def _get_image_informations(self):
+        """
+        :returns: Dictionnary informations about the container image
+        """
+        result = yield from self.manager.query("GET", "images/{}/json".format(self._image))
+        return result
+
+    def _mount_binds(self, image_infos):
+        """
+        :returns: Return the path that we need to map to local folders
+        """
+        binds = []
+        for volume in image_infos.get("ContainerConfig", {}).get("Volumes", {}).keys():
+            source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
+            os.makedirs(source, exist_ok=True)
+            binds.append("{}:{}".format(source, volume))
+        return binds
+
+    @asyncio.coroutine
     def create(self):
         """Creates the Docker container."""
+
+        image_infos = yield from self._get_image_informations()
+
         params = {
             "Name": self._name,
             "Image": self._image,
@@ -130,8 +154,10 @@ class DockerVM(BaseVM):
             "StdinOnce": False,
             "HostConfig": {
                 "CapAdd": ["ALL"],
-                "Privileged": True
-            }
+                "Privileged": True,
+                "Binds": self._mount_binds(image_infos)
+            },
+            "Volumes": {}
         }
         if self._start_command:
             params.update({"Cmd": shlex.split(self._start_command)})
