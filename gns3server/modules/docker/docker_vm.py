@@ -452,7 +452,7 @@ class DockerVM(BaseVM):
             name=adapter_number))
 
         adapter = self._ethernet_adapters[adapter_number]
-        yield from self._ubridge_hypervisor.send('docker delete_veth {hostif} {guestif}'.format(guestif=adapter.guest_ifc, hostif=adapter.host_ifc))
+        yield from self._ubridge_hypervisor.send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
 
     @asyncio.coroutine
     def _get_namespace(self):
