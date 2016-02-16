@@ -127,6 +127,11 @@ class AsyncioTelnetServer:
                 data = coro.result()
                 if coro == network_read:
                     network_read = asyncio.async(network_reader.read(READ_SIZE))
+
+                    # Remote console is closed
+                    if len(data) == 0:
+                        raise ConnectionResetError()
+
                     if IAC in data:
                         data = yield from self._IAC_parser(data, network_reader, network_writer)
                     if self._writer:
