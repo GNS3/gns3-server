@@ -514,7 +514,7 @@ def test_delete_ubridge_connection(loop, vm):
 
     calls = [
         call.send("bridge delete bridge0"),
-        call.send('docker delete_veth gns3-veth0ext gns3-veth0int')
+        call.send('docker delete_veth gns3-veth0ext')
     ]
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
