@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.4.2 17/02/2016
+* Fix missing format in IOU export
+* Fix number of arguments to the UDP errors on VBOX
+* Add verification when UDP tunnel is created in a VirtualBox VM. Ref #899.
+* Fixes VMware linked clone cleanup bug. Fixes #420.
+* Removed docker support from 1.4 (drop unused code)
+* Fix a crash if you create a file named IOS in the image dir
+* Disallow creating project with " in the path
+* Always look at the registry to find vmrun.exe on Windows.
+* Check for VMware VIX library version. Fixes #413.
+* Fixes VDE not working #345.
+* Do not list qemu binary with -spice in the name
+* Send command line used to start the VM to client
+* Fix crash if you have a { in your user name
+
 ## 1.4.1 01/02/2016
 * VMware raise error if version is not found
 * For topologies before 1.4 manage qemu missing
