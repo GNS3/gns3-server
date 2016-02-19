@@ -68,7 +68,6 @@ def test_start_command(vm):
     assert vm.start_command is None
 
 
-
 def test_create(loop, project, manager):
 
     response = {

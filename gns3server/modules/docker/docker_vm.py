@@ -299,16 +299,17 @@ class DockerVM(BaseVM):
         """Stops this Docker container."""
 
         try:
+            if self._telnet_server:
+                self._telnet_server.close()
+                yield from self._telnet_server.wait_closed()
+                self._telnet_server = None
+
             if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
                 yield from self._ubridge_hypervisor.stop()
 
             state = yield from self._get_container_state()
             if state == "paused":
                 yield from self.unpause()
-
-            if self._telnet_server:
-                self._telnet_server.close()
-                self._telnet_server = None
 
             # t=5 number of seconds to wait before killing the container
             try:
