@@ -60,6 +60,15 @@ def test_json(vm, project):
     }
 
 
+def test_start_command(vm):
+
+    vm.start_command = "hello"
+    assert vm.start_command == "hello"
+    vm.start_command = " "
+    assert vm.start_command is None
+
+
+
 def test_create(loop, project, manager):
 
     response = {

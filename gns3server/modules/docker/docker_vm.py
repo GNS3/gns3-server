@@ -95,7 +95,11 @@ class DockerVM(BaseVM):
 
     @start_command.setter
     def start_command(self, command):
-        self._start_command = command
+        command = command.strip()
+        if len(command) == 0:
+            self._start_command = None
+        else:
+            self._start_command = command
 
     @property
     def environment(self):
