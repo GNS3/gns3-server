@@ -161,6 +161,8 @@ class VMware(BaseManager):
             return
         else:
             if sys.platform.startswith("darwin"):
+                if not os.path.isdir("/Applications/VMware Fusion.app"):
+                    raise VMwareError("VMware Fusion is not installed")
                 return  # FIXME: no version checking on Mac OS X
 
             vmware_path = VMware._get_linux_vmware_binary()
