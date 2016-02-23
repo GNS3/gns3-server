@@ -82,6 +82,9 @@ class AsyncioTelnetServer:
             yield from self._process(network_reader, network_writer)
         except ConnectionResetError:
             with (yield from self._lock):
+
+                network_writer.close()
+
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
