@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.4.4 23/02/2016
+* Check if VMware Fusion is correctly installed when retrieving the VM list.
+
 ## 1.4.3 19/02/2016
 * Nothing! (changes made in the GUI only).
 
