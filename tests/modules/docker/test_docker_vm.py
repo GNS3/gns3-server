@@ -91,6 +91,7 @@ def test_create(loop, project, manager):
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
+                "Hostname": "test",
                 "Image": "ubuntu"
             })
         assert vm._cid == "e90e34656806"
@@ -121,6 +122,7 @@ def test_create_start_cmd(loop, project, manager):
                 "Cmd": ["/bin/ls"],
                 "NetworkDisabled": True,
                 "Name": "test",
+                "Hostname": "test",
                 "Image": "ubuntu"
             })
         assert vm._cid == "e90e34656806"
@@ -151,6 +153,7 @@ def test_create_environment(loop, project, manager):
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
+                "Hostname": "test",
                 "Image": "ubuntu"
             })
         assert vm._cid == "e90e34656806"
@@ -180,6 +183,7 @@ def test_create_image_not_available(loop, project, manager):
                     "Volumes": {},
                     "NetworkDisabled": True,
                     "Name": "test",
+                    "Hostname": "test",
                     "Image": "ubuntu"
                 })
             assert vm._cid == "e90e34656806"
@@ -382,6 +386,7 @@ def test_update(loop, vm):
         "Volumes": {},
         "NetworkDisabled": True,
         "Name": "test",
+        "Hostname": "test",
         "Image": "ubuntu"
     })
     assert vm.console == original_console

@@ -153,6 +153,7 @@ class DockerVM(BaseVM):
         image_infos = yield from self._get_image_informations()
 
         params = {
+            "Hostname": self._name,
             "Name": self._name,
             "Image": self._image,
             "NetworkDisabled": True,
