@@ -23,7 +23,7 @@ from tests.utils import asyncio_patch
 
 from gns3server.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.modules.docker.docker_vm import DockerVM
-from gns3server.modules.docker.docker_error import DockerError
+from gns3server.modules.docker.docker_error import *
 from gns3server.modules.docker import Docker
 
 
@@ -161,33 +161,47 @@ def test_create_environment(loop, project, manager):
 
 def test_create_image_not_available(loop, project, manager):
 
+    call = 0
+
+    @asyncio.coroutine
+    def informations():
+        nonlocal call
+        if call == 0:
+            call += 1
+            raise DockerHttp404Error("missing")
+        else:
+            return {}
+
     response = {
         "Id": "e90e34656806",
         "Warnings": []
     }
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[]) as mock_list_images:
-        with asyncio_patch("gns3server.modules.docker.DockerVM.pull_image", return_value=True) as mock_pull:
-            with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
-                vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
-                loop.run_until_complete(asyncio.async(vm.create()))
-                mock.assert_called_with("POST", "containers/create", data={
-                    "Tty": True,
-                    "OpenStdin": True,
-                    "StdinOnce": False,
-                    "HostConfig":
-                        {
-                            "CapAdd": ["ALL"],
-                            "Binds": [],
-                            "Privileged": True
-                        },
-                    "Volumes": {},
-                    "NetworkDisabled": True,
-                    "Name": "test",
-                    "Hostname": "test",
-                    "Image": "ubuntu"
-                })
-            assert vm._cid == "e90e34656806"
-            mock_pull.assert_called_with("ubuntu")
+
+    vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+    vm._get_image_informations = MagicMock()
+    vm._get_image_informations.side_effect = informations
+
+    with asyncio_patch("gns3server.modules.docker.DockerVM.pull_image", return_value=True) as mock_pull:
+        with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
+            loop.run_until_complete(asyncio.async(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu"
+            })
+        assert vm._cid == "e90e34656806"
+        mock_pull.assert_called_with("ubuntu")
 
 
 def test_get_container_state(loop, vm):

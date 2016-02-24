@@ -150,7 +150,12 @@ class DockerVM(BaseVM):
     def create(self):
         """Creates the Docker container."""
 
-        image_infos = yield from self._get_image_informations()
+        try:
+            image_infos = yield from self._get_image_informations()
+        except DockerHttp404Error:
+            log.info("Image %s is missing pulling it from docker hub", self._image)
+            yield from self.pull_image(self._image)
+            image_infos = yield from self._get_image_informations()
 
         params = {
             "Hostname": self._name,
@@ -172,11 +177,6 @@ class DockerVM(BaseVM):
 
         if self._environment:
             params.update({"Env": [e.strip() for e in self._environment.split("\n")]})
-
-        images = [i["image"] for i in (yield from self.manager.list_images())]
-        if self._image not in images:
-            log.info("Image %s is missing pulling it from docker hub", self._image)
-            yield from self.pull_image(self._image)
 
         result = yield from self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
