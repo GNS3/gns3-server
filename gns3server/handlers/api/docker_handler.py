@@ -297,8 +297,8 @@ class DockerHandler:
         input=VM_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
-        iou_manager = Docker.instance()
-        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        docker_manager = Docker.instance()
+        vm = docker_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
@@ -325,8 +325,8 @@ class DockerHandler:
         description="Stop a packet capture on a IOU VM instance")
     def stop_capture(request, response):
 
-        iou_manager = Docker.instance()
-        vm = iou_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        docker_manager = Docker.instance()
+        vm = docker_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
 
         if not vm.is_running():
             raise HTTPConflict(text="Cannot capture traffic on a non started VM")
