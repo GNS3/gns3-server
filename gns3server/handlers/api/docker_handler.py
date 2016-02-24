@@ -300,7 +300,6 @@ class DockerHandler:
         docker_manager = Docker.instance()
         vm = docker_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
-        port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
 
         if not vm.is_running():
@@ -332,6 +331,5 @@ class DockerHandler:
             raise HTTPConflict(text="Cannot capture traffic on a non started VM")
 
         adapter_number = int(request.match_info["adapter_number"])
-        port_number = int(request.match_info["port_number"])
-        yield from vm.stop_capture(adapter_number, port_number)
+        yield from vm.stop_capture(adapter_number)
         response.set_status(204)
