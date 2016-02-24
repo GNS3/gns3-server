@@ -454,6 +454,9 @@ class DockerVM(BaseVM):
 
         :param adapter_number: adapter number
         """
+        if not self._ubridge_hypervisor:
+            return
+
         yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
             name=adapter_number))
 
@@ -504,8 +507,7 @@ class DockerVM(BaseVM):
                     name=self.name, adapter_number=adapter_number))
 
         adapter.remove_nio(0)
-        if not self._ubridge_hypervisor:
-            yield from self._delete_ubridge_connection(adapter_number)
+        yield from self._delete_ubridge_connection(adapter_number)
 
         log.info(
             "Docker VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(
