@@ -189,11 +189,15 @@ class DockerVM(BaseVM):
         """
         Destroy an recreate the container with the new settings
         """
-        # We need to save the console port and restore it
+        # We need to save the console and state and restore it
         console = self.console
+        state = yield from self._get_container_state()
+
         yield from self.remove()
         yield from self.create()
         self.console = console
+        if state == "running":
+            yield from self.start()
 
     @asyncio.coroutine
     def start(self):

@@ -392,6 +392,43 @@ def test_update(loop, vm):
     assert vm.console == original_console
 
 
+def test_update_running(loop, vm):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    original_console = vm.console
+    vm.start = MagicMock()
+
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+        with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="running"):
+            with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock_query:
+                loop.run_until_complete(asyncio.async(vm.update()))
+
+    mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1})
+    mock_query.assert_any_call("POST", "containers/create", data={
+        "Tty": True,
+        "OpenStdin": True,
+        "StdinOnce": False,
+        "HostConfig":
+        {
+            "CapAdd": ["ALL"],
+            "Binds": [],
+            "Privileged": True
+        },
+        "Volumes": {},
+        "NetworkDisabled": True,
+        "Name": "test",
+        "Hostname": "test",
+        "Image": "ubuntu"
+    })
+
+    assert vm.console == original_console
+    assert vm.start.called
+
+
 def test_remove(loop, vm):
 
     with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
