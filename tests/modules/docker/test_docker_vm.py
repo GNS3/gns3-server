@@ -54,6 +54,7 @@ def test_json(vm, project):
         'vm_id': vm.id,
         'adapters': 1,
         'console': vm.console,
+        'console_type': 'telnet',
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
@@ -93,8 +94,43 @@ def test_create(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu"
+                "Image": "ubuntu",
+                "Env": []
             })
+        assert vm._cid == "e90e34656806"
+
+
+def test_create_vnc(loop, project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+        with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", console_type="vnc")
+            vm._start_vnc = MagicMock()
+            vm._display = 42
+            loop.run_until_complete(asyncio.async(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": ['/tmp/.X11-unix/:/tmp/.X11-unix/'],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu",
+                "Env": ['DISPLAY=:42']
+            })
+        assert vm._start_vnc.called
         assert vm._cid == "e90e34656806"
 
 
@@ -124,7 +160,8 @@ def test_create_start_cmd(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu"
+                "Image": "ubuntu",
+                "Env": []
             })
         assert vm._cid == "e90e34656806"
 
@@ -199,7 +236,8 @@ def test_create_image_not_available(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu"
+                "Image": "ubuntu",
+                "Env": []
             })
         assert vm._cid == "e90e34656806"
         mock_pull.assert_called_with("ubuntu")
@@ -402,7 +440,8 @@ def test_update(loop, vm):
         "NetworkDisabled": True,
         "Name": "test",
         "Hostname": "test",
-        "Image": "ubuntu"
+        "Image": "ubuntu",
+        "Env": []
     })
     assert vm.console == original_console
 
@@ -437,39 +476,20 @@ def test_update_running(loop, vm):
         "NetworkDisabled": True,
         "Name": "test",
         "Hostname": "test",
-        "Image": "ubuntu"
+        "Image": "ubuntu",
+        "Env": []
     })
 
     assert vm.console == original_console
     assert vm.start.called
 
 
-def test_remove(loop, vm):
+def test_delete(loop, vm):
 
     with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
-            loop.run_until_complete(asyncio.async(vm.remove()))
+            loop.run_until_complete(asyncio.async(vm.delete()))
     mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
-
-
-def test_remove_paused(loop, vm):
-
-    with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="paused"):
-        with asyncio_patch("gns3server.modules.docker.DockerVM.unpause") as mock_unpause:
-            with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
-                loop.run_until_complete(asyncio.async(vm.remove()))
-    mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
-    assert mock_unpause.called
-
-
-def test_remove_running(loop, vm):
-
-    with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="running"):
-        with asyncio_patch("gns3server.modules.docker.DockerVM.stop") as mock_stop:
-            with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
-                loop.run_until_complete(asyncio.async(vm.remove()))
-    mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
-    assert mock_stop.called
 
 
 def test_close(loop, vm, port_manager):
@@ -480,11 +500,28 @@ def test_close(loop, vm, port_manager):
     nio = vm.manager.create_nio(0, nio)
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
 
-    with asyncio_patch("gns3server.modules.docker.DockerVM.remove") as mock_remove:
-        loop.run_until_complete(asyncio.async(vm.close()))
-    assert mock_remove.called
+    with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
+            loop.run_until_complete(asyncio.async(vm.close()))
+    mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
+
     assert vm._closed is True
     assert "4242" not in port_manager.udp_ports
+
+
+def test_close_vnc(loop, vm, port_manager):
+
+    vm._console_type = "vnc"
+    vm._x11vnc_process = MagicMock()
+    vm._xvfb_process = MagicMock()
+
+    with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
+            loop.run_until_complete(asyncio.async(vm.close()))
+    mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
+
+    assert vm._closed is True
+    assert vm._xvfb_process.terminate.called
 
 
 def test_get_namespace(loop, vm):
@@ -706,3 +743,19 @@ def test_mount_binds(vm, tmpdir):
     ]
 
     assert os.path.exists(dst)
+
+
+def test_start_vnc(vm, loop):
+    with patch("shutil.which", return_value="/bin/x"):
+        with asyncio_patch("gns3server.modules.docker.docker_vm.wait_for_file_creation") as mock_wait:
+            with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
+                loop.run_until_complete(asyncio.async(vm._start_vnc()))
+    assert vm._display is not None
+    mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1024x768x16")
+    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-noncache", "-listen", "127.0.0.1")
+    mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
+
+
+def test_start_vnc_xvfb_missing(vm, loop):
+    with pytest.raises(DockerError):
+        loop.run_until_complete(asyncio.async(vm._start_vnc()))

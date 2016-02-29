@@ -70,7 +70,10 @@ class DockerHandler:
             image=request.json.pop("image"),
             start_command=request.json.get("start_command"),
             environment=request.json.get("environment"),
-            adapters=request.json.get("adapters")
+            adapters=request.json.get("adapters"),
+            console=request.json.get("console"),
+            console_type=request.json.get("console_type"),
+            aux=request.json.get("aux")
         )
         for name, value in request.json.items():
             if name != "_vm_id":
@@ -167,7 +170,7 @@ class DockerHandler:
         container = docker_manager.get_vm(
             request.match_info["id"],
             project_id=request.match_info["project_id"])
-        yield from container.remove()
+        yield from container.delete()
         response.set_status(204)
 
     @classmethod

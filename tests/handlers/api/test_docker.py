@@ -30,7 +30,7 @@ from gns3server.modules.docker import Docker
 @pytest.fixture
 def base_params():
     """Return standard parameters"""
-    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0"}
+    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0", "console_type": "telnet"}
 
 
 @pytest.yield_fixture(autouse=True)
@@ -89,7 +89,7 @@ def test_docker_reload(server, vm):
 
 
 def test_docker_delete(server, vm):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.remove", return_value=True) as mock:
+    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.delete", return_value=True) as mock:
         response = server.delete("/projects/{project_id}/docker/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204

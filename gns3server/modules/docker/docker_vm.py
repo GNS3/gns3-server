@@ -33,6 +33,7 @@ from ..base_vm import BaseVM
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ...utils.asyncio.telnet_server import AsyncioTelnetServer
+from ...utils.asyncio import wait_for_file_creation
 
 from ...ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 
@@ -50,11 +51,14 @@ class DockerVM(BaseVM):
     :param manager: Manager instance
     :param image: Docker image
     :param console: TCP console port
+    :param console_type: Console type
     :param aux: TCP aux console port
     """
 
-    def __init__(self, name, vm_id, project, manager, image, console=None, aux=None, start_command=None, adapters=None, environment=None):
-        super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True)
+    def __init__(self, name, vm_id, project, manager, image,
+                 console=None, aux=None, start_command=None,
+                 adapters=None, environment=None, console_type="telnet"):
+        super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
         self._image = image
         self._start_command = start_command
@@ -85,11 +89,24 @@ class DockerVM(BaseVM):
             "image": self._image,
             "adapters": self.adapters,
             "console": self.console,
+            "console_type": self.console_type,
             "aux": self.aux,
             "start_command": self.start_command,
             "environment": self.environment,
             "vm_directory": self.working_dir
         }
+
+    def _get_free_display_port(self):
+        """
+        Search a free display port
+        """
+        display = 100
+        if not os.path.exists("/tmp/.X11-unix/"):
+            return display
+        while True:
+            if not os.path.exists("/tmp/.X11-unix/X{}".format(display)):
+                return display
+            display += 1
 
     @property
     def start_command(self):
@@ -172,13 +189,19 @@ class DockerVM(BaseVM):
                 "Privileged": True,
                 "Binds": self._mount_binds(image_infos)
             },
-            "Volumes": {}
+            "Volumes": {},
+            "Env": []
         }
         if self._start_command:
             params.update({"Cmd": shlex.split(self._start_command)})
 
         if self._environment:
-            params.update({"Env": [e.strip() for e in self._environment.split("\n")]})
+            params["Env"] += [e.strip() for e in self._environment.split("\n")]
+
+        if self._console_type == "vnc":
+            yield from self._start_vnc()
+            params["Env"].append("DISPLAY=:{}".format(self._display))
+            params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
 
         result = yield from self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
@@ -195,7 +218,7 @@ class DockerVM(BaseVM):
         console = self.console
         state = yield from self._get_container_state()
 
-        yield from self.remove()
+        yield from self.close()
         yield from self.create()
         self.console = console
         if state == "running":
@@ -229,10 +252,26 @@ class DockerVM(BaseVM):
                             log.error(line)
                         raise DockerError(logdata)
 
-            yield from self._start_console()
+            if self.console_type == "telnet":
+                yield from self._start_console()
 
         self.status = "started"
         log.info("Docker container '{name}' [{image}] started listen for telnet on {console}".format(name=self._name, image=self._image, console=self._console))
+
+    @asyncio.coroutine
+    def _start_vnc(self):
+        """
+        Start a VNC server for this container
+        """
+
+        self._display = self._get_free_display_port()
+        if shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
+            raise DockerError("Please install Xvfb and x11vnc before using the VNC support")
+        self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", "1024x768x16")
+        self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
+
+        x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
+        yield from wait_for_file_creation(x11_socket)
 
     @asyncio.coroutine
     def _start_console(self):
@@ -348,22 +387,25 @@ class DockerVM(BaseVM):
         self.status = "started"
 
     @asyncio.coroutine
-    def remove(self):
-        """Removes this Docker container."""
+    def close(self):
+        """Closes this Docker container."""
+
+        if not (yield from super().close()):
+            return False
 
         try:
+            if self.console_type == "vnc":
+                self._x11vnc_process.terminate()
+                self._xvfb_process.terminate()
+                yield from self._x11vnc_process.wait()
+                yield from self._xvfb_process.wait()
+
             state = yield from self._get_container_state()
-            if state == "paused":
-                yield from self.unpause()
-            if state == "running":
+            if state == "paused" or state == "running":
                 yield from self.stop()
             yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1})
             log.info("Docker container '{name}' [{image}] removed".format(
                 name=self._name, image=self._image))
-
-            if self._console:
-                self._manager.port_manager.release_tcp_port(self._console, self._project)
-                self._console = None
 
             for adapter in self._ethernet_adapters:
                 if adapter is not None:
@@ -374,22 +416,6 @@ class DockerVM(BaseVM):
         except (DockerHttp404Error, RuntimeError) as e:
             log.debug("Docker error when closing: {}".format(str(e)))
             return
-
-    @asyncio.coroutine
-    def close(self):
-        """Closes this Docker container."""
-
-        if not (yield from super().close()):
-            return False
-
-        for adapter in self._ethernet_adapters:
-            if adapter is not None:
-                for nio in adapter.ports.values():
-                    if nio and isinstance(nio, NIOUDP):
-                        self.manager.port_manager.release_udp_port(
-                            nio.lport, self._project)
-
-        yield from self.remove()
 
     @asyncio.coroutine
     def _add_ubridge_connection(self, nio, adapter_number, namespace):
@@ -662,3 +688,11 @@ class DockerVM(BaseVM):
 
         result = yield from self.manager.query("GET", "containers/{}/logs".format(self._cid), params={"stderr": 1, "stdout": 1})
         return result
+
+    @asyncio.coroutine
+    def delete(self):
+        """
+        Delete the VM (including all its files).
+        """
+        yield from self.close()
+        yield from super().delete()

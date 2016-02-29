@@ -39,6 +39,10 @@ DOCKER_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet", "vnc"]
+        },
         "aux": {
             "description": "auxilary TCP port",
             "minimum": 1,
@@ -87,6 +91,10 @@ DOCKER_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
+        },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet", "vnc"]
         },
         "aux": {
             "description": "auxilary TCP port",
@@ -143,6 +151,10 @@ DOCKER_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet", "vnc"]
+        },
         "container_id": {
             "description": "Docker container ID",
             "type": "string",
@@ -184,7 +196,7 @@ DOCKER_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "aux", "console", "start_command", "environment", "vm_directory"]
+    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "start_command", "environment", "vm_directory"]
 }
 
 
