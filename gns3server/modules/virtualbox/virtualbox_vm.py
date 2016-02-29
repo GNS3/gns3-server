@@ -60,7 +60,6 @@ class VirtualBoxVM(BaseVM):
         self._system_properties = {}
         self._telnet_server_thread = None
         self._serial_pipe = None
-        self._closed = False
 
         # VirtualBox settings
         self._adapters = adapters
@@ -344,14 +343,8 @@ class VirtualBoxVM(BaseVM):
         Closes this VirtualBox VM.
         """
 
-        if self._closed:
-            # VM is already closed
-            return
-
-        log.debug("VirtualBox VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        if not (yield from super().close()):
+            return False
 
         for adapter in self._ethernet_adapters.values():
             if adapter is not None:
@@ -403,9 +396,6 @@ class VirtualBoxVM(BaseVM):
                     log.warning("VirtualBox VM '{name}' [{id}] could not write HHD info file: {error}".format(name=self.name,
                                                                                                               id=self.id,
                                                                                                               error=e.strerror))
-
-        log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
-        self._closed = True
 
     @property
     def headless(self):

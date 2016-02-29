@@ -43,9 +43,11 @@ class BaseVM:
     :param project: Project instance
     :param manager: parent VM Manager
     :param console: TCP console port
+    :param aux: TCP aux console port
+    :param allocate_aux: Boolean if true will allocate an aux console port
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None, console_type="telnet"):
+    def __init__(self, name, vm_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False):
 
         self._name = name
         self._usage = ""
@@ -53,10 +55,12 @@ class BaseVM:
         self._project = project
         self._manager = manager
         self._console = console
+        self._aux = aux
         self._console_type = console_type
         self._temporary_directory = None
         self._hw_virtualization = False
         self._ubridge_hypervisor = None
+        self._closed = False
         self._vm_status = "stopped"
         self._command_line = ""
 
@@ -65,12 +69,20 @@ class BaseVM:
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project, port_range_start=5900, port_range_end=6000)
             else:
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
-        else:
+
+        # We need to allocate aux before giving a random console port
+        if self._aux is not None:
+            self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
+
+        if self._console is None:
             if console_type == "vnc":
                 # VNC is a special case and the range must be 5900-6000
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project, port_range_start=5900, port_range_end=6000)
             else:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+
+        if self._aux is None and allocate_aux:
+            self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
 
         log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(module=self.manager.module_name,
                                                                                        name=self.name,
@@ -233,12 +245,61 @@ class BaseVM:
 
         raise NotImplementedError
 
+    @asyncio.coroutine
     def close(self):
         """
         Close the VM process.
         """
 
-        raise NotImplementedError
+        if self._closed:
+            return False
+
+        log.info("{module}: '{name}' [{id}]: is closing".format(
+            module=self.manager.module_name,
+            name=self.name,
+            id=self.id))
+
+        if self._console:
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
+            self._console = None
+
+        if self._aux:
+            self._manager.port_manager.release_tcp_port(self._aux, self._project)
+            self._aux = None
+
+        self._closed = True
+        return True
+
+    @property
+    def aux(self):
+        """
+        Returns the aux console port of this VM.
+
+        :returns: aux console port
+        """
+
+        return self._aux
+
+    @aux.setter
+    def aux(self, aux):
+        """
+        Changes the aux port
+
+        :params aux: Console port (integer) or None to free the port
+        """
+
+        if aux == self._aux:
+            return
+
+        if self._aux:
+            self._manager.port_manager.release_tcp_port(self._aux, self._project)
+            self._aux = None
+        if aux is not None:
+            self._aux = self._manager.port_manager.reserve_tcp_port(aux, self._project)
+            log.info("{module}: '{name}' [{id}]: aux port set to {port}".format(module=self.manager.module_name,
+                                                                                name=self.name,
+                                                                                id=self.id,
+                                                                                port=aux))
 
     @property
     def console(self):
@@ -255,22 +316,24 @@ class BaseVM:
         """
         Changes the console port
 
-        :params console: Console port (integer)
+        :params console: Console port (integer) or None to free the port
         """
 
         if console == self._console:
             return
 
-        if self._console_type == "vnc" and console < 5900:
+        if self._console_type == "vnc" and console is not None and console < 5900:
             raise VMError("VNC console require a port superior or equal to 5900")
 
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
-        self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
-        log.info("{module}: '{name}' [{id}]: console port set to {port}".format(module=self.manager.module_name,
-                                                                                name=self.name,
-                                                                                id=self.id,
-                                                                                port=console))
+            self._console = None
+        if console is not None:
+            self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
+            log.info("{module}: '{name}' [{id}]: console port set to {port}".format(module=self.manager.module_name,
+                                                                                    name=self.name,
+                                                                                    id=self.id,
+                                                                                    port=console))
 
     @property
     def console_type(self):

@@ -39,6 +39,12 @@ DOCKER_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "aux": {
+            "description": "auxilary TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
         "start_command": {
             "description": "Docker CMD entry",
             "type": ["string", "null"],
@@ -82,6 +88,12 @@ DOCKER_UPDATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "aux": {
+            "description": "auxilary TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
         "start_command": {
             "description": "Docker CMD entry",
             "type": ["string", "null"],
@@ -118,6 +130,12 @@ DOCKER_OBJECT_SCHEMA = {
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "aux": {
+            "description": "auxilary TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
         },
         "console": {
             "description": "console TCP port",
@@ -166,7 +184,7 @@ DOCKER_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "console", "start_command", "environment", "vm_directory"]
+    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "aux", "console", "start_command", "environment", "vm_directory"]
 }
 
 

@@ -542,14 +542,8 @@ class VMwareVM(BaseVM):
         Closes this VMware VM.
         """
 
-        if self._closed:
-            # VM is already closed
-            return
-
-        log.debug("VMware VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        if not (yield from super().close()):
+            return False
 
         for adapter in self._ethernet_adapters.values():
             if adapter is not None:
@@ -566,9 +560,6 @@ class VMwareVM(BaseVM):
 
         if self._linked_clone:
             yield from self.manager.remove_from_vmware_inventory(self._vmx_path)
-
-        log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
-        self._closed = True
 
     @property
     def headless(self):

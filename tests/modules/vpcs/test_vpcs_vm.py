@@ -273,17 +273,6 @@ def test_get_startup_script_using_default_script(vm):
     assert vm.script_file == filepath
 
 
-def test_change_console_port(vm, port_manager):
-    port1 = port_manager.get_free_tcp_port(vm.project)
-    port2 = port_manager.get_free_tcp_port(vm.project)
-    port_manager.release_tcp_port(port1, vm.project)
-    port_manager.release_tcp_port(port2, vm.project)
-    vm.console = port1
-    vm.console = port2
-    assert vm.console == port2
-    port_manager.reserve_tcp_port(port1, vm.project)
-
-
 def test_change_name(vm, tmpdir):
     path = os.path.join(vm.working_dir, 'startup.vpc')
     vm.name = "world"
@@ -299,8 +288,5 @@ def test_close(vm, port_manager, loop):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
-            port = vm.console
             loop.run_until_complete(asyncio.async(vm.close()))
-            # Raise an exception if the port is not free
-            port_manager.reserve_tcp_port(port, vm.project)
             assert vm.is_running() is False

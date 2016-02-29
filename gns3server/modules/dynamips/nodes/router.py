@@ -61,12 +61,12 @@ class Router(BaseVM):
 
     def __init__(self, name, vm_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        allocate_aux = manager.config.get_section_config("Dynamips").getboolean("allocate_aux_console_ports", False)
+
+        super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=aux)
 
         self._hypervisor = hypervisor
         self._dynamips_id = dynamips_id
-        self._closed = False
-        self._name = name
         self._platform = platform
         self._image = ""
         self._startup_config = ""
@@ -88,7 +88,6 @@ class Router(BaseVM):
         self._disk0 = 0  # Megabytes
         self._disk1 = 0  # Megabytes
         self._auto_delete_disks = False
-        self._aux = aux
         self._mac_addr = ""
         self._system_id = "FTX0945W0MY"  # processor board ID in IOS
         self._slots = []
@@ -100,19 +99,12 @@ class Router(BaseVM):
             else:
                 self._dynamips_id = dynamips_id
                 manager.take_dynamips_id(project.id, dynamips_id)
-
-            if self._aux is not None:
-                self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
-            else:
-                allocate_aux = self.manager.config.get_section_config("Dynamips").getboolean("allocate_aux_console_ports", False)
-                if allocate_aux:
-                    self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
         else:
             log.info("Creating a new ghost IOS instance")
             if self._console:
                 # Ghost VMs do not need a console port.
-                self._manager.port_manager.release_tcp_port(self._console, self._project)
-                self._console = None
+                self.console = None
+
             self._dynamips_id = 0
             self._name = "Ghost"
 
@@ -140,8 +132,8 @@ class Router(BaseVM):
                        "disk0": self._disk0,
                        "disk1": self._disk1,
                        "auto_delete_disks": self._auto_delete_disks,
-                       "console": self._console,
-                       "aux": self._aux,
+                       "console": self.console,
+                       "aux": self.aux,
                        "mac_addr": self._mac_addr,
                        "system_id": self._system_id}
 
@@ -195,8 +187,8 @@ class Router(BaseVM):
 
             yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
 
-            if self._aux is not None:
-                yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self._aux))
+            if self.aux is not None:
+                yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self.aux))
 
             # get the default base MAC address
             mac_addr = yield from self._hypervisor.send('{platform} get_mac_addr "{name}"'.format(platform=self._platform,
@@ -328,19 +320,8 @@ class Router(BaseVM):
     @asyncio.coroutine
     def close(self):
 
-        if self._closed:
-            # router is already closed
-            return
-
-        log.debug('Router "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
-
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
-
-        if self._aux:
-            self._manager.port_manager.release_tcp_port(self._aux, self._project)
-            self._aux = None
+        if not (yield from super().close()):
+            return False
 
         for adapter in self._slots:
             if adapter is not None:
@@ -375,7 +356,6 @@ class Router(BaseVM):
                 except OSError as e:
                     log.warn("Could not delete file {}: {}".format(file, e))
                     continue
-        self._closed = True
 
     @property
     def platform(self):
@@ -913,25 +893,8 @@ class Router(BaseVM):
         :param console: console port (integer)
         """
 
+        self.console = console
         yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=console))
-
-        log.info('Router "{name}" [{id}]: console port updated from {old_console} to {new_console}'.format(name=self._name,
-                                                                                                           id=self._id,
-                                                                                                           old_console=self._console,
-                                                                                                           new_console=console))
-
-        self._manager.port_manager.release_tcp_port(self._console, self._project)
-        self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
-
-    @property
-    def aux(self):
-        """
-        Returns the TCP auxiliary port.
-
-        :returns: console auxiliary port (integer)
-        """
-
-        return self._aux
 
     @asyncio.coroutine
     def set_aux(self, aux):
@@ -941,15 +904,8 @@ class Router(BaseVM):
         :param aux: console auxiliary port (integer)
         """
 
+        self.aux = aux
         yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=aux))
-
-        log.info('Router "{name}" [{id}]: aux port updated from {old_aux} to {new_aux}'.format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               old_aux=self._aux,
-                                                                                               new_aux=aux))
-
-        self._manager.port_manager.release_tcp_port(self._aux, self._project)
-        self._aux = self._manager.port_manager.reserve_tcp_port(aux, self._project)
 
     @asyncio.coroutine
     def get_cpu_usage(self, cpu_id=0):

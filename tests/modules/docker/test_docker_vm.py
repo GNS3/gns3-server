@@ -54,6 +54,7 @@ def test_json(vm, project):
         'vm_id': vm.id,
         'adapters': 1,
         'console': vm.console,
+        'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
         'vm_directory': vm.working_dir

@@ -97,11 +97,8 @@ class IOUVM(BaseVM):
         Closes this IOU VM.
         """
 
-        log.debug('IOU "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
-
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        if not (yield from super().close()):
+            return False
 
         adapters = self._ethernet_adapters + self._serial_adapters
         for adapter in adapters:

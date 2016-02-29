@@ -49,10 +49,12 @@ class DockerVM(BaseVM):
     :param project: Project instance
     :param manager: Manager instance
     :param image: Docker image
+    :param console: TCP console port
+    :param aux: TCP aux console port
     """
 
-    def __init__(self, name, vm_id, project, manager, image, console=None, start_command=None, adapters=None, environment=None):
-        super().__init__(name, vm_id, project, manager, console=console)
+    def __init__(self, name, vm_id, project, manager, image, console=None, aux=None, start_command=None, adapters=None, environment=None):
+        super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True)
 
         self._image = image
         self._start_command = start_command
@@ -62,7 +64,6 @@ class DockerVM(BaseVM):
         self._ubridge_hypervisor = None
         self._temporary_directory = None
         self._telnet_server = None
-        self._closed = False
 
         if adapters is None:
             self.adapters = 1
@@ -84,6 +85,7 @@ class DockerVM(BaseVM):
             "image": self._image,
             "adapters": self.adapters,
             "console": self.console,
+            "aux": self.aux,
             "start_command": self.start_command,
             "environment": self.environment,
             "vm_directory": self.working_dir
@@ -377,11 +379,9 @@ class DockerVM(BaseVM):
     def close(self):
         """Closes this Docker container."""
 
-        if self._closed:
-            return
+        if not (yield from super().close()):
+            return False
 
-        log.debug("Docker container '{name}' [{id}] is closing".format(
-            name=self.name, id=self._cid))
         for adapter in self._ethernet_adapters:
             if adapter is not None:
                 for nio in adapter.ports.values():
@@ -390,10 +390,6 @@ class DockerVM(BaseVM):
                             nio.lport, self._project)
 
         yield from self.remove()
-
-        log.info("Docker container '{name}' [{id}] closed".format(
-            name=self.name, id=self._cid))
-        self._closed = True
 
     @asyncio.coroutine
     def _add_ubridge_connection(self, nio, adapter_number, namespace):

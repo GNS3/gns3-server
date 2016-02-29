@@ -75,10 +75,8 @@ class VPCSVM(BaseVM):
         Closes this VPCS VM.
         """
 
-        log.debug('VPCS "{name}" [{id}] is closing'.format(name=self._name, id=self._id))
-        if self._console:
-            self._manager.port_manager.release_tcp_port(self._console, self._project)
-            self._console = None
+        if not (yield from super().close()):
+            return False
 
         nio = self._ethernet_adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
@@ -86,6 +84,8 @@ class VPCSVM(BaseVM):
 
         if self.is_running():
             self._terminate_process()
+
+        return True
 
     @asyncio.coroutine
     def _check_requirements(self):
