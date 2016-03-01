@@ -63,6 +63,7 @@ class BaseVM:
         self._closed = False
         self._vm_status = "stopped"
         self._command_line = ""
+        self._allocate_aux = allocate_aux
 
         if self._console is not None:
             if console_type == "vnc":
@@ -269,6 +270,13 @@ class BaseVM:
 
         self._closed = True
         return True
+
+    @property
+    def allocate_aux(self):
+        """
+        :returns: Boolean allocate or not an aux console
+        """
+        return self._allocate_aux
 
     @property
     def aux(self):
