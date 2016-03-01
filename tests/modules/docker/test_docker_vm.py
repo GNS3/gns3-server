@@ -25,6 +25,7 @@ from gns3server.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.modules.docker.docker_vm import DockerVM
 from gns3server.modules.docker.docker_error import *
 from gns3server.modules.docker import Docker
+from gns3server.utils.get_resource import get_resource
 
 
 from unittest.mock import patch, MagicMock, PropertyMock, call
@@ -88,7 +89,7 @@ def test_create(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [],
+                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -96,7 +97,8 @@ def test_create(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Env": []
+                "Env": [],
+                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
             })
         assert vm._cid == "e90e34656806"
 
@@ -121,7 +123,10 @@ def test_create_vnc(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ['/tmp/.X11-unix/:/tmp/.X11-unix/'],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                            '/tmp/.X11-unix/:/tmp/.X11-unix/'
+                        ],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -129,7 +134,8 @@ def test_create_vnc(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Env": ['DISPLAY=:42']
+                "Env": ['DISPLAY=:42'],
+                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
             })
         assert vm._start_vnc.called
         assert vm._cid == "e90e34656806"
@@ -153,11 +159,11 @@ def test_create_start_cmd(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [],
+                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
                         "Privileged": True
                     },
                 "Volumes": {},
-                "Cmd": ["/bin/ls"],
+                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/ls"],
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
@@ -185,7 +191,7 @@ def test_create_environment(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [],
+                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
                         "Privileged": True
                     },
                 "Env": ["YES=1", "NO=0"],
@@ -193,7 +199,8 @@ def test_create_environment(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu"
+                "Image": "ubuntu",
+                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
             })
         assert vm._cid == "e90e34656806"
 
@@ -230,7 +237,7 @@ def test_create_image_not_available(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [],
+                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -238,7 +245,8 @@ def test_create_image_not_available(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Env": []
+                "Env": [],
+                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
             })
         assert vm._cid == "e90e34656806"
         mock_pull.assert_called_with("ubuntu")
@@ -439,7 +447,7 @@ def test_update(loop, vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": [],
+            "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
             "Privileged": True
         },
         "Volumes": {},
@@ -447,7 +455,8 @@ def test_update(loop, vm):
         "Name": "test",
         "Hostname": "test",
         "Image": "ubuntu",
-        "Env": []
+        "Env": [],
+        "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
     })
     assert vm.console == original_console
 
@@ -475,7 +484,7 @@ def test_update_running(loop, vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": [],
+            "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
             "Privileged": True
         },
         "Volumes": {},
@@ -483,7 +492,8 @@ def test_update_running(loop, vm):
         "Name": "test",
         "Hostname": "test",
         "Image": "ubuntu",
-        "Env": []
+        "Env": [],
+        "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
     })
 
     assert vm.console == original_console
@@ -745,6 +755,7 @@ def test_mount_binds(vm, tmpdir):
 
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
+        "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
         "{}:{}".format(dst, "/test/experimental")
     ]
 

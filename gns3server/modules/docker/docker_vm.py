@@ -34,7 +34,7 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ...utils.asyncio.telnet_server import AsyncioTelnetServer
 from ...utils.asyncio import wait_for_file_creation
-
+from ...utils.get_resource import get_resource
 from ...ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 
 
@@ -156,6 +156,9 @@ class DockerVM(BaseVM):
         :returns: Return the path that we need to map to local folders
         """
         binds = []
+
+        binds.append("{}:/gns3:ro".format(get_resource("modules/docker/resources")))
+
         volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
         if volumes is None:
             return binds
@@ -163,6 +166,7 @@ class DockerVM(BaseVM):
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
             binds.append("{}:{}".format(source, volume))
+
         return binds
 
     @asyncio.coroutine
@@ -190,10 +194,17 @@ class DockerVM(BaseVM):
                 "Binds": self._mount_binds(image_infos)
             },
             "Volumes": {},
-            "Env": []
+            "Env": [],
+            "Cmd": image_infos.get("ContainerConfig", {"Cmd": []})["Cmd"]
         }
+
+        params["Cmd"].insert(0, "/bin/sh")
+        params["Cmd"].insert(1, "/gns3/init.sh")
         if self._start_command:
-            params.update({"Cmd": shlex.split(self._start_command)})
+            params["Cmd"] += shlex.split(self._start_command)
+        else:
+            if len(params["Cmd"]) == 2:
+                params["Cmd"] += ["/bin/sh"]
 
         if self._environment:
             params["Env"] += [e.strip() for e in self._environment.split("\n")]
