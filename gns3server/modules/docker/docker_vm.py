@@ -512,7 +512,7 @@ class DockerVM(BaseVM):
 
         :param adapter_number: adapter number
         """
-        if not self._ubridge_hypervisor:
+        if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             return
 
         yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
@@ -634,7 +634,7 @@ class DockerVM(BaseVM):
         """
 
         adapter = "bridge{}".format(adapter_number)
-        if not self._ubridge_hypervisor:
+        if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise VMwareError("Cannot start the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=adapter, output_file=output_file))
 
@@ -647,7 +647,7 @@ class DockerVM(BaseVM):
         """
 
         adapter = "bridge{}".format(adapter_number)
-        if not self._ubridge_hypervisor:
+        if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise VMwareError("Cannot stop the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=adapter))
 
