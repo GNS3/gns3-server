@@ -554,10 +554,10 @@ def test_add_ubridge_connection(loop, vm):
     loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
 
     calls = [
-        call.send("docker create_veth gns3-veth0ext gns3-veth0int"),
-        call.send('docker move_to_ns gns3-veth0int 42 eth0'),
+        call.send("docker create_veth veth-gns3-ext0 veth-gns3-int0"),
+        call.send('docker move_to_ns veth-gns3-int0 42 eth0'),
         call.send('bridge create bridge0'),
-        call.send('bridge add_nio_linux_raw bridge0 gns3-veth0ext'),
+        call.send('bridge add_nio_linux_raw bridge0 veth-gns3-ext0'),
         call.send('bridge add_nio_udp bridge0 4242 127.0.0.1 4343'),
         call.send('bridge start_capture bridge0 "/tmp/capture.pcap"'),
         call.send('bridge start bridge0')
@@ -574,8 +574,8 @@ def test_add_ubridge_connection_none_nio(loop, vm):
     loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
 
     calls = [
-        call.send("docker create_veth gns3-veth0ext gns3-veth0int"),
-        call.send('docker move_to_ns gns3-veth0int 42 eth0'),
+        call.send("docker create_veth veth-gns3-ext0 veth-gns3-int0"),
+        call.send('docker move_to_ns veth-gns3-int0 42 eth0'),
     ]
     # We need to check any_order ortherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
@@ -602,7 +602,7 @@ def test_add_ubridge_connection_no_free_interface(loop, vm):
     with pytest.raises(DockerError):
 
         # We create fake ethernet interfaces for docker
-        interfaces = ["gns3-veth{}ext".format(index) for index in range(128)]
+        interfaces = ["veth-gns3-ext{}".format(index) for index in range(128)]
 
         with patch("psutil.net_if_addrs", return_value=interfaces):
             loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
@@ -622,7 +622,7 @@ def test_delete_ubridge_connection(loop, vm):
 
     calls = [
         call.send("bridge delete bridge0"),
-        call.send('docker delete_veth gns3-veth0ext')
+        call.send('docker delete_veth veth-gns3-ext0')
     ]
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 

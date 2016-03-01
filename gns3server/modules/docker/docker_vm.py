@@ -454,10 +454,10 @@ class DockerVM(BaseVM):
                 "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name, adapter_number=adapter_number))
 
         for index in range(128):
-            if "gns3-veth{}ext".format(index) not in psutil.net_if_addrs():
+            if "veth-gns3-ext{}".format(index) not in psutil.net_if_addrs():
                 adapter.ifc = "eth{}".format(str(index))
-                adapter.host_ifc = "gns3-veth{}ext".format(str(index))
-                adapter.guest_ifc = "gns3-veth{}int".format(str(index))
+                adapter.host_ifc = "veth-gns3-ext{}".format(str(index))
+                adapter.guest_ifc = "veth-gns3-int{}".format(str(index))
                 break
         if not hasattr(adapter, "ifc"):
             raise DockerError(
