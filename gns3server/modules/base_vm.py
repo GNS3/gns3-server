@@ -278,6 +278,13 @@ class BaseVM:
         """
         return self._allocate_aux
 
+    @allocate_aux.setter
+    def allocate_aux(self, allocate_aux):
+        """
+        :returns: Boolean allocate or not an aux console
+        """
+        self._allocate_aux = allocate_aux
+
     @property
     def aux(self):
         """
