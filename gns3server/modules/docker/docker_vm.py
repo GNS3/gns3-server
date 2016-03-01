@@ -67,7 +67,7 @@ class DockerVM(BaseVM):
         self._ethernet_adapters = []
         self._ubridge_hypervisor = None
         self._temporary_directory = None
-        self._telnet_server = None
+        self._telnet_servers = []
 
         if adapters is None:
             self.adapters = 1
@@ -255,8 +255,28 @@ class DockerVM(BaseVM):
             if self.console_type == "telnet":
                 yield from self._start_console()
 
+            if self.allocate_aux:
+                yield from self._start_aux()
+
         self.status = "started"
-        log.info("Docker container '{name}' [{image}] started listen for telnet on {console}".format(name=self._name, image=self._image, console=self._console))
+        log.info("Docker container '{name}' [{image}] started listen for {console_type} on {console}".format(name=self._name, image=self._image, console=self.console, console_type=self.console_type))
+
+    @asyncio.coroutine
+    def _start_aux(self):
+        """
+        Start an auxilary console
+        """
+
+        # We can not use the API because docker doesn't expose a websocket api for exec
+        # https://github.com/GNS3/gns3-gui/issues/1039
+        process = yield from asyncio.subprocess.create_subprocess_exec(
+            "docker", "exec", "-i", self._cid, "/bin/sh", "-i",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            stdin=asyncio.subprocess.PIPE)
+        server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=False, echo=False)
+        self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
+        log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
 
     @asyncio.coroutine
     def _start_vnc(self):
@@ -295,8 +315,8 @@ class DockerVM(BaseVM):
         output_stream = asyncio.StreamReader()
         input_stream = InputStream()
 
-        telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream)
-        self._telnet_server = yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self._console)
+        telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True)
+        self._telnet_servers.append((yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)))
 
         ws = yield from self.manager.websocket_query("containers/{}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1".format(self._cid))
         input_stream.ws = ws
@@ -345,10 +365,11 @@ class DockerVM(BaseVM):
         """Stops this Docker container."""
 
         try:
-            if self._telnet_server:
-                self._telnet_server.close()
-                yield from self._telnet_server.wait_closed()
-                self._telnet_server = None
+            if len(self._telnet_servers) > 0:
+                for telnet_server in self._telnet_servers:
+                    telnet_server.close()
+                    yield from telnet_server.wait_closed()
+                self._telnet_servers = []
 
             if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
                 yield from self._ubridge_hypervisor.stop()

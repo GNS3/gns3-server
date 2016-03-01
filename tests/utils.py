@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 
 class _asyncio_patch:
@@ -62,3 +62,15 @@ class _asyncio_patch:
 
 def asyncio_patch(function, *args, **kwargs):
     return _asyncio_patch(function, *args, **kwargs)
+
+
+class AsyncioMagicMock(MagicMock):
+    """
+    Magic mock returning coroutine
+    """
+    def __init__(self, return_value=None, **kwargs):
+        if return_value:
+            future = asyncio.Future()
+            future.set_result(return_value)
+            kwargs["return_value"] = future
+        super().__init__(**kwargs)

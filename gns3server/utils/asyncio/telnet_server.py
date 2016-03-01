@@ -58,13 +58,19 @@ READ_SIZE = 1024
 
 class AsyncioTelnetServer:
 
-    def __init__(self, reader=None, writer=None):
+    def __init__(self, reader=None, writer=None, binary=True, echo=False):
         self._reader = reader
         self._writer = writer
         self._clients = set()
         self._lock = asyncio.Lock()
         self._reader_process = None
         self._current_read = None
+
+        self._binary = binary
+        # If echo is true when the client send data
+        # the data is echo on his terminal by telnet otherwise
+        # it's our job (or the wrapped app) to send back the data
+        self._echo = echo
 
     @asyncio.coroutine
     def run(self, network_reader, network_writer):
@@ -73,10 +79,24 @@ class AsyncioTelnetServer:
 
         try:
             # Send initial telnet session opening
-            network_writer.write(bytes([IAC, WILL, ECHO,
-                                        IAC, WILL, SGA,
-                                        IAC, WILL, BINARY,
-                                        IAC, DO, BINARY]))
+            if self._echo:
+                network_writer.write(bytes([IAC, WILL, ECHO]))
+            else:
+                network_writer.write(bytes([
+                                     IAC, WONT, ECHO,
+                                     IAC, DONT, ECHO]))
+
+            if self._binary:
+                network_writer.write(bytes([
+                    IAC, WILL, SGA,
+                    IAC, WILL, BINARY,
+                    IAC, DO, BINARY]))
+            else:
+                network_writer.write(bytes([
+                    IAC, WONT, SGA,
+                    IAC, DONT, SGA,
+                    IAC, WONT, BINARY,
+                    IAC, DONT, BINARY]))
             yield from network_writer.drain()
 
             yield from self._process(network_reader, network_writer)
@@ -128,7 +148,6 @@ class AsyncioTelnetServer:
                     return_when=asyncio.FIRST_COMPLETED)
             for coro in done:
                 data = coro.result()
-
                 # Console is closed
                 if len(data) == 0:
                     raise ConnectionResetError()
@@ -138,11 +157,18 @@ class AsyncioTelnetServer:
 
                     if IAC in data:
                         data = yield from self._IAC_parser(data, network_reader, network_writer)
+                    if len(data) == 0:
+                        continue
+
+                    if not self._binary:
+                        data = data.replace(b"\r\n", b"\n")
+
                     if self._writer:
                         self._writer.write(data)
                         yield from self._writer.drain()
                 elif coro == reader_read:
                     reader_read = yield from self._get_reader(network_reader)
+
                     # Replicate the output on all clients
                     for writer in self._clients:
                         writer.write(data)
@@ -199,9 +225,27 @@ class AsyncioTelnetServer:
                     buf.extend(d)
                     iac_cmd.append(buf[iac_loc + 2])
                 # We do ECHO, SGA, and BINARY. Period.
-                if iac_cmd[1] == DO and iac_cmd[2] not in [ECHO, SGA, BINARY]:
-                    network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
-                    log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                if iac_cmd[1] == DO:
+                    if iac_cmd[2] not in [ECHO, SGA, BINARY]:
+                        network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
+                        log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                    else:
+                        if iac_cmd[2] == SGA:
+                            if self._binary:
+                                network_writer.write(bytes([IAC, WILL, iac_cmd[2]]))
+                            else:
+                                network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
+                                log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+
+                elif iac_cmd[1] == DONT:
+                    log.debug("Unhandled DONT telnet command: "
+                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                elif iac_cmd[1] == WILL:
+                    log.debug("Unhandled WILL telnet command: "
+                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                elif iac_cmd[1] == WONT:
+                    log.debug("Unhandled WONT telnet command: "
+                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
                 else:
                     log.debug("Unhandled telnet command: "
                               "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
@@ -215,15 +259,16 @@ class AsyncioTelnetServer:
         return buf
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
 
-    process = loop.run_until_complete(asyncio.async(asyncio.subprocess.create_subprocess_exec("bash",
+    process = loop.run_until_complete(asyncio.async(asyncio.subprocess.create_subprocess_exec("/bin/sh", "-i",
                                                                                               stdout=asyncio.subprocess.PIPE,
                                                                                               stderr=asyncio.subprocess.STDOUT,
                                                                                               stdin=asyncio.subprocess.PIPE)))
-    server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin)
+    server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=False, echo=False)
 
-    coro = asyncio.start_server(server.run, '127.0.0.1', 2222, loop=loop)
+    coro = asyncio.start_server(server.run, '127.0.0.1', 4444, loop=loop)
     s = loop.run_until_complete(coro)
 
     try:
