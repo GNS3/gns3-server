@@ -90,6 +90,7 @@ def parse_arguments(argv):
     parser.add_argument("--host", help="run on the given host/IP address")
     parser.add_argument("--port", help="run on the given port", type=int)
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
+    parser.add_argument("--controller", action="store_true", help="start as a GNS3 controller")
     parser.add_argument("--config", help="Configuration file")
     parser.add_argument("--certfile", help="SSL cert file")
     parser.add_argument("--certkey", help="SSL key file")
@@ -117,6 +118,7 @@ def parse_arguments(argv):
         "certkey": config.get("certkey", ""),
         "record": config.get("record", ""),
         "local": config.getboolean("local", False),
+        "controller": config.getboolean("controller", False),
         "allow": config.getboolean("allow_remote_console", False),
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
@@ -133,6 +135,7 @@ def set_config(args):
     config = Config.instance()
     server_config = config.get_section_config("Server")
     server_config["local"] = str(args.local)
+    server_config["controller"] = str(args.controller)
     server_config["allow_remote_console"] = str(args.allow)
     server_config["host"] = args.host
     server_config["port"] = str(args.port)
@@ -201,6 +204,9 @@ def run():
 
     set_config(args)
     server_config = Config.instance().get_section_config("Server")
+    if server_config.getboolean("controller"):
+        log.info("Controller mode is enabled.")
+
     if server_config.getboolean("local"):
         log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 

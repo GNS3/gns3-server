@@ -151,6 +151,7 @@ def run_around_tests(monkeypatch, port_manager):
     config.set("Server", "project_directory", os.path.join(tmppath, 'projects'))
     config.set("Server", "images_path", os.path.join(tmppath, 'images'))
     config.set("Server", "auth", False)
+    config.set("Server", "controller", False)
 
     # Prevent executions of the VM if we forgot to mock something
     config.set("VirtualBox", "vboxmanage_path", tmppath)
