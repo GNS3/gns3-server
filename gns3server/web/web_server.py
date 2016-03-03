@@ -29,11 +29,11 @@ import types
 import time
 import atexit
 
-from .web.route import Route
-from .web.request_handler import RequestHandler
-from .config import Config
-from .modules import MODULES
-from .modules.port_manager import PortManager
+from .route import Route
+from .request_handler import RequestHandler
+from ..config import Config
+from ..modules import MODULES
+from ..modules.port_manager import PortManager
 
 # do not delete this import
 import gns3server.handlers
@@ -42,7 +42,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Server:
+class WebServer:
 
     def __init__(self, host, port):
 
@@ -61,11 +61,11 @@ class Server:
         :returns: instance of Server
         """
 
-        if not hasattr(Server, "_instance") or Server._instance is None:
+        if not hasattr(WebServer, "_instance") or WebServer._instance is None:
             assert host is not None
             assert port is not None
-            Server._instance = Server(host, port)
-        return Server._instance
+            WebServer._instance = WebServer(host, port)
+        return WebServer._instance
 
     @asyncio.coroutine
     def _run_application(self, handler, ssl_context=None):

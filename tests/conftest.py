@@ -40,6 +40,7 @@ from gns3server.handlers import *
 from gns3server.modules import MODULES
 from gns3server.modules.port_manager import PortManager
 from gns3server.modules.project_manager import ProjectManager
+from gns3server.controller import Controller
 from tests.handlers.api.base import Query
 
 
@@ -136,8 +137,14 @@ def ethernet_device():
     return sorted(psutil.net_if_addrs().keys())[0]
 
 
+@pytest.fixture
+def controller():
+    Controller._instance = None
+    return Controller.instance()
+
+
 @pytest.yield_fixture(autouse=True)
-def run_around_tests(monkeypatch, port_manager):
+def run_around_tests(monkeypatch, port_manager, controller):
     """
     This setup a temporay project file environnement around tests
     """
@@ -151,7 +158,7 @@ def run_around_tests(monkeypatch, port_manager):
     config.set("Server", "project_directory", os.path.join(tmppath, 'projects'))
     config.set("Server", "images_path", os.path.join(tmppath, 'images'))
     config.set("Server", "auth", False)
-    config.set("Server", "controller", False)
+    config.set("Server", "controller", True)
 
     # Prevent executions of the VM if we forgot to mock something
     config.set("VirtualBox", "vboxmanage_path", tmppath)

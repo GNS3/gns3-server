@@ -28,7 +28,7 @@ import locale
 import argparse
 import asyncio
 
-from gns3server.server import Server
+from gns3server.web.web_server import WebServer
 from gns3server.web.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
@@ -233,7 +233,7 @@ def run():
     host = server_config["host"]
     port = int(server_config["port"])
 
-    server = Server.instance(host, port)
+    server = WebServer.instance(host, port)
     try:
         server.run()
     except OSError as e:

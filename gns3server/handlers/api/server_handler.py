@@ -15,18 +15,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+from aiohttp.web import HTTPForbidden
+
 from ...web.route import Route
 from ...config import Config
 from ...modules.project_manager import ProjectManager
-from aiohttp.web import HTTPForbidden
+from ...schemas.server import SERVER_CREATE_SCHEMA, SERVER_OBJECT_SCHEMA
+from ...controller import Controller
+from ...controller.server import Server
 
-import asyncio
+
 import logging
-
 log = logging.getLogger(__name__)
 
 
 class ServerHandler:
+    """API entry points for server management."""
+
+    @classmethod
+    @Route.post(
+        r"/servers",
+        description="Register a server",
+        status_codes={
+            201: "Server added"
+        },
+        controller=True,
+        input=SERVER_CREATE_SCHEMA,
+        output=SERVER_OBJECT_SCHEMA)
+    def create(request, response):
+
+        server = Server(request.json.pop("server_id"), **request.json)
+        Controller.instance().addServer(server)
+
+        response.set_status(201)
+        response.json(server)
 
     @classmethod
     @Route.post(
@@ -60,7 +83,7 @@ class ServerHandler:
                     continue
 
         # then shutdown the server itself
-        from gns3server.server import Server
-        server = Server.instance()
+        from gns3server.web.web_server import WebServer
+        server = WebServer.instance()
         asyncio.async(server.shutdown_server())
         response.set_status(201)

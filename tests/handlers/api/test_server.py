@@ -15,26 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 
-from gns3server.controller import Controller
-from gns3server.controller.server import Server
-from gns3server.config import Config
+def test_server_create(server, controller):
 
+    params = {
+        "server_id": "my_server_id",
+        "protocol": "http",
+        "host": "example.com",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = server.post("/servers", params)
+    assert response.status == 201
+    assert response.route == "/servers"
+    assert response.json["user"] == "julien"
+    assert "password" not in response.json
 
-def test_isEnabled(controller):
-    Config.instance().set("Server", "controller", False)
-    assert not controller.isEnabled()
-    Config.instance().set("Server", "controller", True)
-    assert controller.isEnabled()
-
-
-def test_addServer(controller):
-    server1 = Server("test1")
-
-    controller.addServer(server1)
     assert len(controller.servers) == 1
-    controller.addServer(Server("test1"))
-    assert len(controller.servers) == 1
-    controller.addServer(Server("test2"))
-    assert len(controller.servers) == 2
+    assert controller.servers["my_server_id"].host == "example.com"

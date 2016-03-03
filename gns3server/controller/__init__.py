@@ -22,12 +22,28 @@ from ..config import Config
 class Controller:
     """The controller manage multiple gns3 servers"""
 
+    def __init__(self):
+        self._servers = {}
+
     def isEnabled(self):
         """
         :returns: True if current instance is the controller
         of our GNS3 infrastructure.
         """
         return Config.instance().get_section_config("Server").getboolean("controller")
+
+    def addServer(self, server):
+        """
+        Add a server to the dictionnary of servers controlled by GNS3
+        """
+        self._servers[server.id] = server
+
+    @property
+    def servers(self):
+        """
+        :returns: The dictionnary of servers managed by GNS3
+        """
+        return self._servers
 
     @staticmethod
     def instance():
