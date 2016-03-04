@@ -26,6 +26,7 @@ import traceback
 log = logging.getLogger(__name__)
 
 from ..modules.vm_error import VMError
+from ..controller.controller_error import ControllerError
 from ..ubridge.ubridge_error import UbridgeError
 from .response import Response
 from ..crash_report import CrashReport
@@ -185,6 +186,11 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(e.status)
                     response.json({"message": e.text, "status": e.status})
+                except (ControllerError) as e:
+                    log.error("Controller error detected: {type}".format(type=type(e)), exc_info=1)
+                    response = Response(request=request, route=route)
+                    response.set_status(409)
+                    response.json({"message": str(e), "status": 409})
                 except (VMError, UbridgeError) as e:
                     log.error("VM error detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)

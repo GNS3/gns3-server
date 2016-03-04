@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,20 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class VMError(Exception):
-
-    def __init__(self, message, original_exception=None):
-
+class ControllerError(Exception):
+    def __init__(self, message):
         super().__init__(message)
-        if isinstance(message, Exception):
-            message = str(message)
         self._message = message
-        self._original_exception = original_exception
 
     def __repr__(self):
-
         return self._message
 
     def __str__(self):
-
         return self._message
+
+

@@ -16,6 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from ..controller.controller_error import ControllerError
+from ..config import Config
+
+
+class ServerError(ControllerError):
+    pass
+
+
 class Server:
     """
     A GNS3 server.
@@ -31,6 +39,11 @@ class Server:
         self._connected = False
         # The remote server version
         self._version = None
+
+        # If the server is local but the server id is local
+        # it's a configuration issue
+        if server_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
+            raise ServerError("The local server is started without --local")
 
     @property
     def id(self):
@@ -57,7 +70,4 @@ class Server:
             "version": self._version
         }
 
-    def __eq__(self, other):
-        if not isinstance(other, Server):
-            return False
-        return other._id == self._id
+
