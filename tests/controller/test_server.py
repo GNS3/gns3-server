@@ -20,6 +20,7 @@ import pytest
 from unittest.mock import patch
 
 from gns3server.controller.server import Server, ServerError
+from gns3server.version import __version__
 
 
 @pytest.fixture
@@ -53,5 +54,5 @@ def test_json(server):
         "port": 84,
         "user": "test",
         "connected": False,
-        "version": None
+        "version": __version__
     }

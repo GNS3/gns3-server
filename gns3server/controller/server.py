@@ -18,6 +18,8 @@
 
 from ..controller.controller_error import ControllerError
 from ..config import Config
+from ..version import __version__
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -42,7 +44,8 @@ class Server:
         self._password = password
         self._connected = False
         # The remote server version
-        self._version = None
+        # TODO: For the moment it's fake we return the controller version
+        self._version = __version__
 
         # If the server is local but the server id is local
         # it's a configuration issue
