@@ -19,6 +19,9 @@
 from ..controller.controller_error import ControllerError
 from ..config import Config
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class ServerError(ControllerError):
     pass
@@ -30,6 +33,7 @@ class Server:
     """
 
     def __init__(self, server_id, protocol="http", host="localhost", port=8000, user=None, password=None):
+        log.info("Create server %s", server_id)
         self._id = server_id
         self._protocol = protocol
         self._host = host
@@ -69,5 +73,3 @@ class Server:
             "connected": self._connected,
             "version": self._version
         }
-
-

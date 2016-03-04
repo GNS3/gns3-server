@@ -44,6 +44,7 @@ def test_server_local(server):
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         s = Server("test")
 
+
 def test_json(server):
     assert server.__json__() == {
         "server_id": "my_server_id",
@@ -54,4 +55,3 @@ def test_json(server):
         "connected": False,
         "version": None
     }
-

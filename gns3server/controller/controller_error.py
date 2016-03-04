@@ -17,6 +17,7 @@
 
 
 class ControllerError(Exception):
+
     def __init__(self, message):
         super().__init__(message)
         self._message = message
@@ -26,5 +27,3 @@ class ControllerError(Exception):
 
     def __str__(self):
         return self._message
-
-
