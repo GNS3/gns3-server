@@ -43,4 +43,4 @@ sed -n 's/^ *\(eth[0-9]*\):.*/\1/p' < /proc/net/dev | while read dev; do
 done
 
 # continue normal docker startup
-/bin/sh -c "$@"
+exec "$@"

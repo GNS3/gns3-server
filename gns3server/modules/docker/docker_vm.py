@@ -195,16 +195,22 @@ class DockerVM(BaseVM):
             },
             "Volumes": {},
             "Env": [],
-            "Cmd": image_infos.get("ContainerConfig", {"Cmd": []})["Cmd"]
+            "Cmd": [],
+            "Entrypoint": image_infos.get("Config", {"Entrypoint": []})["Entrypoint"]
         }
 
-        params["Cmd"].insert(0, "/bin/sh")
-        params["Cmd"].insert(1, "/gns3/init.sh")
+
+        if params["Entrypoint"] is None:
+            params["Entrypoint"] = []
         if self._start_command:
-            params["Cmd"] += shlex.split(self._start_command)
-        else:
-            if len(params["Cmd"]) == 2:
-                params["Cmd"] += ["/bin/sh"]
+            params["Cmd"] = shlex.split(self._start_command)
+        if len(params["Cmd"]) == 0:
+            params["Cmd"] = image_infos.get("Config", {"Cmd": []})["Cmd"]
+            if params["Cmd"] is None:
+                params["Cmd"] = []
+        if len(params["Cmd"]) == 0 and len(params["Entrypoint"]) == 0:
+            params["Cmd"] = ["/bin/sh"]
+        params["Entrypoint"].insert(0, "/gns3/init.sh")
 
         if self._environment:
             params["Env"] += [e.strip() for e in self._environment.split("\n")]
