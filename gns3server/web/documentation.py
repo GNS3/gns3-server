@@ -36,6 +36,11 @@ class Documentation(object):
         self._directory = directory
 
     def write(self):
+        self.write_documentation(False)
+        # Controller documentation
+        self.write_documentation(True)
+
+    def write_documentation(self, controller):
         for handler_name in sorted(self._documentation):
             print("Build {}".format(handler_name))
 
@@ -45,11 +50,20 @@ class Documentation(object):
                 if api_version is None:
                     continue
 
-                self._create_handler_directory(handler_name, api_version)
+                if self._documentation[handler_name][path].get("controller", False):
+                    server_type = "controller"
+                    if not controller:
+                        continue
+                else:
+                    server_type = "server"
+                    if controller:
+                        continue
+
+                self._create_handler_directory(handler_name, api_version, server_type)
 
                 filename = self._file_path(path)
                 handler_doc = self._documentation[handler_name][path]
-                with open("{}/api/v{}/{}/{}.rst".format(self._directory, api_version, handler_name, filename), 'w+') as f:
+                with open("{}/api/v{}/{}/{}/{}.rst".format(self._directory, api_version, server_type, handler_name, filename), 'w+') as f:
                     f.write('{}\n----------------------------------------------------------------------------------------------------------------------\n\n'.format(path))
                     f.write('.. contents::\n')
                     for method in handler_doc["methods"]:
@@ -81,13 +95,13 @@ class Documentation(object):
 
                         self._include_query_example(f, method, path, api_version)
 
-    def _create_handler_directory(self, handler_name, api_version):
+    def _create_handler_directory(self, handler_name, api_version, server_type):
         """Create a directory for the handler and add an index inside"""
 
-        directory = "{}/api/v{}/{}".format(self._directory, api_version, handler_name)
+        directory = "{}/api/v{}/{}/{}".format(self._directory, api_version, server_type, handler_name)
         os.makedirs(directory, exist_ok=True)
 
-        with open("{}/api/v{}/{}.rst".format(self._directory, api_version, handler_name), "w+") as f:
+        with open("{}/api/v{}/{}/{}.rst".format(self._directory, api_version, server_type, handler_name), "w+") as f:
             f.write(handler_name.replace("api.", "").replace("_", " ", ).capitalize())
             f.write("\n---------------------\n\n")
             f.write(".. toctree::\n   :glob:\n   :maxdepth: 2\n\n   {}/*\n".format(handler_name))
@@ -98,7 +112,7 @@ class Documentation(object):
         query_path = "{}_{}.txt".format(m, self._file_path(path))
         if os.path.isfile(os.path.join(self._directory, "api", "examples", query_path)):
             f.write("Sample session\n***************\n")
-            f.write("\n\n.. literalinclude:: ../../examples/{}\n\n".format(query_path))
+            f.write("\n\n.. literalinclude:: ../../../examples/{}\n\n".format(query_path))
 
     def _file_path(self, path):
         return re.sub("^v1", "", re.sub("[^a-z0-9]", "", path))

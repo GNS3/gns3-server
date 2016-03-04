@@ -1,14 +1,13 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/f5bfbadc-9a09-4090-a624-89be68858746/stop' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/d6dea08f-6d73-4406-8679-400318a53efb/stop' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/f5bfbadc-9a09-4090-a624-89be68858746/stop HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/d6dea08f-6d73-4406-8679-400318a53efb/stop HTTP/1.1
 {}
 
 
 HTTP/1.1 204
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.4.0dev13
+SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}/stop
 

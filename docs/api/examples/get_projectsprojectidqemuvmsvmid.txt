@@ -1,16 +1,15 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/84777300-eef4-4a3a-9135-d7009bdb0722'
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/b7c0e4f8-f8a9-4a48-9e5c-62b5845c22c6'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/84777300-eef4-4a3a-9135-d7009bdb0722 HTTP/1.1
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/b7c0e4f8-f8a9-4a48-9e5c-62b5845c22c6 HTTP/1.1
 
 
 
 HTTP/1.1 200
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONNECTION: keep-alive
-CONTENT-LENGTH: 1353
+CONTENT-LENGTH: 1386
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.4.0dev13
+SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
 
 {
@@ -20,6 +19,7 @@ X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
     "boot_priority": "c",
     "cdrom_image": "",
     "cdrom_image_md5sum": null,
+    "command_line": "",
     "console": 2001,
     "console_type": "telnet",
     "cpu_throttling": 0,
@@ -42,15 +42,15 @@ X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:00:ab:07:22:00",
+    "mac_address": "00:00:ab:22:c6:00",
     "name": "PC TEST 1",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph3pfurip/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpich388hc/qemu-system-x86_64",
     "ram": 256,
     "usage": "",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpqqnauky9/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/84777300-eef4-4a3a-9135-d7009bdb0722",
-    "vm_id": "84777300-eef4-4a3a-9135-d7009bdb0722"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpxhp21u5q/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/b7c0e4f8-f8a9-4a48-9e5c-62b5845c22c6",
+    "vm_id": "b7c0e4f8-f8a9-4a48-9e5c-62b5845c22c6"
 }

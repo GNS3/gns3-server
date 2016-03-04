@@ -1,14 +1,13 @@
-curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/1b1a72b7-97ea-4598-8c02-2edc285f7987'
+curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/faf129e7-c74c-4851-8677-7030cdc63a75'
 
-DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/1b1a72b7-97ea-4598-8c02-2edc285f7987 HTTP/1.1
+DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/faf129e7-c74c-4851-8677-7030cdc63a75 HTTP/1.1
 
 
 
 HTTP/1.1 204
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.4.0dev13
+SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v1/projects/{project_id}/qemu/vms/{vm_id}
 

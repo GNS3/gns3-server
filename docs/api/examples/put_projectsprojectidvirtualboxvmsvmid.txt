@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/aa45d68c-c68e-4296-9550-641b522a73c2' -d '{"console": 2011, "name": "test"}'
+curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/7106debb-510b-4094-b694-8c3987f5c1de' -d '{"console": 2011, "name": "test"}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/aa45d68c-c68e-4296-9550-641b522a73c2 HTTP/1.1
+PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/7106debb-510b-4094-b694-8c3987f5c1de HTTP/1.1
 {
     "console": 2011,
     "name": "test"
@@ -9,11 +9,10 @@ PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/aa45d68c-c6
 
 HTTP/1.1 200
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONNECTION: keep-alive
 CONTENT-LENGTH: 413
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.4.0dev13
+SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v1/projects/{project_id}/virtualbox/vms/{vm_id}
 
 {
@@ -28,6 +27,6 @@ X-ROUTE: /v1/projects/{project_id}/virtualbox/vms/{vm_id}
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "aa45d68c-c68e-4296-9550-641b522a73c2",
+    "vm_id": "7106debb-510b-4094-b694-8c3987f5c1de",
     "vmname": "VMTEST"
 }

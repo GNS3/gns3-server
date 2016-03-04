@@ -6,11 +6,10 @@ GET /v1/interfaces HTTP/1.1
 
 HTTP/1.1 200
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONNECTION: keep-alive
-CONTENT-LENGTH: 1012
+CONTENT-LENGTH: 1253
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.4.0dev13
+SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v1/interfaces
 
 [
@@ -51,12 +50,12 @@ X-ROUTE: /v1/interfaces
     },
     {
         "id": "vboxnet0",
-        "ip_address": "172.16.43.1",
+        "ip_address": "",
         "name": "vboxnet0"
     },
     {
         "id": "vboxnet1",
-        "ip_address": "192.168.59.3",
+        "ip_address": "",
         "name": "vboxnet1"
     },
     {
@@ -66,7 +65,22 @@ X-ROUTE: /v1/interfaces
     },
     {
         "id": "vboxnet3",
-        "ip_address": "192.168.99.1",
+        "ip_address": "",
         "name": "vboxnet3"
+    },
+    {
+        "id": "vboxnet4",
+        "ip_address": "",
+        "name": "vboxnet4"
+    },
+    {
+        "id": "vboxnet5",
+        "ip_address": "",
+        "name": "vboxnet5"
+    },
+    {
+        "id": "vboxnet6",
+        "ip_address": "",
+        "name": "vboxnet6"
     }
 ]

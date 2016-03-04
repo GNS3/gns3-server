@@ -1,14 +1,13 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/95f620da-c0e5-4404-81fc-10f3e18786cb/suspend' -d '{}'
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/eb76e968-9c4b-4ea3-939a-18b9d7515b4b/suspend' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/95f620da-c0e5-4404-81fc-10f3e18786cb/suspend HTTP/1.1
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/eb76e968-9c4b-4ea3-939a-18b9d7515b4b/suspend HTTP/1.1
 {}
 
 
 HTTP/1.1 204
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONNECTION: keep-alive
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.4.0dev13
+SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v1/projects/{project_id}/virtualbox/vms/{vm_id}/suspend
 

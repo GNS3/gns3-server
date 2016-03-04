@@ -10,13 +10,22 @@ Welcome to API documentation!
     glossary
     development
 
-
-API Endpoints
-~~~~~~~~~~~~~~~
+Controller API Endpoints
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. toctree::
    :glob:
    :maxdepth: 2
    
-   api/v1/*
+   api/v1/controller/*
+
+
+Low level API Endpoints
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. toctree::
+   :glob:
+   :maxdepth: 2
+   
+   api/v1/server/*
 

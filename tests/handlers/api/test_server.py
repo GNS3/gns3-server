@@ -26,7 +26,7 @@ def test_server_create(server, controller):
         "user": "julien",
         "password": "secure"
     }
-    response = server.post("/servers", params)
+    response = server.post("/servers", params, example=True)
     assert response.status == 201
     assert response.route == "/servers"
     assert response.json["user"] == "julien"

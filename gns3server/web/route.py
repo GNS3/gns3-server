@@ -135,6 +135,7 @@ class Route(object):
             handler = func.__module__.replace("_handler", "").replace("gns3server.handlers.api.", "")
             cls._documentation.setdefault(handler, {})
             cls._documentation[handler].setdefault(route, {"api_version": api_version,
+                                                           "controller": kw.get("controller", False),
                                                            "methods": []})
 
             cls._documentation[handler][route]["methods"].append({
