@@ -17,5 +17,3 @@
 
 from .server_handler import ServerHandler
 from .version_handler import VersionHandler
-
-

@@ -36,5 +36,3 @@ if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.e
     if not sys.platform.startswith("win"):
         from .iou_handler import IOUHandler
         from .docker_handler import DockerHandler
-
-

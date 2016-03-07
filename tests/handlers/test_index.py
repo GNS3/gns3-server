@@ -34,3 +34,11 @@ def test_index(http_root):
 def test_status(http_root):
     response = http_root.get('/status')
     assert response.status == 200
+
+
+def test_v1(http_root):
+    """
+    The old api v1 raise a 429
+    """
+    response = http_root.get('/v1/version')
+    assert response.status == 200

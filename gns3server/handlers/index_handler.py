@@ -14,9 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 from ..web.route import Route
 from ..modules.port_manager import PortManager
 from ..modules.project_manager import ProjectManager
+from ..version import __version__
 
 
 class IndexHandler:
@@ -24,8 +26,7 @@ class IndexHandler:
     @classmethod
     @Route.get(
         r"/",
-        description="Home page for GNS3Server",
-        api_version=None
+        description="Home page for GNS3Server"
     )
     def index(request, response):
         response.template("index.html")
@@ -33,11 +34,18 @@ class IndexHandler:
     @classmethod
     @Route.get(
         r"/status",
-        description="Ressources used by GNS3Server",
-        api_version=None
+        description="Ressources used by GNS3Server"
     )
     def ports(request, response):
         response.template("status.html",
                           port_manager=PortManager.instance(),
                           project_manager=ProjectManager.instance()
                           )
+
+    @classmethod
+    @Route.get(
+        r"/v1/version",
+        description="Old API"
+    )
+    def get_v1(request, response):
+        response.json({"version": __version__})
