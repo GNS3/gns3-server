@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/90cbd7a9-dddf-43cf-90c7-766ae33a49f5'
+curl -i -X GET 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/01702d40-34f3-4035-9c26-fe8cdb914ca6'
 
-GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/90cbd7a9-dddf-43cf-90c7-766ae33a49f5 HTTP/1.1
+GET /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/01702d40-34f3-4035-9c26-fe8cdb914ca6 HTTP/1.1
 
 
 
@@ -10,7 +10,7 @@ CONTENT-LENGTH: 415
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}
+X-ROUTE: /v2/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}
 
 {
     "acpi_shutdown": false,
@@ -24,6 +24,6 @@ X-ROUTE: /v1/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "90cbd7a9-dddf-43cf-90c7-766ae33a49f5",
+    "vm_id": "01702d40-34f3-4035-9c26-fe8cdb914ca6",
     "vmname": "VMTEST"
 }

@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/330e4cd0-f20e-4ee9-b15e-1f57dcbe7b9e' -d '{"console": 2002, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/088ce9f5-eda0-403c-9336-c56d2fd18e59' -d '{"console": 2002, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/330e4cd0-f20e-4ee9-b15e-1f57dcbe7b9e HTTP/1.1
+PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/088ce9f5-eda0-403c-9336-c56d2fd18e59 HTTP/1.1
 {
     "console": 2002,
     "ethernet_adapters": 4,
@@ -21,13 +21,13 @@ CONTENT-LENGTH: 718
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms/{vm_id}
+X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}
 
 {
     "command_line": "",
     "console": 2002,
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpxy5rc5sv/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmppfz9vhu7/iourc",
     "l1_keepalives": true,
     "md5sum": null,
     "name": "test",
@@ -39,6 +39,6 @@ X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms/{vm_id}
     "serial_adapters": 0,
     "startup_config": "startup-config.cfg",
     "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpcf202_bh/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/330e4cd0-f20e-4ee9-b15e-1f57dcbe7b9e",
-    "vm_id": "330e4cd0-f20e-4ee9-b15e-1f57dcbe7b9e"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i_9npri/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/088ce9f5-eda0-403c-9336-c56d2fd18e59",
+    "vm_id": "088ce9f5-eda0-403c-9336-c56d2fd18e59"
 }

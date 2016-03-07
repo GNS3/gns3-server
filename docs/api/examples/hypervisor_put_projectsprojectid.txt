@@ -1,9 +1,9 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/c9b21e04-b7f1-4dfb-8ea0-d9b195fec5ff' -d '{"name": "second_name", "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-436/test_update_path_project_non_l0"}'
+curl -i -X PUT 'http://localhost:8000/v2/projects/a922355c-cb97-411b-879f-d9d09d330005' -d '{"name": "second_name", "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-553/test_update_path_project_non_l0"}'
 
-PUT /v1/projects/c9b21e04-b7f1-4dfb-8ea0-d9b195fec5ff HTTP/1.1
+PUT /v2/projects/a922355c-cb97-411b-879f-d9d09d330005 HTTP/1.1
 {
     "name": "second_name",
-    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-436/test_update_path_project_non_l0"
+    "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-553/test_update_path_project_non_l0"
 }
 
 
@@ -13,7 +13,7 @@ CONTENT-LENGTH: 96
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}
+X-ROUTE: /v2/hypervisor/projects/{project_id}
 
 {
     "message": "You are not allowed to modify the project directory path",

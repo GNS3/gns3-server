@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/be1f8feb-e276-43a9-a383-1899002c8871/reload' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/c72d1bbe-97b0-4711-a372-f472929e3cb5/reload' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/be1f8feb-e276-43a9-a383-1899002c8871/reload HTTP/1.1
+POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/c72d1bbe-97b0-4711-a372-f472929e3cb5/reload HTTP/1.1
 {}
 
 
@@ -9,5 +9,5 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}/reload
+X-ROUTE: /v2/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}/reload
 

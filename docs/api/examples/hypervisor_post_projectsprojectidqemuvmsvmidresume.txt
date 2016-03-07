@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/e52aeb77-ae1e-4a30-9611-c9932ed11bb6/resume' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/5b08ab35-71f7-4574-a81a-25e0ba69bb15/resume' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/e52aeb77-ae1e-4a30-9611-c9932ed11bb6/resume HTTP/1.1
+POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/5b08ab35-71f7-4574-a81a-25e0ba69bb15/resume HTTP/1.1
 {}
 
 
@@ -9,5 +9,5 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/qemu/vms/{vm_id}/resume
+X-ROUTE: /v2/hypervisor/projects/{project_id}/qemu/vms/{vm_id}/resume
 

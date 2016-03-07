@@ -39,32 +39,28 @@ class Documentation(object):
         self.write_documentation("hypervisor")
         # Controller documentation
         self.write_documentation("controller")
-        # Write doc common to both
-        self.write_documentation("common")
 
     def write_documentation(self, doc_type):
         """
         Build all the doc page for handlers
 
-        :param doc_type: Type of doc to generate (controller, hypervisor or common)
+        :param doc_type: Type of doc to generate (controller, hypervisor)
         """
         for handler_name in sorted(self._documentation):
+            if "controller." in handler_name:
+                server_type = "controller"
+            elif "hypervisor." in handler_name:
+                server_type = "hypervisor"
+
+            if doc_type != server_type:
+                continue
+
             print("Build {}".format(handler_name))
 
             for path in sorted(self._documentation[handler_name]):
 
                 api_version = self._documentation[handler_name][path]["api_version"]
                 if api_version is None:
-                    continue
-
-                if "controller." in handler_name:
-                    server_type = "controller"
-                elif "hypervisor." in handler_name:
-                    server_type = "hypervisor"
-                else:
-                    server_type = "common"
-
-                if doc_type != server_type:
                     continue
 
                 filename = self._file_path(path)
@@ -126,7 +122,7 @@ class Documentation(object):
     def _file_path(self, path):
         path = path.replace("hypervisor", "")
         path = path.replace("controller", "")
-        return re.sub("^v1", "", re.sub("[^a-z0-9]", "", path))
+        return re.sub("^v2", "", re.sub("[^a-z0-9]", "", path))
 
     def _write_definitions(self, f, schema):
         if "definitions" in schema:

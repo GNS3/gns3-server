@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/bee007f4-d97c-4273-9e17-b8f95ee25645' -d '{"console": 2003, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/289c485c-fe29-4f35-a65c-146cd4854262' -d '{"console": 2003, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/bee007f4-d97c-4273-9e17-b8f95ee25645 HTTP/1.1
+PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/289c485c-fe29-4f35-a65c-146cd4854262 HTTP/1.1
 {
     "console": 2003,
     "environment": "GNS3=1\nGNS4=0",
@@ -15,7 +15,7 @@ CONTENT-LENGTH: 531
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/docker/vms/{vm_id}
+X-ROUTE: /v2/hypervisor/projects/{project_id}/docker/vms/{vm_id}
 
 {
     "adapters": 2,
@@ -28,6 +28,6 @@ X-ROUTE: /v1/hypervisor/projects/{project_id}/docker/vms/{vm_id}
     "name": "test",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpcf202_bh/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/bee007f4-d97c-4273-9e17-b8f95ee25645",
-    "vm_id": "bee007f4-d97c-4273-9e17-b8f95ee25645"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i_9npri/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/289c485c-fe29-4f35-a65c-146cd4854262",
+    "vm_id": "289c485c-fe29-4f35-a65c-146cd4854262"
 }

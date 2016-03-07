@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/qemu/img' -d '{"cluster_size": 64, "format": "qcow2", "lazy_refcounts": "off", "path": "/tmp/hda.qcow2", "preallocation": "metadata", "qemu_img": "/tmp/qemu-img", "refcount_bits": 12, "size": 100}'
+curl -i -X POST 'http://localhost:8000/v2/qemu/img' -d '{"cluster_size": 64, "format": "qcow2", "lazy_refcounts": "off", "path": "/tmp/hda.qcow2", "preallocation": "metadata", "qemu_img": "/tmp/qemu-img", "refcount_bits": 12, "size": 100}'
 
-POST /v1/qemu/img HTTP/1.1
+POST /v2/qemu/img HTTP/1.1
 {
     "cluster_size": 64,
     "format": "qcow2",
@@ -18,5 +18,5 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/qemu/img
+X-ROUTE: /v2/hypervisor/qemu/img
 

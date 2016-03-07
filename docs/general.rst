@@ -211,3 +211,10 @@ The available notification are:
 * vm.stopped
 * log.error
 
+Previous versions
+=================
+
+API version 1
+-------------
+Shipped with GNS3 1.3 and 1.4. This API doesn't support the controller system.
+

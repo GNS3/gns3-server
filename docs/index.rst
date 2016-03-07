@@ -19,18 +19,6 @@ GNS3 expose two type of endpoints:
   * Controller
   * Hypervisor
 
-
-Common API Endpoints
-~~~~~~~~~~~~~~~~~~~~
-
-This calls are available on both server.
-
-.. toctree::
-   :glob:
-   :maxdepth: 2
-   
-   api/v1/common/*
-
 Controller API Endpoints
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -46,7 +34,7 @@ hypervisors.
    :glob:
    :maxdepth: 2
    
-   api/v1/controller/*
+   api/v2/controller/*
 
 
 Hypervisor API Endpoints
@@ -62,5 +50,5 @@ the VM process.
    :glob:
    :maxdepth: 2
    
-   api/v1/hypervisor/*
+   api/v2/hypervisor/*
 

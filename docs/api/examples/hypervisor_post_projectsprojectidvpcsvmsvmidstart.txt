@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/b8c36dbd-2274-4148-923f-a35865b38a48/start' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/a2598c6d-3952-47a1-bdc0-37da99c1e273/start' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/b8c36dbd-2274-4148-923f-a35865b38a48/start HTTP/1.1
+POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/a2598c6d-3952-47a1-bdc0-37da99c1e273/start HTTP/1.1
 {}
 
 
@@ -10,7 +10,7 @@ CONTENT-LENGTH: 455
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}/start
+X-ROUTE: /v2/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}/start
 
 {
     "command_line": "",
@@ -20,6 +20,6 @@ X-ROUTE: /v1/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}/start
     "startup_script": null,
     "startup_script_path": null,
     "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpxwj0vubb/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/b8c36dbd-2274-4148-923f-a35865b38a48",
-    "vm_id": "b8c36dbd-2274-4148-923f-a35865b38a48"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpwq5ca6jn/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/a2598c6d-3952-47a1-bdc0-37da99c1e273",
+    "vm_id": "a2598c6d-3952-47a1-bdc0-37da99c1e273"
 }

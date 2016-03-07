@@ -120,7 +120,7 @@ class Route(object):
         # This block is executed only the first time
         output_schema = kw.get("output", {})
         input_schema = kw.get("input", {})
-        api_version = kw.get("api_version", 1)
+        api_version = kw.get("api_version", 2)
         raw = kw.get("raw", False)
 
         def register(func):
@@ -129,8 +129,6 @@ class Route(object):
                 route = "/v{version}/controller{path}".format(path=path, version=api_version)
             elif "hypervisor" in func.__module__:
                 route = "/v{version}/hypervisor{path}".format(path=path, version=api_version)
-            elif "handlers.api" in func.__module__:
-                route = "/v{version}{path}".format(path=path, version=api_version)
             else:
                 route = path
 

@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7bdba100-186c-4665-9f9e-beae8ccd47f6/adapters/0/ports/0/stop_capture' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/36f9d2a3-fccb-4602-ae5a-ae2166b8a037/adapters/0/ports/0/stop_capture' -d '{}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7bdba100-186c-4665-9f9e-beae8ccd47f6/adapters/0/ports/0/stop_capture HTTP/1.1
+POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/36f9d2a3-fccb-4602-ae5a-ae2166b8a037/adapters/0/ports/0/stop_capture HTTP/1.1
 {}
 
 
@@ -9,5 +9,5 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture
+X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture
 

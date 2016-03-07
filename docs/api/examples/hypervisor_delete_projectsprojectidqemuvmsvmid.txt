@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/089172d7-6de2-4936-961f-1cddec3ec4df'
+curl -i -X DELETE 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/9ae4aaa3-ffc0-4695-8216-fbd82d67e428'
 
-DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/089172d7-6de2-4936-961f-1cddec3ec4df HTTP/1.1
+DELETE /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/9ae4aaa3-ffc0-4695-8216-fbd82d67e428 HTTP/1.1
 
 
 
@@ -9,5 +9,5 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/qemu/vms/{vm_id}
+X-ROUTE: /v2/hypervisor/projects/{project_id}/qemu/vms/{vm_id}
 

@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/fed59d23-c0e8-4ce3-a4dd-9acc73d8b40c' -d '{"console": 2012, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/5f21b010-55dd-450c-a0ed-1fe0706afd2c' -d '{"console": 2012, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/fed59d23-c0e8-4ce3-a4dd-9acc73d8b40c HTTP/1.1
+PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/5f21b010-55dd-450c-a0ed-1fe0706afd2c HTTP/1.1
 {
     "console": 2012,
     "name": "test",
@@ -14,7 +14,7 @@ CONTENT-LENGTH: 471
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}
+X-ROUTE: /v2/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}
 
 {
     "command_line": "",
@@ -24,6 +24,6 @@ X-ROUTE: /v1/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",
     "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpxwj0vubb/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/fed59d23-c0e8-4ce3-a4dd-9acc73d8b40c",
-    "vm_id": "fed59d23-c0e8-4ce3-a4dd-9acc73d8b40c"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpwq5ca6jn/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/5f21b010-55dd-450c-a0ed-1fe0706afd2c",
+    "vm_id": "5f21b010-55dd-450c-a0ed-1fe0706afd2c"
 }

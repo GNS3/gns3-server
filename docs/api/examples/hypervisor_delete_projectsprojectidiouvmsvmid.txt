@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/487f966e-f0b7-440e-9360-dd0b3ec85298'
+curl -i -X DELETE 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/85bf8018-891e-4a8f-97b0-efc3046aab36'
 
-DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/487f966e-f0b7-440e-9360-dd0b3ec85298 HTTP/1.1
+DELETE /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/85bf8018-891e-4a8f-97b0-efc3046aab36 HTTP/1.1
 
 
 
@@ -9,5 +9,5 @@ ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms/{vm_id}
+X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}
 

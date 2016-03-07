@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/2220af9e-1308-487c-9394-d07fc02b48d2/start' -d '{"iourc_content": "test"}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/6cae9c24-fbc6-485f-b8cf-df8512bb512e/start' -d '{"iourc_content": "test"}'
 
-POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/2220af9e-1308-487c-9394-d07fc02b48d2/start HTTP/1.1
+POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/6cae9c24-fbc6-485f-b8cf-df8512bb512e/start HTTP/1.1
 {
     "iourc_content": "test"
 }
@@ -12,13 +12,13 @@ CONTENT-LENGTH: 707
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/1.5.0dev1
-X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms/{vm_id}/start
+X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}/start
 
 {
     "command_line": "",
     "console": 2001,
     "ethernet_adapters": 2,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpy0ailev_/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpq6flori0/iourc",
     "l1_keepalives": false,
     "md5sum": null,
     "name": "PC TEST 1",
@@ -30,6 +30,6 @@ X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms/{vm_id}/start
     "serial_adapters": 2,
     "startup_config": null,
     "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpcf202_bh/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/2220af9e-1308-487c-9394-d07fc02b48d2",
-    "vm_id": "2220af9e-1308-487c-9394-d07fc02b48d2"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i_9npri/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/6cae9c24-fbc6-485f-b8cf-df8512bb512e",
+    "vm_id": "6cae9c24-fbc6-485f-b8cf-df8512bb512e"
 }

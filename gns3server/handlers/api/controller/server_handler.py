@@ -52,7 +52,7 @@ class ServerHandler:
 
     @classmethod
     @Route.post(
-        r"/server/shutdown",
+        r"/servers/shutdown",
         description="Shutdown the local server",
         status_codes={
             201: "Server is shutting down",

@@ -1,0 +1,19 @@
+curl -i -X POST 'http://localhost:8000/v2/version' -d '{"version": "1.5.0dev1"}'
+
+POST /v2/version HTTP/1.1
+{
+    "version": "1.5.0dev1"
+}
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 30
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v2/controller/version
+
+{
+    "version": "1.5.0dev1"
+}

@@ -30,13 +30,13 @@ def test_documentation_write(tmpdir):
     Documentation(Route, str(tmpdir)).write()
 
     assert os.path.exists(str(tmpdir / "api"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox.rst"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox" / "virtualboxvms.rst"))
-    with open(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox" / "projectsprojectidvirtualboxvms.rst")) as f:
+    assert os.path.exists(str(tmpdir / "api" / "v2" / "hypervisor"))
+    assert os.path.exists(str(tmpdir / "api" / "v2" / "hypervisor" / "virtualbox.rst"))
+    assert os.path.exists(str(tmpdir / "api" / "v2" / "hypervisor" / "virtualbox"))
+    assert os.path.exists(str(tmpdir / "api" / "v2" / "hypervisor" / "virtualbox" / "virtualboxvms.rst"))
+    with open(str(tmpdir / "api" / "v2" / "hypervisor" / "virtualbox" / "projectsprojectidvirtualboxvms.rst")) as f:
         content = f.read()
         assert "Sample session" in content
         assert "literalinclude:: ../../../examples/hypervisor_post_projectsprojectidvirtualboxvms.txt" in content
 
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "controller" / "server.rst"))
+    assert os.path.exists(str(tmpdir / "api" / "v2" / "controller" / "server.rst"))
