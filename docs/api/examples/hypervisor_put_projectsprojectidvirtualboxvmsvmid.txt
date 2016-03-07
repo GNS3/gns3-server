@@ -1,0 +1,32 @@
+curl -i -X PUT 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/6ae23735-e754-4e32-b6b5-458bd2828328' -d '{"console": 2011, "name": "test"}'
+
+PUT /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/6ae23735-e754-4e32-b6b5-458bd2828328 HTTP/1.1
+{
+    "console": 2011,
+    "name": "test"
+}
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 413
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}
+
+{
+    "acpi_shutdown": false,
+    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+    "adapters": 0,
+    "console": 2011,
+    "enable_remote_console": false,
+    "headless": false,
+    "name": "test",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 0,
+    "use_any_adapter": false,
+    "vm_directory": null,
+    "vm_id": "6ae23735-e754-4e32-b6b5-458bd2828328",
+    "vmname": "VMTEST"
+}

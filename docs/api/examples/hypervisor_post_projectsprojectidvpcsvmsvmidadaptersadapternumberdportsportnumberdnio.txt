@@ -1,0 +1,25 @@
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/4c222853-b5b2-435e-865f-cf66f0bd32da/adapters/0/ports/0/nio' -d '{"lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
+
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/4c222853-b5b2-435e-865f-cf66f0bd32da/adapters/0/ports/0/nio HTTP/1.1
+{
+    "lport": 4242,
+    "rhost": "127.0.0.1",
+    "rport": 4343,
+    "type": "nio_udp"
+}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 89
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
+
+{
+    "lport": 4242,
+    "rhost": "127.0.0.1",
+    "rport": 4343,
+    "type": "nio_udp"
+}

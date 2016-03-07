@@ -34,7 +34,7 @@ def restore_working_dir():
     os.chdir(directory)
 
 
-def test_index_upload(server, tmpdir):
+def test_index_upload(http_root, tmpdir):
 
     Config.instance().set("Server", "images_path", str(tmpdir))
 
@@ -42,7 +42,7 @@ def test_index_upload(server, tmpdir):
     open(str(tmpdir / "alpha.md5sum"), "w+").close()
     open(str(tmpdir / ".beta"), "w+").close()
 
-    response = server.get('/upload', api_version=None)
+    response = http_root.get('/upload')
     assert response.status == 200
     html = response.html
     assert "GNS3 Server" in html
@@ -52,7 +52,7 @@ def test_index_upload(server, tmpdir):
     assert "alpha.md5sum" not in html
 
 
-def test_upload(server, tmpdir):
+def test_upload(http_root, tmpdir):
 
     content = ''.join(['a' for _ in range(0, 1025)])
 
@@ -64,7 +64,7 @@ def test_upload(server, tmpdir):
 
     Config.instance().set("Server", "images_path", str(tmpdir))
 
-    response = server.post('/upload', api_version=None, body=body, raw=True)
+    response = http_root.post('/upload', body=body, raw=True)
 
     assert "test2" in response.body.decode("utf-8")
 
@@ -76,7 +76,7 @@ def test_upload(server, tmpdir):
         assert checksum == "ae187e1febee2a150b64849c32d566ca"
 
 
-def test_upload_previous_checksum(server, tmpdir):
+def test_upload_previous_checksum(http_root, tmpdir):
 
     content = ''.join(['a' for _ in range(0, 1025)])
 
@@ -93,7 +93,7 @@ def test_upload_previous_checksum(server, tmpdir):
     with open(str(tmpdir / "QEMU" / "test2.md5sum"), 'w+') as f:
         f.write("FAKE checksum")
 
-    response = server.post('/upload', api_version=None, body=body, raw=True)
+    response = http_root.post('/upload', body=body, raw=True)
 
     assert "test2" in response.body.decode("utf-8")
 
@@ -105,7 +105,7 @@ def test_upload_previous_checksum(server, tmpdir):
         assert checksum == "ae187e1febee2a150b64849c32d566ca"
 
 
-def test_upload_images_backup(server, tmpdir):
+def test_upload_images_backup(http_root, tmpdir):
     Config.instance().set("Server", "images_path", str(tmpdir / 'images'))
     os.makedirs(str(tmpdir / 'images' / 'IOU'))
     # An old IOU image that we need to replace
@@ -126,7 +126,7 @@ def test_upload_images_backup(server, tmpdir):
     body = aiohttp.FormData()
     body.add_field('type', 'IMAGES')
     body.add_field('file', open(str(tmpdir / 'test.tar'), 'rb'), content_type='application/x-gtar', filename='test.tar')
-    response = server.post('/upload', api_version=None, body=body, raw=True)
+    response = http_root.post('/upload', body=body, raw=True)
     assert response.status == 200
 
     with open(str(tmpdir / 'images' / 'QEMU' / 'a.img')) as f:
@@ -139,7 +139,7 @@ def test_upload_images_backup(server, tmpdir):
     assert not os.path.exists(str(tmpdir / 'images' / 'archive.tar'))
 
 
-def test_upload_projects_backup(server, tmpdir):
+def test_upload_projects_backup(http_root, tmpdir):
     Config.instance().set("Server", "projects_path", str(tmpdir / 'projects'))
     os.makedirs(str(tmpdir / 'projects' / 'b'))
     # An old b image that we need to replace
@@ -160,7 +160,7 @@ def test_upload_projects_backup(server, tmpdir):
     body = aiohttp.FormData()
     body.add_field('type', 'PROJECTS')
     body.add_field('file', open(str(tmpdir / 'test.tar'), 'rb'), content_type='application/x-gtar', filename='test.tar')
-    response = server.post('/upload', api_version=None, body=body, raw=True)
+    response = http_root.post('/upload', body=body, raw=True)
     assert response.status == 200
 
     with open(str(tmpdir / 'projects' / 'a' / 'a.img')) as f:
@@ -173,7 +173,7 @@ def test_upload_projects_backup(server, tmpdir):
     assert not os.path.exists(str(tmpdir / 'projects' / 'archive.tar'))
 
 
-def test_backup_images(server, tmpdir, loop):
+def test_backup_images(http_root, tmpdir, loop):
     Config.instance().set('Server', 'images_path', str(tmpdir))
 
     os.makedirs(str(tmpdir / 'QEMU'))
@@ -182,7 +182,7 @@ def test_backup_images(server, tmpdir, loop):
     with open(str(tmpdir / 'QEMU' / 'b.img'), 'w+') as f:
         f.write('world')
 
-    response = server.get('/backup/images.tar', api_version=None, raw=True)
+    response = http_root.get('/backup/images.tar', raw=True)
     assert response.status == 200
     assert response.headers['CONTENT-TYPE'] == 'application/x-gtar'
 
@@ -204,7 +204,7 @@ def test_backup_images(server, tmpdir, loop):
     assert open(os.path.join('QEMU', 'b.img')).read() == 'world'
 
 
-def test_backup_projects(server, tmpdir, loop):
+def test_backup_projects(http_root, tmpdir, loop):
     Config.instance().set('Server', 'projects_path', str(tmpdir))
 
     os.makedirs(str(tmpdir / 'a'))
@@ -214,7 +214,7 @@ def test_backup_projects(server, tmpdir, loop):
     with open(str(tmpdir / 'b' / 'b.gns3'), 'w+') as f:
         f.write('world')
 
-    response = server.get('/backup/projects.tar', api_version=None, raw=True)
+    response = http_root.get('/backup/projects.tar', raw=True)
     assert response.status == 200
     assert response.headers['CONTENT-TYPE'] == 'application/x-gtar'
 

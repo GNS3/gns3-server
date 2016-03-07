@@ -1,0 +1,25 @@
+curl -i -X GET 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/fdd9250a-63f3-4027-8754-eef610194c57'
+
+GET /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/fdd9250a-63f3-4027-8754-eef610194c57 HTTP/1.1
+
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 455
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}
+
+{
+    "command_line": "",
+    "console": 2010,
+    "name": "PC TEST 1",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "startup_script": null,
+    "startup_script_path": null,
+    "status": "stopped",
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpxwj0vubb/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/fdd9250a-63f3-4027-8754-eef610194c57",
+    "vm_id": "fdd9250a-63f3-4027-8754-eef610194c57"
+}

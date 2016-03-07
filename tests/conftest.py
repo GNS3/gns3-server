@@ -79,7 +79,7 @@ def _get_unused_port():
 
 
 @pytest.fixture
-def server(request, loop, port_manager, monkeypatch):
+def http_server(request, loop, port_manager, monkeypatch):
     """A GNS3 server"""
 
     port = _get_unused_port()
@@ -101,7 +101,43 @@ def server(request, loop, port_manager, monkeypatch):
         srv.close()
         srv.wait_closed()
     request.addfinalizer(tear_down)
+    return (host, port)
+
+
+@pytest.fixture
+def http_root(loop, http_server):
+    """
+    Return an helper allowing you to call the server without any prefix
+    """
+    host, port = http_server
     return Query(loop, host=host, port=port)
+
+
+@pytest.fixture
+def http_controller(loop, http_server):
+    """
+    Return an helper allowing you to call the server API without any prefix
+    """
+    host, port = http_server
+    return Query(loop, host=host, port=port, prefix="/controller", api_version=1)
+
+
+@pytest.fixture
+def http_hypervisor(loop, http_server):
+    """
+    Return an helper allowing you to call the hypervisor API via HTTP
+    """
+    host, port = http_server
+    return Query(loop, host=host, port=port, prefix="/hypervisor", api_version=1)
+
+
+@pytest.fixture
+def http_api(loop, http_server):
+    """
+    Return an helper allowing you to call the root API via HTTP
+    """
+    host, port = http_server
+    return Query(loop, host=host, port=port, api_version=1)
 
 
 @pytest.fixture(scope="function")

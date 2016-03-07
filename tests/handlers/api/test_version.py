@@ -25,37 +25,37 @@ from gns3server.config import Config
 from gns3server.version import __version__
 
 
-def test_version_output(server):
+def test_version_output(http_api):
     config = Config.instance()
     config.set("Server", "local", "true")
 
-    response = server.get('/version', example=True)
+    response = http_api.get('/version', example=True)
     assert response.status == 200
     assert response.json == {'local': True, 'version': __version__}
 
 
-def test_version_input(server):
+def test_version_input(http_api):
     query = {'version': __version__}
-    response = server.post('/version', query, example=True)
+    response = http_api.post('/version', query, example=True)
     assert response.status == 200
     assert response.json == {'version': __version__}
 
 
-def test_version_invalid_input(server):
+def test_version_invalid_input(http_api):
     query = {'version': "0.4.2"}
-    response = server.post('/version', query)
+    response = http_api.post('/version', query)
     assert response.status == 409
     assert response.json == {'message': 'Client version 0.4.2 differs with server version {}'.format(__version__),
                              'status': 409}
 
 
-def test_version_invalid_input_schema(server):
+def test_version_invalid_input_schema(http_api):
     query = {'version': "0.4.2", "bla": "blu"}
-    response = server.post('/version', query)
+    response = http_api.post('/version', query)
     assert response.status == 400
 
 
-def test_version_invalid_json(server):
+def test_version_invalid_json(http_api):
     query = "BOUM"
-    response = server.post('/version', query, raw=True)
+    response = http_api.post('/version', query, raw=True)
     assert response.status == 400

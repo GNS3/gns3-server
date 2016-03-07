@@ -1,0 +1,38 @@
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms' -d '{"name": "PC TEST 1", "path": "iou.bin", "startup_config_content": "hostname test", "vm_id": "939d59a8-17c9-40c5-8880-6d1bfc88a130"}'
+
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms HTTP/1.1
+{
+    "name": "PC TEST 1",
+    "path": "iou.bin",
+    "startup_config_content": "hostname test",
+    "vm_id": "939d59a8-17c9-40c5-8880-6d1bfc88a130"
+}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 659
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms
+
+{
+    "command_line": "",
+    "console": 2001,
+    "ethernet_adapters": 2,
+    "iourc_path": null,
+    "l1_keepalives": false,
+    "md5sum": null,
+    "name": "PC TEST 1",
+    "nvram": 128,
+    "path": "iou.bin",
+    "private_config": null,
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 256,
+    "serial_adapters": 2,
+    "startup_config": "startup-config.cfg",
+    "use_default_iou_values": true,
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpcf202_bh/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/939d59a8-17c9-40c5-8880-6d1bfc88a130",
+    "vm_id": "939d59a8-17c9-40c5-8880-6d1bfc88a130"
+}

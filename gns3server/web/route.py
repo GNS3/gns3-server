@@ -123,29 +123,34 @@ class Route(object):
         api_version = kw.get("api_version", 1)
         raw = kw.get("raw", False)
 
-        # If it's a JSON api endpoint just register the endpoint an do nothing
-        if api_version is None:
-            cls._path = path
-        else:
-            cls._path = "/v{version}{path}".format(path=path, version=api_version)
-
         def register(func):
-            route = cls._path
+            # Add the type of server to the route
+            if "controller" in func.__module__:
+                route = "/v{version}/controller{path}".format(path=path, version=api_version)
+            elif "hypervisor" in func.__module__:
+                route = "/v{version}/hypervisor{path}".format(path=path, version=api_version)
+            elif "handlers.api" in func.__module__:
+                route = "/v{version}{path}".format(path=path, version=api_version)
+            else:
+                route = path
 
-            handler = func.__module__.replace("_handler", "").replace("gns3server.handlers.api.", "")
-            cls._documentation.setdefault(handler, {})
-            cls._documentation[handler].setdefault(route, {"api_version": api_version,
-                                                           "controller": kw.get("controller", False),
-                                                           "methods": []})
+            # Compute metadata for the documentation
+            if api_version:
+                handler = func.__module__.replace("_handler", "").replace("gns3server.handlers.api.", "")
+                cls._documentation.setdefault(handler, {})
+                cls._documentation[handler].setdefault(route, {"api_version": api_version,
+                                                               "controller": kw.get("controller", False),
+                                                               "methods": []})
 
-            cls._documentation[handler][route]["methods"].append({
-                "method": method,
-                "status_codes": kw.get("status_codes", {200: "OK"}),
-                "parameters": kw.get("parameters", {}),
-                "output_schema": output_schema,
-                "input_schema": input_schema,
-                "description": kw.get("description", ""),
-            })
+                cls._documentation[handler][route]["methods"].append({
+                    "method": method,
+                    "status_codes": kw.get("status_codes", {200: "OK"}),
+                    "parameters": kw.get("parameters", {}),
+                    "output_schema": output_schema,
+                    "input_schema": input_schema,
+                    "description": kw.get("description", ""),
+                })
+
             func = asyncio.coroutine(func)
 
             @asyncio.coroutine
@@ -253,7 +258,7 @@ class Route(object):
                     response = yield from control_schema(request)
                 return response
 
-            cls._routes.append((method, cls._path, vm_concurrency))
+            cls._routes.append((method, route, vm_concurrency))
 
             return vm_concurrency
         return register

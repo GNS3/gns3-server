@@ -24,20 +24,19 @@ from gns3server.web.route import Route
 
 def test_documentation_write(tmpdir):
     os.makedirs(str(tmpdir / "api/examples"))
-    with open(str(tmpdir / "api/examples/post_projectsprojectidvirtualboxvms.txt"), "w+") as f:
+    with open(str(tmpdir / "api/examples/hypervisor_post_projectsprojectidvirtualboxvms.txt"), "w+") as f:
         f.write("curl test")
 
     Documentation(Route, str(tmpdir)).write()
 
     assert os.path.exists(str(tmpdir / "api"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "server"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "server" / "virtualbox.rst"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "server" / "virtualbox"))
-    assert os.path.exists(str(tmpdir / "api" / "v1" / "server" / "virtualbox" / "virtualboxvms.rst"))
-    with open(str(tmpdir / "api" / "v1" / "server" / "virtualbox" / "projectsprojectidvirtualboxvms.rst")) as f:
+    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor"))
+    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox.rst"))
+    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox"))
+    assert os.path.exists(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox" / "virtualboxvms.rst"))
+    with open(str(tmpdir / "api" / "v1" / "hypervisor" / "virtualbox" / "projectsprojectidvirtualboxvms.rst")) as f:
         content = f.read()
         assert "Sample session" in content
-        assert "literalinclude:: ../../../examples/post_projectsprojectidvirtualboxvms.txt" in content
+        assert "literalinclude:: ../../../examples/hypervisor_post_projectsprojectidvirtualboxvms.txt" in content
 
     assert os.path.exists(str(tmpdir / "api" / "v1" / "controller" / "server.rst"))
-

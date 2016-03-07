@@ -1,0 +1,13 @@
+curl -i -X POST 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/1e957352-5bcb-4655-9bc8-03f7e3b543b7/adapters/0/ports/0/stop_capture' -d '{}'
+
+POST /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/1e957352-5bcb-4655-9bc8-03f7e3b543b7/adapters/0/ports/0/stop_capture HTTP/1.1
+{}
+
+
+HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects/{project_id}/docker/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture
+

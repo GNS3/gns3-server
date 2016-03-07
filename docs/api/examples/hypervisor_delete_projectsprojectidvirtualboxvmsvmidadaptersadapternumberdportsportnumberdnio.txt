@@ -1,0 +1,13 @@
+curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/149016fb-30de-44c9-b28b-ddb3c66b150d/adapters/0/ports/0/nio'
+
+DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/149016fb-30de-44c9-b28b-ddb3c66b150d/adapters/0/ports/0/nio HTTP/1.1
+
+
+
+HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
+

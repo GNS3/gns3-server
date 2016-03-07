@@ -1,0 +1,23 @@
+curl -i -X POST 'http://localhost:8000/v1/projects' -d '{"name": "test"}'
+
+POST /v1/projects HTTP/1.1
+{
+    "name": "test"
+}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 315
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects
+
+{
+    "location": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpw5zez4l6/projects",
+    "name": "test",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpw5zez4l6/projects/28e98ad8-23a2-48ea-a316-c9e5d9bb40d5",
+    "project_id": "28e98ad8-23a2-48ea-a316-c9e5d9bb40d5",
+    "temporary": false
+}

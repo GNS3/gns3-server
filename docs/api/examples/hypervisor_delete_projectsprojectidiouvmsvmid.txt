@@ -1,0 +1,13 @@
+curl -i -X DELETE 'http://localhost:8000/v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/487f966e-f0b7-440e-9360-dd0b3ec85298'
+
+DELETE /v1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/487f966e-f0b7-440e-9360-dd0b3ec85298 HTTP/1.1
+
+
+
+HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v1/hypervisor/projects/{project_id}/iou/vms/{vm_id}
+
