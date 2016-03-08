@@ -152,7 +152,7 @@ class Project:
     @asyncio.coroutine
     def clean_old_path(self, old_path):
         """
-        Called after a project location change. All the modules should
+        Called after a project location change. All the hypervisor should
         have been notified before
         """
         if self._temporary:
@@ -343,10 +343,10 @@ class Project:
         Closes the project, but keep information on disk
         """
 
-        for module in self.modules():
+        for module in self.hypervisor():
             yield from module.instance().project_closing(self)
         yield from self._close_and_clean(self._temporary)
-        for module in self.modules():
+        for module in self.hypervisor():
             yield from module.instance().project_closed(self)
 
     @asyncio.coroutine
@@ -400,7 +400,7 @@ class Project:
             vm = self._vms_to_destroy.pop()
             yield from vm.delete()
             self.remove_vm(vm)
-        for module in self.modules():
+        for module in self.hypervisor():
             yield from module.instance().project_committed(self)
 
     @asyncio.coroutine
@@ -409,10 +409,10 @@ class Project:
         Removes project from disk
         """
 
-        for module in self.modules():
+        for module in self.hypervisor():
             yield from module.instance().project_closing(self)
         yield from self._close_and_clean(True)
-        for module in self.modules():
+        for module in self.hypervisor():
             yield from module.instance().project_closed(self)
 
     @classmethod
@@ -430,13 +430,13 @@ class Project:
                     log.warning("Purge old temporary project {}".format(project))
                     shutil.rmtree(path)
 
-    def modules(self):
+    def hypervisor(self):
         """
-        Returns all loaded VM modules.
+        Returns all loaded VM hypervisor.
         """
 
         # We import it at the last time to avoid circular dependencies
-        from ..modules import MODULES
+        from ..hypervisor import MODULES
         return MODULES
 
     def emit(self, action, event):

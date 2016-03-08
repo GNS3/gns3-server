@@ -20,7 +20,7 @@ import os.path
 
 from aiohttp.web import HTTPConflict
 from ....web.route import Route
-from ....modules.project_manager import ProjectManager
+from ....hypervisor.project_manager import ProjectManager
 from ....schemas.nio import NIO_SCHEMA
 from ....schemas.qemu import QEMU_CREATE_SCHEMA
 from ....schemas.qemu import QEMU_UPDATE_SCHEMA
@@ -30,7 +30,7 @@ from ....schemas.qemu import QEMU_BINARY_LIST_SCHEMA
 from ....schemas.qemu import QEMU_CAPABILITY_LIST_SCHEMA
 from ....schemas.qemu import QEMU_IMAGE_CREATE_SCHEMA
 from ....schemas.vm import VM_LIST_IMAGES_SCHEMA
-from ....modules.qemu import Qemu
+from ....hypervisor.qemu import Qemu
 from ....config import Config
 
 

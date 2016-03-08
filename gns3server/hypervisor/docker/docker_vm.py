@@ -157,7 +157,7 @@ class DockerVM(BaseVM):
         """
         binds = []
 
-        binds.append("{}:/gns3:ro".format(get_resource("modules/docker/resources")))
+        binds.append("{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")))
 
         volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
         if volumes is None:

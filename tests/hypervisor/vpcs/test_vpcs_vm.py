@@ -25,9 +25,9 @@ from tests.utils import asyncio_patch
 from pkg_resources import parse_version
 from unittest.mock import patch, MagicMock
 
-from gns3server.modules.vpcs.vpcs_vm import VPCSVM
-from gns3server.modules.vpcs.vpcs_error import VPCSError
-from gns3server.modules.vpcs import VPCS
+from gns3server.hypervisor.vpcs.vpcs_vm import VPCSVM
+from gns3server.hypervisor.vpcs.vpcs_error import VPCSError
+from gns3server.hypervisor.vpcs import VPCS
 
 
 @pytest.fixture(scope="module")
@@ -51,19 +51,19 @@ def test_vm(project, manager):
 
 
 def test_vm_check_vpcs_version(loop, vm, manager):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.9"):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.9"):
         loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
         assert vm._vpcs_version == parse_version("0.9")
 
 
 def test_vm_check_vpcs_version_0_6_1(loop, vm, manager):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.6.1"):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.6.1"):
         loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
         assert vm._vpcs_version == parse_version("0.6.1")
 
 
 def test_vm_invalid_vpcs_version(loop, manager, vm):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
         with pytest.raises(VPCSError):
             nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -73,7 +73,7 @@ def test_vm_invalid_vpcs_version(loop, manager, vm):
 
 
 def test_vm_invalid_vpcs_path(vm, manager, loop):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.vpcs_path", return_value="/tmp/fake/path/vpcs"):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM.vpcs_path", return_value="/tmp/fake/path/vpcs"):
         with pytest.raises(VPCSError):
             nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -87,7 +87,7 @@ def test_start(loop, vm):
     process.returncode = None
     queue = vm.project.get_listen_queue()
 
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -123,7 +123,7 @@ def test_start_0_6_1(loop, vm):
     queue = vm.project.get_listen_queue()
     vm._vpcs_version = parse_version("0.6.1")
 
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -156,7 +156,7 @@ def test_stop(loop, vm):
     process.wait.return_value = future
     process.returncode = None
 
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -189,7 +189,7 @@ def test_reload(loop, vm):
     process.wait.return_value = future
     process.returncode = None
 
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -214,14 +214,14 @@ def test_add_nio_binding_udp(vm):
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_add_nio_binding_tap(vm, ethernet_device):
-    with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
+    with patch("gns3server.hypervisor.base_manager.BaseManager.has_privileged_access", return_value=True):
         nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_tap", "tap_device": ethernet_device})
         vm.port_add_nio_binding(0, nio)
         assert nio.tap_device == ethernet_device
 
 
 # def test_add_nio_binding_tap_no_privileged_access(vm):
-#     with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=False):
+#     with patch("gns3server.hypervisor.base_manager.BaseManager.has_privileged_access", return_value=False):
 #         with pytest.raises(aiohttp.web.HTTPForbidden):
 #             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_tap", "tap_device": "test"})
 #             vm.port_add_nio_binding(0, nio)
@@ -285,7 +285,7 @@ def test_change_name(vm, tmpdir):
 
 
 def test_close(vm, port_manager, loop):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
             loop.run_until_complete(asyncio.async(vm.close()))

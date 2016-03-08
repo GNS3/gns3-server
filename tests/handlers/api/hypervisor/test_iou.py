@@ -136,7 +136,7 @@ def test_iou_get(http_hypervisor, project, vm):
 
 
 def test_iou_start(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.start", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 200
@@ -146,7 +146,7 @@ def test_iou_start(http_hypervisor, vm):
 def test_iou_start_with_iourc(http_hypervisor, vm, tmpdir):
     body = {"iourc_content": "test"}
 
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.start", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=body, example=True)
         assert mock.called
         assert response.status == 200
@@ -158,21 +158,21 @@ def test_iou_start_with_iourc(http_hypervisor, vm, tmpdir):
 
 
 def test_iou_stop(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.stop", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.stop", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_iou_reload(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.reload", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.reload", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_iou_delete(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.iou.IOU.delete_vm", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.iou.IOU.delete_vm", return_value=True) as mock:
         response = http_hypervisor.delete("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
@@ -242,7 +242,7 @@ def test_iou_nio_create_ethernet_different_port(http_hypervisor, vm, ethernet_de
 
 
 def test_iou_nio_create_tap(http_hypervisor, vm, ethernet_device):
-    with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
+    with patch("gns3server.hypervisor.base_manager.BaseManager.has_privileged_access", return_value=True):
         response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
                                                                                                                                                                  "tap_device": ethernet_device})
         assert response.status == 201
@@ -262,8 +262,8 @@ def test_iou_delete_nio(http_hypervisor, vm):
 
 def test_iou_start_capture(http_hypervisor, vm, tmpdir, project):
 
-    with patch("gns3server.modules.iou.iou_vm.IOUVM.is_running", return_value=True) as mock:
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start_capture") as start_capture:
+    with patch("gns3server.hypervisor.iou.iou_vm.IOUVM.is_running", return_value=True) as mock:
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.start_capture") as start_capture:
 
             params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
             response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params, example=True)
@@ -276,8 +276,8 @@ def test_iou_start_capture(http_hypervisor, vm, tmpdir, project):
 
 def test_iou_start_capture_not_started(http_hypervisor, vm, tmpdir):
 
-    with patch("gns3server.modules.iou.iou_vm.IOUVM.is_running", return_value=False) as mock:
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.start_capture") as start_capture:
+    with patch("gns3server.hypervisor.iou.iou_vm.IOUVM.is_running", return_value=False) as mock:
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.start_capture") as start_capture:
 
             params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
             response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params)
@@ -288,8 +288,8 @@ def test_iou_start_capture_not_started(http_hypervisor, vm, tmpdir):
 
 def test_iou_stop_capture(http_hypervisor, vm, tmpdir, project):
 
-    with patch("gns3server.modules.iou.iou_vm.IOUVM.is_running", return_value=True) as mock:
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.stop_capture") as stop_capture:
+    with patch("gns3server.hypervisor.iou.iou_vm.IOUVM.is_running", return_value=True) as mock:
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.stop_capture") as stop_capture:
 
             response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
 
@@ -300,8 +300,8 @@ def test_iou_stop_capture(http_hypervisor, vm, tmpdir, project):
 
 def test_iou_stop_capture_not_started(http_hypervisor, vm, tmpdir):
 
-    with patch("gns3server.modules.iou.iou_vm.IOUVM.is_running", return_value=False) as mock:
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM.stop_capture") as stop_capture:
+    with patch("gns3server.hypervisor.iou.iou_vm.IOUVM.is_running", return_value=False) as mock:
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM.stop_capture") as stop_capture:
 
             response = http_hypervisor.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
 
@@ -330,14 +330,14 @@ def test_get_configs_with_startup_config_file(http_hypervisor, project, vm):
 
 def test_vms(http_hypervisor, tmpdir, fake_iou_bin):
 
-    with patch("gns3server.modules.IOU.get_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.hypervisor.IOU.get_images_directory", return_value=str(tmpdir)):
         response = http_hypervisor.get("/iou/vms", example=True)
     assert response.status == 200
     assert response.json == [{"filename": "iou.bin", "path": "iou.bin"}]
 
 
 def test_upload_vm(http_hypervisor, tmpdir):
-    with patch("gns3server.modules.IOU.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.IOU.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/iou/vms/test2", body="TEST", raw=True)
         assert response.status == 204
 
@@ -354,6 +354,6 @@ def test_upload_vm_permission_denied(http_hypervisor, tmpdir):
         f.write("")
     os.chmod(str(tmpdir / "test2"), 0)
 
-    with patch("gns3server.modules.IOU.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.IOU.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/iou/vms/test2", body="TEST", raw=True)
         assert response.status == 409

@@ -20,9 +20,9 @@ import asyncio
 import configparser
 
 from unittest.mock import patch
-from gns3server.modules.dynamips.nodes.router import Router
-from gns3server.modules.dynamips.dynamips_error import DynamipsError
-from gns3server.modules.dynamips import Dynamips
+from gns3server.hypervisor.dynamips.nodes.router import Router
+from gns3server.hypervisor.dynamips.dynamips_error import DynamipsError
+from gns3server.hypervisor.dynamips import Dynamips
 from gns3server.config import Config
 
 

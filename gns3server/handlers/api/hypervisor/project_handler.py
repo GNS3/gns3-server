@@ -23,8 +23,8 @@ import psutil
 
 from ....web.route import Route
 from ....schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA, PROJECT_LIST_SCHEMA
-from ....modules.project_manager import ProjectManager
-from ....modules import MODULES
+from ....hypervisor.project_manager import ProjectManager
+from ....hypervisor import MODULES
 
 import logging
 log = logging.getLogger()

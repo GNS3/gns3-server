@@ -19,7 +19,7 @@ import os
 from aiohttp.web import HTTPConflict
 
 from ....web.route import Route
-from ....modules.docker import Docker
+from ....hypervisor.docker import Docker
 
 from ....schemas.docker import (
     DOCKER_CREATE_SCHEMA,

@@ -24,8 +24,8 @@ from ....schemas.virtualbox import VBOX_CREATE_SCHEMA
 from ....schemas.virtualbox import VBOX_UPDATE_SCHEMA
 from ....schemas.virtualbox import VBOX_OBJECT_SCHEMA
 from ....schemas.vm import VM_CAPTURE_SCHEMA
-from ....modules.virtualbox import VirtualBox
-from ....modules.project_manager import ProjectManager
+from ....hypervisor.virtualbox import VirtualBox
+from ....hypervisor.project_manager import ProjectManager
 
 
 class VirtualBoxHandler:

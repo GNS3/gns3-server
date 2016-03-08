@@ -21,9 +21,9 @@ import pytest
 from unittest.mock import patch
 
 
-from gns3server.modules.vpcs import VPCS
-from gns3server.modules.qemu import Qemu
-from gns3server.modules.vm_error import VMError
+from gns3server.hypervisor.vpcs import VPCS
+from gns3server.hypervisor.qemu import Qemu
+from gns3server.hypervisor.vm_error import VMError
 from gns3server.utils import force_unix_path
 
 
@@ -67,7 +67,7 @@ def test_create_vm_new_topology_without_uuid(loop, project, vpcs):
 
 def test_create_vm_old_topology(loop, project, tmpdir, vpcs):
 
-    with patch("gns3server.modules.project.Project.is_local", return_value=True):
+    with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
         # Create an old topology directory
         project_dir = str(tmpdir / "testold")
         vm_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
@@ -158,7 +158,7 @@ def test_list_images(loop, qemu, tmpdir):
         with open(str(tmpdir / image), "w+") as f:
             f.write("1")
 
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value=str(tmpdir)):
         assert loop.run_until_complete(qemu.list_images()) == [
             {"filename": "a.bin", "path": "a.bin"},
             {"filename": "b.bin", "path": "b.bin"}
@@ -177,7 +177,7 @@ def test_list_images_recursives(loop, qemu, tmpdir):
         with open(str(tmpdir / "c" / image), "w+") as f:
             f.write("1")
 
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value=str(tmpdir)):
         assert loop.run_until_complete(qemu.list_images()) == [
             {"filename": "a.bin", "path": "a.bin"},
             {"filename": "b.bin", "path": "b.bin"},
@@ -186,10 +186,10 @@ def test_list_images_recursives(loop, qemu, tmpdir):
 
 
 def test_list_images_empty(loop, qemu, tmpdir):
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value=str(tmpdir)):
         assert loop.run_until_complete(qemu.list_images()) == []
 
 
 def test_list_images_directory_not_exist(loop, qemu):
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value="/bla"):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value="/bla"):
         assert loop.run_until_complete(qemu.list_images()) == []

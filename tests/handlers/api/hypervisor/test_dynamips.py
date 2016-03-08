@@ -27,7 +27,7 @@ from tests.utils import asyncio_patch
 # def vm(http_hypervisor, project):
 #
 #     dynamips_path = "/fake/dynamips"
-#     with asyncio_patch("gns3server.modules.dynamips.nodes.router.Router.create", return_value=True) as mock:
+#     with asyncio_patch("gns3server.hypervisor.dynamips.nodes.router.Router.create", return_value=True) as mock:
 #         response = http_hypervisor.post("/projects/{project_id}/dynamips/vms".format(project_id=project.id), {"name": "My router",
 #                                                                                                      "platform": "c3745",
 #                                                                                                      "image": "somewhere",
@@ -35,13 +35,13 @@ from tests.utils import asyncio_patch
 #     assert mock.called
 #     assert response.status == 201
 #
-#     with asyncio_patch("gns3server.modules.dynamips.Dynamips.find_dynamips", return_value=dynamips_path):
+#     with asyncio_patch("gns3server.hypervisor.dynamips.Dynamips.find_dynamips", return_value=dynamips_path):
 #         yield response.json
 #
 #
 # def test_dynamips_vm_create(http_hypervisor, project):
 #
-#     with asyncio_patch("gns3server.modules.dynamips.nodes.router.Router.create", return_value=True):
+#     with asyncio_patch("gns3server.hypervisor.dynamips.nodes.router.Router.create", return_value=True):
 #         response = http_hypervisor.post("/projects/{project_id}/dynamips/vms".format(project_id=project.id), {"name": "My router",
 #                                                                                                      "platform": "c3745",
 #                                                                                                      "image": "somewhere",
@@ -62,28 +62,28 @@ from tests.utils import asyncio_patch
 #
 #
 # def test_dynamips_vm_start(http_hypervisor, vm):
-#     with asyncio_patch("gns3server.modules.dynamips.nodes.router.Router.start", return_value=True) as mock:
+#     with asyncio_patch("gns3server.hypervisor.dynamips.nodes.router.Router.start", return_value=True) as mock:
 #         response = http_hypervisor.post("/projects/{project_id}/dynamips/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
 #         assert mock.called
 #         assert response.status == 204
 #
 #
 # def test_dynamips_vm_stop(http_hypervisor, vm):
-#     with asyncio_patch("gns3server.modules.dynamips.nodes.router.Router.stop", return_value=True) as mock:
+#     with asyncio_patch("gns3server.hypervisor.dynamips.nodes.router.Router.stop", return_value=True) as mock:
 #         response = http_hypervisor.post("/projects/{project_id}/dynamips/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
 #         assert mock.called
 #         assert response.status == 204
 #
 #
 # def test_dynamips_vm_suspend(http_hypervisor, vm):
-#     with asyncio_patch("gns3server.modules.dynamips.nodes.router.Router.suspend", return_value=True) as mock:
+#     with asyncio_patch("gns3server.hypervisor.dynamips.nodes.router.Router.suspend", return_value=True) as mock:
 #         response = http_hypervisor.post("/projects/{project_id}/dynamips/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
 #         assert mock.called
 #         assert response.status == 204
 #
 #
 # def test_dynamips_vm_resume(http_hypervisor, vm):
-#     with asyncio_patch("gns3server.modules.dynamips.nodes.router.Router.resume", return_value=True) as mock:
+#     with asyncio_patch("gns3server.hypervisor.dynamips.nodes.router.Router.resume", return_value=True) as mock:
 #         response = http_hypervisor.post("/projects/{project_id}/dynamips/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
 #         assert mock.called
 #         assert response.status == 204
@@ -91,7 +91,7 @@ from tests.utils import asyncio_patch
 
 # def test_vbox_nio_create_udp(http_hypervisor, vm):
 #
-#     with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
+#     with asyncio_patch('gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
 #         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"],
 #                                                                                                      vm_id=vm["vm_id"]), {"type": "nio_udp",
 #                                                                                                                           "lport": 4242,
@@ -110,7 +110,7 @@ from tests.utils import asyncio_patch
 #
 # def test_vbox_delete_nio(http_hypervisor, vm):
 #
-#     with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
+#     with asyncio_patch('gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
 #         response = http_hypervisor.delete("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
 #
 #         assert mock.called
@@ -153,14 +153,14 @@ def fake_file(tmpdir):
 
 def test_vms(http_hypervisor, tmpdir, fake_dynamips, fake_file):
 
-    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
+    with patch("gns3server.hypervisor.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
         response = http_hypervisor.get("/dynamips/vms")
     assert response.status == 200
     assert response.json == [{"filename": "7200.bin", "path": "7200.bin"}]
 
 
 def test_upload_vm(http_hypervisor, tmpdir):
-    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.Dynamips.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/dynamips/vms/test2", body="TEST", raw=True)
         assert response.status == 204
 
@@ -177,6 +177,6 @@ def test_upload_vm_permission_denied(http_hypervisor, tmpdir):
         f.write("")
     os.chmod(str(tmpdir / "test2"), 0)
 
-    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.Dynamips.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/dynamips/vms/test2", body="TEST", raw=True)
         assert response.status == 409

@@ -24,8 +24,8 @@ from ....schemas.vmware import VMWARE_UPDATE_SCHEMA
 from ....schemas.vmware import VMWARE_OBJECT_SCHEMA
 from ....schemas.vm import VM_CAPTURE_SCHEMA
 from ....schemas.nio import NIO_SCHEMA
-from ....modules.vmware import VMware
-from ....modules.project_manager import ProjectManager
+from ....hypervisor.vmware import VMware
+from ....hypervisor.project_manager import ProjectManager
 
 
 class VMwareHandler:

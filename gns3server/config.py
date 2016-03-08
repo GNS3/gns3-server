@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Reads the configuration file and store the settings for the server & modules.
+Reads the configuration file and store the settings for the server & hypervisor.
 """
 
 import sys

@@ -23,11 +23,11 @@ from tests.utils import asyncio_patch
 
 
 from unittest.mock import patch, MagicMock
-from gns3server.modules.vpcs.vpcs_vm import VPCSVM
-from gns3server.modules.docker.docker_vm import DockerVM
-from gns3server.modules.vpcs.vpcs_error import VPCSError
-from gns3server.modules.vm_error import VMError
-from gns3server.modules.vpcs import VPCS
+from gns3server.hypervisor.vpcs.vpcs_vm import VPCSVM
+from gns3server.hypervisor.docker.docker_vm import DockerVM
+from gns3server.hypervisor.vpcs.vpcs_error import VPCSError
+from gns3server.hypervisor.vm_error import VMError
+from gns3server.hypervisor.vpcs import VPCS
 
 
 @pytest.fixture(scope="module")

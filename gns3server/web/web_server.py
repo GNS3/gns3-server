@@ -32,8 +32,8 @@ import atexit
 from .route import Route
 from .request_handler import RequestHandler
 from ..config import Config
-from ..modules import MODULES
-from ..modules.port_manager import PortManager
+from ..hypervisor import MODULES
+from ..hypervisor.port_manager import PortManager
 
 # do not delete this import
 import gns3server.handlers
@@ -134,8 +134,8 @@ class WebServer:
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
         # code extracted from tornado
-        for module in sys.modules.values():
-            # Some modules play games with sys.modules (e.g. email/__init__.py
+        for module in sys.hypervisor.values():
+            # Some hypervisor play games with sys.hypervisor (e.g. email/__init__.py
             # in the standard library), and occasionally this can cause strange
             # failures in getattr.  Just ignore anything that's not an ordinary
             # module.

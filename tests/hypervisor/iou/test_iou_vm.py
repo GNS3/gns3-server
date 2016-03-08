@@ -32,9 +32,9 @@ from unittest.mock import patch, MagicMock, PropertyMock
 pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 
 if not sys.platform.startswith("win"):
-    from gns3server.modules.iou.iou_vm import IOUVM
-    from gns3server.modules.iou.iou_error import IOUError
-    from gns3server.modules.iou import IOU
+    from gns3server.hypervisor.iou.iou_vm import IOUVM
+    from gns3server.hypervisor.iou.iou_error import IOUError
+    from gns3server.hypervisor.iou import IOU
 
 from gns3server.config import Config
 
@@ -108,15 +108,16 @@ def test_vm_invalid_iouyap_path(project, manager, loop, fake_iou_bin):
 def test_start(loop, vm, monkeypatch):
 
     mock_process = MagicMock()
-    with patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
-            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-                with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+    with patch("gns3server.hypervisor.iou.iou_vm.IOUVM._check_requirements", return_value=True):
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
+            with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+                with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
                     with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
                         mock_process.returncode = None
                         loop.run_until_complete(asyncio.async(vm.start()))
                         assert vm.is_running()
                         assert vm.command_line == ' '.join(mock_exec.call_args[0])
+
 
 def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
 
@@ -125,10 +126,10 @@ def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
         f.write("1")
     mock_process = MagicMock()
     with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file, "iouyap_path": vm.iouyap_path}):
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
-                with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-                    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._check_requirements", return_value=True):
+            with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
+                with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+                    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
                         with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
                             mock_process.returncode = None
                             loop.run_until_complete(asyncio.async(vm.start()))
@@ -161,9 +162,9 @@ def test_stop(loop, vm):
     future.set_result(True)
     process.wait.return_value = future
 
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._check_requirements", return_value=True):
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+            with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
                 with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
                     with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
                         loop.run_until_complete(asyncio.async(vm.start()))
@@ -183,9 +184,9 @@ def test_reload(loop, vm, fake_iou_bin):
     process.wait.return_value = future
     process.returncode = None
 
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-            with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._check_requirements", return_value=True):
+        with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
+            with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
                 with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
                     with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
                         loop.run_until_complete(asyncio.async(vm.start()))
@@ -196,7 +197,7 @@ def test_reload(loop, vm, fake_iou_bin):
 
 
 def test_close(vm, port_manager, loop):
-    with asyncio_patch("gns3server.modules.iou.iou_vm.IOUVM._check_requirements", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.iou.iou_vm.IOUVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
             port = vm.console

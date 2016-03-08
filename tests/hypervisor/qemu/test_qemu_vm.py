@@ -28,9 +28,9 @@ from tests.utils import asyncio_patch
 from unittest import mock
 from unittest.mock import patch, MagicMock
 
-from gns3server.modules.qemu.qemu_vm import QemuVM
-from gns3server.modules.qemu.qemu_error import QemuError
-from gns3server.modules.qemu import Qemu
+from gns3server.hypervisor.qemu.qemu_vm import QemuVM
+from gns3server.hypervisor.qemu.qemu_error import QemuError
+from gns3server.hypervisor.qemu import Qemu
 from gns3server.utils import force_unix_path
 
 
@@ -175,7 +175,7 @@ def test_termination_callback_error(vm, tmpdir):
 
 def test_reload(loop, vm):
 
-    with asyncio_patch("gns3server.modules.qemu.QemuVM._control_vm") as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.QemuVM._control_vm") as mock:
         loop.run_until_complete(asyncio.async(vm.reload()))
         assert mock.called_with("system_reset")
 
@@ -184,7 +184,7 @@ def test_suspend(loop, vm):
 
     control_vm_result = MagicMock()
     control_vm_result.match.group.decode.return_value = "running"
-    with asyncio_patch("gns3server.modules.qemu.QemuVM._control_vm", return_value=control_vm_result) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.QemuVM._control_vm", return_value=control_vm_result) as mock:
         loop.run_until_complete(asyncio.async(vm.suspend()))
         assert mock.called_with("system_reset")
 
@@ -197,7 +197,7 @@ def test_add_nio_binding_udp(vm, loop):
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_add_nio_binding_ethernet(vm, loop, ethernet_device):
-    with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
+    with patch("gns3server.hypervisor.base_manager.BaseManager.has_privileged_access", return_value=True):
         nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_generic_ethernet", "ethernet_device": ethernet_device})
         loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
         assert nio.ethernet_device == ethernet_device
@@ -305,7 +305,7 @@ def test_set_qemu_path_kvm_binary(vm, tmpdir, fake_qemu_binary):
 def test_set_platform(project, manager):
 
     with patch("shutil.which", return_value="/bin/qemu-system-x86_64") as which_mock:
-        with patch("gns3server.modules.qemu.QemuVM._check_qemu_path"):
+        with patch("gns3server.hypervisor.qemu.QemuVM._check_qemu_path"):
             vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, platform="x86_64")
             if sys.platform.startswith("win"):
                 which_mock.assert_called_with("qemu-system-x86_64w.exe", path=mock.ANY)
@@ -480,7 +480,7 @@ def test_initrd(vm, tmpdir):
 
     vm.manager.config.set("Server", "images_path", str(tmpdir))
 
-    with patch("gns3server.modules.project.Project.emit") as mock:
+    with patch("gns3server.hypervisor.project.Project.emit") as mock:
         vm.initrd = str(tmpdir / "test")
         assert vm.initrd == force_unix_path(str(tmpdir / "test"))
         vm.initrd = "test"
@@ -492,7 +492,7 @@ def test_initrd_asa(vm, tmpdir):
 
     vm.manager.config.set("Server", "images_path", str(tmpdir))
 
-    with patch("gns3server.modules.project.Project.emit") as mock:
+    with patch("gns3server.hypervisor.project.Project.emit") as mock:
         vm.initrd = str(tmpdir / "asa842-initrd.gz")
         assert vm.initrd == force_unix_path(str(tmpdir / "asa842-initrd.gz"))
         vm.initrd = "asa842-initrd.gz"

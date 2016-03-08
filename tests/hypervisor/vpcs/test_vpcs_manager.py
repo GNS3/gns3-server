@@ -20,9 +20,9 @@ import pytest
 import uuid
 
 
-from gns3server.modules.vpcs import VPCS
-from gns3server.modules.vpcs.vpcs_error import VPCSError
-from gns3server.modules.project_manager import ProjectManager
+from gns3server.hypervisor.vpcs import VPCS
+from gns3server.hypervisor.vpcs.vpcs_error import VPCSError
+from gns3server.hypervisor.project_manager import ProjectManager
 
 
 def test_get_mac_id(loop, project, port_manager):

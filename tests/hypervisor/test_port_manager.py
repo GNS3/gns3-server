@@ -19,15 +19,15 @@ import aiohttp
 import pytest
 import sys
 from unittest.mock import patch
-from gns3server.modules.port_manager import PortManager
-from gns3server.modules.project import Project
+from gns3server.hypervisor.port_manager import PortManager
+from gns3server.hypervisor.project import Project
 
 
 def test_reserve_tcp_port():
     pm = PortManager()
     project = Project()
     pm.reserve_tcp_port(2001, project)
-    with patch("gns3server.modules.project.Project.emit") as mock_emit:
+    with patch("gns3server.hypervisor.project.Project.emit") as mock_emit:
         port = pm.reserve_tcp_port(2001, project)
         assert port != 2001
         assert mock_emit.call_args[0][0] == "log.warning"
@@ -36,7 +36,7 @@ def test_reserve_tcp_port():
 def test_reserve_tcp_port_outside_range():
     pm = PortManager()
     project = Project()
-    with patch("gns3server.modules.project.Project.emit") as mock_emit:
+    with patch("gns3server.hypervisor.project.Project.emit") as mock_emit:
         port = pm.reserve_tcp_port(80, project)
         assert port != 80
         assert mock_emit.call_args[0][0] == "log.warning"
@@ -50,7 +50,7 @@ def test_reserve_tcp_port_already_used_by_another_program():
 
     pm = PortManager()
     project = Project()
-    with patch("gns3server.modules.port_manager.PortManager._check_port") as mock_check:
+    with patch("gns3server.hypervisor.port_manager.PortManager._check_port") as mock_check:
 
         def execute_mock(host, port, *args):
             if port == 2001:
@@ -60,7 +60,7 @@ def test_reserve_tcp_port_already_used_by_another_program():
 
         mock_check.side_effect = execute_mock
 
-        with patch("gns3server.modules.project.Project.emit") as mock_emit:
+        with patch("gns3server.hypervisor.project.Project.emit") as mock_emit:
             port = pm.reserve_tcp_port(2001, project)
             assert port != 2001
             assert mock_emit.call_args[0][0] == "log.warning"
@@ -74,7 +74,7 @@ def test_reserve_tcp_port_already_used():
 
     pm = PortManager()
     project = Project()
-    with patch("gns3server.modules.port_manager.PortManager._check_port") as mock_check:
+    with patch("gns3server.hypervisor.port_manager.PortManager._check_port") as mock_check:
 
         def execute_mock(host, port, *args):
             if port == 2001:
@@ -84,7 +84,7 @@ def test_reserve_tcp_port_already_used():
 
         mock_check.side_effect = execute_mock
 
-        with patch("gns3server.modules.project.Project.emit") as mock_emit:
+        with patch("gns3server.hypervisor.project.Project.emit") as mock_emit:
             port = pm.reserve_tcp_port(2001, project)
             assert port != 2001
             assert mock_emit.call_args[0][0] == "log.warning"

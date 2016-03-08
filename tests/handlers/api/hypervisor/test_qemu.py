@@ -112,7 +112,7 @@ def test_qemu_get(http_hypervisor, project, vm):
 
 
 def test_qemu_start(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.start", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.qemu_vm.QemuVM.start", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/qemu/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 200
@@ -120,35 +120,35 @@ def test_qemu_start(http_hypervisor, vm):
 
 
 def test_qemu_stop(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.stop", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.qemu_vm.QemuVM.stop", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/qemu/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_reload(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.reload", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.qemu_vm.QemuVM.reload", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/qemu/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_suspend(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.suspend", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.qemu_vm.QemuVM.suspend", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/qemu/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_resume(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.qemu.qemu_vm.QemuVM.resume", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.qemu_vm.QemuVM.resume", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/qemu/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_delete(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.qemu.Qemu.delete_vm", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.Qemu.delete_vm", return_value=True) as mock:
         response = http_hypervisor.delete("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
@@ -204,7 +204,7 @@ def test_qemu_delete_nio(http_hypervisor, vm):
 def test_qemu_list_binaries(http_hypervisor, vm):
     ret = [{"path": "/tmp/1", "version": "2.2.0"},
            {"path": "/tmp/2", "version": "2.1.0"}]
-    with asyncio_patch("gns3server.modules.qemu.Qemu.binary_list", return_value=ret) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.Qemu.binary_list", return_value=ret) as mock:
         response = http_hypervisor.get("/qemu/binaries".format(project_id=vm["project_id"]), example=True)
         assert mock.called_with(None)
         assert response.status == 200
@@ -217,7 +217,7 @@ def test_qemu_list_binaries_filter(http_hypervisor, vm):
         {"path": "/tmp/alpha", "version": "2.1.0"},
         {"path": "/tmp/i386", "version": "2.1.0"}
     ]
-    with asyncio_patch("gns3server.modules.qemu.Qemu.binary_list", return_value=ret) as mock:
+    with asyncio_patch("gns3server.hypervisor.qemu.Qemu.binary_list", return_value=ret) as mock:
         response = http_hypervisor.get("/qemu/binaries".format(project_id=vm["project_id"]), body={"archs": ["i386"]}, example=True)
         assert response.status == 200
         assert mock.called_with(["i386"])
@@ -232,7 +232,7 @@ def test_vms(http_hypervisor, tmpdir, fake_qemu_vm):
 
 
 def test_upload_vm(http_hypervisor, tmpdir):
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/qemu/vms/test2", body="TEST", raw=True)
         assert response.status == 204
 
@@ -245,7 +245,7 @@ def test_upload_vm(http_hypervisor, tmpdir):
 
 
 def test_upload_vm_ova(http_hypervisor, tmpdir):
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/qemu/vms/test2.ova/test2.vmdk", body="TEST", raw=True)
         assert response.status == 204
 
@@ -258,7 +258,7 @@ def test_upload_vm_ova(http_hypervisor, tmpdir):
 
 
 def test_upload_vm_forbiden_location(http_hypervisor, tmpdir):
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/qemu/vms/../../test2", body="TEST", raw=True)
         assert response.status == 403
 
@@ -268,7 +268,7 @@ def test_upload_vm_permission_denied(http_hypervisor, tmpdir):
         f.write("")
     os.chmod(str(tmpdir / "test2"), 0)
 
-    with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.hypervisor.Qemu.get_images_directory", return_value=str(tmpdir),):
         response = http_hypervisor.post("/qemu/vms/test2", body="TEST", raw=True)
         assert response.status == 409
 
@@ -284,7 +284,7 @@ def test_create_img_relative(http_hypervisor):
         "lazy_refcounts": "off",
         "size": 100
     }
-    with asyncio_patch("gns3server.modules.Qemu.create_disk"):
+    with asyncio_patch("gns3server.hypervisor.Qemu.create_disk"):
         response = http_hypervisor.post("/qemu/img", body=body, example=True)
 
     assert response.status == 201
@@ -305,7 +305,7 @@ def test_create_img_absolute_non_local(http_hypervisor):
         "lazy_refcounts": "off",
         "size": 100
     }
-    with asyncio_patch("gns3server.modules.Qemu.create_disk"):
+    with asyncio_patch("gns3server.hypervisor.Qemu.create_disk"):
         response = http_hypervisor.post("/qemu/img", body=body, example=True)
 
     assert response.status == 403
@@ -326,13 +326,13 @@ def test_create_img_absolute_local(http_hypervisor):
         "lazy_refcounts": "off",
         "size": 100
     }
-    with asyncio_patch("gns3server.modules.Qemu.create_disk"):
+    with asyncio_patch("gns3server.hypervisor.Qemu.create_disk"):
         response = http_hypervisor.post("/qemu/img", body=body, example=True)
 
     assert response.status == 201
 
 
 def test_capabilities(http_hypervisor):
-    with asyncio_patch("gns3server.modules.Qemu.get_kvm_archs", return_value=["x86_64"]):
+    with asyncio_patch("gns3server.hypervisor.Qemu.get_kvm_archs", return_value=["x86_64"]):
         response = http_hypervisor.get("/qemu/capabilities", example=True)
         assert response.json["kvm"] == ["x86_64"]

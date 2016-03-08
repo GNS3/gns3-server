@@ -27,7 +27,7 @@ from ....schemas.iou import IOU_OBJECT_SCHEMA
 from ....schemas.iou import IOU_CONFIGS_SCHEMA
 from ....schemas.vm import VM_LIST_IMAGES_SCHEMA
 from ....schemas.vm import VM_CAPTURE_SCHEMA
-from ....modules.iou import IOU
+from ....hypervisor.iou import IOU
 
 
 class IOUHandler:

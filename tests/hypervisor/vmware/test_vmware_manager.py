@@ -25,7 +25,7 @@ import asyncio
 
 from unittest.mock import patch
 
-from gns3server.modules.vmware import VMware
+from gns3server.hypervisor.vmware import VMware
 from tests.utils import asyncio_patch
 
 

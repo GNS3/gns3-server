@@ -27,9 +27,9 @@ from ....schemas.dynamips_vm import VM_UPDATE_SCHEMA
 from ....schemas.dynamips_vm import VM_OBJECT_SCHEMA
 from ....schemas.dynamips_vm import VM_CONFIGS_SCHEMA
 from ....schemas.vm import VM_CAPTURE_SCHEMA
-from ....modules.dynamips import Dynamips
-from ....modules.dynamips.dynamips_error import DynamipsError
-from ....modules.project_manager import ProjectManager
+from ....hypervisor.dynamips import Dynamips
+from ....hypervisor.dynamips.dynamips_error import DynamipsError
+from ....hypervisor.project_manager import ProjectManager
 
 DEFAULT_CHASSIS = {
     "c1700": "1720",

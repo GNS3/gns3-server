@@ -28,11 +28,11 @@ from unittest.mock import patch
 from tests.utils import asyncio_patch
 
 from gns3server.handlers.api.hypervisor.project_handler import ProjectHandler
-from gns3server.modules.project_manager import ProjectManager
+from gns3server.hypervisor.project_manager import ProjectManager
 
 
 def test_create_project_with_path(http_hypervisor, tmpdir):
-    with patch("gns3server.modules.project.Project.is_local", return_value=True):
+    with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
         response = http_hypervisor.post("/projects", {"name": "test", "path": str(tmpdir)})
         assert response.status == 201
         assert response.json["path"] == str(tmpdir)
@@ -114,7 +114,7 @@ def test_update_path_project_temporary(http_hypervisor, tmpdir):
     os.makedirs(str(tmpdir / "a"))
     os.makedirs(str(tmpdir / "b"))
 
-    with patch("gns3server.modules.project.Project.is_local", return_value=True):
+    with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
         response = http_hypervisor.post("/projects", {"name": "first_name", "path": str(tmpdir / "a"), "temporary": True})
         assert response.status == 201
         assert response.json["name"] == "first_name"
@@ -133,7 +133,7 @@ def test_update_path_project_non_temporary(http_hypervisor, tmpdir):
     os.makedirs(str(tmpdir / "a"))
     os.makedirs(str(tmpdir / "b"))
 
-    with patch("gns3server.modules.project.Project.is_local", return_value=True):
+    with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
         response = http_hypervisor.post("/projects", {"name": "first_name", "path": str(tmpdir / "a")})
         assert response.status == 201
         assert response.json["name"] == "first_name"
@@ -149,7 +149,7 @@ def test_update_path_project_non_temporary(http_hypervisor, tmpdir):
 
 def test_update_path_project_non_local(http_hypervisor, tmpdir):
 
-    with patch("gns3server.modules.project.Project.is_local", return_value=False):
+    with patch("gns3server.hypervisor.project.Project.is_local", return_value=False):
         response = http_hypervisor.post("/projects", {"name": "first_name"})
         assert response.status == 201
         query = {"name": "second_name", "path": str(tmpdir)}
@@ -158,7 +158,7 @@ def test_update_path_project_non_local(http_hypervisor, tmpdir):
 
 
 def test_commit_project(http_hypervisor, project):
-    with asyncio_patch("gns3server.modules.project.Project.commit", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.project.Project.commit", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/commit".format(project_id=project.id), example=True)
     assert response.status == 204
     assert mock.called
@@ -170,7 +170,7 @@ def test_commit_project_invalid_uuid(http_hypervisor):
 
 
 def test_delete_project(http_hypervisor, project):
-    with asyncio_patch("gns3server.modules.project.Project.delete", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.project.Project.delete", return_value=True) as mock:
         response = http_hypervisor.delete("/projects/{project_id}".format(project_id=project.id), example=True)
         assert response.status == 204
         assert mock.called
@@ -182,7 +182,7 @@ def test_delete_project_invalid_uuid(http_hypervisor):
 
 
 def test_close_project(http_hypervisor, project):
-    with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.project.Project.close", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
         assert response.status == 204
         assert mock.called
@@ -192,7 +192,7 @@ def test_close_project_two_client_connected(http_hypervisor, project):
 
     ProjectHandler._notifications_listening = {project.id: 2}
 
-    with asyncio_patch("gns3server.modules.project.Project.close", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.project.Project.close", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
         assert response.status == 204
         assert not mock.called
@@ -238,7 +238,7 @@ def test_list_files(http_hypervisor, project):
             "md5sum": "098f6bcd4621d373cade4e832627b4f6"
         }
     ]
-    with asyncio_patch("gns3server.modules.project.Project.list_files", return_value=files) as mock:
+    with asyncio_patch("gns3server.hypervisor.project.Project.list_files", return_value=files) as mock:
         response = http_hypervisor.get("/projects/{project_id}/files".format(project_id=project.id), example=True)
         assert response.status == 200
         assert response.json == files

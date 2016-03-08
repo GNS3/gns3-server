@@ -25,7 +25,7 @@ import traceback
 
 log = logging.getLogger(__name__)
 
-from ..modules.vm_error import VMError
+from ..hypervisor.vm_error import VMError
 from ..controller.controller_error import ControllerError
 from ..ubridge.ubridge_error import UbridgeError
 from .response import Response

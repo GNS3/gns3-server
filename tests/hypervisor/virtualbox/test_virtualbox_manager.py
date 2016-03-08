@@ -25,8 +25,8 @@ import asyncio
 
 from unittest.mock import patch
 
-from gns3server.modules.virtualbox import VirtualBox
-from gns3server.modules.virtualbox.virtualbox_error import VirtualBoxError
+from gns3server.hypervisor.virtualbox import VirtualBox
+from gns3server.hypervisor.virtualbox.virtualbox_error import VirtualBoxError
 from tests.utils import asyncio_patch
 
 
@@ -90,7 +90,7 @@ def test_list_images(manager, loop):
                 return ["memory=256"]
         assert False, "Unknow {} {}".format(cmd, args)
 
-    with asyncio_patch("gns3server.modules.virtualbox.VirtualBox.execute") as mock:
+    with asyncio_patch("gns3server.hypervisor.virtualbox.VirtualBox.execute") as mock:
         mock.side_effect = execute_mock
         vms = loop.run_until_complete(asyncio.async(manager.list_images()))
     assert vms == [

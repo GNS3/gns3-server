@@ -16,8 +16,8 @@
 
 
 from ..web.route import Route
-from ..modules.port_manager import PortManager
-from ..modules.project_manager import ProjectManager
+from ..hypervisor.port_manager import PortManager
+from ..hypervisor.project_manager import ProjectManager
 from ..version import __version__
 
 

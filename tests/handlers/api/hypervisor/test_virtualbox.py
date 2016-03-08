@@ -25,20 +25,20 @@ def vm(http_hypervisor, project, monkeypatch):
 
     vboxmanage_path = "/fake/VboxManage"
 
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms".format(project_id=project.id), {"name": "VMTEST",
                                                                                                                 "vmname": "VMTEST",
                                                                                                                 "linked_clone": False})
     assert mock.called
     assert response.status == 201
 
-    with patch("gns3server.modules.virtualbox.VirtualBox.find_vboxmanage", return_value=vboxmanage_path):
+    with patch("gns3server.hypervisor.virtualbox.VirtualBox.find_vboxmanage", return_value=vboxmanage_path):
         yield response.json
 
 
 def test_vbox_create(http_hypervisor, project):
 
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True):
+    with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True):
         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms".format(project_id=project.id), {"name": "VM1",
                                                                                                                 "vmname": "VM1",
                                                                                                                 "linked_clone": False},
@@ -57,36 +57,36 @@ def test_vbox_get(http_hypervisor, project, vm):
 
 
 def test_vbox_start(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.check_hw_virtualization", return_value=True) as mock:
-        with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.check_hw_virtualization", return_value=True) as mock:
+        with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
             response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
             assert mock.called
             assert response.status == 204
 
 
 def test_vbox_stop(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.stop", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.stop", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_suspend(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.suspend", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.suspend", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_resume(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.resume", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.resume", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vbox_reload(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.reload", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.reload", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
@@ -94,7 +94,7 @@ def test_vbox_reload(http_hypervisor, vm):
 
 def test_vbox_nio_create_udp(http_hypervisor, vm):
 
-    with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
+    with asyncio_patch('gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
         response = http_hypervisor.post("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"],
                                                                                                                       vm_id=vm["vm_id"]), {"type": "nio_udp",
                                                                                                                                            "lport": 4242,
@@ -113,7 +113,7 @@ def test_vbox_nio_create_udp(http_hypervisor, vm):
 
 def test_vbox_delete_nio(http_hypervisor, vm):
 
-    with asyncio_patch('gns3server.modules.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
+    with asyncio_patch('gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
         response = http_hypervisor.delete("/projects/{project_id}/virtualbox/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
 
         assert mock.called

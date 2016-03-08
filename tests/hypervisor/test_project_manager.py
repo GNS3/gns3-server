@@ -17,7 +17,7 @@
 
 import aiohttp
 import pytest
-from gns3server.modules.project_manager import ProjectManager
+from gns3server.hypervisor.project_manager import ProjectManager
 
 
 def test_create_project():

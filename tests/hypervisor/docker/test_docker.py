@@ -20,8 +20,8 @@ import asyncio
 from unittest.mock import MagicMock
 
 from tests.utils import asyncio_patch
-from gns3server.modules.docker import Docker
-from gns3server.modules.docker.docker_error import DockerError
+from gns3server.hypervisor.docker import Docker
+from gns3server.hypervisor.docker.docker_error import DockerError
 
 
 def test_query_success(loop):
@@ -125,7 +125,7 @@ def test_list_images(loop):
         }
     ]
 
-    with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.Docker.query", return_value=response) as mock:
         images = loop.run_until_complete(asyncio.async(Docker.instance().list_images()))
         mock.assert_called_with("GET", "images/json", params={"all": 0})
     assert len(images) == 5

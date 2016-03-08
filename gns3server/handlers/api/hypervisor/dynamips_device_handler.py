@@ -23,7 +23,7 @@ from ....schemas.dynamips_device import DEVICE_UPDATE_SCHEMA
 from ....schemas.dynamips_device import DEVICE_OBJECT_SCHEMA
 from ....schemas.dynamips_device import DEVICE_NIO_SCHEMA
 from ....schemas.vm import VM_CAPTURE_SCHEMA
-from ....modules.dynamips import Dynamips
+from ....hypervisor.dynamips import Dynamips
 
 
 class DynamipsDeviceHandler:

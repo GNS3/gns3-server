@@ -19,9 +19,9 @@ import pytest
 import asyncio
 from tests.utils import asyncio_patch
 
-from gns3server.modules.virtualbox.virtualbox_vm import VirtualBoxVM
-from gns3server.modules.virtualbox.virtualbox_error import VirtualBoxError
-from gns3server.modules.virtualbox import VirtualBox
+from gns3server.hypervisor.virtualbox.virtualbox_vm import VirtualBoxVM
+from gns3server.hypervisor.virtualbox.virtualbox_error import VirtualBoxError
+from gns3server.hypervisor.virtualbox import VirtualBox
 
 
 @pytest.fixture(scope="module")
@@ -44,13 +44,13 @@ def test_vm(project, manager):
 
 
 def test_vm_valid_virtualbox_api_version(loop, project, manager):
-    with asyncio_patch("gns3server.modules.virtualbox.VirtualBox.execute", return_value=["API version:  4_3"]):
+    with asyncio_patch("gns3server.hypervisor.virtualbox.VirtualBox.execute", return_value=["API version:  4_3"]):
         vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
         loop.run_until_complete(asyncio.async(vm.create()))
 
 
 def test_vm_invalid_virtualbox_api_version(loop, project, manager):
-    with asyncio_patch("gns3server.modules.virtualbox.VirtualBox.execute", return_value=["API version:  4_2"]):
+    with asyncio_patch("gns3server.hypervisor.virtualbox.VirtualBox.execute", return_value=["API version:  4_2"]):
         with pytest.raises(VirtualBoxError):
             vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
             loop.run_until_complete(asyncio.async(vm.create()))

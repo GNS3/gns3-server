@@ -79,7 +79,7 @@ def test_vpcs_nio_create_udp(http_hypervisor, vm):
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_vpcs_nio_create_tap(http_hypervisor, vm, ethernet_device):
-    with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
+    with patch("gns3server.hypervisor.base_manager.BaseManager.has_privileged_access", return_value=True):
         response = http_hypervisor.post("/projects/{project_id}/vpcs/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
                                                                                                                                                                   "tap_device": ethernet_device})
         assert response.status == 201
@@ -99,7 +99,7 @@ def test_vpcs_delete_nio(http_hypervisor, vm):
 
 def test_vpcs_start(http_hypervisor, vm):
 
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/vpcs/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 200
@@ -107,21 +107,21 @@ def test_vpcs_start(http_hypervisor, vm):
 
 
 def test_vpcs_stop(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.stop", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM.stop", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/vpcs/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_reload(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.reload", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM.reload", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/vpcs/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_vpcs_delete(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.vpcs.VPCS.delete_vm", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.vpcs.VPCS.delete_vm", return_value=True) as mock:
         response = http_hypervisor.delete("/projects/{project_id}/vpcs/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
         assert mock.called
         assert response.status == 204

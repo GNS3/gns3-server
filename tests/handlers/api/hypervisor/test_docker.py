@@ -24,7 +24,7 @@ import aiohttp
 
 from tests.utils import asyncio_patch
 from unittest.mock import patch, MagicMock, PropertyMock
-from gns3server.modules.docker import Docker
+from gns3server.hypervisor.docker import Docker
 
 
 @pytest.fixture
@@ -44,8 +44,8 @@ def mock_connection():
 
 @pytest.fixture
 def vm(http_hypervisor, project, base_params):
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "nginx"}]) as mock_list:
-        with asyncio_patch("gns3server.modules.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.Docker.list_images", return_value=[{"image": "nginx"}]) as mock_list:
+        with asyncio_patch("gns3server.hypervisor.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}) as mock:
             response = http_hypervisor.post("/projects/{project_id}/docker/vms".format(project_id=project.id), base_params)
     if response.status != 201:
         print(response.body)
@@ -54,8 +54,8 @@ def vm(http_hypervisor, project, base_params):
 
 
 def test_docker_create(http_hypervisor, project, base_params):
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "nginx"}]) as mock_list:
-        with asyncio_patch("gns3server.modules.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.Docker.list_images", return_value=[{"image": "nginx"}]) as mock_list:
+        with asyncio_patch("gns3server.hypervisor.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}) as mock:
             response = http_hypervisor.post("/projects/{project_id}/docker/vms".format(project_id=project.id), base_params)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/docker/vms"
@@ -68,35 +68,35 @@ def test_docker_create(http_hypervisor, project, base_params):
 
 
 def test_docker_start(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.start", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.start", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_docker_stop(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.stop", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.stop", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_docker_reload(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.restart", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.restart", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_docker_delete(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.delete", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.delete", return_value=True) as mock:
         response = http_hypervisor.delete("/projects/{project_id}/docker/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
 
 
 def test_docker_reload(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.pause", return_value=True) as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.pause", return_value=True) as mock:
         response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
         assert mock.called
         assert response.status == 204
@@ -114,14 +114,14 @@ def test_docker_nio_create_udp(http_hypervisor, vm):
 
 
 def test_docker_delete_nio(http_hypervisor, vm):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.adapter_remove_nio_binding") as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.adapter_remove_nio_binding") as mock:
         response = http_hypervisor.delete("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
     assert response.status == 204
     assert response.route == "/projects/{project_id}/docker/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_docker_update(http_hypervisor, vm, tmpdir, free_console_port):
-    with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.update") as mock:
+    with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.update") as mock:
         response = http_hypervisor.put("/projects/{project_id}/docker/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"name": "test",
                                                                                                                                             "console": free_console_port,
                                                                                                                                             "start_command": "yes",
@@ -137,8 +137,8 @@ def test_docker_update(http_hypervisor, vm, tmpdir, free_console_port):
 
 def test_docker_start_capture(http_hypervisor, vm, tmpdir, project):
 
-    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
-        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.start_capture") as start_capture:
+    with patch("gns3server.hypervisor.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
+        with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.start_capture") as start_capture:
 
             params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
             response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params, example=True)
@@ -151,8 +151,8 @@ def test_docker_start_capture(http_hypervisor, vm, tmpdir, project):
 
 def test_docker_start_capture_not_started(http_hypervisor, vm, tmpdir):
 
-    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=False) as mock:
-        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.start_capture") as start_capture:
+    with patch("gns3server.hypervisor.docker.docker_vm.DockerVM.is_running", return_value=False) as mock:
+        with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.start_capture") as start_capture:
 
             params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
             response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params)
@@ -163,8 +163,8 @@ def test_docker_start_capture_not_started(http_hypervisor, vm, tmpdir):
 
 def test_docker_stop_capture(http_hypervisor, vm, tmpdir, project):
 
-    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
-        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.stop_capture") as stop_capture:
+    with patch("gns3server.hypervisor.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
+        with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.stop_capture") as stop_capture:
 
             response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
 
@@ -175,8 +175,8 @@ def test_docker_stop_capture(http_hypervisor, vm, tmpdir, project):
 
 def test_docker_stop_capture_not_started(http_hypervisor, vm, tmpdir):
 
-    with patch("gns3server.modules.docker.docker_vm.DockerVM.is_running", return_value=False) as mock:
-        with asyncio_patch("gns3server.modules.docker.docker_vm.DockerVM.stop_capture") as stop_capture:
+    with patch("gns3server.hypervisor.docker.docker_vm.DockerVM.is_running", return_value=False) as mock:
+        with asyncio_patch("gns3server.hypervisor.docker.docker_vm.DockerVM.stop_capture") as stop_capture:
 
             response = http_hypervisor.post("/projects/{project_id}/docker/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
 

@@ -20,7 +20,7 @@ from aiohttp.web import HTTPForbidden
 
 from ....web.route import Route
 from ....config import Config
-from ....modules.project_manager import ProjectManager
+from ....hypervisor.project_manager import ProjectManager
 from ....schemas.hypervisor import HYPERVISOR_CREATE_SCHEMA, HYPERVISOR_OBJECT_SCHEMA
 from ....controller import Controller
 from ....controller.hypervisor import Hypervisor

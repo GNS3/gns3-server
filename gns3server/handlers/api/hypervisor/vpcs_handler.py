@@ -21,7 +21,7 @@ from ....schemas.nio import NIO_SCHEMA
 from ....schemas.vpcs import VPCS_CREATE_SCHEMA
 from ....schemas.vpcs import VPCS_UPDATE_SCHEMA
 from ....schemas.vpcs import VPCS_OBJECT_SCHEMA
-from ....modules.vpcs import VPCS
+from ....hypervisor.vpcs import VPCS
 
 
 class VPCSHandler:

@@ -19,9 +19,9 @@ import pytest
 import asyncio
 from tests.utils import asyncio_patch
 
-from gns3server.modules.vmware.vmware_vm import VMwareVM
-from gns3server.modules.vmware.vmware_error import VMwareError
-from gns3server.modules.vmware import VMware
+from gns3server.hypervisor.vmware.vmware_vm import VMwareVM
+from gns3server.hypervisor.vmware.vmware_error import VMwareError
+from gns3server.hypervisor.vmware import VMware
 
 
 @pytest.fixture(scope="module")
