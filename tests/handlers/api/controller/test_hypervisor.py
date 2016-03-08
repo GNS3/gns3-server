@@ -16,21 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-def test_server_create(http_controller, controller):
+def test_hypervisor_create(http_controller, controller):
 
     params = {
-        "server_id": "my_server_id",
+        "hypervisor_id": "my_hypervisor_id",
         "protocol": "http",
         "host": "example.com",
         "port": 84,
         "user": "julien",
         "password": "secure"
     }
-    response = http_controller.post("/servers", params, example=True)
+    response = http_controller.post("/hypervisors", params, example=True)
     assert response.status == 201
-    assert response.route == "/servers"
+    assert response.route == "/hypervisors"
     assert response.json["user"] == "julien"
     assert "password" not in response.json
 
-    assert len(controller.servers) == 1
-    assert controller.servers["my_server_id"].host == "example.com"
+    assert len(controller.hypervisors) == 1
+    assert controller.hypervisors["my_hypervisor_id"].host == "example.com"

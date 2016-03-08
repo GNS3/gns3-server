@@ -39,4 +39,4 @@ def test_documentation_write(tmpdir):
         assert "Sample session" in content
         assert "literalinclude:: ../../../examples/hypervisor_post_projectsprojectidvirtualboxvms.txt" in content
 
-    assert os.path.exists(str(tmpdir / "api" / "v2" / "controller" / "server.rst"))
+    assert os.path.exists(str(tmpdir / "api" / "v2" / "controller" / "hypervisor.rst"))

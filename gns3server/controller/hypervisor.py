@@ -25,50 +25,50 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class ServerError(ControllerError):
+class HypervisorError(ControllerError):
     pass
 
 
-class Server:
+class Hypervisor:
     """
-    A GNS3 server.
+    A GNS3 hypervisor.
     """
 
-    def __init__(self, server_id, protocol="http", host="localhost", port=8000, user=None, password=None):
-        log.info("Create server %s", server_id)
-        self._id = server_id
+    def __init__(self, hypervisor_id, protocol="http", host="localhost", port=8000, user=None, password=None):
+        log.info("Create hypervisor %s", hypervisor_id)
+        self._id = hypervisor_id
         self._protocol = protocol
         self._host = host
         self._port = port
         self._user = user
         self._password = password
         self._connected = False
-        # The remote server version
+        # The remote hypervisor version
         # TODO: For the moment it's fake we return the controller version
         self._version = __version__
 
-        # If the server is local but the server id is local
+        # If the hypervisor is local but the hypervisor id is local
         # it's a configuration issue
-        if server_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
-            raise ServerError("The local server is started without --local")
+        if hypervisor_id == "local" and Config.instance().get_section_config("Hypervisor")["local"] is False:
+            raise HypervisorError("The local hypervisor is started without --local")
 
     @property
     def id(self):
         """
-        :returns: Server identifier (string)
+        :returns: Hypervisor identifier (string)
         """
         return self._id
 
     @property
     def host(self):
         """
-        :returns: Server host (string)
+        :returns: Hypervisor host (string)
         """
         return self._host
 
     def __json__(self):
         return {
-            "server_id": self._id,
+            "hypervisor_id": self._id,
             "protocol": self._protocol,
             "host": self._host,
             "port": self._port,

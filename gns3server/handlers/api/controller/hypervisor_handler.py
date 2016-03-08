@@ -21,48 +21,48 @@ from aiohttp.web import HTTPForbidden
 from ....web.route import Route
 from ....config import Config
 from ....modules.project_manager import ProjectManager
-from ....schemas.server import SERVER_CREATE_SCHEMA, SERVER_OBJECT_SCHEMA
+from ....schemas.hypervisor import HYPERVISOR_CREATE_SCHEMA, HYPERVISOR_OBJECT_SCHEMA
 from ....controller import Controller
-from ....controller.server import Server
+from ....controller.hypervisor import Hypervisor
 
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class ServerHandler:
-    """API entry points for server management."""
+class HypervisorHandler:
+    """API entry points for hypervisor management."""
 
     @classmethod
     @Route.post(
-        r"/servers",
-        description="Register a server",
+        r"/hypervisors",
+        description="Register a hypervisor",
         status_codes={
-            201: "Server added"
+            201: "Hypervisor added"
         },
-        input=SERVER_CREATE_SCHEMA,
-        output=SERVER_OBJECT_SCHEMA)
+        input=HYPERVISOR_CREATE_SCHEMA,
+        output=HYPERVISOR_OBJECT_SCHEMA)
     def create(request, response):
 
-        server = Server(request.json.pop("server_id"), **request.json)
-        Controller.instance().addServer(server)
+        hypervisor = Hypervisor(request.json.pop("hypervisor_id"), **request.json)
+        Controller.instance().addHypervisor(hypervisor)
 
         response.set_status(201)
-        response.json(server)
+        response.json(hypervisor)
 
     @classmethod
     @Route.post(
-        r"/servers/shutdown",
-        description="Shutdown the local server",
+        r"/hypervisors/shutdown",
+        description="Shutdown the local hypervisor",
         status_codes={
-            201: "Server is shutting down",
-            403: "Server shutdown refused"
+            201: "Hypervisor is shutting down",
+            403: "Hypervisor shutdown refused"
         })
     def shutdown(request, response):
 
         config = Config.instance()
-        if config.get_section_config("Server").getboolean("local", False) is False:
-            raise HTTPForbidden(text="You can only stop a local server")
+        if config.get_section_config("Hypervisor").getboolean("local", False) is False:
+            raise HTTPForbidden(text="You can only stop a local hypervisor")
 
         # close all the projects first
         pm = ProjectManager.instance()
@@ -81,7 +81,7 @@ class ServerHandler:
                     log.error("Could not close project {}".format(e), exc_info=1)
                     continue
 
-        # then shutdown the server itself
+        # then shutdown the hypervisor itself
         from gns3server.web.web_server import WebServer
         server = WebServer.instance()
         asyncio.async(server.shutdown_server())

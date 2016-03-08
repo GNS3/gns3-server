@@ -20,10 +20,10 @@ from ..config import Config
 
 
 class Controller:
-    """The controller manage multiple gns3 servers"""
+    """The controller manage multiple gns3 hypervisors"""
 
     def __init__(self):
-        self._servers = {}
+        self._hypervisors = {}
 
     def isEnabled(self):
         """
@@ -32,18 +32,18 @@ class Controller:
         """
         return Config.instance().get_section_config("Server").getboolean("controller")
 
-    def addServer(self, server):
+    def addHypervisor(self, hypervisor):
         """
-        Add a server to the dictionnary of servers controlled by GNS3
+        Add a server to the dictionnary of hypervisors controlled by GNS3
         """
-        self._servers[server.id] = server
+        self._hypervisors[hypervisor.id] = hypervisor
 
     @property
-    def servers(self):
+    def hypervisors(self):
         """
-        :returns: The dictionnary of servers managed by GNS3
+        :returns: The dictionnary of hypervisors managed by GNS3
         """
-        return self._servers
+        return self._hypervisors
 
     @staticmethod
     def instance():

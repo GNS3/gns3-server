@@ -16,12 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-SERVER_CREATE_SCHEMA = {
+HYPERVISOR_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to register a GNS3 server instance",
+    "description": "Request validation to register a GNS3 hypervisor instance",
     "type": "object",
     "properties": {
-        "server_id": {
+        "hypervisor_id": {
             "description": "Server identifier",
             "type": "string"
         },
@@ -47,15 +47,15 @@ SERVER_CREATE_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["server_id", "protocol", "host", "port"]
+    "required": ["hypervisor_id", "protocol", "host", "port"]
 }
 
-SERVER_OBJECT_SCHEMA = {
+HYPERVISOR_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to a GNS3 server object instance",
+    "description": "Request validation to a GNS3 hypervisor object instance",
     "type": "object",
     "properties": {
-        "server_id": {
+        "hypervisor_id": {
             "description": "Server identifier",
             "type": "string"
         },
@@ -76,14 +76,14 @@ SERVER_OBJECT_SCHEMA = {
             "type": "string"
         },
         "connected": {
-            "description": "True if controller is connected to the server",
+            "description": "True if controller is connected to the hypervisor",
             "type": "boolean"
         },
         "version": {
-            "description": "Version of the GNS3 remote server",
+            "description": "Version of the GNS3 remote hypervisor",
             "type": ["string", "null"]
         }
     },
     "additionalProperties": False,
-    "required": ["server_id", "protocol", "host", "port"]
+    "required": ["hypervisor_id", "protocol", "host", "port"]
 }

@@ -18,7 +18,7 @@
 import pytest
 
 from gns3server.controller import Controller
-from gns3server.controller.server import Server
+from gns3server.controller.hypervisor import Hypervisor
 from gns3server.config import Config
 
 
@@ -29,12 +29,12 @@ def test_isEnabled(controller):
     assert controller.isEnabled()
 
 
-def test_addServer(controller):
-    server1 = Server("test1")
+def test_addHypervisor(controller):
+    hypervisor1 = Hypervisor("test1")
 
-    controller.addServer(server1)
-    assert len(controller.servers) == 1
-    controller.addServer(Server("test1"))
-    assert len(controller.servers) == 1
-    controller.addServer(Server("test2"))
-    assert len(controller.servers) == 2
+    controller.addHypervisor(hypervisor1)
+    assert len(controller.hypervisors) == 1
+    controller.addHypervisor(Hypervisor("test1"))
+    assert len(controller.hypervisors) == 1
+    controller.addHypervisor(Hypervisor("test2"))
+    assert len(controller.hypervisors) == 2

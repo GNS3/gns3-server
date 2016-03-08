@@ -19,36 +19,36 @@
 import pytest
 from unittest.mock import patch
 
-from gns3server.controller.server import Server, ServerError
+from gns3server.controller.hypervisor import Hypervisor, HypervisorError
 from gns3server.version import __version__
 
 
 @pytest.fixture
-def server():
-    return Server("my_server_id", protocol="https", host="example.com", port=84, user="test", password="secure")
+def hypervisor():
+    return Hypervisor("my_hypervisor_id", protocol="https", host="example.com", port=84, user="test", password="secure")
 
 
-def test_init(server):
-    assert server.id == "my_server_id"
+def test_init(hypervisor):
+    assert hypervisor.id == "my_hypervisor_id"
 
 
-def test_server_local(server):
+def test_hypervisor_local(hypervisor):
     """
-    If the server is local but the server id is local
+    If the hypervisor is local but the hypervisor id is local
     it's a configuration issue
     """
 
     with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
-        with pytest.raises(ServerError):
-            s = Server("local")
+        with pytest.raises(HypervisorError):
+            s = Hypervisor("local")
 
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        s = Server("test")
+        s = Hypervisor("test")
 
 
-def test_json(server):
-    assert server.__json__() == {
-        "server_id": "my_server_id",
+def test_json(hypervisor):
+    assert hypervisor.__json__() == {
+        "hypervisor_id": "my_hypervisor_id",
         "protocol": "https",
         "host": "example.com",
         "port": 84,
