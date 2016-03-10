@@ -62,3 +62,48 @@ VM_CAPTURE_SCHEMA = {
     "additionalProperties": False,
     "required": ["capture_file_name"]
 }
+
+
+VM_OBJECT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "A VM object",
+    "type": "object",
+    "properties": {
+        "hypervisor_id": {
+            "description": "Server identifier",
+            "type": "string"
+        },
+        "vm_id": {
+            "description": "VM identifier",
+            "type": "string",
+             "minLength": 36,
+             "maxLength": 36,
+             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "vm_type": {
+            "description": "Type of VM",
+            "enum": ["docker", "dynamips", "vpcs", "virtualbox", "vmware", "iou"]
+        },
+        "name": {
+            "description": "VM name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "console": {
+            "description": "Console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["serial", "vnc", "telnet"]
+        },
+        "properties": {
+            "description": "Properties specific to an emulator",
+            "type": "object"
+        }
+    },
+    "additionalProperties": False,
+    "required": ["name", "vm_type", "hypervisor_id"]
+}

@@ -81,7 +81,7 @@ class Hypervisor:
         }
 
     @asyncio.coroutine
-    def _httpQuery(self, method, path, data=None):
+    def httpQuery(self, method, path, data=None):
         with aiohttp.Timeout(10):
             with aiohttp.ClientSession() as session:
                 url = "{}://{}:{}/v2/hypervisor{}".format(self._protocol, self._host, self._port, path)
@@ -98,4 +98,4 @@ class Hypervisor:
 
     @asyncio.coroutine
     def post(self, path, data={}):
-        yield from self._httpQuery("POST", path, data)
+        yield from self.httpQuery("POST", path, data)

@@ -22,7 +22,6 @@ import asyncio
 from ....web.route import Route
 from ....schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA
 from ....controller import Controller
-from ....controller.project import Project
 
 
 import logging
@@ -44,11 +43,11 @@ class ProjectHandler:
     def create_project(request, response):
 
         controller = Controller.instance()
-        project = Project(name=request.json.get("name"),
-                          path=request.json.get("path"),
-                          project_id=request.json.get("project_id"),
-                          temporary=request.json.get("temporary", False))
-        yield from controller.addProject(project)
+        project = yield from controller.addProject(
+            name=request.json.get("name"),
+            path=request.json.get("path"),
+            project_id=request.json.get("project_id"),
+            temporary=request.json.get("temporary", False))
         response.set_status(201)
         response.json(project)
 

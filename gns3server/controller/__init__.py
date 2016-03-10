@@ -19,6 +19,8 @@ import asyncio
 import aiohttp
 
 from ..config import Config
+from .project import Project
+from .hypervisor import Hypervisor
 
 
 class Controller:
@@ -35,12 +37,17 @@ class Controller:
         """
         return Config.instance().get_section_config("Server").getboolean("controller")
 
-    def addHypervisor(self, hypervisor):
+    @asyncio.coroutine
+    def addHypervisor(self, hypervisor_id, **kwargs):
         """
         Add a server to the dictionnary of hypervisors controlled by GNS3
+
+        :param kwargs: See the documentation of Hypervisor
         """
-        if hypervisor.id not in self._hypervisors:
-            self._hypervisors[hypervisor.id] = hypervisor
+        if hypervisor_id not in self._hypervisors:
+            hypervisor = Hypervisor(hypervisor_id=hypervisor_id, **kwargs)
+            self._hypervisors[hypervisor_id] = hypervisor
+        return self._hypervisors[hypervisor_id]
 
     @property
     def hypervisors(self):
@@ -49,19 +56,33 @@ class Controller:
         """
         return self._hypervisors
 
+    def getHypervisor(self, hypervisor_id):
+        """
+        Return an hypervisor or raise a 404
+        """
+        try:
+            return self._hypervisors[hypervisor_id]
+        except KeyError:
+            raise aiohttp.web.HTTPNotFound(text="Hypervisor ID {} doesn't exist".format(hypervisor_id))
+
     @asyncio.coroutine
-    def addProject(self, project):
+    def addProject(self, project_id=None, **kwargs):
         """
-        Add a server to the dictionnary of projects controlled by GNS3
+        Create a project or return an existing project
+
+        :param kwargs: See the documentation of Project
         """
-        if project.id not in self._projects:
+        if project_id not in self._projects:
+            project = Project(project_id=project_id, **kwargs)
             self._projects[project.id] = project
             for hypervisor in self._hypervisors.values():
                 yield from project.addHypervisor(hypervisor)
+            return self._projects[project.id]
+        return self._projects[project_id]
 
     def getProject(self, project_id):
         """
-        Return a server or raise a 404
+        Return a project or raise a 404
         """
         try:
             return self._projects[project_id]

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
+    #
+    # This program is free software: you can redistribute it and/or modify
+    # it under the terms of the GNU General Public License as published by
+    # the Free Software Foundation, either version 3 of the License, or
+    # (at your option) any later version.
+    #
+    # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -42,12 +42,10 @@ def project(http_controller):
 
 
 def test_create_project_with_path(http_controller, tmpdir):
-    with asyncio_patch("gns3server.controller.Controller.addProject") as mock:
-        response = http_controller.post("/projects", {"name": "test", "path": str(tmpdir), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"})
-        assert response.status == 201
-        assert response.json["name"] == "test"
-        assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
-        assert mock.called
+    response = http_controller.post("/projects", {"name": "test", "path": str(tmpdir), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"})
+    assert response.status == 201
+    assert response.json["name"] == "test"
+    assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
 def test_create_project_without_dir(http_controller):

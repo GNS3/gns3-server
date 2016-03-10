@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from unittest.mock import MagicMock
+
 
 from gns3server.controller.project import Project
 
@@ -31,3 +33,10 @@ def test_affect_uuid():
 def test_json(tmpdir):
     p = Project()
     assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False, "path": None}
+
+
+def test_addVM(async_run):
+    hypervisor = MagicMock()
+    project = Project()
+    vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", startup_config="test.cfg"))
+    hypervisor.post.assert_called_with('/projects/{}/vpcs/vms'.format(project.id), data={'console': None, 'vm_id': vm.id, 'console_type': 'telnet', 'startup_config': 'test.cfg'})

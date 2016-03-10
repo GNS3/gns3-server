@@ -34,35 +34,40 @@ def test_isEnabled(controller):
     assert controller.isEnabled()
 
 
-def test_addHypervisor(controller):
-    hypervisor1 = Hypervisor("test1")
-
-    controller.addHypervisor(hypervisor1)
+def test_addHypervisor(controller, async_run):
+    async_run(controller.addHypervisor("test1"))
     assert len(controller.hypervisors) == 1
-    controller.addHypervisor(Hypervisor("test1"))
+    async_run(controller.addHypervisor("test1"))
     assert len(controller.hypervisors) == 1
-    controller.addHypervisor(Hypervisor("test2"))
+    async_run(controller.addHypervisor("test2"))
     assert len(controller.hypervisors) == 2
+
+
+def test_getHypervisor(controller, async_run):
+
+    hypervisor = async_run(controller.addHypervisor("test1"))
+
+    assert controller.getHypervisor("test1") == hypervisor
+    with pytest.raises(aiohttp.web.HTTPNotFound):
+        assert controller.getHypervisor("dsdssd")
 
 
 def test_addProject(controller, async_run):
     uuid1 = str(uuid.uuid4())
-    project1 = Project(project_id=uuid1)
     uuid2 = str(uuid.uuid4())
 
-    async_run(controller.addProject(project1))
+    async_run(controller.addProject(project_id=uuid1))
     assert len(controller.projects) == 1
-    async_run(controller.addProject(Project(project_id=uuid1)))
+    async_run(controller.addProject(project_id=uuid1))
     assert len(controller.projects) == 1
-    async_run(controller.addProject(Project(project_id=uuid2)))
+    async_run(controller.addProject(project_id=uuid2))
     assert len(controller.projects) == 2
 
 
 def test_removeProject(controller, async_run):
     uuid1 = str(uuid.uuid4())
-    project1 = Project(project_id=uuid1)
 
-    async_run(controller.addProject(project1))
+    project1 = async_run(controller.addProject(project_id=uuid1))
     assert len(controller.projects) == 1
 
     controller.removeProject(project1)
@@ -71,21 +76,19 @@ def test_removeProject(controller, async_run):
 
 def test_addProject_with_hypervisor(controller, async_run):
     uuid1 = str(uuid.uuid4())
-    project1 = Project(project_id=uuid1)
 
     hypervisor = Hypervisor("test1")
     hypervisor.post = MagicMock()
-    controller.addHypervisor(hypervisor)
+    controller._hypervisors = {"test1": hypervisor }
 
-    async_run(controller.addProject(project1))
+    project1 = async_run(controller.addProject(project_id=uuid1))
     hypervisor.post.assert_called_with("/projects", project1)
 
 
 def test_getProject(controller, async_run):
     uuid1 = str(uuid.uuid4())
-    project = Project(project_id=uuid1)
 
-    async_run(controller.addProject(project))
+    project = async_run(controller.addProject(project_id=uuid1))
     assert controller.getProject(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.getProject("dsdssd")

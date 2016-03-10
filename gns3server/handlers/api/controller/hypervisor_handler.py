@@ -44,9 +44,7 @@ class HypervisorHandler:
         output=HYPERVISOR_OBJECT_SCHEMA)
     def create(request, response):
 
-        hypervisor = Hypervisor(request.json.pop("hypervisor_id"), **request.json)
-        Controller.instance().addHypervisor(hypervisor)
-
+        hypervisor = yield from Controller.instance().addHypervisor(**request.json)
         response.set_status(201)
         response.json(hypervisor)
 

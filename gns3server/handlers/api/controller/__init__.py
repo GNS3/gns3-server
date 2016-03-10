@@ -18,3 +18,5 @@
 from .hypervisor_handler import HypervisorHandler
 from .project_handler import ProjectHandler
 from .version_handler import VersionHandler
+from .vm_handler import VMHandler
+
