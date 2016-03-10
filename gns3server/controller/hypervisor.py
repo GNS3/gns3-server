@@ -97,5 +97,5 @@ class Hypervisor:
         return body
 
     @asyncio.coroutine
-    def post(self, path, data):
+    def post(self, path, data={}):
         yield from self._httpQuery("POST", path, data)
