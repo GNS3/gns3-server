@@ -78,16 +78,6 @@ PROJECT_OBJECT_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1
         },
-        "location": {
-            "description": "Base directory where the project should be created on remote server",
-            "type": "string",
-            "minLength": 1
-        },
-        "path": {
-            "description": "Directory of the project on the server",
-            "type": "string",
-            "minLength": 1
-        },
         "project_id": {
             "description": "Project UUID",
             "type": "string",
@@ -99,9 +89,14 @@ PROJECT_OBJECT_SCHEMA = {
             "description": "If project is a temporary project",
             "type": "boolean"
         },
+        "path": {
+            "description": "Project directory",
+            "type": ["string", "null"],
+            "minLength": 1
+        }
     },
     "additionalProperties": False,
-    "required": ["location", "project_id", "temporary"]
+    "required": ["project_id", "temporary"]
 }
 
 PROJECT_LIST_SCHEMA = {

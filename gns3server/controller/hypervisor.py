@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
+import asyncio
+import json
 
 from ..controller.controller_error import ControllerError
 from ..config import Config
@@ -49,7 +52,7 @@ class Hypervisor:
 
         # If the hypervisor is local but the hypervisor id is local
         # it's a configuration issue
-        if hypervisor_id == "local" and Config.instance().get_section_config("Hypervisor")["local"] is False:
+        if hypervisor_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
             raise HypervisorError("The local hypervisor is started without --local")
 
     @property
@@ -76,3 +79,23 @@ class Hypervisor:
             "connected": self._connected,
             "version": self._version
         }
+
+    @asyncio.coroutine
+    def _httpQuery(self, method, path, data=None):
+        with aiohttp.Timeout(10):
+            with aiohttp.ClientSession() as session:
+                url = "{}://{}:{}/v2/hypervisor{}".format(self._protocol, self._host, self._port, path)
+                headers = {'content-type': 'application/json'}
+                if hasattr(data, '__json__'):
+                    data = data.__json__()
+                data = json.dumps(data)
+                response = yield from session.request(method, url, headers=headers, data=data)
+                print(response.status)
+                assert response.status < 300
+                body = yield from response.read()
+                yield from response.release()
+        return body
+
+    @asyncio.coroutine
+    def post(self, path, data):
+        yield from self._httpQuery("POST", path, data)

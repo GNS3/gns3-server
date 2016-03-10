@@ -17,10 +17,13 @@
 
 
 import pytest
-from unittest.mock import patch
+import json
+from unittest.mock import patch, MagicMock
 
+from gns3server.controller.project import Project
 from gns3server.controller.hypervisor import Hypervisor, HypervisorError
 from gns3server.version import __version__
+from tests.utils import asyncio_patch
 
 
 @pytest.fixture
@@ -44,6 +47,25 @@ def test_hypervisor_local(hypervisor):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         s = Hypervisor("test")
+
+
+def test_hypervisor_httpQuery(hypervisor, async_run):
+    response = MagicMock()
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        response.status = 200
+
+        async_run(hypervisor.post("/projects", {"a": "b"}))
+        mock.assert_called_with("POST", "https://example.com:84/v2/hypervisor/projects", data='{"a": "b"}', headers={'content-type': 'application/json'})
+
+
+def test_hypervisor_httpQuery_project(hypervisor, async_run):
+    response = MagicMock()
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        response.status = 200
+
+        project = Project()
+        async_run(hypervisor.post("/projects", project))
+        mock.assert_called_with("POST", "https://example.com:84/v2/hypervisor/projects", data=json.dumps(project.__json__()), headers={'content-type': 'application/json'})
 
 
 def test_json(hypervisor):

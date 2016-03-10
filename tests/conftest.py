@@ -240,3 +240,11 @@ def linux_platform():
     sys.platform = "linuxdebian"
     yield
     sys.plaform = old_platform
+
+
+@pytest.fixture
+def async_run(loop):
+    """
+    Shortcut for running in asyncio loop
+    """
+    return lambda x: loop.run_until_complete(asyncio.async(x))

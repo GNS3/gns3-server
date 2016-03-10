@@ -38,27 +38,17 @@ class Project:
 
     :param project_id: force project identifier (None by default auto generate an UUID)
     :param path: path of the project. (None use the standard directory)
-    :param location: parent path of the project. (None should create a tmp directory)
     :param temporary: boolean to tell if the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, location=None, temporary=False):
+    def __init__(self, name=None, project_id=None, path=None, temporary=False):
 
         self._name = name
-        if project_id is None:
-            self._id = str(uuid4())
-        else:
-            try:
-                UUID(project_id, version=4)
-            except ValueError:
-                raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
-            self._id = project_id
-
-        self._location = None
-        if location is None:
-            self._location = self._config().get("project_directory", self._get_default_project_directory())
-        else:
-            self.location = location
+        try:
+            UUID(project_id, version=4)
+        except ValueError:
+            raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
+        self._id = project_id
 
         self._vms = set()
         self._vms_to_destroy = set()
@@ -70,7 +60,8 @@ class Project:
         self._listeners = set()
 
         if path is None:
-            path = os.path.join(self._location, self._id)
+            location = self._config().get("project_directory", self._get_default_project_directory())
+            path = os.path.join(location, self._id)
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
@@ -84,9 +75,7 @@ class Project:
         return {
             "name": self._name,
             "project_id": self._id,
-            "location": self._location,
-            "temporary": self._temporary,
-            "path": self._path,
+            "temporary": self._temporary
         }
 
     def _config(self):
@@ -117,19 +106,6 @@ class Project:
     def id(self):
 
         return self._id
-
-    @property
-    def location(self):
-
-        return self._location
-
-    @location.setter
-    def location(self, location):
-
-        if location != self._location and self.is_local() is False:
-            raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory location")
-
-        self._location = location
 
     @property
     def path(self):

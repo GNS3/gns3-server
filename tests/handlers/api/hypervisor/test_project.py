@@ -33,74 +33,72 @@ from gns3server.hypervisor.project_manager import ProjectManager
 
 def test_create_project_with_path(http_hypervisor, tmpdir):
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
-        response = http_hypervisor.post("/projects", {"name": "test", "path": str(tmpdir)})
+        response = http_hypervisor.post("/projects", {"name": "test", "path": str(tmpdir), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"})
         assert response.status == 201
-        assert response.json["path"] == str(tmpdir)
         assert response.json["name"] == "test"
+        assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
 def test_create_project_without_dir(http_hypervisor):
-    query = {"name": "test"}
+    query = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_hypervisor.post("/projects", query, example=True)
     assert response.status == 201
-    assert response.json["project_id"] is not None
+    assert response.json["project_id"] == "10010203-0405-0607-0809-0a0b0c0d0e0f"
     assert response.json["temporary"] is False
     assert response.json["name"] == "test"
 
 
 def test_create_temporary_project(http_hypervisor):
-    query = {"name": "test", "temporary": True}
+    query = {"name": "test", "temporary": True, "project_id": "20010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_hypervisor.post("/projects", query)
     assert response.status == 201
-    assert response.json["project_id"] is not None
+    assert response.json["project_id"] == "20010203-0405-0607-0809-0a0b0c0d0e0f"
     assert response.json["temporary"] is True
     assert response.json["name"] == "test"
 
 
 def test_create_project_with_uuid(http_hypervisor):
-    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
+    query = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_hypervisor.post("/projects", query)
     assert response.status == 201
-    assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+    assert response.json["project_id"] == "30010203-0405-0607-0809-0a0b0c0d0e0f"
     assert response.json["name"] == "test"
 
 
 def test_show_project(http_hypervisor):
-    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e02", "temporary": False}
+    query = {"name": "test", "project_id": "40010203-0405-0607-0809-0a0b0c0d0e02", "temporary": False}
     response = http_hypervisor.post("/projects", query)
     assert response.status == 201
-    response = http_hypervisor.get("/projects/00010203-0405-0607-0809-0a0b0c0d0e02", example=True)
-    assert len(response.json.keys()) == 5
-    assert len(response.json["location"]) > 0
-    assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e02"
+    response = http_hypervisor.get("/projects/40010203-0405-0607-0809-0a0b0c0d0e02", example=True)
+    assert len(response.json.keys()) == 3
+    assert response.json["project_id"] == "40010203-0405-0607-0809-0a0b0c0d0e02"
     assert response.json["temporary"] is False
     assert response.json["name"] == "test"
 
 
 def test_show_project_invalid_uuid(http_hypervisor):
-    response = http_hypervisor.get("/projects/00010203-0405-0607-0809-0a0b0c0d0e42")
+    response = http_hypervisor.get("/projects/50010203-0405-0607-0809-0a0b0c0d0e42")
     assert response.status == 404
 
 
 def test_list_projects(http_hypervisor):
     ProjectManager.instance()._projects = {}
 
-    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
+    query = {"name": "test", "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_hypervisor.post("/projects", query)
     assert response.status == 201
-    query = {"name": "test", "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0b"}
+    query = {"name": "test", "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b"}
     response = http_hypervisor.post("/projects", query)
     assert response.status == 201
 
     response = http_hypervisor.get("/projects", example=True)
     assert response.status == 200
-    print(response.json)
     assert len(response.json) == 2
-    assert response.json[0]["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0b" or response.json[1]["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0b"
+    assert "51010203-0405-0607-0809-0a0b0c0d0e0f" in [p["project_id"] for p in response.json]
 
 
 def test_update_temporary_project(http_hypervisor):
-    query = {"name": "test", "temporary": True}
+    query = {"name": "test", "temporary": True, "project_id": "60010203-0405-0607-0809-0a0b0c0d0e0b"}
     response = http_hypervisor.post("/projects", query)
     assert response.status == 201
     query = {"name": "test", "temporary": False}
@@ -115,13 +113,12 @@ def test_update_path_project_temporary(http_hypervisor, tmpdir):
     os.makedirs(str(tmpdir / "b"))
 
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
-        response = http_hypervisor.post("/projects", {"name": "first_name", "path": str(tmpdir / "a"), "temporary": True})
+        response = http_hypervisor.post("/projects", {"name": "first_name", "path": str(tmpdir / "a"), "temporary": True, "project_id": "70010203-0405-0607-0809-0a0b0c0d0e0b"})
         assert response.status == 201
         assert response.json["name"] == "first_name"
         query = {"name": "second_name", "path": str(tmpdir / "b")}
         response = http_hypervisor.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
         assert response.status == 200
-        assert response.json["path"] == str(tmpdir / "b")
         assert response.json["name"] == "second_name"
 
         assert not os.path.exists(str(tmpdir / "a"))
@@ -134,13 +131,12 @@ def test_update_path_project_non_temporary(http_hypervisor, tmpdir):
     os.makedirs(str(tmpdir / "b"))
 
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
-        response = http_hypervisor.post("/projects", {"name": "first_name", "path": str(tmpdir / "a")})
+        response = http_hypervisor.post("/projects", {"name": "first_name", "path": str(tmpdir / "a"), "project_id": "80010203-0405-0607-0809-0a0b0c0d0e0b"})
         assert response.status == 201
         assert response.json["name"] == "first_name"
         query = {"name": "second_name", "path": str(tmpdir / "b")}
         response = http_hypervisor.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
         assert response.status == 200
-        assert response.json["path"] == str(tmpdir / "b")
         assert response.json["name"] == "second_name"
 
         assert os.path.exists(str(tmpdir / "a"))
@@ -150,7 +146,7 @@ def test_update_path_project_non_temporary(http_hypervisor, tmpdir):
 def test_update_path_project_non_local(http_hypervisor, tmpdir):
 
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=False):
-        response = http_hypervisor.post("/projects", {"name": "first_name"})
+        response = http_hypervisor.post("/projects", {"name": "first_name", "project_id": "90010203-0405-0607-0809-0a0b0c0d0e0b"})
         assert response.status == 201
         query = {"name": "second_name", "path": str(tmpdir)}
         response = http_hypervisor.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
@@ -247,7 +243,7 @@ def test_list_files(http_hypervisor, project):
 def test_get_file(http_hypervisor, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
-        project = ProjectManager.instance().create_project()
+        project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
     with open(os.path.join(project.path, "hello"), "w+") as f:
         f.write("world")

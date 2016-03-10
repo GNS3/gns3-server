@@ -16,9 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import uuid
+import aiohttp
+from unittest.mock import MagicMock
+
 
 from gns3server.controller import Controller
 from gns3server.controller.hypervisor import Hypervisor
+from gns3server.controller.project import Project
 from gns3server.config import Config
 
 
@@ -38,3 +43,49 @@ def test_addHypervisor(controller):
     assert len(controller.hypervisors) == 1
     controller.addHypervisor(Hypervisor("test2"))
     assert len(controller.hypervisors) == 2
+
+
+def test_addProject(controller, async_run):
+    uuid1 = str(uuid.uuid4())
+    project1 = Project(project_id=uuid1)
+    uuid2 = str(uuid.uuid4())
+
+    async_run(controller.addProject(project1))
+    assert len(controller.projects) == 1
+    async_run(controller.addProject(Project(project_id=uuid1)))
+    assert len(controller.projects) == 1
+    async_run(controller.addProject(Project(project_id=uuid2)))
+    assert len(controller.projects) == 2
+
+
+def test_removeProject(controller, async_run):
+    uuid1 = str(uuid.uuid4())
+    project1 = Project(project_id=uuid1)
+
+    async_run(controller.addProject(project1))
+    assert len(controller.projects) == 1
+
+    controller.removeProject(project1)
+    assert len(controller.projects) == 0
+
+
+def test_addProject_with_hypervisor(controller, async_run):
+    uuid1 = str(uuid.uuid4())
+    project1 = Project(project_id=uuid1)
+
+    hypervisor = Hypervisor("test1")
+    hypervisor.post = MagicMock()
+    controller.addHypervisor(hypervisor)
+
+    async_run(controller.addProject(project1))
+    hypervisor.post.assert_called_with("/projects", project1)
+
+
+def test_getProject(controller, async_run):
+    uuid1 = str(uuid.uuid4())
+    project = Project(project_id=uuid1)
+
+    async_run(controller.addProject(project))
+    assert controller.getProject(uuid1) == project
+    with pytest.raises(aiohttp.web.HTTPNotFound):
+        assert controller.getProject("dsdssd")

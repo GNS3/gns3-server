@@ -26,6 +26,7 @@ from unittest.mock import patch
 from tests.utils import asyncio_patch
 from gns3server.hypervisor.project import Project
 from gns3server.hypervisor.vpcs import VPCS, VPCSVM
+from gns3server.config import Config
 
 
 @pytest.fixture(scope="module")
@@ -42,32 +43,33 @@ def vm(project, manager, loop):
 
 
 def test_affect_uuid():
-    p = Project()
-    assert len(p.id) == 36
-
     p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
     assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
 def test_path(tmpdir):
+
+    directory = Config.instance().get_section_config("Server").get("project_directory")
+
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
-        p = Project(location=str(tmpdir))
-        assert p.path == os.path.join(str(tmpdir), p.id)
-        assert os.path.exists(os.path.join(str(tmpdir), p.id))
-        assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
+        with patch("gns3server.hypervisor.project.Project._get_default_project_directory", return_value=directory):
+            p = Project(project_id=str(uuid4()))
+            assert p.path == os.path.join(directory, p.id)
+            assert os.path.exists(os.path.join(directory, p.id))
+            assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
 def test_init_path(tmpdir):
 
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
-        p = Project(path=str(tmpdir))
+        p = Project(path=str(tmpdir), project_id=str(uuid4()))
         assert p.path == str(tmpdir)
 
 
 def test_changing_path_temporary_flag(tmpdir):
 
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
-        p = Project(temporary=True)
+        p = Project(temporary=True, project_id=str(uuid4()))
         assert os.path.exists(p.path)
         original_path = p.path
         assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
@@ -76,53 +78,49 @@ def test_changing_path_temporary_flag(tmpdir):
 
 
 def test_temporary_path():
-    p = Project(temporary=True)
+    p = Project(temporary=True, project_id=str(uuid4()))
     assert os.path.exists(p.path)
     assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
 def test_remove_temporary_flag():
-    p = Project(temporary=True)
+    p = Project(temporary=True, project_id=str(uuid4()))
     assert os.path.exists(p.path)
     assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
     p.temporary = False
     assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
-def test_changing_location_not_allowed(tmpdir):
-    with patch("gns3server.hypervisor.project.Project.is_local", return_value=False):
-        with pytest.raises(aiohttp.web.HTTPForbidden):
-            p = Project(location=str(tmpdir))
-
-
 def test_changing_path_not_allowed(tmpdir):
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=False):
         with pytest.raises(aiohttp.web.HTTPForbidden):
-            p = Project()
+            p = Project(project_id=str(uuid4()))
             p.path = str(tmpdir)
 
 
 def test_changing_path_with_quote_not_allowed(tmpdir):
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
         with pytest.raises(aiohttp.web.HTTPForbidden):
-            p = Project()
+            p = Project(project_id=str(uuid4()))
             p.path = str(tmpdir / "project\"53")
 
 
 def test_json(tmpdir):
-    p = Project()
-    assert p.__json__() == {"name": p.name, "location": p.location, "path": p.path, "project_id": p.id, "temporary": False}
+    p = Project(project_id=str(uuid4()))
+    assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False}
 
 
 def test_vm_working_directory(tmpdir, vm):
+    directory = Config.instance().get_section_config("Server").get("project_directory")
+
     with patch("gns3server.hypervisor.project.Project.is_local", return_value=True):
-        p = Project(location=str(tmpdir))
-        assert p.vm_working_directory(vm) == os.path.join(str(tmpdir), p.id, 'project-files', vm.module_name, vm.id)
+        p = Project(project_id=str(uuid4()))
+        assert p.vm_working_directory(vm) == os.path.join(directory, p.id, 'project-files', vm.module_name, vm.id)
         assert os.path.exists(p.vm_working_directory(vm))
 
 
 def test_mark_vm_for_destruction(vm):
-    project = Project()
+    project = Project(project_id=str(uuid4()))
     project.add_vm(vm)
     project.mark_vm_for_destruction(vm)
     assert len(project._vms_to_destroy) == 1
@@ -130,7 +128,7 @@ def test_mark_vm_for_destruction(vm):
 
 
 def test_commit(manager, loop):
-    project = Project()
+    project = Project(project_id=str(uuid4()))
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
     directory = project.vm_working_directory(vm)
@@ -144,7 +142,7 @@ def test_commit(manager, loop):
 
 
 def test_commit_permission_issue(manager, loop):
-    project = Project()
+    project = Project(project_id=str(uuid4()))
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
     directory = project.vm_working_directory(vm)
@@ -158,7 +156,7 @@ def test_commit_permission_issue(manager, loop):
 
 
 def test_project_delete(loop):
-    project = Project()
+    project = Project(project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
     loop.run_until_complete(asyncio.async(project.delete()))
@@ -166,7 +164,7 @@ def test_project_delete(loop):
 
 
 def test_project_delete_permission_issue(loop):
-    project = Project()
+    project = Project(project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
     os.chmod(directory, 0)
@@ -176,7 +174,7 @@ def test_project_delete_permission_issue(loop):
 
 
 def test_project_add_vm(manager):
-    project = Project()
+    project = Project(project_id=str(uuid4()))
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
     assert len(project.vms) == 1
@@ -193,7 +191,7 @@ def test_project_close(loop, vm, project):
 def test_project_close_temporary_project(loop, manager):
     """A temporary project is deleted when closed"""
 
-    project = Project(temporary=True)
+    project = Project(temporary=True, project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
     loop.run_until_complete(asyncio.async(project.close()))
@@ -203,7 +201,7 @@ def test_project_close_temporary_project(loop, manager):
 def test_get_default_project_directory(monkeypatch):
 
     monkeypatch.undo()
-    project = Project()
+    project = Project(project_id=str(uuid4()))
     path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
     assert project._get_default_project_directory() == path
     assert os.path.exists(path)
@@ -237,7 +235,7 @@ def test_clean_project_directory(tmpdir):
 def test_list_files(tmpdir, loop):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
-        project = Project()
+        project = Project(project_id=str(uuid4()))
         path = project.path
         os.makedirs(os.path.join(path, "vm-1", "dynamips"))
         with open(os.path.join(path, "vm-1", "dynamips", "test.bin"), "w+") as f:
