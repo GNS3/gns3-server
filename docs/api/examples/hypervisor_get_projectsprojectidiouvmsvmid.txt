@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/d3b40654-aac9-4482-ae7f-b17585452f47'
+curl -i -X GET 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/e24dae90-93ea-4929-99aa-5a822abb84b3'
 
-GET /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/d3b40654-aac9-4482-ae7f-b17585452f47 HTTP/1.1
+GET /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/e24dae90-93ea-4929-99aa-5a822abb84b3 HTTP/1.1
 
 
 
@@ -28,6 +28,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}
     "serial_adapters": 2,
     "startup_config": null,
     "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i_9npri/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/d3b40654-aac9-4482-ae7f-b17585452f47",
-    "vm_id": "d3b40654-aac9-4482-ae7f-b17585452f47"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i5ppgsq/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/e24dae90-93ea-4929-99aa-5a822abb84b3",
+    "vm_id": "e24dae90-93ea-4929-99aa-5a822abb84b3"
 }

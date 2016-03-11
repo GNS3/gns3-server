@@ -38,7 +38,7 @@ def test_json(tmpdir):
 def test_addVM(async_run):
     hypervisor = MagicMock()
     project = Project()
-    vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", properties= {"startup_config": "test.cfg"}))
+    vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
     hypervisor.post.assert_called_with('/projects/{}/vpcs/vms'.format(project.id),
                                        data={'console': None,
                                              'vm_id': vm.id,

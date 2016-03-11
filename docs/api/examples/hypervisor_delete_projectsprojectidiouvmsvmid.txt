@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/85bf8018-891e-4a8f-97b0-efc3046aab36'
+curl -i -X DELETE 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/b2bc705e-6878-4700-bb18-28bb200cdb64'
 
-DELETE /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/85bf8018-891e-4a8f-97b0-efc3046aab36 HTTP/1.1
+DELETE /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/b2bc705e-6878-4700-bb18-28bb200cdb64 HTTP/1.1
 
 
 

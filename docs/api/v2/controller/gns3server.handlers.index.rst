@@ -1,8 +1,8 @@
-Server
+Gns3server.handlers.index
 -----------------------------
 
 .. toctree::
    :glob:
    :maxdepth: 2
 
-   server/*
+   gns3server.handlers.index/*

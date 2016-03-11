@@ -1,0 +1,13 @@
+curl -i -X POST 'http://localhost:8000/v2/projects/02eac428-0bf5-442e-9f53-3b9af544d057/commit' -d '{}'
+
+POST /v2/projects/02eac428-0bf5-442e-9f53-3b9af544d057/commit HTTP/1.1
+{}
+
+
+HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v2/controller/projects/{project_id}/commit
+
