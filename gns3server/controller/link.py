@@ -21,9 +21,10 @@ import asyncio
 
 class Link:
 
-    def __init__(self):
+    def __init__(self, project):
         self._id = str(uuid.uuid4())
         self._vms = []
+        self._project = project
 
     @asyncio.coroutine
     def addVM(self, vm, adapter_number, port_number):

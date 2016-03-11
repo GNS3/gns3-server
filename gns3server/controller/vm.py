@@ -72,6 +72,10 @@ class VM:
     def project(self):
         return self._project
 
+    @property
+    def hypervisor(self):
+        return self._hypervisor
+
     @asyncio.coroutine
     def create(self):
         data = copy.copy(self._properties)
@@ -80,6 +84,13 @@ class VM:
         data["console"] = self._console
         data["console_type"] = self._console_type
         yield from self._hypervisor.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
+
+    @asyncio.coroutine
+    def post(self, path, data={}):
+        """
+        HTTP post on the VM
+        """
+        return (yield from self._hypervisor.post("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path), data=data))
 
     def __json__(self):
         return {

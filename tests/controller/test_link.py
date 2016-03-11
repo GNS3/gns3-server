@@ -36,7 +36,7 @@ def hypervisor():
 def test_addVM(async_run, project, hypervisor):
     vm1 = VM(project, hypervisor)
 
-    link = Link()
+    link = Link(project)
     async_run(link.addVM(vm1, 0, 4))
     assert link._vms == [
         {
@@ -51,7 +51,7 @@ def test_json(async_run, project, hypervisor):
     vm1 = VM(project, hypervisor)
     vm2 = VM(project, hypervisor)
 
-    link = Link()
+    link = Link(project)
     async_run(link.addVM(vm1, 0, 4))
     async_run(link.addVM(vm2, 1, 3))
     assert link.__json__() == {

@@ -98,7 +98,7 @@ class Project:
         """
         Create a link. By default the link is empty
         """
-        link = Link()
+        link = Link(self)
         self._links[link.id] = link
         return link
 

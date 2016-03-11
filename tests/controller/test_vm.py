@@ -73,3 +73,8 @@ def test_create(vm, hypervisor, project, async_run):
         "name": "demo"
     }
     hypervisor.post.assert_called_with("/projects/{}/vpcs/vms".format(vm.project.id), data=data)
+
+
+def test_post(vm, hypervisor, async_run):
+    async_run(vm.post("/test", {"a": "b"}))
+    hypervisor.post.assert_called_with("/projects/{}/vpcs/vms/{}/test".format(vm.project.id, vm.id), data={"a": "b"})
