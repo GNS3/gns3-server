@@ -48,3 +48,9 @@ Output
     <tr><td>vm_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: docker, dynamips, vpcs, virtualbox, vmware, iou</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidvms.txt
+

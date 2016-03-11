@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/a508ab79-4cfa-46fb-896b-ee4399463d33/commit' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/projects/86f47fd6-908d-4ca7-998d-a69782792b31/commit' -d '{}'
 
-POST /v2/projects/a508ab79-4cfa-46fb-896b-ee4399463d33/commit HTTP/1.1
+POST /v2/projects/86f47fd6-908d-4ca7-998d-a69782792b31/commit HTTP/1.1
 {}
 
 

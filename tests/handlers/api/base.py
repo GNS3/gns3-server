@@ -135,5 +135,8 @@ class Query:
 
     def _example_file_path(self, method, path):
         path = re.sub('[^a-z0-9]', '', path)
-        prefix = self._prefix.replace('/', '')
-        return "docs/api/examples/{}_{}_{}.txt".format(prefix, method.lower(), path)
+        if len(self._prefix) > 0:
+            prefix = self._prefix.replace('/', '')
+            return "docs/api/examples/{}_{}_{}.txt".format(prefix, method.lower(), path)
+        else:
+            return "docs/api/examples/controller_{}_{}.txt".format(method.lower(), path)

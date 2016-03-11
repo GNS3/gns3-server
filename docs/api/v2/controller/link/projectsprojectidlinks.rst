@@ -36,3 +36,9 @@ Output
     <tr><td>vms</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinks.txt
+

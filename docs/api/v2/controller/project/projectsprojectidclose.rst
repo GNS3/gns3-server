@@ -16,3 +16,9 @@ Response status codes
 - **404**: The project doesn't exist
 - **204**: The project has been closed
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidclose.txt
+

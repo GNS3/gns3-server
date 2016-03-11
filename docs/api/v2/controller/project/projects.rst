@@ -36,3 +36,9 @@ Output
     <tr><td>temporary</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>If project is a temporary project</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projects.txt
+

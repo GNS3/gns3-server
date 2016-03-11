@@ -16,3 +16,9 @@ Response status codes
 - **404**: The project doesn't exist
 - **204**: Changes have been written on disk
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_delete_projectsprojectid.txt
+

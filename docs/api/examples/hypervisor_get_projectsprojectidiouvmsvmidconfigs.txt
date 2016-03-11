@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/d721a97b-5287-4dd6-8d40-d161af4a0fa2/configs'
+curl -i -X GET 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/6a58f681-755e-4678-ae5f-9d747aeb05ec/configs'
 
-GET /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/d721a97b-5287-4dd6-8d40-d161af4a0fa2/configs HTTP/1.1
+GET /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/6a58f681-755e-4678-ae5f-9d747aeb05ec/configs HTTP/1.1
 
 
 
