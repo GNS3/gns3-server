@@ -22,8 +22,6 @@ from .link import Link
 
 
 class UDPLink(Link):
-    pass
-
     @asyncio.coroutine
     def create(self):
         """
@@ -58,4 +56,3 @@ class UDPLink(Link):
             "type": "nio_udp"
         }
         yield from vm2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=data)
-
