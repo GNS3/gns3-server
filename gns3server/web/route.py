@@ -126,7 +126,7 @@ class Route(object):
         def register(func):
             # Add the type of server to the route
             if "controller" in func.__module__:
-                route = "/v{version}/controller{path}".format(path=path, version=api_version)
+                route = "/v{version}{path}".format(path=path, version=api_version)
             elif "hypervisor" in func.__module__:
                 route = "/v{version}/hypervisor{path}".format(path=path, version=api_version)
             else:

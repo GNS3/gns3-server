@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v2/qemu/binaries' -d '{"archs": ["i386"]}'
+curl -i -X GET 'http://localhost:8000/v2/hypervisor/qemu/binaries' -d '{"archs": ["i386"]}'
 
-GET /v2/qemu/binaries HTTP/1.1
+GET /v2/hypervisor/qemu/binaries HTTP/1.1
 {
     "archs": [
         "i386"

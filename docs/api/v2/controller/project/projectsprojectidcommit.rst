@@ -1,9 +1,9 @@
-/v2/controller/projects/{project_id}/commit
+/v2/projects/{project_id}/commit
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/controller/projects/**{project_id}**/commit
+POST /v2/projects/**{project_id}**/commit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Write changes on disk
 
@@ -15,10 +15,4 @@ Response status codes
 **********************
 - **404**: The project doesn't exist
 - **204**: Changes have been written on disk
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidcommit.txt
 

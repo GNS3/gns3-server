@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects' -d '{"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects' -d '{"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}'
 
-POST /v2/projects HTTP/1.1
+POST /v2/hypervisor/projects HTTP/1.1
 {
     "name": "test",
     "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"

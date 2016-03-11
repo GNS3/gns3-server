@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms' -d '{"linked_clone": false, "name": "VM1", "vmname": "VM1"}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms' -d '{"linked_clone": false, "name": "VM1", "vmname": "VM1"}'
 
-POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms HTTP/1.1
+POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms HTTP/1.1
 {
     "linked_clone": false,
     "name": "VM1",
@@ -28,6 +28,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/virtualbox/vms
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "e403e2fe-8439-4eb8-8994-7d23df8137b4",
+    "vm_id": "e5ddf8a0-a140-42e1-a10c-47604b48c408",
     "vmname": "VM1"
 }

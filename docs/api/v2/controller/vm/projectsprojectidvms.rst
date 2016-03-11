@@ -1,9 +1,9 @@
-/v2/controller/projects/{project_id}/vms
+/v2/projects/{project_id}/vms
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/controller/projects/**{project_id}**/vms
+POST /v2/projects/**{project_id}**/vms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Create a new VM instance
 
@@ -47,10 +47,4 @@ Output
     <tr><td>vm_id</td>                    <td> </td>                     <td>string</td>                     <td>VM identifier</td>                     </tr>
     <tr><td>vm_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: docker, dynamips, vpcs, virtualbox, vmware, iou</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidvms.txt
 

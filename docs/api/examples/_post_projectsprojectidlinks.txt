@@ -1,0 +1,42 @@
+curl -i -X POST 'http://localhost:8000/v2/projects/93c9f250-c79b-4191-86e0-dfe177194cfc/links' -d '{"vms": [{"adapter_number": 0, "port_number": 3, "vm_id": "bab8bd9a-b951-4a91-a77d-a872d15b9ce3"}, {"adapter_number": 2, "port_number": 4, "vm_id": "f50d4553-0895-4d66-9006-56e9ba3b30d6"}]}'
+
+POST /v2/projects/93c9f250-c79b-4191-86e0-dfe177194cfc/links HTTP/1.1
+{
+    "vms": [
+        {
+            "adapter_number": 0,
+            "port_number": 3,
+            "vm_id": "bab8bd9a-b951-4a91-a77d-a872d15b9ce3"
+        },
+        {
+            "adapter_number": 2,
+            "port_number": 4,
+            "vm_id": "f50d4553-0895-4d66-9006-56e9ba3b30d6"
+        }
+    ]
+}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 364
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v2/projects/{project_id}/links
+
+{
+    "link_id": "8d49f36a-2469-4295-a803-ae3cc54b780e",
+    "vms": [
+        {
+            "adapter_number": 0,
+            "port_number": 3,
+            "vm_id": "bab8bd9a-b951-4a91-a77d-a872d15b9ce3"
+        },
+        {
+            "adapter_number": 2,
+            "port_number": 4,
+            "vm_id": "f50d4553-0895-4d66-9006-56e9ba3b30d6"
+        }
+    ]
+}

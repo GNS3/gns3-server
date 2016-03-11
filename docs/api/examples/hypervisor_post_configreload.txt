@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/config/reload' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/config/reload' -d '{}'
 
-POST /v2/config/reload HTTP/1.1
+POST /v2/hypervisor/config/reload HTTP/1.1
 {}
 
 

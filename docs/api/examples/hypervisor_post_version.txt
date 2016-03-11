@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/version' -d '{"version": "1.5.0dev1"}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/version' -d '{"version": "1.5.0dev1"}'
 
-POST /v2/version HTTP/1.1
+POST /v2/hypervisor/version HTTP/1.1
 {
     "version": "1.5.0dev1"
 }

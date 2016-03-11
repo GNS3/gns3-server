@@ -119,7 +119,7 @@ def http_controller(loop, http_server):
     Return an helper allowing you to call the server API without any prefix
     """
     host, port = http_server
-    return Query(loop, host=host, port=port, prefix="/controller", api_version=2)
+    return Query(loop, host=host, port=port, api_version=2)
 
 
 @pytest.fixture

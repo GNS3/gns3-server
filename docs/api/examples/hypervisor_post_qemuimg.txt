@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/qemu/img' -d '{"cluster_size": 64, "format": "qcow2", "lazy_refcounts": "off", "path": "/tmp/hda.qcow2", "preallocation": "metadata", "qemu_img": "/tmp/qemu-img", "refcount_bits": 12, "size": 100}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/qemu/img' -d '{"cluster_size": 64, "format": "qcow2", "lazy_refcounts": "off", "path": "/tmp/hda.qcow2", "preallocation": "metadata", "qemu_img": "/tmp/qemu-img", "refcount_bits": 12, "size": 100}'
 
-POST /v2/qemu/img HTTP/1.1
+POST /v2/hypervisor/qemu/img HTTP/1.1
 {
     "cluster_size": 64,
     "format": "qcow2",

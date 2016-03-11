@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v2/iou/vms'
+curl -i -X GET 'http://localhost:8000/v2/hypervisor/iou/vms'
 
-GET /v2/iou/vms HTTP/1.1
+GET /v2/hypervisor/iou/vms HTTP/1.1
 
 
 
