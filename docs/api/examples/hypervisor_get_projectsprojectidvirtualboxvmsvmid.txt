@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/865c5e39-3aa9-4a38-a6cd-72fc78fb15fa'
+curl -i -X GET 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/2b155a42-44ab-444a-b56a-8666c03cd52e'
 
-GET /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/865c5e39-3aa9-4a38-a6cd-72fc78fb15fa HTTP/1.1
+GET /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/2b155a42-44ab-444a-b56a-8666c03cd52e HTTP/1.1
 
 
 
@@ -24,6 +24,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "865c5e39-3aa9-4a38-a6cd-72fc78fb15fa",
+    "vm_id": "2b155a42-44ab-444a-b56a-8666c03cd52e",
     "vmname": "VMTEST"
 }

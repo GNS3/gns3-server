@@ -1,10 +1,10 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms' -d '{"hda_disk_image": "linux\u8f7d.img", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph1maw1oo/qemu-system-x86_64", "ram": 1024}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms' -d '{"hda_disk_image": "linux\u8f7d.img", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmprb55n51b/qemu-system-x86_64", "ram": 1024}'
 
 POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms HTTP/1.1
 {
     "hda_disk_image": "linux\u8f7d.img",
     "name": "PC TEST 1",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph1maw1oo/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmprb55n51b/qemu-system-x86_64",
     "ram": 1024
 }
 
@@ -47,15 +47,15 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/qemu/vms
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:00:ab:f8:3d:00",
+    "mac_address": "00:00:ab:b2:75:00",
     "name": "PC TEST 1",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph1maw1oo/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmprb55n51b/qemu-system-x86_64",
     "ram": 1024,
     "usage": "",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpnu0jz9hy/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/f597ba60-a3e6-4dea-9df2-b109e265f83d",
-    "vm_id": "f597ba60-a3e6-4dea-9df2-b109e265f83d"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpge9bdv6k/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/2a562347-5729-4e7a-9e46-36708a09b275",
+    "vm_id": "2a562347-5729-4e7a-9e46-36708a09b275"
 }

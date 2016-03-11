@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/bd9b04ab-0915-4057-ad64-8e45446f286a' -d '{"console": 2011, "name": "test"}'
+curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/cfe3fc5d-7f24-4f0f-970b-eca30450e836' -d '{"console": 2011, "name": "test"}'
 
-PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/bd9b04ab-0915-4057-ad64-8e45446f286a HTTP/1.1
+PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/vms/cfe3fc5d-7f24-4f0f-970b-eca30450e836 HTTP/1.1
 {
     "console": 2011,
     "name": "test"
@@ -27,6 +27,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "bd9b04ab-0915-4057-ad64-8e45446f286a",
+    "vm_id": "cfe3fc5d-7f24-4f0f-970b-eca30450e836",
     "vmname": "VMTEST"
 }

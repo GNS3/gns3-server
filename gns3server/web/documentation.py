@@ -51,6 +51,8 @@ class Documentation(object):
                 server_type = "controller"
             elif "hypervisor." in handler_name:
                 server_type = "hypervisor"
+            else:
+                server_type = "root"
 
             if doc_type != server_type:
                 continue

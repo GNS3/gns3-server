@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/32f396f4-3ea3-4331-bde4-34ff49d53afe/start' -d '{"iourc_content": "test"}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/5ed5c17a-5f52-4e55-89d5-f67365666b9f/start' -d '{"iourc_content": "test"}'
 
-POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/32f396f4-3ea3-4331-bde4-34ff49d53afe/start HTTP/1.1
+POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/5ed5c17a-5f52-4e55-89d5-f67365666b9f/start HTTP/1.1
 {
     "iourc_content": "test"
 }
@@ -18,7 +18,7 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}/start
     "command_line": "",
     "console": 2001,
     "ethernet_adapters": 2,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpdz7rj3bb/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpbrzzmh2h/iourc",
     "l1_keepalives": false,
     "md5sum": null,
     "name": "PC TEST 1",
@@ -30,6 +30,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}/start
     "serial_adapters": 2,
     "startup_config": null,
     "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i5ppgsq/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/32f396f4-3ea3-4331-bde4-34ff49d53afe",
-    "vm_id": "32f396f4-3ea3-4331-bde4-34ff49d53afe"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpong6v0ku/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/5ed5c17a-5f52-4e55-89d5-f67365666b9f",
+    "vm_id": "5ed5c17a-5f52-4e55-89d5-f67365666b9f"
 }

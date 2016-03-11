@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/4eed4d28-791f-46c1-8177-6ae1c0450a20/vms' -d '{"hypervisor_id": "example.com", "name": "test", "properties": {"startup_script": "echo test"}, "vm_type": "vpcs"}'
+curl -i -X POST 'http://localhost:8000/v2/projects/566f5bce-2984-42db-a90b-542cf8a63836/vms' -d '{"hypervisor_id": "example.com", "name": "test", "properties": {"startup_script": "echo test"}, "vm_type": "vpcs"}'
 
-POST /v2/projects/4eed4d28-791f-46c1-8177-6ae1c0450a20/vms HTTP/1.1
+POST /v2/projects/566f5bce-2984-42db-a90b-542cf8a63836/vms HTTP/1.1
 {
     "hypervisor_id": "example.com",
     "name": "test",
@@ -24,14 +24,14 @@ X-ROUTE: /v2/controller/projects/{project_id}/vms
     "console_type": "telnet",
     "hypervisor_id": "example.com",
     "name": "test",
-    "project_id": "4eed4d28-791f-46c1-8177-6ae1c0450a20",
+    "project_id": "566f5bce-2984-42db-a90b-542cf8a63836",
     "properties": {
         "console": null,
         "console_type": "telnet",
         "name": "test",
         "startup_script": "echo test",
-        "vm_id": "ca8bd33c-fd32-4252-90f6-47b4a2b5a115"
+        "vm_id": "cfcff9e3-e326-4726-8e5e-5d158dff9c9c"
     },
-    "vm_id": "ca8bd33c-fd32-4252-90f6-47b4a2b5a115",
+    "vm_id": "cfcff9e3-e326-4726-8e5e-5d158dff9c9c",
     "vm_type": "vpcs"
 }

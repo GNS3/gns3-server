@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/351efb4b-1f7d-4057-bc48-d2563312a88e' -d '{"console": 2003, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/00569de4-466d-4770-874a-c220c57098a9' -d '{"console": 2003, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
 
-PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/351efb4b-1f7d-4057-bc48-d2563312a88e HTTP/1.1
+PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/00569de4-466d-4770-874a-c220c57098a9 HTTP/1.1
 {
     "console": 2003,
     "environment": "GNS3=1\nGNS4=0",
@@ -28,6 +28,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/docker/vms/{vm_id}
     "name": "test",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i5ppgsq/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/351efb4b-1f7d-4057-bc48-d2563312a88e",
-    "vm_id": "351efb4b-1f7d-4057-bc48-d2563312a88e"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpong6v0ku/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/00569de4-466d-4770-874a-c220c57098a9",
+    "vm_id": "00569de4-466d-4770-874a-c220c57098a9"
 }
