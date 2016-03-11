@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/3409583e-9e0e-4826-ba8e-4a2e2780a2f2/configs'
+curl -i -X GET 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/45ec2ea9-5569-42d0-aef3-4112437ee7ac/configs'
 
-GET /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/3409583e-9e0e-4826-ba8e-4a2e2780a2f2/configs HTTP/1.1
+GET /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/45ec2ea9-5569-42d0-aef3-4112437ee7ac/configs HTTP/1.1
 
 
 

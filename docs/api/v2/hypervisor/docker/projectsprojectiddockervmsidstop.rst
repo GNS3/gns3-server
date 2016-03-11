@@ -9,8 +9,8 @@ Stop a Docker container
 
 Parameters
 **********
-- **id**: ID of the container
 - **project_id**: UUID of the project
+- **id**: ID of the container
 
 Response status codes
 **********************

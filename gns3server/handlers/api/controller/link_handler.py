@@ -46,7 +46,7 @@ class LinkHandler:
         link = yield from project.addLink()
         for vm in request.json["vms"]:
             yield from link.addVM(project.getVM(vm["vm_id"]),
-                                 vm["adapter_number"],
-                                 vm["port_number"])
+                                  vm["adapter_number"],
+                                  vm["port_number"])
         response.set_status(201)
         response.json(link)

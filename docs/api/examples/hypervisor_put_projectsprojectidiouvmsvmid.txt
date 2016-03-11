@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7356b23a-8c35-458c-b1f7-480d708d1028' -d '{"console": 2002, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/53188672-e84b-4177-a430-dcbf5c4a0e47' -d '{"console": 2002, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7356b23a-8c35-458c-b1f7-480d708d1028 HTTP/1.1
+PUT /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/53188672-e84b-4177-a430-dcbf5c4a0e47 HTTP/1.1
 {
     "console": 2002,
     "ethernet_adapters": 4,
@@ -27,7 +27,7 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}
     "command_line": "",
     "console": 2002,
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpzzq34lkn/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpgrmrfaw9/iourc",
     "l1_keepalives": true,
     "md5sum": null,
     "name": "test",
@@ -39,6 +39,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}
     "serial_adapters": 0,
     "startup_config": "startup-config.cfg",
     "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp3892e7sw/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/7356b23a-8c35-458c-b1f7-480d708d1028",
-    "vm_id": "7356b23a-8c35-458c-b1f7-480d708d1028"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1tufm1gg/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/53188672-e84b-4177-a430-dcbf5c4a0e47",
+    "vm_id": "53188672-e84b-4177-a430-dcbf5c4a0e47"
 }

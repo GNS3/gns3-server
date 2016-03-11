@@ -69,4 +69,3 @@ def test_json(async_run, project, hypervisor):
             }
         ]
     }
-

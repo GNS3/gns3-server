@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/319027e4-2f0b-4b68-91a1-bcf9300ae50b/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
+curl -i -X POST 'http://localhost:8000/v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7bb550f3-8ae2-40a4-87c5-f5937c3d1e24/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
 
-POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/319027e4-2f0b-4b68-91a1-bcf9300ae50b/adapters/0/ports/0/start_capture HTTP/1.1
+POST /v2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/7bb550f3-8ae2-40a4-87c5-f5937c3d1e24/adapters/0/ports/0/start_capture HTTP/1.1
 {
     "capture_file_name": "test.pcap",
     "data_link_type": "DLT_EN10MB"
@@ -16,5 +16,5 @@ SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture
 
 {
-    "pcap_file_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp3892e7sw/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/captures/test.pcap"
+    "pcap_file_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1tufm1gg/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/captures/test.pcap"
 }

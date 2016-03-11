@@ -9,10 +9,10 @@ Stop a packet capture on a IOU VM instance
 
 Parameters
 **********
-- **adapter_number**: Adapter to stop a packet capture
-- **port_number**: Port on the adapter (always 0)
-- **vm_id**: UUID for the instance
 - **project_id**: UUID for the project
+- **adapter_number**: Adapter to stop a packet capture
+- **vm_id**: UUID for the instance
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************

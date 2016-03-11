@@ -20,6 +20,7 @@ import asyncio
 
 
 class Link:
+
     def __init__(self):
         self._id = str(uuid.uuid4())
         self._vms = []
@@ -48,4 +49,3 @@ class Link:
                 "port_number": side["port_number"]
             })
         return {"vms": res, "link_id": self._id}
-
