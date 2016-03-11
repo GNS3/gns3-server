@@ -18,6 +18,7 @@
 
 import pytest
 import json
+import aiohttp
 from unittest.mock import patch, MagicMock
 
 from gns3server.controller.project import Project
@@ -56,6 +57,15 @@ def test_hypervisor_httpQuery(hypervisor, async_run):
 
         async_run(hypervisor.post("/projects", {"a": "b"}))
         mock.assert_called_with("POST", "https://example.com:84/v2/hypervisor/projects", data='{"a": "b"}', headers={'content-type': 'application/json'})
+
+
+def test_hypervisor_httpQueryError(hypervisor, async_run):
+    response = MagicMock()
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        response.status = 409
+
+        with pytest.raises(aiohttp.errors.HttpProcessingError):
+            async_run(hypervisor.post("/projects", {"a": "b"}))
 
 
 def test_hypervisor_httpQuery_project(hypervisor, async_run):

@@ -47,4 +47,3 @@ class VMHandler:
         vm = yield from project.addVM(hypervisor, request.json.pop("vm_id", None), **request.json)
         response.set_status(201)
         response.json(vm)
-

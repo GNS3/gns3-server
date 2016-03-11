@@ -90,9 +90,9 @@ class Hypervisor:
                     data = data.__json__()
                 data = json.dumps(data)
                 response = yield from session.request(method, url, headers=headers, data=data)
-                print(response.status)
-                assert response.status < 300
                 body = yield from response.read()
+                if response.status >= 300:
+                    raise aiohttp.errors.HttpProcessingError(code=response.status, message=body)
                 yield from response.release()
         return body
 

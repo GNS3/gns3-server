@@ -79,7 +79,7 @@ def test_addProject_with_hypervisor(controller, async_run):
 
     hypervisor = Hypervisor("test1")
     hypervisor.post = MagicMock()
-    controller._hypervisors = {"test1": hypervisor }
+    controller._hypervisors = {"test1": hypervisor}
 
     project1 = async_run(controller.addProject(project_id=uuid1))
     hypervisor.post.assert_called_with("/projects", project1)

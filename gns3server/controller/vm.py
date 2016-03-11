@@ -21,7 +21,8 @@ import uuid
 
 
 class VM:
-    def __init__(self, project, hypervisor, vm_id=None, vm_type=None, name=None, console=None, console_type="telnet", **kwargs):
+
+    def __init__(self, project, hypervisor, vm_id=None, vm_type=None, name=None, console=None, console_type="telnet", properties={}):
         """
         :param project: Project of the VM
         :param hypervisor: Hypervisor server where the server will run
@@ -30,7 +31,7 @@ class VM:
         :param name: Name of the vm
         :param console: TCP port of the console
         :param console_type: Type of the console (telnet, vnc, serial..)
-        :param kwargs: Emulator specific properties of the VM
+        :param properties: Emulator specific properties of the VM
         """
 
         if vm_id is None:
@@ -44,7 +45,7 @@ class VM:
         self._vm_type = vm_type
         self._console = console
         self._console_type = console_type
-        self._properties = kwargs
+        self._properties = properties
 
     @property
     def id(self):
@@ -74,6 +75,7 @@ class VM:
     def create(self):
         data = self._properties
         data["vm_id"] = self._id
+        data["name"] = self._name
         data["console"] = self._console
         data["console_type"] = self._console_type
         yield from self._hypervisor.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
@@ -81,6 +83,7 @@ class VM:
     def __json__(self):
         return {
             "hypervisor_id": self._hypervisor.id,
+            "project_id": self._project.id,
             "vm_id": self._id,
             "vm_type": self._vm_type,
             "name": self._name,
@@ -88,4 +91,3 @@ class VM:
             "console_type": self._console_type,
             "properties": self._properties
         }
-

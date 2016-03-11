@@ -70,15 +70,19 @@ VM_OBJECT_SCHEMA = {
     "type": "object",
     "properties": {
         "hypervisor_id": {
-            "description": "Server identifier",
+            "description": "Hypervisor identifier",
+            "type": "string"
+        },
+        "project_id": {
+            "description": "Project identifier",
             "type": "string"
         },
         "vm_id": {
             "description": "VM identifier",
             "type": "string",
-             "minLength": 36,
-             "maxLength": 36,
-             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "vm_type": {
             "description": "Type of VM",

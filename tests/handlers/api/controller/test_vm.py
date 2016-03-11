@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
-    #
-    # This program is free software: you can redistribute it and/or modify
-    # it under the terms of the GNU General Public License as published by
-    # the Free Software Foundation, either version 3 of the License, or
-    # (at your option) any later version.
-    #
-    # This program is distributed in the hope that it will be useful,
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -47,7 +47,13 @@ def project(http_controller, async_run):
 
 
 def test_create_vm(http_controller, tmpdir, project, hypervisor):
-    response = http_controller.post("/projects/{}/vms".format(project.id), {"name": "test", "vm_type": "vpcs", "hypervisor_id": "example.com"}, example=True)
+    response = http_controller.post("/projects/{}/vms".format(project.id), {
+        "name": "test",
+        "vm_type": "vpcs",
+        "hypervisor_id": "example.com",
+        "properties": {
+            "startup_script": "echo test"
+        }
+    }, example=True)
     assert response.status == 201
     assert response.json["name"] == "test"
-

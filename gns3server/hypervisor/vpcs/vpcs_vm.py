@@ -112,6 +112,7 @@ class VPCSVM(BaseVM):
                 "vm_directory": self.working_dir,
                 "status": self.status,
                 "console": self._console,
+                "console_type": "telnet",
                 "project_id": self.project.id,
                 "startup_script": self.startup_script,
                 "startup_script_path": self.relative_startup_script,

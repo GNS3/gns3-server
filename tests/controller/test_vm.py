@@ -38,13 +38,15 @@ def vm(hypervisor):
             name="demo",
             vm_id=str(uuid.uuid4()),
             vm_type="vpcs",
-            console_type="vnc")
+            console_type="vnc",
+            properties={"startup_script": "echo test"})
     return vm
 
 
 def test_json(vm, hypervisor):
     assert vm.__json__() == {
         "hypervisor_id": hypervisor.id,
+        "project_id": vm.project.id,
         "vm_id": vm.id,
         "vm_type": vm.vm_type,
         "name": "demo",
@@ -66,6 +68,8 @@ def test_create(vm, hypervisor, project, async_run):
     data = {
         "console": None,
         "console_type": "vnc",
-        "vm_id": vm.id
+        "vm_id": vm.id,
+        "startup_script": "echo test",
+        "name": "demo"
     }
     hypervisor.post.assert_called_with("/projects/{}/vpcs/vms".format(vm.project.id), data=data)

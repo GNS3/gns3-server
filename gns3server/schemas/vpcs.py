@@ -42,6 +42,10 @@ VPCS_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet"]
+        },
         "startup_script": {
             "description": "Content of the VPCS startup script",
             "type": ["string", "null"]
@@ -66,6 +70,10 @@ VPCS_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
+        },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet"]
         },
         "startup_script": {
             "description": "Content of the VPCS startup script",
@@ -106,6 +114,10 @@ VPCS_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "console_type": {
+            "description": "console type",
+            "enum": ["telnet"]
+        },
         "project_id": {
             "description": "Project UUID",
             "type": "string",
@@ -127,5 +139,5 @@ VPCS_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "status", "console", "project_id", "startup_script_path", "command_line"]
+    "required": ["name", "vm_id", "status", "console", "console_type", "project_id", "startup_script_path", "command_line"]
 }
