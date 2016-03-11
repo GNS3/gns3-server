@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
+import aiohttp
 from unittest.mock import MagicMock
 
 
@@ -45,3 +47,34 @@ def test_addVM(async_run):
                                              'console_type': 'telnet',
                                              'startup_config': 'test.cfg',
                                              'name': 'test'})
+
+
+def test_getVM(async_run):
+    hypervisor = MagicMock()
+    project = Project()
+    vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert project.getVM(vm.id) == vm
+
+    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+        project.getVM("test")
+
+
+def test_addLink(async_run):
+    hypervisor = MagicMock()
+    project = Project()
+    vm1 = async_run(project.addVM(hypervisor, None, name="test1", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm2 = async_run(project.addVM(hypervisor, None, name="test2", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    link = async_run(project.addLink())
+    async_run(link.addVM(vm1, 3, 1))
+    async_run(link.addVM(vm2, 4, 2))
+    assert len(link._vms) == 2
+
+
+def test_getLink(async_run):
+    hypervisor = MagicMock()
+    project = Project()
+    link = async_run(project.addLink())
+    assert project.getLink(link.id) == link
+
+    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+        project.getLink("test")

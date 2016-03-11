@@ -16,9 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import aiohttp
 from uuid import UUID, uuid4
 
 from .vm import VM
+from .link import Link
 
 
 class Project:
@@ -45,6 +47,7 @@ class Project:
         self._temporary = temporary
         self._hypervisors = set()
         self._vms = {}
+        self._links = {}
 
     @property
     def name(self):
@@ -80,6 +83,33 @@ class Project:
             self._vms[vm.id] = vm
             return vm
         return self._vms[vm_id]
+
+    def getVM(self, vm_id):
+        """
+        Return the VM or raise a 404 if the VM is unknown
+        """
+        try:
+            return self._vms[vm_id]
+        except KeyError:
+            raise aiohttp.web.HTTPNotFound(text="VM ID {} doesn't exist".format(vm_id))
+
+    @asyncio.coroutine
+    def addLink(self):
+        """
+        Create a link. By default the link is empty
+        """
+        link = Link()
+        self._links[link.id] = link
+        return link
+
+    def getLink(self, link_id):
+        """
+        Return the Link or raise a 404 if the VM is unknown
+        """
+        try:
+            return self._links[link_id]
+        except KeyError:
+            raise aiohttp.web.HTTPNotFound(text="Link ID {} doesn't exist".format(link_id))
 
     @asyncio.coroutine
     def close(self):
