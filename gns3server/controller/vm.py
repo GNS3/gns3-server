@@ -17,6 +17,7 @@
 
 
 import asyncio
+import copy
 import uuid
 
 
@@ -73,7 +74,7 @@ class VM:
 
     @asyncio.coroutine
     def create(self):
-        data = self._properties
+        data = copy.copy(self._properties)
         data["vm_id"] = self._id
         data["name"] = self._name
         data["console"] = self._console

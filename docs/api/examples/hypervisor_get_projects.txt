@@ -15,12 +15,12 @@ X-ROUTE: /v2/hypervisor/projects
 [
     {
         "name": "test",
-        "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b",
+        "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f",
         "temporary": false
     },
     {
         "name": "test",
-        "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f",
+        "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b",
         "temporary": false
     }
 ]

@@ -10,9 +10,9 @@ Add a NIO to a Docker container
 Parameters
 **********
 - **adapter_number**: Adapter where the nio should be added
+- **id**: ID of the container
 - **port_number**: Port on the adapter
 - **project_id**: UUID for the project
-- **id**: ID of the container
 
 Response status codes
 **********************
@@ -34,9 +34,9 @@ Remove a NIO from a Docker container
 Parameters
 **********
 - **adapter_number**: Adapter where the nio should be added
+- **id**: ID of the container
 - **port_number**: Port on the adapter
 - **project_id**: UUID for the project
-- **id**: ID of the container
 
 Response status codes
 **********************

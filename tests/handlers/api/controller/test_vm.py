@@ -57,3 +57,4 @@ def test_create_vm(http_controller, tmpdir, project, hypervisor):
     }, example=True)
     assert response.status == 201
     assert response.json["name"] == "test"
+    assert "name" not in response.json["properties"]

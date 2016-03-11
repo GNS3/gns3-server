@@ -9,8 +9,8 @@ Delete a Docker container
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **id**: ID for the container
+- **project_id**: UUID for the project
 
 Response status codes
 **********************

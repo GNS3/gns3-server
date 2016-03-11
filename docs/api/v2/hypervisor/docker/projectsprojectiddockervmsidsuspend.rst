@@ -9,8 +9,8 @@ Pause a Docker container
 
 Parameters
 **********
-- **project_id**: UUID of the project
 - **id**: ID of the container
+- **project_id**: UUID of the project
 
 Response status codes
 **********************
