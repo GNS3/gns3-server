@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/d6e84048-dc17-4582-940e-3d8df5bf9c07/resume' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/51ea2f31-1a16-46e7-8088-a8bc0d0b6726/resume' -d '{}'
 
-POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/d6e84048-dc17-4582-940e-3d8df5bf9c07/resume HTTP/1.1
+POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/51ea2f31-1a16-46e7-8088-a8bc0d0b6726/resume HTTP/1.1
 {}
 
 

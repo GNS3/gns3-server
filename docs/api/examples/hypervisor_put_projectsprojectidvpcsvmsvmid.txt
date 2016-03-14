@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/670e09f9-a0ec-4400-887d-7cb839582acc' -d '{"console": 2012, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f444597-b557-498a-9771-ab87707d3807' -d '{"console": 2012, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/670e09f9-a0ec-4400-887d-7cb839582acc HTTP/1.1
+PUT /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/6f444597-b557-498a-9771-ab87707d3807 HTTP/1.1
 {
     "console": 2012,
     "name": "test",
@@ -25,6 +25,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",
     "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpbcb6b3fb/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/670e09f9-a0ec-4400-887d-7cb839582acc",
-    "vm_id": "670e09f9-a0ec-4400-887d-7cb839582acc"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpynsw_k3v/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/6f444597-b557-498a-9771-ab87707d3807",
+    "vm_id": "6f444597-b557-498a-9771-ab87707d3807"
 }

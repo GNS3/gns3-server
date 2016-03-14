@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/e77e2864-4c3f-4613-b06b-489cc608e9f5/close' -d '{}'
+curl -i -X POST 'http://localhost:8000/v2/projects/d7c2d234-9854-47d4-bb78-93a94f2d8bfc/close' -d '{}'
 
-POST /v2/projects/e77e2864-4c3f-4613-b06b-489cc608e9f5/close HTTP/1.1
+POST /v2/projects/d7c2d234-9854-47d4-bb78-93a94f2d8bfc/close HTTP/1.1
 {}
 
 

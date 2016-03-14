@@ -1,26 +1,25 @@
-/v2/hypervisor/projects/{project_id}/virtualbox/vms/{vm_id}/stop
+/v2/projects/{project_id}/links/{link_id}
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/hypervisor/projects/**{project_id}**/virtualbox/vms/**{vm_id}**/stop
+DELETE /v2/projects/**{project_id}**/links/**{link_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Stop a VirtualBox VM instance
+Delete a link instance
 
 Parameters
 **********
+- **link_id**: UUID of the link
 - **project_id**: UUID for the project
-- **vm_id**: UUID for the instance
 
 Response status codes
 **********************
 - **400**: Invalid request
-- **404**: Instance doesn't exist
-- **204**: Instance stopped
+- **201**: Link deleted
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../../examples/hypervisor_post_projectsprojectidvirtualboxvmsvmidstop.txt
+.. literalinclude:: ../../../examples/controller_delete_projectsprojectidlinkslinkid.txt
 

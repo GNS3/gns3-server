@@ -1,11 +1,11 @@
-curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms' -d '{"name": "PC TEST 1", "path": "iou.bin", "startup_config_content": "hostname test", "vm_id": "12d081d8-d490-4535-9485-3820d7452cb3"}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms' -d '{"name": "PC TEST 1", "path": "iou.bin", "startup_config_content": "hostname test", "vm_id": "3b289fdd-8fc9-48de-8366-db79c1a1dbe4"}'
 
 POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms HTTP/1.1
 {
     "name": "PC TEST 1",
     "path": "iou.bin",
     "startup_config_content": "hostname test",
-    "vm_id": "12d081d8-d490-4535-9485-3820d7452cb3"
+    "vm_id": "3b289fdd-8fc9-48de-8366-db79c1a1dbe4"
 }
 
 
@@ -33,6 +33,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/iou/vms
     "serial_adapters": 2,
     "startup_config": "startup-config.cfg",
     "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpfk_m3jgm/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/12d081d8-d490-4535-9485-3820d7452cb3",
-    "vm_id": "12d081d8-d490-4535-9485-3820d7452cb3"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmphaiimisv/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/3b289fdd-8fc9-48de-8366-db79c1a1dbe4",
+    "vm_id": "3b289fdd-8fc9-48de-8366-db79c1a1dbe4"
 }

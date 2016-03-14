@@ -1,17 +1,17 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/f6bf6c1c-19ac-4441-9efe-8ed31a5f7542/links' -d '{"vms": [{"adapter_number": 0, "port_number": 3, "vm_id": "4b9f3a9a-b40e-4144-bcb2-429ff3f64049"}, {"adapter_number": 2, "port_number": 4, "vm_id": "d32d5a58-1f36-4937-a3b6-c24fb43df67c"}]}'
+curl -i -X POST 'http://localhost:8000/v2/projects/b61e91b1-e69c-4eaa-a012-9d98135a53e0/links' -d '{"vms": [{"adapter_number": 0, "port_number": 3, "vm_id": "0f349889-091d-4919-87d2-11d7ec429066"}, {"adapter_number": 2, "port_number": 4, "vm_id": "bc556663-16a6-41e0-9562-4e541037d890"}]}'
 
-POST /v2/projects/f6bf6c1c-19ac-4441-9efe-8ed31a5f7542/links HTTP/1.1
+POST /v2/projects/b61e91b1-e69c-4eaa-a012-9d98135a53e0/links HTTP/1.1
 {
     "vms": [
         {
             "adapter_number": 0,
             "port_number": 3,
-            "vm_id": "4b9f3a9a-b40e-4144-bcb2-429ff3f64049"
+            "vm_id": "0f349889-091d-4919-87d2-11d7ec429066"
         },
         {
             "adapter_number": 2,
             "port_number": 4,
-            "vm_id": "d32d5a58-1f36-4937-a3b6-c24fb43df67c"
+            "vm_id": "bc556663-16a6-41e0-9562-4e541037d890"
         }
     ]
 }
@@ -26,17 +26,17 @@ SERVER: Python/3.5 GNS3/1.5.0dev1
 X-ROUTE: /v2/projects/{project_id}/links
 
 {
-    "link_id": "bfb1c5e0-4915-454d-acf9-fa8b19e62bf8",
+    "link_id": "43bd7b6b-8878-48fd-b8f7-1ca876b372ae",
     "vms": [
         {
             "adapter_number": 0,
             "port_number": 3,
-            "vm_id": "4b9f3a9a-b40e-4144-bcb2-429ff3f64049"
+            "vm_id": "0f349889-091d-4919-87d2-11d7ec429066"
         },
         {
             "adapter_number": 2,
             "port_number": 4,
-            "vm_id": "d32d5a58-1f36-4937-a3b6-c24fb43df67c"
+            "vm_id": "bc556663-16a6-41e0-9562-4e541037d890"
         }
     ]
 }

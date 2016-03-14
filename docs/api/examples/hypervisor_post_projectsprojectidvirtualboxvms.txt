@@ -28,6 +28,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/virtualbox/vms
     "ram": 0,
     "use_any_adapter": false,
     "vm_directory": null,
-    "vm_id": "cb0cef3c-a75e-45c8-9f97-5aec95f8e035",
+    "vm_id": "abab4e24-e383-441d-94c6-f652c42bd118",
     "vmname": "VM1"
 }

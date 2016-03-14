@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/2663a05a-a0b1-4f99-b1e6-0c88eb4f428f/adapters/1/ports/0/nio' -d '{"ethernet_device": "bridge0", "type": "nio_generic_ethernet"}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/946c98ca-806d-4335-80e3-9cb65d13dbf4/adapters/1/ports/0/nio' -d '{"ethernet_device": "bridge0", "type": "nio_generic_ethernet"}'
 
-POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/2663a05a-a0b1-4f99-b1e6-0c88eb4f428f/adapters/1/ports/0/nio HTTP/1.1
+POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/946c98ca-806d-4335-80e3-9cb65d13dbf4/adapters/1/ports/0/nio HTTP/1.1
 {
     "ethernet_device": "bridge0",
     "type": "nio_generic_ethernet"

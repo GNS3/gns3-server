@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/5d855bb2-517d-449b-a47d-128d0b8efbc2'
+curl -i -X GET 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/7aa4b445-5fe9-4525-9704-8f409ce002f1'
 
-GET /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/5d855bb2-517d-449b-a47d-128d0b8efbc2 HTTP/1.1
+GET /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/vms/7aa4b445-5fe9-4525-9704-8f409ce002f1 HTTP/1.1
 
 
 
@@ -21,6 +21,6 @@ X-ROUTE: /v2/hypervisor/projects/{project_id}/vpcs/vms/{vm_id}
     "startup_script": null,
     "startup_script_path": null,
     "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpbcb6b3fb/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/5d855bb2-517d-449b-a47d-128d0b8efbc2",
-    "vm_id": "5d855bb2-517d-449b-a47d-128d0b8efbc2"
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpynsw_k3v/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/7aa4b445-5fe9-4525-9704-8f409ce002f1",
+    "vm_id": "7aa4b445-5fe9-4525-9704-8f409ce002f1"
 }

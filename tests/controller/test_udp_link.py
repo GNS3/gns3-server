@@ -82,7 +82,6 @@ def test_create(async_run, project):
     })
 
 
-
 def test_delete(async_run, project):
     hypervisor1 = MagicMock()
     hypervisor2 = MagicMock()

@@ -1,0 +1,18 @@
+curl -i -X DELETE 'http://localhost:8000/v2/projects/7e95cc8e-44b0-42ca-9c2b-8769755b7586/links/8805466a-991c-40ec-937f-517561ecf65b'
+
+DELETE /v2/projects/7e95cc8e-44b0-42ca-9c2b-8769755b7586/links/8805466a-991c-40ec-937f-517561ecf65b HTTP/1.1
+
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 72
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/1.5.0dev1
+X-ROUTE: /v2/projects/{project_id}/links/{link_id}
+
+{
+    "link_id": "8805466a-991c-40ec-937f-517561ecf65b",
+    "vms": []
+}

@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/b997d690-c8a3-4f15-83e8-a674e6cd006d/adapters/0/ports/0/nio' -d '{"lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
+curl -i -X POST 'http://localhost:8000/v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/30686a1e-59ac-4e43-8b0e-aeec3f1180c8/adapters/0/ports/0/nio' -d '{"lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
 
-POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/b997d690-c8a3-4f15-83e8-a674e6cd006d/adapters/0/ports/0/nio HTTP/1.1
+POST /v2/hypervisor/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/30686a1e-59ac-4e43-8b0e-aeec3f1180c8/adapters/0/ports/0/nio HTTP/1.1
 {
     "lport": 4242,
     "rhost": "127.0.0.1",

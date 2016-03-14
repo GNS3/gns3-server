@@ -9,9 +9,9 @@ Add a NIO to a Dynamips device instance
 
 Parameters
 **********
-- **device_id**: UUID for the instance
 - **port_number**: Port on the device
 - **project_id**: UUID for the project
+- **device_id**: UUID for the instance
 
 Response status codes
 **********************
@@ -139,9 +139,9 @@ Remove a NIO from a Dynamips device instance
 
 Parameters
 **********
-- **device_id**: UUID for the instance
 - **port_number**: Port on the device
 - **project_id**: UUID for the project
+- **device_id**: UUID for the instance
 
 Response status codes
 **********************
