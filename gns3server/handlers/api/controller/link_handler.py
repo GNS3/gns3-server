@@ -60,7 +60,7 @@ class LinkHandler:
             "link_id": "UUID of the link"
         },
         status_codes={
-            201: "Link deleted",
+            204: "Link deleted",
             400: "Invalid request"
         },
         description="Delete a link instance")
@@ -70,5 +70,5 @@ class LinkHandler:
         project = controller.getProject(request.match_info["project_id"])
         link = project.getLink(request.match_info["link_id"])
         yield from link.delete()
-        response.set_status(201)
+        response.set_status(204)
         response.json(link)

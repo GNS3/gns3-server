@@ -114,3 +114,7 @@ class Hypervisor:
     @asyncio.coroutine
     def post(self, path, data={}):
         return (yield from self.httpQuery("POST", path, data))
+
+    @asyncio.coroutine
+    def delete(self, path):
+        return (yield from self.httpQuery("DELETE", path))

@@ -79,4 +79,4 @@ def test_delete_link(http_controller, tmpdir, project, hypervisor, async_run):
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.udp_link.Link.delete"):
         response = http_controller.delete("/projects/{}/links/{}".format(project.id, link.id), example=True)
-    assert response.status == 201
+    assert response.status == 204
