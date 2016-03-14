@@ -51,20 +51,22 @@ def test_create_link(http_controller, tmpdir, project, hypervisor, async_run):
     vm1 = async_run(project.addVM(hypervisor, None))
     vm2 = async_run(project.addVM(hypervisor, None))
 
-    response = http_controller.post("/projects/{}/links".format(project.id), {
-        "vms": [
-            {
-                "vm_id": vm1.id,
-                "adapter_number": 0,
-                "port_number": 3
-            },
-            {
-                "vm_id": vm2.id,
-                "adapter_number": 2,
-                "port_number": 4
-            }
-        ]
-    }, example=True)
+
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+        response = http_controller.post("/projects/{}/links".format(project.id), {
+            "vms": [
+                {
+                    "vm_id": vm1.id,
+                    "adapter_number": 0,
+                    "port_number": 3
+                },
+                {
+                    "vm_id": vm2.id,
+                    "adapter_number": 2,
+                    "port_number": 4
+                }
+            ]
+        }, example=True)
     assert response.status == 201
     assert response.json["link_id"] is not None
     assert len(response.json["vms"]) == 2

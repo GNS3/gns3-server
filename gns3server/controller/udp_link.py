@@ -35,9 +35,9 @@ class UDPLink(Link):
         port_number2 = self._vms[1]["port_number"]
 
         # Reserve a UDP port on both side
-        response = yield from vm1.post("/ports/udp".format(self._project.id))
+        response = yield from vm1.hypervisor.post("/projects/{}/ports/udp".format(self._project.id))
         vm1_port = response.json["udp_port"]
-        response = yield from vm2.post("/ports/udp".format(self._project.id))
+        response = yield from vm2.hypervisor.post("/projects/{}/ports/udp".format(self._project.id))
         vm2_port = response.json["udp_port"]
 
         # Create the tunnel on both side

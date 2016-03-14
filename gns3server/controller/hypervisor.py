@@ -91,11 +91,26 @@ class Hypervisor:
                 data = json.dumps(data)
                 response = yield from session.request(method, url, headers=headers, data=data)
                 body = yield from response.read()
-                if response.status >= 300:
-                    raise aiohttp.errors.HttpProcessingError(code=response.status, message=body)
-                yield from response.release()
-        return body
+                if body:
+                    body = body.decode()
+                if response.status == 400:
+                    raise aiohttp.web.HTTPBadRequest(text=body)
+                elif response.status == 401:
+                    raise aiohttp.web.HTTPUnauthorized(text=body)
+                elif response.status == 403:
+                    raise aiohttp.web.HTTPForbidden(text=body)
+                elif response.status == 404:
+                    raise aiohttp.web.HTTPNotFound(text="{} not found on hypervisor".format(url))
+                elif response.status == 409:
+                    raise aiohttp.web.HTTPConflict(text=body)
+                elif response.status >= 300:
+                    raise NotImplemented("{} status code is not supported".format(e.status))
+                if body and len(body):
+                    response.json = json.loads(body)
+                else:
+                    response.json = {}
+                return response
 
     @asyncio.coroutine
     def post(self, path, data={}):
-        yield from self.httpQuery("POST", path, data)
+        return (yield from self.httpQuery("POST", path, data))

@@ -20,7 +20,7 @@ import aiohttp
 from uuid import UUID, uuid4
 
 from .vm import VM
-from .link import Link
+from .udp_link import UDPLink
 
 
 class Project:
@@ -98,7 +98,7 @@ class Project:
         """
         Create a link. By default the link is empty
         """
-        link = Link(self)
+        link = UDPLink(self)
         self._links[link.id] = link
         return link
 

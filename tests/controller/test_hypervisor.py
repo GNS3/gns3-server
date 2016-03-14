@@ -64,7 +64,7 @@ def test_hypervisor_httpQueryError(hypervisor, async_run):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         response.status = 409
 
-        with pytest.raises(aiohttp.errors.HttpProcessingError):
+        with pytest.raises(aiohttp.web.HTTPConflict):
             async_run(hypervisor.post("/projects", {"a": "b"}))
 
 
