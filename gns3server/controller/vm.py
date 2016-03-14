@@ -92,6 +92,13 @@ class VM:
         """
         return (yield from self._hypervisor.post("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path), data=data))
 
+    @asyncio.coroutine
+    def delete(self, path):
+        """
+        HTTP post on the VM
+        """
+        return (yield from self._hypervisor.delete("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
+
     def __json__(self):
         return {
             "hypervisor_id": self._hypervisor.id,

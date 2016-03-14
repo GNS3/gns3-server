@@ -17,6 +17,7 @@
 
 import pytest
 import asyncio
+import aiohttp
 from unittest.mock import MagicMock
 
 from gns3server.controller.project import Project
@@ -79,3 +80,21 @@ def test_create(async_run, project):
         "rport": 1024,
         "type": "nio_udp"
     })
+
+
+
+def test_delete(async_run, project):
+    hypervisor1 = MagicMock()
+    hypervisor2 = MagicMock()
+
+    vm1 = VM(project, hypervisor1, vm_type="vpcs")
+    vm2 = VM(project, hypervisor2, vm_type="vpcs")
+
+    link = UDPLink(project)
+    async_run(link.addVM(vm1, 0, 4))
+    async_run(link.addVM(vm2, 3, 1))
+
+    async_run(link.delete())
+
+    hypervisor1.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/0/ports/4/nio".format(project.id, vm1.id))
+    hypervisor2.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/3/ports/1/nio".format(project.id, vm2.id))

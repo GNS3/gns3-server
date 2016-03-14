@@ -78,3 +78,8 @@ def test_create(vm, hypervisor, project, async_run):
 def test_post(vm, hypervisor, async_run):
     async_run(vm.post("/test", {"a": "b"}))
     hypervisor.post.assert_called_with("/projects/{}/vpcs/vms/{}/test".format(vm.project.id, vm.id), data={"a": "b"})
+
+
+def test_delete(vm, hypervisor, async_run):
+    async_run(vm.delete("/test"))
+    hypervisor.delete.assert_called_with("/projects/{}/vpcs/vms/{}/test".format(vm.project.id, vm.id))

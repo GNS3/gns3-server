@@ -32,6 +32,7 @@ from tests.utils import asyncio_patch
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
 from gns3server.controller.vm import VM
+from gns3server.controller.link import Link
 
 
 @pytest.fixture
@@ -51,8 +52,7 @@ def test_create_link(http_controller, tmpdir, project, hypervisor, async_run):
     vm1 = async_run(project.addVM(hypervisor, None))
     vm2 = async_run(project.addVM(hypervisor, None))
 
-
-    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
             "vms": [
                 {
@@ -67,6 +67,16 @@ def test_create_link(http_controller, tmpdir, project, hypervisor, async_run):
                 }
             ]
         }, example=True)
+    assert mock.called
     assert response.status == 201
     assert response.json["link_id"] is not None
     assert len(response.json["vms"]) == 2
+
+
+def test_delete_link(http_controller, tmpdir, project, hypervisor, async_run):
+
+    link = Link(project)
+    project._links = {link.id: link}
+    with asyncio_patch("gns3server.controller.udp_link.Link.delete"):
+        response = http_controller.delete("/projects/{}/links/{}".format(project.id, link.id), example=True)
+    assert response.status == 201

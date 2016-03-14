@@ -37,6 +37,20 @@ class Link:
             "port_number": port_number
         })
 
+    @asyncio.coroutine
+    def create(self):
+        """
+        Create the link
+        """
+        raise NotImplemented
+
+    @asyncio.coroutine
+    def delete(self):
+        """
+        Delete the link
+        """
+        raise NotImplemented
+
     @property
     def id(self):
         return self._id

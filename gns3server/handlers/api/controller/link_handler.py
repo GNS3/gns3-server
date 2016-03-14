@@ -51,3 +51,24 @@ class LinkHandler:
         yield from link.create()
         response.set_status(201)
         response.json(link)
+
+    @classmethod
+    @Route.delete(
+        r"/projects/{project_id}/links/{link_id}",
+        parameters={
+            "project_id": "UUID for the project",
+            "link_id": "UUID of the link"
+        },
+        status_codes={
+            201: "Link deleted",
+            400: "Invalid request"
+        },
+        description="Delete a link instance")
+    def delete(request, response):
+
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+        link = project.getLink(request.match_info["link_id"])
+        yield from link.delete()
+        response.set_status(201)
+        response.json(link)
