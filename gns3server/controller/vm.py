@@ -53,6 +53,10 @@ class VM:
         return self._id
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def vm_type(self):
         return self._vm_type
 
@@ -75,6 +79,14 @@ class VM:
     @property
     def hypervisor(self):
         return self._hypervisor
+
+    @property
+    def host(self):
+        """
+        :returns: Domain or ip for console connection
+        """
+        return self._hypervisor.host
+
 
     @asyncio.coroutine
     def create(self):

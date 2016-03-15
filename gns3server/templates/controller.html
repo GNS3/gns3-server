@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>
+    Controller status
+</h1>
+The purpose of this page is to help for GNS3 debug. This can be dropped
+in futur GNS3 versions.
+
+<h2>Opened projects</h2>
+<table border="1">
+    <tr>
+        <th>Name</th>
+        <th>ID</td>
+        <th>VMs</th>
+        <th>Links</th>
+    </tr>
+{% for project in controller.projects.values() %}
+<tr>
+    <td><a href="/projects/{{project.id}}">{{project.name}}</a></td>
+    <td><a href="/projects/{{project.id}}">{{project.id}}</a></td>
+    <td>{{project.vms|length}}</td>    
+    <td>{{project.links|length}}</td>    
+</tr>
+{% endfor %}
+</table>
+
+<h2>Hypervisors</h2>
+<table border="1">
+    <tr>
+        <th>ID</td>
+    </tr>
+{% for hypervisor in controller.hypervisors.values() %}
+<tr>
+    <td>{{hypervisor.id}}</td>    
+</tr>
+{% endfor %}
+</table>
+
+
+{%endblock%}
+

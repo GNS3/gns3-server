@@ -16,6 +16,7 @@
 
 
 from ..web.route import Route
+from ..controller import Controller
 from ..hypervisor.port_manager import PortManager
 from ..hypervisor.project_manager import ProjectManager
 from ..version import __version__
@@ -33,14 +34,33 @@ class IndexHandler:
 
     @classmethod
     @Route.get(
-        r"/status",
-        description="Ressources used by GNS3Server"
+        r"/hypervisor",
+        description="Ressources used by GNS3 Hypervisor"
     )
-    def ports(request, response):
-        response.template("status.html",
+    def hypervisor(request, response):
+        response.template("hypervisor.html",
                           port_manager=PortManager.instance(),
                           project_manager=ProjectManager.instance()
                           )
+    @classmethod
+    @Route.get(
+        r"/controller",
+        description="Ressources used by GNS3 Controller"
+    )
+    def controller(request, response):
+        response.template("controller.html",
+                          controller=Controller.instance()
+                          )
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}",
+        description="Ressources used by GNS3 Controller"
+    )
+    def project(request, response):
+        controller = Controller.instance()
+        response.template("project.html",
+                          project=controller.getProject(request.match_info["project_id"]))
 
     @classmethod
     @Route.get(

@@ -93,6 +93,13 @@ class Project:
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="VM ID {} doesn't exist".format(vm_id))
 
+    @property
+    def vms(self):
+        """
+        :returns: Dictionnary of the VMS
+        """
+        return self._vms
+
     @asyncio.coroutine
     def addLink(self):
         """
@@ -110,6 +117,13 @@ class Project:
             return self._links[link_id]
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="Link ID {} doesn't exist".format(link_id))
+
+    @property
+    def links(self):
+        """
+        :returns: Dictionnary of the Links
+        """
+        return self._links
 
     @asyncio.coroutine
     def close(self):

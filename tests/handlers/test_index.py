@@ -21,6 +21,7 @@ import os
 from unittest.mock import patch
 
 from gns3server.version import __version__
+from gns3server.controller import Controller
 
 
 def test_index(http_root):
@@ -31,8 +32,21 @@ def test_index(http_root):
     assert __version__ in html
 
 
-def test_status(http_root):
-    response = http_root.get('/status')
+def test_controller(http_root, async_run):
+    project = async_run(Controller.instance().addProject(name="test"))
+    response = http_root.get('/controller')
+    assert "test" in response.html
+    assert response.status == 200
+
+
+def test_hypervisor(http_root):
+    response = http_root.get('/hypervisor')
+    assert response.status == 200
+
+
+def test_project(http_root, async_run):
+    project = async_run(Controller.instance().addProject(name="test"))
+    response = http_root.get('/projects/{}'.format(project.id))
     assert response.status == 200
 
 
