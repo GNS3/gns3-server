@@ -26,7 +26,7 @@ import asyncio
 import tempfile
 
 from gns3server.utils.telnet_server import TelnetServer
-from gns3server.utils.interfaces import get_windows_interfaces
+from gns3server.utils.interfaces import interfaces, get_windows_interfaces
 from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
 from collections import OrderedDict
 from .vmware_error import VMwareError
@@ -318,20 +318,29 @@ class VMwareVM(BaseVM):
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
         if sys.platform.startswith("linux"):
             yield from self._ubridge_hypervisor.send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet,
-                                                                                                            interface=vmnet_interface))
+                                                                                                           interface=vmnet_interface))
         elif sys.platform.startswith("win"):
             windows_interfaces = get_windows_interfaces()
             npf = None
+            source_mac = None
             for interface in windows_interfaces:
                 if "netcard" in interface and vmnet_interface in interface["netcard"]:
                     npf = interface["id"]
+                    source_mac = interface["mac_address"]
                 elif vmnet_interface in interface["name"]:
                     npf = interface["id"]
+                    source_mac = interface["mac_address"]
             if npf:
                 yield from self._ubridge_hypervisor.send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
                                                                                                                interface=npf))
             else:
                 raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
+
+            # TODO: should provide that as an option
+            #if source_mac:
+            #    yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
+            #                                                                                                          mac=source_mac))
+
         elif sys.platform.startswith("darwin"):
             yield from self._ubridge_hypervisor.send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet,
                                                                                                                interface=vmnet_interface))
@@ -350,6 +359,14 @@ class VMwareVM(BaseVM):
                                                                                                         pcap_file=nio.pcap_output_file))
 
         yield from self._ubridge_hypervisor.send('bridge start {name}'.format(name=vnet))
+
+        # TODO: this only work when using PCAP (NIO Ethernet)
+        # source_mac = None
+        # for interface in interfaces():
+        #     if interface["name"] == vmnet_interface:
+        #         source_mac = interface["mac_address"]
+        # if source_mac:
+        #     yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet, mac=source_mac))
 
     @asyncio.coroutine
     def _delete_ubridge_connection(self, adapter_number):
