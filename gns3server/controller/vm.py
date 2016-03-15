@@ -83,7 +83,21 @@ class VM:
         data["name"] = self._name
         data["console"] = self._console
         data["console_type"] = self._console_type
-        yield from self._hypervisor.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
+
+        # None properties should be send. Because it can mean the emulator doesn't support it
+        for key in list(data.keys()):
+            if data[key] is None:
+                del data[key]
+
+        response = yield from self._hypervisor.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
+
+        for key, value in response.json.items():
+            if key == "console":
+                self._console = value
+            elif key in ["console_type", "name", "vm_id"]:
+                pass
+            else:
+                self._properties[key] = value
 
     @asyncio.coroutine
     def post(self, path, data={}):

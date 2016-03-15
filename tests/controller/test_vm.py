@@ -17,8 +17,11 @@
 
 import pytest
 import uuid
+import asyncio
 from unittest.mock import MagicMock
 
+
+from tests.utils import AsyncioMagicMock
 
 from gns3server.controller.vm import VM
 from gns3server.controller.project import Project
@@ -26,7 +29,7 @@ from gns3server.controller.project import Project
 
 @pytest.fixture
 def hypervisor():
-    s = MagicMock()
+    s = AsyncioMagicMock()
     s.id = "http://test.com:42"
     return s
 
@@ -64,15 +67,44 @@ def test_init_without_uuid(project, hypervisor):
 
 
 def test_create(vm, hypervisor, project, async_run):
+    vm._console = 2048
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
     async_run(vm.create())
     data = {
-        "console": None,
+        "console": 2048,
         "console_type": "vnc",
         "vm_id": vm.id,
         "startup_script": "echo test",
         "name": "demo"
     }
     hypervisor.post.assert_called_with("/projects/{}/vpcs/vms".format(vm.project.id), data=data)
+    assert vm._console == 2048
+    assert vm._properties == {"startup_script": "echo test"}
+
+
+def test_create_without_console(vm, hypervisor, project, async_run):
+    """
+    None properties should be send. Because it can mean the emulator doesn"t support it
+    """
+
+    response = MagicMock()
+    response.json = {"console": 2048, "test_value": "success"}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
+    async_run(vm.create())
+    data = {
+        "console_type": "vnc",
+        "vm_id": vm.id,
+        "startup_script": "echo test",
+        "name": "demo"
+    }
+    hypervisor.post.assert_called_with("/projects/{}/vpcs/vms".format(vm.project.id), data=data)
+    assert vm._console == 2048
+    assert vm._properties == {"test_value": "success", "startup_script": "echo test"}
 
 
 def test_post(vm, hypervisor, async_run):

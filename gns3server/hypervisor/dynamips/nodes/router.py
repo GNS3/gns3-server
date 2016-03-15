@@ -133,6 +133,7 @@ class Router(BaseVM):
                        "disk1": self._disk1,
                        "auto_delete_disks": self._auto_delete_disks,
                        "console": self.console,
+                       "console_type": "telnet",
                        "aux": self.aux,
                        "mac_addr": self._mac_addr,
                        "system_id": self._system_id}

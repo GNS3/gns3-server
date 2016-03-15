@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from unittest.mock import patch, MagicMock
+import unittest.mock
 
 
 class _asyncio_patch:
@@ -38,7 +38,7 @@ class _asyncio_patch:
 
     def __enter__(self):
         """Used when enter in the with block"""
-        self._patcher = patch(self.function, return_value=self._fake_anwser())
+        self._patcher = unittest.mock.patch(self.function, return_value=self._fake_anwser())
         mock_class = self._patcher.start()
         return mock_class
 
@@ -64,13 +64,26 @@ def asyncio_patch(function, *args, **kwargs):
     return _asyncio_patch(function, *args, **kwargs)
 
 
-class AsyncioMagicMock(MagicMock):
+class AsyncioMagicMock(unittest.mock.MagicMock):
     """
     Magic mock returning coroutine
     """
+
     def __init__(self, return_value=None, **kwargs):
         if return_value:
             future = asyncio.Future()
             future.set_result(return_value)
             kwargs["return_value"] = future
         super().__init__(**kwargs)
+
+    def _get_child_mock(self, **kw):
+        """Create the child mocks for attributes and return value.
+        By default child mocks will be the same type as the parent.
+        Subclasses of Mock may want to override this to customize the way
+        child mocks are made.
+        For non-callable mocks the callable variant will be used (rather than
+        any custom subclass).
+
+        Original code: https://github.com/python/cpython/blob/121f86338111e49c547a55eb7f26db919bfcbde9/Lib/unittest/mock.py
+        """
+        return AsyncioMagicMock(**kw)

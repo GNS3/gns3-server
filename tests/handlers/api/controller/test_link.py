@@ -27,7 +27,7 @@ import pytest
 
 
 from unittest.mock import patch, MagicMock, PropertyMock
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
@@ -49,6 +49,10 @@ def project(http_controller, async_run):
 
 
 def test_create_link(http_controller, tmpdir, project, hypervisor, async_run):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
     vm1 = async_run(project.addVM(hypervisor, None))
     vm2 = async_run(project.addVM(hypervisor, None))
 

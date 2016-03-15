@@ -26,8 +26,8 @@ import aiohttp
 import pytest
 
 
-from unittest.mock import patch, MagicMock, PropertyMock
-from tests.utils import asyncio_patch
+from unittest.mock import patch, MagicMock
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
@@ -47,12 +47,16 @@ def project(http_controller, async_run):
 
 
 def test_create_vm(http_controller, tmpdir, project, hypervisor):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
     response = http_controller.post("/projects/{}/vms".format(project.id), {
         "name": "test",
         "vm_type": "vpcs",
         "hypervisor_id": "example.com",
         "properties": {
-            "startup_script": "echo test"
+                "startup_script": "echo test"
         }
     }, example=True)
     assert response.status == 201

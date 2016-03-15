@@ -19,6 +19,7 @@
 import pytest
 import aiohttp
 from unittest.mock import MagicMock
+from tests.utils import AsyncioMagicMock
 
 
 from gns3server.controller.project import Project
@@ -40,10 +41,15 @@ def test_json(tmpdir):
 def test_addVM(async_run):
     hypervisor = MagicMock()
     project = Project()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
     vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+
     hypervisor.post.assert_called_with('/projects/{}/vpcs/vms'.format(project.id),
-                                       data={'console': None,
-                                             'vm_id': vm.id,
+                                       data={'vm_id': vm.id,
                                              'console_type': 'telnet',
                                              'startup_config': 'test.cfg',
                                              'name': 'test'})
@@ -52,6 +58,11 @@ def test_addVM(async_run):
 def test_getVM(async_run):
     hypervisor = MagicMock()
     project = Project()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
     vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert project.getVM(vm.id) == vm
 
@@ -62,6 +73,11 @@ def test_getVM(async_run):
 def test_addLink(async_run):
     hypervisor = MagicMock()
     project = Project()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
     vm1 = async_run(project.addVM(hypervisor, None, name="test1", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
     vm2 = async_run(project.addVM(hypervisor, None, name="test2", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
     link = async_run(project.addLink())
@@ -73,6 +89,11 @@ def test_addLink(async_run):
 def test_getLink(async_run):
     hypervisor = MagicMock()
     project = Project()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    hypervisor.post = AsyncioMagicMock(return_value=response)
+
     link = async_run(project.addLink())
     assert project.getLink(link.id) == link
 
