@@ -98,7 +98,8 @@ def test_create(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu",
                 "Env": [],
-                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
             })
         assert vm._cid == "e90e34656806"
 
@@ -135,7 +136,8 @@ def test_create_vnc(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu",
                 "Env": ['DISPLAY=:42'],
-                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
             })
         assert vm._start_vnc.called
         assert vm._cid == "e90e34656806"
@@ -163,7 +165,8 @@ def test_create_start_cmd(loop, project, manager):
                         "Privileged": True
                     },
                 "Volumes": {},
-                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/ls"],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/ls"],
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
@@ -200,7 +203,8 @@ def test_create_environment(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
             })
         assert vm._cid == "e90e34656806"
 
@@ -246,7 +250,8 @@ def test_create_image_not_available(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu",
                 "Env": [],
-                "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
             })
         assert vm._cid == "e90e34656806"
         mock_pull.assert_called_with("ubuntu")
@@ -456,7 +461,8 @@ def test_update(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu",
         "Env": [],
-        "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
+        "Entrypoint": ["/gns3/init.sh"],
+        "Cmd": ["/bin/sh"]
     })
     assert vm.console == original_console
 
@@ -493,7 +499,8 @@ def test_update_running(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu",
         "Env": [],
-        "Cmd": ["/bin/sh", "/gns3/init.sh", "/bin/sh"]
+        "Entrypoint": ["/gns3/init.sh"],
+        "Cmd": ["/bin/sh"]
     })
 
     assert vm.console == original_console

@@ -166,6 +166,8 @@ def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
                 continue
             print("Adding vmnet{}...".format(vmnet_number))
             os.system('"{}" -- add adapter vmnet{}'.format(vnetlib_path, vmnet_number))
+    os.system("net stop npf")
+    os.system("net start npf")
 
 
 def vmnet_unix(args, vmnet_range_start, vmnet_range_end):

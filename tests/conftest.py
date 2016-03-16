@@ -82,16 +82,25 @@ def _get_unused_port():
 def http_server(request, loop, port_manager, monkeypatch):
     """A GNS3 server"""
 
-    port = _get_unused_port()
-    host = "localhost"
     app = web.Application()
     for method, route, handler in Route.get_routes():
         app.router.add_route(method, route, handler)
     for module in MODULES:
         instance = module.instance()
         instance.port_manager = port_manager
-    srv = loop.create_server(app.make_handler(), host, port)
-    srv = loop.run_until_complete(srv)
+
+    host = "localhost"
+
+    # We try multiple time. Because on Travis test can fail when because the port is taken by someone else
+    for i in range(0, 5):
+        port = _get_unused_port()
+        try:
+            srv = loop.create_server(app.make_handler(), host, port)
+            srv = loop.run_until_complete(srv)
+        except OSError:
+            pass
+        else:
+            break
 
     def tear_down():
         for module in MODULES:
