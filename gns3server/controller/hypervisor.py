@@ -18,6 +18,7 @@
 import aiohttp
 import asyncio
 import json
+from pkg_resources import parse_version
 
 from ..controller.controller_error import ControllerError
 from ..config import Config
@@ -43,8 +44,9 @@ class Hypervisor:
         self._protocol = protocol
         self._host = host
         self._port = port
-        self._user = user
-        self._password = password
+        self._user = None
+        self._password = None
+        self._setAuth(user, password)
         self._connected = False
         # The remote hypervisor version
         # TODO: For the moment it's fake we return the controller version
@@ -54,6 +56,17 @@ class Hypervisor:
         # it's a configuration issue
         if hypervisor_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
             raise HypervisorError("The local hypervisor is started without --local")
+
+    def _setAuth(self, user, password):
+        """
+        Set authentication parameters
+        """
+        self._user = user
+        self._password = password
+        if self._user and self._password:
+            self._auth = aiohttp.BasicAuth(self._user, self._password)
+        else:
+            self._auth = None
 
     @property
     def id(self):
@@ -69,6 +82,22 @@ class Hypervisor:
         """
         return self._host
 
+    @property
+    def user(self):
+        return self._user
+
+    @user.setter
+    def user(self, value):
+        self._setAuth(value, self._password)
+
+    @property
+    def password(self):
+        return self._password
+
+    @user.setter
+    def password(self, value):
+        self._setAuth(self._user, value)
+
     def __json__(self):
         return {
             "hypervisor_id": self._id,
@@ -76,38 +105,55 @@ class Hypervisor:
             "host": self._host,
             "port": self._port,
             "user": self._user,
-            "connected": self._connected,
-            "version": self._version
+            "connected": self._connected
         }
 
     @asyncio.coroutine
     def httpQuery(self, method, path, data=None):
+        if not self._connected:
+            response = yield from self._runHttpQuery("GET", "/version")
+            if "version" not in response.json:
+                raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+            if parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
+                raise aiohttp.web.HTTPConflict(text="The server {} versions are not compatible {} != {}".format(self._id, __version__, response.json["version"]))
+
+        self._connected = True
+        return (yield from self._runHttpQuery(method, path, data=data))
+
+    @asyncio.coroutine
+    def _runHttpQuery(self, method, path, data=None):
         with aiohttp.Timeout(10):
             with aiohttp.ClientSession() as session:
                 url = "{}://{}:{}/v2/hypervisor{}".format(self._protocol, self._host, self._port, path)
                 headers = {'content-type': 'application/json'}
-                if hasattr(data, '__json__'):
-                    data = data.__json__()
-                data = json.dumps(data)
-                response = yield from session.request(method, url, headers=headers, data=data)
+                if data:
+                    if hasattr(data, '__json__'):
+                        data = data.__json__()
+                    data = json.dumps(data)
+                response = yield from session.request(method, url, headers=headers, data=data, auth=self._auth)
                 body = yield from response.read()
                 if body:
                     body = body.decode()
-                if response.status == 400:
-                    raise aiohttp.web.HTTPBadRequest(text=body)
-                elif response.status == 401:
-                    raise aiohttp.web.HTTPUnauthorized(text=body)
-                elif response.status == 403:
-                    raise aiohttp.web.HTTPForbidden(text=body)
-                elif response.status == 404:
-                    raise aiohttp.web.HTTPNotFound(text="{} not found on hypervisor".format(url))
-                elif response.status == 409:
-                    raise aiohttp.web.HTTPConflict(text=body)
-                elif response.status >= 300:
-                    raise NotImplemented("{} status code is not supported".format(e.status))
-                if body and len(body):
-                    response.json = json.loads(body)
-                else:
+
+                if response.status >= 300:
+                    if response.status == 400:
+                        raise aiohttp.web.HTTPBadRequest(text="Bad request {} {}".format(url, body))
+                    elif response.status == 401:
+                        raise aiohttp.web.HTTPUnauthorized(text="Invalid authentication for hypervisor {}".format(self.id))
+                    elif response.status == 403:
+                        raise aiohttp.web.HTTPForbidden(text="Forbidden {} {}".format(url, body))
+                    elif response.status == 404:
+                        raise aiohttp.web.HTTPNotFound(text="{} not found on hypervisor".format(url))
+                    elif response.status == 409:
+                        raise aiohttp.web.HTTPConflict(text="Conflict {} {}".format(url, body))
+                    else:
+                        raise NotImplemented("{} status code is not supported".format(e.status))
+                if len(body):
+                    try:
+                        response.json = json.loads(body)
+                    except json.JSONDecodeError:
+                        raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+                if response.json is None:
                     response.json = {}
                 return response
 

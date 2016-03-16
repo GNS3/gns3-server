@@ -87,7 +87,6 @@ class VM:
         """
         return self._hypervisor.host
 
-
     @asyncio.coroutine
     def create(self):
         data = copy.copy(self._properties)
