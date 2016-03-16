@@ -148,7 +148,7 @@ class Hypervisor:
                         raise aiohttp.web.HTTPConflict(text="Conflict {} {}".format(url, body))
                     else:
                         raise NotImplemented("{} status code is not supported".format(e.status))
-                if len(body):
+                if body and len(body):
                     try:
                         response.json = json.loads(body)
                     except json.JSONDecodeError:

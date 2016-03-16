@@ -78,7 +78,7 @@ def test_hypervisor_httpQueryAuth(hypervisor, async_run):
 def test_hypervisor_httpQueryNotConnected(hypervisor, async_run):
     hypervisor._connected = False
     response = AsyncioMagicMock()
-    response.read = AsyncioMagicMock(return_value = json.dumps({"version": __version__}).encode())
+    response.read = AsyncioMagicMock(return_value=json.dumps({"version": __version__}).encode())
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         async_run(hypervisor.post("/projects", {"a": "b"}))
@@ -90,7 +90,7 @@ def test_hypervisor_httpQueryNotConnected(hypervisor, async_run):
 def test_hypervisor_httpQueryNotConnectedInvalidVersion(hypervisor, async_run):
     hypervisor._connected = False
     response = AsyncioMagicMock()
-    response.read = AsyncioMagicMock(return_value = json.dumps({"version": "1.42.4"}).encode())
+    response.read = AsyncioMagicMock(return_value=json.dumps({"version": "1.42.4"}).encode())
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(aiohttp.web.HTTPConflict):
@@ -101,7 +101,7 @@ def test_hypervisor_httpQueryNotConnectedInvalidVersion(hypervisor, async_run):
 def test_hypervisor_httpQueryNotConnectedNonGNS3Server(hypervisor, async_run):
     hypervisor._connected = False
     response = AsyncioMagicMock()
-    response.read = AsyncioMagicMock(return_value = b'Blocked by super antivirus')
+    response.read = AsyncioMagicMock(return_value=b'Blocked by super antivirus')
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(aiohttp.web.HTTPConflict):
@@ -112,7 +112,7 @@ def test_hypervisor_httpQueryNotConnectedNonGNS3Server(hypervisor, async_run):
 def test_hypervisor_httpQueryNotConnectedNonGNS3Server2(hypervisor, async_run):
     hypervisor._connected = False
     response = AsyncioMagicMock()
-    response.read = AsyncioMagicMock(return_value = b'{}')
+    response.read = AsyncioMagicMock(return_value=b'{}')
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(aiohttp.web.HTTPConflict):
