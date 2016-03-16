@@ -23,7 +23,7 @@ import struct
 import psutil
 
 if psutil.version_info < (3, 0, 0):
-    raise Exception("psutil version should >= 3.0.0. If you are under ubuntu/debian install gns3 via apt instead of pip")
+    raise Exception("psutil version should >= 3.0.0. If you are under Ubuntu/Debian install gns3 via apt instead of pip")
 
 import logging
 log = logging.getLogger(__name__)
@@ -59,6 +59,7 @@ def _get_windows_interfaces_from_registry():
             interfaces.append({"id": npf_interface,
                                "name": name,
                                "ip_address": ip_address,
+                               "mac_address": "",  # TODO: find MAC address in registry
                                "netcard": netcard})
             winreg.CloseKey(hkeyinterface)
             winreg.CloseKey(hkeycon)
@@ -99,6 +100,7 @@ def get_windows_interfaces():
                 interfaces.append({"id": npf_interface,
                                    "name": adapter.NetConnectionID,
                                    "ip_address": ip_address,
+                                   "mac_address": adapter.MACAddress,
                                    "netcard": adapter.name})
     except (AttributeError, pywintypes.com_error):
         log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")
@@ -148,14 +150,17 @@ def interfaces():
     if not sys.platform.startswith("win"):
         for interface in sorted(psutil.net_if_addrs().keys()):
             ip_address = ""
+            mac_address = ""
             for addr in psutil.net_if_addrs()[interface]:
                 # get the first available IPv4 address only
                 if addr.family == socket.AF_INET:
                     ip_address = addr.address
-                    break
+                if addr.family == psutil.AF_LINK:
+                    mac_address = addr.address
             results.append({"id": interface,
                             "name": interface,
-                            "ip_address": ip_address})
+                            "ip_address": ip_address,
+                            "mac_address": mac_address})
     else:
         try:
             results = get_windows_interfaces()

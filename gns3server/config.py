@@ -75,7 +75,7 @@ class Config(object):
             # 2: $HOME/.config/GNS3.conf
             # 3: /etc/xdg/GNS3/gns3_server.conf
             # 4: /etc/xdg/GNS3.conf
-            # 5: server.conf in the current working directory
+            # 5: gns3_server.conf in the current working directory
 
             appname = "GNS3"
             home = os.path.expanduser("~")
@@ -84,6 +84,7 @@ class Config(object):
                 self._files = [os.path.join(os.getcwd(), filename),
                                os.path.join(home, ".config", appname, filename),
                                os.path.join(home, ".config", appname + ".conf"),
+                               os.path.join("/etc/gns3", filename),
                                os.path.join("/etc/xdg", appname, filename),
                                os.path.join("/etc/xdg", appname + ".conf")]
 

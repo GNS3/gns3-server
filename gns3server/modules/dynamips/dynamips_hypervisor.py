@@ -55,7 +55,6 @@ class DynamipsHypervisor:
         self._working_dir = working_dir
         self._version = "N/A"
         self._timeout = timeout
-        self._uuid = None
         self._reader = None
         self._writer = None
         self._io_lock = asyncio.Lock()
@@ -98,8 +97,6 @@ class DynamipsHypervisor:
             self._version = version[0].split("-", 1)[0]
         except IndexError:
             self._version = "Unknown"
-
-        self._uuid = yield from self.send("hypervisor uuid")
 
         # this forces to send the working dir to Dynamips
         yield from self.set_working_dir(self._working_dir)
@@ -173,16 +170,6 @@ class DynamipsHypervisor:
         """
 
         return self._working_dir
-
-    @property
-    def uuid(self):
-        """
-        Returns this hypervisor UUID.
-
-        :Returns: uuid string
-        """
-
-        return self._uuid
 
     @property
     def devices(self):

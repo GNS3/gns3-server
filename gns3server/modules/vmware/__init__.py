@@ -35,10 +35,10 @@ from pkg_resources import parse_version
 
 log = logging.getLogger(__name__)
 
-from ..base_manager import BaseManager
-from .vmware_vm import VMwareVM
-from .vmware_error import VMwareError
-from .nio_vmnet import NIOVMNET
+from gns3server.modules.base_manager import BaseManager
+from gns3server.modules.vmware.vmware_vm import VMwareVM
+from gns3server.modules.vmware.vmware_error import VMwareError
+from gns3server.modules.vmware.nio_vmnet import NIOVMNET
 
 
 class VMware(BaseManager):
@@ -162,8 +162,8 @@ class VMware(BaseManager):
         else:
             if sys.platform.startswith("darwin"):
                 if not os.path.isdir("/Applications/VMware Fusion.app"):
-                    raise VMwareError("VMware Fusion is not installed")
-                return  # FIXME: no version checking on Mac OS X
+                    raise VMwareError("VMware Fusion is not installed in the standard location /Applications/VMware Fusion.app")
+                return  # FIXME: no version checking on Mac OS X but we support all versions of fusion
 
             vmware_path = VMware._get_linux_vmware_binary()
             if vmware_path is None:
@@ -646,3 +646,10 @@ class VMware(BaseManager):
         if path is None:
             path = shutil.which("vmplayer")
         return path
+
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    vmware = VMware.instance()
+    print("=> Check version")
+    loop.run_until_complete(asyncio.async(vmware.check_vmware_version()))
