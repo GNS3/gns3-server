@@ -35,10 +35,10 @@ from pkg_resources import parse_version
 
 log = logging.getLogger(__name__)
 
-from gns3server.modules.base_manager import BaseManager
-from gns3server.modules.vmware.vmware_vm import VMwareVM
-from gns3server.modules.vmware.vmware_error import VMwareError
-from gns3server.modules.vmware.nio_vmnet import NIOVMNET
+from gns3server.hypervisor.base_manager import BaseManager
+from gns3server.hypervisor.vmware.vmware_vm import VMwareVM
+from gns3server.hypervisor.vmware.vmware_error import VMwareError
+from gns3server.hypervisor.vmware.nio_vmnet import NIOVMNET
 
 
 class VMware(BaseManager):
