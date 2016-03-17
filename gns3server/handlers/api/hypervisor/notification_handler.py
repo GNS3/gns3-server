@@ -35,6 +35,9 @@ class NotificationHandler:
 
         with notifications.queue() as queue:
             while True:
-                notif = yield from queue.get_json(5)
+                try:
+                    notif = yield from queue.get_json(5)
+                except asyncio.futures.CancelledError as e:
+                    break
                 ws.send_str(notif)
         return ws

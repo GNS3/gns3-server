@@ -24,6 +24,7 @@ import os
 import asyncio
 import aiohttp
 import pytest
+import json
 
 
 from unittest.mock import patch
@@ -86,6 +87,12 @@ def test_commit_project_invalid_uuid(http_controller):
     assert response.status == 404
 
 
+def test_get_project(http_controller, project):
+    response = http_controller.get("/projects/{project_id}".format(project_id=project.id), example=True)
+    assert response.status == 200
+    assert response.json["name"] == "test"
+
+
 def test_delete_project(http_controller, project):
     with asyncio_patch("gns3server.controller.project.Project.delete", return_value=True) as mock:
         response = http_controller.delete("/projects/{project_id}".format(project_id=project.id), example=True)
@@ -105,3 +112,42 @@ def test_close_project(http_controller, project):
         assert response.status == 204
         assert mock.called
         assert project not in Controller.instance().projects
+
+
+def test_notification(http_controller, project, loop):
+    @asyncio.coroutine
+    def go(future):
+        response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)))
+        response.body = yield from response.content.read(200)
+        project.emit("vm.created", {"a": "b"})
+        response.body += yield from response.content.read(50)
+        response.close()
+        future.set_result(response)
+
+    future = asyncio.Future()
+    asyncio.async(go(future))
+    response = loop.run_until_complete(future)
+    assert response.status == 200
+    assert b'"action": "ping"' in response.body
+    assert b'"cpu_usage_percent"' in response.body
+    assert b'{"action": "vm.created", "event": {"a": "b"}}\n' in response.body
+
+
+def test_notification_invalid_id(http_controller):
+    response = http_controller.get("/projects/{project_id}/notifications".format(project_id=uuid.uuid4()))
+    assert response.status == 404
+
+
+def test_notification_ws(http_controller, project, async_run):
+    ws = http_controller.websocket("/projects/{project_id}/notifications/ws".format(project_id=project.id))
+    answer = async_run(ws.receive())
+    answer = json.loads(answer.data)
+    assert answer["action"] == "ping"
+
+    project.emit("test", {})
+
+    answer = async_run(ws.receive())
+    answer = json.loads(answer.data)
+    assert answer["action"] == "test"
+
+    async_run(http_controller.close())

@@ -52,6 +52,22 @@ class ProjectHandler:
         response.json(project)
 
     @classmethod
+    @Route.get(
+        r"/projects/{project_id}",
+        description="Get the project",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        status_codes={
+            200: "The project exist",
+            404: "The project doesn't exist"
+        })
+    def get(request, response):
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+        response.json(project)
+
+    @classmethod
     @Route.post(
         r"/projects/{project_id}/commit",
         description="Write changes on disk",
@@ -106,3 +122,62 @@ class ProjectHandler:
         yield from project.delete()
         controller.removeProject(project)
         response.set_status(204)
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}/notifications",
+        description="Receive notifications about the projects",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        status_codes={
+            200: "End of stream",
+            404: "The project doesn't exist"
+        })
+    def notification(request, response):
+
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+
+        response.content_type = "application/json"
+        response.set_status(200)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content lenght otherwise QT close the connection but curl can consume the Feed
+        response.content_length = None
+
+        response.start(request)
+        with project.queue() as queue:
+            while True:
+                try:
+                    msg = yield from queue.get_json(5)
+                    response.write(("{}\n".format(msg)).encode("utf-8"))
+                except asyncio.futures.CancelledError as e:
+                    break
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}/notifications/ws",
+        description="Receive notifications about the projects via Websocket",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        status_codes={
+            200: "End of stream",
+            404: "The project doesn't exist"
+        })
+    def notification_ws(request, response):
+
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+
+        ws = aiohttp.web.WebSocketResponse()
+        yield from ws.prepare(request)
+
+        with project.queue() as queue:
+            while True:
+                try:
+                    notif = yield from queue.get_json(5)
+                except asyncio.futures.CancelledError as e:
+                    break
+                ws.send_str(notif)
+        return ws

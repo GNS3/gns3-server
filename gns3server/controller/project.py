@@ -18,9 +18,11 @@
 import asyncio
 import aiohttp
 from uuid import UUID, uuid4
+from contextlib import contextmanager
 
 from .vm import VM
 from .udp_link import UDPLink
+from ..notification_queue import NotificationQueue
 
 
 class Project:
@@ -48,6 +50,7 @@ class Project:
         self._hypervisors = set()
         self._vms = {}
         self._links = {}
+        self._listeners = set()
 
     @property
     def name(self):
@@ -139,6 +142,29 @@ class Project:
     def delete(self):
         for hypervisor in self._hypervisors:
             yield from hypervisor.delete("/projects/{}".format(self._id))
+
+    @contextmanager
+    def queue(self):
+        """
+        Get a queue of notifications
+
+        Use it with Python with
+        """
+        queue = NotificationQueue()
+        self._listeners.add(queue)
+        yield queue
+        self._listeners.remove(queue)
+
+    def emit(self, action, event, **kwargs):
+        """
+        Send an event to all the client listening for notifications
+
+        :param action: Action name
+        :param event: Event to send
+        :param kwargs: Add this meta to the notif (project_id for example)
+        """
+        for listener in self._listeners:
+            listener.put_nowait((action, event, kwargs))
 
     def __json__(self):
 

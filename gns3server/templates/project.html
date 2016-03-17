@@ -1,4 +1,20 @@
 {% extends "layout.html" %}
+
+{% block head %}
+<script>
+var socket = new WebSocket("ws://" + location.host + "/v2/projects/{{project.id}}/notifications/ws");
+socket.onopen = function (event) {
+    document.getElementById("notifications").innerText = "Connected";
+};
+
+socket.onmessage = function (event) {
+    document.getElementById("notifications").innerText = event.data + "\n" + document.getElementById("notifications").innerText;
+};
+
+</script>
+{% endblock %}
+
+
 {% block body %}
 <h1>
     {{project.name}} 
@@ -34,6 +50,8 @@ in futur GNS3 versions.
 {% endfor %}
 </table>
 
-
+<h2>Notifications</h2>
+<div id="notifications">
+</div>
 {%endblock%}
 
