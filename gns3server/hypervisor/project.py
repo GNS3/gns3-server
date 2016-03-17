@@ -23,6 +23,7 @@ import hashlib
 
 from uuid import UUID, uuid4
 from .port_manager import PortManager
+from .notification_manager import NotificationManager
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 
@@ -55,9 +56,6 @@ class Project:
         self.temporary = temporary
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
-
-        # clients listening for notifications
-        self._listeners = set()
 
         if path is None:
             location = self._config().get("project_directory", self._get_default_project_directory())
@@ -422,28 +420,7 @@ class Project:
         :param action: Action name
         :param event: Event to send
         """
-        for listener in self._listeners:
-            listener.put_nowait((action, event, ))
-
-    def get_listen_queue(self):
-        """Get a queue where you receive all the events related to the
-        project."""
-
-        queue = asyncio.Queue()
-        self._listeners.add(queue)
-        return queue
-
-    def stop_listen_queue(self, queue):
-        """Stop sending notification to this clients"""
-
-        self._listeners.remove(queue)
-
-    @property
-    def listeners(self):
-        """
-        List of current clients listening for event in this projects
-        """
-        return self._listeners
+        NotificationManager.instance().emit(action, event, project_id=self.id)
 
     @asyncio.coroutine
     def list_files(self):

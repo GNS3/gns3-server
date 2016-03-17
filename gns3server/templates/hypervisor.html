@@ -1,7 +1,22 @@
 {% extends "layout.html" %}
+
+{% block head %}
+<script>
+var socket = new WebSocket("ws://" + location.host + "/v2/hypervisor/notifications/ws");
+socket.onopen = function (event) {
+    document.getElementById("notifications").innerText = "Connected";
+};
+
+socket.onmessage = function (event) {
+    document.getElementById("notifications").innerText = event.data + "\n" + document.getElementById("notifications").innerText;
+};
+
+</script>
+{% endblock %}
+
 {% block body %}
 <h1>
-    Server status
+    Hypervisor status
 </h1>
 The purpose of this page is to help for GNS3 debug. This can be dropped
 in futur GNS3 versions.
@@ -39,4 +54,9 @@ in futur GNS3 versions.
     <li>{{port}}</li>
 {% endfor %}
 </ul>
+
+<h2>Notifications</h2>
+<div id="notifications">
+</div>
 {% endblock %}
+

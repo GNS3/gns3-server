@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
-{% block script %}
+
+{% block head %}
+<script>
 function onSubmit() {
     if (document.getElementById("uploadInput").files == undefined) {
         //OLD browser
@@ -15,7 +17,9 @@ function onSubmit() {
     }
     return true;
 }
+</script>
 {% endblock %}
+
 {% block body %}
     <h1>Select & Upload an image for GNS3</h1>
     <form enctype="multipart/form-data" action="/upload" method="post" onSubmit="return onSubmit()">

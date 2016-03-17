@@ -32,6 +32,7 @@ from gns3server.hypervisor.qemu.qemu_vm import QemuVM
 from gns3server.hypervisor.qemu.qemu_error import QemuError
 from gns3server.hypervisor.qemu import Qemu
 from gns3server.utils import force_unix_path
+from gns3server.hypervisor.notification_manager import NotificationManager
 
 
 @pytest.fixture(scope="module")
@@ -136,41 +137,43 @@ def test_stop(loop, vm, running_subprocess_mock):
         process.terminate.assert_called_with()
 
 
-def test_termination_callback(vm):
+def test_termination_callback(vm, async_run):
 
     vm.status = "started"
-    queue = vm.project.get_listen_queue()
 
-    vm._termination_callback(0)
-    assert vm.status == "stopped"
+    with NotificationManager.instance().queue() as queue:
+        vm._termination_callback(0)
+        assert vm.status == "stopped"
 
-    (action, event) = queue.get_nowait()
-    assert action == "vm.stopped"
-    assert event == vm
+        async_run(queue.get(0)) # Ping
 
-    with pytest.raises(asyncio.queues.QueueEmpty):
-        queue.get_nowait()
+        (action, event, kwargs) = async_run(queue.get(0))
+        assert action == "vm.stopped"
+        assert event == vm
 
 
-def test_termination_callback_error(vm, tmpdir):
+def test_termination_callback_error(vm, tmpdir, async_run):
 
     with open(str(tmpdir / "qemu.log"), "w+") as f:
         f.write("BOOMM")
 
     vm.status = "started"
     vm._stdout_file = str(tmpdir / "qemu.log")
-    queue = vm.project.get_listen_queue()
 
-    vm._termination_callback(1)
-    assert vm.status == "stopped"
+    with NotificationManager.instance().queue() as queue:
+        vm._termination_callback(1)
+        assert vm.status == "stopped"
 
-    (action, event) = queue.get_nowait()
-    assert action == "vm.stopped"
-    assert event == vm
 
-    (action, event) = queue.get_nowait()
-    assert action == "log.error"
-    assert event["message"] == "QEMU process has stopped, return code: 1\nBOOMM"
+        async_run(queue.get(0)) # Ping
+
+        (action, event, kwargs) = queue.get_nowait()
+        assert action == "vm.stopped"
+        assert event == vm
+
+        (action, event, kwargs) = queue.get_nowait()
+        assert action == "log.error"
+        assert event["message"] == "QEMU process has stopped, return code: 1\nBOOMM"
 
 
 def test_reload(loop, vm):

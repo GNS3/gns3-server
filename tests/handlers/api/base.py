@@ -40,6 +40,11 @@ class Query:
         self._host = host
         self._prefix = prefix
         self._api_version = api_version
+        self._session = None
+
+    @asyncio.coroutine
+    def close(self):
+        yield from self._session.close()
 
     def post(self, path, body={}, **kwargs):
         return self._fetch("POST", path, body, **kwargs)
@@ -57,6 +62,20 @@ class Query:
         if self._api_version is None:
             return "http://{}:{}{}{}".format(self._host, self._port, self._prefix, path)
         return "http://{}:{}/v{}{}{}".format(self._host, self._port, self._api_version, self._prefix, path)
+
+    def websocket(self, path):
+        """
+        Return a websocket connected to the path
+        """
+        self._session = aiohttp.ClientSession()
+        @asyncio.coroutine
+        def go_request(future):
+            response = yield from self._session.ws_connect(self.get_url(path))
+            future.set_result(response)
+        future = asyncio.Future()
+        asyncio.async(go_request(future))
+        self._loop.run_until_complete(future)
+        return future.result()
 
     def _fetch(self, method, path, body=None, **kwargs):
         """Fetch an url, parse the JSON and return response

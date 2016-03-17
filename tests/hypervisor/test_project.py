@@ -25,6 +25,7 @@ from unittest.mock import patch
 
 from tests.utils import asyncio_patch
 from gns3server.hypervisor.project import Project
+from gns3server.hypervisor.notification_manager import NotificationManager
 from gns3server.hypervisor.vpcs import VPCS, VPCSVM
 from gns3server.config import Config
 
@@ -256,3 +257,15 @@ def test_list_files(tmpdir, loop):
                 "md5sum": "098f6bcd4621d373cade4e832627b4f6"
             }
         ]
+
+
+def test_emit(async_run):
+
+    with NotificationManager.instance().queue() as queue:
+        (action, event, context) = async_run(queue.get(0.5)) # Ping
+
+        project = Project(project_id=str(uuid4()))
+        project.emit("test", {})
+        (action, event, context) = async_run(queue.get(0.5))
+        assert action == "test"
+        assert context["project_id"] == project.id

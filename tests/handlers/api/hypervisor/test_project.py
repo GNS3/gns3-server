@@ -199,47 +199,6 @@ def test_close_project_invalid_uuid(http_hypervisor):
     assert response.status == 404
 
 
-def test_notification(http_hypervisor, project, loop):
-    @asyncio.coroutine
-    def go(future):
-        response = yield from aiohttp.request("GET", http_hypervisor.get_url("/projects/{project_id}/notifications".format(project_id=project.id)))
-        response.body = yield from response.content.read(200)
-        project.emit("vm.created", {"a": "b"})
-        response.body += yield from response.content.read(50)
-        response.close()
-        future.set_result(response)
-
-    future = asyncio.Future()
-    asyncio.async(go(future))
-    response = loop.run_until_complete(future)
-    assert response.status == 200
-    assert b'"action": "ping"' in response.body
-    assert b'"cpu_usage_percent"' in response.body
-    assert b'{"action": "vm.created", "event": {"a": "b"}}\n' in response.body
-
-
-def test_notification_invalid_id(http_hypervisor):
-    response = http_hypervisor.get("/projects/{project_id}/notifications".format(project_id=uuid.uuid4()))
-    assert response.status == 404
-
-
-def test_list_files(http_hypervisor, project):
-    files = [
-        {
-            "path": "test.txt",
-            "md5sum": "ad0234829205b9033196ba818f7a872b"
-        },
-        {
-            "path": "vm-1/dynamips/test.bin",
-            "md5sum": "098f6bcd4621d373cade4e832627b4f6"
-        }
-    ]
-    with asyncio_patch("gns3server.hypervisor.project.Project.list_files", return_value=files) as mock:
-        response = http_hypervisor.get("/projects/{project_id}/files".format(project_id=project.id), example=True)
-        assert response.status == 200
-        assert response.json == files
-
-
 def test_get_file(http_hypervisor, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):

@@ -202,14 +202,14 @@ upload and run code on your machine.
 Notifications
 =============
 
-You can receive notification from the server if you listen the HTTP stream /notifications.
+You can receive notification from the server if you listen the HTTP stream /notifications or the websocket.
 
 The available notification are:
-* ping
-* vm.created
-* vm.started
-* vm.stopped
-* log.error
+    * ping
+    * vm.created
+    * vm.started
+    * vm.stopped
+    * log.error
 
 Previous versions
 =================

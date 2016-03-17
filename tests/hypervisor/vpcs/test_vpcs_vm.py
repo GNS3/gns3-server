@@ -28,6 +28,7 @@ from unittest.mock import patch, MagicMock
 from gns3server.hypervisor.vpcs.vpcs_vm import VPCSVM
 from gns3server.hypervisor.vpcs.vpcs_error import VPCSError
 from gns3server.hypervisor.vpcs import VPCS
+from gns3server.hypervisor.notification_manager import NotificationManager
 
 
 @pytest.fixture(scope="module")
@@ -82,35 +83,38 @@ def test_vm_invalid_vpcs_path(vm, manager, loop):
             assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
 
 
-def test_start(loop, vm):
+def test_start(loop, vm, async_run):
     process = MagicMock()
     process.returncode = None
-    queue = vm.project.get_listen_queue()
 
-    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
-            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-            vm.port_add_nio_binding(0, nio)
-            loop.run_until_complete(asyncio.async(vm.start()))
-            assert mock_exec.call_args[0] == (vm.vpcs_path,
-                                              '-p',
-                                              str(vm.console),
-                                              '-m', '1',
-                                              '-i',
-                                              '1',
-                                              '-F',
-                                              '-R',
-                                              '-s',
-                                              '4242',
-                                              '-c',
-                                              '4243',
-                                              '-t',
-                                              '127.0.0.1')
-            assert vm.is_running()
-            assert vm.command_line == ' '.join(mock_exec.call_args[0])
-    (action, event) = queue.get_nowait()
-    assert action == "vm.started"
-    assert event == vm
+
+    with NotificationManager.instance().queue() as queue:
+        async_run(queue.get(0)) # Ping
+
+        with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
+                nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                vm.port_add_nio_binding(0, nio)
+                loop.run_until_complete(asyncio.async(vm.start()))
+                assert mock_exec.call_args[0] == (vm.vpcs_path,
+                                                  '-p',
+                                                  str(vm.console),
+                                                  '-m', '1',
+                                                  '-i',
+                                                  '1',
+                                                  '-F',
+                                                  '-R',
+                                                  '-s',
+                                                  '4242',
+                                                  '-c',
+                                                  '4243',
+                                                  '-t',
+                                                  '127.0.0.1')
+                assert vm.is_running()
+                assert vm.command_line == ' '.join(mock_exec.call_args[0])
+        (action, event, kwargs) = async_run(queue.get(0))
+        assert action == "vm.started"
+        assert event == vm
 
 
 def test_start_0_6_1(loop, vm):
@@ -120,7 +124,6 @@ def test_start_0_6_1(loop, vm):
     """
     process = MagicMock()
     process.returncode = None
-    queue = vm.project.get_listen_queue()
     vm._vpcs_version = parse_version("0.6.1")
 
     with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
@@ -142,12 +145,10 @@ def test_start_0_6_1(loop, vm):
                                               '-t',
                                               '127.0.0.1')
             assert vm.is_running()
-    (action, event) = queue.get_nowait()
-    assert action == "vm.started"
-    assert event == vm
 
 
-def test_stop(loop, vm):
+
+def test_stop(loop, vm, async_run):
     process = MagicMock()
 
     # Wait process kill success
@@ -156,28 +157,31 @@ def test_stop(loop, vm):
     process.wait.return_value = future
     process.returncode = None
 
-    with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-            vm.port_add_nio_binding(0, nio)
+    with NotificationManager.instance().queue() as queue:
+        with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+                nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                vm.port_add_nio_binding(0, nio)
 
-            loop.run_until_complete(asyncio.async(vm.start()))
-            assert vm.is_running()
+                loop.run_until_complete(asyncio.async(vm.start()))
+                assert vm.is_running()
 
-            queue = vm.project.get_listen_queue()
 
-            with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                loop.run_until_complete(asyncio.async(vm.stop()))
-            assert vm.is_running() is False
+                with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                    loop.run_until_complete(asyncio.async(vm.stop()))
+                assert vm.is_running() is False
 
-            if sys.platform.startswith("win"):
-                process.send_signal.assert_called_with(1)
-            else:
-                process.terminate.assert_called_with()
+                if sys.platform.startswith("win"):
+                    process.send_signal.assert_called_with(1)
+                else:
+                    process.terminate.assert_called_with()
 
-            (action, event) = queue.get_nowait()
-            assert action == "vm.stopped"
-            assert event == vm
+                async_run(queue.get(0)) # Ping
+                async_run(queue.get(0)) # Started
+
+                (action, event, kwargs) = async_run(queue.get(0))
+                assert action == "vm.stopped"
+                assert event == vm
 
 
 def test_reload(loop, vm):
