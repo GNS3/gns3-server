@@ -87,9 +87,8 @@ def test_start(loop, vm, async_run):
     process = MagicMock()
     process.returncode = None
 
-
     with NotificationManager.instance().queue() as queue:
-        async_run(queue.get(0)) # Ping
+        async_run(queue.get(0))  #  Ping
 
         with asyncio_patch("gns3server.hypervisor.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
             with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
@@ -147,7 +146,6 @@ def test_start_0_6_1(loop, vm):
             assert vm.is_running()
 
 
-
 def test_stop(loop, vm, async_run):
     process = MagicMock()
 
@@ -166,7 +164,6 @@ def test_stop(loop, vm, async_run):
                 loop.run_until_complete(asyncio.async(vm.start()))
                 assert vm.is_running()
 
-
                 with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
                     loop.run_until_complete(asyncio.async(vm.stop()))
                 assert vm.is_running() is False
@@ -176,8 +173,8 @@ def test_stop(loop, vm, async_run):
                 else:
                     process.terminate.assert_called_with()
 
-                async_run(queue.get(0)) # Ping
-                async_run(queue.get(0)) # Started
+                async_run(queue.get(0))  #  Ping
+                async_run(queue.get(0))  #  Started
 
                 (action, event, kwargs) = async_run(queue.get(0))
                 assert action == "vm.stopped"

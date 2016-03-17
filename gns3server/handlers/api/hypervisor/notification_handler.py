@@ -38,4 +38,3 @@ class NotificationHandler:
                 notif = yield from queue.get_json(5)
                 ws.send_str(notif)
         return ws
-

@@ -262,7 +262,7 @@ def test_list_files(tmpdir, loop):
 def test_emit(async_run):
 
     with NotificationManager.instance().queue() as queue:
-        (action, event, context) = async_run(queue.get(0.5)) # Ping
+        (action, event, context) = async_run(queue.get(0.5))  #  Ping
 
         project = Project(project_id=str(uuid4()))
         project.emit("test", {})

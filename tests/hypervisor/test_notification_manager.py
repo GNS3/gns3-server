@@ -69,7 +69,6 @@ def test_queue_json_meta(async_run):
     assert len(notifications._listeners) == 0
 
 
-
 def test_queue_ping(async_run):
     """
     If we don't send a message during a long time (0.5 seconds)

@@ -25,6 +25,7 @@ class NotificationQueue(asyncio.Queue):
     """
     Queue returned by the notification manager.
     """
+
     def __init__(self):
         super().__init__()
         self._first = True

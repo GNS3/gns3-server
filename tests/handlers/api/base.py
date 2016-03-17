@@ -68,6 +68,7 @@ class Query:
         Return a websocket connected to the path
         """
         self._session = aiohttp.ClientSession()
+
         @asyncio.coroutine
         def go_request(future):
             response = yield from self._session.ws_connect(self.get_url(path))
