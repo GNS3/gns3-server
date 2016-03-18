@@ -218,6 +218,7 @@ class BaseVM:
         log.info("{module}: {name} [{id}] created".format(module=self.manager.module_name,
                                                           name=self.name,
                                                           id=self.id))
+        self._project.emit("vm.created", self)
 
     @asyncio.coroutine
     def delete(self):
@@ -225,6 +226,7 @@ class BaseVM:
         Delete the VM (including all its files).
         """
 
+        self._project.emit("vm.deleted", self)
         directory = self.project.vm_working_directory(self)
         if os.path.exists(directory):
             try:

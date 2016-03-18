@@ -42,14 +42,14 @@ class Link:
         """
         Create the link
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @asyncio.coroutine
     def delete(self):
         """
         Delete the link
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @property
     def id(self):

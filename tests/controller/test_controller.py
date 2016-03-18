@@ -77,7 +77,7 @@ def test_removeProject(controller, async_run):
 def test_addProject_with_hypervisor(controller, async_run):
     uuid1 = str(uuid.uuid4())
 
-    hypervisor = Hypervisor("test1")
+    hypervisor = Hypervisor("test1", controller=MagicMock())
     hypervisor.post = MagicMock()
     controller._hypervisors = {"test1": hypervisor}
 
@@ -92,3 +92,48 @@ def test_getProject(controller, async_run):
     assert controller.getProject(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.getProject("dsdssd")
+
+
+def test_emit(controller, async_run):
+    project1 = MagicMock()
+    uuid1 = str(uuid.uuid4())
+    controller._projects[uuid1] = project1
+
+    project2 = MagicMock()
+    uuid2 = str(uuid.uuid4())
+    controller._projects[uuid2] = project2
+
+    # Notif without project should be send to all projects
+    controller.emit("test", {})
+    assert project1.emit.called
+    assert project2.emit.called
+
+
+def test_emit_to_project(controller, async_run):
+    project1 = MagicMock()
+    uuid1 = str(uuid.uuid4())
+    controller._projects[uuid1] = project1
+
+    project2 = MagicMock()
+    uuid2 = str(uuid.uuid4())
+    controller._projects[uuid2] = project2
+
+    # Notif with project should be send to this project
+    controller.emit("test", {}, project_id=uuid1)
+    project1.emit.assert_called_with('test', {})
+    assert not project2.emit.called
+
+
+def test_emit_to_project_not_exists(controller, async_run):
+    project1 = MagicMock()
+    uuid1 = str(uuid.uuid4())
+    controller._projects[uuid1] = project1
+
+    project2 = MagicMock()
+    uuid2 = str(uuid.uuid4())
+    controller._projects[uuid2] = project2
+
+    # Notif with project should be send to this project
+    controller.emit("test", {}, project_id="4444444")
+    assert not project1.emit.called
+    assert not project2.emit.called

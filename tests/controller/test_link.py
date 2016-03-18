@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+from unittest.mock import MagicMock
 
 from gns3server.controller.link import Link
 from gns3server.controller.vm import VM
@@ -30,7 +31,7 @@ def project():
 
 @pytest.fixture
 def hypervisor():
-    return Hypervisor("example.com")
+    return Hypervisor("example.com", controller=MagicMock())
 
 
 def test_addVM(async_run, project, hypervisor):

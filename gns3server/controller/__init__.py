@@ -45,7 +45,7 @@ class Controller:
         :param kwargs: See the documentation of Hypervisor
         """
         if hypervisor_id not in self._hypervisors:
-            hypervisor = Hypervisor(hypervisor_id=hypervisor_id, **kwargs)
+            hypervisor = Hypervisor(hypervisor_id=hypervisor_id, controller=self, **kwargs)
             self._hypervisors[hypervisor_id] = hypervisor
         return self._hypervisors[hypervisor_id]
 
@@ -109,3 +109,18 @@ class Controller:
         if not hasattr(Controller, '_instance') or Controller._instance is None:
             Controller._instance = Controller()
         return Controller._instance
+
+    def emit(self, action, event, **kwargs):
+        """
+        Send a notification to clients scoped by projects
+        """
+
+        if "project_id" in kwargs:
+            try:
+                project_id = kwargs.pop("project_id")
+                self._projects[project_id].emit(action, event, **kwargs)
+            except KeyError:
+                pass
+        else:
+            for project in self._projects.values():
+                project.emit(action, event, **kwargs)

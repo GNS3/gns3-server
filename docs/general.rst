@@ -209,7 +209,9 @@ The available notification are:
     * vm.created
     * vm.started
     * vm.stopped
+    * vm.deleted
     * log.error
+    * log.warning
 
 Previous versions
 =================

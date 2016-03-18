@@ -19,6 +19,7 @@
 import pytest
 import json
 import aiohttp
+import asyncio
 from unittest.mock import patch, MagicMock
 
 from gns3server.controller.project import Project
@@ -29,7 +30,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 @pytest.fixture
 def hypervisor():
-    hypervisor = Hypervisor("my_hypervisor_id", protocol="https", host="example.com", port=84)
+    hypervisor = Hypervisor("my_hypervisor_id", protocol="https", host="example.com", port=84, controller=MagicMock())
     hypervisor._connected = True
     return hypervisor
 
@@ -46,10 +47,10 @@ def test_hypervisor_local(hypervisor):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
         with pytest.raises(HypervisorError):
-            s = Hypervisor("local")
+            s = Hypervisor("local", controller=MagicMock())
 
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        s = Hypervisor("test")
+        s = Hypervisor("test", controller=MagicMock())
 
 
 def test_hypervisor_httpQuery(hypervisor, async_run):
@@ -137,6 +138,35 @@ def test_hypervisor_httpQuery_project(hypervisor, async_run):
         project = Project()
         async_run(hypervisor.post("/projects", project))
         mock.assert_called_with("POST", "https://example.com:84/v2/hypervisor/projects", data=json.dumps(project.__json__()), headers={'content-type': 'application/json'}, auth=None)
+
+
+def test_connectNotification(hypervisor, async_run):
+    ws_mock = AsyncioMagicMock()
+
+    call = 0
+
+    @asyncio.coroutine
+    def receive():
+        nonlocal call
+        call += 1
+        if call == 1:
+            response = MagicMock()
+            response.data = '{"action": "test", "event": {"a": 1}, "project_id": "42"}'
+            response.tp = aiohttp.MsgType.text
+            return response
+        else:
+            response = MagicMock()
+            response.tp = aiohttp.MsgType.closed
+            return response
+
+    hypervisor._controller = MagicMock()
+    hypervisor._session = AsyncioMagicMock(return_value=ws_mock)
+    hypervisor._session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
+    ws_mock.receive = receive
+    async_run(hypervisor._connectNotification())
+
+    hypervisor._controller.emit.assert_called_with('test', {'a': 1}, hypervisor_id=hypervisor.id, project_id='42')
+    assert hypervisor._connected is False
 
 
 def test_json(hypervisor):
