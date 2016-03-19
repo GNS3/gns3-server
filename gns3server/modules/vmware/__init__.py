@@ -616,26 +616,39 @@ class VMware(BaseManager):
         yield from self.check_vmware_version()
 
         inventory_path = self.get_vmware_inventory_path()
-        if os.path.exists(inventory_path):
-            # FIXME: inventory may exist if VMware workstation has not been fully uninstalled, therefore VMware player VMs are not searched
+        if os.path.exists(inventory_path) and self.host_type == "ws":
+            # inventory may exist for VMware player if VMware workstation has been previously installed
             return self._get_vms_from_inventory(inventory_path)
         else:
-            # VMware player has no inventory file, let's search the default location for VMs.
+            # VMware player has no inventory file, let's search the default location for VMs
             vmware_preferences_path = self.get_vmware_preferences_path()
             default_vm_path = self.get_vmware_default_vm_path()
-
+            pairs = {}
             if os.path.exists(vmware_preferences_path):
                 # the default vm path may be present in VMware preferences file.
                 try:
                     pairs = self.parse_vmware_file(vmware_preferences_path)
-                    if "prefvmx.defaultvmpath" in pairs:
-                        default_vm_path = pairs["prefvmx.defaultvmpath"]
                 except OSError as e:
                     log.warning('Could not read VMware preferences file "{}": {}'.format(vmware_preferences_path, e))
-
+                if "prefvmx.defaultvmpath" in pairs:
+                    default_vm_path = pairs["prefvmx.defaultvmpath"]
             if not os.path.isdir(default_vm_path):
                 raise VMwareError('Could not find the default VM directory: "{}"'.format(default_vm_path))
-            return self._get_vms_from_directory(default_vm_path)
+            vms = self._get_vms_from_directory(default_vm_path)
+
+            # looks for VMX paths in the preferences file in case not all VMs are in the default directory
+            for key, value in pairs:
+                m = re.match(r'pref.mruVM(\d+)\.filename', key)
+                if m:
+                    display_name = "pref.mruVM{}.displayName".format(m.group(1))
+                    if display_name in pairs:
+                        found = False
+                        for vm in vms:
+                            if vm["vmname"] == display_name:
+                                found = True
+                        if found is False:
+                            vms.append({"vmname": pairs[display_name], "vmx_path": value})
+            return vms
 
     @staticmethod
     def _get_linux_vmware_binary():
