@@ -488,11 +488,12 @@ class VMwareVM(BaseVM):
             yield from self._ubridge_hypervisor.stop()
 
         try:
-            if self.acpi_shutdown:
-                # use ACPI to shutdown the VM
-                yield from self._control_vm("stop", "soft")
-            else:
-                yield from self._control_vm("stop")
+            if (yield from self.is_running()):
+                if self.acpi_shutdown:
+                    # use ACPI to shutdown the VM
+                    yield from self._control_vm("stop", "soft")
+                else:
+                    yield from self._control_vm("stop")
         finally:
             self._started = False
 
