@@ -21,7 +21,6 @@ Represents a Dynamips hypervisor and starts/stops the associated Dynamips proces
 
 import os
 import subprocess
-import tempfile
 import asyncio
 
 from gns3server.utils.asyncio import wait_for_process_termination
@@ -120,10 +119,9 @@ class Hypervisor(DynamipsHypervisor):
         self._command = self._build_command()
         try:
             log.info("Starting Dynamips: {}".format(self._command))
-
-            with tempfile.NamedTemporaryFile(delete=False) as fd:
-                self._stdout_file = fd.name
-                log.info("Dynamips process logging to {}".format(fd.name))
+            self._stdout_file = os.path.join(self.working_dir, "dynamips_i{}_stdout.txt".format(self._id))
+            log.info("Dynamips process logging to {}".format(self._stdout_file))
+            with open(self._stdout_file, "w", encoding="utf-8") as fd:
                 self._process = yield from asyncio.create_subprocess_exec(*self._command,
                                                                           stdout=fd,
                                                                           stderr=subprocess.STDOUT,
