@@ -637,7 +637,7 @@ class VMware(BaseManager):
             vms = self._get_vms_from_directory(default_vm_path)
 
             # looks for VMX paths in the preferences file in case not all VMs are in the default directory
-            for key, value in pairs:
+            for key, value in pairs.items():
                 m = re.match(r'pref.mruVM(\d+)\.filename', key)
                 if m:
                     display_name = "pref.mruVM{}.displayName".format(m.group(1))
