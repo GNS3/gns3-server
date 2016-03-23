@@ -26,6 +26,8 @@ PATH=/gns3/bin:/tmp/gns3/bin
 if [ ! -d /tmp/gns3/bin ]; then
 	busybox mkdir -p /tmp/gns3/bin
 	/gns3/bin/busybox --install -s /tmp/gns3/bin
+	# remove commands already available in /gns3/bin
+	(cd /tmp/gns3/bin; rm -f `cd /gns3/bin; echo *`)
 fi
 
 # Wait 2 seconds to settle the network interfaces
@@ -51,8 +53,10 @@ sed -n 's/^ *\(eth[0-9]*\):.*/\1/p' < /proc/net/dev | while read dev; do
 done
 
 if [ -n "$INTERFACES" ]; then
+	mkdir -p /etc/network/if-up.d /etc/network/if-pre-up.d
+	mkdir -p /etc/network/if-down.d /etc/network/if-post-down.d
 	echo -e "$INTERFACES" > /etc/network/interfaces
-	ifup -a
+	ifup -a -f
 fi
 
 # continue normal docker startup
