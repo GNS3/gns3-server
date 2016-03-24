@@ -261,3 +261,25 @@ def test_get_file(server, tmpdir):
 
     response = server.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
     assert response.status == 403
+
+
+def test_write_file(server, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+        project = ProjectManager.instance().create_project()
+
+    with open(os.path.join(project.path, "hello"), "w+") as f:
+        f.write("world")
+
+    response = server.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="universe", raw=True)
+    assert response.status == 200
+
+    with open(os.path.join(project.path, "hello")) as f:
+        content = f.read()
+        assert content == "universe"
+
+    response = server.post("/projects/{project_id}/files/test/false".format(project_id=project.id), body="universe", raw=True)
+    assert response.status == 404
+
+    response = server.post("/projects/{project_id}/files/../hello".format(project_id=project.id), body="universe", raw=True)
+    assert response.status == 403

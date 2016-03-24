@@ -302,3 +302,43 @@ class ProjectHandler:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
             raise aiohttp.web.HTTPForbidden
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/files/{path:.+}",
+        description="Get a file of a project",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        raw=True,
+        status_codes={
+            200: "Return the file",
+            403: "Permission denied",
+            404: "The path doesn't exist"
+        })
+    def write_file(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
+        path = request.match_info["path"]
+        path = os.path.normpath(path)
+
+        # Raise error if user try to escape
+        if path[0] == ".":
+            raise aiohttp.web.HTTPForbidden
+        path = os.path.join(project.path, path)
+
+        response.set_status(200)
+
+        try:
+            with open(path, 'wb+') as f:
+                while True:
+                    packet = yield from request.content.read(512)
+                    if not packet:
+                        break
+                    f.write(packet)
+
+        except FileNotFoundError:
+            raise aiohttp.web.HTTPNotFound()
+        except PermissionError:
+            raise aiohttp.web.HTTPForbidden
