@@ -118,6 +118,7 @@ def test_start(loop, vm, monkeypatch):
                         assert vm.is_running()
                         assert vm.command_line == ' '.join(mock_exec.call_args[0])
 
+
 def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
 
     fake_file = str(tmpdir / "iourc")
@@ -410,6 +411,14 @@ def test_iourc_content(vm):
 
     with open(os.path.join(vm.temporary_directory, "iourc")) as f:
         assert f.read() == "test"
+
+
+def test_iourc_content_fix_carriage_return(vm):
+
+    vm.iourc_content = "test\r\n12"
+
+    with open(os.path.join(vm.temporary_directory, "iourc")) as f:
+        assert f.read() == "test\n12"
 
 
 def test_extract_configs(vm):

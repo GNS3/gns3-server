@@ -318,7 +318,7 @@ class VMwareVM(BaseVM):
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
         if sys.platform.startswith("linux"):
             yield from self._ubridge_hypervisor.send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet,
-                                                                                                           interface=vmnet_interface))
+                                                                                                            interface=vmnet_interface))
         elif sys.platform.startswith("win"):
             windows_interfaces = get_windows_interfaces()
             npf = None
@@ -454,21 +454,25 @@ class VMwareVM(BaseVM):
         else:
             yield from self._control_vm("start")
 
-        if self._use_ubridge and self._ubridge_hypervisor:
-            for adapter_number in range(0, self._adapters):
-                nio = self._ethernet_adapters[adapter_number].get_nio(0)
-                if nio:
-                    yield from self._add_ubridge_connection(nio, adapter_number)
+        try:
+            if self._use_ubridge and self._ubridge_hypervisor:
+                for adapter_number in range(0, self._adapters):
+                    nio = self._ethernet_adapters[adapter_number].get_nio(0)
+                    if nio:
+                        yield from self._add_ubridge_connection(nio, adapter_number)
 
-        if self._enable_remote_console and self._console is not None:
-            try:
-                if sys.platform.startswith("win"):
-                    yield from wait_for_named_pipe_creation(self._get_pipe_name())
-                else:
-                    yield from wait_for_file_creation(self._get_pipe_name())  # wait for VMware to create the pipe file.
-            except asyncio.TimeoutError:
-                raise VMwareError('Pipe file "{}" for remote console has not been created by VMware'.format(self._get_pipe_name()))
-            self._start_remote_console()
+            if self._enable_remote_console and self._console is not None:
+                try:
+                    if sys.platform.startswith("win"):
+                        yield from wait_for_named_pipe_creation(self._get_pipe_name())
+                    else:
+                        yield from wait_for_file_creation(self._get_pipe_name())  # wait for VMware to create the pipe file.
+                except asyncio.TimeoutError:
+                    raise VMwareError('Pipe file "{}" for remote console has not been created by VMware'.format(self._get_pipe_name()))
+                self._start_remote_console()
+        except VMwareError:
+            yield from self.stop()
+            raise
 
         if self._get_vmx_setting("vhv.enable", "TRUE"):
             self._hw_virtualization = True
@@ -488,11 +492,12 @@ class VMwareVM(BaseVM):
             yield from self._ubridge_hypervisor.stop()
 
         try:
-            if self.acpi_shutdown:
-                # use ACPI to shutdown the VM
-                yield from self._control_vm("stop", "soft")
-            else:
-                yield from self._control_vm("stop")
+            if (yield from self.is_running()):
+                if self.acpi_shutdown:
+                    # use ACPI to shutdown the VM
+                    yield from self._control_vm("stop", "soft")
+                else:
+                    yield from self._control_vm("stop")
         finally:
             self._started = False
 

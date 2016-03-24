@@ -1,5 +1,18 @@
 # Change Log
 
+## 1.4.5 23/03/2016
+
+* Stop the VMware VM if there is an error while setting up the network connections or console.
+* Remote install on 14.04 ubuntu
+* Include VMware VMs paths found preferences.ini
+* Allow to stop a VMware VM from GNS3 even if halted within the VM. Fixes #1118.
+* Keep Dynamips stdout log file in the project directory.
+* Get MAC addresses for host interfaces to use for filtering frames from vmnet interfaces.
+* Dynamips uuid hypervisor command is no longer supported.
+* Restart NPF service after adding vmnet adapters on Windows.
+* Support /etc/gns3/gns3_server.conf for the config
+* Improve warning if fusion is not installed or in non standard location
+
 ## 1.4.4 23/02/2016
 * Check if VMware Fusion is correctly installed when retrieving the VM list.
 
