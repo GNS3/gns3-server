@@ -179,8 +179,8 @@ class DockerVM(BaseVM):
         """
         path = os.path.join(self.working_dir, "etc", "network")
         os.makedirs(path, exist_ok=True)
-        os.makedirs(os.path.join(path, "if-up.d"))
-        os.makedirs(os.path.join(path, "if-down.d"))
+        os.makedirs(os.path.join(path, "if-up.d"), exist_ok=True)
+        os.makedirs(os.path.join(path, "if-down.d"), exist_ok=True)
 
         if not os.path.exists(os.path.join(path, "interfaces")):
             with open(os.path.join(path, "interfaces"), "w+") as f:
