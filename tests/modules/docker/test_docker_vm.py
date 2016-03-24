@@ -89,7 +89,10 @@ def test_create(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -126,6 +129,7 @@ def test_create_vnc(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
                             '/tmp/.X11-unix/:/tmp/.X11-unix/'
                         ],
                         "Privileged": True
@@ -161,7 +165,10 @@ def test_create_start_cmd(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -194,7 +201,10 @@ def test_create_environment(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Env": ["YES=1", "NO=0"],
@@ -241,7 +251,10 @@ def test_create_image_not_available(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -452,7 +465,10 @@ def test_update(loop, vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
+            "Binds": [
+                "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+            ],
             "Privileged": True
         },
         "Volumes": {},
@@ -490,7 +506,10 @@ def test_update_running(loop, vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": ["{}:/gns3:ro".format(get_resource("modules/docker/resources"))],
+            "Binds": [
+                "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+            ],
             "Privileged": True
         },
         "Volumes": {},
@@ -763,6 +782,7 @@ def test_mount_binds(vm, tmpdir):
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
         "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+        "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
         "{}:{}".format(dst, "/test/experimental")
     ]
 
@@ -789,3 +809,17 @@ def test_start_aux(vm, loop):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
         loop.run_until_complete(asyncio.async(vm._start_aux()))
+
+
+def test_create_network_interfaces(vm):
+
+    vm.adapters = 5
+    network_config = vm._create_network_config()
+    assert os.path.exists(os.path.join(network_config, "interfaces"))
+    assert os.path.exists(os.path.join(network_config, "if-up.d"))
+
+    with open(os.path.join(network_config, "interfaces")) as f:
+        content = f.read()
+    assert "eth0" in content
+    assert "eth4" in content
+    assert "eth5" not in content

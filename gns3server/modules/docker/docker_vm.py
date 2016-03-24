@@ -159,6 +159,10 @@ class DockerVM(BaseVM):
 
         binds.append("{}:/gns3:ro".format(get_resource("modules/docker/resources")))
 
+        # We mount our own etc/network
+        network_config = self._create_network_config()
+        binds.append("{}:/etc/network:rw".format(network_config))
+
         volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
         if volumes is None:
             return binds
@@ -168,6 +172,37 @@ class DockerVM(BaseVM):
             binds.append("{}:{}".format(source, volume))
 
         return binds
+
+    def _create_network_config(self):
+        """
+        If network config is empty we create a sample config
+        """
+        path = os.path.join(self.working_dir, "etc", "network")
+        os.makedirs(path, exist_ok=True)
+        os.makedirs(os.path.join(path, "if-up.d"))
+        os.makedirs(os.path.join(path, "if-down.d"))
+
+        if not os.path.exists(os.path.join(path, "interfaces")):
+            with open(os.path.join(path, "interfaces"), "w+") as f:
+                f.write("""#
+# This is a sample network config uncomment lines to configure the network
+#
+
+""")
+                for adapter in range(0, self.adapters):
+                    f.write("""
+# Static config for eth{adapter}
+#auto eth{adapter}
+#iface eth{adapter} inet static
+#\taddress 192.168.{adapter}.2
+#\tnetmask 255.255.255.0
+#\tgateway 192.168.{adapter}.1
+#\tup echo nameserver 192.168.{adapter}.1 > /etc/resolv.conf
+
+# DHCP config for eth{adapter}
+# auto eth{adapter}
+# iface eth{adapter} inet dhcp""".format(adapter=adapter))
+        return path
 
     @asyncio.coroutine
     def create(self):
@@ -198,7 +233,6 @@ class DockerVM(BaseVM):
             "Cmd": [],
             "Entrypoint": image_infos.get("Config", {"Entrypoint": []})["Entrypoint"]
         }
-
 
         if params["Entrypoint"] is None:
             params["Entrypoint"] = []
@@ -287,7 +321,7 @@ class DockerVM(BaseVM):
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
         process = yield from asyncio.subprocess.create_subprocess_exec(
-            "docker", "exec", "-i", self._cid, "/bin/sh", "-i",
+            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "sh", "-i",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             stdin=asyncio.subprocess.PIPE)

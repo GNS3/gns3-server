@@ -52,12 +52,8 @@ sed -n 's/^ *\(eth[0-9]*\):.*/\1/p' < /proc/net/dev | while read dev; do
 	ip link set dev $dev up
 done
 
-if [ -n "$INTERFACES" ]; then
-	mkdir -p /etc/network/if-up.d /etc/network/if-pre-up.d
-	mkdir -p /etc/network/if-down.d /etc/network/if-post-down.d
-	echo -e "$INTERFACES" > /etc/network/interfaces
-	ifup -a -f
-fi
+
+ifup -a -f
 
 # continue normal docker startup
 PATH="$OLD_PATH"
