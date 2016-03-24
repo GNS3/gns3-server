@@ -413,6 +413,14 @@ def test_iourc_content(vm):
         assert f.read() == "test"
 
 
+def test_iourc_content_fix_carriage_return(vm):
+
+    vm.iourc_content = "test\r\n12"
+
+    with open(os.path.join(vm.temporary_directory, "iourc")) as f:
+        assert f.read() == "test\n12"
+
+
 def test_extract_configs(vm):
     assert vm.extract_configs() == (None, None)
 
