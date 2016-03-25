@@ -555,10 +555,10 @@ class DockerVM(BaseVM):
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             return
 
+        adapter = self._ethernet_adapters[adapter_number]
+
         yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
             name=adapter_number))
-
-        adapter = self._ethernet_adapters[adapter_number]
         yield from self._ubridge_hypervisor.send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
 
     @asyncio.coroutine
