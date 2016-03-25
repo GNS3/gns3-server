@@ -144,7 +144,7 @@ log "Setup GNS3 server"
 cat <<EOF > /opt/gns3/gns3_server.conf
 [Server]
 host = 0.0.0.0
-port = 8000
+port = 3080 
 images_path = /opt/gns3/images
 projects_path = /opt/gns3/projects
 report_errors = True
@@ -196,7 +196,7 @@ log "Setup VPN"
 cat <<EOF > /opt/gns3/gns3_server.conf
 [Server]
 host = 172.16.253.1
-port = 8000
+port = 3080 
 images_path = /opt/gns3/images
 projects_path = /opt/gns3/projects
 report_errors = True
