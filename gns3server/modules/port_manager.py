@@ -42,8 +42,8 @@ class PortManager:
         server_config = Config.instance().get_section_config("Server")
         remote_console_connections = server_config.getboolean("allow_remote_console")
 
-        console_start_port_range = server_config.getint("console_start_port_range", 2001)
-        console_end_port_range = server_config.getint("console_end_port_range", 7000)
+        console_start_port_range = server_config.getint("console_start_port_range", 5000)
+        console_end_port_range = server_config.getint("console_end_port_range", 10000)
         self._console_port_range = (console_start_port_range, console_end_port_range)
         log.debug("Console port range is {}-{}".format(console_start_port_range, console_end_port_range))
 
