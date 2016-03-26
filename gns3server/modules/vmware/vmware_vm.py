@@ -26,7 +26,7 @@ import asyncio
 import tempfile
 
 from gns3server.utils.telnet_server import TelnetServer
-from gns3server.utils.interfaces import interfaces, get_windows_interfaces
+from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
 from collections import OrderedDict
 from .vmware_error import VMwareError
@@ -320,7 +320,7 @@ class VMwareVM(BaseVM):
             yield from self._ubridge_hypervisor.send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet,
                                                                                                             interface=vmnet_interface))
         elif sys.platform.startswith("win"):
-            windows_interfaces = get_windows_interfaces()
+            windows_interfaces = interfaces()
             npf = None
             source_mac = None
             for interface in windows_interfaces:
