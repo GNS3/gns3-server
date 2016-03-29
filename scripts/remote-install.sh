@@ -24,6 +24,7 @@
 function help {
   echo "Usage:" >&2
   echo "--with-openvpn: Install Open VPN" >&2
+  echo "--with-iou: Install IOU" >&2
   echo "--help: This help" >&2
 }
 
@@ -42,8 +43,9 @@ fi
 
 # Read the options
 USE_VPN=0
+USE_IOU=0
 
-TEMP=`getopt -o h --long with-openvpn,help -n 'gns3-remote-install.sh' -- "$@"`
+TEMP=`getopt -o h --long with-openvpn,with-iou,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
 then
   help
@@ -56,6 +58,10 @@ while true ; do
     case "$1" in
         --with-openvpn)
           USE_VPN=1
+          shift
+          ;;
+        --with-iou)
+          USE_IOU=1
           shift
           ;;
         -h|--help)
@@ -73,17 +79,16 @@ set -e
 export DEBIAN_FRONTEND="noninteractive"
 
 log "Add GNS3 repository"
-cat > /etc/apt/sources.list.d/gns3.list << EOF
+cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
 deb http://ppa.launchpad.net/gns3/ppa/ubuntu trusty main
 deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu trusty main
 deb http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
 deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
-EOF
+EOFLIST
 
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A2E3EF7B
 
 log "Update system packages"
-dpkg --add-architecture i386
 apt-get update
 
 log "Upgrade packages"
@@ -107,41 +112,31 @@ fi
 log "Add GNS3 to the docker group"
 usermod -aG docker gns3
 
-log "IOU setup"
-#apt-get install -y gns3-iou
+if [ $USE_IOU == 1 ]
+then
+    log "IOU setup"
+    dpkg --add-architecture i386
+    apt-get update
 
-# Force the host name to gns3vm
-hostnamectl set-hostname gns3vm
+    apt-get install -y gns3-iou
 
-# Force hostid for IOU
-dd if=/dev/zero bs=4 count=1 of=/etc/hostid
+    # Force the host name to gns3vm
+    hostnamectl set-hostname gns3vm
 
-# Block iou call. The server is down
-echo "127.0.0.254 xml.cisco.com" | tee --append /etc/hosts
+    # Force hostid for IOU
+    dd if=/dev/zero bs=4 count=1 of=/etc/hostid
+
+    # Block iou call. The server is down
+    echo "127.0.0.254 xml.cisco.com" | tee --append /etc/hosts
+fi
 
 log "Add gns3 to the kvm group"
 usermod -aG kvm gns3
 
-log "Setup VDE network"
-
-apt-get install -y vde2 uml-utilities
-
-usermod -a -G vde2-net gns3
-
-cat <<EOF > /etc/network/interfaces.d/qemu0.conf
-# A vde network
-auto qemu0
-    iface qemu0 inet static
-    address 172.16.0.1
-    netmask 255.255.255.0
-    vde2-switch -t qemu0
-EOF 
-
 log "Setup GNS3 server"
 
-
-#TODO: 1.4.5 allow /etc/gns3/gns3_server.conf it's cleaner
-cat <<EOF > /opt/gns3/gns3_server.conf
+mkdir -p /etc/gns3
+cat <<EOFC > /etc/gns3/gns3_server.conf
 [Server]
 host = 0.0.0.0
 port = 3080 
@@ -151,9 +146,12 @@ report_errors = True
 
 [Qemu]
 enable_kvm = True
-EOF
+EOFC
 
-cat <<EOF > /etc/init/gns3.conf
+chown -R gns3:gns3 /etc/gns3
+chmod -R 700 /etc/gns3
+
+cat <<EOFI > /etc/init/gns3.conf
 description "GNS3 server"
 author      "GNS3 Team"
 
@@ -175,7 +173,7 @@ end script
 pre-stop script
     echo "[`date`] GNS3 Stopping"
 end script
-EOF
+EOFI
 
 chown root:root /etc/init/gns3.conf
 chmod 644 /etc/init/gns3.conf
@@ -193,7 +191,7 @@ if [ $USE_VPN == 1 ]
 then
 log "Setup VPN"
 
-cat <<EOF > /opt/gns3/gns3_server.conf
+cat <<EOFSERVER > /etc/gns3/gns3_server.conf
 [Server]
 host = 172.16.253.1
 port = 3080 
@@ -203,7 +201,7 @@ report_errors = True
 
 [Qemu]
 enable_kvm = True
-EOF
+EOFSERVER
 
 log "Install packages for Open VPN"
 
@@ -221,7 +219,7 @@ UUID=$(uuid)
 
 log "Update motd"
 
-cat <<EOF > /etc/update-motd.d/70-openvpn
+cat <<EOFMOTD > /etc/update-motd.d/70-openvpn
 #!/bin/sh
 echo ""
 echo "_______________________________________________________________________________________________"
@@ -232,7 +230,7 @@ echo "And add it to your openvpn client."
 echo ""
 echo "apt-get remove nginx-light to disable the HTTP server."
 echo "And remove this file with rm /etc/update-motd.d/70-openvpn"
-EOF
+EOFMOTD
 chmod 755 /etc/update-motd.d/70-openvpn
 
 
@@ -250,7 +248,7 @@ chmod 600 /etc/openvpn/key.pem
 [ -f /etc/openvpn/cert.pem ] || openssl x509 -req -in /etc/openvpn/csr.pem -out /etc/openvpn/cert.pem -signkey /etc/openvpn/key.pem -days 24855
 
 log "Create client configuration"
-cat <<EOF > /root/client.ovpn
+cat <<EOFCLIENT > /root/client.ovpn
 client
 nobind
 comp-lzo
@@ -302,7 +300,7 @@ server {
 	listen 8003;
     root /usr/share/nginx/openvpn;
 }
-EOF
+EOFCLIENT
 [ -f /etc/nginx/sites-enabled/openvpn ] || ln -s /etc/nginx/sites-available/openvpn /etc/nginx/sites-enabled/
 service nginx stop
 service nginx start
