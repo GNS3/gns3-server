@@ -20,6 +20,8 @@ import asyncio
 import json
 import os
 import psutil
+import tempfile
+import zipfile
 
 from ...web.route import Route
 from ...schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA, PROJECT_LIST_SCHEMA
@@ -301,7 +303,7 @@ class ProjectHandler:
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
 
     @classmethod
     @Route.post(
@@ -341,4 +343,70 @@ class ProjectHandler:
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}/export",
+        description="Export a project as a portable archive",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        raw=True,
+        status_codes={
+            200: "Return the file",
+            404: "The project doesn't exist"
+        })
+    def export_project(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
+        response.content_type = 'application/gns3z'
+        response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3z"'.format(project.name)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        response.content_length = None
+        response.start(request)
+
+        for data in project.export():
+            response.write(data)
+            yield from response.drain()
+
+        yield from response.write_eof()
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/import",
+        description="Import a project from a portable archive",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        raw=True,
+        status_codes={
+            200: "Return the file"
+        })
+    def import_project(request, response):
+
+        pm = ProjectManager.instance()
+        project_id = request.match_info["project_id"]
+        project = pm.create_project(project_id=project_id)
+
+        # We write the content to a temporary location
+        # and after extract all. It could be more optimal to stream
+        # this but it's not implemented in Python.
+        # 
+        # Spooled mean the file is temporary keep in ram until max_size
+        try:
+            with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
+                while True:
+                    packet = yield from request.content.read(512)
+                    if not packet:
+                        break
+                    temp.write(packet)
+
+                with zipfile.ZipFile(temp) as myzip:
+                    myzip.extractall(project.path)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
+
+        response.set_status(201)

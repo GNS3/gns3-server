@@ -20,6 +20,8 @@ import os
 import shutil
 import asyncio
 import hashlib
+import zipstream
+import zipfile
 
 from uuid import UUID, uuid4
 from .port_manager import PortManager
@@ -507,3 +509,34 @@ class Project:
                     break
                 m.update(buf)
         return m.hexdigest()
+
+    def export(self):
+        """
+        Export the project as zip. It's a ZipStream object.
+        The file will be read chunk by chunk when you iterate on
+        the zip.
+
+        It will ignore some files like snapshots and
+
+        :returns: ZipStream object
+        """
+
+        z = zipstream.ZipFile()
+        # topdown allo to modify the list of directory in order to ignore
+        # directory
+        for root, dirs, files in os.walk(self._path, topdown=True):
+            # Remove snapshots
+            if "project-files" in root:
+                dirs[:] = [d for d in dirs if d != "snapshots"]
+
+            # Ignore log files and OS noise
+            files = [f for f in files if not f.endswith('_log.txt') and not f.endswith('.log') and f != '.DS_Store']
+
+            for file in files:
+                path = os.path.join(root, file)
+                # We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
+                if file.endswith(".gns3"):
+                    z.write(path, "project.gns3")
+                else:
+                    z.write(path, os.path.relpath(path, self._path))
+        return z

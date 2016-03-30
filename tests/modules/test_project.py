@@ -20,6 +20,7 @@ import os
 import asyncio
 import pytest
 import aiohttp
+import zipfile
 from uuid import uuid4
 from unittest.mock import patch
 
@@ -258,3 +259,37 @@ def test_list_files(tmpdir, loop):
                 "md5sum": "098f6bcd4621d373cade4e832627b4f6"
             }
         ]
+
+
+def test_export(tmpdir):
+    project = Project()
+    path = project.path
+    os.makedirs(os.path.join(path, "vm-1", "dynamips"))
+
+    # The .gns3 should be renamed project.gns3 in order to simplify import
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        f.write("{}")
+
+    with open(os.path.join(path, "vm-1", "dynamips", "test"), 'w+') as f:
+        f.write("HELLO")
+    with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), 'w+') as f:
+        f.write("LOG")
+    os.makedirs(os.path.join(path, "project-files", "snapshots"))
+    with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
+        f.write("WORLD")
+
+    z = project.export()
+
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        with myzip.open("vm-1/dynamips/test") as myfile:
+            content = myfile.read()
+            assert content == b"HELLO"
+
+        assert 'test.gns3' not in myzip.namelist()
+        assert 'project.gns3' in myzip.namelist()
+        assert 'project-files/snapshots/test' not in myzip.namelist()
+        assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
