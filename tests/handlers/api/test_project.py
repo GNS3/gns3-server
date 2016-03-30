@@ -304,3 +304,20 @@ def test_export(server, tmpdir, loop, project):
         with myzip.open("a") as myfile:
             content = myfile.read()
             assert content == b"hello"
+
+
+def test_import(server, tmpdir, loop):
+
+    with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
+        myzip.writestr("demo", b"hello")
+
+    project_id = str(uuid.uuid4())
+
+    with open(str(tmpdir / "test.zip"), "rb") as f:
+        response = server.post("/projects/{project_id}/import".format(project_id=project_id), body=f.read(), raw=True)
+    assert response.status == 201
+
+    project = ProjectManager.instance().get_project(project_id=project_id)
+    with open(os.path.join(project.path, "demo")) as f:
+        content = f.read()
+    assert content == "hello"
