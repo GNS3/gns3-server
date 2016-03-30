@@ -181,6 +181,8 @@ class DockerVM(BaseVM):
         os.makedirs(path, exist_ok=True)
         os.makedirs(os.path.join(path, "if-up.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-down.d"), exist_ok=True)
+        os.makedirs(os.path.join(path, "if-pre-up.d"), exist_ok=True)
+        os.makedirs(os.path.join(path, "if-post-down.d"), exist_ok=True)
 
         if not os.path.exists(os.path.join(path, "interfaces")):
             with open(os.path.join(path, "interfaces"), "w+") as f:
