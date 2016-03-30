@@ -26,8 +26,6 @@ PATH=/gns3/bin:/tmp/gns3/bin
 if [ ! -d /tmp/gns3/bin ]; then
 	busybox mkdir -p /tmp/gns3/bin
 	/gns3/bin/busybox --install -s /tmp/gns3/bin
-	# remove commands already available in /gns3/bin
-	(cd /tmp/gns3/bin; rm -f `cd /gns3/bin; echo *`)
 fi
 
 # Wait 2 seconds to settle the network interfaces
@@ -47,12 +45,12 @@ __EOF__
 # configure loopback interface
 ip link set dev lo up
 
-# configure eth interfaces
+# activate eth interfaces
 sed -n 's/^ *\(eth[0-9]*\):.*/\1/p' < /proc/net/dev | while read dev; do
 	ip link set dev $dev up
 done
 
-
+# configure network interfaces
 ifup -a -f
 
 # continue normal docker startup

@@ -1,3 +1,0 @@
-#!/tmp/gns3/bin/sh
-
-exec busybox udhcpc6 -s /gns3/etc/udhcpc/default.script "$@"
