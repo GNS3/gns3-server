@@ -23,6 +23,7 @@ import uuid
 import os
 import asyncio
 import aiohttp
+import zipfile
 
 from unittest.mock import patch
 from tests.utils import asyncio_patch
@@ -283,3 +284,23 @@ def test_write_file(server, tmpdir):
 
     response = server.post("/projects/{project_id}/files/../hello".format(project_id=project.id), body="universe", raw=True)
     assert response.status == 403
+
+
+def test_export(server, tmpdir, loop, project):
+
+    os.makedirs(project.path, exist_ok=True)
+    with open(os.path.join(project.path, 'a'), 'w+') as f:
+        f.write('hello')
+
+    response = server.get("/projects/{project_id}/export".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.headers['CONTENT-TYPE'] == 'application/gns3z'
+    assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3z"'.format(project.name)
+
+    with open(str(tmpdir / 'project.zip'), 'wb+') as f:
+        f.write(response.body)
+
+    with zipfile.ZipFile(str(tmpdir / 'project.zip')) as myzip:
+        with myzip.open("a") as myfile:
+            content = myfile.read()
+            assert content == b"hello"

@@ -342,3 +342,32 @@ class ProjectHandler:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
             raise aiohttp.web.HTTPForbidden
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}/export",
+        description="Export a project as a portable archive",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        raw=True,
+        status_codes={
+            200: "Return the file",
+            404: "The path doesn't exist"
+        })
+    def export(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
+        response.content_type = 'application/gns3z'
+        response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3z"'.format(project.name)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        response.content_length = None
+        response.start(request)
+
+        for data in project.export():
+            response.write(data)
+            yield from response.drain()
+
+        yield from response.write_eof()
