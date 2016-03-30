@@ -534,5 +534,9 @@ class Project:
 
             for file in files:
                 path = os.path.join(root, file)
-                z.write(path, os.path.relpath(path, self._path))
+                # We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
+                if file.endswith(".gns3"):
+                    z.write(path, "project.gns3")
+                else:
+                    z.write(path, os.path.relpath(path, self._path))
         return z

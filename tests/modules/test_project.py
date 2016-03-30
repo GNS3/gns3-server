@@ -265,6 +265,11 @@ def test_export(tmpdir):
     project = Project()
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))
+
+    # The .gns3 should be renamed project.gns3 in order to simplify import
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        f.write("{}")
+
     with open(os.path.join(path, "vm-1", "dynamips", "test"), 'w+') as f:
         f.write("HELLO")
     with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), 'w+') as f:
@@ -284,5 +289,7 @@ def test_export(tmpdir):
             content = myfile.read()
             assert content == b"HELLO"
 
+        assert 'test.gns3' not in myzip.namelist()
+        assert 'project.gns3' in myzip.namelist()
         assert 'project-files/snapshots/test' not in myzip.namelist()
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
