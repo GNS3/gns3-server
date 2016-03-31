@@ -18,6 +18,7 @@
 import json
 import jsonschema
 import aiohttp.web
+import asyncio
 import logging
 import sys
 import jinja2
@@ -41,7 +42,8 @@ class Response(aiohttp.web.Response):
         headers['Server'] = "Python/{0[0]}.{0[1]} GNS3/{1}".format(sys.version_info, __version__)
         super().__init__(headers=headers, **kwargs)
 
-    def start(self, request):
+    @asyncio.coroutine
+    def prepare(self, request):
         if log.getEffectiveLevel() == logging.DEBUG:
             log.info("%s %s", request.method, request.path_qs)
             log.debug("%s", dict(request.headers))
@@ -51,7 +53,7 @@ class Response(aiohttp.web.Response):
             log.debug(dict(self.headers))
             if hasattr(self, 'body') and self.body is not None and self.headers["CONTENT-TYPE"] == "application/json":
                 log.debug(json.loads(self.body.decode('utf-8')))
-        return super().start(request)
+        return (yield from super().prepare(request))
 
     def html(self, answer):
         """
