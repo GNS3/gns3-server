@@ -451,6 +451,7 @@ def test_update(loop, vm):
     }
 
     original_console = vm.console
+    original_aux = vm.aux
 
     with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
@@ -481,6 +482,7 @@ def test_update(loop, vm):
         "Cmd": ["/bin/sh"]
     })
     assert vm.console == original_console
+    assert vm.aux == original_aux
 
 
 def test_update_running(loop, vm):

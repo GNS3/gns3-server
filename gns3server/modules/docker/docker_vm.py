@@ -269,11 +269,13 @@ class DockerVM(BaseVM):
         """
         # We need to save the console and state and restore it
         console = self.console
+        aux = self.aux
         state = yield from self._get_container_state()
 
         yield from self.close()
         yield from self.create()
         self.console = console
+        self.aux = aux
         if state == "running":
             yield from self.start()
 
