@@ -40,6 +40,7 @@ from ..base_vm import BaseVM
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
+from .qcow2 import Qcow2, Qcow2Error
 
 import logging
 log = logging.getLogger(__name__)
@@ -1261,6 +1262,14 @@ class QemuVM(BaseVM):
                         log.info("{} returned with {}".format(qemu_img_path, retcode))
                     except (OSError, subprocess.SubprocessError) as e:
                         raise QemuError("Could not create {} disk image {}".format(disk_name, e))
+                else:
+                    # The disk exists we check if the clone work
+                    try:
+                        qcow2 = Qcow2(disk)
+                        yield from qcow2.rebase(qemu_img_path, disk_image)
+                    except (Qcow2Error, OSError) as e:
+                        raise QemuError("Could not use qcow2 disk image {} for {} {}".format(disk_image, disk_name, e))
+
             else:
                 disk = disk_image
             options.extend(["-drive", 'file={},if={},index={},media=disk'.format(disk, interface, disk_index)])

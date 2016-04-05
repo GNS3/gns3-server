@@ -64,7 +64,7 @@ class Qcow2:
 
             self.magic, self.version, self.backing_file_offset, self.backing_file_size = struct.unpack_from(struct_format, content)
 
-        if self.magic != 1363560955: # The first 4 bytes contain the characters 'Q', 'F', 'I' followed by 0xfb.
+        if self.magic != 1363560955:  # The first 4 bytes contain the characters 'Q', 'F', 'I' followed by 0xfb.
             raise Qcow2Error("Invalid magic for {}".format(self.path))
 
     @property

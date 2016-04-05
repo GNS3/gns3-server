@@ -20,7 +20,7 @@ import pytest
 import shutil
 import asyncio
 
-from gns3server.modules.qemu.qcow2 import Qcow2,Qcow2Error
+from gns3server.modules.qemu.qcow2 import Qcow2, Qcow2Error
 
 
 def qemu_img():
@@ -65,4 +65,3 @@ def test_rebase(tmpdir, loop):
     assert qcow2.backing_file == "empty8G.qcow2"
     loop.run_until_complete(asyncio.async(qcow2.rebase(qemu_img(), str(tmpdir / "empty16G.qcow2"))))
     assert qcow2.backing_file == str(tmpdir / "empty16G.qcow2")
-
