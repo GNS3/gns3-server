@@ -529,7 +529,7 @@ class Project:
         # directory
         for root, dirs, files in os.walk(self._path, topdown=True):
             # Remove snapshots
-            if "project-files" in root:
+            if os.path.split(root)[-1:][0] == "project-files":
                 dirs[:] = [d for d in dirs if d != "snapshots"]
 
             # Ignore log files and OS noise
@@ -541,26 +541,79 @@ class Project:
                 if file.endswith(".gns3"):
                     z.write(path, "project.gns3")
                 else:
-                    z.write(path, os.path.relpath(path, self._path))
+                    # We merge the data from all server in the same project-files directory
+                    vm_directory = os.path.join(self._path, "servers", "vm")
+                    if os.path.commonprefix([root, vm_directory]) == vm_directory:
+                        z.write(path, os.path.relpath(path, vm_directory))
+                    else:
+                        z.write(path, os.path.relpath(path, self._path))
         return z
 
-    def import_zip(self, stream):
+    def import_zip(self, stream, gns3vm=True):
         """
         Import a project contain in a zip file
 
-        :params: A io.BytesIO of the zifile
+        :param stream: A io.BytesIO of the zipfile
+        :param gns3vm: True move docker, iou and qemu to the GNS3 VM
         """
 
         with zipfile.ZipFile(stream) as myzip:
             myzip.extractall(self.path)
+
         project_file = os.path.join(self.path, "project.gns3")
         if os.path.exists(project_file):
             with open(project_file) as f:
                 topology = json.load(f)
                 topology["project_id"] = self.id
                 topology["name"] = self.name
+                topology.setdefault("topology", {})
+                topology["topology"].setdefault("nodes", [])
+                topology["topology"]["servers"] = [
+                    {
+                        "id": 1,
+                        "local": True,
+                        "vm": False
+                    }
+                ]
 
+            # By default all node run on local server
+            for node in topology["topology"]["nodes"]:
+                node["server_id"] = 1
+
+            if gns3vm:
+                # Move to servers/vm directory the data that should be import on remote server
+                modules_to_vm = {
+                    "qemu": "QemuVM",
+                    "iou": "IOUDevice",
+                    "docker": "DockerVM"
+                }
+
+                vm_directory = os.path.join(self.path, "servers", "vm", "project-files")
+                vm_server_use = False
+
+                for module, device_type in modules_to_vm.items():
+                    module_directory = os.path.join(self.path, "project-files", module)
+                    if os.path.exists(module_directory):
+                        os.makedirs(vm_directory, exist_ok=True)
+                        shutil.move(module_directory, os.path.join(vm_directory, module))
+
+                        # Patch node to use the GNS3 VM
+                        for node in topology["topology"]["nodes"]:
+                            if node["type"] == device_type:
+                                node["server_id"] = 2
+                        vm_server_use = True
+
+                # We use the GNS3 VM. We need to add the server to the list
+                if vm_server_use:
+                    topology["topology"]["servers"].append({
+                        "id": 2,
+                        "vm": True,
+                        "local": False
+                    })
+
+            # Write the modified topology
             with open(project_file, "w") as f:
                 json.dump(topology, f, indent=4)
 
+            # Rename to a human distinctive name
             shutil.move(project_file, os.path.join(self.path, self.name + ".gns3"))
