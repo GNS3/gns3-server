@@ -17,6 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import uuid
+import json
 import asyncio
 import pytest
 import aiohttp
@@ -293,3 +295,30 @@ def test_export(tmpdir):
         assert 'project.gns3' in myzip.namelist()
         assert 'project-files/snapshots/test' not in myzip.namelist()
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
+
+
+def test_import(tmpdir):
+
+    project_id = str(uuid.uuid4())
+    project = Project(name="test", project_id=project_id)
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        f.write('{"project_id": "ddd", "name": "test"}')
+    with open(str(tmpdir / "b.png"), 'w+') as f:
+        f.write("B")
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+        myzip.write(str(tmpdir / "b.png"), "b.png")
+
+    with open(zip_path, "rb") as f:
+        project.import_zip(f)
+
+    assert os.path.exists(os.path.join(project.path, "b.png"))
+    assert os.path.exists(os.path.join(project.path, "test.gns3"))
+
+    with open(os.path.join(project.path, "test.gns3")) as f:
+        content = json.load(f)
+    assert content["project_id"] == project_id
+    assert content["name"] == project.name

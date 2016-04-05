@@ -21,7 +21,6 @@ import json
 import os
 import psutil
 import tempfile
-import zipfile
 
 from ...web.route import Route
 from ...schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA, PROJECT_LIST_SCHEMA
@@ -58,6 +57,7 @@ class ProjectHandler:
         description="Create a new project on the server",
         status_codes={
             201: "Project created",
+            403: "You are not allowed to modify this property",
             409: "Project already created"
         },
         output=PROJECT_OBJECT_SCHEMA,
@@ -382,14 +382,16 @@ class ProjectHandler:
             "project_id": "The UUID of the project",
         },
         raw=True,
+        output=PROJECT_OBJECT_SCHEMA,
         status_codes={
-            200: "Return the file"
+            200: "Project imported",
+            403: "You are not allowed to modify this property"
         })
     def import_project(request, response):
 
         pm = ProjectManager.instance()
         project_id = request.match_info["project_id"]
-        project = pm.create_project(project_id=project_id)
+        project = pm.get_project(project_id)
 
         # We write the content to a temporary location
         # and after extract all. It could be more optimal to stream
@@ -403,10 +405,9 @@ class ProjectHandler:
                     if not packet:
                         break
                     temp.write(packet)
-
-                with zipfile.ZipFile(temp) as myzip:
-                    myzip.extractall(project.path)
+                project.import_zip(temp)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
 
+        response.json(project)
         response.set_status(201)

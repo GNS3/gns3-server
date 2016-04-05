@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import os
+import aiohttp
 import shutil
 import asyncio
 import hashlib
 import zipstream
 import zipfile
+import json
 
 from uuid import UUID, uuid4
 from .port_manager import PortManager
@@ -171,6 +172,8 @@ class Project:
     @name.setter
     def name(self, name):
 
+        if "/" in name or "\\" in name:
+            raise aiohttp.web.HTTPForbidden(text="Name can not contain path separator")
         self._name = name
 
     @property
@@ -540,3 +543,24 @@ class Project:
                 else:
                     z.write(path, os.path.relpath(path, self._path))
         return z
+
+    def import_zip(self, stream):
+        """
+        Import a project contain in a zip file
+
+        :params: A io.BytesIO of the zifile
+        """
+
+        with zipfile.ZipFile(stream) as myzip:
+            myzip.extractall(self.path)
+        project_file = os.path.join(self.path, "project.gns3")
+        if os.path.exists(project_file):
+            with open(project_file) as f:
+                topology = json.load(f)
+                topology["project_id"] = self.id
+                topology["name"] = self.name
+
+            with open(project_file, "w") as f:
+                json.dump(topology, f, indent=4)
+
+            shutil.move(project_file, os.path.join(self.path, self.name + ".gns3"))
