@@ -391,7 +391,7 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project_id = request.match_info["project_id"]
-        project = pm.get_project(project_id)
+        project = pm.create_project(project_id=project_id)
 
         # We write the content to a temporary location
         # and after extract all. It could be more optimal to stream
