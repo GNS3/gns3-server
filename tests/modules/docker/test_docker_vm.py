@@ -116,7 +116,7 @@ def test_create_vnc(loop, project, manager):
 
     with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
-            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", console_type="vnc")
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", console_type="vnc", console=5900)
             vm._start_vnc = MagicMock()
             vm._display = 42
             loop.run_until_complete(asyncio.async(vm.create()))
@@ -145,6 +145,7 @@ def test_create_vnc(loop, project, manager):
             })
         assert vm._start_vnc.called
         assert vm._cid == "e90e34656806"
+        assert vm._console_type == "vnc"
 
 
 def test_create_start_cmd(loop, project, manager):
@@ -481,6 +482,29 @@ def test_update(loop, vm):
         "Entrypoint": ["/gns3/init.sh"],
         "Cmd": ["/bin/sh"]
     })
+    assert vm.console == original_console
+    assert vm.aux == original_aux
+
+
+def test_update_vnc(loop, vm):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    vm.console_type = "vnc"
+    vm.console = 5900
+    vm._display = "display"
+    original_console = vm.console
+    original_aux = vm.aux
+
+    with asyncio_patch("gns3server.modules.docker.DockerVM._start_vnc"):
+        with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+            with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
+                with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock_query:
+                    loop.run_until_complete(asyncio.async(vm.update()))
+
     assert vm.console == original_console
     assert vm.aux == original_aux
 

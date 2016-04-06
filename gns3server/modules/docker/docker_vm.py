@@ -68,6 +68,7 @@ class DockerVM(BaseVM):
         self._ubridge_hypervisor = None
         self._temporary_directory = None
         self._telnet_servers = []
+        self._x11vnc_process = None
 
         if adapters is None:
             self.adapters = 1
@@ -471,10 +472,11 @@ class DockerVM(BaseVM):
 
         try:
             if self.console_type == "vnc":
-                self._x11vnc_process.terminate()
-                self._xvfb_process.terminate()
-                yield from self._x11vnc_process.wait()
-                yield from self._xvfb_process.wait()
+                if self._x11vnc_process:
+                    self._x11vnc_process.terminate()
+                    self._xvfb_process.terminate()
+                    yield from self._x11vnc_process.wait()
+                    yield from self._xvfb_process.wait()
 
             state = yield from self._get_container_state()
             if state == "paused" or state == "running":
