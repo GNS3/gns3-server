@@ -228,7 +228,7 @@ class PortManager:
             log.warning(msg)
             project.emit("log.warning", {"message": msg})
             return port
-        if port < self._console_port_range[0] or port > self._console_port_range[1]:
+        if port < port_range_start or port > port_range_end:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} is outside the range {}-{} on host {}. Port has been replaced by {}".format(old_port, port_range_start, port_range_end, self._console_host, port)
