@@ -279,6 +279,7 @@ class DockerHandler:
         vm.console = request.json.get("console", vm.console)
         vm.start_command = request.json.get("start_command", vm.start_command)
         vm.environment = request.json.get("environment", vm.environment)
+        vm.adapters = request.json.get("adapters", vm.adapters)
         yield from vm.update()
         response.json(vm)
 
