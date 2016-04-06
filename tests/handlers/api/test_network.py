@@ -22,7 +22,7 @@ import pytest
 def test_udp_allocation(server, project):
     response = server.post('/projects/{}/ports/udp'.format(project.id), {}, example=True)
     assert response.status == 201
-    assert response.json == {'udp_port': 10000}
+    assert 'udp_port' in response.json
 
 
 # Netfifaces is not available on Travis
