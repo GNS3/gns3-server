@@ -297,13 +297,70 @@ def test_export(tmpdir):
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
 
 
+def test_export(tmpdir):
+    project = Project()
+    path = project.path
+    os.makedirs(os.path.join(path, "vm-1", "dynamips"))
+
+    # The .gns3 should be renamed project.gns3 in order to simplify import
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        f.write("{}")
+
+    with open(os.path.join(path, "vm-1", "dynamips", "test"), 'w+') as f:
+        f.write("HELLO")
+    with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), 'w+') as f:
+        f.write("LOG")
+    os.makedirs(os.path.join(path, "project-files", "snapshots"))
+    with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
+        f.write("WORLD")
+
+    os.makedirs(os.path.join(path, "servers", "vm", "project-files", "docker"))
+    with open(os.path.join(path, "servers", "vm", "project-files", "docker", "busybox"), 'w+') as f:
+        f.write("DOCKER")
+
+    z = project.export()
+
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        with myzip.open("vm-1/dynamips/test") as myfile:
+            content = myfile.read()
+            assert content == b"HELLO"
+
+        assert 'test.gns3' not in myzip.namelist()
+        assert 'project.gns3' in myzip.namelist()
+        assert 'project-files/snapshots/test' not in myzip.namelist()
+        assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
+        assert 'servers/vm/project-files/docker/busybox' not in myzip.namelist()
+        assert 'project-files/docker/busybox' in myzip.namelist()
+
+
 def test_import(tmpdir):
 
     project_id = str(uuid.uuid4())
     project = Project(name="test", project_id=project_id)
 
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "testtest",
+        "topology": {
+            "nodes": [
+                {
+                    "server_id": 3,
+                    "type": "VPCSDevice"
+                },
+                {
+                    "server_id": 3,
+                    "type": "QemuVM"
+                }
+            ]
+        }
+    }
+
     with open(str(tmpdir / "project.gns3"), 'w+') as f:
-        f.write('{"project_id": "ddd", "name": "test"}')
+        json.dump(topology, f)
     with open(str(tmpdir / "b.png"), 'w+') as f:
         f.write("B")
 
@@ -311,14 +368,33 @@ def test_import(tmpdir):
     with zipfile.ZipFile(zip_path, 'w') as myzip:
         myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
         myzip.write(str(tmpdir / "b.png"), "b.png")
+        myzip.write(str(tmpdir / "b.png"), "project-files/dynamips/test")
+        myzip.write(str(tmpdir / "b.png"), "project-files/qemu/test")
 
     with open(zip_path, "rb") as f:
         project.import_zip(f)
 
     assert os.path.exists(os.path.join(project.path, "b.png"))
     assert os.path.exists(os.path.join(project.path, "test.gns3"))
+    assert os.path.exists(os.path.join(project.path, "project-files/dynamips/test"))
+    assert os.path.exists(os.path.join(project.path, "servers/vm/project-files/qemu/test"))
 
     with open(os.path.join(project.path, "test.gns3")) as f:
         content = json.load(f)
+
+    assert content["name"] == "test"
     assert content["project_id"] == project_id
-    assert content["name"] == project.name
+    assert content["topology"]["servers"] == [
+        {
+            "id": 1,
+            "local": True,
+            "vm": False
+        },
+        {
+            "id": 2,
+            "local": False,
+            "vm": True
+        },
+    ]
+    assert content["topology"]["nodes"][0]["server_id"] == 1
+    assert content["topology"]["nodes"][1]["server_id"] == 2
