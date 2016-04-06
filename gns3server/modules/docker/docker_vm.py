@@ -343,7 +343,8 @@ class DockerVM(BaseVM):
         self._display = self._get_free_display_port()
         if shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
             raise DockerError("Please install Xvfb and x11vnc before using the VNC support")
-        self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", "1024x768x16")
+        screen_resolution = "1024x768"
+        self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", screen_resolution + "x16")
         self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
 
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
