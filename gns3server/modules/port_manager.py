@@ -225,15 +225,15 @@ class PortManager:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
-            log.warning(msg)
-            project.emit("log.warning", {"message": msg})
+            log.debug(msg)
+            #project.emit("log.warning", {"message": msg})
             return port
         if port < port_range_start or port > port_range_end:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} is outside the range {}-{} on host {}. Port has been replaced by {}".format(old_port, port_range_start, port_range_end, self._console_host, port)
-            log.warning(msg)
-            project.emit("log.warning", {"message": msg})
+            log.debug(msg)
+            #project.emit("log.warning", {"message": msg})
             return port
         try:
             PortManager._check_port(self._console_host, port, "TCP")
@@ -241,8 +241,8 @@ class PortManager:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
-            log.warning(msg)
-            project.emit("log.warning", {"message": msg})
+            log.debug(msg)
+            #project.emit("log.warning", {"message": msg})
             return port
 
         self._used_tcp_ports.add(port)
