@@ -53,11 +53,13 @@ class DockerVM(BaseVM):
     :param console: TCP console port
     :param console_type: Console type
     :param aux: TCP aux console port
+    :param console_resolution: Resolution of the VNC display
     """
 
     def __init__(self, name, vm_id, project, manager, image,
                  console=None, aux=None, start_command=None,
-                 adapters=None, environment=None, console_type="telnet"):
+                 adapters=None, environment=None, console_type="telnet",
+                 console_resolution="1024x768"):
         super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
         self._image = image
@@ -69,6 +71,7 @@ class DockerVM(BaseVM):
         self._temporary_directory = None
         self._telnet_servers = []
         self._x11vnc_process = None
+        self._console_resolution = console_resolution
 
         if adapters is None:
             self.adapters = 1
@@ -91,6 +94,7 @@ class DockerVM(BaseVM):
             "adapters": self.adapters,
             "console": self.console,
             "console_type": self.console_type,
+            "console_resolution": self.console_resolution,
             "aux": self.aux,
             "start_command": self.start_command,
             "environment": self.environment,
@@ -120,6 +124,14 @@ class DockerVM(BaseVM):
             self._start_command = None
         else:
             self._start_command = command
+
+    @property
+    def console_resolution(self):
+        return self._console_resolution
+
+    @console_resolution.setter
+    def console_resolution(self, resolution):
+        self._console_resolution = resolution
 
     @property
     def environment(self):
@@ -343,8 +355,7 @@ class DockerVM(BaseVM):
         self._display = self._get_free_display_port()
         if shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
             raise DockerError("Please install Xvfb and x11vnc before using the VNC support")
-        screen_resolution = "1024x768"
-        self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", screen_resolution + "x16")
+        self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", self._console_resolution + "x16")
         self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
 
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))

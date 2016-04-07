@@ -43,6 +43,11 @@ DOCKER_CREATE_SCHEMA = {
             "description": "console type",
             "enum": ["telnet", "vnc"]
         },
+        "console_resolution": {
+            "description": "console resolution for VNC",
+            "type": ["string", "null"],
+            "pattern": "^[0-9]+x[0-9]+$"
+        },
         "aux": {
             "description": "auxilary TCP port",
             "minimum": 1,
@@ -91,6 +96,11 @@ DOCKER_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
+        },
+        "console_resolution": {
+            "description": "console resolution for VNC",
+            "type": ["string", "null"],
+            "pattern": "^[0-9]+x[0-9]+$"
         },
         "console_type": {
             "description": "console type",
@@ -143,13 +153,18 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "auxilary TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": ["integer", "null"]
+            "type": "integer"
         },
         "console": {
             "description": "console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": ["integer", "null"]
+            "type": "integer"
+        },
+        "console_resolution": {
+            "description": "console resolution for VNC",
+            "type": "string",
+            "pattern": "^[0-9]+x[0-9]+$"
         },
         "console_type": {
             "description": "console type",
@@ -196,7 +211,7 @@ DOCKER_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "start_command", "environment", "vm_directory"]
+    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "console_resolution", "start_command", "environment", "vm_directory"]
 }
 
 

@@ -30,7 +30,7 @@ from gns3server.modules.docker import Docker
 @pytest.fixture
 def base_params():
     """Return standard parameters"""
-    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0", "console_type": "telnet"}
+    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0", "console_type": "telnet", "console_resolution": "1280x1024"}
 
 
 @pytest.yield_fixture(autouse=True)
@@ -65,6 +65,7 @@ def test_docker_create(server, project, base_params):
     assert response.json["image"] == "nginx"
     assert response.json["adapters"] == 2
     assert response.json["environment"] == "YES=1\nNO=0"
+    assert response.json["console_resolution"] == "1280x1024"
 
 
 def test_docker_start(server, vm):

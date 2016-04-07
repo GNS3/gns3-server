@@ -57,6 +57,7 @@ def test_json(vm, project):
         'adapters': 1,
         'console': vm.console,
         'console_type': 'telnet',
+        'console_resolution': '1024x768',
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
@@ -816,12 +817,13 @@ def test_mount_binds(vm, tmpdir):
 
 
 def test_start_vnc(vm, loop):
+    vm.console_resolution = "1280x1024"
     with patch("shutil.which", return_value="/bin/x"):
         with asyncio_patch("gns3server.modules.docker.docker_vm.wait_for_file_creation") as mock_wait:
             with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
                 loop.run_until_complete(asyncio.async(vm._start_vnc()))
     assert vm._display is not None
-    mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1024x768x16")
+    mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1280x1024x16")
     mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-noncache", "-listen", "127.0.0.1")
     mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
 
