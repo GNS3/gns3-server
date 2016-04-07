@@ -575,9 +575,15 @@ class DockerVM(BaseVM):
 
         adapter = self._ethernet_adapters[adapter_number]
 
-        yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
-            name=adapter_number))
-        yield from self._ubridge_hypervisor.send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
+        try:
+            yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
+                name=adapter_number))
+        except UbridgeError as e:
+            log.debug(str(e))
+        try:
+            yield from self._ubridge_hypervisor.send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
+        except UbridgeError as e:
+            log.debug(str(e))
 
     @asyncio.coroutine
     def _get_namespace(self):
