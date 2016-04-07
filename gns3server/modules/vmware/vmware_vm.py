@@ -144,6 +144,8 @@ class VMwareVM(BaseVM):
 
         yield from self.manager.check_vmrun_version()
         if self._linked_clone and not os.path.exists(os.path.join(self.working_dir, os.path.basename(self._vmx_path))):
+            if self.manager.host_type == "player":
+                raise VMwareError("Linked clones are not supported by VMware Player")
             # create the base snapshot for linked clones
             base_snapshot_name = "GNS3 Linked Base for clones"
             vmsd_path = os.path.splitext(self._vmx_path)[0] + ".vmsd"

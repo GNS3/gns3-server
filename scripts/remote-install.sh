@@ -25,6 +25,7 @@ function help {
   echo "Usage:" >&2
   echo "--with-openvpn: Install Open VPN" >&2
   echo "--with-iou: Install IOU" >&2
+  echo "--with-i386-repository: Add i386 repositories require by IOU if they are not available on the system. Warning this will replace your source.list in order to use official ubuntu mirror" >&2
   echo "--help: This help" >&2
 }
 
@@ -44,8 +45,9 @@ fi
 # Read the options
 USE_VPN=0
 USE_IOU=0
+I386_REPO=0
 
-TEMP=`getopt -o h --long with-openvpn,with-iou,help -n 'gns3-remote-install.sh' -- "$@"`
+TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
 then
   help
@@ -62,6 +64,10 @@ while true ; do
           ;;
         --with-iou)
           USE_IOU=1
+          shift
+          ;;
+        --with-i386-repository)
+          I386_REPO=1
           shift
           ;;
         -h|--help)
@@ -85,6 +91,21 @@ deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu trusty main
 deb http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
 deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
 EOFLIST
+
+if [ $I386_REPO == 1 ]
+then
+    cat <<EOFLIST2  >> /etc/apt/sources.list
+###### Ubuntu Main Repos
+deb http://archive.ubuntu.com/ubuntu/ trusty main universe multiverse 
+deb-src http://archive.ubuntu.com/ubuntu/ trusty main universe multiverse 
+
+###### Ubuntu Update Repos
+deb http://archive.ubuntu.com/ubuntu/ trusty-security main universe multiverse 
+deb http://archive.ubuntu.com/ubuntu/ trusty-updates main universe multiverse 
+deb-src http://archive.ubuntu.com/ubuntu/ trusty-security main universe multiverse 
+deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates main universe multiverse 
+EOFLIST2
+fi
 
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A2E3EF7B
 
