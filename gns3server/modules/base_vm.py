@@ -403,7 +403,7 @@ class BaseVM:
         if path == "ubridge":
             path = shutil.which("ubridge")
 
-        if path is None:
+        if path is None or len(path) == 0:
             raise VMError("uBridge is not installed")
         return path
 
