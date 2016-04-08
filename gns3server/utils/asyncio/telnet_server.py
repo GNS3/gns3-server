@@ -148,11 +148,11 @@ class AsyncioTelnetServer:
                     return_when=asyncio.FIRST_COMPLETED)
             for coro in done:
                 data = coro.result()
-                # Console is closed
-                if len(data) == 0:
-                    raise ConnectionResetError()
 
                 if coro == network_read:
+                    if network_reader.at_eof():
+                        raise ConnectionResetError()
+
                     network_read = asyncio.async(network_reader.read(READ_SIZE))
 
                     if IAC in data:
@@ -167,6 +167,9 @@ class AsyncioTelnetServer:
                         self._writer.write(data)
                         yield from self._writer.drain()
                 elif coro == reader_read:
+                    if self._reader.at_eof():
+                        raise ConnectionResetError()
+
                     reader_read = yield from self._get_reader(network_reader)
 
                     # Replicate the output on all clients

@@ -15,11 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import os
+import aiohttp
 import shutil
 import asyncio
 import hashlib
+import zipstream
+import zipfile
+import json
 
 from uuid import UUID, uuid4
 from .port_manager import PortManager
@@ -143,6 +146,8 @@ class Project:
     @name.setter
     def name(self, name):
 
+        if "/" in name or "\\" in name:
+            raise aiohttp.web.HTTPForbidden(text="Name can not contain path separator")
         self._name = name
 
     @property
@@ -460,3 +465,108 @@ class Project:
                     break
                 m.update(buf)
         return m.hexdigest()
+
+    def export(self):
+        """
+        Export the project as zip. It's a ZipStream object.
+        The file will be read chunk by chunk when you iterate on
+        the zip.
+
+        It will ignore some files like snapshots and
+
+        :returns: ZipStream object
+        """
+
+        z = zipstream.ZipFile()
+        # topdown allo to modify the list of directory in order to ignore
+        # directory
+        for root, dirs, files in os.walk(self._path, topdown=True):
+            # Remove snapshots
+            if os.path.split(root)[-1:][0] == "project-files":
+                dirs[:] = [d for d in dirs if d != "snapshots"]
+
+            # Ignore log files and OS noise
+            files = [f for f in files if not f.endswith('_log.txt') and not f.endswith('.log') and f != '.DS_Store']
+
+            for file in files:
+                path = os.path.join(root, file)
+                # We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
+                if file.endswith(".gns3"):
+                    z.write(path, "project.gns3")
+                else:
+                    # We merge the data from all server in the same project-files directory
+                    vm_directory = os.path.join(self._path, "servers", "vm")
+                    if os.path.commonprefix([root, vm_directory]) == vm_directory:
+                        z.write(path, os.path.relpath(path, vm_directory))
+                    else:
+                        z.write(path, os.path.relpath(path, self._path))
+        return z
+
+    def import_zip(self, stream, gns3vm=True):
+        """
+        Import a project contain in a zip file
+
+        :param stream: A io.BytesIO of the zipfile
+        :param gns3vm: True move docker, iou and qemu to the GNS3 VM
+        """
+
+        with zipfile.ZipFile(stream) as myzip:
+            myzip.extractall(self.path)
+
+        project_file = os.path.join(self.path, "project.gns3")
+        if os.path.exists(project_file):
+            with open(project_file) as f:
+                topology = json.load(f)
+                topology["project_id"] = self.id
+                topology["name"] = self.name
+                topology.setdefault("topology", {})
+                topology["topology"].setdefault("nodes", [])
+                topology["topology"]["servers"] = [
+                    {
+                        "id": 1,
+                        "local": True,
+                        "vm": False
+                    }
+                ]
+
+            # By default all node run on local server
+            for node in topology["topology"]["nodes"]:
+                node["server_id"] = 1
+
+            if gns3vm:
+                # Move to servers/vm directory the data that should be import on remote server
+                modules_to_vm = {
+                    "qemu": "QemuVM",
+                    "iou": "IOUDevice",
+                    "docker": "DockerVM"
+                }
+
+                vm_directory = os.path.join(self.path, "servers", "vm", "project-files")
+                vm_server_use = False
+
+                for module, device_type in modules_to_vm.items():
+                    module_directory = os.path.join(self.path, "project-files", module)
+                    if os.path.exists(module_directory):
+                        os.makedirs(vm_directory, exist_ok=True)
+                        shutil.move(module_directory, os.path.join(vm_directory, module))
+
+                        # Patch node to use the GNS3 VM
+                        for node in topology["topology"]["nodes"]:
+                            if node["type"] == device_type:
+                                node["server_id"] = 2
+                        vm_server_use = True
+
+                # We use the GNS3 VM. We need to add the server to the list
+                if vm_server_use:
+                    topology["topology"]["servers"].append({
+                        "id": 2,
+                        "vm": True,
+                        "local": False
+                    })
+
+            # Write the modified topology
+            with open(project_file, "w") as f:
+                json.dump(topology, f, indent=4)
+
+            # Rename to a human distinctive name
+            shutil.move(project_file, os.path.join(self.path, self.name + ".gns3"))

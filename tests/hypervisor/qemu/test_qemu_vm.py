@@ -323,10 +323,34 @@ def test_disk_options(vm, tmpdir, loop, fake_qemu_img_binary):
     open(vm._hda_disk_image, "w+").close()
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
-        loop.run_until_complete(asyncio.async(vm._disk_options()))
+        options = loop.run_until_complete(asyncio.async(vm._disk_options()))
         assert process.called
         args, kwargs = process.call_args
         assert args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hda_disk_image), "-f", "qcow2", os.path.join(vm.working_dir, "hda_disk.qcow2"))
+
+    assert options == ['-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk']
+
+
+def test_disk_options_multiple_disk(vm, tmpdir, loop, fake_qemu_img_binary):
+
+    vm._hda_disk_image = str(tmpdir / "test0.qcow2")
+    vm._hdb_disk_image = str(tmpdir / "test1.qcow2")
+    vm._hdc_disk_image = str(tmpdir / "test2.qcow2")
+    vm._hdd_disk_image = str(tmpdir / "test3.qcow2")
+    open(vm._hda_disk_image, "w+").close()
+    open(vm._hdb_disk_image, "w+").close()
+    open(vm._hdc_disk_image, "w+").close()
+    open(vm._hdd_disk_image, "w+").close()
+
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        options = loop.run_until_complete(asyncio.async(vm._disk_options()))
+
+    assert options == [
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk',
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ',if=ide,index=1,media=disk',
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hdc_disk.qcow2") + ',if=ide,index=2,media=disk',
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hdd_disk.qcow2") + ',if=ide,index=3,media=disk'
+    ]
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")

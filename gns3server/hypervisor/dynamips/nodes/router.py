@@ -895,7 +895,7 @@ class Router(BaseVM):
         """
 
         self.console = console
-        yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=console))
+        yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self.console))
 
     @asyncio.coroutine
     def set_aux(self, aux):

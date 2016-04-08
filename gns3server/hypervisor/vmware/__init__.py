@@ -594,8 +594,10 @@ class VMware(BaseManager):
         """
 
         if sys.platform.startswith("win"):
-            from win32com.shell import shell, shellcon
-            documents_folder = shell.SHGetSpecialFolderPath(None, shellcon.CSIDL_PERSONAL)
+            import ctypes
+            path = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+            ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, path)
+            documents_folder = path.value
             windows_type = sys.getwindowsversion().product_type
             if windows_type == 2 or windows_type == 3:
                 return '{}\My Virtual Machines'.format(documents_folder)

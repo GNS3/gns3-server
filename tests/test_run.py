@@ -77,7 +77,7 @@ def test_parse_arguments(capsys, tmpdir):
     assert run.parse_arguments([]).host == "192.168.1.2"
 
     assert run.parse_arguments(["--port", "8002"]).port == 8002
-    assert run.parse_arguments([]).port == 8000
+    assert run.parse_arguments([]).port == 3080
     server_config["port"] = "8003"
     assert run.parse_arguments([]).port == 8003
 

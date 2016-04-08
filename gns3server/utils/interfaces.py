@@ -163,6 +163,19 @@ def interfaces():
                             "mac_address": mac_address})
     else:
         try:
+            import pywintypes
+            import win32service
+            import win32serviceutil
+
+            try:
+                if win32serviceutil.QueryServiceStatus("npf", None)[1] != win32service.SERVICE_RUNNING:
+                    raise aiohttp.web.HTTPInternalServerError(text="The NPF service is not running")
+            except pywintypes.error as e:
+                if e[0] == 1060:
+                    raise aiohttp.web.HTTPInternalServerError(text="The NPF service is not installed")
+                else:
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not check if the NPF service is running: {}".format(e[2]))
+
             results = get_windows_interfaces()
         except ImportError:
             message = "pywin32 module is not installed, please install it on the server to get the available interface names"

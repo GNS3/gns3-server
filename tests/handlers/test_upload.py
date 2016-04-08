@@ -219,7 +219,6 @@ def test_backup_projects(http_root, tmpdir, loop):
     assert response.headers['CONTENT-TYPE'] == 'application/x-gtar'
 
     with open(str(tmpdir / 'projects.tar'), 'wb+') as f:
-        print(len(response.body))
         f.write(response.body)
 
     tar = tarfile.open(str(tmpdir / 'projects.tar'), 'r')

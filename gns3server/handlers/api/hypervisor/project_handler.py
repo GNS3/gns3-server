@@ -20,6 +20,7 @@ import asyncio
 import json
 import os
 import psutil
+import tempfile
 
 from ....web.route import Route
 from ....schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA, PROJECT_LIST_SCHEMA
@@ -56,6 +57,7 @@ class ProjectHandler:
         description="Create a new project on the server",
         status_codes={
             201: "Project created",
+            403: "You are not allowed to modify this property",
             409: "Project already created"
         },
         output=PROJECT_OBJECT_SCHEMA,
@@ -301,4 +303,111 @@ class ProjectHandler:
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
+            raise aiohttp.web.HTTPForbidden()
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/files/{path:.+}",
+        description="Get a file of a project",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        raw=True,
+        status_codes={
+            200: "Return the file",
+            403: "Permission denied",
+            404: "The path doesn't exist"
+        })
+    def write_file(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
+        path = request.match_info["path"]
+        path = os.path.normpath(path)
+
+        # Raise error if user try to escape
+        if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
+        path = os.path.join(project.path, path)
+
+        response.set_status(200)
+
+        try:
+            with open(path, 'wb+') as f:
+                while True:
+                    packet = yield from request.content.read(512)
+                    if not packet:
+                        break
+                    f.write(packet)
+
+        except FileNotFoundError:
+            raise aiohttp.web.HTTPNotFound()
+        except PermissionError:
+            raise aiohttp.web.HTTPForbidden()
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}/export",
+        description="Export a project as a portable archive",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        raw=True,
+        status_codes={
+            200: "Return the file",
+            404: "The project doesn't exist"
+        })
+    def export_project(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
+        response.content_type = 'application/gns3z'
+        response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3z"'.format(project.name)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        response.content_length = None
+        response.start(request)
+
+        for data in project.export():
+            response.write(data)
+            yield from response.drain()
+
+        yield from response.write_eof()
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/import",
+        description="Import a project from a portable archive",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        raw=True,
+        output=PROJECT_OBJECT_SCHEMA,
+        status_codes={
+            200: "Project imported",
+            403: "You are not allowed to modify this property"
+        })
+    def import_project(request, response):
+
+        pm = ProjectManager.instance()
+        project_id = request.match_info["project_id"]
+        project = pm.create_project(project_id=project_id)
+
+        # We write the content to a temporary location
+        # and after extract all. It could be more optimal to stream
+        # this but it's not implemented in Python.
+        # 
+        # Spooled mean the file is temporary keep in ram until max_size
+        try:
+            with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
+                while True:
+                    packet = yield from request.content.read(512)
+                    if not packet:
+                        break
+                    temp.write(packet)
+                project.import_zip(temp, gns3vm=bool(request.GET.get("gns3vm", "1")))
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
+
+        response.json(project)
+        response.set_status(201)

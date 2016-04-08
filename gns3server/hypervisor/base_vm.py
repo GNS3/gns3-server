@@ -340,13 +340,17 @@ class BaseVM:
             return
 
         if self._console_type == "vnc" and console is not None and console < 5900:
-            raise VMError("VNC console require a port superior or equal to 5900")
+            raise VMError("VNC console require a port superior or equal to 5900 currently it's {}".format(console))
 
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
         if console is not None:
-            self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
+            if self.console_type == "vnc":
+                self._console = self._manager.port_manager.reserve_tcp_port(console, self._project, port_range_start=5900, port_range_end=6000)
+            else:
+                self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
+
             log.info("{module}: '{name}' [{id}]: console port set to {port}".format(module=self.manager.module_name,
                                                                                     name=self.name,
                                                                                     id=self.id,
@@ -401,7 +405,7 @@ class BaseVM:
         if path == "ubridge":
             path = shutil.which("ubridge")
 
-        if path is None:
+        if path is None or len(path) == 0:
             raise VMError("uBridge is not installed")
         return path
 

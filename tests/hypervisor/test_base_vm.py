@@ -49,8 +49,8 @@ def test_temporary_directory(project, manager):
 
 def test_console(project, manager):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    vm.console = 2111
-    assert vm.console == 2111
+    vm.console = 5011
+    assert vm.console == 5011
     vm.console = None
     assert vm.console is None
 

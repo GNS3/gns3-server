@@ -133,7 +133,7 @@ class Query:
         if path is None:
             return
         with open(self._example_file_path(method, route), 'w+') as f:
-            f.write("curl -i -X {} 'http://localhost:8000/v{}{}{}'".format(method, self._api_version, self._prefix, path))
+            f.write("curl -i -X {} 'http://localhost:3080/v{}{}{}'".format(method, self._api_version, self._prefix, path))
             if body:
                 f.write(" -d '{}'".format(re.sub(r"\n", "", json.dumps(json.loads(body), sort_keys=True))))
             f.write("\n\n")

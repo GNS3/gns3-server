@@ -32,7 +32,7 @@ import glob
 
 log = logging.getLogger(__name__)
 
-from gns3server.utils.interfaces import get_windows_interfaces, is_interface_up
+from gns3server.utils.interfaces import interfaces, is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor
 from pkg_resources import parse_version
 from uuid import UUID, uuid4
@@ -439,9 +439,9 @@ class Dynamips(BaseManager):
             ethernet_device = nio_settings["ethernet_device"]
             if sys.platform.startswith("win"):
                 # replace the interface name by the GUID on Windows
-                interfaces = get_windows_interfaces()
+                windows_interfaces = interfaces()
                 npf_interface = None
-                for interface in interfaces:
+                for interface in windows_interfaces:
                     if interface["name"] == ethernet_device:
                         npf_interface = interface["id"]
                 if not npf_interface:

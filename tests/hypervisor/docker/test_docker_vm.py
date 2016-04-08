@@ -57,6 +57,7 @@ def test_json(vm, project):
         'adapters': 1,
         'console': vm.console,
         'console_type': 'telnet',
+        'console_resolution': '1024x768',
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
@@ -89,7 +90,10 @@ def test_create(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -113,7 +117,7 @@ def test_create_vnc(loop, project, manager):
 
     with asyncio_patch("gns3server.hypervisor.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.hypervisor.docker.Docker.query", return_value=response) as mock:
-            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", console_type="vnc")
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", console_type="vnc", console=5900)
             vm._start_vnc = MagicMock()
             vm._display = 42
             loop.run_until_complete(asyncio.async(vm.create()))
@@ -126,6 +130,7 @@ def test_create_vnc(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
                             '/tmp/.X11-unix/:/tmp/.X11-unix/'
                         ],
                         "Privileged": True
@@ -141,6 +146,7 @@ def test_create_vnc(loop, project, manager):
             })
         assert vm._start_vnc.called
         assert vm._cid == "e90e34656806"
+        assert vm._console_type == "vnc"
 
 
 def test_create_start_cmd(loop, project, manager):
@@ -161,7 +167,10 @@ def test_create_start_cmd(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -194,7 +203,10 @@ def test_create_environment(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Env": ["YES=1", "NO=0"],
@@ -241,7 +253,10 @@ def test_create_image_not_available(loop, project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
                         "Privileged": True
                     },
                 "Volumes": {},
@@ -438,6 +453,7 @@ def test_update(loop, vm):
     }
 
     original_console = vm.console
+    original_aux = vm.aux
 
     with asyncio_patch("gns3server.hypervisor.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.hypervisor.docker.DockerVM._get_container_state", return_value="stopped"):
@@ -452,7 +468,10 @@ def test_update(loop, vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))],
+            "Binds": [
+                "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+            ],
             "Privileged": True
         },
         "Volumes": {},
@@ -465,6 +484,30 @@ def test_update(loop, vm):
         "Cmd": ["/bin/sh"]
     })
     assert vm.console == original_console
+    assert vm.aux == original_aux
+
+
+def test_update_vnc(loop, vm):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    vm.console_type = "vnc"
+    vm.console = 5900
+    vm._display = "display"
+    original_console = vm.console
+    original_aux = vm.aux
+
+    with asyncio_patch("gns3server.hypervisor.docker.DockerVM._start_vnc"):
+        with asyncio_patch("gns3server.hypervisor.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+            with asyncio_patch("gns3server.hypervisor.docker.DockerVM._get_container_state", return_value="stopped"):
+                with asyncio_patch("gns3server.hypervisor.docker.Docker.query", return_value=response) as mock_query:
+                    loop.run_until_complete(asyncio.async(vm.update()))
+
+    assert vm.console == original_console
+    assert vm.aux == original_aux
 
 
 def test_update_running(loop, vm):
@@ -490,7 +533,10 @@ def test_update_running(loop, vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))],
+            "Binds": [
+                "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+            ],
             "Privileged": True
         },
         "Volumes": {},
@@ -763,6 +809,7 @@ def test_mount_binds(vm, tmpdir):
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
         "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+        "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
         "{}:{}".format(dst, "/test/experimental")
     ]
 
@@ -770,13 +817,14 @@ def test_mount_binds(vm, tmpdir):
 
 
 def test_start_vnc(vm, loop):
+    vm.console_resolution = "1280x1024"
     with patch("shutil.which", return_value="/bin/x"):
         with asyncio_patch("gns3server.hypervisor.docker.docker_vm.wait_for_file_creation") as mock_wait:
             with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
                 loop.run_until_complete(asyncio.async(vm._start_vnc()))
     assert vm._display is not None
-    mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1024x768x16")
-    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-noncache", "-listen", "127.0.0.1")
+    mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1280x1024x16")
+    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-shared", "-geometry", "1280x1024", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-noncache", "-listen", "127.0.0.1")
     mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
 
 
@@ -789,3 +837,17 @@ def test_start_aux(vm, loop):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
         loop.run_until_complete(asyncio.async(vm._start_aux()))
+
+
+def test_create_network_interfaces(vm):
+
+    vm.adapters = 5
+    network_config = vm._create_network_config()
+    assert os.path.exists(os.path.join(network_config, "interfaces"))
+    assert os.path.exists(os.path.join(network_config, "if-up.d"))
+
+    with open(os.path.join(network_config, "interfaces")) as f:
+        content = f.read()
+    assert "eth0" in content
+    assert "eth4" in content
+    assert "eth5" not in content

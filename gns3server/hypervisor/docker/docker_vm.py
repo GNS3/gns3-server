@@ -53,11 +53,13 @@ class DockerVM(BaseVM):
     :param console: TCP console port
     :param console_type: Console type
     :param aux: TCP aux console port
+    :param console_resolution: Resolution of the VNC display
     """
 
     def __init__(self, name, vm_id, project, manager, image,
                  console=None, aux=None, start_command=None,
-                 adapters=None, environment=None, console_type="telnet"):
+                 adapters=None, environment=None, console_type="telnet",
+                 console_resolution="1024x768"):
         super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
         self._image = image
@@ -68,6 +70,8 @@ class DockerVM(BaseVM):
         self._ubridge_hypervisor = None
         self._temporary_directory = None
         self._telnet_servers = []
+        self._x11vnc_process = None
+        self._console_resolution = console_resolution
 
         if adapters is None:
             self.adapters = 1
@@ -90,6 +94,7 @@ class DockerVM(BaseVM):
             "adapters": self.adapters,
             "console": self.console,
             "console_type": self.console_type,
+            "console_resolution": self.console_resolution,
             "aux": self.aux,
             "start_command": self.start_command,
             "environment": self.environment,
@@ -119,6 +124,14 @@ class DockerVM(BaseVM):
             self._start_command = None
         else:
             self._start_command = command
+
+    @property
+    def console_resolution(self):
+        return self._console_resolution
+
+    @console_resolution.setter
+    def console_resolution(self, resolution):
+        self._console_resolution = resolution
 
     @property
     def environment(self):
@@ -159,6 +172,10 @@ class DockerVM(BaseVM):
 
         binds.append("{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")))
 
+        # We mount our own etc/network
+        network_config = self._create_network_config()
+        binds.append("{}:/etc/network:rw".format(network_config))
+
         volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
         if volumes is None:
             return binds
@@ -168,6 +185,39 @@ class DockerVM(BaseVM):
             binds.append("{}:{}".format(source, volume))
 
         return binds
+
+    def _create_network_config(self):
+        """
+        If network config is empty we create a sample config
+        """
+        path = os.path.join(self.working_dir, "etc", "network")
+        os.makedirs(path, exist_ok=True)
+        os.makedirs(os.path.join(path, "if-up.d"), exist_ok=True)
+        os.makedirs(os.path.join(path, "if-down.d"), exist_ok=True)
+        os.makedirs(os.path.join(path, "if-pre-up.d"), exist_ok=True)
+        os.makedirs(os.path.join(path, "if-post-down.d"), exist_ok=True)
+
+        if not os.path.exists(os.path.join(path, "interfaces")):
+            with open(os.path.join(path, "interfaces"), "w+") as f:
+                f.write("""#
+# This is a sample network config uncomment lines to configure the network
+#
+
+""")
+                for adapter in range(0, self.adapters):
+                    f.write("""
+# Static config for eth{adapter}
+#auto eth{adapter}
+#iface eth{adapter} inet static
+#\taddress 192.168.{adapter}.2
+#\tnetmask 255.255.255.0
+#\tgateway 192.168.{adapter}.1
+#\tup echo nameserver 192.168.{adapter}.1 > /etc/resolv.conf
+
+# DHCP config for eth{adapter}
+# auto eth{adapter}
+# iface eth{adapter} inet dhcp""".format(adapter=adapter))
+        return path
 
     @asyncio.coroutine
     def create(self):
@@ -198,7 +248,6 @@ class DockerVM(BaseVM):
             "Cmd": [],
             "Entrypoint": image_infos.get("Config", {"Entrypoint": []})["Entrypoint"]
         }
-
 
         if params["Entrypoint"] is None:
             params["Entrypoint"] = []
@@ -233,11 +282,13 @@ class DockerVM(BaseVM):
         """
         # We need to save the console and state and restore it
         console = self.console
+        aux = self.aux
         state = yield from self._get_container_state()
 
         yield from self.close()
         yield from self.create()
         self.console = console
+        self.aux = aux
         if state == "running":
             yield from self.start()
 
@@ -287,7 +338,7 @@ class DockerVM(BaseVM):
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
         process = yield from asyncio.subprocess.create_subprocess_exec(
-            "docker", "exec", "-i", self._cid, "/bin/sh", "-i",
+            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "sh", "-i",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             stdin=asyncio.subprocess.PIPE)
@@ -304,8 +355,8 @@ class DockerVM(BaseVM):
         self._display = self._get_free_display_port()
         if shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
             raise DockerError("Please install Xvfb and x11vnc before using the VNC support")
-        self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", "1024x768x16")
-        self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
+        self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", self._console_resolution + "x16")
+        self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
 
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         yield from wait_for_file_creation(x11_socket)
@@ -433,10 +484,11 @@ class DockerVM(BaseVM):
 
         try:
             if self.console_type == "vnc":
-                self._x11vnc_process.terminate()
-                self._xvfb_process.terminate()
-                yield from self._x11vnc_process.wait()
-                yield from self._xvfb_process.wait()
+                if self._x11vnc_process:
+                    self._x11vnc_process.terminate()
+                    self._xvfb_process.terminate()
+                    yield from self._x11vnc_process.wait()
+                    yield from self._xvfb_process.wait()
 
             state = yield from self._get_container_state()
             if state == "paused" or state == "running":
@@ -521,11 +573,17 @@ class DockerVM(BaseVM):
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             return
 
-        yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
-            name=adapter_number))
-
         adapter = self._ethernet_adapters[adapter_number]
-        yield from self._ubridge_hypervisor.send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
+
+        try:
+            yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
+                name=adapter_number))
+        except UbridgeError as e:
+            log.debug(str(e))
+        try:
+            yield from self._ubridge_hypervisor.send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
+        except UbridgeError as e:
+            log.debug(str(e))
 
     @asyncio.coroutine
     def _get_namespace(self):

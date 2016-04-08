@@ -23,6 +23,7 @@ import uuid
 import os
 import asyncio
 import aiohttp
+import zipfile
 
 from unittest.mock import patch
 from tests.utils import asyncio_patch
@@ -216,3 +217,40 @@ def test_get_file(http_hypervisor, tmpdir):
 
     response = http_hypervisor.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
     assert response.status == 403
+
+
+def test_export(http_hypervisor, tmpdir, loop, project):
+
+    os.makedirs(project.path, exist_ok=True)
+    with open(os.path.join(project.path, 'a'), 'w+') as f:
+        f.write('hello')
+
+    response = http_hypervisor.get("/projects/{project_id}/export".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.headers['CONTENT-TYPE'] == 'application/gns3z'
+    assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3z"'.format(project.name)
+
+    with open(str(tmpdir / 'project.zip'), 'wb+') as f:
+        f.write(response.body)
+
+    with zipfile.ZipFile(str(tmpdir / 'project.zip')) as myzip:
+        with myzip.open("a") as myfile:
+            content = myfile.read()
+            assert content == b"hello"
+
+
+def test_import(http_hypervisor, tmpdir, loop, project):
+
+    with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
+        myzip.writestr("demo", b"hello")
+
+    project_id = project.id
+
+    with open(str(tmpdir / "test.zip"), "rb") as f:
+        response = http_hypervisor.post("/projects/{project_id}/import".format(project_id=project_id), body=f.read(), raw=True)
+    assert response.status == 201
+
+    project = ProjectManager.instance().get_project(project_id=project_id)
+    with open(os.path.join(project.path, "demo")) as f:
+        content = f.read()
+    assert content == "hello"
