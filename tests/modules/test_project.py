@@ -297,7 +297,41 @@ def test_export(tmpdir):
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
 
 
-def test_export(tmpdir):
+def test_export_fix_path(tmpdir):
+    """
+    Fix absolute image path
+    """
+    project = Project()
+    path = project.path
+
+    topology = {
+        "topology": {
+            "nodes": [
+                    {
+                        "properties": {
+                            "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
+                        }
+                    }
+            ]
+        }
+    }
+
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    z = project.export()
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        with myzip.open("project.gns3") as myfile:
+            content = myfile.read().decode()
+            topology = json.loads(content)
+    assert topology["topology"]["nodes"][0]["properties"]["image"] == "c3725-adventerprisek9-mz.124-25d.image"
+
+
+def test_export_with_vm(tmpdir):
     project = Project()
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))

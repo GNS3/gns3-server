@@ -539,7 +539,7 @@ class Project:
                 path = os.path.join(root, file)
                 # We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
                 if file.endswith(".gns3"):
-                    z.write(path, "project.gns3")
+                    z.writestr("project.gns3", self._export_project_file(path))
                 else:
                     # We merge the data from all server in the same project-files directory
                     vm_directory = os.path.join(self._path, "servers", "vm")
@@ -548,6 +548,24 @@ class Project:
                     else:
                         z.write(path, os.path.relpath(path, self._path))
         return z
+
+    def _export_project_file(self, path):
+        """
+        Take a project file (.gns3) and patch it for the export
+
+        :returns: Content of the topology
+        """
+
+        with open(path) as f:
+            topology = json.load(f)
+        if "topology" in topology and "nodes" in topology["topology"]:
+            for node in topology["topology"]["nodes"]:
+                if "properties" in node:
+                    for prop, value in node["properties"].items():
+                        if prop.endswith("image"):
+                            node["properties"][prop] = os.path.basename(value)
+
+        return json.dumps(topology).encode()
 
     def import_zip(self, stream, gns3vm=True):
         """
