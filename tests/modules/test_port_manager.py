@@ -30,7 +30,6 @@ def test_reserve_tcp_port():
     with patch("gns3server.modules.project.Project.emit") as mock_emit:
         port = pm.reserve_tcp_port(2001, project)
         assert port != 2001
-        assert mock_emit.call_args[0][0] == "log.warning"
 
 
 def test_reserve_tcp_port_outside_range():
@@ -39,7 +38,6 @@ def test_reserve_tcp_port_outside_range():
     with patch("gns3server.modules.project.Project.emit") as mock_emit:
         port = pm.reserve_tcp_port(80, project)
         assert port != 80
-        assert mock_emit.call_args[0][0] == "log.warning"
 
 
 def test_reserve_tcp_port_already_used_by_another_program():
@@ -63,7 +61,6 @@ def test_reserve_tcp_port_already_used_by_another_program():
         with patch("gns3server.modules.project.Project.emit") as mock_emit:
             port = pm.reserve_tcp_port(2001, project)
             assert port != 2001
-            assert mock_emit.call_args[0][0] == "log.warning"
 
 
 def test_reserve_tcp_port_already_used():
@@ -87,7 +84,6 @@ def test_reserve_tcp_port_already_used():
         with patch("gns3server.modules.project.Project.emit") as mock_emit:
             port = pm.reserve_tcp_port(2001, project)
             assert port != 2001
-            assert mock_emit.call_args[0][0] == "log.warning"
 
 
 def test_reserve_udp_port():
