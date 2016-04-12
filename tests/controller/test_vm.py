@@ -86,6 +86,30 @@ def test_create(vm, hypervisor, project, async_run):
     assert vm._properties == {"startup_script": "echo test"}
 
 
+def test_start(vm, hypervisor, project, async_run):
+
+    hypervisor.post = AsyncioMagicMock()
+
+    async_run(vm.start())
+    hypervisor.post.assert_called_with("/projects/{}/vpcs/vms/{}/start".format(vm.project.id, vm.id))
+
+
+def test_stop(vm, hypervisor, project, async_run):
+
+    hypervisor.post = AsyncioMagicMock()
+
+    async_run(vm.stop())
+    hypervisor.post.assert_called_with("/projects/{}/vpcs/vms/{}/stop".format(vm.project.id, vm.id))
+
+
+def test_suspend(vm, hypervisor, project, async_run):
+
+    hypervisor.post = AsyncioMagicMock()
+
+    async_run(vm.suspend())
+    hypervisor.post.assert_called_with("/projects/{}/vpcs/vms/{}/suspend".format(vm.project.id, vm.id))
+
+
 def test_create_without_console(vm, hypervisor, project, async_run):
     """
     None properties should be send. Because it can mean the emulator doesn"t support it

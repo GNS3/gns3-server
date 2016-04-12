@@ -31,6 +31,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
+from gns3server.controller.vm import VM
 
 
 @pytest.fixture
@@ -44,6 +45,13 @@ def hypervisor(http_controller, async_run):
 @pytest.fixture
 def project(http_controller, async_run):
     return async_run(Controller.instance().addProject())
+
+
+@pytest.fixture
+def vm(project, hypervisor, async_run):
+    vm = VM(project, hypervisor, name="test", vm_type="vpcs")
+    project._vms[vm.id] = vm
+    return vm
 
 
 def test_create_vm(http_controller, tmpdir, project, hypervisor):
@@ -62,3 +70,30 @@ def test_create_vm(http_controller, tmpdir, project, hypervisor):
     assert response.status == 201
     assert response.json["name"] == "test"
     assert "name" not in response.json["properties"]
+
+
+def test_start_vm(http_controller, tmpdir, project, hypervisor, vm):
+    response = MagicMock()
+    hypervisor.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/vms/{}/start".format(project.id, vm.id), example=True)
+    assert response.status == 201
+    assert response.json["name"] == vm.name
+
+
+def test_stop_vm(http_controller, tmpdir, project, hypervisor, vm):
+    response = MagicMock()
+    hypervisor.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/vms/{}/stop".format(project.id, vm.id), example=True)
+    assert response.status == 201
+    assert response.json["name"] == vm.name
+
+
+def test_suspend_vm(http_controller, tmpdir, project, hypervisor, vm):
+    response = MagicMock()
+    hypervisor.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/vms/{}/suspend".format(project.id, vm.id), example=True)
+    assert response.status == 201
+    assert response.json["name"] == vm.name

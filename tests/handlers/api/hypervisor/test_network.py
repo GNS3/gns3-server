@@ -22,7 +22,7 @@ import pytest
 def test_udp_allocation(http_hypervisor, project):
     response = http_hypervisor.post('/projects/{}/ports/udp'.format(project.id), {}, example=True)
     assert response.status == 201
-    assert response.json == {'udp_port': 10000}
+    assert response.json['udp_port'] is not None
 
 
 # Netfifaces is not available on Travis

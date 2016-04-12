@@ -47,3 +47,66 @@ class VMHandler:
         vm = yield from project.addVM(hypervisor, request.json.pop("vm_id", None), **request.json)
         response.set_status(201)
         response.json(vm)
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/vms/{vm_id}/start",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the VM"
+        },
+        status_codes={
+            201: "Instance created",
+            400: "Invalid request"
+        },
+        description="Start a VM instance",
+        output=VM_OBJECT_SCHEMA)
+    def start(request, response):
+
+        project = Controller.instance().getProject(request.match_info["project_id"])
+        vm = project.getVM(request.match_info["vm_id"])
+        yield from vm.start()
+        response.set_status(201)
+        response.json(vm)
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/vms/{vm_id}/stop",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the VM"
+        },
+        status_codes={
+            201: "Instance created",
+            400: "Invalid request"
+        },
+        description="Start a VM instance",
+        output=VM_OBJECT_SCHEMA)
+    def stop(request, response):
+
+        project = Controller.instance().getProject(request.match_info["project_id"])
+        vm = project.getVM(request.match_info["vm_id"])
+        yield from vm.stop()
+        response.set_status(201)
+        response.json(vm)
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/vms/{vm_id}/suspend",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the VM"
+        },
+        status_codes={
+            201: "Instance created",
+            400: "Invalid request"
+        },
+        description="Start a VM instance",
+        output=VM_OBJECT_SCHEMA)
+    def suspend(request, response):
+
+        project = Controller.instance().getProject(request.match_info["project_id"])
+        vm = project.getVM(request.match_info["vm_id"])
+        yield from vm.suspend()
+        response.set_status(201)
+        response.json(vm)

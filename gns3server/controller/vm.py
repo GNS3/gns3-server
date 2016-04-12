@@ -111,6 +111,27 @@ class VM:
                 self._properties[key] = value
 
     @asyncio.coroutine
+    def start(self):
+        """
+        Start a VM
+        """
+        yield from self._hypervisor.post("/projects/{}/{}/vms/{}/start".format(self._project.id, self._vm_type, self._id))
+
+    @asyncio.coroutine
+    def stop(self):
+        """
+        Stop a VM
+        """
+        yield from self._hypervisor.post("/projects/{}/{}/vms/{}/stop".format(self._project.id, self._vm_type, self._id))
+
+    @asyncio.coroutine
+    def suspend(self):
+        """
+        Suspend a VM
+        """
+        yield from self._hypervisor.post("/projects/{}/{}/vms/{}/suspend".format(self._project.id, self._vm_type, self._id))
+
+    @asyncio.coroutine
     def post(self, path, data={}):
         """
         HTTP post on the VM
