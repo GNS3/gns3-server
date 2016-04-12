@@ -310,7 +310,8 @@ def test_export_fix_path(tmpdir):
                     {
                         "properties": {
                             "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
-                        }
+                        },
+                        "type": "C3725"
                     }
             ]
         }
@@ -329,6 +330,43 @@ def test_export_fix_path(tmpdir):
             content = myfile.read().decode()
             topology = json.loads(content)
     assert topology["topology"]["nodes"][0]["properties"]["image"] == "c3725-adventerprisek9-mz.124-25d.image"
+
+
+def test_export_with_images(tmpdir):
+    """
+    Fix absolute image path
+    """
+    project = Project()
+    path = project.path
+
+    os.makedirs(str(tmpdir / "IOS"))
+    with open(str(tmpdir / "IOS" / "test.image"), "w+") as f:
+        f.write("AAA")
+
+    topology = {
+        "topology": {
+            "nodes": [
+                    {
+                        "properties": {
+                            "image": "test.image"
+                        },
+                        "type": "C3725"
+                    }
+            ]
+        }
+    }
+
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+        z = project.export(include_images=True)
+        with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+            for data in z:
+                f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        myzip.getinfo("images/IOS/test.image")
 
 
 def test_export_with_vm(tmpdir):
@@ -432,3 +470,23 @@ def test_import(tmpdir):
     ]
     assert content["topology"]["nodes"][0]["server_id"] == 1
     assert content["topology"]["nodes"][1]["server_id"] == 2
+
+
+def test_import_with_images(tmpdir):
+
+    project_id = str(uuid.uuid4())
+    project = Project(name="test", project_id=project_id)
+
+    with open(str(tmpdir / "test.image"), 'w+') as f:
+        f.write("B")
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "test.image"), "images/IOS/test.image")
+
+    with open(zip_path, "rb") as f:
+        project.import_zip(f)
+
+    # TEST import images
+    path = os.path.join(project._config().get("images_path"), "IOS", "test.image")
+    assert os.path.exists(path), path

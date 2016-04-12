@@ -29,6 +29,7 @@ from .port_manager import PortManager
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -513,7 +514,7 @@ class Project:
                 m.update(buf)
         return m.hexdigest()
 
-    def export(self):
+    def export(self, include_images=False):
         """
         Export the project as zip. It's a ZipStream object.
         The file will be read chunk by chunk when you iterate on
@@ -539,7 +540,7 @@ class Project:
                 path = os.path.join(root, file)
                 # We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
                 if file.endswith(".gns3"):
-                    z.writestr("project.gns3", self._export_project_file(path))
+                    self._export_project_file(path, z, include_images)
                 else:
                     # We merge the data from all server in the same project-files directory
                     vm_directory = os.path.join(self._path, "servers", "vm")
@@ -549,23 +550,53 @@ class Project:
                         z.write(path, os.path.relpath(path, self._path))
         return z
 
-    def _export_project_file(self, path):
+    def _export_images(self, image, type, z):
+        """
+        Take a project file (.gns3) and export images to the zip
+
+        :param image: Image path
+        :param type: Type of image
+        :param z: Zipfile instance for the export
+        """
+        from . import MODULES
+
+        for module in MODULES:
+            try:
+                img_directory = module.instance().get_images_directory()
+            except NotImplementedError:
+                # Some modules don't have images
+                continue
+
+            directory = os.path.split(img_directory)[-1:][0]
+
+            if os.path.exists(image):
+                path = image
+            else:
+                path = os.path.join(img_directory, image)
+
+            if os.path.exists(path):
+                arcname = os.path.join("images", directory, os.path.basename(image))
+                z.write(path, arcname)
+                break
+
+    def _export_project_file(self, path, z, include_images):
         """
         Take a project file (.gns3) and patch it for the export
 
-        :returns: Content of the topology
+        :param path: Path of the .gns3
         """
 
         with open(path) as f:
             topology = json.load(f)
         if "topology" in topology and "nodes" in topology["topology"]:
             for node in topology["topology"]["nodes"]:
-                if "properties" in node:
+                if "properties" in node and node["type"] != "DockerVM":
                     for prop, value in node["properties"].items():
                         if prop.endswith("image"):
                             node["properties"][prop] = os.path.basename(value)
-
-        return json.dumps(topology).encode()
+                            if include_images:
+                                self._export_images(value, node["type"], z)
+        z.writestr("project.gns3", json.dumps(topology).encode())
 
     def import_zip(self, stream, gns3vm=True):
         """
@@ -635,3 +666,23 @@ class Project:
 
             # Rename to a human distinctive name
             shutil.move(project_file, os.path.join(self.path, self.name + ".gns3"))
+        if os.path.exists(os.path.join(self.path, "images")):
+            self._import_images()
+
+    def _import_images(self):
+        """
+        Copy images to the images directory or delete them if they
+        already exists.
+        """
+        image_dir = self._config().get("images_path")
+
+        root = os.path.join(self.path, "images")
+        for (dirpath, dirnames, filenames) in os.walk(root):
+            for filename in filenames:
+                path = os.path.join(dirpath, filename)
+                dst = os.path.join(image_dir, os.path.relpath(path, root))
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.move(path, dst)
+
+        # Cleanup the project
+        shutil.rmtree(root)
