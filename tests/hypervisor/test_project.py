@@ -348,7 +348,8 @@ def test_export_with_images(tmpdir):
     """
     Fix absolute image path
     """
-    project = Project()
+    project_id = str(uuid.uuid4())
+    project = Project(project_id=project_id)
     path = project.path
 
     os.makedirs(str(tmpdir / "IOS"))
@@ -371,7 +372,7 @@ def test_export_with_images(tmpdir):
     with open(os.path.join(path, "test.gns3"), 'w+') as f:
         json.dump(topology, f)
 
-    with patch("gns3server.modules.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+    with patch("gns3server.hypervisor.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
         z = project.export(include_images=True)
         with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
             for data in z:
@@ -382,7 +383,8 @@ def test_export_with_images(tmpdir):
 
 
 def test_export_with_vm(tmpdir):
-    project = Project()
+    project_id = str(uuid.uuid4())
+    project = Project(project_id=project_id)
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))
 
