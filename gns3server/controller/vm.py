@@ -115,21 +115,21 @@ class VM:
         """
         Start a VM
         """
-        yield from self._hypervisor.post("/projects/{}/{}/vms/{}/start".format(self._project.id, self._vm_type, self._id))
+        yield from self.post("/start")
 
     @asyncio.coroutine
     def stop(self):
         """
         Stop a VM
         """
-        yield from self._hypervisor.post("/projects/{}/{}/vms/{}/stop".format(self._project.id, self._vm_type, self._id))
+        yield from self.post("/stop")
 
     @asyncio.coroutine
     def suspend(self):
         """
         Suspend a VM
         """
-        yield from self._hypervisor.post("/projects/{}/{}/vms/{}/suspend".format(self._project.id, self._vm_type, self._id))
+        yield from self.post("/suspend")
 
     @asyncio.coroutine
     def post(self, path, data={}):

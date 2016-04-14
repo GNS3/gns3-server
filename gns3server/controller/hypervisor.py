@@ -47,10 +47,9 @@ class Hypervisor:
         self._port = port
         self._user = None
         self._password = None
-        self._setAuth(user, password)
         self._connected = False
         self._controller = controller
-        self._session = aiohttp.ClientSession()
+        self._setAuth(user, password)
 
         # If the hypervisor is local but the hypervisor id is local
         # it's a configuration issue
@@ -72,6 +71,7 @@ class Hypervisor:
             self._auth = aiohttp.BasicAuth(self._user, self._password)
         else:
             self._auth = None
+        self._session = aiohttp.ClientSession(auth=self._auth)
 
     @property
     def id(self):
@@ -117,7 +117,8 @@ class Hypervisor:
     def httpQuery(self, method, path, data=None):
         if not self._connected:
             yield from self._connect()
-        return (yield from self._runHttpQuery(method, path, data=data))
+        response = yield from self._runHttpQuery(method, path, data=data)
+        return response
 
     @asyncio.coroutine
     def _connect(self):
@@ -140,7 +141,7 @@ class Hypervisor:
         """
         Connect to the notification stream
         """
-        ws = yield from self._session.ws_connect(self._getUrl("/notifications/ws"), auth=self._auth)
+        ws = yield from self._session.ws_connect(self._getUrl("/notifications/ws"))
         while True:
             response = yield from ws.receive()
             if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error:
@@ -159,11 +160,14 @@ class Hypervisor:
         with aiohttp.Timeout(10):
             url = self._getUrl(path)
             headers = {'content-type': 'application/json'}
-            if data:
+            if data == {}:
+                data = None
+            elif data is not None:
                 if hasattr(data, '__json__'):
                     data = data.__json__()
                 data = json.dumps(data)
-            response = yield from self._session.request(method, url, headers=headers, data=data, auth=self._auth)
+
+            response = yield from self._session.request(method, url, headers=headers, data=data)
             body = yield from response.read()
             if body:
                 body = body.decode()
@@ -191,8 +195,13 @@ class Hypervisor:
             return response
 
     @asyncio.coroutine
+    def get(self, path):
+        return (yield from self.httpQuery("GET", path))
+
+    @asyncio.coroutine
     def post(self, path, data={}):
-        return (yield from self.httpQuery("POST", path, data))
+        response = yield from self.httpQuery("POST", path, data)
+        return response
 
     @asyncio.coroutine
     def delete(self, path):
