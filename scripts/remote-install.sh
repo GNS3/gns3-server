@@ -332,6 +332,6 @@ set +e
 service openvpn stop
 service openvpn start
 
-log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client"
+log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client after rebooting the server"
 
 fi
