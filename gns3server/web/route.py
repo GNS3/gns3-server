@@ -242,16 +242,23 @@ class Route(object):
                     vm_id = request.match_info.get("vm_id")
                     if vm_id is None:
                         vm_id = request.match_info["device_id"]
-                    cls._vm_locks.setdefault(vm_id, {"lock": asyncio.Lock(), "concurrency": 0})
-                    cls._vm_locks[vm_id]["concurrency"] += 1
 
-                    with (yield from cls._vm_locks[vm_id]["lock"]):
+                    if "controller" in request.path:
+                        type = "controller"
+                    else:
+                        type = "compute"
+                    lock_key = "{}:{}:{}".format(type, request.match_info["project_id"], vm_id)
+
+                    cls._vm_locks.setdefault(lock_key, {"lock": asyncio.Lock(), "concurrency": 0})
+                    cls._vm_locks[lock_key]["concurrency"] += 1
+
+                    with (yield from cls._vm_locks[lock_key]["lock"]):
                         response = yield from control_schema(request)
-                    cls._vm_locks[vm_id]["concurrency"] -= 1
+                    cls._vm_locks[lock_key]["concurrency"] -= 1
 
                     # No more waiting requests, garbage collect the lock
-                    if cls._vm_locks[vm_id]["concurrency"] <= 0:
-                        del cls._vm_locks[vm_id]
+                    if cls._vm_locks[lock_key]["concurrency"] <= 0:
+                        del cls._vm_locks[lock_key]
                 else:
                     response = yield from control_schema(request)
                 return response
