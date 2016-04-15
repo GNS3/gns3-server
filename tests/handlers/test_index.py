@@ -39,8 +39,8 @@ def test_controller(http_root, async_run):
     assert response.status == 200
 
 
-def test_hypervisor(http_root):
-    response = http_root.get('/hypervisor')
+def test_compute(http_root):
+    response = http_root.get('/compute')
     assert response.status == 200
 
 

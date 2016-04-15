@@ -21,7 +21,7 @@ Entry point of the server. It's support daemonize the process
 """
 
 # WARNING
-# Due to buggy user machines we choose to put this as the first loading hypervisor
+# Due to buggy user machines we choose to put this as the first loading
 # otherwise the egg cache is initialized in his standard location and
 # if is not writetable the application crash. It's the user fault
 # because one day the user as used sudo to run an egg and break his

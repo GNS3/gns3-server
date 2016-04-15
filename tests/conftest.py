@@ -37,9 +37,9 @@ from gns3server.config import Config
 from gns3server.web.route import Route
 # TODO: get rid of *
 from gns3server.handlers import *
-from gns3server.hypervisor import MODULES
-from gns3server.hypervisor.port_manager import PortManager
-from gns3server.hypervisor.project_manager import ProjectManager
+from gns3server.compute import MODULES
+from gns3server.compute.port_manager import PortManager
+from gns3server.compute.project_manager import ProjectManager
 from gns3server.controller import Controller
 from tests.handlers.api.base import Query
 
@@ -105,7 +105,7 @@ def http_server(request, loop, port_manager, monkeypatch):
     def tear_down():
         for module in MODULES:
             instance = module.instance()
-            monkeypatch.setattr('gns3server.hypervisor.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
+            monkeypatch.setattr('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
             loop.run_until_complete(instance.unload())
         srv.close()
         srv.wait_closed()
@@ -132,12 +132,12 @@ def http_controller(loop, http_server):
 
 
 @pytest.fixture
-def http_hypervisor(loop, http_server):
+def http_compute(loop, http_server):
     """
     Return an helper allowing you to call the hypervisor API via HTTP
     """
     host, port = http_server
-    return Query(loop, host=host, port=port, prefix="/hypervisor", api_version=2)
+    return Query(loop, host=host, port=port, prefix="/compute", api_version=2)
 
 
 @pytest.fixture(scope="function")
@@ -204,7 +204,7 @@ def run_around_tests(monkeypatch, port_manager, controller):
     # Force turn off KVM because it's not available on CI
     config.set("Qemu", "enable_kvm", False)
 
-    monkeypatch.setattr("gns3server.hypervisor.project.Project._get_default_project_directory", lambda *args: os.path.join(tmppath, 'projects'))
+    monkeypatch.setattr("gns3server.compute.project.Project._get_default_project_directory", lambda *args: os.path.join(tmppath, 'projects'))
 
     # Force sys.platform to the original value. Because it seem not be restore correctly at each tests
     sys.platform = sys.original_platform

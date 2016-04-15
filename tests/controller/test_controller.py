@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 
 
 from gns3server.controller import Controller
-from gns3server.controller.hypervisor import Hypervisor
+from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
 from gns3server.config import Config
 
@@ -34,22 +34,22 @@ def test_isEnabled(controller):
     assert controller.isEnabled()
 
 
-def test_addHypervisor(controller, async_run):
-    async_run(controller.addHypervisor("test1"))
-    assert len(controller.hypervisors) == 1
-    async_run(controller.addHypervisor("test1"))
-    assert len(controller.hypervisors) == 1
-    async_run(controller.addHypervisor("test2"))
-    assert len(controller.hypervisors) == 2
+def test_addCompute(controller, async_run):
+    async_run(controller.addCompute("test1"))
+    assert len(controller.computes) == 1
+    async_run(controller.addCompute("test1"))
+    assert len(controller.computes) == 1
+    async_run(controller.addCompute("test2"))
+    assert len(controller.computes) == 2
 
 
-def test_getHypervisor(controller, async_run):
+def test_getCompute(controller, async_run):
 
-    hypervisor = async_run(controller.addHypervisor("test1"))
+    compute = async_run(controller.addCompute("test1"))
 
-    assert controller.getHypervisor("test1") == hypervisor
+    assert controller.getCompute("test1") == compute
     with pytest.raises(aiohttp.web.HTTPNotFound):
-        assert controller.getHypervisor("dsdssd")
+        assert controller.getCompute("dsdssd")
 
 
 def test_addProject(controller, async_run):
@@ -74,15 +74,15 @@ def test_removeProject(controller, async_run):
     assert len(controller.projects) == 0
 
 
-def test_addProject_with_hypervisor(controller, async_run):
+def test_addProject_with_compute(controller, async_run):
     uuid1 = str(uuid.uuid4())
 
-    hypervisor = Hypervisor("test1", controller=MagicMock())
-    hypervisor.post = MagicMock()
-    controller._hypervisors = {"test1": hypervisor}
+    compute = Compute("test1", controller=MagicMock())
+    compute.post = MagicMock()
+    controller._computes = {"test1": compute}
 
     project1 = async_run(controller.addProject(project_id=uuid1))
-    hypervisor.post.assert_called_with("/projects", project1)
+    compute.post.assert_called_with("/projects", project1)
 
 
 def test_getProject(controller, async_run):

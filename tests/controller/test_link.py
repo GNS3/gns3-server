@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 
 from gns3server.controller.link import Link
 from gns3server.controller.vm import VM
-from gns3server.controller.hypervisor import Hypervisor
+from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
 
 
@@ -30,12 +30,12 @@ def project():
 
 
 @pytest.fixture
-def hypervisor():
-    return Hypervisor("example.com", controller=MagicMock())
+def compute():
+    return Compute("example.com", controller=MagicMock())
 
 
-def test_addVM(async_run, project, hypervisor):
-    vm1 = VM(project, hypervisor)
+def test_addVM(async_run, project, compute):
+    vm1 = VM(project, compute)
 
     link = Link(project)
     async_run(link.addVM(vm1, 0, 4))
@@ -48,9 +48,9 @@ def test_addVM(async_run, project, hypervisor):
     ]
 
 
-def test_json(async_run, project, hypervisor):
-    vm1 = VM(project, hypervisor)
-    vm2 = VM(project, hypervisor)
+def test_json(async_run, project, compute):
+    vm1 = VM(project, compute)
+    vm2 = VM(project, compute)
 
     link = Link(project)
     async_run(link.addVM(vm1, 0, 4))

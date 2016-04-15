@@ -32,8 +32,8 @@ import atexit
 from .route import Route
 from .request_handler import RequestHandler
 from ..config import Config
-from ..hypervisor import MODULES
-from ..hypervisor.port_manager import PortManager
+from ..compute import MODULES
+from ..compute.port_manager import PortManager
 
 # do not delete this import
 import gns3server.handlers
@@ -123,34 +123,6 @@ class WebServer:
                 signal.signal(getattr(signal, signal_name), callback)
             else:
                 self._loop.add_signal_handler(getattr(signal, signal_name), callback)
-
-    def _reload_hook(self):
-
-        @asyncio.coroutine
-        def reload():
-
-            log.info("Reloading")
-            yield from self.shutdown_server()
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-
-        # code extracted from tornado
-        for module in sys.hypervisor.values():
-            # Some hypervisor play games with sys.hypervisor (e.g. email/__init__.py
-            # in the standard library), and occasionally this can cause strange
-            # failures in getattr.  Just ignore anything that's not an ordinary
-            # module.
-            if not isinstance(module, types.ModuleType):
-                continue
-            path = getattr(module, "__file__", None)
-            if not path:
-                continue
-            if path.endswith(".pyc") or path.endswith(".pyo"):
-                path = path[:-1]
-            modified = os.stat(path).st_mtime
-            if modified > self._start_time:
-                log.debug("File {} has been modified".format(path))
-                asyncio.async(reload())
-        self._loop.call_later(1, self._reload_hook)
 
     def _create_ssl_context(self, server_config):
 
@@ -244,10 +216,6 @@ class WebServer:
         self._loop.run_until_complete(server)
         self._signal_handling()
         self._exit_handling()
-
-        if server_config.getboolean("live"):
-            log.info("Code live reload is enabled, watching for file changes")
-            self._loop.call_later(1, self._reload_hook)
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())

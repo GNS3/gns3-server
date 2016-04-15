@@ -20,14 +20,14 @@ import aiohttp
 
 from ..config import Config
 from .project import Project
-from .hypervisor import Hypervisor
+from .compute import Compute
 
 
 class Controller:
-    """The controller manage multiple gns3 hypervisors"""
+    """The controller manage multiple gns3 computes"""
 
     def __init__(self):
-        self._hypervisors = {}
+        self._computes = {}
         self._projects = {}
 
     def isEnabled(self):
@@ -38,32 +38,32 @@ class Controller:
         return Config.instance().get_section_config("Server").getboolean("controller")
 
     @asyncio.coroutine
-    def addHypervisor(self, hypervisor_id, **kwargs):
+    def addCompute(self, compute_id, **kwargs):
         """
-        Add a server to the dictionnary of hypervisors controlled by GNS3
+        Add a server to the dictionnary of computes controlled by GNS3
 
-        :param kwargs: See the documentation of Hypervisor
+        :param kwargs: See the documentation of Compute
         """
-        if hypervisor_id not in self._hypervisors:
-            hypervisor = Hypervisor(hypervisor_id=hypervisor_id, controller=self, **kwargs)
-            self._hypervisors[hypervisor_id] = hypervisor
-        return self._hypervisors[hypervisor_id]
+        if compute_id not in self._computes:
+            compute = Compute(compute_id=compute_id, controller=self, **kwargs)
+            self._computes[compute_id] = compute
+        return self._computes[compute_id]
 
     @property
-    def hypervisors(self):
+    def computes(self):
         """
-        :returns: The dictionnary of hypervisors managed by GNS3
+        :returns: The dictionnary of computes managed by GNS3
         """
-        return self._hypervisors
+        return self._computes
 
-    def getHypervisor(self, hypervisor_id):
+    def getCompute(self, compute_id):
         """
-        Return an hypervisor or raise a 404
+        Return an compute or raise a 404
         """
         try:
-            return self._hypervisors[hypervisor_id]
+            return self._computes[compute_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Hypervisor ID {} doesn't exist".format(hypervisor_id))
+            raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     @asyncio.coroutine
     def addProject(self, project_id=None, **kwargs):
@@ -75,8 +75,8 @@ class Controller:
         if project_id not in self._projects:
             project = Project(project_id=project_id, **kwargs)
             self._projects[project.id] = project
-            for hypervisor in self._hypervisors.values():
-                yield from project.addHypervisor(hypervisor)
+            for compute in self._computes.values():
+                yield from project.addCompute(compute)
             return self._projects[project.id]
         return self._projects[project_id]
 
@@ -95,7 +95,7 @@ class Controller:
     @property
     def projects(self):
         """
-        :returns: The dictionnary of hypervisors managed by GNS3
+        :returns: The dictionnary of computes managed by GNS3
         """
         return self._projects
 

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .hypervisor_handler import HypervisorHandler
+from .compute_handler import ComputeHandler
 from .project_handler import ProjectHandler
 from .version_handler import VersionHandler
 from .vm_handler import VMHandler

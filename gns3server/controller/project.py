@@ -47,7 +47,7 @@ class Project:
             self._id = project_id
         self._path = path
         self._temporary = temporary
-        self._hypervisors = set()
+        self._computes = set()
         self._vms = {}
         self._links = {}
         self._listeners = set()
@@ -69,19 +69,19 @@ class Project:
         return self._path
 
     @asyncio.coroutine
-    def addHypervisor(self, hypervisor):
-        self._hypervisors.add(hypervisor)
-        yield from hypervisor.post("/projects", self)
+    def addCompute(self, compute):
+        self._computes.add(compute)
+        yield from compute.post("/projects", self)
 
     @asyncio.coroutine
-    def addVM(self, hypervisor, vm_id, **kwargs):
+    def addVM(self, compute, vm_id, **kwargs):
         """
         Create a vm or return an existing vm
 
         :param kwargs: See the documentation of VM
         """
         if vm_id not in self._vms:
-            vm = VM(self, hypervisor, vm_id=vm_id, **kwargs)
+            vm = VM(self, compute, vm_id=vm_id, **kwargs)
             yield from vm.create()
             self._vms[vm.id] = vm
             return vm
@@ -130,18 +130,18 @@ class Project:
 
     @asyncio.coroutine
     def close(self):
-        for hypervisor in self._hypervisors:
-            yield from hypervisor.post("/projects/{}/close".format(self._id))
+        for compute in self._computes:
+            yield from compute.post("/projects/{}/close".format(self._id))
 
     @asyncio.coroutine
     def commit(self):
-        for hypervisor in self._hypervisors:
-            yield from hypervisor.post("/projects/{}/commit".format(self._id))
+        for compute in self._computes:
+            yield from compute.post("/projects/{}/commit".format(self._id))
 
     @asyncio.coroutine
     def delete(self):
-        for hypervisor in self._hypervisors:
-            yield from hypervisor.delete("/projects/{}".format(self._id))
+        for compute in self._computes:
+            yield from compute.delete("/projects/{}".format(self._id))
 
     @contextmanager
     def queue(self):

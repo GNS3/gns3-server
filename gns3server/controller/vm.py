@@ -23,10 +23,10 @@ import uuid
 
 class VM:
 
-    def __init__(self, project, hypervisor, vm_id=None, vm_type=None, name=None, console=None, console_type="telnet", properties={}):
+    def __init__(self, project, compute, vm_id=None, vm_type=None, name=None, console=None, console_type="telnet", properties={}):
         """
         :param project: Project of the VM
-        :param hypervisor: Hypervisor server where the server will run
+        :param compute: Hypervisor server where the server will run
         :param vm_id: UUID of the vm. Integer id
         :param vm_type: Type of emulator
         :param name: Name of the vm
@@ -42,7 +42,7 @@ class VM:
 
         self._name = name
         self._project = project
-        self._hypervisor = hypervisor
+        self._compute = compute
         self._vm_type = vm_type
         self._console = console
         self._console_type = console_type
@@ -77,15 +77,15 @@ class VM:
         return self._project
 
     @property
-    def hypervisor(self):
-        return self._hypervisor
+    def compute(self):
+        return self._compute
 
     @property
     def host(self):
         """
         :returns: Domain or ip for console connection
         """
-        return self._hypervisor.host
+        return self._compute.host
 
     @asyncio.coroutine
     def create(self):
@@ -100,7 +100,7 @@ class VM:
             if data[key] is None:
                 del data[key]
 
-        response = yield from self._hypervisor.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
+        response = yield from self._compute.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
 
         for key, value in response.json.items():
             if key == "console":
@@ -132,22 +132,25 @@ class VM:
         yield from self.post("/suspend")
 
     @asyncio.coroutine
-    def post(self, path, data={}):
+    def post(self, path, data=None):
         """
         HTTP post on the VM
         """
-        return (yield from self._hypervisor.post("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path), data=data))
+        if data:
+            return (yield from self._compute.post("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path), data=data))
+        else:
+            return (yield from self._compute.post("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
 
     @asyncio.coroutine
     def delete(self, path):
         """
         HTTP post on the VM
         """
-        return (yield from self._hypervisor.delete("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
+        return (yield from self._compute.delete("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
 
     def __json__(self):
         return {
-            "hypervisor_id": self._hypervisor.id,
+            "compute_id": self._compute.id,
             "project_id": self._project.id,
             "vm_id": self._id,
             "vm_type": self._vm_type,

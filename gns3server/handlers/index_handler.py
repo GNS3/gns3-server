@@ -17,8 +17,8 @@
 
 from ..web.route import Route
 from ..controller import Controller
-from ..hypervisor.port_manager import PortManager
-from ..hypervisor.project_manager import ProjectManager
+from ..compute.port_manager import PortManager
+from ..compute.project_manager import ProjectManager
 from ..version import __version__
 
 
@@ -34,14 +34,15 @@ class IndexHandler:
 
     @classmethod
     @Route.get(
-        r"/hypervisor",
+        r"/compute",
         description="Ressources used by GNS3 Hypervisor"
     )
-    def hypervisor(request, response):
-        response.template("hypervisor.html",
+    def compute(request, response):
+        response.template("compute.html",
                           port_manager=PortManager.instance(),
                           project_manager=ProjectManager.instance()
                           )
+
     @classmethod
     @Route.get(
         r"/controller",

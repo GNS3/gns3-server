@@ -32,7 +32,7 @@ class Query:
 
     def __init__(self, loop, host='localhost', port=8001, prefix='', api_version=None):
         """
-        :param prefix: Prefix added before path (ex: /hypervisor)
+        :param prefix: Prefix added before path (ex: /compute)
         :param api_version: Version of the api
         """
         self._loop = loop
@@ -110,6 +110,8 @@ class Query:
             response.route = x_route.replace("/v{}".format(self._api_version), "")
             response.route = response.route .replace(self._prefix, "")
 
+        response.json = {}
+        response.html = ""
         if response.body is not None:
             if response.headers.get("CONTENT-TYPE", "") == "application/json":
                 try:
@@ -121,9 +123,7 @@ class Query:
                     response.html = response.body.decode("utf-8")
                 except UnicodeDecodeError:
                     response.html = None
-        else:
-            response.json = {}
-            response.html = ""
+
         if kwargs.get('example') and os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
             self._dump_example(method, response.route, path, body, response)
         return response

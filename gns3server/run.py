@@ -32,7 +32,7 @@ from gns3server.web.web_server import WebServer
 from gns3server.web.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
-from gns3server.hypervisor.project import Project
+from gns3server.compute.project import Project
 from gns3server.crash_report import CrashReport
 
 import logging
@@ -99,7 +99,6 @@ def parse_arguments(argv):
     parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
-    parser.add_argument("--live", action="store_true", help="enable code live reload")
     parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
     parser.add_argument("--log", help="send output to logfile instead of console")
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
@@ -122,7 +121,6 @@ def parse_arguments(argv):
         "allow": config.getboolean("allow_remote_console", False),
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
-        "live": config.getboolean("live", False),
         "logfile": config.getboolean("logfile", ""),
     }
 
@@ -144,7 +142,6 @@ def set_config(args):
     server_config["certkey"] = args.certkey
     server_config["record"] = args.record
     server_config["debug"] = str(args.debug)
-    server_config["live"] = str(args.live)
     server_config["shell"] = str(args.shell)
     config.set_section_config("Server", server_config)
 

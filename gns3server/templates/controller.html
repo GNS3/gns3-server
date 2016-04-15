@@ -19,24 +19,23 @@ in futur GNS3 versions.
 <tr>
     <td><a href="/projects/{{project.id}}">{{project.name}}</a></td>
     <td><a href="/projects/{{project.id}}">{{project.id}}</a></td>
-    <td>{{project.vms|length}}</td>    
-    <td>{{project.links|length}}</td>    
+    <td>{{project.vms|length}}</td>
+    <td>{{project.links|length}}</td>
 </tr>
 {% endfor %}
 </table>
 
-<h2>Hypervisors</h2>
+<h2>Computes</h2>
 <table border="1">
     <tr>
         <th>ID</td>
     </tr>
-{% for hypervisor in controller.hypervisors.values() %}
+{% for compute in controller.computes.values() %}
 <tr>
-    <td>{{hypervisor.id}}</td>    
+    <td>{{compute.id}}</td>
 </tr>
 {% endfor %}
 </table>
 
 
 {%endblock%}
-

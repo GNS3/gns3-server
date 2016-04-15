@@ -42,9 +42,9 @@ class VMHandler:
     def create(request, response):
 
         controller = Controller.instance()
-        hypervisor = controller.getHypervisor(request.json.pop("hypervisor_id"))
+        compute = controller.getCompute(request.json.pop("compute_id"))
         project = controller.getProject(request.match_info["project_id"])
-        vm = yield from project.addVM(hypervisor, request.json.pop("vm_id", None), **request.json)
+        vm = yield from project.addVM(compute, request.json.pop("vm_id", None), **request.json)
         response.set_status(201)
         response.json(vm)
 

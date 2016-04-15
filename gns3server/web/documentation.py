@@ -36,7 +36,7 @@ class Documentation(object):
         self._directory = directory
 
     def write(self):
-        self.write_documentation("hypervisor")
+        self.write_documentation("compute")
         # Controller documentation
         self.write_documentation("controller")
 
@@ -49,8 +49,8 @@ class Documentation(object):
         for handler_name in sorted(self._documentation):
             if "controller." in handler_name:
                 server_type = "controller"
-            elif "hypervisor." in handler_name:
-                server_type = "hypervisor"
+            elif "compute" in handler_name:
+                server_type = "compute"
             else:
                 server_type = "root"
 
@@ -122,7 +122,7 @@ class Documentation(object):
             f.write("\n\n.. literalinclude:: ../../../examples/{}\n\n".format(query_path))
 
     def _file_path(self, path):
-        path = path.replace("hypervisor", "")
+        path = path.replace("compute", "")
         path = path.replace("controller", "")
         return re.sub("^v2", "", re.sub("[^a-z0-9]", "", path))
 

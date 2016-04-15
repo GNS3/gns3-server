@@ -21,7 +21,7 @@ import aiohttp
 from unittest.mock import MagicMock
 
 from gns3server.controller.project import Project
-from gns3server.controller.hypervisor import Hypervisor
+from gns3server.controller.compute import Compute
 from gns3server.controller.udp_link import UDPLink
 from gns3server.controller.vm import VM
 
@@ -32,18 +32,18 @@ def project():
 
 
 def test_create(async_run, project):
-    hypervisor1 = MagicMock()
-    hypervisor2 = MagicMock()
+    compute1 = MagicMock()
+    compute2 = MagicMock()
 
-    vm1 = VM(project, hypervisor1, vm_type="vpcs")
-    vm2 = VM(project, hypervisor2, vm_type="vpcs")
+    vm1 = VM(project, compute1, vm_type="vpcs")
+    vm2 = VM(project, compute2, vm_type="vpcs")
 
     link = UDPLink(project)
     async_run(link.addVM(vm1, 0, 4))
     async_run(link.addVM(vm2, 3, 1))
 
     @asyncio.coroutine
-    def hypervisor1_callback(path, data={}):
+    def compute1_callback(path, data={}):
         """
         Fake server
         """
@@ -53,7 +53,7 @@ def test_create(async_run, project):
             return response
 
     @asyncio.coroutine
-    def hypervisor2_callback(path, data={}):
+    def compute2_callback(path, data={}):
         """
         Fake server
         """
@@ -62,32 +62,32 @@ def test_create(async_run, project):
             response.json = {"udp_port": 2048}
             return response
 
-    hypervisor1.post.side_effect = hypervisor1_callback
-    hypervisor1.host = "example.com"
-    hypervisor2.post.side_effect = hypervisor2_callback
-    hypervisor2.host = "example.org"
+    compute1.post.side_effect = compute1_callback
+    compute1.host = "example.com"
+    compute2.post.side_effect = compute2_callback
+    compute2.host = "example.org"
     async_run(link.create())
 
-    hypervisor1.post.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/0/ports/4/nio".format(project.id, vm1.id), data={
+    compute1.post.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/0/ports/4/nio".format(project.id, vm1.id), data={
         "lport": 1024,
-        "rhost": hypervisor2.host,
+        "rhost": compute2.host,
         "rport": 2048,
         "type": "nio_udp"
     })
-    hypervisor2.post.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/3/ports/1/nio".format(project.id, vm2.id), data={
+    compute2.post.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/3/ports/1/nio".format(project.id, vm2.id), data={
         "lport": 2048,
-        "rhost": hypervisor1.host,
+        "rhost": compute1.host,
         "rport": 1024,
         "type": "nio_udp"
     })
 
 
 def test_delete(async_run, project):
-    hypervisor1 = MagicMock()
-    hypervisor2 = MagicMock()
+    compute1 = MagicMock()
+    compute2 = MagicMock()
 
-    vm1 = VM(project, hypervisor1, vm_type="vpcs")
-    vm2 = VM(project, hypervisor2, vm_type="vpcs")
+    vm1 = VM(project, compute1, vm_type="vpcs")
+    vm2 = VM(project, compute2, vm_type="vpcs")
 
     link = UDPLink(project)
     async_run(link.addVM(vm1, 0, 4))
@@ -95,5 +95,5 @@ def test_delete(async_run, project):
 
     async_run(link.delete())
 
-    hypervisor1.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/0/ports/4/nio".format(project.id, vm1.id))
-    hypervisor2.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/3/ports/1/nio".format(project.id, vm2.id))
+    compute1.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/0/ports/4/nio".format(project.id, vm1.id))
+    compute2.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/3/ports/1/nio".format(project.id, vm2.id))

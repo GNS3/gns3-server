@@ -69,7 +69,7 @@ VM_OBJECT_SCHEMA = {
     "description": "A VM object",
     "type": "object",
     "properties": {
-        "hypervisor_id": {
+        "compute_id": {
             "description": "Hypervisor identifier",
             "type": "string"
         },
@@ -109,5 +109,5 @@ VM_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_type", "hypervisor_id"]
+    "required": ["name", "vm_type", "compute_id"]
 }

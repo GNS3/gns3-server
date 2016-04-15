@@ -25,7 +25,7 @@ import traceback
 
 log = logging.getLogger(__name__)
 
-from ..hypervisor.vm_error import VMError
+from ..compute.vm_error import VMError
 from ..controller.controller_error import ControllerError
 from ..ubridge.ubridge_error import UbridgeError
 from .response import Response
@@ -127,8 +127,8 @@ class Route(object):
             # Add the type of server to the route
             if "controller" in func.__module__:
                 route = "/v{version}{path}".format(path=path, version=api_version)
-            elif "hypervisor" in func.__module__:
-                route = "/v{version}/hypervisor{path}".format(path=path, version=api_version)
+            elif "compute" in func.__module__:
+                route = "/v{version}/compute{path}".format(path=path, version=api_version)
             else:
                 route = path
 
@@ -243,7 +243,7 @@ class Route(object):
                     if vm_id is None:
                         vm_id = request.match_info["device_id"]
 
-                    if "hypervisor" in request.path:
+                    if "compute" in request.path:
                         type = "compute"
                     else:
                         type = "controller"

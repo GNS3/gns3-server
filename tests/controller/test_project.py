@@ -39,31 +39,31 @@ def test_json(tmpdir):
 
 
 def test_addVM(async_run):
-    hypervisor = MagicMock()
+    compute = MagicMock()
     project = Project()
 
     response = MagicMock()
     response.json = {"console": 2048}
-    hypervisor.post = AsyncioMagicMock(return_value=response)
+    compute.post = AsyncioMagicMock(return_value=response)
 
-    vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm = async_run(project.addVM(compute, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
 
-    hypervisor.post.assert_called_with('/projects/{}/vpcs/vms'.format(project.id),
-                                       data={'vm_id': vm.id,
-                                             'console_type': 'telnet',
-                                             'startup_config': 'test.cfg',
-                                             'name': 'test'})
+    compute.post.assert_called_with('/projects/{}/vpcs/vms'.format(project.id),
+                                    data={'vm_id': vm.id,
+                                          'console_type': 'telnet',
+                                          'startup_config': 'test.cfg',
+                                          'name': 'test'})
 
 
 def test_getVM(async_run):
-    hypervisor = MagicMock()
+    compute = MagicMock()
     project = Project()
 
     response = MagicMock()
     response.json = {"console": 2048}
-    hypervisor.post = AsyncioMagicMock(return_value=response)
+    compute.post = AsyncioMagicMock(return_value=response)
 
-    vm = async_run(project.addVM(hypervisor, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm = async_run(project.addVM(compute, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert project.getVM(vm.id) == vm
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
@@ -71,15 +71,15 @@ def test_getVM(async_run):
 
 
 def test_addLink(async_run):
-    hypervisor = MagicMock()
+    compute = MagicMock()
     project = Project()
 
     response = MagicMock()
     response.json = {"console": 2048}
-    hypervisor.post = AsyncioMagicMock(return_value=response)
+    compute.post = AsyncioMagicMock(return_value=response)
 
-    vm1 = async_run(project.addVM(hypervisor, None, name="test1", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
-    vm2 = async_run(project.addVM(hypervisor, None, name="test2", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm1 = async_run(project.addVM(compute, None, name="test1", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm2 = async_run(project.addVM(compute, None, name="test2", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
     link = async_run(project.addLink())
     async_run(link.addVM(vm1, 3, 1))
     async_run(link.addVM(vm2, 4, 2))
@@ -87,12 +87,12 @@ def test_addLink(async_run):
 
 
 def test_getLink(async_run):
-    hypervisor = MagicMock()
+    compute = MagicMock()
     project = Project()
 
     response = MagicMock()
     response.json = {"console": 2048}
-    hypervisor.post = AsyncioMagicMock(return_value=response)
+    compute.post = AsyncioMagicMock(return_value=response)
 
     link = async_run(project.addLink())
     assert project.getLink(link.id) == link

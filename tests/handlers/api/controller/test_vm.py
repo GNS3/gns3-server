@@ -35,11 +35,11 @@ from gns3server.controller.vm import VM
 
 
 @pytest.fixture
-def hypervisor(http_controller, async_run):
-    hypervisor = MagicMock()
-    hypervisor.id = "example.com"
-    Controller.instance()._hypervisors = {"example.com": hypervisor}
-    return hypervisor
+def compute(http_controller, async_run):
+    compute = MagicMock()
+    compute.id = "example.com"
+    Controller.instance()._computes = {"example.com": compute}
+    return compute
 
 
 @pytest.fixture
@@ -48,21 +48,21 @@ def project(http_controller, async_run):
 
 
 @pytest.fixture
-def vm(project, hypervisor, async_run):
-    vm = VM(project, hypervisor, name="test", vm_type="vpcs")
+def vm(project, compute, async_run):
+    vm = VM(project, compute, name="test", vm_type="vpcs")
     project._vms[vm.id] = vm
     return vm
 
 
-def test_create_vm(http_controller, tmpdir, project, hypervisor):
+def test_create_vm(http_controller, tmpdir, project, compute):
     response = MagicMock()
     response.json = {"console": 2048}
-    hypervisor.post = AsyncioMagicMock(return_value=response)
+    compute.post = AsyncioMagicMock(return_value=response)
 
     response = http_controller.post("/projects/{}/vms".format(project.id), {
         "name": "test",
         "vm_type": "vpcs",
-        "hypervisor_id": "example.com",
+        "compute_id": "example.com",
         "properties": {
                 "startup_script": "echo test"
         }
@@ -72,27 +72,27 @@ def test_create_vm(http_controller, tmpdir, project, hypervisor):
     assert "name" not in response.json["properties"]
 
 
-def test_start_vm(http_controller, tmpdir, project, hypervisor, vm):
+def test_start_vm(http_controller, tmpdir, project, compute, vm):
     response = MagicMock()
-    hypervisor.post = AsyncioMagicMock()
+    compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/vms/{}/start".format(project.id, vm.id), example=True)
     assert response.status == 201
     assert response.json["name"] == vm.name
 
 
-def test_stop_vm(http_controller, tmpdir, project, hypervisor, vm):
+def test_stop_vm(http_controller, tmpdir, project, compute, vm):
     response = MagicMock()
-    hypervisor.post = AsyncioMagicMock()
+    compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/vms/{}/stop".format(project.id, vm.id), example=True)
     assert response.status == 201
     assert response.json["name"] == vm.name
 
 
-def test_suspend_vm(http_controller, tmpdir, project, hypervisor, vm):
+def test_suspend_vm(http_controller, tmpdir, project, compute, vm):
     response = MagicMock()
-    hypervisor.post = AsyncioMagicMock()
+    compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/vms/{}/suspend".format(project.id, vm.id), example=True)
     assert response.status == 201
