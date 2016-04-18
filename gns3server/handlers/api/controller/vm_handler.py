@@ -110,3 +110,24 @@ class VMHandler:
         yield from vm.suspend()
         response.set_status(201)
         response.json(vm)
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/vms/{vm_id}/reload",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the VM"
+        },
+        status_codes={
+            201: "Instance created",
+            400: "Invalid request"
+        },
+        description="Reload a VM instance",
+        output=VM_OBJECT_SCHEMA)
+    def reload(request, response):
+
+        project = Controller.instance().getProject(request.match_info["project_id"])
+        vm = project.getVM(request.match_info["vm_id"])
+        yield from vm.reload()
+        response.set_status(201)
+        response.json(vm)

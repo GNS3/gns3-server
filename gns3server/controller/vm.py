@@ -132,6 +132,13 @@ class VM:
         yield from self.post("/suspend")
 
     @asyncio.coroutine
+    def reload(self):
+        """
+        Suspend a VM
+        """
+        yield from self.post("/suspend")
+
+    @asyncio.coroutine
     def post(self, path, data=None):
         """
         HTTP post on the VM

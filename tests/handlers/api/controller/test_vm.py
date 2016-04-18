@@ -97,3 +97,12 @@ def test_suspend_vm(http_controller, tmpdir, project, compute, vm):
     response = http_controller.post("/projects/{}/vms/{}/suspend".format(project.id, vm.id), example=True)
     assert response.status == 201
     assert response.json["name"] == vm.name
+
+
+def test_reload_vm(http_controller, tmpdir, project, compute, vm):
+    response = MagicMock()
+    compute.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/vms/{}/reload".format(project.id, vm.id), example=True)
+    assert response.status == 201
+    assert response.json["name"] == vm.name

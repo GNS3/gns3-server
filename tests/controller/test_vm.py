@@ -110,6 +110,14 @@ def test_suspend(vm, compute, project, async_run):
     compute.post.assert_called_with("/projects/{}/vpcs/vms/{}/suspend".format(vm.project.id, vm.id))
 
 
+def test_reload(vm, compute, project, async_run):
+
+    compute.post = AsyncioMagicMock()
+
+    async_run(vm.reload())
+    compute.post.assert_called_with("/projects/{}/vpcs/vms/{}/reload".format(vm.project.id, vm.id))
+
+
 def test_create_without_console(vm, compute, project, async_run):
     """
     None properties should be send. Because it can mean the emulator doesn"t support it
