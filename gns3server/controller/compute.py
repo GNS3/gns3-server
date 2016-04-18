@@ -204,5 +204,10 @@ class Compute:
         return response
 
     @asyncio.coroutine
+    def put(self, path, data={}):
+        response = yield from self.httpQuery("PUT", path, data)
+        return response
+
+    @asyncio.coroutine
     def delete(self, path):
         return (yield from self.httpQuery("DELETE", path))

@@ -89,6 +89,51 @@ class VM:
 
     @asyncio.coroutine
     def create(self):
+        """
+        Create the VM on the compute Node
+        """
+        data = self._vm_data()
+        response = yield from self._compute.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
+        self._parse_vm_response(response)
+
+    @asyncio.coroutine
+    def update(self, name=None, console=None, console_type="telnet", properties={}):
+        """
+        Update the VM on the compute Node
+
+        :param vm_id: UUID of the vm. Integer id
+        :param vm_type: Type of emulator
+        :param name: Name of the vm
+        :param console: TCP port of the console
+        :param console_type: Type of the console (telnet, vnc, serial..)
+        :param properties: Emulator specific properties of the VM
+
+        """
+        self._name = name
+        self._console = console
+        self._console_type = console_type
+        self._properties = properties
+
+        data = self._vm_data()
+        response = yield from self._compute.put("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
+        self._parse_vm_response(response)
+
+    def _parse_vm_response(self, response):
+        """
+        Update the object with the remote VM object
+        """
+        for key, value in response.json.items():
+            if key == "console":
+                self._console = value
+            elif key in ["console_type", "name", "vm_id"]:
+                pass
+            else:
+                self._properties[key] = value
+
+    def _vm_data(self):
+        """
+        Prepare VM data to send to the remote controller
+        """
         data = copy.copy(self._properties)
         data["vm_id"] = self._id
         data["name"] = self._name
@@ -99,16 +144,11 @@ class VM:
         for key in list(data.keys()):
             if data[key] is None:
                 del data[key]
+        return data
 
-        response = yield from self._compute.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
-
-        for key, value in response.json.items():
-            if key == "console":
-                self._console = value
-            elif key in ["console_type", "name", "vm_id"]:
-                pass
-            else:
-                self._properties[key] = value
+    @asyncio.coroutine
+    def destroy(self):
+        yield from self.delete()
 
     @asyncio.coroutine
     def start(self):
@@ -136,7 +176,7 @@ class VM:
         """
         Suspend a VM
         """
-        yield from self.post("/suspend")
+        yield from self.post("/reload")
 
     @asyncio.coroutine
     def post(self, path, data=None):
@@ -149,7 +189,17 @@ class VM:
             return (yield from self._compute.post("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
 
     @asyncio.coroutine
-    def delete(self, path):
+    def put(self, path, data=None):
+        """
+        HTTP post on the VM
+        """
+        if data:
+            return (yield from self._compute.put("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path), data=data))
+        else:
+            return (yield from self._compute.put("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
+
+    @asyncio.coroutine
+    def delete(self, path=None):
         """
         HTTP post on the VM
         """

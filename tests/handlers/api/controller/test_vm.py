@@ -72,6 +72,24 @@ def test_create_vm(http_controller, tmpdir, project, compute):
     assert "name" not in response.json["properties"]
 
 
+def test_update_vm(http_controller, tmpdir, project, compute, vm):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.put = AsyncioMagicMock(return_value=response)
+
+    response = http_controller.put("/projects/{}/vms/{}".format(project.id, vm.id), {
+        "name": "test",
+        "vm_type": "vpcs",
+        "compute_id": "example.com",
+        "properties": {
+                "startup_script": "echo test"
+        }
+    }, example=True)
+    assert response.status == 201
+    assert response.json["name"] == "test"
+    assert "name" not in response.json["properties"]
+
+
 def test_start_vm(http_controller, tmpdir, project, compute, vm):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
@@ -106,3 +124,11 @@ def test_reload_vm(http_controller, tmpdir, project, compute, vm):
     response = http_controller.post("/projects/{}/vms/{}/reload".format(project.id, vm.id), example=True)
     assert response.status == 201
     assert response.json["name"] == vm.name
+
+
+def test_delete_vm(http_controller, tmpdir, project, compute, vm):
+    response = MagicMock()
+    compute.post = AsyncioMagicMock()
+
+    response = http_controller.delete("/projects/{}/vms/{}".format(project.id, vm.id), example=True)
+    assert response.status == 201

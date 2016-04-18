@@ -86,6 +86,24 @@ def test_create(vm, compute, project, async_run):
     assert vm._properties == {"startup_script": "echo test"}
 
 
+def test_update(vm, compute, project, async_run):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.put = AsyncioMagicMock(return_value=response)
+
+    async_run(vm.update(console=2048, console_type="vnc", properties={"startup_script" :"echo test"}, name="demo"))
+    data = {
+        "console": 2048,
+        "console_type": "vnc",
+        "vm_id": vm.id,
+        "startup_script": "echo test",
+        "name": "demo"
+    }
+    compute.put.assert_called_with("/projects/{}/vpcs/vms".format(vm.project.id), data=data)
+    assert vm._console == 2048
+    assert vm._properties == {"startup_script": "echo test"}
+
+
 def test_start(vm, compute, project, async_run):
 
     compute.post = AsyncioMagicMock()
@@ -137,6 +155,11 @@ def test_create_without_console(vm, compute, project, async_run):
     compute.post.assert_called_with("/projects/{}/vpcs/vms".format(vm.project.id), data=data)
     assert vm._console == 2048
     assert vm._properties == {"test_value": "success", "startup_script": "echo test"}
+
+
+def test_delete(vm, compute, async_run):
+    async_run(vm.destroy())
+    compute.delete.assert_called_with("/projects/{}/vpcs/vms/{}".format(vm.project.id, vm.id))
 
 
 def test_post(vm, compute, async_run):

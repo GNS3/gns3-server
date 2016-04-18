@@ -49,6 +49,29 @@ class VMHandler:
         response.json(vm)
 
     @classmethod
+    @Route.put(
+        r"/projects/{project_id}/vms/{vm_id}",
+        status_codes={
+            201: "Instance created",
+            400: "Invalid request"
+        },
+        description="Update a VM instance",
+        input=VM_OBJECT_SCHEMA,
+        output=VM_OBJECT_SCHEMA)
+    def update(request, response):
+        project = Controller.instance().getProject(request.match_info["project_id"])
+        vm = project.getVM(request.match_info["vm_id"])
+
+        # Ignore this, because we use it only in create
+        request.json.pop("vm_id", None)
+        request.json.pop("vm_type", None)
+        request.json.pop("compute_id", None)
+
+        yield from vm.update(**request.json)
+        response.set_status(201)
+        response.json(vm)
+
+    @classmethod
     @Route.post(
         r"/projects/{project_id}/vms/{vm_id}/start",
         parameters={
@@ -131,3 +154,21 @@ class VMHandler:
         yield from vm.reload()
         response.set_status(201)
         response.json(vm)
+
+    @classmethod
+    @Route.delete(
+        r"/projects/{project_id}/vms/{vm_id}",
+        parameters={
+            "project_id": "UUID for the project",
+            "vm_id": "UUID for the VM"
+        },
+        status_codes={
+            201: "Instance deleted",
+            400: "Invalid request"
+        },
+        description="Delete a VM instance")
+    def delete(request, response):
+        project = Controller.instance().getProject(request.match_info["project_id"])
+        vm = project.getVM(request.match_info["vm_id"])
+        yield from vm.destroy()
+        response.set_status(201)
