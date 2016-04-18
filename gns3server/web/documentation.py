@@ -44,7 +44,7 @@ class Documentation(object):
         """
         Build all the doc page for handlers
 
-        :param doc_type: Type of doc to generate (controller, hypervisor)
+        :param doc_type: Type of doc to generate (controller, compute)
         """
         for handler_name in sorted(self._documentation):
             if "controller." in handler_name:

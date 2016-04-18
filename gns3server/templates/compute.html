@@ -2,7 +2,7 @@
 
 {% block head %}
 <script>
-var socket = new WebSocket("ws://" + location.host + "/v2/hypervisor/notifications/ws");
+var socket = new WebSocket("ws://" + location.host + "/v2/compute/notifications/ws");
 socket.onopen = function (event) {
     document.getElementById("notifications").innerText = "Connected";
 };
@@ -16,7 +16,7 @@ socket.onmessage = function (event) {
 
 {% block body %}
 <h1>
-    Hypervisor status
+    Compute status
 </h1>
 The purpose of this page is to help for GNS3 debug. This can be dropped
 in futur GNS3 versions.

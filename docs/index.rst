@@ -17,18 +17,18 @@ Endpoints
 GNS3 expose two type of endpoints:
 
   * Controller
-  * Hypervisor
+  * Compute
 
 Controller API Endpoints
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The controller manage all the running topologies. The controller
 has knowledge of everything on in GNS3. If you want to create and
-manage a topology it's here. The controller will call the hypervisor API
+manage a topology it's here. The controller will call the compute API
 when needed.
 
 In a standard GNS3 installation you have one controller and one or many
-hypervisors.
+computes.
 
 .. toctree::
    :glob:
@@ -37,10 +37,10 @@ hypervisors.
    api/v2/controller/*
 
 
-Hypervisor API Endpoints
+Compute API Endpoints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The hypervisor is the GNS3 process running on a server and controlling
+The compute is the GNS3 process running on a server and controlling
 the VM process.
 
 .. WARNING::
@@ -50,5 +50,5 @@ the VM process.
    :glob:
    :maxdepth: 2
    
-   api/v2/hypervisor/*
+   api/v2/compute/*
 

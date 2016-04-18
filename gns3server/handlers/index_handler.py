@@ -35,7 +35,7 @@ class IndexHandler:
     @classmethod
     @Route.get(
         r"/compute",
-        description="Ressources used by GNS3 Hypervisor"
+        description="Ressources used by GNS3 Compute"
     )
     def compute(request, response):
         response.template("compute.html",

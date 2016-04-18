@@ -23,11 +23,11 @@ Controller
 ----------
 
 The central server managing everything in GNS3. A GNS3 controller
-will manage multiple GNS3 hypervisor.
+will manage multiple GNS3 compute node.
 
-Hypervisor
+Compute
 ----------
 
-The process running on each server with GNS3. The GNS3 hypervisor 
+The process running on each server with GNS3. The GNS3 compute node
 is controlled by the GNS3 controller.
 

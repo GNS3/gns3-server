@@ -70,7 +70,7 @@ VM_OBJECT_SCHEMA = {
     "type": "object",
     "properties": {
         "compute_id": {
-            "description": "Hypervisor identifier",
+            "description": "Compute identifier",
             "type": "string"
         },
         "project_id": {

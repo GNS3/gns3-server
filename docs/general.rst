@@ -193,10 +193,8 @@ concurrent.
 Authentication
 -----------------
 
-In this version of the API you have no authentification system. If you
-listen on your network interface instead of localhost be carefull. Due
-to the nature of the multiple supported VM it's easy for an user to
-upload and run code on your machine.
+You can use HTTP basic auth to protect the access to the API. And run
+the API over HTTPS.
 
 
 Notifications
