@@ -29,9 +29,9 @@ You can check the server version with a simple curl command:
 
 .. code-block:: shell-session
 
-    # curl "http://localhost:3080/v1/version"
+    # curl "http://localhost:3080/v2/version""
     {
-        "version": "1.3.dev1"
+        "version": "2.0.0dev1"
     }
 
 
@@ -39,18 +39,19 @@ The next step is to create a project.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects" -d '{"name": "test"}'
+    # curl -X POST "http://localhost:3080/v2/projects" -d '{"name": "test"}'
     {
-        "project_id": "42f9feee-3217-4104-981e-85d5f0a806ec",
-        "temporary": false,
-        "name": "Test"
+        "name": "test",
+        "path": null,
+        "project_id": "994d95b6-7dd4-467b-898c-14cf34900b7b",
+        "temporary": false
     }
 
 With this project id we can now create two VPCS VM.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms" -d '{"name": "VPCS 1"}'
+    # curl -X POST "http://localhost:3080/v2/projects/994d95b6-7dd4-467b-898c-14cf34900b7b/vms" -d '{"name": "VPCS 1", "vm_type": "vpcs"}'
     {
         "console": 2000,
         "name": "VPCS 1",
@@ -210,6 +211,7 @@ The available notification are:
     * vm.deleted
     * log.error
     * log.warning
+    * log.info
 
 Previous versions
 =================
