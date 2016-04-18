@@ -1,0 +1,29 @@
+curl -i -X POST 'http://localhost:3080/v2/computes' -d '{"compute_id": "my_compute_id", "host": "example.com", "password": "secure", "port": 84, "protocol": "http", "user": "julien"}'
+
+POST /v2/computes HTTP/1.1
+{
+    "compute_id": "my_compute_id",
+    "host": "example.com",
+    "password": "secure",
+    "port": 84,
+    "protocol": "http",
+    "user": "julien"
+}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 150
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/computes
+
+{
+    "compute_id": "my_compute_id",
+    "connected": false,
+    "host": "example.com",
+    "port": 84,
+    "protocol": "http",
+    "user": "julien"
+}

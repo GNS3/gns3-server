@@ -1,0 +1,13 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/f5fa5b3a-cd39-4c42-a1d3-613ef7936b6c/suspend' -d '{}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/vms/f5fa5b3a-cd39-4c42-a1d3-613ef7936b6c/suspend HTTP/1.1
+{}
+
+
+HTTP/1.1 204
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/qemu/vms/{vm_id}/suspend
+

@@ -1,0 +1,34 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/0bfa9e76-9d26-467e-a66e-a696ffaf71ac' -d '{"console": 5002, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/vms/0bfa9e76-9d26-467e-a66e-a696ffaf71ac HTTP/1.1
+{
+    "console": 5002,
+    "environment": "GNS3=1\nGNS4=0",
+    "name": "test",
+    "start_command": "yes"
+}
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 570
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/docker/vms/{vm_id}
+
+{
+    "adapters": 2,
+    "aux": 5001,
+    "console": 5002,
+    "console_resolution": "1280x1024",
+    "console_type": "telnet",
+    "container_id": "8bd8153ea8f5",
+    "environment": "GNS3=1\nGNS4=0",
+    "image": "nginx",
+    "name": "test",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "start_command": "yes",
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpkojiv29w/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/0bfa9e76-9d26-467e-a66e-a696ffaf71ac",
+    "vm_id": "0bfa9e76-9d26-467e-a66e-a696ffaf71ac"
+}

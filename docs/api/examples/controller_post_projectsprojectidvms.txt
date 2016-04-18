@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/40743a17-5552-4ccc-aedb-648f9577c5ce/vms' -d '{"compute_id": "example.com", "name": "test", "properties": {"startup_script": "echo test"}, "vm_type": "vpcs"}'
+curl -i -X POST 'http://localhost:3080/v2/projects/f8094ada-6a80-40c9-a674-ded9f69eeb7b/vms' -d '{"compute_id": "example.com", "name": "test", "properties": {"startup_script": "echo test"}, "vm_type": "vpcs"}'
 
-POST /v2/projects/40743a17-5552-4ccc-aedb-648f9577c5ce/vms HTTP/1.1
+POST /v2/projects/f8094ada-6a80-40c9-a674-ded9f69eeb7b/vms HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -24,10 +24,10 @@ X-ROUTE: /v2/projects/{project_id}/vms
     "console": 2048,
     "console_type": "telnet",
     "name": "test",
-    "project_id": "40743a17-5552-4ccc-aedb-648f9577c5ce",
+    "project_id": "f8094ada-6a80-40c9-a674-ded9f69eeb7b",
     "properties": {
         "startup_script": "echo test"
     },
-    "vm_id": "bca482df-96d4-46d4-aeed-5b38e874c6b0",
+    "vm_id": "f6c1ed76-dd59-4064-b7b6-7a3f1655d1c4",
     "vm_type": "vpcs"
 }

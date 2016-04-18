@@ -9,8 +9,8 @@ Delete a link instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **link_id**: UUID of the link
+- **project_id**: UUID for the project
 
 Response status codes
 **********************

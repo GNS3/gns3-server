@@ -1,0 +1,33 @@
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/07a93f77-4469-4d2a-a800-4cb3a699e552'
+
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/vms/07a93f77-4469-4d2a-a800-4cb3a699e552 HTTP/1.1
+
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 643
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/iou/vms/{vm_id}
+
+{
+    "command_line": "",
+    "console": 5000,
+    "ethernet_adapters": 2,
+    "iourc_path": null,
+    "l1_keepalives": false,
+    "md5sum": null,
+    "name": "PC TEST 1",
+    "nvram": 128,
+    "path": "iou.bin",
+    "private_config": null,
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 256,
+    "serial_adapters": 2,
+    "startup_config": null,
+    "use_default_iou_values": true,
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpkojiv29w/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/07a93f77-4469-4d2a-a800-4cb3a699e552",
+    "vm_id": "07a93f77-4469-4d2a-a800-4cb3a699e552"
+}
