@@ -91,15 +91,14 @@ def test_update(vm, compute, project, async_run):
     response.json = {"console": 2048}
     compute.put = AsyncioMagicMock(return_value=response)
 
-    async_run(vm.update(console=2048, console_type="vnc", properties={"startup_script" :"echo test"}, name="demo"))
+    async_run(vm.update(console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo"))
     data = {
         "console": 2048,
         "console_type": "vnc",
-        "vm_id": vm.id,
         "startup_script": "echo test",
         "name": "demo"
     }
-    compute.put.assert_called_with("/projects/{}/vpcs/vms".format(vm.project.id), data=data)
+    compute.put.assert_called_with("/projects/{}/vpcs/vms/{}".format(vm.project.id, vm.id), data=data)
     assert vm._console == 2048
     assert vm._properties == {"startup_script": "echo test"}
 

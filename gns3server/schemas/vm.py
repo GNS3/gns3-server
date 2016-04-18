@@ -111,3 +111,6 @@ VM_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["name", "vm_type", "compute_id"]
 }
+
+VM_UPDATE_SCHEMA = VM_OBJECT_SCHEMA
+del VM_UPDATE_SCHEMA["required"]

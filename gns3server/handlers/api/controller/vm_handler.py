@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ....web.route import Route
-from ....schemas.vm import VM_OBJECT_SCHEMA
+from ....schemas.vm import VM_OBJECT_SCHEMA, VM_UPDATE_SCHEMA
 from ....controller.project import Project
 from ....controller import Controller
 
@@ -56,7 +56,7 @@ class VMHandler:
             400: "Invalid request"
         },
         description="Update a VM instance",
-        input=VM_OBJECT_SCHEMA,
+        input=VM_UPDATE_SCHEMA,
         output=VM_OBJECT_SCHEMA)
     def update(request, response):
         project = Controller.instance().getProject(request.match_info["project_id"])

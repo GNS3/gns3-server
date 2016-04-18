@@ -93,6 +93,7 @@ class VM:
         Create the VM on the compute Node
         """
         data = self._vm_data()
+        data["vm_id"] = self._id
         response = yield from self._compute.post("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
         self._parse_vm_response(response)
 
@@ -109,13 +110,17 @@ class VM:
         :param properties: Emulator specific properties of the VM
 
         """
-        self._name = name
-        self._console = console
-        self._console_type = console_type
-        self._properties = properties
+        if name:
+            self._name = name
+        if console:
+            self._console = console
+        if console_type:
+            self._console_type = console_type
+        if properties != {}:
+            self._properties = properties
 
         data = self._vm_data()
-        response = yield from self._compute.put("/projects/{}/{}/vms".format(self._project.id, self._vm_type), data=data)
+        response = yield from self.put(None, data=data)
         self._parse_vm_response(response)
 
     def _parse_vm_response(self, response):
@@ -125,7 +130,7 @@ class VM:
         for key, value in response.json.items():
             if key == "console":
                 self._console = value
-            elif key in ["console_type", "name", "vm_id"]:
+            elif key in ["console_type", "name", "vm_id", "project_id", "vm_directory", "command_line", "status"]:
                 pass
             else:
                 self._properties[key] = value
@@ -135,7 +140,6 @@ class VM:
         Prepare VM data to send to the remote controller
         """
         data = copy.copy(self._properties)
-        data["vm_id"] = self._id
         data["name"] = self._name
         data["console"] = self._console
         data["console_type"] = self._console_type
@@ -193,17 +197,24 @@ class VM:
         """
         HTTP post on the VM
         """
-        if data:
-            return (yield from self._compute.put("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path), data=data))
+        if path is None:
+            path = "/projects/{}/{}/vms/{}".format(self._project.id, self._vm_type, self._id)
         else:
-            return (yield from self._compute.put("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
+            path = "/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)
+        if data:
+            return (yield from self._compute.put(path, data=data))
+        else:
+            return (yield from self._compute.put(path))
 
     @asyncio.coroutine
     def delete(self, path=None):
         """
         HTTP post on the VM
         """
-        return (yield from self._compute.delete("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
+        if path is None:
+            return (yield from self._compute.delete("/projects/{}/{}/vms/{}".format(self._project.id, self._vm_type, self._id)))
+        else:
+            return (yield from self._compute.delete("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
 
     def __json__(self):
         return {

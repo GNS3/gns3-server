@@ -79,6 +79,10 @@ VPCS_UPDATE_SCHEMA = {
             "description": "Content of the VPCS startup script",
             "type": ["string", "null"]
         },
+        "startup_script_path": {
+            "description": "Path of the VPCS startup script relative to project directory (IGNORED)",
+            "type": ["string", "null"]
+        }
     },
     "additionalProperties": False,
 }
