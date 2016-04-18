@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/d7c2d234-9854-47d4-bb78-93a94f2d8bfc/close' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/6f734cbe-2109-4b01-803d-082f5fbca7ee/close' -d '{}'
 
-POST /v2/projects/d7c2d234-9854-47d4-bb78-93a94f2d8bfc/close HTTP/1.1
+POST /v2/projects/6f734cbe-2109-4b01-803d-082f5fbca7ee/close HTTP/1.1
 {}
 
 
@@ -8,6 +8,6 @@ HTTP/1.1 204
 ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.5.0dev1
+SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/close
 

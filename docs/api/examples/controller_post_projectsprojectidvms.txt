@@ -1,8 +1,8 @@
-curl -i -X POST 'http://localhost:8000/v2/projects/e00d950d-0d48-422c-b3ea-43d0fbaa8291/vms' -d '{"hypervisor_id": "example.com", "name": "test", "properties": {"startup_script": "echo test"}, "vm_type": "vpcs"}'
+curl -i -X POST 'http://localhost:3080/v2/projects/40743a17-5552-4ccc-aedb-648f9577c5ce/vms' -d '{"compute_id": "example.com", "name": "test", "properties": {"startup_script": "echo test"}, "vm_type": "vpcs"}'
 
-POST /v2/projects/e00d950d-0d48-422c-b3ea-43d0fbaa8291/vms HTTP/1.1
+POST /v2/projects/40743a17-5552-4ccc-aedb-648f9577c5ce/vms HTTP/1.1
 {
-    "hypervisor_id": "example.com",
+    "compute_id": "example.com",
     "name": "test",
     "properties": {
         "startup_script": "echo test"
@@ -13,21 +13,21 @@ POST /v2/projects/e00d950d-0d48-422c-b3ea-43d0fbaa8291/vms HTTP/1.1
 
 HTTP/1.1 201
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 308
+CONTENT-LENGTH: 305
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/1.5.0dev1
+SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/vms
 
 {
-    "console": null,
+    "compute_id": "example.com",
+    "console": 2048,
     "console_type": "telnet",
-    "hypervisor_id": "example.com",
     "name": "test",
-    "project_id": "e00d950d-0d48-422c-b3ea-43d0fbaa8291",
+    "project_id": "40743a17-5552-4ccc-aedb-648f9577c5ce",
     "properties": {
         "startup_script": "echo test"
     },
-    "vm_id": "a311973e-9ede-4aa2-823c-268e972fc66a",
+    "vm_id": "bca482df-96d4-46d4-aeed-5b38e874c6b0",
     "vm_type": "vpcs"
 }

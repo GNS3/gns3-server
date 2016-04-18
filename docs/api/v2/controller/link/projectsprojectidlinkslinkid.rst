@@ -9,13 +9,13 @@ Delete a link instance
 
 Parameters
 **********
-- **link_id**: UUID of the link
 - **project_id**: UUID for the project
+- **link_id**: UUID of the link
 
 Response status codes
 **********************
 - **400**: Invalid request
-- **201**: Link deleted
+- **204**: Link deleted
 
 Sample session
 ***************
