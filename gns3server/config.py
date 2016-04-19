@@ -27,8 +27,6 @@ import asyncio
 import logging
 log = logging.getLogger(__name__)
 
-CLOUD_SERVER = 'CLOUD_SERVER'
-
 
 class Config(object):
 
