@@ -49,6 +49,18 @@ class ComputeHandler:
         response.json(compute)
 
     @classmethod
+    @Route.get(
+        r"/computes",
+        description="List compute nodes",
+        status_codes={
+            200: "Compute list"
+        })
+    def list(request, response):
+
+        controller = Controller.instance()
+        response.json([ c for c in controller.computes.values() ])
+
+    @classmethod
     @Route.post(
         r"/computes/shutdown",
         description="Shutdown the local compute",

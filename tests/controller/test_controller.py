@@ -82,6 +82,7 @@ def test_addCompute(controller, controller_config_path, async_run):
     async_run(controller.addCompute("test2"))
     assert len(controller.computes) == 2
 
+
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
     async_run(controller.addCompute("test1"))
     assert len(controller.computes) == 1

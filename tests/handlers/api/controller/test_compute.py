@@ -34,3 +34,33 @@ def test_compute_create(http_controller, controller):
 
     assert len(controller.computes) == 1
     assert controller.computes["my_compute_id"].host == "example.com"
+
+
+def test_compute_list(http_controller, controller):
+
+    params = {
+        "compute_id": "my_compute_id",
+        "protocol": "http",
+        "host": "example.com",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params)
+    assert response.status == 201
+    assert response.route == "/computes"
+    assert response.json["user"] == "julien"
+    assert "password" not in response.json
+
+    response = http_controller.get("/computes", example=True)
+    assert response.json == [
+        {
+            'compute_id': 'my_compute_id',
+            'connected': False,
+            'host': 'example.com',
+            'port': 84,
+            'protocol': 'http',
+            'user': 'julien'
+        }
+    ]
+

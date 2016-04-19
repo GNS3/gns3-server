@@ -48,14 +48,14 @@ class Controller:
         Save the controller configuration on disk
         """
         data = {
-            "computes": [ {
+            "computes": [{
                 "host": c.host,
                 "port": c.port,
                 "protocol": c.protocol,
                 "user": c.user,
                 "password": c.password,
                 "compute_id": c.id
-            } for c in self._computes.values() ],
+            } for c in self._computes.values()],
             "version": __version__
         }
         os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
