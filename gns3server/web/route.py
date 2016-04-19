@@ -154,7 +154,6 @@ class Route(object):
             @asyncio.coroutine
             def control_schema(request):
                 # This block is executed at each method call
-
                 server_config = Config.instance().get_section_config("Server")
 
                 # Authenticate
@@ -171,6 +170,9 @@ class Route(object):
 
                 # API call
                 try:
+                    if "controller" in func.__module__ and server_config.getboolean("controller", False) is False:
+                        raise aiohttp.web.HTTPForbidden(text="The server is not a controller")
+
                     request = yield from parse_request(request, input_schema)
                     record_file = server_config.get("record")
                     if record_file:

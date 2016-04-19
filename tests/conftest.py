@@ -179,8 +179,15 @@ def controller():
     return Controller.instance()
 
 
+@pytest.fixture
+def config():
+    config = Config.instance()
+    config.clear()
+    return config
+
+
 @pytest.yield_fixture(autouse=True)
-def run_around_tests(monkeypatch, port_manager, controller):
+def run_around_tests(monkeypatch, port_manager, controller, config):
     """
     This setup a temporay project file environnement around tests
     """
@@ -188,8 +195,6 @@ def run_around_tests(monkeypatch, port_manager, controller):
     tmppath = tempfile.mkdtemp()
 
     port_manager._instance = port_manager
-    config = Config.instance()
-    config.clear()
     os.makedirs(os.path.join(tmppath, 'projects'))
     config.set("Server", "project_directory", os.path.join(tmppath, 'projects'))
     config.set("Server", "images_path", os.path.join(tmppath, 'images'))
