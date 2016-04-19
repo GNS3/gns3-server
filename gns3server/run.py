@@ -26,7 +26,6 @@ import datetime
 import sys
 import locale
 import argparse
-import asyncio
 
 from gns3server.web.web_server import WebServer
 from gns3server.web.logger import init_logger
@@ -34,6 +33,7 @@ from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.compute.project import Project
 from gns3server.crash_report import CrashReport
+
 
 import logging
 log = logging.getLogger(__name__)

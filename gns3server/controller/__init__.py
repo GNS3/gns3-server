@@ -15,12 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
+import json
 import asyncio
 import aiohttp
 
 from ..config import Config
 from .project import Project
 from .compute import Compute
+from ..version import __version__
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class Controller:
@@ -29,6 +36,48 @@ class Controller:
     def __init__(self):
         self._computes = {}
         self._projects = {}
+
+        if sys.platform.startswith("win"):
+            config_path = os.path.join(os.path.expandvars("%APPDATA%"), "GNS3")
+        else:
+            config_path = os.path.join(os.path.expanduser("~"), ".config", "GNS3")
+        self._config_file = os.path.join(config_path, "gns3_controller.conf")
+
+    def save(self):
+        """
+        Save the controller configuration on disk
+        """
+        data = {
+            "computes": [ {
+                "host": c.host,
+                "port": c.port,
+                "protocol": c.protocol,
+                "user": c.user,
+                "password": c.password,
+                "compute_id": c.id
+            } for c in self._computes.values() ],
+            "version": __version__
+        }
+        os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
+        with open(self._config_file, 'w+') as f:
+            json.dump(data, f, indent=4)
+
+    @asyncio.coroutine
+    def load(self):
+        """
+        Reload the controller configuration from disk
+        """
+        if not os.path.exists(self._config_file):
+            return
+        try:
+            with open(self._config_file) as f:
+                data = json.load(f)
+        except OSError as e:
+            log.critical("Can not load %s: %s", self._config_file, str(e))
+            return
+        for c in data["computes"]:
+            compute_id = c.pop("compute_id")
+            yield from self.addCompute(compute_id, **c)
 
     def isEnabled(self):
         """
@@ -47,6 +96,7 @@ class Controller:
         if compute_id not in self._computes:
             compute = Compute(compute_id=compute_id, controller=self, **kwargs)
             self._computes[compute_id] = compute
+            self.save()
         return self._computes[compute_id]
 
     @property

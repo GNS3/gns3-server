@@ -174,9 +174,16 @@ def ethernet_device():
 
 
 @pytest.fixture
-def controller():
+def controller_config_path(tmpdir):
+    return str(tmpdir / "config" / "gns3_controller.conf")
+
+
+@pytest.fixture
+def controller(tmpdir, controller_config_path):
     Controller._instance = None
-    return Controller.instance()
+    controller = Controller.instance()
+    controller._config_file = controller_config_path
+    return controller
 
 
 @pytest.fixture

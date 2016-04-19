@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
+import os
 import uuid
+import json
+import pytest
 import aiohttp
 from unittest.mock import MagicMock
 
@@ -25,6 +27,44 @@ from gns3server.controller import Controller
 from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
 from gns3server.config import Config
+from gns3server.version import __version__
+
+
+def test_save(controller, controller_config_path):
+    controller.save()
+    assert os.path.exists(controller_config_path)
+    with open(controller_config_path) as f:
+        data = json.load(f)
+        assert data["computes"] == []
+        assert data["version"] == __version__
+
+
+def test_load(controller, controller_config_path, async_run):
+    controller.save()
+    with open(controller_config_path) as f:
+        data = json.load(f)
+    data["computes"] = [
+        {
+            "host": "localhost",
+            "port": 8000,
+            "protocol": "http",
+            "user": "admin",
+            "password": "root",
+            "compute_id": "test1"
+        }
+    ]
+    with open(controller_config_path, "w+") as f:
+        json.dump(data, f)
+    async_run(controller.load())
+    assert len(controller.computes) == 1
+    assert controller.computes["test1"].__json__() == {
+        "compute_id": "test1",
+        "connected": False,
+        "host": "localhost",
+        "port": 8000,
+        "protocol": "http",
+        "user": "admin"
+    }
 
 
 def test_isEnabled(controller):
@@ -34,7 +74,7 @@ def test_isEnabled(controller):
     assert controller.isEnabled()
 
 
-def test_addCompute(controller, async_run):
+def test_addCompute(controller, controller_config_path, async_run):
     async_run(controller.addCompute("test1"))
     assert len(controller.computes) == 1
     async_run(controller.addCompute("test1"))
@@ -42,9 +82,24 @@ def test_addCompute(controller, async_run):
     async_run(controller.addCompute("test2"))
     assert len(controller.computes) == 2
 
+def test_addComputeConfigFile(controller, controller_config_path, async_run):
+    async_run(controller.addCompute("test1"))
+    assert len(controller.computes) == 1
+    with open(controller_config_path) as f:
+        data = json.load(f)
+        assert data["computes"] == [
+            {
+                'compute_id': 'test1',
+                'host': 'localhost',
+                'port': 8000,
+                'protocol': 'http',
+                'user': None,
+                'password': None
+            }
+        ]
+
 
 def test_getCompute(controller, async_run):
-
     compute = async_run(controller.addCompute("test1"))
 
     assert controller.getCompute("test1") == compute

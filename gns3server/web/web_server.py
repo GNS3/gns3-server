@@ -34,6 +34,8 @@ from .request_handler import RequestHandler
 from ..config import Config
 from ..compute import MODULES
 from ..compute.port_manager import PortManager
+from ..controller import Controller
+
 
 # do not delete this import
 import gns3server.handlers
@@ -197,6 +199,9 @@ class WebServer:
         self._loop = asyncio.get_event_loop()
         # Asyncio will raise error if coroutine is not called
         self._loop.set_debug(True)
+
+        if server_config.getboolean("controller"):
+            asyncio.async(Controller.instance().load())
 
         for key, val in os.environ.items():
             log.debug("ENV %s=%s", key, val)

@@ -88,6 +88,20 @@ class Compute:
         return self._host
 
     @property
+    def port(self):
+        """
+        :returns: Compute port (integer)
+        """
+        return self._port
+
+    @property
+    def protocol(self):
+        """
+        :returns: Compute protocol (string)
+        """
+        return self._protocol
+
+    @property
     def user(self):
         return self._user
 
