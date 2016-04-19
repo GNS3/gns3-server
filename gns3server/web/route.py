@@ -250,7 +250,6 @@ class Route(object):
                     else:
                         type = "controller"
                     lock_key = "{}:{}:{}".format(type, request.match_info["project_id"], vm_id)
-                    print(lock_key)
                     cls._vm_locks.setdefault(lock_key, {"lock": asyncio.Lock(), "concurrency": 0})
                     cls._vm_locks[lock_key]["concurrency"] += 1
 

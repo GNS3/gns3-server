@@ -163,8 +163,6 @@ class IOUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
-                print(name)
-                print(vm.iourc_path)
 
         yield from vm.start()
         response.json(vm)
