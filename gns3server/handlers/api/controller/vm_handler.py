@@ -49,6 +49,22 @@ class VMHandler:
         response.json(vm)
 
     @classmethod
+    @Route.get(
+        r"/projects/{project_id}/vms",
+        parameters={
+            "project_id": "UUID for the project"
+        },
+        status_codes={
+            200: "List of VMS",
+        },
+        description="List VMs of a project")
+    def list_vms(request, response):
+
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+        response.json([ v for v in project.vms.values() ])
+
+    @classmethod
     @Route.put(
         r"/projects/{project_id}/vms/{vm_id}",
         status_codes={

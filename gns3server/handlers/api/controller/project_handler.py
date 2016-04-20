@@ -53,6 +53,17 @@ class ProjectHandler:
 
     @classmethod
     @Route.get(
+        r"/projects",
+        description="List projects",
+        status_codes={
+            200: "List of projects",
+        })
+    def list_projects(request, response):
+        controller = Controller.instance()
+        response.json([ p for p in controller.projects.values() ])
+
+    @classmethod
+    @Route.get(
         r"/projects/{project_id}",
         description="Get the project",
         parameters={

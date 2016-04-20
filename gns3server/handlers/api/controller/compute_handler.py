@@ -58,7 +58,7 @@ class ComputeHandler:
     def list(request, response):
 
         controller = Controller.instance()
-        response.json([ c for c in controller.computes.values() ])
+        response.json([c for c in controller.computes.values()])
 
     @classmethod
     @Route.post(

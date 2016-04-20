@@ -63,4 +63,3 @@ def test_compute_list(http_controller, controller):
             'user': 'julien'
         }
     ]
-
