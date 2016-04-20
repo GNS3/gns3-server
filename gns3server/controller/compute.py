@@ -57,8 +57,6 @@ class Compute:
         if compute_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
             raise ComputeError("The local compute is started without --local")
 
-        asyncio.async(self._connect())
-
     def __del__(self):
         self._session.close()
 
@@ -131,6 +129,8 @@ class Compute:
     def httpQuery(self, method, path, data=None):
         if not self._connected:
             yield from self._connect()
+        if not self._connected:
+            raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
         response = yield from self._runHttpQuery(method, path, data=data)
         return response
 
@@ -141,6 +141,7 @@ class Compute:
         """
         if not self._connected:
             response = yield from self._runHttpQuery("GET", "/version")
+
             if "version" not in response.json:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
             if parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
@@ -197,6 +198,8 @@ class Compute:
                     raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(url))
                 elif response.status == 409:
                     raise aiohttp.web.HTTPConflict(text="Conflict {} {}".format(url, body))
+                elif response.status == 503:
+                    raise aiohttp.web.HTTPServiceUnavailable(text="Service unavailable {} {}".format(url, body))
                 else:
                     raise NotImplementedError("{} status code is not supported".format(response.status))
             if body and len(body):
