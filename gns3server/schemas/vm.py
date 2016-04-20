@@ -86,7 +86,7 @@ VM_OBJECT_SCHEMA = {
         },
         "vm_type": {
             "description": "Type of VM",
-            "enum": ["docker", "dynamips", "vpcs", "virtualbox", "vmware", "iou"]
+            "enum": ["docker", "dynamips", "vpcs", "virtualbox", "vmware", "iou", "qemu"]
         },
         "name": {
             "description": "VM name",
