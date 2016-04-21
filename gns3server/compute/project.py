@@ -70,6 +70,12 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         self.path = path
 
+        try:
+            if os.path.exists(self.tmp_working_directory()):
+                shutil.rmtree(self.tmp_working_directory())
+        except OSError:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not clean project directory: {}".format(e))
+
         log.info("Project {id} with path '{path}' created".format(path=self._path, id=self._id))
 
     def __json__(self):
@@ -274,14 +280,20 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create the VM working directory: {}".format(e))
         return workdir
 
+    def tmp_working_directory(self):
+        """
+        A temporary directory. Will be clean at project open and close
+        """
+        return os.path.join(self._path, "project-files", "tmp")
+
     def capture_working_directory(self):
         """
-        Returns a working directory where to store packet capture files.
+        Returns a working directory where to temporary store packet capture files.
 
         :returns: path to the directory
         """
 
-        workdir = os.path.join(self._path, "project-files", "captures")
+        workdir = os.path.join(self._path, "project-files", "tmp", "captures")
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
@@ -328,6 +340,12 @@ class Project:
         yield from self._close_and_clean(self._temporary)
         for module in self.compute():
             yield from module.instance().project_closed(self)
+
+        try:
+            if os.path.exists(self.tmp_working_directory()):
+                shutil.rmtree(self.tmp_working_directory())
+        except OSError:
+            pass
 
     @asyncio.coroutine
     def _close_and_clean(self, cleanup):
@@ -484,7 +502,7 @@ class Project:
         for root, dirs, files in os.walk(self._path, topdown=True):
             # Remove snapshots and capture
             if os.path.split(root)[-1:][0] == "project-files":
-                dirs[:] = [d for d in dirs if d not in ("snapshots", "captures")]
+                dirs[:] = [d for d in dirs if d not in ("snapshots", "tmp")]
 
             # Ignore log files and OS noise
             files = [f for f in files if not f.endswith('_log.txt') and not f.endswith('.log') and f != '.DS_Store']

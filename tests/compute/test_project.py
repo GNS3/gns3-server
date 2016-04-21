@@ -51,6 +51,22 @@ def test_affect_uuid():
     assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
+def test_clean_tmp_directory(async_run):
+    """
+    The tmp directory should be clean at project open and close
+    """
+
+    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
+    path = p.tmp_working_directory()
+    os.makedirs(path)
+    async_run(p.close())
+    assert not os.path.exists(path)
+
+    os.makedirs(path)
+    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
+    assert not os.path.exists(path)
+
+
 def test_path(tmpdir):
 
     directory = Config.instance().get_section_config("Server").get("project_directory")
