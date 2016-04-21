@@ -68,7 +68,8 @@ def test_json(async_run, project, compute):
                 "adapter_number": 1,
                 "port_number": 3
             }
-        ]
+        ],
+        "capturing": False
     }
 
 

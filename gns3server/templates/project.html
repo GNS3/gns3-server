@@ -42,10 +42,12 @@ in futur GNS3 versions.
 <table border="1">
     <tr>
         <th>ID</td>
+        <th>Capture</td>
     </tr>
 {% for link in project.links.values() %}
 <tr>
-    <td>{{link.id}}</td>    
+    <td>{{link.id}}</td>
+    <td>{{link.capturing}}</td>
 </tr>
 {% endfor %}
 </table>

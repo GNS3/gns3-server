@@ -90,6 +90,7 @@ class UDPLink(Link):
             "data_link_type": data_link_type
         }
         yield from self._capture_vm["vm"].post("/adapters/{adapter_number}/ports/{port_number}/start_capture".format(adapter_number=self._capture_vm["adapter_number"], port_number=self._capture_vm["port_number"]), data=data)
+        self._capturing = True
 
     @asyncio.coroutine
     def stop_capture(self):
@@ -99,6 +100,7 @@ class UDPLink(Link):
         if self._capture_vm:
             yield from self._capture_vm["vm"].post("/adapters/{adapter_number}/ports/{port_number}/stop_capture".format(adapter_number=self._capture_vm["adapter_number"], port_number=self._capture_vm["port_number"]))
             self._capture_vm = None
+            self._capturing = False
 
     def _choose_capture_side(self):
         """

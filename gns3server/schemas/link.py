@@ -53,7 +53,11 @@ LINK_OBJECT_SCHEMA = {
                 "required": ["vm_id", "adapter_number", "port_number"],
                 "additionalProperties": False
             }
-        }
+        },
+        "capturing": {
+            "description": "Read only propertie. Is a capture running on the link",
+            "type": "boolean"
+        },
     },
     "required": ["vms"],
     "additionalProperties": False

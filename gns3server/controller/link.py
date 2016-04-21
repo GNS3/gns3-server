@@ -27,6 +27,7 @@ class Link:
         self._vms = []
         self._project = project
         self._data_link_type = data_link_type
+        self._capturing = False
 
     @asyncio.coroutine
     def addVM(self, vm, adapter_number, port_number):
@@ -86,6 +87,10 @@ class Link:
     def id(self):
         return self._id
 
+    @property
+    def capturing(self):
+        return self._capturing
+
     def __json__(self):
         res = []
         for side in self._vms:
@@ -94,4 +99,4 @@ class Link:
                 "adapter_number": side["adapter_number"],
                 "port_number": side["port_number"]
             })
-        return {"vms": res, "link_id": self._id}
+        return {"vms": res, "link_id": self._id, "capturing": self._capturing}

@@ -149,6 +149,7 @@ def test_capture(async_run, project):
     async_run(link.addVM(vm_iou, 3, 1))
 
     capture = async_run(link.start_capture())
+    assert link.capturing
 
     compute1.post.assert_any_call("/projects/{}/iou/vms/{}/adapters/3/ports/1/start_capture".format(project.id, vm_iou.id), data={
         "capture_file_name": link.capture_file_name(),
@@ -156,6 +157,6 @@ def test_capture(async_run, project):
     })
 
     capture = async_run(link.stop_capture())
+    assert link.capturing is False
 
     compute1.post.assert_any_call("/projects/{}/iou/vms/{}/adapters/3/ports/1/stop_capture".format(project.id, vm_iou.id))
-
