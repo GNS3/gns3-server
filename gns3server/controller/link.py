@@ -15,16 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 import uuid
 import asyncio
 
 
 class Link:
 
-    def __init__(self, project):
+    def __init__(self, project, data_link_type="DLT_EN10MB"):
         self._id = str(uuid.uuid4())
         self._vms = []
         self._project = project
+        self._data_link_type = data_link_type
 
     @asyncio.coroutine
     def addVM(self, vm, adapter_number, port_number):
@@ -51,6 +53,35 @@ class Link:
         """
         raise NotImplementedError
 
+    @asyncio.coroutine
+    def start_capture(self):
+        """
+        Start capture on the link
+
+        :returns: Capture object
+        """
+        raise NotImplementedError
+
+    @asyncio.coroutine
+    def stop_capture(self):
+        """
+        Stop capture on the link
+        """
+        raise NotImplementedError
+
+    def capture_file_name(self):
+        """
+        :returns: File name for a capture on this link
+        """
+        capture_file_name = "{}_{}-{}_to_{}_{}-{}".format(
+            self._vms[0]["vm"].name,
+            self._vms[0]["adapter_number"],
+            self._vms[0]["port_number"],
+            self._vms[1]["vm"].name,
+            self._vms[1]["adapter_number"],
+            self._vms[1]["port_number"])
+        return re.sub("[^0-9A-Za-z_-]", "", capture_file_name) + ".pcap"
+
     @property
     def id(self):
         return self._id
@@ -63,4 +94,4 @@ class Link:
                 "adapter_number": side["adapter_number"],
                 "port_number": side["port_number"]
             })
-        return {"vms": res, "link_id": self._id}
+        return {"vms": res, "link_id": self._id, "data_link_type": self._data_link_type}

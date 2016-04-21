@@ -28,6 +28,10 @@ LINK_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "data_link_type": {
+            "description": "PCAP data link type (http://www.tcpdump.org/linktypes.html)",
+            "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC"]
+        },
         "vms": {
             "description": "List of the VMS",
             "type": "array",

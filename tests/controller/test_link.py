@@ -57,6 +57,7 @@ def test_json(async_run, project, compute):
     async_run(link.addVM(vm2, 1, 3))
     assert link.__json__() == {
         "link_id": link.id,
+        "data_link_type": "DLT_EN10MB",
         "vms": [
             {
                 "vm_id": vm1.id,
@@ -70,3 +71,12 @@ def test_json(async_run, project, compute):
             }
         ]
     }
+
+def test_capture_filename(project, compute, async_run):
+    vm1 = VM(project, compute, name="Hello@")
+    vm2 = VM(project, compute, name="w0.rld")
+
+    link = Link(project)
+    async_run(link.addVM(vm1, 0, 4))
+    async_run(link.addVM(vm2, 1, 3))
+    assert link.capture_file_name() == "Hello_0-4_to_w0rld_1-3.pcap"

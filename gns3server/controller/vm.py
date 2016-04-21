@@ -216,6 +216,9 @@ class VM:
         else:
             return (yield from self._compute.delete("/projects/{}/{}/vms/{}{}".format(self._project.id, self._vm_type, self._id, path)))
 
+    def __repr__(self):
+        return "<gns3server.controller.VM {} {}>".format(self._vm_type, self._name)
+
     def __json__(self):
         return {
             "compute_id": self._compute.id,

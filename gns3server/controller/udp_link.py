@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import aiohttp
 
 
 from .link import Link
@@ -23,8 +24,9 @@ from .link import Link
 
 class UDPLink(Link):
 
-    def __init__(self, project):
-        super().__init__(project)
+    def __init__(self, project, data_link_type="DLT_EN10MB"):
+        super().__init__(project, data_link_type)
+        self._capture_vm = None
 
     @asyncio.coroutine
     def create(self):
@@ -76,3 +78,45 @@ class UDPLink(Link):
 
         yield from vm1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1))
         yield from vm2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2))
+
+    @asyncio.coroutine
+    def start_capture(self):
+        """
+        Start capture on a link
+        """
+        self._capture_vm = self._choose_capture_side()
+        data = {
+            "capture_file_name": self.capture_file_name(),
+            "data_link_type": self._data_link_type
+        }
+        yield from self._capture_vm["vm"].post("/adapters/{adapter_number}/ports/{port_number}/start_capture".format(adapter_number=self._capture_vm["adapter_number"], port_number=self._capture_vm["port_number"]), data=data)
+
+    @asyncio.coroutine
+    def stop_capture(self):
+        """
+        Stop capture on a link
+        """
+        if self._capture_vm:
+            yield from self._capture_vm["vm"].post("/adapters/{adapter_number}/ports/{port_number}/stop_capture".format(adapter_number=self._capture_vm["adapter_number"], port_number=self._capture_vm["port_number"]))
+            self._capture_vm = None
+
+    def _choose_capture_side(self):
+        """
+        Run capture on the best candidate.
+
+        The ideal candidate is a node who support capture on controller
+        server
+
+        :returns: VM where the capture should run
+        """
+
+        # For saving bandwith we use the local node first
+        for vm in self._vms:
+            if vm["vm"].compute.id == "local" and vm["vm"].vm_type not in ["qemu", "vpcs"]:
+                return vm
+
+        for vm in self._vms:
+            if vm["vm"].vm_type not in ["qemu", "vpcs"]:
+                return vm
+
+        raise aiohttp.web.HTTPConflict(text="Capture is not supported for this link")

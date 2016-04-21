@@ -54,9 +54,8 @@ VM_CAPTURE_SCHEMA = {
             "minLength": 1,
         },
         "data_link_type": {
-            "description": "PCAP data link type",
-            "type": "string",
-            "minLength": 1,
+            "description": "PCAP data link type (http://www.tcpdump.org/linktypes.html)",
+            "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC"]
         }
     },
     "additionalProperties": False,

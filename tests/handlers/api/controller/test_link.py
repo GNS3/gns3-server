@@ -36,11 +36,11 @@ from gns3server.controller.link import Link
 
 
 @pytest.fixture
-def hypervisor(http_controller, async_run):
-    hypervisor = MagicMock()
-    hypervisor.id = "example.com"
-    Controller.instance()._hypervisors = {"example.com": hypervisor}
-    return hypervisor
+def compute(http_controller, async_run):
+    compute = MagicMock()
+    compute.id = "example.com"
+    Controller.instance()._computes = {"example.com": compute}
+    return compute
 
 
 @pytest.fixture
@@ -48,13 +48,13 @@ def project(http_controller, async_run):
     return async_run(Controller.instance().addProject())
 
 
-def test_create_link(http_controller, tmpdir, project, hypervisor, async_run):
+def test_create_link(http_controller, tmpdir, project, compute, async_run):
     response = MagicMock()
     response.json = {"console": 2048}
-    hypervisor.post = AsyncioMagicMock(return_value=response)
+    compute.post = AsyncioMagicMock(return_value=response)
 
-    vm1 = async_run(project.addVM(hypervisor, None))
-    vm2 = async_run(project.addVM(hypervisor, None))
+    vm1 = async_run(project.addVM(compute, None))
+    vm2 = async_run(project.addVM(compute, None))
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
@@ -77,10 +77,29 @@ def test_create_link(http_controller, tmpdir, project, hypervisor, async_run):
     assert len(response.json["vms"]) == 2
 
 
-def test_delete_link(http_controller, tmpdir, project, hypervisor, async_run):
+def test_start_capture(http_controller, tmpdir, project, compute, async_run):
+    link = Link(project)
+    project._links = {link.id: link}
+    with asyncio_patch("gns3server.controller.link.Link.start_capture") as mock:
+        response = http_controller.post("/projects/{}/links/{}/start_capture".format(project.id, link.id), example=True)
+    assert mock.called
+    assert response.status == 204
+
+
+def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
+    link = Link(project)
+    project._links = {link.id: link}
+    with asyncio_patch("gns3server.controller.link.Link.stop_capture") as mock:
+        response = http_controller.post("/projects/{}/links/{}/stop_capture".format(project.id, link.id), example=True)
+    assert mock.called
+    assert response.status == 204
+
+
+def test_delete_link(http_controller, tmpdir, project, compute, async_run):
 
     link = Link(project)
     project._links = {link.id: link}
-    with asyncio_patch("gns3server.controller.udp_link.Link.delete"):
+    with asyncio_patch("gns3server.controller.link.Link.delete") as mock:
         response = http_controller.delete("/projects/{}/links/{}".format(project.id, link.id), example=True)
+    assert mock.called
     assert response.status == 204

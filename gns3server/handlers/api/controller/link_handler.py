@@ -53,6 +53,46 @@ class LinkHandler:
         response.json(link)
 
     @classmethod
+    @Route.post(
+        r"/projects/{project_id}/links/{link_id}/start_capture",
+        parameters={
+            "project_id": "UUID for the project",
+            "link_id": "UUID of the link"
+        },
+        status_codes={
+            204: "Capture started",
+            400: "Invalid request"
+        },
+        description="Start capture on a link instance")
+    def start_capture(request, response):
+
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+        link = project.getLink(request.match_info["link_id"])
+        yield from link.start_capture()
+        response.set_status(204)
+
+    @classmethod
+    @Route.post(
+        r"/projects/{project_id}/links/{link_id}/stop_capture",
+        parameters={
+            "project_id": "UUID for the project",
+            "link_id": "UUID of the link"
+        },
+        status_codes={
+            204: "Capture stopped",
+            400: "Invalid request"
+        },
+        description="Stop capture on a link instance")
+    def stop_capture(request, response):
+
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+        link = project.getLink(request.match_info["link_id"])
+        yield from link.stop_capture()
+        response.set_status(204)
+
+    @classmethod
     @Route.delete(
         r"/projects/{project_id}/links/{link_id}",
         parameters={
