@@ -24,8 +24,8 @@ from .link import Link
 
 class UDPLink(Link):
 
-    def __init__(self, project, data_link_type="DLT_EN10MB"):
-        super().__init__(project, data_link_type)
+    def __init__(self, project):
+        super().__init__(project)
         self._capture_vm = None
 
     @asyncio.coroutine
@@ -80,14 +80,14 @@ class UDPLink(Link):
         yield from vm2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2))
 
     @asyncio.coroutine
-    def start_capture(self):
+    def start_capture(self, data_link_type="DLT_EN10MB"):
         """
         Start capture on a link
         """
         self._capture_vm = self._choose_capture_side()
         data = {
             "capture_file_name": self.capture_file_name(),
-            "data_link_type": self._data_link_type
+            "data_link_type": data_link_type
         }
         yield from self._capture_vm["vm"].post("/adapters/{adapter_number}/ports/{port_number}/start_capture".format(adapter_number=self._capture_vm["adapter_number"], port_number=self._capture_vm["port_number"]), data=data)
 

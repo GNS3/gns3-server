@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ....web.route import Route
-from ....schemas.link import LINK_OBJECT_SCHEMA
+from ....schemas.link import LINK_OBJECT_SCHEMA, LINK_CAPTURE_SCHEMA
 from ....controller.project import Project
 from ....controller import Controller
 
@@ -63,13 +63,14 @@ class LinkHandler:
             204: "Capture started",
             400: "Invalid request"
         },
-        description="Start capture on a link instance")
+        input=LINK_CAPTURE_SCHEMA,
+        description="Start capture on a link instance. By default we consider it as an ethernet link")
     def start_capture(request, response):
 
         controller = Controller.instance()
         project = controller.getProject(request.match_info["project_id"])
         link = project.getLink(request.match_info["link_id"])
-        yield from link.start_capture()
+        yield from link.start_capture(request.json.get("data_link_type", "DLT_EN10MB"))
         response.set_status(204)
 
     @classmethod

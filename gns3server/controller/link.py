@@ -94,4 +94,4 @@ class Link:
                 "adapter_number": side["adapter_number"],
                 "port_number": side["port_number"]
             })
-        return {"vms": res, "link_id": self._id, "data_link_type": self._data_link_type}
+        return {"vms": res, "link_id": self._id}
