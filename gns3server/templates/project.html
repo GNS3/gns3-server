@@ -27,12 +27,14 @@ in futur GNS3 versions.
     <tr>
         <th>Name</th>
         <th>ID</td>
+        <th>Compute</th>
         <th>Console</th>
     </tr>
 {% for vm in project.vms.values() %}
 <tr>
     <td>{{vm.name}}</td>
     <td>{{vm.id}}</td>
+    <td>{{vm.compute.id}}</td>
     <td><a href="{{vm.console_type}}://{{vm.host}}:{{vm.console}}">Console</a>
 </tr>
 {% endfor %}
