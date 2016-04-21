@@ -482,9 +482,9 @@ class Project:
         # topdown allo to modify the list of directory in order to ignore
         # directory
         for root, dirs, files in os.walk(self._path, topdown=True):
-            # Remove snapshots
+            # Remove snapshots and capture
             if os.path.split(root)[-1:][0] == "project-files":
-                dirs[:] = [d for d in dirs if d != "snapshots"]
+                dirs[:] = [d for d in dirs if d not in ("snapshots", "captures")]
 
             # Ignore log files and OS noise
             files = [f for f in files if not f.endswith('_log.txt') and not f.endswith('.log') and f != '.DS_Store']
