@@ -70,6 +70,13 @@ class Link:
         """
         raise NotImplementedError
 
+    @asyncio.coroutine
+    def read_pcap(self):
+        """
+        Return a FileStream of the Pcap from the compute node
+        """
+        raise NotImplementedError
+
     def capture_file_name(self):
         """
         :returns: File name for a capture on this link

@@ -126,6 +126,22 @@ class Compute:
         }
 
     @asyncio.coroutine
+    def streamFile(self, project, path):
+        """
+        Read file of a project and stream it
+
+        :param project: A project object
+        :param path: The path of the file in the project
+        :returns: A file stream
+        """
+
+        url = self._getUrl("/projects/{}/stream/{}".format(project.id, path))
+        response = yield from self._session.request("GET", url, auth=self._auth)
+        if response.status == 404:
+            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
+        return response.content
+
+    @asyncio.coroutine
     def httpQuery(self, method, path, data=None):
         if not self._connected:
             yield from self._connect()

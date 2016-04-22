@@ -284,7 +284,7 @@ class Project:
         """
         A temporary directory. Will be clean at project open and close
         """
-        return os.path.join(self._path, "project-files", "tmp")
+        return os.path.join(self._path, "tmp")
 
     def capture_working_directory(self):
         """
@@ -293,7 +293,7 @@ class Project:
         :returns: path to the directory
         """
 
-        workdir = os.path.join(self._path, "project-files", "tmp", "captures")
+        workdir = os.path.join(self._path, "tmp", "captures")
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:

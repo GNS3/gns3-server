@@ -27,7 +27,6 @@ from .virtualbox_handler import VirtualBoxHandler
 from .vpcs_handler import VPCSHandler
 from .vmware_handler import VMwareHandler
 from .config_handler import ConfigHandler
-from .file_handler import FileHandler
 from .version_handler import VersionHandler
 from .notification_handler import NotificationHandler
 

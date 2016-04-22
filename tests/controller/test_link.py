@@ -18,6 +18,7 @@
 import pytest
 from unittest.mock import MagicMock
 
+
 from gns3server.controller.link import Link
 from gns3server.controller.vm import VM
 from gns3server.controller.compute import Compute

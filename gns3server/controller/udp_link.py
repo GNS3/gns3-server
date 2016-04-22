@@ -122,3 +122,12 @@ class UDPLink(Link):
                 return vm
 
         raise aiohttp.web.HTTPConflict(text="Capture is not supported for this link")
+
+    @asyncio.coroutine
+    def read_pcap(self):
+        """
+        Return a FileStream of the Pcap from the compute node
+        """
+        if self._capture_vm:
+            compute = self._capture_vm["vm"].compute
+            return compute.streamFile(self._project, "tmp/captures/" + self.capture_file_name())

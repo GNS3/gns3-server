@@ -306,6 +306,50 @@ class ProjectHandler:
             raise aiohttp.web.HTTPForbidden()
 
     @classmethod
+    @Route.get(
+        r"/projects/{project_id}/stream/{path:.+}",
+        description="Stream a file from a project",
+        parameters={
+            "project_id": "The UUID of the project",
+        },
+        status_codes={
+            200: "Return the file",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    def stream_file(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
+        path = request.match_info["path"]
+        path = os.path.normpath(path)
+
+        # Raise error if user try to escape
+        if path[0] == ".":
+            raise aiohttp.web.HTTPForbidden
+        path = os.path.join(project.path, path)
+
+        response.content_type = "application/octet-stream"
+        response.set_status(200)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        response.content_length = None
+
+        try:
+            with open(path, "rb") as f:
+                response.start(request)
+                while True:
+                    data = f.read(4096)
+                    if not data:
+                        yield from asyncio.sleep(0.1)
+                    yield from response.write(data)
+
+        except FileNotFoundError:
+            raise aiohttp.web.HTTPNotFound()
+        except PermissionError:
+            raise aiohttp.web.HTTPForbidden()
+
+    @classmethod
     @Route.post(
         r"/projects/{project_id}/files/{path:.+}",
         description="Get a file of a project",

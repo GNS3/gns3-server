@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
+import asyncio
+
 from ....web.route import Route
 from ....schemas.link import LINK_OBJECT_SCHEMA, LINK_CAPTURE_SCHEMA
 from ....controller.project import Project
@@ -113,3 +116,40 @@ class LinkHandler:
         yield from link.delete()
         response.set_status(204)
         response.json(link)
+
+    @classmethod
+    @Route.get(
+        r"/projects/{project_id}/links/{link_id}/pcap",
+        parameters={
+            "project_id": "UUID for the project",
+            "link_id": "UUID of the link"
+        },
+        description="Get the pcap from the capture",
+        status_codes={
+            200: "Return the file",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    def pcap(request, response):
+
+        controller = Controller.instance()
+        project = controller.getProject(request.match_info["project_id"])
+        link = project.getLink(request.match_info["link_id"])
+
+        content = yield from link.read_pcap()
+        if content is None:
+            raise aiohttp.web.HTTPNotFound(text="pcap file not found")
+
+        response.content_type = "application/vnd.tcpdump.pcap"
+        response.set_status(200)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        response.content_length = None
+
+        response.start(request)
+
+        while True:
+            chunk = yield from content.read(4096)
+            if not chunk:
+                yield from asyncio.sleep(0.1)
+            yield from response.write(chunk)

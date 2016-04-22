@@ -179,3 +179,11 @@ def test_json(compute):
         "user": "test",
         "connected": True
     }
+
+
+def test_streamFile(project, async_run, compute):
+    response = MagicMock()
+    response.status = 200
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        async_run(compute.streamFile(project, "test/titi"))
+    mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/stream/test/titi".format(project.id), auth=None)

@@ -19,6 +19,7 @@ import pytest
 import asyncio
 import aiohttp
 from unittest.mock import MagicMock
+from tests.utils import asyncio_patch
 
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
@@ -160,3 +161,17 @@ def test_capture(async_run, project):
     assert link.capturing is False
 
     compute1.post.assert_any_call("/projects/{}/iou/vms/{}/adapters/3/ports/1/stop_capture".format(project.id, vm_iou.id))
+
+
+def test_read_pcap(project, async_run):
+    compute1 = MagicMock()
+
+    link = UDPLink(project)
+    async_run(link.addVM(compute1, 0, 4))
+    async_run(link.addVM(compute1, 3, 1))
+
+    capture = async_run(link.start_capture())
+    assert link._capture_vm is not None
+
+    async_run(link.read_pcap())
+    link._capture_vm["vm"].compute.streamFile.assert_called_with(project, "tmp/captures/" + link.capture_file_name())

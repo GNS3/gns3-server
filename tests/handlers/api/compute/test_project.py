@@ -218,6 +218,25 @@ def test_get_file(http_compute, tmpdir):
     assert response.status == 403
 
 
+def test_stream_file(http_compute, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+        project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
+
+    with open(os.path.join(project.path, "hello"), "w+") as f:
+        f.write("world")
+
+    response = http_compute.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.body == b"world"
+
+    response = http_compute.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
+    assert response.status == 404
+
+    response = http_compute.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    assert response.status == 403
+
+
 def test_export(http_compute, tmpdir, loop, project):
 
     os.makedirs(project.path, exist_ok=True)
