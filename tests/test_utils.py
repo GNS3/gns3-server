@@ -16,10 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.utils import force_unix_path
+from gns3server.utils import force_unix_path, macaddress_to_int, int_to_macaddress
 
 
 def test_force_unix_path():
     assert force_unix_path("a/b") == "a/b"
     assert force_unix_path("a\\b") == "a/b"
     assert force_unix_path("a\\b\\..\\c") == "a/c"
+
+
+def test_macaddress_to_int():
+    assert macaddress_to_int("00:0c:29:11:b0:0a") == 52228632586
+
+
+def test_int_to_macaddress():
+    assert int_to_macaddress(52228632586) == "00:0c:29:11:b0:0a"
