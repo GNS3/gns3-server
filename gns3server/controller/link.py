@@ -87,7 +87,6 @@ class Link:
                     f.flush()
                 else:
                     break
-            yield from stream.close()
 
     @asyncio.coroutine
     def stop_capture(self):
