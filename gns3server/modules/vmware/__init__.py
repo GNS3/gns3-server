@@ -618,7 +618,7 @@ class VMware(BaseManager):
         yield from self.check_vmware_version()
 
         inventory_path = self.get_vmware_inventory_path()
-        if os.path.exists(inventory_path) and self.host_type == "ws":
+        if os.path.exists(inventory_path) and self.host_type != "player":
             # inventory may exist for VMware player if VMware workstation has been previously installed
             return self._get_vms_from_inventory(inventory_path)
         else:

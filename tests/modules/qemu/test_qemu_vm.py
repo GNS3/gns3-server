@@ -443,6 +443,49 @@ def test_build_command_without_display(vm, loop, fake_qemu_binary):
         assert "-nographic" in cmd
 
 
+def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
+
+    vm.adapters = 2
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert cmd == [
+            fake_qemu_binary,
+            "-name",
+            "test",
+            "-m",
+            "256M",
+            "-smp",
+            "cpus=1",
+            "-boot",
+            "order=c",
+            "-serial",
+            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "-net",
+            "none",
+            "-device",
+            "e1000,mac=00:00:ab:0e:0f:00",
+            "-device",
+            "e1000,mac=00:00:ab:0e:0f:01",
+            "-nographic"
+        ]
+
+
+def test_build_command_two_adapters_mac_address(vm, loop, fake_qemu_binary, port_manager):
+
+    vm.adapters = 2
+    vm.mac_address = "00:00:ab:0e:0f:09"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert "e1000,mac=00:00:ab:0e:0f:09" in cmd
+        assert "e1000,mac=00:00:ab:0e:0f:0a" in cmd
+
+    vm.mac_address = "00:00:ab:0e:0f:0a"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert "e1000,mac=00:00:ab:0e:0f:0a" in cmd
+        assert "e1000,mac=00:00:ab:0e:0f:0b" in cmd
+
+
 # Windows accept this kind of mistake
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_build_command_with_invalid_options(vm, loop, fake_qemu_binary):

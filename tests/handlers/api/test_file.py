@@ -27,15 +27,15 @@ from gns3server.version import __version__
 
 
 def test_stream(server, tmpdir, loop):
-    with open(str(tmpdir / "test"), 'w+') as f:
+    with open(str(tmpdir / "test.pcap"), 'w+') as f:
         f.write("hello")
 
     def go(future):
-        query = json.dumps({"location": str(tmpdir / "test")})
+        query = json.dumps({"location": str(tmpdir / "test.pcap")})
         headers = {'content-type': 'application/json'}
         response = yield from aiohttp.request("GET", server.get_url("/files/stream", 1), data=query, headers=headers)
         response.body = yield from response.content.read(5)
-        with open(str(tmpdir / "test"), 'a') as f:
+        with open(str(tmpdir / "test.pcap"), 'a') as f:
             f.write("world")
         response.body += yield from response.content.read(5)
         response.close()
@@ -48,9 +48,23 @@ def test_stream(server, tmpdir, loop):
     assert response.body == b'helloworld'
 
 
-def test_stream_file_not_found(server, tmpdir, loop):
+def test_stream_file_not_pcap(server, tmpdir, loop):
     def go(future):
         query = json.dumps({"location": str(tmpdir / "test")})
+        headers = {'content-type': 'application/json'}
+        response = yield from aiohttp.request("GET", server.get_url("/files/stream", 1), data=query, headers=headers)
+        response.close()
+        future.set_result(response)
+
+    future = asyncio.Future()
+    asyncio.async(go(future))
+    response = loop.run_until_complete(future)
+    assert response.status == 403
+
+
+def test_stream_file_not_found(server, tmpdir, loop):
+    def go(future):
+        query = json.dumps({"location": str(tmpdir / "test.pcap")})
         headers = {'content-type': 'application/json'}
         response = yield from aiohttp.request("GET", server.get_url("/files/stream", 1), data=query, headers=headers)
         response.close()

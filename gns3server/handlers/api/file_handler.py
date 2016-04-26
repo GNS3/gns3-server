@@ -37,6 +37,9 @@ class FileHandler:
     def read(request, response):
         response.enable_chunked_encoding()
 
+        if not request.json.get("location").endswith(".pcap"):
+            raise aiohttp.web.HTTPForbidden(text="Only .pcap file are allowed")
+
         try:
             with open(request.json.get("location"), "rb") as f:
                 loop = asyncio.get_event_loop()
