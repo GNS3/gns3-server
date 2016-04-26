@@ -652,6 +652,9 @@ class DockerVM(BaseVM):
         :param adapters: number of adapters
         """
 
+        if len(self._ethernet_adapters) == adapters:
+            return
+
         self._ethernet_adapters.clear()
         for adapter_number in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
