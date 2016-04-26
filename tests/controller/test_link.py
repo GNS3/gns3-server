@@ -86,7 +86,8 @@ def test_json(async_run, project, compute):
             }
         ],
         "capturing": False,
-        "capture_file_name": None
+        "capture_file_name": None,
+        "capture_file_path": None
     }
 
 

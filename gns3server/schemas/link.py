@@ -61,6 +61,10 @@ LINK_OBJECT_SCHEMA = {
         "capture_file_name": {
             "description": "Read only propertie. The name of the capture file if capture is running",
             "type": ["string", "null"]
+        },
+        "capture_file_path": {
+            "description": "Read only propertie. The full path of the capture file if capture is running",
+            "type": ["string", "null"]
         }
     },
     "required": ["vms"],

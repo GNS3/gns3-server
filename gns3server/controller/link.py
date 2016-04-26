@@ -145,5 +145,6 @@ class Link:
         return {
             "vms": res, "link_id": self._id,
             "capturing": self._capturing,
-            "capture_file_name": self._capture_file_name
+            "capture_file_name": self._capture_file_name,
+            "capture_file_path": self.capture_file_path
         }
