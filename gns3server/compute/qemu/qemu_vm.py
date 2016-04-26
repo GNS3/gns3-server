@@ -41,6 +41,8 @@ from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
 from .qcow2 import Qcow2, Qcow2Error
+from ...utils import macaddress_to_int, int_to_macaddress
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -1326,7 +1328,7 @@ class QemuVM(BaseVM):
                 patched_qemu = True
 
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
-            mac = "%s%02x" % (self._mac_address[:-2], (int(self._mac_address[-2:]) + adapter_number) % 255)
+            mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
             nio = adapter.get_nio(0)
             if self._legacy_networking:
                 # legacy QEMU networking syntax (-net)

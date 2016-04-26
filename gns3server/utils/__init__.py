@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import textwrap
 import posixpath
 
 
@@ -26,3 +27,20 @@ def force_unix_path(path):
 
     path = path.replace("\\", "/")
     return posixpath.normpath(path)
+
+
+def macaddress_to_int(macaddress):
+    """
+    Convert a macaddress with the format 00:0c:29:11:b0:0a to a int
+
+    :param macaddress: The mac address
+    :returns: Integer
+    """
+    return int(macaddress.replace(":", ""), 16)
+
+
+def int_to_macaddress(integer):
+    """
+    Convert an integer to a macaddress
+    """
+    return ":".join(textwrap.wrap("%012x" % (integer), width=2))

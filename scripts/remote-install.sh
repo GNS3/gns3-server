@@ -289,9 +289,9 @@ dev tun
 <connection>
 remote $MY_IP_ADDR 1194 udp
 </connection>
-EOF
+EOFCLIENT
 
-cat <<EOF > /etc/openvpn/udp1194.conf
+cat <<EOFUDP > /etc/openvpn/udp1194.conf
 server 172.16.253.0 255.255.255.0
 verb 3
 duplicate-cn
@@ -308,7 +308,7 @@ port 1194
 dev tun1194
 status openvpn-status-1194.log
 log-append /var/log/openvpn-udp1194.log
-EOF
+EOFUDP
 
 echo "Setup HTTP server for serving client certificate"
 mkdir -p /usr/share/nginx/openvpn/$UUID
@@ -316,12 +316,13 @@ cp /root/client.ovpn /usr/share/nginx/openvpn/$UUID/$HOSTNAME.ovpn
 touch /usr/share/nginx/openvpn/$UUID/index.html
 touch /usr/share/nginx/openvpn/index.html
 
-cat <<EOF > /etc/nginx/sites-available/openvpn
+cat <<EOFNGINX > /etc/nginx/sites-available/openvpn
 server {
 	listen 8003;
     root /usr/share/nginx/openvpn;
 }
-EOFCLIENT
+EOFNGINX
+
 [ -f /etc/nginx/sites-enabled/openvpn ] || ln -s /etc/nginx/sites-available/openvpn /etc/nginx/sites-enabled/
 service nginx stop
 service nginx start
@@ -332,6 +333,6 @@ set +e
 service openvpn stop
 service openvpn start
 
-log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client"
+log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client after rebooting the server"
 
 fi
