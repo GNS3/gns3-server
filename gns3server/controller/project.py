@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import asyncio
 import aiohttp
 from uuid import UUID, uuid4
@@ -23,6 +24,7 @@ from contextlib import contextmanager
 from .vm import VM
 from .udp_link import UDPLink
 from ..notification_queue import NotificationQueue
+from ..config import Config
 
 
 class Project:
@@ -45,7 +47,13 @@ class Project:
             except ValueError:
                 raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
             self._id = project_id
-        self._path = path
+
+        #TODO: Security check if not locale
+        if path is None:
+            location = self._config().get("project_directory", self._get_default_project_directory())
+            path = os.path.join(location, self._id)
+        self.path = path
+
         self._temporary = temporary
         self._computes = set()
         self._vms = {}
@@ -67,6 +75,30 @@ class Project:
     @property
     def path(self):
         return self._path
+
+    @path.setter
+    def path(self, path):
+        try:
+            os.makedirs(path, exist_ok=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+
+        if '"' in path:
+            raise aiohttp.web.HTTPForbidden(text="You are not allowed to use \" in the project directory path. It's not supported by Dynamips.")
+
+        self._path = path
+
+    def _config(self):
+        return Config.instance().get_section_config("Server")
+
+    @property
+    def captures_directory(self):
+        """
+        Location of the captures file
+        """
+        path = os.path.join(self._path, "project-files", "captures")
+        os.makedirs(path, exist_ok=True)
+        return path
 
     @asyncio.coroutine
     def addCompute(self, compute):
@@ -142,6 +174,7 @@ class Project:
     def delete(self):
         for compute in self._computes:
             yield from compute.delete("/projects/{}".format(self._id))
+        shutil.rmtree(self.path)
 
     @contextmanager
     def queue(self):
@@ -165,6 +198,22 @@ class Project:
         """
         for listener in self._listeners:
             listener.put_nowait((action, event, kwargs))
+
+    @classmethod
+    def _get_default_project_directory(cls):
+        """
+        Return the default location for the project directory
+        depending of the operating system
+        """
+
+        server_config = Config.instance().get_section_config("Server")
+        path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
+        path = os.path.normpath(path)
+        try:
+            os.makedirs(path, exist_ok=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+        return path
 
     def __json__(self):
 

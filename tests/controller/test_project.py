@@ -16,13 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import pytest
 import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock
-
+from unittest.mock import patch
+from uuid import uuid4
 
 from gns3server.controller.project import Project
+from gns3server.config import Config
 
 
 def test_affect_uuid():
@@ -35,7 +38,29 @@ def test_affect_uuid():
 
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False, "path": None}
+    assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False, "path": p.path}
+
+
+def test_path(tmpdir):
+
+    directory = Config.instance().get_section_config("Server").get("project_directory")
+
+    with patch("gns3server.compute.project.Project._get_default_project_directory", return_value=directory):
+        p = Project(project_id=str(uuid4()))
+        assert p.path == os.path.join(directory, p.id)
+        assert os.path.exists(os.path.join(directory, p.id))
+
+
+def test_init_path(tmpdir):
+
+    p = Project(path=str(tmpdir), project_id=str(uuid4()))
+    assert p.path == str(tmpdir)
+
+
+def test_changing_path_with_quote_not_allowed(tmpdir):
+    with pytest.raises(aiohttp.web.HTTPForbidden):
+        p = Project(project_id=str(uuid4()))
+        p.path = str(tmpdir / "project\"53")
 
 
 def test_addVM(async_run):
