@@ -153,7 +153,7 @@ def test_capture(async_run, project):
     assert link.capturing
 
     compute1.post.assert_any_call("/projects/{}/iou/vms/{}/adapters/3/ports/1/start_capture".format(project.id, vm_iou.id), data={
-        "capture_file_name": link.capture_file_name(),
+        "capture_file_name": link.default_capture_file_name(),
         "data_link_type": "DLT_EN10MB"
     })
 
@@ -163,7 +163,7 @@ def test_capture(async_run, project):
     compute1.post.assert_any_call("/projects/{}/iou/vms/{}/adapters/3/ports/1/stop_capture".format(project.id, vm_iou.id))
 
 
-def test_read_pcap(project, async_run):
+def test_read_pcap_from_source(project, async_run):
     compute1 = MagicMock()
 
     link = UDPLink(project)
@@ -173,5 +173,5 @@ def test_read_pcap(project, async_run):
     capture = async_run(link.start_capture())
     assert link._capture_vm is not None
 
-    async_run(link.read_pcap())
-    link._capture_vm["vm"].compute.streamFile.assert_called_with(project, "tmp/captures/" + link.capture_file_name())
+    async_run(link.read_pcap_from_source())
+    link._capture_vm["vm"].compute.streamFile.assert_called_with(project, "tmp/captures/" + link._capture_file_name)

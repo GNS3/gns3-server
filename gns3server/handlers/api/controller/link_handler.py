@@ -73,7 +73,7 @@ class LinkHandler:
         controller = Controller.instance()
         project = controller.getProject(request.match_info["project_id"])
         link = project.getLink(request.match_info["link_id"])
-        yield from link.start_capture(request.json.get("data_link_type", "DLT_EN10MB"))
+        yield from link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"), capture_file_name=request.json.get("capture_file_name"))
         response.set_status(204)
 
     @classmethod
@@ -136,20 +136,24 @@ class LinkHandler:
         project = controller.getProject(request.match_info["project_id"])
         link = project.getLink(request.match_info["link_id"])
 
-        content = yield from link.read_pcap()
-        if content is None:
+        if link.capture_file_path is None:
             raise aiohttp.web.HTTPNotFound(text="pcap file not found")
 
-        response.content_type = "application/vnd.tcpdump.pcap"
-        response.set_status(200)
-        response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
-        response.content_length = None
+        try:
+            print(link.capture_file_path)
+            with open(link.capture_file_path, "rb") as f:
 
-        response.start(request)
+                response.content_type = "application/vnd.tcpdump.pcap"
+                response.set_status(200)
+                response.enable_chunked_encoding()
+                # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+                response.content_length = None
+                response.start(request)
 
-        while True:
-            chunk = yield from content.read(4096)
-            if not chunk:
-                yield from asyncio.sleep(0.1)
-            yield from response.write(chunk)
+                while True:
+                    chunk = f.read(4096)
+                    if not chunk:
+                        break
+                    yield from response.write(chunk)
+        except OSError:
+            raise aiohttp.web.HTTPNotFound(text="pcap file {} not found or not accessible".format(link.capture_file_path))

@@ -55,9 +55,13 @@ LINK_OBJECT_SCHEMA = {
             }
         },
         "capturing": {
-            "description": "Read only propertie. Is a capture running on the link",
+            "description": "Read only propertie. True if a capture running on the link",
             "type": "boolean"
         },
+        "capture_file_name": {
+            "description": "Read only propertie. The name of the capture file if capture is running",
+            "type": ["string", "null"]
+        }
     },
     "required": ["vms"],
     "additionalProperties": False
@@ -72,6 +76,10 @@ LINK_CAPTURE_SCHEMA = {
         "data_link_type": {
             "description": "PCAP data link type (http://www.tcpdump.org/linktypes.html)",
             "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC"]
+        },
+        "capture_file_name": {
+            "description": "Read only propertie. The name of the capture file if capture is running",
+            "type": "string"
         }
     },
     "additionalProperties": False

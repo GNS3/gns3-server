@@ -80,17 +80,19 @@ class UDPLink(Link):
         yield from vm2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2))
 
     @asyncio.coroutine
-    def start_capture(self, data_link_type="DLT_EN10MB"):
+    def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
         """
         Start capture on a link
         """
+        if not capture_file_name:
+            capture_file_name = self.default_capture_file_name()
         self._capture_vm = self._choose_capture_side()
         data = {
-            "capture_file_name": self.capture_file_name(),
+            "capture_file_name": capture_file_name,
             "data_link_type": data_link_type
         }
         yield from self._capture_vm["vm"].post("/adapters/{adapter_number}/ports/{port_number}/start_capture".format(adapter_number=self._capture_vm["adapter_number"], port_number=self._capture_vm["port_number"]), data=data)
-        self._capturing = True
+        yield from super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name)
 
     @asyncio.coroutine
     def stop_capture(self):
@@ -100,7 +102,7 @@ class UDPLink(Link):
         if self._capture_vm:
             yield from self._capture_vm["vm"].post("/adapters/{adapter_number}/ports/{port_number}/stop_capture".format(adapter_number=self._capture_vm["adapter_number"], port_number=self._capture_vm["port_number"]))
             self._capture_vm = None
-            self._capturing = False
+        yield from super().stop_capture()
 
     def _choose_capture_side(self):
         """
@@ -124,10 +126,10 @@ class UDPLink(Link):
         raise aiohttp.web.HTTPConflict(text="Capture is not supported for this link")
 
     @asyncio.coroutine
-    def read_pcap(self):
+    def read_pcap_from_source(self):
         """
         Return a FileStream of the Pcap from the compute node
         """
         if self._capture_vm:
             compute = self._capture_vm["vm"].compute
-            return compute.streamFile(self._project, "tmp/captures/" + self.capture_file_name())
+            return compute.streamFile(self._project, "tmp/captures/" + self._capture_file_name)

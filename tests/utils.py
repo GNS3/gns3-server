@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import io
 import asyncio
 import unittest.mock
 
@@ -87,3 +88,22 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
         Original code: https://github.com/python/cpython/blob/121f86338111e49c547a55eb7f26db919bfcbde9/Lib/unittest/mock.py
         """
         return AsyncioMagicMock(**kw)
+
+
+class AsyncioBytesIO(io.BytesIO):
+    """
+    An async wrapper arround io.BytesIO to fake an
+    async network connection
+    """
+
+    @asyncio.coroutine
+    def read(self, length=-1):
+        return super().read(length)
+
+    @asyncio.coroutine
+    def write(self, data):
+        return super().write(data)
+
+    @asyncio.coroutine
+    def close(self):
+        return super().close()

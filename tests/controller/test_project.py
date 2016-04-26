@@ -63,6 +63,12 @@ def test_changing_path_with_quote_not_allowed(tmpdir):
         p.path = str(tmpdir / "project\"53")
 
 
+def test_captures_directory(tmpdir):
+    p = Project(path=str(tmpdir))
+    assert p.captures_directory == str(tmpdir / "project-files" / "captures")
+    assert os.path.exists(p.captures_directory)
+
+
 def test_addVM(async_run):
     compute = MagicMock()
     project = Project()

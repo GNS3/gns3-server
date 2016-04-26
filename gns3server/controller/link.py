@@ -15,19 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import re
 import uuid
 import asyncio
 
 
+import logging
+log = logging.getLogger(__name__)
+
+
 class Link:
 
-    def __init__(self, project, data_link_type="DLT_EN10MB"):
+    def __init__(self, project):
         self._id = str(uuid.uuid4())
         self._vms = []
         self._project = project
-        self._data_link_type = data_link_type
         self._capturing = False
+        self._capture_file_name = None
 
     @asyncio.coroutine
     def addVM(self, vm, adapter_number, port_number):
@@ -55,29 +60,50 @@ class Link:
         raise NotImplementedError
 
     @asyncio.coroutine
-    def start_capture(self):
+    def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
         """
         Start capture on the link
 
         :returns: Capture object
         """
-        raise NotImplementedError
+        self._capturing = True
+        self._capture_file_name = capture_file_name
+        self._streaming_pcap = asyncio.async(self._start_streaming_pcap())
+
+    @asyncio.coroutine
+    def _start_streaming_pcap(self):
+        """
+        Dump the pcap file on disk
+        """
+        stream = yield from self.read_pcap_from_source()
+        with open(self.capture_file_path, "wb+") as f:
+            while self._capturing:
+                # We read 1 bytes by 1 otherwise if the traffic stop the remaining data is not read
+                # this is slow
+                data = yield from stream.read(1)
+                if data:
+                    f.write(data)
+                    # Flush to disk otherwise the live is not really live
+                    f.flush()
+                else:
+                    break
+            yield from stream.close()
 
     @asyncio.coroutine
     def stop_capture(self):
         """
         Stop capture on the link
         """
-        raise NotImplementedError
+        self._capturing = False
 
     @asyncio.coroutine
-    def read_pcap(self):
+    def read_pcap_from_source(self):
         """
         Return a FileStream of the Pcap from the compute node
         """
         raise NotImplementedError
 
-    def capture_file_name(self):
+    def default_capture_file_name(self):
         """
         :returns: File name for a capture on this link
         """
@@ -98,6 +124,16 @@ class Link:
     def capturing(self):
         return self._capturing
 
+    @property
+    def capture_file_path(self):
+        """
+        Get the path of the capture
+        """
+        if self._capture_file_name:
+            return os.path.join(self._project.captures_directory, self._capture_file_name)
+        else:
+            return None
+
     def __json__(self):
         res = []
         for side in self._vms:
@@ -106,4 +142,8 @@ class Link:
                 "adapter_number": side["adapter_number"],
                 "port_number": side["port_number"]
             })
-        return {"vms": res, "link_id": self._id, "capturing": self._capturing}
+        return {
+            "vms": res, "link_id": self._id,
+            "capturing": self._capturing,
+            "capture_file_name": self._capture_file_name
+        }

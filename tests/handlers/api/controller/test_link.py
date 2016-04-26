@@ -97,11 +97,13 @@ def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
 
 def test_pcap(http_controller, tmpdir, project, compute, async_run):
     link = Link(project)
-    link
+    link._capture_file_name = "test"
+    link._capturing = True
+    with open(link.capture_file_path, "w+") as f:
+        f.write("hello")
     project._links = {link.id: link}
-    with asyncio_patch("gns3server.controller.link.Link.read_pcap", return_value=None) as mock:
-        response = http_controller.get("/projects/{}/links/{}/pcap".format(project.id, link.id), example=True)
-    assert mock.called
+    response = http_controller.get("/projects/{}/links/{}/pcap".format(project.id, link.id), example=True)
+    assert response.body == b"hello"
 
 
 def test_delete_link(http_controller, tmpdir, project, compute, async_run):
