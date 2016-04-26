@@ -108,7 +108,7 @@ class VMware(BaseManager):
                 vmrun_path = shutil.which("vmrun")
 
         if not vmrun_path:
-            raise VMwareError("Could not find vmrun")
+            raise VMwareError("Could not find VMware vmrun, please make sure it is installed")
         if not os.path.isfile(vmrun_path):
             raise VMwareError("vmrun {} is not accessible".format(vmrun_path))
         if not os.access(vmrun_path, os.X_OK):
@@ -138,6 +138,50 @@ class VMware(BaseManager):
         return version
 
     @asyncio.coroutine
+    def _check_vmware_player_requirements(self, player_version):
+        """
+        Check minimum requirements to use VMware Player.
+
+        VIX 1.13 was the release for Player 6.
+        VIX 1.14 was the release for Player 7.
+        VIX 1.15 was the release for Workstation Player 12.
+
+        :param player_version: VMware Player major version.
+        """
+
+        player_version = int(player_version)
+        if player_version < 6:
+            raise VMwareError("Using VMware Player requires version 6 or above")
+        elif player_version == 6:
+            yield from self.check_vmrun_version(minimum_required_version="1.13")
+        elif player_version == 7:
+            yield from self.check_vmrun_version(minimum_required_version="1.14")
+        elif player_version >= 12:
+            yield from self.check_vmrun_version(minimum_required_version="1.15")
+
+    @asyncio.coroutine
+    def _check_vmware_workstation_requirements(self, ws_version):
+        """
+        Check minimum requirements to use VMware Workstation.
+
+        VIX 1.13 was the release for Workstation 10.
+        VIX 1.14 was the release for Workstation 11.
+        VIX 1.15 was the release for Workstation Pro 12.
+
+        :param ws_version: VMware Workstation major version.
+        """
+
+        ws_version = int(ws_version)
+        if ws_version < 10:
+            raise VMwareError("Using VMware Workstation requires version 10 or above")
+        elif ws_version == 10:
+            yield from self.check_vmrun_version(minimum_required_version="1.13")
+        elif ws_version == 11:
+            yield from self.check_vmrun_version(minimum_required_version="1.14")
+        elif ws_version >= 12:
+            yield from self.check_vmrun_version(minimum_required_version="1.15")
+
+    @asyncio.coroutine
     def check_vmware_version(self):
         """
         Check VMware version
@@ -150,15 +194,12 @@ class VMware(BaseManager):
                 player_version = self._find_vmware_version_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
                 if player_version:
                     log.debug("VMware Player version {} detected".format(player_version))
-                    if int(player_version) < 6:
-                        raise VMwareError("Using VMware Player requires version 6 or above")
+                    yield from self._check_vmware_player_requirements(player_version)
                 else:
                     log.warning("Could not find VMware version")
             else:
                 log.debug("VMware Workstation version {} detected".format(ws_version))
-                if int(ws_version) < 10:
-                    raise VMwareError("Using VMware Workstation requires version 10 or above")
-            return
+                yield from self._check_vmware_workstation_requirements(ws_version)
         else:
             if sys.platform.startswith("darwin"):
                 if not os.path.isdir("/Applications/VMware Fusion.app"):
@@ -174,16 +215,16 @@ class VMware(BaseManager):
                 match = re.search("VMware Workstation ([0-9]+)\.", output)
                 version = None
                 if match:
+                    # VMware Workstation has been detected
                     version = match.group(1)
                     log.debug("VMware Workstation version {} detected".format(version))
-                    if int(version) < 10:
-                        raise VMwareError("Using VMware Workstation requires version 10 or above")
+                    yield from self._check_vmware_workstation_requirements(version)
                 match = re.search("VMware Player ([0-9]+)\.", output)
                 if match:
+                    # VMware Player has been detected
                     version = match.group(1)
                     log.debug("VMware Player version {} detected".format(version))
-                    if int(version) < 6:
-                        raise VMwareError("Using VMware Player requires version 6 or above")
+                    yield from self._check_vmware_player_requirements(version)
                 if version is None:
                     log.warning("Could not find VMware version. Output of VMware: {}".format(output))
                     raise VMwareError("Could not find VMware version. Output of VMware: {}".format(output))
@@ -352,7 +393,17 @@ class VMware(BaseManager):
             return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
     @asyncio.coroutine
-    def check_vmrun_version(self):
+    def check_vmrun_version(self, minimum_required_version="1.13"):
+        """
+        Checks the vmrun version.
+
+        VMware VIX library version must be at least >= 1.13 by default
+        VIX 1.13 was the release for VMware Fusion 6, Workstation 10, and Player 6.
+        VIX 1.14 was the release for VMware Fusion 7, Workstation 11 and Player 7.
+        VIX 1.15 was the release for VMware Fusion 8, Workstation Pro 12 and Workstation Player 12.
+
+        :param required_version: required vmrun version number
+        """
 
         with (yield from self._execute_lock):
             vmrun_path = self.vmrun_path
@@ -366,9 +417,9 @@ class VMware(BaseManager):
                 if match:
                     version = match.group(1)
                     log.debug("VMware vmrun version {} detected".format(version))
-                    if parse_version(version) < parse_version("1.13"):
-                        # VMware VIX library version must be at least >= 1.13
-                        raise VMwareError("VMware vmrun executable version must be >= version 1.13")
+                    if parse_version(version) < parse_version(minimum_required_version):
+
+                        raise VMwareError("VMware vmrun executable version must be >= version {}".format(minimum_required_version))
                 if version is None:
                     log.warning("Could not find VMware vmrun version. Output: {}".format(output))
                     raise VMwareError("Could not find VMware vmrun version. Output: {}".format(output))
