@@ -83,7 +83,7 @@ def test_start_capture(http_controller, tmpdir, project, compute, async_run):
     with asyncio_patch("gns3server.controller.link.Link.start_capture") as mock:
         response = http_controller.post("/projects/{}/links/{}/start_capture".format(project.id, link.id), example=True)
     assert mock.called
-    assert response.status == 204
+    assert response.status == 201
 
 
 def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
@@ -92,7 +92,7 @@ def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
     with asyncio_patch("gns3server.controller.link.Link.stop_capture") as mock:
         response = http_controller.post("/projects/{}/links/{}/stop_capture".format(project.id, link.id), example=True)
     assert mock.called
-    assert response.status == 204
+    assert response.status == 201
 
 
 def test_pcap(http_controller, tmpdir, project, compute, async_run):

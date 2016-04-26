@@ -63,10 +63,11 @@ class LinkHandler:
             "link_id": "UUID of the link"
         },
         status_codes={
-            204: "Capture started",
+            201: "Capture started",
             400: "Invalid request"
         },
         input=LINK_CAPTURE_SCHEMA,
+        output=LINK_OBJECT_SCHEMA,
         description="Start capture on a link instance. By default we consider it as an ethernet link")
     def start_capture(request, response):
 
@@ -74,7 +75,8 @@ class LinkHandler:
         project = controller.getProject(request.match_info["project_id"])
         link = project.getLink(request.match_info["link_id"])
         yield from link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"), capture_file_name=request.json.get("capture_file_name"))
-        response.set_status(204)
+        response.set_status(201)
+        response.json(link)
 
     @classmethod
     @Route.post(
@@ -84,7 +86,7 @@ class LinkHandler:
             "link_id": "UUID of the link"
         },
         status_codes={
-            204: "Capture stopped",
+            201: "Capture stopped",
             400: "Invalid request"
         },
         description="Stop capture on a link instance")
@@ -94,7 +96,8 @@ class LinkHandler:
         project = controller.getProject(request.match_info["project_id"])
         link = project.getLink(request.match_info["link_id"])
         yield from link.stop_capture()
-        response.set_status(204)
+        response.set_status(201)
+        response.json(link)
 
     @classmethod
     @Route.delete(
