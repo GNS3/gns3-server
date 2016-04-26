@@ -368,12 +368,12 @@ class VirtualBoxVM(BaseVM):
                 hdd_files = yield from self._get_all_hdd_files()
                 vm_info = yield from self._get_vm_info()
                 for entry, value in vm_info.items():
-                    match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)
+                    match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)  # match Controller-PortNumber-DeviceNumber entry
                     if match:
                         controller = match.group(1)
                         port = match.group(2)
                         device = match.group(3)
-                        if value in hdd_files:
+                        if value in hdd_files and os.path.exists(os.path.join(self.working_dir, self._vmname, "Snapshots", os.path.basename(value))):
                             log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
                                                                                                                        id=self.id,
                                                                                                                        controller=controller,
