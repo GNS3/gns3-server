@@ -158,7 +158,7 @@ class VirtualBoxVM(BaseVM):
             if self.id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
                 yield from self.manager.execute("registervm", [vbox_file])
-                yield from self._reattach_hdds()
+                yield from self._reattach_linked_hdds()
             else:
                 yield from self._create_linked_clone()
 
@@ -313,7 +313,10 @@ class VirtualBoxVM(BaseVM):
         return hdds
 
     @asyncio.coroutine
-    def _reattach_hdds(self):
+    def _reattach_linked_hdds(self):
+        """
+        Reattach linked cloned hard disks.
+        """
 
         hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
         try:
@@ -332,10 +335,67 @@ class VirtualBoxVM(BaseVM):
                                                                                                                     device=hdd_info["device"],
                                                                                                                     medium=hdd_file))
 
-                yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
-                                                                                                                          hdd_info["port"],
-                                                                                                                          hdd_info["device"],
-                                                                                                                          hdd_file))
+                try:
+                    yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
+                                                                                                                              hdd_info["port"],
+                                                                                                                              hdd_info["device"],
+                                                                                                                              hdd_file))
+
+                except VirtualBoxError as e:
+                    log.warn("VirtualBox VM '{name}' [{id}] error reattaching HDD {controller} {port} {device} {medium}: {error}".format(name=self.name,
+                                                                                                                                         id=self.id,
+                                                                                                                                         controller=hdd_info["controller"],
+                                                                                                                                         port=hdd_info["port"],
+                                                                                                                                         device=hdd_info["device"],
+                                                                                                                                         medium=hdd_file,
+                                                                                                                                         error=e))
+                    continue
+
+    @asyncio.coroutine
+    def save_linked_hdds_info(self):
+        """
+        Save linked cloned hard disks information.
+
+        :returns: disk table information
+        """
+
+        hdd_table = []
+        if self._linked_clone:
+            if os.path.exists(self.working_dir):
+                hdd_files = yield from self._get_all_hdd_files()
+                vm_info = yield from self._get_vm_info()
+                for entry, value in vm_info.items():
+                    match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)  # match Controller-PortNumber-DeviceNumber entry
+                    if match:
+                        controller = match.group(1)
+                        port = match.group(2)
+                        device = match.group(3)
+                        if value in hdd_files and os.path.exists(os.path.join(self.working_dir, self._vmname, "Snapshots", os.path.basename(value))):
+                            log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
+                                                                                                                       id=self.id,
+                                                                                                                       controller=controller,
+                                                                                                                       port=port,
+                                                                                                                       device=device))
+                            hdd_table.append(
+                                {
+                                    "hdd": os.path.basename(value),
+                                    "controller": controller,
+                                    "port": port,
+                                    "device": device,
+                                }
+                            )
+
+            if hdd_table:
+                try:
+                    hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
+                    with open(hdd_info_file, "w", encoding="utf-8") as f:
+                        json.dump(hdd_table, f, indent=4)
+                except OSError as e:
+                    log.warning("VirtualBox VM '{name}' [{id}] could not write HHD info file: {error}".format(name=self.name,
+                                                                                                              id=self.id,
+                                                                                                              error=e.strerror))
+
+        return hdd_table
 
     @asyncio.coroutine
     def close(self):
@@ -343,8 +403,17 @@ class VirtualBoxVM(BaseVM):
         Closes this VirtualBox VM.
         """
 
+        if self._closed:
+            # VM is already closed
+            return
+
         if not (yield from super().close()):
             return False
+
+        log.debug("VirtualBox VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
+        if self._console:
+            self._manager.port_manager.release_tcp_port(self._console, self._project)
+            self._console = None
 
         for adapter in self._ethernet_adapters.values():
             if adapter is not None:
@@ -356,46 +425,31 @@ class VirtualBoxVM(BaseVM):
         yield from self.stop()
 
         if self._linked_clone:
-            hdd_table = []
-            if os.path.exists(self.working_dir):
-                hdd_files = yield from self._get_all_hdd_files()
-                vm_info = yield from self._get_vm_info()
-                for entry, value in vm_info.items():
-                    match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)
-                    if match:
-                        controller = match.group(1)
-                        port = match.group(2)
-                        device = match.group(3)
-                        if value in hdd_files:
-                            log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
-                                                                                                                       id=self.id,
-                                                                                                                       controller=controller,
-                                                                                                                       port=port,
-                                                                                                                       device=device))
-                            yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(controller,
-                                                                                                                                      port,
-                                                                                                                                      device))
-                            hdd_table.append(
-                                {
-                                    "hdd": os.path.basename(value),
-                                    "controller": controller,
-                                    "port": port,
-                                    "device": device,
-                                }
-                            )
+            hdd_table = yield from self.save_linked_hdds_info()
+            for hdd in hdd_table.copy():
+                log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
+                                                                                                           id=self.id,
+                                                                                                           controller=hdd["controller"],
+                                                                                                           port=hdd["port"],
+                                                                                                           device=hdd["device"]))
+                try:
+                    yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(hdd["controller"],
+                                                                                                                              hdd["port"],
+                                                                                                                              hdd["device"]))
+                except VirtualBoxError as e:
+                    log.warn("VirtualBox VM '{name}' [{id}] error detaching HDD {controller} {port} {device}: {error}".format(name=self.name,
+                                                                                                                              id=self.id,
+                                                                                                                              controller=hdd["controller"],
+                                                                                                                              port=hdd["port"],
+                                                                                                                              device=hdd["device"],
+                                                                                                                              error=e))
+                    continue
 
             log.info("VirtualBox VM '{name}' [{id}] unregistering".format(name=self.name, id=self.id))
             yield from self.manager.execute("unregistervm", [self._name])
 
-            if hdd_table:
-                try:
-                    hdd_info_file = os.path.join(self.working_dir, self._vmname, "hdd_info.json")
-                    with open(hdd_info_file, "w", encoding="utf-8") as f:
-                        json.dump(hdd_table, f, indent=4)
-                except OSError as e:
-                    log.warning("VirtualBox VM '{name}' [{id}] could not write HHD info file: {error}".format(name=self.name,
-                                                                                                              id=self.id,
-                                                                                                              error=e.strerror))
+        log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
+        self._closed = True
 
     @property
     def headless(self):
