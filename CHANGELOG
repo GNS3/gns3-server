@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.4.6 28/04/2016
+
+* More robust save/restore for VirtualBox linked clone VM hard disks.
+* Prevent non linked cloned hard disks to be detached when using VirtualBox linked cloned VMs. Fixes #1184.
+* Stricter checks to match VMware version to the right vmrun (VIX library) version. Also checks the VIX library version when only using the GNS3 VM running in VMware.
+* Allow only .pcap to be downloaded from remote stream API
+* Fix incrementation of qemu mac address
+* Clear warnings about using linked clones with VMware Player.
+* Alternative method to find the Documents folder on Windows.
+* Add IOU support and install config in /etc
+
 ## 1.4.5 23/03/2016
 
 * Stop the VMware VM if there is an error while setting up the network connections or console.
