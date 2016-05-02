@@ -22,7 +22,7 @@ import os
 import sys
 
 from tests.utils import asyncio_patch
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 from unittest.mock import patch, MagicMock
 
 from gns3server.modules.vpcs.vpcs_vm import VPCSVM

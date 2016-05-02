@@ -31,7 +31,7 @@ import codecs
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio import subprocess_check_output
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 
 log = logging.getLogger(__name__)
 

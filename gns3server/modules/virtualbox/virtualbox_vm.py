@@ -28,7 +28,7 @@ import json
 import socket
 import asyncio
 
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
 from .virtualbox_error import VirtualBoxError

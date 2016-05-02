@@ -24,7 +24,7 @@ import logging
 import aiohttp
 import urllib
 import json
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 
 log = logging.getLogger(__name__)
 
