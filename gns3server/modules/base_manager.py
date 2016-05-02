@@ -486,14 +486,17 @@ class BaseManager:
         log.info("Writting image file %s", path)
         try:
             remove_checksum(path)
+            # We store the file under his final name only when the upload is finished
+            tmp_path = path + ".tmp"
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'wb+') as f:
+            with open(tmp_path, 'wb+') as f:
                 while True:
                     packet = yield from stream.read(512)
                     if not packet:
                         break
                     f.write(packet)
-            os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+            os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+            shutil.move(tmp_path, path)
             md5sum(path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))

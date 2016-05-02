@@ -263,9 +263,9 @@ def test_upload_vm_forbiden_location(server, tmpdir):
 
 
 def test_upload_vm_permission_denied(server, tmpdir):
-    with open(str(tmpdir / "test2"), "w+") as f:
+    with open(str(tmpdir / "test2.tmp"), "w+") as f:
         f.write("")
-    os.chmod(str(tmpdir / "test2"), 0)
+    os.chmod(str(tmpdir / "test2.tmp"), 0)
 
     with patch("gns3server.modules.Qemu.get_images_directory", return_value=str(tmpdir),):
         response = server.post("/qemu/vms/test2", body="TEST", raw=True)
