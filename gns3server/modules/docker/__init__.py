@@ -49,7 +49,7 @@ class Docker(BaseManager):
 
     @asyncio.coroutine
     def connector(self):
-        if not self._connected:
+        if not self._connected or self._connector.closed:
             try:
                 self._connector = aiohttp.connector.UnixConnector(self._server_url)
                 self._connected = True
