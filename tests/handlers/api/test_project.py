@@ -294,8 +294,8 @@ def test_export(server, tmpdir, loop, project):
 
     response = server.get("/projects/{project_id}/export".format(project_id=project.id), raw=True)
     assert response.status == 200
-    assert response.headers['CONTENT-TYPE'] == 'application/gns3z'
-    assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3z"'.format(project.name)
+    assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
+    assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
 
     with open(str(tmpdir / 'project.zip'), 'wb+') as f:
         f.write(response.body)

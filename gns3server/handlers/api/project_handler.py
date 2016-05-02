@@ -361,8 +361,8 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        response.content_type = 'application/gns3z'
-        response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3z"'.format(project.name)
+        response.content_type = 'application/gns3project'
+        response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
         response.enable_chunked_encoding()
         # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
         response.content_length = None
