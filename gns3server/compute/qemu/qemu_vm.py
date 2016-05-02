@@ -1261,6 +1261,8 @@ class QemuVM(BaseVM):
                                                                             "backing_file={}".format(disk_image),
                                                                             "-f", "qcow2", disk)
                         retcode = yield from process.wait()
+                        if retcode is not None and retcode != 0:
+                            raise QemuError("Could not create {} disk image".format(disk_name))
                         log.info("{} returned with {}".format(qemu_img_path, retcode))
                     except (OSError, subprocess.SubprocessError) as e:
                         raise QemuError("Could not create {} disk image {}".format(disk_name, e))

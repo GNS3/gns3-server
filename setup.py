@@ -40,9 +40,6 @@ class PyTest(TestCommand):
 
 dependencies = open("requirements.txt", "r").read().splitlines()
 
-if sys.platform.startswith("win"):
-    dependencies.append("pywin32>=219")
-
 setup(
     name="gns3-server",
     version=__import__("gns3server").__version__,
