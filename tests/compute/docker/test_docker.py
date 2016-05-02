@@ -24,11 +24,17 @@ from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_error import DockerError
 
 
-def test_query_success(loop):
-
+@pytest.fixture
+def vm():
     vm = Docker()
-    vm._connector = MagicMock()
     vm._connected = True
+    vm._connector = MagicMock()
+    vm._connector.closed = False
+    return vm
+
+
+def test_query_success(loop, vm):
+
     response = MagicMock()
     response.status = 200
     response.headers = {'CONTENT-TYPE': 'application/json'}
@@ -50,11 +56,8 @@ def test_query_success(loop):
     assert data == {"c": False}
 
 
-def test_query_error(loop):
+def test_query_error(loop, vm):
 
-    vm = Docker()
-    vm._connected = True
-    vm._connector = MagicMock()
     response = MagicMock()
     response.status = 404
 
@@ -74,11 +77,8 @@ def test_query_error(loop):
                             params={'b': 1})
 
 
-def test_query_error_json(loop):
+def test_query_error_json(loop, vm):
 
-    vm = Docker()
-    vm._connected = True
-    vm._connector = MagicMock()
     response = MagicMock()
     response.status = 404
 
