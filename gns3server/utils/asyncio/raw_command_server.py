@@ -24,21 +24,27 @@ log = logging.getLogger(__name__)
 
 READ_SIZE = 4096
 
+
 class AsyncioRawCommandServer:
     """
     Expose a process on the network his stdoud and stdin will be forward
     on network
     """
 
-    def __init__(self, command):
+    def __init__(self, command, replaces=[]):
+        """
+        :param command: Command to run
+        :param replaces: List of tuple to replace in the output ex: [(b":8080", b":6000")]
+        """
         self._command = command
+        self._replaces = replaces
 
     @asyncio.coroutine
     def run(self, network_reader, network_writer):
         process = yield from asyncio.subprocess.create_subprocess_exec(*self._command,
-                                                                      stdout=asyncio.subprocess.PIPE,
-                                                                      stderr=asyncio.subprocess.STDOUT,
-                                                                      stdin=asyncio.subprocess.PIPE)
+                                                                       stdout=asyncio.subprocess.PIPE,
+                                                                       stderr=asyncio.subprocess.STDOUT,
+                                                                       stdin=asyncio.subprocess.PIPE)
         try:
             yield from self._process(network_reader, network_writer, process.stdout, process.stdin)
         except ConnectionResetError:
@@ -73,6 +79,8 @@ class AsyncioRawCommandServer:
 
                     reader_read = asyncio.async(process_reader.read(READ_SIZE))
 
+                    for replace in self._replaces:
+                        data = data.replace(replace[0], replace[1])
                     network_writer.write(data)
                     yield from network_writer.drain()
 

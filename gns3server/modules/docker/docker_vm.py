@@ -393,7 +393,13 @@ class DockerVM(BaseVM):
         """
         log.debug("Forward HTTP for %s to %d", self.name, self._console_http_port)
         command = ["docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "nc", "127.0.0.1", str(self._console_http_port)]
-        server = AsyncioRawCommandServer(command)
+        # We replace the port in the server answer otherwise somelink could be broke
+        server = AsyncioRawCommandServer(command, replaces=[
+            (
+                ':{}'.format(self._console_http_port).encode(),
+                ':{}'.format(self.console).encode(),
+            )
+        ])
         self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)))
 
     @asyncio.coroutine
