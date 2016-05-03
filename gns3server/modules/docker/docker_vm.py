@@ -396,8 +396,8 @@ class DockerVM(BaseVM):
         # We replace the port in the server answer otherwise somelink could be broke
         server = AsyncioRawCommandServer(command, replaces=[
             (
-                ':{}'.format(self._console_http_port).encode(),
-                ':{}'.format(self.console).encode(),
+                '{}'.format(self._console_http_port).encode(),
+                '{}'.format(self.console).encode(),
             )
         ])
         self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)))
