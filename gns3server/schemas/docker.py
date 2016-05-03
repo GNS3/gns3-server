@@ -41,12 +41,20 @@ DOCKER_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "console type",
-            "enum": ["telnet", "vnc"]
+            "enum": ["telnet", "vnc", "http", "https"]
         },
         "console_resolution": {
             "description": "console resolution for VNC",
             "type": ["string", "null"],
             "pattern": "^[0-9]+x[0-9]+$"
+        },
+        "console_http_port": {
+            "description": "Internal port in the container of the HTTP server",
+            "type": "integer",
+        },
+        "console_http_path": {
+            "description": "Path of the web interface",
+            "type": "string",
         },
         "aux": {
             "description": "auxilary TCP port",
@@ -104,7 +112,15 @@ DOCKER_UPDATE_SCHEMA = {
         },
         "console_type": {
             "description": "console type",
-            "enum": ["telnet", "vnc"]
+            "enum": ["telnet", "vnc", "http", "https"]
+        },
+        "console_http_port": {
+            "description": "Internal port in the container of the HTTP server",
+            "type": "integer",
+        },
+        "console_http_path": {
+            "description": "Path of the web interface",
+            "type": "string",
         },
         "aux": {
             "description": "auxilary TCP port",
@@ -168,7 +184,15 @@ DOCKER_OBJECT_SCHEMA = {
         },
         "console_type": {
             "description": "console type",
-            "enum": ["telnet", "vnc"]
+            "enum": ["telnet", "vnc", "http", "https"]
+        },
+        "console_http_port": {
+            "description": "Internal port in the container of the HTTP server",
+            "type": "integer",
+        },
+        "console_http_path": {
+            "description": "Path of the web interface",
+            "type": "string",
         },
         "container_id": {
             "description": "Docker container ID",

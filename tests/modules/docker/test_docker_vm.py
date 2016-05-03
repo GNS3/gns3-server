@@ -58,6 +58,8 @@ def test_json(vm, project):
         'console': vm.console,
         'console_type': 'telnet',
         'console_resolution': '1024x768',
+        'console_http_port': 80,
+        'console_http_path': '/',
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
