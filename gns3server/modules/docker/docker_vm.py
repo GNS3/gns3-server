@@ -338,11 +338,11 @@ class DockerVM(BaseVM):
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
         process = yield from asyncio.subprocess.create_subprocess_exec(
-            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "sh", "-i",
+            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "/gns3/bin/busybox sh", "/dev/null",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             stdin=asyncio.subprocess.PIPE)
-        server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=False, echo=False)
+        server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
         self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
         log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
 
