@@ -38,9 +38,12 @@ class AsyncioRawCommandServer:
         """
         self._command = command
         self._replaces = replaces
+        # We limit number of process
+        self._lock = asyncio.Semaphore(value=4)
 
     @asyncio.coroutine
     def run(self, network_reader, network_writer):
+        yield from self._lock.acquire()
         process = yield from asyncio.subprocess.create_subprocess_exec(*self._command,
                                                                        stdout=asyncio.subprocess.PIPE,
                                                                        stderr=asyncio.subprocess.STDOUT,
@@ -49,11 +52,16 @@ class AsyncioRawCommandServer:
             yield from self._process(network_reader, network_writer, process.stdout, process.stdin)
         except ConnectionResetError:
             network_writer.close()
+        if process.returncode is None:
+            process.kill()
+        yield from process.wait()
+        self._lock.release()
 
     @asyncio.coroutine
     def _process(self, network_reader, network_writer, process_reader, process_writer):
         network_read = asyncio.async(network_reader.read(READ_SIZE))
         reader_read = asyncio.async(process_reader.read(READ_SIZE))
+        timeout = 30
 
         while True:
             done, pending = yield from asyncio.wait(
@@ -61,10 +69,12 @@ class AsyncioRawCommandServer:
                     network_read,
                     reader_read
                 ],
+                timeout=timeout,
                 return_when=asyncio.FIRST_COMPLETED)
+            if len(done) == 0:
+                raise ConnectionResetError()
             for coro in done:
                 data = coro.result()
-
                 if coro == network_read:
                     if network_reader.at_eof():
                         raise ConnectionResetError()
@@ -81,6 +91,8 @@ class AsyncioRawCommandServer:
 
                     for replace in self._replaces:
                         data = data.replace(replace[0], replace[1])
+                    timeout = 2 # We reduce the timeout when the process start to return stuff to avoid problem with server not closing the connection
+
                     network_writer.write(data)
                     yield from network_writer.drain()
 
