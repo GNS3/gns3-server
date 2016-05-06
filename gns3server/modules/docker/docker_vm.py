@@ -284,6 +284,9 @@ class DockerVM(BaseVM):
             params["Cmd"] = ["/bin/sh"]
         params["Entrypoint"].insert(0, "/gns3/init.sh")
 
+        # Give the information to the container on how many interface should be inside
+        params["Env"].append("GNS3_MAX_ETHERNET=eth{}".format(self.adapters - 1))
+
         if self._environment:
             params["Env"] += [e.strip() for e in self._environment.split("\n")]
 

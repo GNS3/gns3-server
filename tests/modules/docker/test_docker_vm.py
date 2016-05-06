@@ -103,7 +103,9 @@ def test_create(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Env": [],
+                "Env": [
+                    "GNS3_MAX_ETHERNET=eth0"
+                ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -142,7 +144,10 @@ def test_create_vnc(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Env": ['DISPLAY=:42'],
+                "Env": [
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "DISPLAY=:42"
+                ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -182,7 +187,9 @@ def test_create_start_cmd(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Env": []
+                "Env": [
+                    "GNS3_MAX_ETHERNET=eth0"
+                ]
             })
         assert vm._cid == "e90e34656806"
 
@@ -211,7 +218,11 @@ def test_create_environment(loop, project, manager):
                         ],
                         "Privileged": True
                     },
-                "Env": ["YES=1", "NO=0"],
+                "Env": [
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "YES=1",
+                    "NO=0"
+                ],
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
@@ -266,7 +277,9 @@ def test_create_image_not_available(loop, project, manager):
                 "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu",
-                "Env": [],
+                "Env": [
+                    "GNS3_MAX_ETHERNET=eth0"
+                ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -481,7 +494,9 @@ def test_update(loop, vm):
         "Name": "test",
         "Hostname": "test",
         "Image": "ubuntu",
-        "Env": [],
+        "Env": [
+            "GNS3_MAX_ETHERNET=eth0"
+        ],
         "Entrypoint": ["/gns3/init.sh"],
         "Cmd": ["/bin/sh"]
     })
@@ -546,7 +561,9 @@ def test_update_running(loop, vm):
         "Name": "test",
         "Hostname": "test",
         "Image": "ubuntu",
-        "Env": [],
+        "Env": [
+            "GNS3_MAX_ETHERNET=eth0"
+        ],
         "Entrypoint": ["/gns3/init.sh"],
         "Cmd": ["/bin/sh"]
     })
