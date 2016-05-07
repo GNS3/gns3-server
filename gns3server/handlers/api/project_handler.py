@@ -368,7 +368,7 @@ class ProjectHandler:
         response.content_length = None
         response.start(request)
 
-        for data in project.export(include_images=bool(request.GET.get("images", "0"))):
+        for data in project.export(include_images=bool(request.GET.get("include_images", "0"))):
             response.write(data)
             yield from response.drain()
 

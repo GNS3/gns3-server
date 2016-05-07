@@ -29,7 +29,6 @@ from gns3server.utils import parse_version
 log = logging.getLogger(__name__)
 
 from ..base_manager import BaseManager
-from ..project_manager import ProjectManager
 from .docker_vm import DockerVM
 from .docker_error import *
 
@@ -59,7 +58,7 @@ class Docker(BaseManager):
                 raise DockerError("Can't connect to docker daemon")
 
             if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError("Docker API version is {}. But GNS3 require a minimum API version {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
+                raise DockerError("Docker API version is {}. GNS3 requires a minimum API version of {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
         return self._connector
 
     def __del__(self):

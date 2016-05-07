@@ -594,7 +594,7 @@ class Project:
                     for prop, value in node["properties"].items():
                         if prop.endswith("image"):
                             node["properties"][prop] = os.path.basename(value)
-                            if include_images:
+                            if include_images is True:
                                 self._export_images(value, node["type"], z)
         z.writestr("project.gns3", json.dumps(topology).encode())
 
