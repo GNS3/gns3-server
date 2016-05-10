@@ -326,6 +326,8 @@ class DockerVM(BaseVM):
         if state == "paused":
             yield from self.unpause()
         else:
+            yield from self._clean_servers()
+
             result = yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
 
             namespace = yield from self._get_namespace()
@@ -474,15 +476,22 @@ class DockerVM(BaseVM):
             name=self._name, image=self._image))
 
     @asyncio.coroutine
+    def _clean_servers(self):
+        """
+        Clean the list of running console servers
+        """
+        if len(self._telnet_servers) > 0:
+            for telnet_server in self._telnet_servers:
+                telnet_server.close()
+                yield from telnet_server.wait_closed()
+            self._telnet_servers = []
+
+    @asyncio.coroutine
     def stop(self):
         """Stops this Docker container."""
 
         try:
-            if len(self._telnet_servers) > 0:
-                for telnet_server in self._telnet_servers:
-                    telnet_server.close()
-                    yield from telnet_server.wait_closed()
-                self._telnet_servers = []
+            yield from self._clean_servers()
 
             if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
                 yield from self._ubridge_hypervisor.stop()
