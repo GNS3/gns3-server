@@ -2,9 +2,9 @@
 
 ## 1.5.0a1 10/05/2016
 
-* Rebase the qcow2 when starting the VM if needed
+* Rebase Qcow2 disks when starting a VM if needed
 * Docker support
-* Import / Export topologies
+* import / export portable projects (.gns3project)
 
 ## 1.4.6 28/04/2016
 
@@ -63,7 +63,7 @@
 * Fix error when setting Qemu VM boot to 'cd' (HDD or CD/DVD-ROM)
 * Fixed the VMware default VM location on Windows, so that it doesn't assume the "Documents" folder is within the %USERPROFILE% folder, and also support Windows Server's folder (which is "My Virtual Machines" instead of "Virtual Machines").
 * Improve dynamips startup_config dump
-* Dump environnement to server debug log
+* Dump environment to server debug log
 * Fix usage of qemu 0.10 on Windows
 * Show hostname when the hostname is missing in the iourc.txt
 
