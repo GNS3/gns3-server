@@ -30,7 +30,7 @@ import asyncio
 import socket
 import gns3server
 
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP

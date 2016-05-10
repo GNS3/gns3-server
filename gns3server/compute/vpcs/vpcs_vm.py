@@ -31,7 +31,7 @@ import shutil
 from ...utils.asyncio import wait_for_process_termination
 from ...utils.asyncio import monitor_process
 from ...utils.asyncio import subprocess_check_output
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP

@@ -21,7 +21,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 """
 
 import asyncio
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 
 from .device import Device
 from ..nios.nio_udp import NIOUDP

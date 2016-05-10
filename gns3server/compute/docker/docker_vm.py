@@ -33,6 +33,7 @@ from ..base_vm import BaseVM
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ...utils.asyncio.telnet_server import AsyncioTelnetServer
+from ...utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from ...utils.asyncio import wait_for_file_creation
 from ...utils.get_resource import get_resource
 from ...ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
@@ -54,12 +55,14 @@ class DockerVM(BaseVM):
     :param console_type: Console type
     :param aux: TCP aux console port
     :param console_resolution: Resolution of the VNC display
+    :param console_http_port: Port to redirect HTTP queries
+    :param console_http_path: Url part with the path of the web interface
     """
 
     def __init__(self, name, vm_id, project, manager, image,
                  console=None, aux=None, start_command=None,
                  adapters=None, environment=None, console_type="telnet",
-                 console_resolution="1024x768"):
+                 console_resolution="1024x768", console_http_port=80, console_http_path="/"):
         super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
         self._image = image
@@ -72,6 +75,9 @@ class DockerVM(BaseVM):
         self._telnet_servers = []
         self._x11vnc_process = None
         self._console_resolution = console_resolution
+        self._console_http_path = console_http_path
+        self._console_http_port = console_http_port
+        self._console_websocket = None
 
         if adapters is None:
             self.adapters = 1
@@ -95,6 +101,8 @@ class DockerVM(BaseVM):
             "console": self.console,
             "console_type": self.console_type,
             "console_resolution": self.console_resolution,
+            "console_http_port": self.console_http_port,
+            "console_http_path": self.console_http_path,
             "aux": self.aux,
             "start_command": self.start_command,
             "environment": self.environment,
@@ -132,6 +140,22 @@ class DockerVM(BaseVM):
     @console_resolution.setter
     def console_resolution(self, resolution):
         self._console_resolution = resolution
+
+    @property
+    def console_http_path(self):
+        return self._console_http_path
+
+    @console_http_path.setter
+    def console_http_path(self, path):
+        self._console_http_path = path
+
+    @property
+    def console_http_port(self):
+        return self._console_http_port
+
+    @console_http_port.setter
+    def console_http_port(self, port):
+        self._console_http_port = port
 
     @property
     def environment(self):
@@ -261,6 +285,9 @@ class DockerVM(BaseVM):
             params["Cmd"] = ["/bin/sh"]
         params["Entrypoint"].insert(0, "/gns3/init.sh")
 
+        # Give the information to the container on how many interface should be inside
+        params["Env"].append("GNS3_MAX_ETHERNET=eth{}".format(self.adapters - 1))
+
         if self._environment:
             params["Env"] += [e.strip() for e in self._environment.split("\n")]
 
@@ -300,6 +327,8 @@ class DockerVM(BaseVM):
         if state == "paused":
             yield from self.unpause()
         else:
+            yield from self._clean_servers()
+
             result = yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
 
             namespace = yield from self._get_namespace()
@@ -322,6 +351,8 @@ class DockerVM(BaseVM):
 
             if self.console_type == "telnet":
                 yield from self._start_console()
+            elif self.console_type == "http" or self.console_type == "https":
+                yield from self._start_http()
 
             if self.allocate_aux:
                 yield from self._start_aux()
@@ -338,11 +369,11 @@ class DockerVM(BaseVM):
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
         process = yield from asyncio.subprocess.create_subprocess_exec(
-            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "sh", "-i",
+            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "/gns3/bin/busybox sh", "/dev/null",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             stdin=asyncio.subprocess.PIPE)
-        server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=False, echo=False)
+        server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
         self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
         log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
 
@@ -362,10 +393,27 @@ class DockerVM(BaseVM):
         yield from wait_for_file_creation(x11_socket)
 
     @asyncio.coroutine
+    def _start_http(self):
+        """
+        Start an HTTP tunnel to container localhost
+        """
+        log.debug("Forward HTTP for %s to %d", self.name, self._console_http_port)
+        command = ["docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "nc", "127.0.0.1", str(self._console_http_port)]
+        # We replace the port in the server answer otherwise somelink could be broke
+        server = AsyncioRawCommandServer(command, replaces=[
+            (
+                '{}'.format(self._console_http_port).encode(),
+                '{}'.format(self.console).encode(),
+            )
+        ])
+        self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)))
+
+    @asyncio.coroutine
     def _start_console(self):
         """
         Start streaming the console via telnet
         """
+
         class InputStream:
 
             def __init__(self):
@@ -386,12 +434,12 @@ class DockerVM(BaseVM):
         telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True)
         self._telnet_servers.append((yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)))
 
-        ws = yield from self.manager.websocket_query("containers/{}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1".format(self._cid))
-        input_stream.ws = ws
+        self._console_websocket = yield from self.manager.websocket_query("containers/{}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1".format(self._cid))
+        input_stream.ws = self._console_websocket
 
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
 
-        asyncio.async(self._read_console_output(ws, output_stream))
+        asyncio.async(self._read_console_output(self._console_websocket, output_stream))
 
     @asyncio.coroutine
     def _read_console_output(self, ws, out):
@@ -429,15 +477,22 @@ class DockerVM(BaseVM):
             name=self._name, image=self._image))
 
     @asyncio.coroutine
+    def _clean_servers(self):
+        """
+        Clean the list of running console servers
+        """
+        if len(self._telnet_servers) > 0:
+            for telnet_server in self._telnet_servers:
+                telnet_server.close()
+                yield from telnet_server.wait_closed()
+            self._telnet_servers = []
+
+    @asyncio.coroutine
     def stop(self):
         """Stops this Docker container."""
 
         try:
-            if len(self._telnet_servers) > 0:
-                for telnet_server in self._telnet_servers:
-                    telnet_server.close()
-                    yield from telnet_server.wait_closed()
-                self._telnet_servers = []
+            yield from self._clean_servers()
 
             if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
                 yield from self._ubridge_hypervisor.stop()

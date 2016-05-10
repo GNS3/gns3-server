@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 from gns3server.utils.interfaces import interfaces, is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 from uuid import UUID, uuid4
 from ..base_manager import BaseManager
 from ..project_manager import ProjectManager

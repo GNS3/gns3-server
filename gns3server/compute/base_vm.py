@@ -24,7 +24,7 @@ import tempfile
 import psutil
 import platform
 
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 from ..utils.asyncio import wait_run_in_executor
 from ..ubridge.hypervisor import Hypervisor
 from .vm_error import VMError

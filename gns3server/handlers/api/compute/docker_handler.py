@@ -74,6 +74,8 @@ class DockerHandler:
             console=request.json.get("console"),
             console_type=request.json.get("console_type"),
             console_resolution=request.json.get("console_resolution", "1024x768"),
+            console_http_port=request.json.get("console_http_port", 80),
+            console_http_path=request.json.get("console_http_path", "/"),
             aux=request.json.get("aux")
         )
         for name, value in request.json.items():
@@ -279,7 +281,10 @@ class DockerHandler:
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
         vm.aux = request.json.get("aux", vm.aux)
+        vm.console_type = request.json.get("console_type", vm.console_type)
         vm.console_resolution = request.json.get("console_resolution", vm.console_resolution)
+        vm.console_http_port = request.json.get("console_http_port", vm.console_http_port)
+        vm.console_http_path = request.json.get("console_http_path", vm.console_http_path)
         vm.start_command = request.json.get("start_command", vm.start_command)
         vm.environment = request.json.get("environment", vm.environment)
         vm.adapters = request.json.get("adapters", vm.adapters)

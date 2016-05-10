@@ -25,7 +25,7 @@ import asyncio
 import socket
 import re
 
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import subprocess_check_output
 from .ubridge_hypervisor import UBridgeHypervisor

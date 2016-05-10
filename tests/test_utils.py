@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.utils import force_unix_path, macaddress_to_int, int_to_macaddress
+from gns3server.utils import *
 
 
 def test_force_unix_path():
@@ -31,3 +31,19 @@ def test_macaddress_to_int():
 
 def test_int_to_macaddress():
     assert int_to_macaddress(52228632586) == "00:0c:29:11:b0:0a"
+
+
+def test_parse_version():
+    assert parse_version('1') == ('000001', '00000', '000000', 'final')
+    assert parse_version('1.3') == ('000001', '000003', '000000', 'final')
+    assert parse_version('1.3.dev3') == ('000001', '000003', '000000', 'dev', '000003')
+    assert parse_version('1.3a1') == ('000001', '000003', '000000', 'a', '000001')
+    assert parse_version('1.3rc1') == ('000001', '000003', '000000', 'c', '000001')
+
+    assert parse_version('1.2.3') > parse_version('1.2.2')
+    assert parse_version('1.3') > parse_version('1.2.2')
+    assert parse_version('1.3') > parse_version('1.3alpha1')
+    assert parse_version('1.3') > parse_version('1.3rc1')
+    assert parse_version('1.3rc1') > parse_version('1.3alpha3')
+    assert parse_version('1.3dev1') > parse_version('1.3rc1')
+    assert parse_version('1.2.3') > parse_version('1.2')

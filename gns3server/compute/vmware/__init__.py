@@ -31,7 +31,7 @@ import codecs
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio import subprocess_check_output
-from pkg_resources import parse_version
+from gns3server.utils import parse_version
 
 log = logging.getLogger(__name__)
 
@@ -153,11 +153,11 @@ class VMware(BaseManager):
         if player_version < 6:
             raise VMwareError("Using VMware Player requires version 6 or above")
         elif player_version == 6:
-            yield from self.check_vmrun_version(minimum_required_version="1.13")
+            yield from self.check_vmrun_version(minimum_required_version="1.13.0")
         elif player_version == 7:
-            yield from self.check_vmrun_version(minimum_required_version="1.14")
+            yield from self.check_vmrun_version(minimum_required_version="1.14.0")
         elif player_version >= 12:
-            yield from self.check_vmrun_version(minimum_required_version="1.15")
+            yield from self.check_vmrun_version(minimum_required_version="1.15.0")
 
     @asyncio.coroutine
     def _check_vmware_workstation_requirements(self, ws_version):
@@ -175,11 +175,11 @@ class VMware(BaseManager):
         if ws_version < 10:
             raise VMwareError("Using VMware Workstation requires version 10 or above")
         elif ws_version == 10:
-            yield from self.check_vmrun_version(minimum_required_version="1.13")
+            yield from self.check_vmrun_version(minimum_required_version="1.13.0")
         elif ws_version == 11:
-            yield from self.check_vmrun_version(minimum_required_version="1.14")
+            yield from self.check_vmrun_version(minimum_required_version="1.14.0")
         elif ws_version >= 12:
-            yield from self.check_vmrun_version(minimum_required_version="1.15")
+            yield from self.check_vmrun_version(minimum_required_version="1.15.0")
 
     @asyncio.coroutine
     def check_vmware_version(self):
@@ -393,7 +393,7 @@ class VMware(BaseManager):
             return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
     @asyncio.coroutine
-    def check_vmrun_version(self, minimum_required_version="1.13"):
+    def check_vmrun_version(self, minimum_required_version="1.13.0"):
         """
         Checks the vmrun version.
 
@@ -416,9 +416,8 @@ class VMware(BaseManager):
                 version = None
                 if match:
                     version = match.group(1)
-                    log.debug("VMware vmrun version {} detected".format(version))
+                    log.debug("VMware vmrun version {} detected, minimum required: {}".format(version, minimum_required_version))
                     if parse_version(version) < parse_version(minimum_required_version):
-
                         raise VMwareError("VMware vmrun executable version must be >= version {}".format(minimum_required_version))
                 if version is None:
                     log.warning("Could not find VMware vmrun version. Output: {}".format(output))

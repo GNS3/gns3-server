@@ -28,9 +28,6 @@ if [ ! -d /tmp/gns3/bin ]; then
 	/gns3/bin/busybox --install -s /tmp/gns3/bin
 fi
 
-# Wait 2 seconds to settle the network interfaces
-sleep 2
-
 # /etc/hosts
 [ -s /etc/hosts ] || cat > /etc/hosts << __EOF__
 127.0.1.1	$HOSTNAME
@@ -44,6 +41,13 @@ __EOF__
 
 # configure loopback interface
 ip link set dev lo up
+
+# Wait for all eth available
+while true 
+do
+    grep $GNS3_MAX_ETHERNET /proc/net/dev > /dev/null && break
+    sleep 0.5
+done  
 
 # activate eth interfaces
 sed -n 's/^ *\(eth[0-9]*\):.*/\1/p' < /proc/net/dev | while read dev; do

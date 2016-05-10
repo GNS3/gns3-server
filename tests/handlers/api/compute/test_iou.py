@@ -347,13 +347,3 @@ def test_upload_vm(http_compute, tmpdir):
     with open(str(tmpdir / "test2.md5sum")) as f:
         checksum = f.read()
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
-
-
-def test_upload_vm_permission_denied(http_compute, tmpdir):
-    with open(str(tmpdir / "test2"), "w+") as f:
-        f.write("")
-    os.chmod(str(tmpdir / "test2"), 0)
-
-    with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/iou/vms/test2", body="TEST", raw=True)
-        assert response.status == 409
