@@ -61,7 +61,9 @@ class Docker(BaseManager):
                 raise DockerError("Docker API version is {}. GNS3 requires a minimum API version of {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
         return self._connector
 
-    def __del__(self):
+    @asyncio.coroutine
+    def unload(self):
+        yield from super().unload()
         if self._connected:
             self._connector.close()
 

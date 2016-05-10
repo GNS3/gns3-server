@@ -77,6 +77,7 @@ class DockerVM(BaseVM):
         self._console_resolution = console_resolution
         self._console_http_path = console_http_path
         self._console_http_port = console_http_port
+        self._console_websocket = None
 
         if adapters is None:
             self.adapters = 1
@@ -433,12 +434,12 @@ class DockerVM(BaseVM):
         telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True)
         self._telnet_servers.append((yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)))
 
-        ws = yield from self.manager.websocket_query("containers/{}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1".format(self._cid))
-        input_stream.ws = ws
+        self._console_websocket = yield from self.manager.websocket_query("containers/{}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1".format(self._cid))
+        input_stream.ws = self._console_websocket
 
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
 
-        asyncio.async(self._read_console_output(ws, output_stream))
+        asyncio.async(self._read_console_output(self._console_websocket, output_stream))
 
     @asyncio.coroutine
     def _read_console_output(self, ws, out):
