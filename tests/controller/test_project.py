@@ -43,9 +43,9 @@ def test_json(tmpdir):
 
 def test_path(tmpdir):
 
-    directory = Config.instance().get_section_config("Server").get("project_directory")
+    directory = Config.instance().get_section_config("Server").get("projects_path")
 
-    with patch("gns3server.compute.project.Project._get_default_project_directory", return_value=directory):
+    with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
         p = Project(project_id=str(uuid4()))
         assert p.path == os.path.join(directory, p.id)
         assert os.path.exists(os.path.join(directory, p.id))
@@ -68,6 +68,12 @@ def test_captures_directory(tmpdir):
     assert p.captures_directory == str(tmpdir / "project-files" / "captures")
     assert os.path.exists(p.captures_directory)
 
+def test_add_compute(async_run):
+    compute = MagicMock()
+    project = Project()
+    async_run(project.addCompute(compute))
+    assert compute in project._computes
+
 
 def test_addVM(async_run):
     compute = MagicMock()
@@ -79,11 +85,12 @@ def test_addVM(async_run):
 
     vm = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
-    compute.post.assert_called_with('/projects/{}/vpcs/nodes'.format(project.id),
-                                    data={'node_id': vm.id,
-                                          'console_type': 'telnet',
-                                          'startup_config': 'test.cfg',
-                                          'name': 'test'})
+    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
+                                 data={'node_id': node.id,
+                                       'console_type': 'telnet',
+                                       'startup_config': 'test.cfg',
+                                       'name': 'test'})
+    assert compute in project._project_created_on_compute
 
 
 def test_getVM(async_run):

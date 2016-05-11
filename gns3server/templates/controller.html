@@ -28,11 +28,21 @@ in futur GNS3 versions.
 <h2>Computes</h2>
 <table border="1">
     <tr>
-        <th>ID</td>
+        <th>ID</th>
+        <th>Version</th>
+        <th>Connected</th>
+        <th>Protocol</th>
+        <th>Host</th>
+        <th>Port</th>
     </tr>
 {% for compute in controller.computes.values() %}
 <tr>
     <td>{{compute.id}}</td>
+    <td>{{compute.version}}</td>
+    <td>{{compute.connected}}</td>
+    <td>{{compute.protocol}}</td>
+    <td>{{compute.host}}</td>
+    <td>{{compute.port}}</td>
 </tr>
 {% endfor %}
 </table>

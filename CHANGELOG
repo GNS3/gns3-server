@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.5.0a2 10/05/2016
+
+* Fix distribution on PyPi
+
+## 1.5.0a1 10/05/2016
+
+* Rebase Qcow2 disks when starting a VM if needed
+* Docker support
+* import / export portable projects (.gns3project)
+
 ## 1.4.6 28/04/2016
 
 * More robust save/restore for VirtualBox linked clone VM hard disks.
@@ -57,7 +67,7 @@
 * Fix error when setting Qemu VM boot to 'cd' (HDD or CD/DVD-ROM)
 * Fixed the VMware default VM location on Windows, so that it doesn't assume the "Documents" folder is within the %USERPROFILE% folder, and also support Windows Server's folder (which is "My Virtual Machines" instead of "Virtual Machines").
 * Improve dynamips startup_config dump
-* Dump environnement to server debug log
+* Dump environment to server debug log
 * Fix usage of qemu 0.10 on Windows
 * Show hostname when the hostname is missing in the iourc.txt
 

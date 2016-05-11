@@ -4,6 +4,7 @@ include INSTALL
 include LICENSE
 include MANIFEST.in
 include tox.ini
+include requirements.txt
 recursive-include tests *
 recursive-exclude docs *
 recursive-include gns3server *

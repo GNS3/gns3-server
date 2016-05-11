@@ -27,6 +27,7 @@ from .node import Node
 from .udp_link import UDPLink
 from ..notification_queue import NotificationQueue
 from ..config import Config
+from ..utils.path import check_path_allowed, get_default_project_directory
 
 
 class Project:
@@ -50,10 +51,8 @@ class Project:
                 raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
             self._id = project_id
 
-        #TODO: Security check if not locale
         if path is None:
-            location = self._config().get("project_directory", self._get_default_project_directory())
-            path = os.path.join(location, self._id)
+            path = os.path.join(get_default_project_directory(), self._id)
         self.path = path
 
         self._temporary = temporary
@@ -61,6 +60,9 @@ class Project:
         self._nodes = {}
         self._links = {}
         self._listeners = set()
+
+        # Create the project on demand on the compute node
+        self._project_created_on_compute = set()
 
     @property
     def name(self):
@@ -80,6 +82,7 @@ class Project:
 
     @path.setter
     def path(self, path):
+        check_path_allowed(path)
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
@@ -105,7 +108,6 @@ class Project:
     @asyncio.coroutine
     def add_compute(self, compute):
         self._computes.add(compute)
-        yield from compute.post("/projects", self)
 
     @asyncio.coroutine
     def add_node(self, compute, node_id, **kwargs):
@@ -116,6 +118,9 @@ class Project:
         """
         if node_id not in self._nodes:
             node = Node(self, compute, node_id=node_id, **kwargs)
+            if compute not in self._project_created_on_compute:
+                yield from compute.post("/projects", self)
+                self._project_created_on_compute.add(compute)
             yield from node.create()
             self._nodes[node.id] = node
             return node
