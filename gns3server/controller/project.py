@@ -60,6 +60,9 @@ class Project:
         self._links = {}
         self._listeners = set()
 
+        # Create the project on demand on the compute node
+        self._project_created_on_compute = set()
+
     @property
     def name(self):
         return self._name
@@ -103,7 +106,6 @@ class Project:
     @asyncio.coroutine
     def addCompute(self, compute):
         self._computes.add(compute)
-        yield from compute.post("/projects", self)
 
     @asyncio.coroutine
     def addVM(self, compute, vm_id, **kwargs):
@@ -114,6 +116,9 @@ class Project:
         """
         if vm_id not in self._vms:
             vm = VM(self, compute, vm_id=vm_id, **kwargs)
+            if compute not in self._project_created_on_compute:
+                yield from compute.post("/projects", self)
+                self._project_created_on_compute.add(compute)
             yield from vm.create()
             self._vms[vm.id] = vm
             return vm

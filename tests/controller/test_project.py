@@ -69,6 +69,13 @@ def test_captures_directory(tmpdir):
     assert os.path.exists(p.captures_directory)
 
 
+def test_addCompute(async_run):
+    compute = MagicMock()
+    project = Project()
+    async_run(project.addCompute(compute))
+    assert compute in project._computes
+
+
 def test_addVM(async_run):
     compute = MagicMock()
     project = Project()
@@ -79,11 +86,12 @@ def test_addVM(async_run):
 
     vm = async_run(project.addVM(compute, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
 
-    compute.post.assert_called_with('/projects/{}/vpcs/vms'.format(project.id),
-                                    data={'vm_id': vm.id,
-                                          'console_type': 'telnet',
-                                          'startup_config': 'test.cfg',
-                                          'name': 'test'})
+    compute.post.assert_any_call('/projects/{}/vpcs/vms'.format(project.id),
+                                 data={'vm_id': vm.id,
+                                       'console_type': 'telnet',
+                                       'startup_config': 'test.cfg',
+                                       'name': 'test'})
+    assert compute in project._project_created_on_compute
 
 
 def test_getVM(async_run):
