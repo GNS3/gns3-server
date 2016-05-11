@@ -49,7 +49,7 @@ class Compute:
         self._password = None
         self._connected = False
         self._controller = controller
-        self._setAuth(user, password)
+        self._set_auth(user, password)
         self._session = aiohttp.ClientSession()
         self._version = None
 
@@ -61,7 +61,7 @@ class Compute:
     def __del__(self):
         self._session.close()
 
-    def _setAuth(self, user, password):
+    def _set_auth(self, user, password):
         """
         Set authentication parameters
         """
@@ -120,7 +120,7 @@ class Compute:
 
     @user.setter
     def user(self, value):
-        self._setAuth(value, self._password)
+        self._set_auth(value, self._password)
 
     @property
     def password(self):
@@ -128,7 +128,7 @@ class Compute:
 
     @user.setter
     def password(self, value):
-        self._setAuth(self._user, value)
+        self._set_auth(self._user, value)
 
     def __json__(self):
         return {
@@ -141,7 +141,7 @@ class Compute:
         }
 
     @asyncio.coroutine
-    def streamFile(self, project, path):
+    def steam_file(self, project, path):
         """
         Read file of a project and stream it
 
@@ -157,12 +157,12 @@ class Compute:
         return response.content
 
     @asyncio.coroutine
-    def httpQuery(self, method, path, data=None):
+    def http_query(self, method, path, data=None):
         if not self._connected:
             yield from self._connect()
         if not self._connected:
             raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
-        response = yield from self._runHttpQuery(method, path, data=data)
+        response = yield from self._run_http_query(method, path, data=data)
         return response
 
     @asyncio.coroutine
@@ -171,7 +171,7 @@ class Compute:
         Check if remote server is accessible
         """
         if not self._connected:
-            response = yield from self._runHttpQuery("GET", "/version")
+            response = yield from self._run_http_query("GET", "/version")
 
             if "version" not in response.json:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
@@ -179,12 +179,11 @@ class Compute:
             if parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
                 raise aiohttp.web.HTTPConflict(text="The server {} versions are not compatible {} != {}".format(self._id, __version__, response.json["version"]))
 
-            self._notifications = asyncio.async(self._connectNotification())
-
+            self._notifications = asyncio.async(self._connect_notification())
             self._connected = True
 
     @asyncio.coroutine
-    def _connectNotification(self):
+    def _connect_notification(self):
         """
         Connect to the notification stream
         """
@@ -203,7 +202,7 @@ class Compute:
         return "{}://{}:{}/v2/compute{}".format(self._protocol, self._host, self._port, path)
 
     @asyncio.coroutine
-    def _runHttpQuery(self, method, path, data=None):
+    def _run_http_query(self, method, path, data=None):
         with aiohttp.Timeout(10):
             url = self._getUrl(path)
             headers = {'content-type': 'application/json'}
@@ -237,7 +236,7 @@ class Compute:
             if body and len(body):
                 try:
                     response.json = json.loads(body)
-                except json.JSONDecodeError:
+                except ValueError:
                     raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
             if response.json is None:
                 response.json = {}
@@ -245,18 +244,18 @@ class Compute:
 
     @asyncio.coroutine
     def get(self, path):
-        return (yield from self.httpQuery("GET", path))
+        return (yield from self.http_query("GET", path))
 
     @asyncio.coroutine
     def post(self, path, data={}):
-        response = yield from self.httpQuery("POST", path, data)
+        response = yield from self.http_query("POST", path, data)
         return response
 
     @asyncio.coroutine
     def put(self, path, data={}):
-        response = yield from self.httpQuery("PUT", path, data)
+        response = yield from self.http_query("PUT", path, data)
         return response
 
     @asyncio.coroutine
     def delete(self, path):
-        return (yield from self.httpQuery("DELETE", path))
+        return (yield from self.http_query("DELETE", path))

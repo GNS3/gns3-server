@@ -112,7 +112,7 @@ class ProjectHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         yield from project.close()
-        controller.removeProject(project)
+        controller.remove_project(project)
         response.set_status(204)
 
     @classmethod
@@ -131,7 +131,7 @@ class ProjectHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         yield from project.delete()
-        controller.removeProject(project)
+        controller.remove_project(project)
         response.set_status(204)
 
     @classmethod

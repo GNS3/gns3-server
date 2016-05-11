@@ -516,8 +516,8 @@ VM_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "node_directory": {
-            "decription": "Path to the node working directory",
+        "vm_directory": {
+            "decription": "Path to the vm working directory",
             "type": "string"
         },
         "project_id": {

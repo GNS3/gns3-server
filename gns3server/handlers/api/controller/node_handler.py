@@ -41,7 +41,7 @@ class NodeHandler:
     def create(request, response):
 
         controller = Controller.instance()
-        compute = controller.getCompute(request.json.pop("compute_id"))
+        compute = controller.get_compute(request.json.pop("compute_id"))
         project = controller.get_project(request.match_info["project_id"])
         node = yield from project.add_node(compute, request.json.pop("node_id", None), **request.json)
         response.set_status(201)

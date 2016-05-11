@@ -71,11 +71,11 @@ def test_captures_directory(tmpdir):
 def test_add_compute(async_run):
     compute = MagicMock()
     project = Project()
-    async_run(project.addCompute(compute))
+    async_run(project.add_compute(compute))
     assert compute in project._computes
 
 
-def test_addVM(async_run):
+def test_add_node(async_run):
     compute = MagicMock()
     project = Project()
 
@@ -83,7 +83,7 @@ def test_addVM(async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    vm = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,

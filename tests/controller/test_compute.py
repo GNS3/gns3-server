@@ -164,7 +164,7 @@ def test_connectNotification(compute, async_run):
     compute._session = AsyncioMagicMock(return_value=ws_mock)
     compute._session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
     ws_mock.receive = receive
-    async_run(compute._connectNotification())
+    async_run(compute._connect_notification())
 
     compute._controller.emit.assert_called_with('test', {'a': 1}, compute_id=compute.id, project_id='42')
     assert compute._connected is False
@@ -186,5 +186,5 @@ def test_streamFile(project, async_run, compute):
     response = MagicMock()
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        async_run(compute.streamFile(project, "test/titi"))
+        async_run(compute.steam_file(project, "test/titi"))
     mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/stream/test/titi".format(project.id), auth=None)

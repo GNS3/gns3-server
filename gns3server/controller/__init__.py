@@ -127,7 +127,7 @@ class Controller:
         """
         return self._computes
 
-    def getCompute(self, compute_id):
+    def get_compute(self, compute_id):
         """
         Return an compute or raise a 404
         """
@@ -162,7 +162,7 @@ class Controller:
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
 
-    def removeProject(self, project):
+    def remove_project(self, project):
         del self._projects[project.id]
 
     @property

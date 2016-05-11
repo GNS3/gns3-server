@@ -130,7 +130,7 @@ class Node:
         for key, value in response.json.items():
             if key == "console":
                 self._console = value
-            elif key in ["console_type", "name", "node_id", "project_id", "node_directory", "command_line", "status"]:
+            elif key in ["console_type", "name", "node_id", "project_id", "vm_directory", "command_line", "status"]:
                 pass
             else:
                 self._properties[key] = value

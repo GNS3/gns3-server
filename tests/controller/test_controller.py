@@ -103,9 +103,9 @@ def test_addComputeConfigFile(controller, controller_config_path, async_run):
 def test_getCompute(controller, async_run):
     compute = async_run(controller.add_compute("test1"))
 
-    assert controller.getCompute("test1") == compute
+    assert controller.get_compute("test1") == compute
     with pytest.raises(aiohttp.web.HTTPNotFound):
-        assert controller.getCompute("dsdssd")
+        assert controller.get_compute("dsdssd")
 
 
 def test_addComputeLocal(controller, controller_config_path, async_run):
@@ -113,8 +113,8 @@ def test_addComputeLocal(controller, controller_config_path, async_run):
     The local node is the controller itself you can not change the informations
     """
     Config.instance().set("Server", "local", True)
-    async_run(controller.addCompute("local", host="example.org"))
-    assert controller.getCompute("local").host == "localhost"
+    async_run(controller.add_compute("local", host="example.org"))
+    assert controller.get_compute("local").host == "localhost"
 
 
 def test_addProject(controller, async_run):
@@ -129,13 +129,13 @@ def test_addProject(controller, async_run):
     assert len(controller.projects) == 2
 
 
-def test_removeProject(controller, async_run):
+def test_remove_project(controller, async_run):
     uuid1 = str(uuid.uuid4())
 
     project1 = async_run(controller.addProject(project_id=uuid1))
     assert len(controller.projects) == 1
 
-    controller.removeProject(project1)
+    controller.remove_project(project1)
     assert len(controller.projects) == 0
 
 

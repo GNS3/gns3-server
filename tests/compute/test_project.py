@@ -123,7 +123,7 @@ def test_json(tmpdir):
     assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False}
 
 
-def test_node_working_directory(tmpdir, vm):
+def test_node_working_directory(tmpdir, node):
     directory = Config.instance().get_section_config("Server").get("projects_path")
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
@@ -186,7 +186,7 @@ def test_project_delete_permission_issue(loop):
     os.chmod(directory, 700)
 
 
-def test_project_add_vm(manager):
+def test_project_add_node(manager):
     project = Project(project_id=str(uuid4()))
     node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_node(node)

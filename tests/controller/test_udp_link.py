@@ -173,4 +173,4 @@ def test_read_pcap_from_source(project, async_run):
     assert link._capture_node is not None
 
     async_run(link.read_pcap_from_source())
-    link._capture_node["node"].compute.streamFile.assert_called_with(project, "tmp/captures/" + link._capture_file_name)
+    link._capture_node["node"].compute.steam_file.assert_called_with(project, "tmp/captures/" + link._capture_file_name)
