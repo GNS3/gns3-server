@@ -25,6 +25,7 @@ from .vm import VM
 from .udp_link import UDPLink
 from ..notification_queue import NotificationQueue
 from ..config import Config
+from ..utils.path import check_path_allowed
 
 
 class Project:
@@ -48,7 +49,6 @@ class Project:
                 raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
             self._id = project_id
 
-        #TODO: Security check if not locale
         if path is None:
             location = self._config().get("project_directory", self._get_default_project_directory())
             path = os.path.join(location, self._id)
@@ -81,6 +81,7 @@ class Project:
 
     @path.setter
     def path(self, path):
+        check_path_allowed(path)
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:

@@ -29,6 +29,7 @@ from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
+from ..utils.path import check_path_allowed
 
 
 import logging
@@ -122,6 +123,7 @@ class Project:
 
     @path.setter
     def path(self, path):
+        check_path_allowed(path)
 
         if hasattr(self, "_path"):
             if path != self._path and self.is_local() is False:
