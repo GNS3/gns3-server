@@ -22,7 +22,7 @@ from ....web.route import Route
 from ....schemas.vmware import VMWARE_CREATE_SCHEMA
 from ....schemas.vmware import VMWARE_UPDATE_SCHEMA
 from ....schemas.vmware import VMWARE_OBJECT_SCHEMA
-from ....schemas.vm import VM_CAPTURE_SCHEMA
+from ....schemas.node import NODE_CAPTURE_SCHEMA
 from ....schemas.nio import NIO_SCHEMA
 from ....compute.vmware import VMware
 from ....compute.project_manager import ProjectManager
@@ -49,7 +49,7 @@ class VMwareHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/vms",
+        r"/projects/{project_id}/vmware/nodes",
         parameters={
             "project_id": "UUID for the project"
         },
@@ -64,15 +64,15 @@ class VMwareHandler:
     def create(request, response):
 
         vmware_manager = VMware.instance()
-        vm = yield from vmware_manager.create_vm(request.json.pop("name"),
-                                                 request.match_info["project_id"],
-                                                 request.json.get("vm_id"),
-                                                 request.json.pop("vmx_path"),
-                                                 request.json.pop("linked_clone"),
-                                                 console=request.json.get("console", None))
+        vm = yield from vmware_manager.create_node(request.json.pop("name"),
+                                                   request.match_info["project_id"],
+                                                   request.json.get("node_id"),
+                                                   request.json.pop("vmx_path"),
+                                                   request.json.pop("linked_clone"),
+                                                   console=request.json.get("console", None))
 
         for name, value in request.json.items():
-            if name != "vm_id":
+            if name != "node_id":
                 if hasattr(vm, name) and getattr(vm, name) != value:
                     setattr(vm, name, value)
 
@@ -81,10 +81,10 @@ class VMwareHandler:
 
     @classmethod
     @Route.get(
-        r"/projects/{project_id}/vmware/vms/{vm_id}",
+        r"/projects/{project_id}/vmware/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             200: "Success",
@@ -96,15 +96,15 @@ class VMwareHandler:
     def show(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
     @classmethod
     @Route.put(
-        r"/projects/{project_id}/vmware/vms/{vm_id}",
+        r"/projects/{project_id}/vmware/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             200: "Instance updated",
@@ -118,7 +118,7 @@ class VMwareHandler:
     def update(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
@@ -128,10 +128,10 @@ class VMwareHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/vmware/vms/{vm_id}",
+        r"/projects/{project_id}/vmware/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance deleted",
@@ -143,15 +143,15 @@ class VMwareHandler:
 
         # check the project_id exists
         ProjectManager.instance().get_project(request.match_info["project_id"])
-        yield from VMware.instance().delete_vm(request.match_info["vm_id"])
+        yield from VMware.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/start",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/start",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance started",
@@ -162,7 +162,7 @@ class VMwareHandler:
     def start(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         if vm.check_hw_virtualization():
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
@@ -172,10 +172,10 @@ class VMwareHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/stop",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/stop",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance stopped",
@@ -186,16 +186,16 @@ class VMwareHandler:
     def stop(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.stop()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/suspend",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/suspend",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance suspended",
@@ -206,16 +206,16 @@ class VMwareHandler:
     def suspend(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.suspend()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/resume",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/resume",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance resumed",
@@ -226,16 +226,16 @@ class VMwareHandler:
     def resume(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.resume()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/reload",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/reload",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance reloaded",
@@ -246,15 +246,15 @@ class VMwareHandler:
     def reload(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.reload()
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Adapter where the nio should be added",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -269,7 +269,7 @@ class VMwareHandler:
     def create_nio(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_vmnet", "nio_nat"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
@@ -280,10 +280,10 @@ class VMwareHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Adapter from where the nio should be removed",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -296,15 +296,15 @@ class VMwareHandler:
     def delete_nio(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Adapter to start a packet capture",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -314,21 +314,21 @@ class VMwareHandler:
             404: "Instance doesn't exist",
         },
         description="Start a packet capture on a VMware VM instance",
-        input=VM_CAPTURE_SCHEMA)
+        input=NODE_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
         yield from vm.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Adapter to stop a packet capture",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -341,17 +341,17 @@ class VMwareHandler:
     def stop_capture(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         yield from vm.stop_capture(adapter_number)
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vmware/vms/{vm_id}/interfaces/vmnet",
+        r"/projects/{project_id}/vmware/nodes/{node_id}/interfaces/vmnet",
         parameters={
             "project_id": "The UUID of the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
         },
         status_codes={
             201: "VMnet interface allocated",
@@ -360,7 +360,7 @@ class VMwareHandler:
     def allocate_vmnet(request, response):
 
         vmware_manager = VMware.instance()
-        vm = vmware_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         vmware_manager.refresh_vmnet_list(ubridge=False)
         vmnet = vmware_manager.allocate_vmnet()
         vm.vmnets.append(vmnet)

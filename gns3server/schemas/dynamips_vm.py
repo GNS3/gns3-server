@@ -21,8 +21,8 @@ VM_CREATE_SCHEMA = {
     "description": "Request validation to create a new Dynamips VM instance",
     "type": "object",
     "properties": {
-        "vm_id": {
-            "description": "Dynamips VM instance identifier",
+        "node_id": {
+            "description": "Node identifier",
             "oneOf": [
                 {"type": "string",
                  "minLength": 36,
@@ -509,15 +509,15 @@ VM_OBJECT_SCHEMA = {
             "description": "ID to use with Dynamips",
             "type": "integer"
         },
-        "vm_id": {
-            "description": "Dynamips router instance UUID",
+        "node_id": {
+            "description": "Node instance UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "vm_directory": {
-            "decription": "Path to the VM working directory",
+        "node_directory": {
+            "decription": "Path to the node working directory",
             "type": "string"
         },
         "project_id": {
@@ -749,7 +749,7 @@ VM_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "project_id", "dynamips_id", "console", "console_type"]
+    "required": ["name", "node_id", "project_id", "dynamips_id", "console", "console_type"]
 }
 
 VM_CONFIGS_SCHEMA = {

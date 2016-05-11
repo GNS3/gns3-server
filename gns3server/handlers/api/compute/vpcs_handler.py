@@ -32,7 +32,7 @@ class VPCSHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vpcs/vms",
+        r"/projects/{project_id}/vpcs/nodes",
         parameters={
             "project_id": "UUID for the project"
         },
@@ -47,20 +47,20 @@ class VPCSHandler:
     def create(request, response):
 
         vpcs = VPCS.instance()
-        vm = yield from vpcs.create_vm(request.json["name"],
-                                       request.match_info["project_id"],
-                                       request.json.get("vm_id"),
-                                       console=request.json.get("console"),
-                                       startup_script=request.json.get("startup_script"))
+        node = yield from vpcs.create_node(request.json["name"],
+                                           request.match_info["project_id"],
+                                           request.json.get("node_id"),
+                                           console=request.json.get("console"),
+                                           startup_script=request.json.get("startup_script"))
         response.set_status(201)
-        response.json(vm)
+        response.json(node)
 
     @classmethod
     @Route.get(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             200: "Success",
@@ -72,15 +72,15 @@ class VPCSHandler:
     def show(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
     @classmethod
     @Route.put(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             200: "Instance updated",
@@ -94,7 +94,7 @@ class VPCSHandler:
     def update(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
         vm.startup_script = request.json.get("startup_script", vm.startup_script)
@@ -102,10 +102,10 @@ class VPCSHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance deleted",
@@ -115,15 +115,15 @@ class VPCSHandler:
         description="Delete a VPCS instance")
     def delete(request, response):
 
-        yield from VPCS.instance().delete_vm(request.match_info["vm_id"])
+        yield from VPCS.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}/start",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/start",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance started",
@@ -135,16 +135,16 @@ class VPCSHandler:
     def start(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.start()
         response.json(vm)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}/stop",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/stop",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance stopped",
@@ -155,16 +155,16 @@ class VPCSHandler:
     def stop(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.stop()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}/reload",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/reload",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
         },
         status_codes={
             204: "Instance reloaded",
@@ -175,15 +175,15 @@ class VPCSHandler:
     def reload(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.reload()
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port where the nio should be added"
         },
@@ -198,7 +198,7 @@ class VPCSHandler:
     def create_nio(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_tap"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
@@ -209,10 +209,10 @@ class VPCSHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/vpcs/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port from where the nio should be removed"
         },
@@ -225,6 +225,6 @@ class VPCSHandler:
     def delete_nio(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         vm.port_remove_nio_binding(int(request.match_info["port_number"]))
         response.set_status(204)

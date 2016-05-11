@@ -18,5 +18,5 @@
 from .compute_handler import ComputeHandler
 from .project_handler import ProjectHandler
 from .version_handler import VersionHandler
-from .vm_handler import VMHandler
+from .node_handler import NodeHandler
 from .link_handler import LinkHandler

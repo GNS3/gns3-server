@@ -24,7 +24,7 @@ import zipstream
 import zipfile
 import json
 
-from uuid import UUID, uuid4
+from uuid import UUID
 from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
@@ -38,8 +38,8 @@ log = logging.getLogger(__name__)
 class Project:
 
     """
-    A project contains a list of VM.
-    In theory VM are isolated project/project.
+    A project contains a list of nodes.
+    In theory nodes are isolated project/project.
 
     :param project_id: force project identifier (None by default auto generate an UUID)
     :param path: path of the project. (None use the standard directory)
@@ -55,8 +55,8 @@ class Project:
             raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
         self._id = project_id
 
-        self._vms = set()
-        self._vms_to_destroy = set()
+        self._nodes = set()
+        self._nodes_to_destroy = set()
         self.temporary = temporary
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
@@ -155,9 +155,9 @@ class Project:
         self._name = name
 
     @property
-    def vms(self):
+    def nodes(self):
 
-        return self._vms
+        return self._nodes
 
     @property
     def temporary(self):
@@ -260,21 +260,21 @@ class Project:
 
         return os.path.join(self._path, "project-files", module_name)
 
-    def vm_working_directory(self, vm):
+    def node_working_directory(self, node):
         """
-        Returns a working directory for a specific VM.
+        Returns a working directory for a specific node.
         If the directory doesn't exist, the directory is created.
 
-        :param vm: VM instance
+        :param node: Node instance
 
-        :returns: VM working directory
+        :returns: Node working directory
         """
 
-        workdir = os.path.join(self._path, "project-files", vm.manager.module_name.lower(), vm.id)
+        workdir = os.path.join(self._path, "project-files", node.manager.module_name.lower(), node.id)
         try:
             os.makedirs(workdir, exist_ok=True)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create the VM working directory: {}".format(e))
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create the node working directory: {}".format(e))
         return workdir
 
     def tmp_working_directory(self):
@@ -297,34 +297,34 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create the capture working directory: {}".format(e))
         return workdir
 
-    def mark_vm_for_destruction(self, vm):
+    def mark_node_for_destruction(self, node):
         """
-        :param vm: An instance of VM
-        """
-
-        self.remove_vm(vm)
-        self._vms_to_destroy.add(vm)
-
-    def add_vm(self, vm):
-        """
-        Adds a VM to the project.
-        In theory this should be called by the VM manager.
-
-        :param vm: VM instance
+        :param node: An instance of Node
         """
 
-        self._vms.add(vm)
+        self.remove_node(node)
+        self._nodes_to_destroy.add(node)
 
-    def remove_vm(self, vm):
+    def add_node(self, node):
         """
-        Removes a VM from the project.
-        In theory this should be called by the VM manager.
+        Adds a node to the project.
+        In theory this should be called by the node manager.
 
-        :param vm: VM instance
+        :param node: Node instance
         """
 
-        if vm in self._vms:
-            self._vms.remove(vm)
+        self._nodes.add(node)
+
+    def remove_node(self, node):
+        """
+        Removes a node from the project.
+        In theory this should be called by the node manager.
+
+        :param node: Node instance
+        """
+
+        if node in self._nodes:
+            self._nodes.remove(node)
 
     @asyncio.coroutine
     def close(self):
@@ -353,8 +353,8 @@ class Project:
         """
 
         tasks = []
-        for vm in self._vms:
-            tasks.append(asyncio.async(vm.manager.close_vm(vm.id)))
+        for node in self._nodes:
+            tasks.append(asyncio.async(node.manager.close_node(node.id)))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -362,7 +362,7 @@ class Project:
                 try:
                     future.result()
                 except (Exception, GeneratorExit) as e:
-                    log.error("Could not close VM or device {}".format(e), exc_info=1)
+                    log.error("Could not close node {}".format(e), exc_info=1)
 
         if cleanup and os.path.exists(self.path):
             try:
@@ -378,7 +378,7 @@ class Project:
         if self._used_udp_ports:
             log.warning("Project {} has UDP ports still in use: {}".format(self.id, self._used_udp_ports))
 
-        # clean the remaining ports that have not been cleaned by their respective VM or device.
+        # clean the remaining ports that have not been cleaned by their respective node.
         port_manager = PortManager.instance()
         for port in self._used_tcp_ports.copy():
             port_manager.release_tcp_port(port, self)
@@ -391,10 +391,10 @@ class Project:
         Writes project changes on disk
         """
 
-        while self._vms_to_destroy:
-            vm = self._vms_to_destroy.pop()
-            yield from vm.delete()
-            self.remove_vm(vm)
+        while self._nodes_to_destroy:
+            node = self._nodes_to_destroy.pop()
+            yield from node.delete()
+            self.remove_node(node)
         for module in self.compute():
             yield from module.instance().project_committed(self)
 
@@ -427,7 +427,7 @@ class Project:
 
     def compute(self):
         """
-        Returns all loaded VM compute.
+        Returns all loaded modules from compute.
         """
 
         # We import it at the last time to avoid circular dependencies
@@ -571,7 +571,7 @@ class Project:
         Import a project contain in a zip file
 
         :param stream: A io.BytesIO of the zipfile
-        :param gns3vm: True move docker, iou and qemu to the GNS3 VM
+        :param gns3vm: True move Docker, IOU and Qemu to the GNS3 VM
         """
 
         with zipfile.ZipFile(stream) as myzip:
@@ -608,7 +608,7 @@ class Project:
                 vm_directory = os.path.join(self.path, "servers", "vm", "project-files")
                 vm_server_use = False
 
-                for module, device_type in modules_to_vm.items():
+                for module, vm_type in modules_to_vm.items():
                     module_directory = os.path.join(self.path, "project-files", module)
                     if os.path.exists(module_directory):
                         os.makedirs(vm_directory, exist_ok=True)
@@ -616,7 +616,7 @@ class Project:
 
                         # Patch node to use the GNS3 VM
                         for node in topology["topology"]["nodes"]:
-                            if node["type"] == device_type:
+                            if node["type"] == vm_type:
                                 node["server_id"] = 2
                         vm_server_use = True
 

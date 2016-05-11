@@ -22,9 +22,8 @@ from unittest.mock import MagicMock
 from tests.utils import asyncio_patch
 
 from gns3server.controller.project import Project
-from gns3server.controller.compute import Compute
 from gns3server.controller.udp_link import UDPLink
-from gns3server.controller.vm import VM
+from gns3server.controller.node import Node
 
 
 @pytest.fixture
@@ -36,12 +35,12 @@ def test_create(async_run, project):
     compute1 = MagicMock()
     compute2 = MagicMock()
 
-    vm1 = VM(project, compute1, vm_type="vpcs")
-    vm2 = VM(project, compute2, vm_type="vpcs")
+    node1 = Node(project, compute1, node_type="vpcs")
+    node2 = Node(project, compute2, node_type="vpcs")
 
     link = UDPLink(project)
-    async_run(link.addVM(vm1, 0, 4))
-    async_run(link.addVM(vm2, 3, 1))
+    async_run(link.add_node(node1, 0, 4))
+    async_run(link.add_node(node2, 3, 1))
 
     @asyncio.coroutine
     def compute1_callback(path, data={}):
@@ -69,13 +68,13 @@ def test_create(async_run, project):
     compute2.host = "example.org"
     async_run(link.create())
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/0/ports/4/nio".format(project.id, vm1.id), data={
+    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
         "rhost": compute2.host,
         "rport": 2048,
         "type": "nio_udp"
     })
-    compute2.post.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/3/ports/1/nio".format(project.id, vm2.id), data={
+    compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": compute1.host,
         "rport": 1024,
@@ -87,17 +86,17 @@ def test_delete(async_run, project):
     compute1 = MagicMock()
     compute2 = MagicMock()
 
-    vm1 = VM(project, compute1, vm_type="vpcs")
-    vm2 = VM(project, compute2, vm_type="vpcs")
+    node1 = Node(project, compute1, node_type="vpcs")
+    node2 = Node(project, compute2, node_type="vpcs")
 
     link = UDPLink(project)
-    async_run(link.addVM(vm1, 0, 4))
-    async_run(link.addVM(vm2, 3, 1))
+    async_run(link.add_node(node1, 0, 4))
+    async_run(link.add_node(node2, 3, 1))
 
     async_run(link.delete())
 
-    compute1.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/0/ports/4/nio".format(project.id, vm1.id))
-    compute2.delete.assert_any_call("/projects/{}/vpcs/vms/{}/adapters/3/ports/1/nio".format(project.id, vm2.id))
+    compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id))
+    compute2.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id))
 
 
 def test_choose_capture_side(async_run, project):
@@ -108,51 +107,51 @@ def test_choose_capture_side(async_run, project):
     compute2 = MagicMock()
     compute2.id = "local"
 
-    vm_vpcs = VM(project, compute1, vm_type="vpcs")
-    vm_iou = VM(project, compute2, vm_type="iou")
+    node_vpcs = Node(project, compute1, node_type="vpcs")
+    node_iou = Node(project, compute2, node_type="iou")
 
     link = UDPLink(project)
-    async_run(link.addVM(vm_vpcs, 0, 4))
-    async_run(link.addVM(vm_iou, 3, 1))
+    async_run(link.add_node(node_vpcs, 0, 4))
+    async_run(link.add_node(node_iou, 3, 1))
 
-    assert link._choose_capture_side()["vm"] == vm_iou
+    assert link._choose_capture_side()["node"] == node_iou
 
-    vm_vpcs = VM(project, compute1, vm_type="vpcs")
-    vm_vpcs2 = VM(project, compute1, vm_type="vpcs")
+    node_vpcs = Node(project, compute1, node_type="vpcs")
+    node_vpcs2 = Node(project, compute1, node_type="vpcs")
 
     link = UDPLink(project)
-    async_run(link.addVM(vm_vpcs, 0, 4))
-    async_run(link.addVM(vm_vpcs2, 3, 1))
+    async_run(link.add_node(node_vpcs, 0, 4))
+    async_run(link.add_node(node_vpcs2, 3, 1))
 
     # VPCS doesn't support capture
     with pytest.raises(aiohttp.web.HTTPConflict):
-        link._choose_capture_side()["vm"]
+        link._choose_capture_side()["node"]
 
     # Capture should run on the local node
-    vm_iou = VM(project, compute1, vm_type="iou")
-    vm_iou2 = VM(project, compute2, vm_type="iou")
+    node_iou = Node(project, compute1, node_type="iou")
+    node_iou2 = Node(project, compute2, node_type="iou")
 
     link = UDPLink(project)
-    async_run(link.addVM(vm_iou, 0, 4))
-    async_run(link.addVM(vm_iou2, 3, 1))
+    async_run(link.add_node(node_iou, 0, 4))
+    async_run(link.add_node(node_iou2, 3, 1))
 
-    assert link._choose_capture_side()["vm"] == vm_iou2
+    assert link._choose_capture_side()["node"] == node_iou2
 
 
 def test_capture(async_run, project):
     compute1 = MagicMock()
 
-    vm_vpcs = VM(project, compute1, vm_type="vpcs", name="V1")
-    vm_iou = VM(project, compute1, vm_type="iou", name="I1")
+    node_vpcs = Node(project, compute1, node_type="vpcs", name="V1")
+    node_iou = Node(project, compute1, node_type="iou", name="I1")
 
     link = UDPLink(project)
-    async_run(link.addVM(vm_vpcs, 0, 4))
-    async_run(link.addVM(vm_iou, 3, 1))
+    async_run(link.add_node(node_vpcs, 0, 4))
+    async_run(link.add_node(node_iou, 3, 1))
 
     capture = async_run(link.start_capture())
     assert link.capturing
 
-    compute1.post.assert_any_call("/projects/{}/iou/vms/{}/adapters/3/ports/1/start_capture".format(project.id, vm_iou.id), data={
+    compute1.post.assert_any_call("/projects/{}/iou/nodes/{}/adapters/3/ports/1/start_capture".format(project.id, node_iou.id), data={
         "capture_file_name": link.default_capture_file_name(),
         "data_link_type": "DLT_EN10MB"
     })
@@ -160,18 +159,18 @@ def test_capture(async_run, project):
     capture = async_run(link.stop_capture())
     assert link.capturing is False
 
-    compute1.post.assert_any_call("/projects/{}/iou/vms/{}/adapters/3/ports/1/stop_capture".format(project.id, vm_iou.id))
+    compute1.post.assert_any_call("/projects/{}/iou/nodes/{}/adapters/3/ports/1/stop_capture".format(project.id, node_iou.id))
 
 
 def test_read_pcap_from_source(project, async_run):
     compute1 = MagicMock()
 
     link = UDPLink(project)
-    async_run(link.addVM(compute1, 0, 4))
-    async_run(link.addVM(compute1, 3, 1))
+    async_run(link.add_node(compute1, 0, 4))
+    async_run(link.add_node(compute1, 3, 1))
 
     capture = async_run(link.start_capture())
-    assert link._capture_vm is not None
+    assert link._capture_node is not None
 
     async_run(link.read_pcap_from_source())
-    link._capture_vm["vm"].compute.streamFile.assert_called_with(project, "tmp/captures/" + link._capture_file_name)
+    link._capture_node["node"].compute.streamFile.assert_called_with(project, "tmp/captures/" + link._capture_file_name)

@@ -37,7 +37,7 @@ DOCKER_MINIMUM_API_VERSION = "1.21"
 
 class Docker(BaseManager):
 
-    _VM_CLASS = DockerVM
+    _NODE_CLASS = DockerVM
 
     def __init__(self):
         super().__init__()

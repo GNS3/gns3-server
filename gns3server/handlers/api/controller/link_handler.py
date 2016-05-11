@@ -16,11 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import aiohttp
-import asyncio
 
 from ....web.route import Route
 from ....schemas.link import LINK_OBJECT_SCHEMA, LINK_CAPTURE_SCHEMA
-from ....controller.project import Project
 from ....controller import Controller
 
 
@@ -45,12 +43,10 @@ class LinkHandler:
     def create(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
-        link = yield from project.addLink()
-        for vm in request.json["vms"]:
-            yield from link.addVM(project.getVM(vm["vm_id"]),
-                                  vm["adapter_number"],
-                                  vm["port_number"])
+        project = controller.get_project(request.match_info["project_id"])
+        link = yield from project.add_link()
+        for node in request.json["nodes"]:
+            yield from link.add_node(project.get_node(node["node_id"]), node["adapter_number"], node["port_number"])
         yield from link.create()
         response.set_status(201)
         response.json(link)
@@ -72,8 +68,8 @@ class LinkHandler:
     def start_capture(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
-        link = project.getLink(request.match_info["link_id"])
+        project = controller.get_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
         yield from link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"), capture_file_name=request.json.get("capture_file_name"))
         response.set_status(201)
         response.json(link)
@@ -93,8 +89,8 @@ class LinkHandler:
     def stop_capture(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
-        link = project.getLink(request.match_info["link_id"])
+        project = controller.get_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
         yield from link.stop_capture()
         response.set_status(201)
         response.json(link)
@@ -114,8 +110,8 @@ class LinkHandler:
     def delete(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
-        link = project.getLink(request.match_info["link_id"])
+        project = controller.get_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
         yield from link.delete()
         response.set_status(204)
         response.json(link)
@@ -136,8 +132,8 @@ class LinkHandler:
     def pcap(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
-        link = project.getLink(request.match_info["link_id"])
+        project = controller.get_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
 
         if link.capture_file_path is None:
             raise aiohttp.web.HTTPNotFound(text="pcap file not found")

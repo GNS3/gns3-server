@@ -19,9 +19,9 @@
 Custom exceptions for the VirtualBox module.
 """
 
-from ..vm_error import VMError
+from ..node_error import NodeError
 
 
-class VirtualBoxError(VMError):
+class VirtualBoxError(NodeError):
 
     pass

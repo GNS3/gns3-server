@@ -77,7 +77,7 @@ class Controller:
             return
         for c in data["computes"]:
             compute_id = c.pop("compute_id")
-            yield from self.addCompute(compute_id, **c)
+            yield from self.add_compute(compute_id, **c)
 
     def isEnabled(self):
         """
@@ -87,7 +87,7 @@ class Controller:
         return Config.instance().get_section_config("Server").getboolean("controller")
 
     @asyncio.coroutine
-    def addCompute(self, compute_id, **kwargs):
+    def add_compute(self, compute_id, **kwargs):
         """
         Add a server to the dictionnary of computes controlled by GNS3
 
@@ -126,11 +126,11 @@ class Controller:
             project = Project(project_id=project_id, **kwargs)
             self._projects[project.id] = project
             for compute in self._computes.values():
-                yield from project.addCompute(compute)
+                yield from project.add_compute(compute)
             return self._projects[project.id]
         return self._projects[project_id]
 
-    def getProject(self, project_id):
+    def get_project(self, project_id):
         """
         Return a project or raise a 404
         """

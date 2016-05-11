@@ -53,7 +53,7 @@ def test_json(vm, project):
         'image': 'ubuntu',
         'name': 'test',
         'project_id': project.id,
-        'vm_id': vm.id,
+        'node_id': vm.id,
         'adapters': 1,
         'console': vm.console,
         'console_type': 'telnet',

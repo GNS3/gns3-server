@@ -40,3 +40,12 @@ Output
     <tr><td>version</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Version of the GNS3 remote compute</td>                     </tr>
     </table>
 
+
+GET /v2/computes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List compute nodes
+
+Response status codes
+**********************
+- **200**: Compute list
+

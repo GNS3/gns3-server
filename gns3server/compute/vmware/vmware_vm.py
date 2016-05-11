@@ -34,7 +34,7 @@ from ..nios.nio_udp import NIOUDP
 from ..nios.nio_nat import NIONAT
 from .nio_vmnet import NIOVMNET
 from ..adapters.ethernet_adapter import EthernetAdapter
-from ..base_vm import BaseVM
+from ..base_node import BaseNode
 
 if sys.platform.startswith('win'):
     import msvcrt
@@ -44,15 +44,15 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class VMwareVM(BaseVM):
+class VMwareVM(BaseNode):
 
     """
     VMware VM implementation.
     """
 
-    def __init__(self, name, vm_id, project, manager, vmx_path, linked_clone, console=None):
+    def __init__(self, name, node_id, project, manager, vmx_path, linked_clone, console=None):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console)
 
         self._linked_clone = linked_clone
         self._vmx_pairs = OrderedDict()
@@ -75,12 +75,12 @@ class VMwareVM(BaseVM):
         self._use_any_adapter = False
 
         if not os.path.exists(vmx_path):
-            raise VMwareError('VMware VM "{name}" [{id}]: could not find VMX file "{vmx_path}"'.format(name=name, id=vm_id, vmx_path=vmx_path))
+            raise VMwareError('VMware VM "{name}" [{id}]: could not find VMX file "{vmx_path}"'.format(name=name, id=node_id, vmx_path=vmx_path))
 
     def __json__(self):
 
         json = {"name": self.name,
-                "vm_id": self.id,
+                "node_id": self.id,
                 "console": self.console,
                 "project_id": self.project.id,
                 "vmx_path": self.vmx_path,

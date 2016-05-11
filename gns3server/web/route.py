@@ -25,7 +25,7 @@ import traceback
 
 log = logging.getLogger(__name__)
 
-from ..compute.vm_error import VMError
+from ..compute.node_error import NodeError
 from ..controller.controller_error import ControllerError
 from ..ubridge.ubridge_error import UbridgeError
 from .response import Response
@@ -67,7 +67,7 @@ class Route(object):
     _routes = []
     _documentation = {}
 
-    _vm_locks = {}
+    _node_locks = {}
 
     @classmethod
     def get(cls, path, *args, **kw):
@@ -197,8 +197,8 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409})
-                except (VMError, UbridgeError) as e:
-                    log.error("VM error detected: {type}".format(type=type(e)), exc_info=1)
+                except (NodeError, UbridgeError) as e:
+                    log.error("Node error detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409})
@@ -234,39 +234,39 @@ class Route(object):
                 return response
 
             @asyncio.coroutine
-            def vm_concurrency(request):
+            def node_concurrency(request):
                 """
                 To avoid strange effect we prevent concurrency
-                between the same instance of the vm
+                between the same instance of the node
                 """
 
-                if "vm_id" in request.match_info or "device_id" in request.match_info:
-                    vm_id = request.match_info.get("vm_id")
-                    if vm_id is None:
-                        vm_id = request.match_info["device_id"]
+                if "node_id" in request.match_info or "device_id" in request.match_info:
+                    node_id = request.match_info.get("node_id")
+                    if node_id is None:
+                        node_id = request.match_info["device_id"]
 
                     if "compute" in request.path:
                         type = "compute"
                     else:
                         type = "controller"
-                    lock_key = "{}:{}:{}".format(type, request.match_info["project_id"], vm_id)
-                    cls._vm_locks.setdefault(lock_key, {"lock": asyncio.Lock(), "concurrency": 0})
-                    cls._vm_locks[lock_key]["concurrency"] += 1
+                    lock_key = "{}:{}:{}".format(type, request.match_info["project_id"], node_id)
+                    cls._node_locks.setdefault(lock_key, {"lock": asyncio.Lock(), "concurrency": 0})
+                    cls._node_locks[lock_key]["concurrency"] += 1
 
-                    with (yield from cls._vm_locks[lock_key]["lock"]):
+                    with (yield from cls._node_locks[lock_key]["lock"]):
                         response = yield from control_schema(request)
-                    cls._vm_locks[lock_key]["concurrency"] -= 1
+                    cls._node_locks[lock_key]["concurrency"] -= 1
 
                     # No more waiting requests, garbage collect the lock
-                    if cls._vm_locks[lock_key]["concurrency"] <= 0:
-                        del cls._vm_locks[lock_key]
+                    if cls._node_locks[lock_key]["concurrency"] <= 0:
+                        del cls._node_locks[lock_key]
                 else:
                     response = yield from control_schema(request)
                 return response
 
-            cls._routes.append((method, route, vm_concurrency))
+            cls._routes.append((method, route, node_concurrency))
 
-            return vm_concurrency
+            return node_concurrency
         return register
 
     @classmethod

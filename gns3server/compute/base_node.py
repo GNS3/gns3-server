@@ -24,34 +24,33 @@ import tempfile
 import psutil
 import platform
 
-from gns3server.utils import parse_version
 from ..utils.asyncio import wait_run_in_executor
 from ..ubridge.hypervisor import Hypervisor
-from .vm_error import VMError
+from .node_error import NodeError
 
 
 log = logging.getLogger(__name__)
 
 
-class BaseVM:
+class BaseNode:
 
     """
-    Base vm implementation.
+    Base node implementation.
 
-    :param name: name of this IOU vm
-    :param vm_id: IOU instance identifier
+    :param name: name of this node
+    :param node_id: Node instance identifier
     :param project: Project instance
-    :param manager: parent VM Manager
+    :param manager: parent node manager
     :param console: TCP console port
     :param aux: TCP aux console port
     :param allocate_aux: Boolean if true will allocate an aux console port
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False):
 
         self._name = name
         self._usage = ""
-        self._id = vm_id
+        self._id = node_id
         self._project = project
         self._manager = manager
         self._console = console
@@ -61,7 +60,7 @@ class BaseVM:
         self._hw_virtualization = False
         self._ubridge_hypervisor = None
         self._closed = False
-        self._vm_status = "stopped"
+        self._node_status = "stopped"
         self._command_line = ""
         self._allocate_aux = allocate_aux
 
@@ -98,19 +97,19 @@ class BaseVM:
 
     @property
     def status(self):
-        """Return current VM status"""
+        """Return current node status"""
 
-        return self._vm_status
+        return self._node_status
 
     @status.setter
     def status(self, status):
 
-        self._vm_status = status
-        self._project.emit("vm.{}".format(status), self)
+        self._node_status = status
+        self._project.emit("node.{}".format(status), self)
 
     @property
     def command_line(self):
-        """Return command used to start the VM"""
+        """Return command used to start the node"""
 
         return self._command_line
 
@@ -122,7 +121,7 @@ class BaseVM:
     @property
     def project(self):
         """
-        Returns the VM current project.
+        Returns the node current project.
 
         :returns: Project instance.
         """
@@ -132,7 +131,7 @@ class BaseVM:
     @property
     def name(self):
         """
-        Returns the name for this VM.
+        Returns the name for this node.
 
         :returns: name
         """
@@ -142,7 +141,7 @@ class BaseVM:
     @name.setter
     def name(self, new_name):
         """
-        Sets the name of this VM.
+        Sets the name of this node.
 
         :param new_name: name
         """
@@ -156,7 +155,7 @@ class BaseVM:
     @property
     def usage(self):
         """
-        Returns the usage for this VM.
+        Returns the usage for this node.
 
         :returns: usage
         """
@@ -166,7 +165,7 @@ class BaseVM:
     @usage.setter
     def usage(self, new_usage):
         """
-        Sets the usage of this VM.
+        Sets the usage of this node.
 
         :param new_usage: usage
         """
@@ -176,9 +175,9 @@ class BaseVM:
     @property
     def id(self):
         """
-        Returns the ID for this VM.
+        Returns the ID for this node.
 
-        :returns: VM identifier (string)
+        :returns: Node identifier (string)
         """
 
         return self._id
@@ -186,7 +185,7 @@ class BaseVM:
     @property
     def manager(self):
         """
-        Returns the manager for this VM.
+        Returns the manager for this node.
 
         :returns: instance of manager
         """
@@ -196,10 +195,10 @@ class BaseVM:
     @property
     def working_dir(self):
         """
-        Return VM working directory
+        Return the node working directory
         """
 
-        return self._project.vm_working_directory(self)
+        return self._project.node_working_directory(self)
 
     @property
     def temporary_directory(self):
@@ -207,43 +206,43 @@ class BaseVM:
             try:
                 self._temporary_directory = tempfile.mkdtemp()
             except OSError as e:
-                raise VMError("Can't create temporary directory: {}".format(e))
+                raise NodeError("Can't create temporary directory: {}".format(e))
         return self._temporary_directory
 
     def create(self):
         """
-        Creates the VM.
+        Creates the node.
         """
 
         log.info("{module}: {name} [{id}] created".format(module=self.manager.module_name,
                                                           name=self.name,
                                                           id=self.id))
-        self._project.emit("vm.created", self)
+        self._project.emit("node.created", self)
 
     @asyncio.coroutine
     def delete(self):
         """
-        Delete the VM (including all its files).
+        Delete the node (including all its files).
         """
 
-        self._project.emit("vm.deleted", self)
-        directory = self.project.vm_working_directory(self)
+        self._project.emit("node.deleted", self)
+        directory = self.project.node_working_directory(self)
         if os.path.exists(directory):
             try:
                 yield from wait_run_in_executor(shutil.rmtree, directory)
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not delete the VM working directory: {}".format(e))
+                raise aiohttp.web.HTTPInternalServerError(text="Could not delete the node working directory: {}".format(e))
 
     def start(self):
         """
-        Starts the VM process.
+        Starts the node process.
         """
 
         raise NotImplementedError
 
     def stop(self):
         """
-        Starts the VM process.
+        Starts the node process.
         """
 
         raise NotImplementedError
@@ -251,7 +250,7 @@ class BaseVM:
     @asyncio.coroutine
     def close(self):
         """
-        Close the VM process.
+        Close the node process.
         """
 
         if self._closed:
@@ -290,7 +289,7 @@ class BaseVM:
     @property
     def aux(self):
         """
-        Returns the aux console port of this VM.
+        Returns the aux console port of this node.
 
         :returns: aux console port
         """
@@ -321,7 +320,7 @@ class BaseVM:
     @property
     def console(self):
         """
-        Returns the console port of this VM.
+        Returns the console port of this node.
 
         :returns: console port
         """
@@ -340,7 +339,7 @@ class BaseVM:
             return
 
         if self._console_type == "vnc" and console is not None and console < 5900:
-            raise VMError("VNC console require a port superior or equal to 5900 currently it's {}".format(console))
+            raise NodeError("VNC console require a port superior or equal to 5900 currently it's {}".format(console))
 
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
@@ -359,7 +358,7 @@ class BaseVM:
     @property
     def console_type(self):
         """
-        Returns the console type for this VM.
+        Returns the console type for this node.
 
         :returns: console type (string)
         """
@@ -369,14 +368,10 @@ class BaseVM:
     @console_type.setter
     def console_type(self, console_type):
         """
-        Sets the console type for this VM.
+        Sets the console type for this node.
 
         :param console_type: console type (string)
         """
-
-        log.info('QEMU VM "{name}" [{id}] has set the console type to {console_type}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             console_type=console_type))
 
         if console_type != self._console_type:
             # get a new port if the console type change
@@ -406,17 +401,17 @@ class BaseVM:
             path = shutil.which("ubridge")
 
         if path is None or len(path) == 0:
-            raise VMError("uBridge is not installed")
+            raise NodeError("uBridge is not installed")
         return path
 
     @asyncio.coroutine
     def _start_ubridge(self):
         """
-        Starts uBridge (handles connections to and from this VMware VM).
+        Starts uBridge (handles connections to and from this node).
         """
 
         if not self._manager.has_privileged_access(self.ubridge_path):
-            raise VMError("uBridge requires root access or capability to interact with network adapters")
+            raise NodeError("uBridge requires root access or capability to interact with network adapters")
 
         server_config = self._manager.config.get_section_config("Server")
         server_host = server_config.get("host")
@@ -430,7 +425,7 @@ class BaseVM:
     @property
     def hw_virtualization(self):
         """
-        Returns either the VM is using hardware virtualization or not.
+        Returns either the node is using hardware virtualization or not.
 
         :return: boolean
         """

@@ -61,7 +61,7 @@ class IndexHandler:
     def project(request, response):
         controller = Controller.instance()
         response.template("project.html",
-                          project=controller.getProject(request.match_info["project_id"]))
+                          project=controller.get_project(request.match_info["project_id"]))
 
     @classmethod
     @Route.get(

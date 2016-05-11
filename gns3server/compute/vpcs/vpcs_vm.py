@@ -36,29 +36,29 @@ from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
-from ..base_vm import BaseVM
+from ..base_node import BaseNode
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class VPCSVM(BaseVM):
+class VPCSVM(BaseNode):
     module_name = 'vpcs'
 
     """
     VPCS VM implementation.
 
     :param name: VPCS VM name
-    :param vm_id: VPCS VM identifier
+    :param node_id: Node identifier
     :param project: Project instance
     :param manager: Manager instance
     :param console: TCP console port
     :param startup_script: content of the startup script file
     """
 
-    def __init__(self, name, vm_id, project, manager, console=None, startup_script=None):
+    def __init__(self, name, node_id, project, manager, console=None, startup_script=None):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console)
         self._process = None
         self._vpcs_stdout_file = ""
         self._vpcs_version = None
@@ -108,7 +108,7 @@ class VPCSVM(BaseVM):
     def __json__(self):
 
         return {"name": self.name,
-                "vm_id": self.id,
+                "node_id": self.id,
                 "vm_directory": self.working_dir,
                 "status": self.status,
                 "console": self._console,
@@ -145,7 +145,7 @@ class VPCSVM(BaseVM):
             path = shutil.which("vpcs")
         return path
 
-    @BaseVM.name.setter
+    @BaseNode.name.setter
     def name(self, new_name):
         """
         Sets the name of this VPCS VM.

@@ -94,7 +94,7 @@ class ProjectManager:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
         del self._projects[project_id]
 
-    def check_hardware_virtualization(self, source_vm):
+    def check_hardware_virtualization(self, source_node):
         """
         Checks if hardware virtualization can be used.
 
@@ -102,9 +102,9 @@ class ProjectManager:
         """
 
         for project in self._projects.values():
-            for vm in project.vms:
-                if vm == source_vm:
+            for node in project.nodes:
+                if node == source_node:
                     continue
-                if vm.hw_virtualization and vm.__class__.__name__ != source_vm.__class__.__name__:
+                if node.hw_virtualization and node.__class__.__name__ != source_node.__class__.__name__:
                     return False
         return True

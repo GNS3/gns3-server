@@ -75,16 +75,16 @@ def test_isEnabled(controller):
 
 
 def test_addCompute(controller, controller_config_path, async_run):
-    async_run(controller.addCompute("test1"))
+    async_run(controller.add_compute("test1"))
     assert len(controller.computes) == 1
-    async_run(controller.addCompute("test1"))
+    async_run(controller.add_compute("test1"))
     assert len(controller.computes) == 1
-    async_run(controller.addCompute("test2"))
+    async_run(controller.add_compute("test2"))
     assert len(controller.computes) == 2
 
 
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
-    async_run(controller.addCompute("test1"))
+    async_run(controller.add_compute("test1"))
     assert len(controller.computes) == 1
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -101,7 +101,7 @@ def test_addComputeConfigFile(controller, controller_config_path, async_run):
 
 
 def test_getCompute(controller, async_run):
-    compute = async_run(controller.addCompute("test1"))
+    compute = async_run(controller.add_compute("test1"))
 
     assert controller.getCompute("test1") == compute
     with pytest.raises(aiohttp.web.HTTPNotFound):
@@ -145,9 +145,9 @@ def test_getProject(controller, async_run):
     uuid1 = str(uuid.uuid4())
 
     project = async_run(controller.addProject(project_id=uuid1))
-    assert controller.getProject(uuid1) == project
+    assert controller.get_project(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
-        assert controller.getProject("dsdssd")
+        assert controller.get_project("dsdssd")
 
 
 def test_emit(controller, async_run):

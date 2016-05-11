@@ -47,21 +47,21 @@ def base_params(tmpdir, fake_iou_bin):
 
 @pytest.fixture
 def vm(http_compute, project, base_params):
-    response = http_compute.post("/projects/{project_id}/iou/vms".format(project_id=project.id), base_params)
+    response = http_compute.post("/projects/{project_id}/iou/nodes".format(project_id=project.id), base_params)
     assert response.status == 201
     return response.json
 
 
 def startup_config_file(project, vm):
-    directory = os.path.join(project.path, "project-files", "iou", vm["vm_id"])
+    directory = os.path.join(project.path, "project-files", "iou", vm["node_id"])
     os.makedirs(directory, exist_ok=True)
     return os.path.join(directory, "startup-config.cfg")
 
 
 def test_iou_create(http_compute, project, base_params):
-    response = http_compute.post("/projects/{project_id}/iou/vms".format(project_id=project.id), base_params)
+    response = http_compute.post("/projects/{project_id}/iou/nodes".format(project_id=project.id), base_params)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/vms"
+    assert response.route == "/projects/{project_id}/iou/nodes"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["serial_adapters"] == 2
@@ -82,9 +82,9 @@ def test_iou_create_with_params(http_compute, project, base_params):
     params["use_default_iou_values"] = True
     params["iourc_content"] = "test"
 
-    response = http_compute.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
+    response = http_compute.post("/projects/{project_id}/iou/nodes".format(project_id=project.id), params, example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/vms"
+    assert response.route == "/projects/{project_id}/iou/nodes"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["serial_adapters"] == 4
@@ -104,18 +104,18 @@ def test_iou_create_with_params(http_compute, project, base_params):
 def test_iou_create_startup_config_already_exist(http_compute, project, base_params):
     """We don't erase a startup-config if already exist at project creation"""
 
-    vm_id = str(uuid.uuid4())
-    startup_config_file_path = startup_config_file(project, {'vm_id': vm_id})
+    node_id = str(uuid.uuid4())
+    startup_config_file_path = startup_config_file(project, {'node_id': node_id})
     with open(startup_config_file_path, 'w+') as f:
         f.write("echo hello")
 
     params = base_params
-    params["vm_id"] = vm_id
+    params["node_id"] = node_id
     params["startup_config_content"] = "hostname test"
 
-    response = http_compute.post("/projects/{project_id}/iou/vms".format(project_id=project.id), params, example=True)
+    response = http_compute.post("/projects/{project_id}/iou/nodes".format(project_id=project.id), params, example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/vms"
+    assert response.route == "/projects/{project_id}/iou/nodes"
 
     assert "startup-config.cfg" in response.json["startup_config"]
     with open(startup_config_file(project, response.json)) as f:
@@ -123,9 +123,9 @@ def test_iou_create_startup_config_already_exist(http_compute, project, base_par
 
 
 def test_iou_get(http_compute, project, vm):
-    response = http_compute.get("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 200
-    assert response.route == "/projects/{project_id}/iou/vms/{vm_id}"
+    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["serial_adapters"] == 2
@@ -137,7 +137,7 @@ def test_iou_get(http_compute, project, vm):
 
 def test_iou_start(http_compute, vm):
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+        response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]))
         assert mock.called
         assert response.status == 200
         assert response.json["name"] == "PC TEST 1"
@@ -147,11 +147,11 @@ def test_iou_start_with_iourc(http_compute, vm, tmpdir):
     body = {"iourc_content": "test"}
 
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=body, example=True)
+        response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=body, example=True)
         assert mock.called
         assert response.status == 200
 
-    response = http_compute.get("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+    response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status == 200
     with open(response.json["iourc_path"]) as f:
         assert f.read() == "test"
@@ -159,21 +159,21 @@ def test_iou_start_with_iourc(http_compute, vm, tmpdir):
 
 def test_iou_stop(http_compute, vm):
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.stop", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_iou_reload(http_compute, vm):
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.reload", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/reload".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_iou_delete(http_compute, vm):
-    with asyncio_patch("gns3server.compute.iou.IOU.delete_vm", return_value=True) as mock:
-        response = http_compute.delete("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    with asyncio_patch("gns3server.compute.iou.IOU.delete_node", return_value=True) as mock:
+        response = http_compute.delete("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
@@ -191,7 +191,7 @@ def test_iou_update(http_compute, vm, tmpdir, free_console_port, project):
         "use_default_iou_values": True,
         "iourc_content": "test"
     }
-    response = http_compute.put("/projects/{project_id}/iou/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
+    response = http_compute.put("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
@@ -209,55 +209,55 @@ def test_iou_update(http_compute, vm, tmpdir, free_console_port, project):
 
 
 def test_iou_nio_create_udp(http_compute, vm):
-    response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
-                                                                                                                                                          "lport": 4242,
-                                                                                                                                                          "rport": 4343,
-                                                                                                                                                          "rhost": "127.0.0.1"},
+    response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
+                                                                                                                                                                  "lport": 4242,
+                                                                                                                                                                  "rport": 4343,
+                                                                                                                                                                  "rhost": "127.0.0.1"},
                                  example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_iou_nio_create_ethernet(http_compute, vm, ethernet_device):
-    response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
-                                                                                                                                                          "ethernet_device": ethernet_device,
-                                                                                                                                                          },
+    response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_generic_ethernet",
+                                                                                                                                                                  "ethernet_device": ethernet_device,
+                                                                                                                                                                 },
                                  example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_generic_ethernet"
     assert response.json["ethernet_device"] == ethernet_device
 
 
 def test_iou_nio_create_ethernet_different_port(http_compute, vm, ethernet_device):
-    response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
-                                                                                                                                                          "ethernet_device": ethernet_device,
-                                                                                                                                                          },
+    response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_generic_ethernet",
+                                                                                                                                                                  "ethernet_device": ethernet_device,
+                                                                                                                                                                 },
                                  example=False)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_generic_ethernet"
     assert response.json["ethernet_device"] == ethernet_device
 
 
 def test_iou_nio_create_tap(http_compute, vm, ethernet_device):
     with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
-        response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_tap",
-                                                                                                                                                              "tap_device": ethernet_device})
+        response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_tap",
+                                                                                                                                                                      "tap_device": ethernet_device})
         assert response.status == 201
-        assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+        assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
         assert response.json["type"] == "nio_tap"
 
 
 def test_iou_delete_nio(http_compute, vm):
-    http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
-                                                                                                                                               "lport": 4242,
-                                                                                                                                               "rport": 4343,
-                                                                                                                                               "rhost": "127.0.0.1"})
-    response = http_compute.delete("/projects/{project_id}/iou/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
+                                                                                                                                                       "lport": 4242,
+                                                                                                                                                       "rport": 4343,
+                                                                                                                                                       "rhost": "127.0.0.1"})
+    response = http_compute.delete("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/iou/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_iou_start_capture(http_compute, vm, tmpdir, project):
@@ -266,7 +266,7 @@ def test_iou_start_capture(http_compute, vm, tmpdir, project):
         with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start_capture") as start_capture:
 
             params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
-            response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params, example=True)
+            response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params, example=True)
 
             assert response.status == 200
 
@@ -280,7 +280,7 @@ def test_iou_start_capture_not_started(http_compute, vm, tmpdir):
         with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start_capture") as start_capture:
 
             params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
-            response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), body=params)
+            response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params)
 
             assert not start_capture.called
             assert response.status == 409
@@ -291,7 +291,7 @@ def test_iou_stop_capture(http_compute, vm, tmpdir, project):
     with patch("gns3server.compute.iou.iou_vm.IOUVM.is_running", return_value=True) as mock:
         with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.stop_capture") as stop_capture:
 
-            response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+            response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
 
             assert response.status == 204
 
@@ -303,7 +303,7 @@ def test_iou_stop_capture_not_started(http_compute, vm, tmpdir):
     with patch("gns3server.compute.iou.iou_vm.IOUVM.is_running", return_value=False) as mock:
         with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.stop_capture") as stop_capture:
 
-            response = http_compute.post("/projects/{project_id}/iou/vms/{vm_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], vm_id=vm["vm_id"]))
+            response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]))
 
             assert not stop_capture.called
             assert response.status == 409
@@ -311,7 +311,7 @@ def test_iou_stop_capture_not_started(http_compute, vm, tmpdir):
 
 def test_get_configs_without_configs_file(http_compute, vm):
 
-    response = http_compute.get("/projects/{project_id}/iou/vms/{vm_id}/configs".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}/configs".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 200
     assert "startup_config" not in response.json
     assert "private_config" not in response.json
@@ -323,7 +323,7 @@ def test_get_configs_with_startup_config_file(http_compute, project, vm):
     with open(path, "w+") as f:
         f.write("TEST")
 
-    response = http_compute.get("/projects/{project_id}/iou/vms/{vm_id}/configs".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}/configs".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 200
     assert response.json["startup_config_content"] == "TEST"
 
@@ -331,14 +331,14 @@ def test_get_configs_with_startup_config_file(http_compute, project, vm):
 def test_vms(http_compute, tmpdir, fake_iou_bin):
 
     with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir)):
-        response = http_compute.get("/iou/vms", example=True)
+        response = http_compute.get("/iou/nodes", example=True)
     assert response.status == 200
     assert response.json == [{"filename": "iou.bin", "path": "iou.bin"}]
 
 
 def test_upload_vm(http_compute, tmpdir):
     with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/iou/vms/test2", body="TEST", raw=True)
+        response = http_compute.post("/iou/nodes/test2", body="TEST", raw=True)
         assert response.status == 204
 
     with open(str(tmpdir / "test2")) as f:

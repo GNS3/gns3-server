@@ -43,7 +43,7 @@ from gns3server.compute.vmware.nio_vmnet import NIOVMNET
 
 class VMware(BaseManager):
 
-    _VM_CLASS = VMwareVM
+    _NODE_CLASS = VMwareVM
 
     def __init__(self):
 
@@ -324,8 +324,8 @@ class VMware(BaseManager):
             vmnet_interfaces = self._get_vmnet_interfaces()
 
         # remove vmnets already in use
-        for vm in self._vms.values():
-            for used_vmnet in vm.vmnets:
+        for vmware_vm in self._nodes.values():
+            for used_vmnet in vmware_vm.vmnets:
                 if used_vmnet in vmnet_interfaces:
                     log.debug("{} is already in use".format(used_vmnet))
                     vmnet_interfaces.remove(used_vmnet)
@@ -558,7 +558,7 @@ class VMware(BaseManager):
         """
 
         vm_entries = {}
-        vms = []
+        vmware_vms = []
         try:
             log.debug('Reading VMware inventory file "{}"'.format(inventory_path))
             pairs = self.parse_vmware_file(inventory_path)
@@ -577,8 +577,8 @@ class VMware(BaseManager):
         for vm_settings in vm_entries.values():
             if "displayname" in vm_settings and "config" in vm_settings:
                 log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["displayname"], vm_settings["config"]))
-                vms.append({"vmname": vm_settings["displayname"], "vmx_path": vm_settings["config"]})
-        return vms
+                vmware_vms.append({"vmname": vm_settings["displayname"], "vmx_path": vm_settings["config"]})
+        return vmware_vms
 
     def _get_vms_from_directory(self, directory):
         """
@@ -589,7 +589,7 @@ class VMware(BaseManager):
         :returns: list of VMs
         """
 
-        vms = []
+        vmware_vms = []
         for path, _, filenames in os.walk(directory):
             for filename in filenames:
                 if os.path.splitext(filename)[1] == ".vmx":
@@ -599,11 +599,11 @@ class VMware(BaseManager):
                         pairs = self.parse_vmware_file(vmx_path)
                         if "displayname" in pairs:
                             log.debug('Found VM named "{}"'.format(pairs["displayname"]))
-                            vms.append({"vmname": pairs["displayname"], "vmx_path": vmx_path})
+                            vmware_vms.append({"vmname": pairs["displayname"], "vmx_path": vmx_path})
                     except OSError as e:
                         log.warning('Could not read VMware VMX file "{}": {}'.format(vmx_path, e))
                         continue
-        return vms
+        return vmware_vms
 
     @staticmethod
     def get_vmware_inventory_path():
@@ -687,7 +687,7 @@ class VMware(BaseManager):
                     default_vm_path = pairs["prefvmx.defaultvmpath"]
             if not os.path.isdir(default_vm_path):
                 raise VMwareError('Could not find the default VM directory: "{}"'.format(default_vm_path))
-            vms = self._get_vms_from_directory(default_vm_path)
+            vmware_vms = self._get_vms_from_directory(default_vm_path)
 
             # looks for VMX paths in the preferences file in case not all VMs are in the default directory
             for key, value in pairs.items():
@@ -696,12 +696,12 @@ class VMware(BaseManager):
                     display_name = "pref.mruVM{}.displayName".format(m.group(1))
                     if display_name in pairs:
                         found = False
-                        for vm in vms:
-                            if vm["vmname"] == display_name:
+                        for vmware_vm in vmware_vms:
+                            if vmware_vm["vmname"] == display_name:
                                 found = True
                         if found is False:
-                            vms.append({"vmname": pairs[display_name], "vmx_path": value})
-            return vms
+                            vmware_vms.append({"vmname": pairs[display_name], "vmx_path": value})
+            return vmware_vms
 
     @staticmethod
     def _get_linux_vmware_binary():

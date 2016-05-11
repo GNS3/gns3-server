@@ -21,7 +21,7 @@ VBOX_CREATE_SCHEMA = {
     "description": "Request validation to create a new VirtualBox VM instance",
     "type": "object",
     "properties": {
-        "vm_id": {
+        "node_id": {
             "description": "VirtualBox VM instance identifier",
             "oneOf": [
                 {"type": "string",
@@ -158,7 +158,7 @@ VBOX_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_id": {
+        "node_id": {
             "description": "VirtualBox VM instance UUID",
             "type": "string",
             "minLength": 36,
@@ -222,5 +222,5 @@ VBOX_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "project_id", "vm_directory"]
+    "required": ["name", "node_id", "project_id", "vm_directory"]
 }

@@ -31,7 +31,7 @@ import binascii
 import logging
 log = logging.getLogger(__name__)
 
-from ...base_vm import BaseVM
+from ...base_node import BaseNode
 from ..dynamips_error import DynamipsError
 from ..nios.nio_udp import NIOUDP
 
@@ -39,13 +39,13 @@ from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
 from gns3server.utils.images import md5sum
 
 
-class Router(BaseVM):
+class Router(BaseNode):
 
     """
     Dynamips router implementation.
 
     :param name: The name of this router
-    :param vm_id: Router instance identifier
+    :param node_id: Node identifier
     :param project: Project instance
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
@@ -59,11 +59,11 @@ class Router(BaseVM):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
+    def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
         allocate_aux = manager.config.get_section_config("Dynamips").getboolean("allocate_aux_console_ports", False)
 
-        super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=aux)
+        super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=aux)
 
         self._hypervisor = hypervisor
         self._dynamips_id = dynamips_id
@@ -111,7 +111,7 @@ class Router(BaseVM):
     def __json__(self):
 
         router_info = {"name": self.name,
-                       "vm_id": self.id,
+                       "node_id": self.id,
                        "vm_directory": os.path.join(self.project.module_working_directory(self.manager.module_name.lower())),
                        "project_id": self.project.id,
                        "dynamips_id": self._dynamips_id,
@@ -1549,7 +1549,7 @@ class Router(BaseVM):
 
     def delete(self):
         """
-        Delete the VM (including all its files).
+        Delete this VM (including all its files).
         """
 
         # delete the VM files

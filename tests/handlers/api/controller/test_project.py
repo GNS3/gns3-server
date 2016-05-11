@@ -39,7 +39,7 @@ def project(http_controller):
     u = str(uuid.uuid4())
     query = {"name": "test", "project_id": u}
     response = http_controller.post("/projects", query)
-    return Controller.instance().getProject(u)
+    return Controller.instance().get_project(u)
 
 
 def test_create_project_with_path(http_controller, tmpdir):
@@ -126,7 +126,7 @@ def test_notification(http_controller, project, loop):
     def go(future):
         response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)))
         response.body = yield from response.content.read(200)
-        project.emit("vm.created", {"a": "b"})
+        project.emit("node.created", {"a": "b"})
         response.body += yield from response.content.read(50)
         response.close()
         future.set_result(response)
@@ -137,7 +137,7 @@ def test_notification(http_controller, project, loop):
     assert response.status == 200
     assert b'"action": "ping"' in response.body
     assert b'"cpu_usage_percent"' in response.body
-    assert b'{"action": "vm.created", "event": {"a": "b"}}\n' in response.body
+    assert b'{"action": "node.created", "event": {"a": "b"}}\n' in response.body
 
 
 def test_notification_invalid_id(http_controller):

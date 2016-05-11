@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-VM_LIST_IMAGES_SCHEMA = {
+NODE_LIST_IMAGES_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "List of disk images",
     "type": "array",
@@ -43,7 +43,7 @@ VM_LIST_IMAGES_SCHEMA = {
 }
 
 
-VM_CAPTURE_SCHEMA = {
+NODE_CAPTURE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to start a packet capture on a port",
     "type": "object",
@@ -63,9 +63,9 @@ VM_CAPTURE_SCHEMA = {
 }
 
 
-VM_OBJECT_SCHEMA = {
+NODE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "A VM object",
+    "description": "A node object",
     "type": "object",
     "properties": {
         "compute_id": {
@@ -76,19 +76,19 @@ VM_OBJECT_SCHEMA = {
             "description": "Project identifier",
             "type": "string"
         },
-        "vm_id": {
-            "description": "VM identifier",
+        "node_id": {
+            "description": "Node identifier",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "vm_type": {
-            "description": "Type of VM",
+        "node_type": {
+            "description": "Type of node",
             "enum": ["docker", "dynamips", "vpcs", "virtualbox", "vmware", "iou", "qemu"]
         },
         "name": {
-            "description": "VM name",
+            "description": "Node name",
             "type": "string",
             "minLength": 1,
         },
@@ -108,8 +108,8 @@ VM_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_type", "compute_id"]
+    "required": ["name", "node_type", "compute_id"]
 }
 
-VM_UPDATE_SCHEMA = VM_OBJECT_SCHEMA
-del VM_UPDATE_SCHEMA["required"]
+NODE_UPDATE_SCHEMA = NODE_OBJECT_SCHEMA
+del NODE_UPDATE_SCHEMA["required"]

@@ -42,3 +42,12 @@ Sample session
 
 .. literalinclude:: ../../../examples/controller_post_projects.txt
 
+
+GET /v2/projects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List projects
+
+Response status codes
+**********************
+- **200**: List of projects
+

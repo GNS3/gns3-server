@@ -44,7 +44,7 @@ class ComputeHandler:
         output=COMPUTE_OBJECT_SCHEMA)
     def create(request, response):
 
-        compute = yield from Controller.instance().addCompute(**request.json)
+        compute = yield from Controller.instance().add_compute(**request.json)
         response.set_status(201)
         response.json(compute)
 

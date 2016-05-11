@@ -19,9 +19,9 @@
 Custom exceptions for the Qemu module.
 """
 
-from ..vm_error import VMError
+from ..node_error import NodeError
 
 
-class QemuError(VMError):
+class QemuError(NodeError):
 
     pass

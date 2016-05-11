@@ -36,16 +36,16 @@ class TelnetServer(threading.Thread):
     """
     Mini Telnet Server.
 
-    :param vm_name: Virtual machine name
-    :param pipe_path: path to VM pipe (UNIX socket on Linux/UNIX, Named Pipe on Windows)
+    :param node_name: node name
+    :param pipe_path: path to node pipe (UNIX socket on Linux/UNIX, Named Pipe on Windows)
     :param host: server host
     :param port: server port
     """
 
-    def __init__(self, vm_name, pipe_path, host, port):
+    def __init__(self, node_name, pipe_path, host, port):
 
         threading.Thread.__init__(self)
-        self._vm_name = vm_name
+        self._node_name = node_name
         self._pipe = pipe_path
         self._host = host
         self._port = port
@@ -101,7 +101,7 @@ class TelnetServer(threading.Thread):
                 return False
 
             if not self._alive:
-                log.info("Telnet server for {} is exiting".format(self._vm_name))
+                log.info("Telnet server for {} is exiting".format(self._node_name))
                 return True
 
             for sock_fileno in rlist:
@@ -117,7 +117,7 @@ class TelnetServer(threading.Thread):
                         log.error("could not accept new client: {}".format(e))
                         continue
 
-                    new_client = TelnetClient(self._vm_name, sock, host, port)
+                    new_client = TelnetClient(self._node_name, sock, host, port)
                     self._clients[sock.fileno()] = new_client
 
                     if self._use_thread and not self._reader_thread:
@@ -258,13 +258,13 @@ class TelnetClient(object):
     """
     Represents a Telnet client connection.
 
-    :param vm_name: VM name
+    :param node_name: Node name
     :param sock: socket connection
     :param host: IP of the Telnet client
     :param port: port of the Telnet client
     """
 
-    def __init__(self, vm_name, sock, host, port):
+    def __init__(self, node_name, sock, host, port):
 
         self._active = True
         self._sock = sock
@@ -276,7 +276,7 @@ class TelnetClient(object):
                          IAC, WILL, BINARY,
                          IAC, DO, BINARY]))
 
-        welcome_msg = "{} console is now available... Press RETURN to get started.\r\n".format(vm_name)
+        welcome_msg = "{} console is now available... Press RETURN to get started.\r\n".format(node_name)
         sock.send(welcome_msg.encode('utf-8'))
 
     def is_active(self):

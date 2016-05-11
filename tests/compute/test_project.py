@@ -41,9 +41,9 @@ def manager(port_manager):
 
 
 @pytest.fixture(scope="function")
-def vm(project, manager, loop):
-    vm = manager.create_vm("test", project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
-    return loop.run_until_complete(asyncio.async(vm))
+def node(project, manager, loop):
+    node = manager.create_node("test", project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
+    return loop.run_until_complete(asyncio.async(node))
 
 
 def test_affect_uuid():
@@ -123,44 +123,44 @@ def test_json(tmpdir):
     assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False}
 
 
-def test_vm_working_directory(tmpdir, vm):
+def test_vm_working_directory(tmpdir, node):
     directory = Config.instance().get_section_config("Server").get("project_directory")
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         p = Project(project_id=str(uuid4()))
-        assert p.vm_working_directory(vm) == os.path.join(directory, p.id, 'project-files', vm.module_name, vm.id)
-        assert os.path.exists(p.vm_working_directory(vm))
+        assert p.node_working_directory(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
+        assert os.path.exists(p.node_working_directory(node))
 
 
-def test_mark_vm_for_destruction(vm):
+def test_mark_node_for_destruction(node):
     project = Project(project_id=str(uuid4()))
-    project.add_vm(vm)
-    project.mark_vm_for_destruction(vm)
-    assert len(project._vms_to_destroy) == 1
-    assert len(project.vms) == 0
+    project.add_node(node)
+    project.mark_node_for_destruction(node)
+    assert len(project._nodes_to_destroy) == 1
+    assert len(project.nodes) == 0
 
 
 def test_commit(manager, loop):
     project = Project(project_id=str(uuid4()))
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    project.add_vm(vm)
-    directory = project.vm_working_directory(vm)
-    project.mark_vm_for_destruction(vm)
-    assert len(project._vms_to_destroy) == 1
+    node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    project.add_node(node)
+    directory = project.node_working_directory(node)
+    project.mark_node_for_destruction(node)
+    assert len(project._nodes_to_destroy) == 1
     assert os.path.exists(directory)
     loop.run_until_complete(asyncio.async(project.commit()))
-    assert len(project._vms_to_destroy) == 0
+    assert len(project._nodes_to_destroy) == 0
     assert os.path.exists(directory) is False
-    assert len(project.vms) == 0
+    assert len(project.nodes) == 0
 
 
 def test_commit_permission_issue(manager, loop):
     project = Project(project_id=str(uuid4()))
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    project.add_vm(vm)
-    directory = project.vm_working_directory(vm)
-    project.mark_vm_for_destruction(vm)
-    assert len(project._vms_to_destroy) == 1
+    node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    project.add_node(node)
+    directory = project.node_working_directory(node)
+    project.mark_node_for_destruction(node)
+    assert len(project._nodes_to_destroy) == 1
     assert os.path.exists(directory)
     os.chmod(directory, 0)
     with pytest.raises(aiohttp.web.HTTPInternalServerError):
@@ -188,17 +188,17 @@ def test_project_delete_permission_issue(loop):
 
 def test_project_add_vm(manager):
     project = Project(project_id=str(uuid4()))
-    vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    project.add_vm(vm)
-    assert len(project.vms) == 1
+    node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
+    project.add_node(node)
+    assert len(project.nodes) == 1
 
 
-def test_project_close(loop, vm, project):
+def test_project_close(loop, node, project):
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.close") as mock:
         loop.run_until_complete(asyncio.async(project.close()))
         assert mock.called
-    assert vm.id not in vm.manager._vms
+    assert node.id not in node.manager._nodes
 
 
 def test_project_close_temporary_project(loop, manager):

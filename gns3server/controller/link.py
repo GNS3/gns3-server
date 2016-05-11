@@ -29,18 +29,18 @@ class Link:
 
     def __init__(self, project):
         self._id = str(uuid.uuid4())
-        self._vms = []
+        self._nodes = []
         self._project = project
         self._capturing = False
         self._capture_file_name = None
 
     @asyncio.coroutine
-    def addVM(self, vm, adapter_number, port_number):
+    def add_node(self, node, adapter_number, port_number):
         """
-        Add a VM to the link
+        Add a node to the link
         """
-        self._vms.append({
-            "vm": vm,
+        self._nodes.append({
+            "node": node,
             "adapter_number": adapter_number,
             "port_number": port_number
         })
@@ -107,12 +107,12 @@ class Link:
         :returns: File name for a capture on this link
         """
         capture_file_name = "{}_{}-{}_to_{}_{}-{}".format(
-            self._vms[0]["vm"].name,
-            self._vms[0]["adapter_number"],
-            self._vms[0]["port_number"],
-            self._vms[1]["vm"].name,
-            self._vms[1]["adapter_number"],
-            self._vms[1]["port_number"])
+            self._nodes[0]["node"].name,
+            self._nodes[0]["adapter_number"],
+            self._nodes[0]["port_number"],
+            self._nodes[1]["node"].name,
+            self._nodes[1]["adapter_number"],
+            self._nodes[1]["port_number"])
         return re.sub("[^0-9A-Za-z_-]", "", capture_file_name) + ".pcap"
 
     @property
@@ -135,14 +135,14 @@ class Link:
 
     def __json__(self):
         res = []
-        for side in self._vms:
+        for side in self._nodes:
             res.append({
-                "vm_id": side["vm"].id,
+                "node_id": side["node"].id,
                 "adapter_number": side["adapter_number"],
                 "port_number": side["port_number"]
             })
         return {
-            "vms": res, "link_id": self._id,
+            "nodes": res, "link_id": self._id,
             "capturing": self._capturing,
             "capture_file_name": self._capture_file_name,
             "capture_file_path": self.capture_file_path

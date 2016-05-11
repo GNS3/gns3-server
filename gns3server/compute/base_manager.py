@@ -40,14 +40,14 @@ from .nios.nio_tap import NIOTAP
 from .nios.nio_nat import NIONAT
 from .nios.nio_generic_ethernet import NIOGenericEthernet
 from ..utils.images import md5sum, remove_checksum
-from .vm_error import VMError
+from .node_error import NodeError
 
 
 class BaseManager:
 
     """
     Base class for all Manager classes.
-    Responsible of management of a VM pool of the same type.
+    Responsible of management of a node pool of the same type.
     """
 
     _convert_lock = None
@@ -55,7 +55,7 @@ class BaseManager:
     def __init__(self):
 
         BaseManager._convert_lock = asyncio.Lock()
-        self._vms = {}
+        self._nodes = {}
         self._port_manager = None
         self._config = Config.instance()
 
@@ -110,8 +110,8 @@ class BaseManager:
     def unload(self):
 
         tasks = []
-        for vm_id in self._vms.keys():
-            tasks.append(asyncio.async(self.close_vm(vm_id)))
+        for node_id in self._nodes.keys():
+            tasks.append(asyncio.async(self.close_node(node_id)))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -119,21 +119,21 @@ class BaseManager:
                 try:
                     future.result()
                 except (Exception, GeneratorExit) as e:
-                    log.error("Could not close VM {}".format(e), exc_info=1)
+                    log.error("Could not close node {}".format(e), exc_info=1)
                     continue
 
         if hasattr(BaseManager, "_instance"):
             BaseManager._instance = None
         log.debug("Module {} unloaded".format(self.module_name))
 
-    def get_vm(self, vm_id, project_id=None):
+    def get_node(self, node_id, project_id=None):
         """
-        Returns a VM instance.
+        Returns a Node instance.
 
-        :param vm_id: VM identifier
+        :param node_id: Node identifier
         :param project_id: Project identifier
 
-        :returns: VM instance
+        :returns: Node instance
         """
 
         if project_id:
@@ -141,19 +141,19 @@ class BaseManager:
             project = ProjectManager.instance().get_project(project_id)
 
         try:
-            UUID(vm_id, version=4)
+            UUID(node_id, version=4)
         except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="VM ID {} is not a valid UUID".format(vm_id))
+            raise aiohttp.web.HTTPBadRequest(text="Node ID {} is not a valid UUID".format(node_id))
 
-        if vm_id not in self._vms:
-            raise aiohttp.web.HTTPNotFound(text="VM ID {} doesn't exist".format(vm_id))
+        if node_id not in self._nodes:
+            raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
 
-        vm = self._vms[vm_id]
+        node = self._nodes[node_id]
         if project_id:
-            if vm.project.id != project.id:
-                raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't belong to VM {}".format(project_id, vm.name))
+            if node.project.id != project.id:
+                raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't belong to node {}".format(project_id, node.name))
 
-        return vm
+        return node
 
     @asyncio.coroutine
     def convert_old_project(self, project, legacy_id, name):
@@ -194,8 +194,8 @@ class BaseManager:
                                                                                                                   new_remote_project_path, e))
 
         if hasattr(self, "get_legacy_vm_workdir"):
-            # rename old project VM working dir
-            log.info("Converting old VM working directory...")
+            # rename old project node working dir
+            log.info("Converting old node working directory...")
             legacy_vm_dir = self.get_legacy_vm_workdir(legacy_id, name)
             legacy_vm_working_path = os.path.join(new_project_files_path, legacy_vm_dir)
             new_vm_working_path = os.path.join(new_project_files_path, self.module_name.lower(), new_id)
@@ -204,57 +204,58 @@ class BaseManager:
                     log.info('Moving "{}" to "{}"'.format(legacy_vm_working_path, new_vm_working_path))
                     yield from wait_run_in_executor(shutil.move, legacy_vm_working_path, new_vm_working_path)
                 except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not move VM working directory: {} to {} {}".format(legacy_vm_working_path,
-                                                                                                                             new_vm_working_path, e))
+                    raise aiohttp.web.HTTPInternalServerError(text="Could not move vm working directory: {} to {} {}".format(legacy_vm_working_path,
+                                                                                                                             new_vm_working_path,e))
 
         return new_id
 
     @asyncio.coroutine
-    def create_vm(self, name, project_id, vm_id, *args, **kwargs):
+    def create_node(self, name, project_id, node_id, *args, **kwargs):
         """
-        Create a new VM
+        Create a new node
 
-        :param name: VM name
+        :param name: Node name
         :param project_id: Project identifier
-        :param vm_id: restore a VM identifier
+        :param node_id: restore a node identifier
         """
 
-        if vm_id in self._vms:
-            return self._vms[vm_id]
+        if node_id in self._nodes:
+            return self._nodes[node_id]
 
         project = ProjectManager.instance().get_project(project_id)
-        if vm_id and isinstance(vm_id, int):
+        if node_id and isinstance(node_id, int):
+            # old project
             with (yield from BaseManager._convert_lock):
-                vm_id = yield from self.convert_old_project(project, vm_id, name)
+                node_id = yield from self.convert_old_project(project, node_id, name)
 
-        if not vm_id:
-            vm_id = str(uuid4())
+        if not node_id:
+            node_id = str(uuid4())
 
-        vm = self._VM_CLASS(name, vm_id, project, self, *args, **kwargs)
-        if asyncio.iscoroutinefunction(vm.create):
-            yield from vm.create()
+        node = self._NODE_CLASS(name, node_id, project, self, *args, **kwargs)
+        if asyncio.iscoroutinefunction(node.create):
+            yield from node.create()
         else:
-            vm.create()
-        self._vms[vm.id] = vm
-        project.add_vm(vm)
-        return vm
+            node.create()
+        self._nodes[node.id] = node
+        project.add_node(node)
+        return node
 
     @asyncio.coroutine
-    def close_vm(self, vm_id):
+    def close_node(self, node_id):
         """
-        Close a VM
+        Close a node
 
-        :param vm_id: VM identifier
+        :param node_id: Node identifier
 
-        :returns: VM instance
+        :returns: Node instance
         """
 
-        vm = self.get_vm(vm_id)
-        if asyncio.iscoroutinefunction(vm.close):
-            yield from vm.close()
+        node = self.get_node(node_id)
+        if asyncio.iscoroutinefunction(node.close):
+            yield from node.close()
         else:
-            vm.close()
-        return vm
+            node.close()
+        return node
 
     @asyncio.coroutine
     def project_closing(self, project):
@@ -274,9 +275,9 @@ class BaseManager:
         :param project: Project instance
         """
 
-        for vm in project.vms:
-            if vm.id in self._vms:
-                del self._vms[vm.id]
+        for node in project.nodes:
+            if node.id in self._nodes:
+                del self._nodes[node.id]
 
     @asyncio.coroutine
     def project_moved(self, project):
@@ -299,20 +300,19 @@ class BaseManager:
         pass
 
     @asyncio.coroutine
-    def delete_vm(self, vm_id):
+    def delete_node(self, node_id):
         """
-        Delete a VM. VM working directory will be destroy when
-        we receive a commit.
+        Delete a node. The node working directory will be destroyed when a commit is received.
 
-        :param vm_id: VM identifier
-        :returns: VM instance
+        :param node_id: Node identifier
+        :returns: Node instance
         """
 
-        vm = yield from self.close_vm(vm_id)
-        vm.project.mark_vm_for_destruction(vm)
-        if vm.id in self._vms:
-            del self._vms[vm.id]
-        return vm
+        node = yield from self.close_node(node_id)
+        node.project.mark_node_for_destruction(node)
+        if node.id in self._nodes:
+            del self._nodes[node.id]
+        return node
 
     @staticmethod
     def has_privileged_access(executable):
@@ -408,7 +408,7 @@ class BaseManager:
         # Windows path should not be send to a unix server
         if not sys.platform.startswith("win"):
             if re.match(r"^[A-Z]:", path) is not None:
-                raise VMError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
+                raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
 
         if not os.path.isabs(path):
             s = os.path.split(path)
@@ -429,7 +429,7 @@ class BaseManager:
                 img_directory = force_unix_path(img_directory)
                 path = force_unix_path(path)
                 if len(os.path.commonprefix([img_directory, path])) < len(img_directory):
-                    raise VMError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
+                    raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
 
         return force_unix_path(path)
 
@@ -454,7 +454,7 @@ class BaseManager:
     @asyncio.coroutine
     def list_images(self):
         """
-        Return the list of available images for this VM type
+        Return the list of available images for this node type
 
         :returns: Array of hash
         """

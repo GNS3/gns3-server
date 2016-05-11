@@ -21,7 +21,7 @@ DOCKER_CREATE_SCHEMA = {
     "description": "Request validation to create a new Docker container",
     "type": "object",
     "properties": {
-        "vm_id": {
+        "node_id": {
             "description": "Docker VM instance identifier",
             "type": "string",
             "minLength": 36,
@@ -158,7 +158,7 @@ DOCKER_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_id": {
+        "node_id": {
             "description": "Docker container instance UUID",
             "type": "string",
             "minLength": 36,
@@ -235,7 +235,7 @@ DOCKER_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["vm_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "console_resolution", "start_command", "environment", "vm_directory"]
+    "required": ["node_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "console_resolution", "start_command", "environment", "vm_directory"]
 }
 
 

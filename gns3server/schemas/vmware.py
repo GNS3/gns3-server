@@ -21,7 +21,7 @@ VMWARE_CREATE_SCHEMA = {
     "description": "Request validation to create a new VMware VM instance",
     "type": "object",
     "properties": {
-        "vm_id": {
+        "node_id": {
             "description": "VMware VM instance identifier",
             "type": "string",
             "minLength": 36,
@@ -151,7 +151,7 @@ VMWARE_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_id": {
+        "node_id": {
             "description": "VMware VM instance UUID",
             "type": "string",
             "minLength": 36,
@@ -213,5 +213,5 @@ VMWARE_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "project_id"]
+    "required": ["name", "node_id", "project_id"]
 }

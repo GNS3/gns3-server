@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.qemu import Qemu
-from gns3server.compute.vm_error import VMError
+from gns3server.compute.node_error import NodeError
 from gns3server.utils import force_unix_path
 
 
@@ -43,48 +43,48 @@ def qemu(port_manager):
     return qemu
 
 
-def test_create_vm_new_topology(loop, project, vpcs):
-    vm_id = str(uuid.uuid4())
-    vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id))
-    assert vm in project.vms
+def test_create_node_new_topology(loop, project, vpcs):
+    node_id = str(uuid.uuid4())
+    node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, node_id))
+    assert node in project.nodes
 
 
-def test_create_twice_same_vm_new_topology(loop, project, vpcs):
-    project._vms = set()
-    vm_id = str(uuid.uuid4())
-    vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id, console=2222))
-    assert vm in project.vms
-    assert len(project.vms) == 1
-    vm = loop.run_until_complete(vpcs.create_vm("PC 2", project.id, vm_id, console=2222))
-    assert len(project.vms) == 1
+def test_create_twice_same_node_new_topology(loop, project, vpcs):
+    project._nodes = set()
+    node_id = str(uuid.uuid4())
+    node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, node_id, console=2222))
+    assert node in project.nodes
+    assert len(project.nodes) == 1
+    node = loop.run_until_complete(vpcs.create_node("PC 2", project.id, node_id, console=2222))
+    assert len(project.nodes) == 1
 
 
-def test_create_vm_new_topology_without_uuid(loop, project, vpcs):
-    vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, None))
-    assert vm in project.vms
-    assert len(vm.id) == 36
+def test_create_node_new_topology_without_uuid(loop, project, vpcs):
+    node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, None))
+    assert node in project.nodes
+    assert len(node.id) == 36
 
 
-def test_create_vm_old_topology(loop, project, tmpdir, vpcs):
+def test_create_node_old_topology(loop, project, tmpdir, vpcs):
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         # Create an old topology directory
         project_dir = str(tmpdir / "testold")
-        vm_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
+        node_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
         project.path = project_dir
         project.name = "testold"
-        os.makedirs(vm_dir, exist_ok=True)
-        with open(os.path.join(vm_dir, "startup.vpc"), "w+") as f:
+        os.makedirs(node_dir, exist_ok=True)
+        with open(os.path.join(node_dir, "startup.vpc"), "w+") as f:
             f.write("1")
 
-        vm_id = 1
-        vm = loop.run_until_complete(vpcs.create_vm("PC 1", project.id, vm_id))
-        assert len(vm.id) == 36
+        node_id = 1
+        node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, node_id))
+        assert len(node.id) == 36
 
         assert os.path.exists(os.path.join(project_dir, "testold-files")) is False
 
-        vm_dir = os.path.join(project_dir, "project-files", "vpcs", vm.id)
-        with open(os.path.join(vm_dir, "startup.vpc")) as f:
+        node_dir = os.path.join(project_dir, "project-files", "vpcs", node.id)
+        with open(os.path.join(node_dir, "startup.vpc")) as f:
             assert f.read() == "1"
 
 
@@ -116,9 +116,9 @@ def test_get_abs_image_path_non_local(qemu, tmpdir):
     # If non local we can't use path outside images directory
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": False}):
         assert qemu.get_abs_image_path(path1) == path1
-        with pytest.raises(VMError):
+        with pytest.raises(NodeError):
             qemu.get_abs_image_path(path2)
-        with pytest.raises(VMError):
+        with pytest.raises(NodeError):
             qemu.get_abs_image_path("C:\\test2.bin")
 
     with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": True}):

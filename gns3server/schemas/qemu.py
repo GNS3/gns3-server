@@ -23,7 +23,7 @@ QEMU_CREATE_SCHEMA = {
     "description": "Request validation to create a new QEMU VM instance",
     "type": "object",
     "properties": {
-        "vm_id": {
+        "node_id": {
             "description": "QEMU VM identifier",
             "oneOf": [
                 {"type": "string",
@@ -382,7 +382,7 @@ QEMU_OBJECT_SCHEMA = {
     "description": "Request validation for a QEMU VM instance",
     "type": "object",
     "properties": {
-        "vm_id": {
+        "node_id": {
             "description": "QEMU VM uuid",
             "type": "string",
             "minLength": 1,
@@ -564,7 +564,7 @@ QEMU_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["vm_id",
+    "required": ["node_id",
                  "project_id",
                  "name",
                  "usage",

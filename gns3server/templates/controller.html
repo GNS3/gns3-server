@@ -12,14 +12,14 @@ in futur GNS3 versions.
     <tr>
         <th>Name</th>
         <th>ID</td>
-        <th>VMs</th>
+        <th>Nodes</th>
         <th>Links</th>
     </tr>
 {% for project in controller.projects.values() %}
 <tr>
     <td><a href="/projects/{{project.id}}">{{project.name}}</a></td>
     <td><a href="/projects/{{project.id}}">{{project.id}}</a></td>
-    <td>{{project.vms|length}}</td>
+    <td>{{project.nodes|length}}</td>
     <td>{{project.links|length}}</td>
 </tr>
 {% endfor %}

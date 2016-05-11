@@ -22,7 +22,7 @@ socket.onmessage = function (event) {
 The purpose of this page is to help for GNS3 debug. This can be dropped
 in futur GNS3 versions.
 
-<h2>VMs</h2>
+<h2>Nodes</h2>
 <table border="1">
     <tr>
         <th>Name</th>
@@ -30,12 +30,12 @@ in futur GNS3 versions.
         <th>Compute</th>
         <th>Console</th>
     </tr>
-{% for vm in project.vms.values() %}
+{% for node in project.nodes.values() %}
 <tr>
-    <td>{{vm.name}}</td>
-    <td>{{vm.id}}</td>
-    <td>{{vm.compute.id}}</td>
-    <td><a href="{{vm.console_type}}://{{vm.host}}:{{vm.console}}">Console</a>
+    <td>{{node.name}}</td>
+    <td>{{node.id}}</td>
+    <td>{{node.compute.id}}</td>
+    <td><a href="{{node.console_type}}://{{node.host}}:{{node.console}}">Console</a>
 </tr>
 {% endfor %}
 </table>

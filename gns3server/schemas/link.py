@@ -28,13 +28,13 @@ LINK_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "vms": {
+        "nodes": {
             "description": "List of the VMS",
             "type": "array",
             "items": {
                 "type": "object",
                 "properties": {
-                    "vm_id": {
+                    "node_id": {
                         "description": "VM identifier",
                         "type": "string",
                         "minLength": 36,
@@ -50,7 +50,7 @@ LINK_OBJECT_SCHEMA = {
                         "type": "integer"
                     }
                 },
-                "required": ["vm_id", "adapter_number", "port_number"],
+                "required": ["node_id", "adapter_number", "port_number"],
                 "additionalProperties": False
             }
         },
@@ -67,7 +67,7 @@ LINK_OBJECT_SCHEMA = {
             "type": ["string", "null"]
         }
     },
-    "required": ["vms"],
+    "required": ["nodes"],
     "additionalProperties": False
 }
 

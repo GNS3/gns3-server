@@ -69,7 +69,7 @@ class Device:
     @name.setter
     def name(self, new_name):
         """
-        Sets the name of this VM.
+        Sets the name of this device.
 
         :param new_name: name
         """

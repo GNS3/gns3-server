@@ -19,9 +19,9 @@
 Custom exceptions for the Dynamips module.
 """
 
-from ..vm_error import VMError
+from ..node_error import NodeError
 
 
-class DynamipsError(VMError):
+class DynamipsError(NodeError):
 
     pass

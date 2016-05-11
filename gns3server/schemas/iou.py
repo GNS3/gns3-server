@@ -26,7 +26,7 @@ IOU_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_id": {
+        "node_id": {
             "description": "IOU VM identifier",
             "oneOf": [
                 {"type": "string",
@@ -187,7 +187,7 @@ IOU_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_id": {
+        "node_id": {
             "description": "IOU VM UUID",
             "type": "string",
             "minLength": 36,
@@ -261,7 +261,7 @@ IOU_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "console", "project_id", "path", "md5sum", "serial_adapters", "ethernet_adapters",
+    "required": ["name", "node_id", "console", "project_id", "path", "md5sum", "serial_adapters", "ethernet_adapters",
                  "ram", "nvram", "l1_keepalives", "startup_config", "private_config", "use_default_iou_values",
                  "command_line"]
 }

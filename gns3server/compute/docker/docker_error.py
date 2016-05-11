@@ -19,10 +19,10 @@
 Custom exceptions for the Docker module.
 """
 
-from ..vm_error import VMError
+from ..node_error import NodeError
 
 
-class DockerError(VMError):
+class DockerError(NodeError):
     pass
 
 

@@ -26,7 +26,7 @@ VPCS_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_id": {
+        "node_id": {
             "description": "VPCS VM identifier",
             "oneOf": [
                 {"type": "string",
@@ -97,7 +97,7 @@ VPCS_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_id": {
+        "node_id": {
             "description": "VPCS VM UUID",
             "type": "string",
             "minLength": 36,
@@ -143,5 +143,5 @@ VPCS_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vm_id", "status", "console", "console_type", "project_id", "startup_script_path", "command_line"]
+    "required": ["name", "node_id", "status", "console", "console_type", "project_id", "startup_script_path", "command_line"]
 }

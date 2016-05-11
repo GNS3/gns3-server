@@ -29,7 +29,7 @@ from .vpcs_vm import VPCSVM
 
 class VPCS(BaseManager):
 
-    _VM_CLASS = VPCSVM
+    _NODE_CLASS = VPCSVM
 
     def __init__(self):
 
@@ -38,55 +38,55 @@ class VPCS(BaseManager):
         self._used_mac_ids = {}
 
     @asyncio.coroutine
-    def create_vm(self, *args, **kwargs):
+    def create_node(self, *args, **kwargs):
         """
         Creates a new VPCS VM.
 
         :returns: VPCSVM instance
         """
 
-        vm = yield from super().create_vm(*args, **kwargs)
-        self._free_mac_ids.setdefault(vm.project.id, list(range(0, 255)))
+        node = yield from super().create_node(*args, **kwargs)
+        self._free_mac_ids.setdefault(node.project.id, list(range(0, 255)))
         try:
-            self._used_mac_ids[vm.id] = self._free_mac_ids[vm.project.id].pop(0)
+            self._used_mac_ids[node.id] = self._free_mac_ids[node.project.id].pop(0)
         except IndexError:
             raise VPCSError("Cannot create a new VPCS VM (limit of 255 VMs reached on this host)")
-        return vm
+        return node
 
     @asyncio.coroutine
-    def close_vm(self, vm_id, *args, **kwargs):
+    def close_node(self, node_id, *args, **kwargs):
         """
         Closes a VPCS VM.
 
         :returns: VPCSVM instance
         """
 
-        vm = self.get_vm(vm_id)
-        if vm_id in self._used_mac_ids:
-            i = self._used_mac_ids[vm_id]
-            self._free_mac_ids[vm.project.id].insert(0, i)
-            del self._used_mac_ids[vm_id]
-        yield from super().close_vm(vm_id, *args, **kwargs)
-        return vm
+        node = self.get_node(node_id)
+        if node_id in self._used_mac_ids:
+            i = self._used_mac_ids[node_id]
+            self._free_mac_ids[node.project.id].insert(0, i)
+            del self._used_mac_ids[node_id]
+        yield from super().close_node(node_id, *args, **kwargs)
+        return node
 
-    def get_mac_id(self, vm_id):
+    def get_mac_id(self, node_id):
         """
         Get an unique VPCS MAC id (offset)
 
-        :param vm_id: VPCS VM identifier
+        :param node_id: VPCS node identifier
 
         :returns: VPCS MAC identifier
         """
 
-        return self._used_mac_ids.get(vm_id, 1)
+        return self._used_mac_ids.get(node_id, 1)
 
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):
         """
-        Returns the name of the legacy working directory name for a VM.
+        Returns the name of the legacy working directory name for a node.
 
-        :param legacy_vm_id: legacy VM identifier (integer)
-        :param name: VM name (not used)
+        :param legacy_vm_id: legacy node identifier (integer)
+        :param name: node name (not used)
 
         :returns: working directory name
         """

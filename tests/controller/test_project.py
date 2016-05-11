@@ -77,10 +77,10 @@ def test_addVM(async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    vm = async_run(project.addVM(compute, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
-    compute.post.assert_called_with('/projects/{}/vpcs/vms'.format(project.id),
-                                    data={'vm_id': vm.id,
+    compute.post.assert_called_with('/projects/{}/vpcs/nodes'.format(project.id),
+                                    data={'node_id': vm.id,
                                           'console_type': 'telnet',
                                           'startup_config': 'test.cfg',
                                           'name': 'test'})
@@ -94,11 +94,11 @@ def test_getVM(async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    vm = async_run(project.addVM(compute, None, name="test", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
-    assert project.getVM(vm.id) == vm
+    vm = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert project.get_node(vm.id) == vm
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
-        project.getVM("test")
+        project.get_node("test")
 
 
 def test_addLink(async_run):
@@ -109,12 +109,12 @@ def test_addLink(async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    vm1 = async_run(project.addVM(compute, None, name="test1", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
-    vm2 = async_run(project.addVM(compute, None, name="test2", vm_type="vpcs", properties={"startup_config": "test.cfg"}))
-    link = async_run(project.addLink())
-    async_run(link.addVM(vm1, 3, 1))
-    async_run(link.addVM(vm2, 4, 2))
-    assert len(link._vms) == 2
+    vm1 = async_run(project.add_node(compute, None, name="test1", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm2 = async_run(project.add_node(compute, None, name="test2", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    link = async_run(project.add_link())
+    async_run(link.add_node(vm1, 3, 1))
+    async_run(link.add_node(vm2, 4, 2))
+    assert len(link._nodes) == 2
 
 
 def test_getLink(async_run):
@@ -125,11 +125,11 @@ def test_getLink(async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    link = async_run(project.addLink())
-    assert project.getLink(link.id) == link
+    link = async_run(project.add_link())
+    assert project.get_link(link.id) == link
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
-        project.getLink("test")
+        project.get_link("test")
 
 
 def test_emit(async_run):

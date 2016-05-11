@@ -44,13 +44,13 @@ def test_get_application_id(loop, project, iou):
     vm1_id = str(uuid.uuid4())
     vm2_id = str(uuid.uuid4())
     vm3_id = str(uuid.uuid4())
-    loop.run_until_complete(iou.create_vm("PC 1", project.id, vm1_id))
-    loop.run_until_complete(iou.create_vm("PC 2", project.id, vm2_id))
+    loop.run_until_complete(iou.create_node("PC 1", project.id, vm1_id))
+    loop.run_until_complete(iou.create_node("PC 2", project.id, vm2_id))
     assert iou.get_application_id(vm1_id) == 1
     assert iou.get_application_id(vm1_id) == 1
     assert iou.get_application_id(vm2_id) == 2
-    loop.run_until_complete(iou.delete_vm(vm1_id))
-    loop.run_until_complete(iou.create_vm("PC 3", project.id, vm3_id))
+    loop.run_until_complete(iou.delete_node(vm1_id))
+    loop.run_until_complete(iou.create_node("PC 3", project.id, vm3_id))
     assert iou.get_application_id(vm3_id) == 1
 
 
@@ -60,9 +60,9 @@ def test_get_application_id_multiple_project(loop, iou):
     vm3_id = str(uuid.uuid4())
     project1 = ProjectManager.instance().create_project(project_id=str(uuid.uuid4()))
     project2 = ProjectManager.instance().create_project(project_id=str(uuid.uuid4()))
-    loop.run_until_complete(iou.create_vm("PC 1", project1.id, vm1_id))
-    loop.run_until_complete(iou.create_vm("PC 2", project1.id, vm2_id))
-    loop.run_until_complete(iou.create_vm("PC 2", project2.id, vm3_id))
+    loop.run_until_complete(iou.create_node("PC 1", project1.id, vm1_id))
+    loop.run_until_complete(iou.create_node("PC 2", project1.id, vm2_id))
+    loop.run_until_complete(iou.create_node("PC 2", project2.id, vm3_id))
     assert iou.get_application_id(vm1_id) == 1
     assert iou.get_application_id(vm2_id) == 2
     assert iou.get_application_id(vm3_id) == 3
@@ -71,9 +71,9 @@ def test_get_application_id_multiple_project(loop, iou):
 def test_get_application_id_no_id_available(loop, project, iou):
     with pytest.raises(IOUError):
         for i in range(1, 513):
-            vm_id = str(uuid.uuid4())
-            loop.run_until_complete(iou.create_vm("PC {}".format(i), project.id, vm_id))
-            assert iou.get_application_id(vm_id) == i
+            node_id = str(uuid.uuid4())
+            loop.run_until_complete(iou.create_node("PC {}".format(i), project.id, node_id))
+            assert iou.get_application_id(node_id) == i
 
 
 def test_get_images_directory(iou, tmpdir):

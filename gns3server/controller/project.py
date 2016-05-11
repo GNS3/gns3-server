@@ -18,10 +18,12 @@
 import os
 import asyncio
 import aiohttp
+import shutil
+
 from uuid import UUID, uuid4
 from contextlib import contextmanager
 
-from .vm import VM
+from .node import Node
 from .udp_link import UDPLink
 from ..notification_queue import NotificationQueue
 from ..config import Config
@@ -56,7 +58,7 @@ class Project:
 
         self._temporary = temporary
         self._computes = set()
-        self._vms = {}
+        self._nodes = {}
         self._links = {}
         self._listeners = set()
 
@@ -101,42 +103,42 @@ class Project:
         return path
 
     @asyncio.coroutine
-    def addCompute(self, compute):
+    def add_compute(self, compute):
         self._computes.add(compute)
         yield from compute.post("/projects", self)
 
     @asyncio.coroutine
-    def addVM(self, compute, vm_id, **kwargs):
+    def add_node(self, compute, node_id, **kwargs):
         """
-        Create a vm or return an existing vm
+        Create a node or return an existing node
 
-        :param kwargs: See the documentation of VM
+        :param kwargs: See the documentation of node
         """
-        if vm_id not in self._vms:
-            vm = VM(self, compute, vm_id=vm_id, **kwargs)
-            yield from vm.create()
-            self._vms[vm.id] = vm
-            return vm
-        return self._vms[vm_id]
+        if node_id not in self._nodes:
+            node = Node(self, compute, node_id=node_id, **kwargs)
+            yield from node.create()
+            self._nodes[node.id] = node
+            return node
+        return self._nodes[node_id]
 
-    def getVM(self, vm_id):
+    def get_node(self, node_id):
         """
-        Return the VM or raise a 404 if the VM is unknown
+        Return the node or raise a 404 if the node is unknown
         """
         try:
-            return self._vms[vm_id]
+            return self._nodes[node_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="VM ID {} doesn't exist".format(vm_id))
+            raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
 
     @property
-    def vms(self):
+    def nodes(self):
         """
-        :returns: Dictionnary of the VMS
+        :returns: Dictionary of the nodes
         """
-        return self._vms
+        return self._nodes
 
     @asyncio.coroutine
-    def addLink(self):
+    def add_link(self):
         """
         Create a link. By default the link is empty
         """
@@ -144,9 +146,9 @@ class Project:
         self._links[link.id] = link
         return link
 
-    def getLink(self, link_id):
+    def get_link(self, link_id):
         """
-        Return the Link or raise a 404 if the VM is unknown
+        Return the Link or raise a 404 if the link is unknown
         """
         try:
             return self._links[link_id]
@@ -156,7 +158,7 @@ class Project:
     @property
     def links(self):
         """
-        :returns: Dictionnary of the Links
+        :returns: Dictionary of the Links
         """
         return self._links
 
@@ -174,7 +176,7 @@ class Project:
     def delete(self):
         for compute in self._computes:
             yield from compute.delete("/projects/{}".format(self._id))
-        shutil.rmtree(self.path)
+        shutil.rmtree(self.path, ignore_errors=True)
 
     @contextmanager
     def queue(self):

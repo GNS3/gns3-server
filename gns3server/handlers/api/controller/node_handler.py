@@ -16,19 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ....web.route import Route
-from ....schemas.vm import VM_OBJECT_SCHEMA, VM_UPDATE_SCHEMA
-from ....controller.project import Project
+from ....schemas.node import NODE_OBJECT_SCHEMA, NODE_UPDATE_SCHEMA
 from ....controller import Controller
 
 
-class VMHandler:
+class NodeHandler:
     """
-    API entry point for VM
+    API entry point for node
     """
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vms",
+        r"/projects/{project_id}/nodes",
         parameters={
             "project_id": "UUID for the project"
         },
@@ -36,155 +35,155 @@ class VMHandler:
             201: "Instance created",
             400: "Invalid request"
         },
-        description="Create a new VM instance",
-        input=VM_OBJECT_SCHEMA,
-        output=VM_OBJECT_SCHEMA)
+        description="Create a new node instance",
+        input=NODE_OBJECT_SCHEMA,
+        output=NODE_OBJECT_SCHEMA)
     def create(request, response):
 
         controller = Controller.instance()
         compute = controller.getCompute(request.json.pop("compute_id"))
-        project = controller.getProject(request.match_info["project_id"])
-        vm = yield from project.addVM(compute, request.json.pop("vm_id", None), **request.json)
+        project = controller.get_project(request.match_info["project_id"])
+        node = yield from project.add_node(compute, request.json.pop("node_id", None), **request.json)
         response.set_status(201)
-        response.json(vm)
+        response.json(node)
 
     @classmethod
     @Route.get(
-        r"/projects/{project_id}/vms",
+        r"/projects/{project_id}/nodes",
         parameters={
             "project_id": "UUID for the project"
         },
         status_codes={
-            200: "List of VMS",
+            200: "List of nodes",
         },
-        description="List VMs of a project")
-    def list_vms(request, response):
+        description="List nodes of a project")
+    def list_nodes(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
-        response.json([ v for v in project.vms.values() ])
+        project = controller.get_project(request.match_info["project_id"])
+        response.json([ v for v in project.nodes.values() ])
 
     @classmethod
     @Route.put(
-        r"/projects/{project_id}/vms/{vm_id}",
+        r"/projects/{project_id}/nodes/{node_id}",
         status_codes={
             201: "Instance created",
             400: "Invalid request"
         },
-        description="Update a VM instance",
-        input=VM_UPDATE_SCHEMA,
-        output=VM_OBJECT_SCHEMA)
+        description="Update a node instance",
+        input=NODE_UPDATE_SCHEMA,
+        output=NODE_OBJECT_SCHEMA)
     def update(request, response):
-        project = Controller.instance().getProject(request.match_info["project_id"])
-        vm = project.getVM(request.match_info["vm_id"])
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
 
         # Ignore this, because we use it only in create
-        request.json.pop("vm_id", None)
-        request.json.pop("vm_type", None)
+        request.json.pop("node_id", None)
+        request.json.pop("node_type", None)
         request.json.pop("compute_id", None)
 
-        yield from vm.update(**request.json)
+        yield from node.update(**request.json)
         response.set_status(201)
-        response.json(vm)
+        response.json(node)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vms/{vm_id}/start",
+        r"/projects/{project_id}/nodes/{node_id}/start",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the VM"
+            "node_id": "UUID for the node"
         },
         status_codes={
             201: "Instance created",
             400: "Invalid request"
         },
-        description="Start a VM instance",
-        output=VM_OBJECT_SCHEMA)
+        description="Start a node instance",
+        output=NODE_OBJECT_SCHEMA)
     def start(request, response):
 
-        project = Controller.instance().getProject(request.match_info["project_id"])
-        vm = project.getVM(request.match_info["vm_id"])
-        yield from vm.start()
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        yield from node.start()
         response.set_status(201)
-        response.json(vm)
+        response.json(node)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vms/{vm_id}/stop",
+        r"/projects/{project_id}/nodes/{node_id}/stop",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the VM"
+            "node_id": "UUID for the node"
         },
         status_codes={
             201: "Instance created",
             400: "Invalid request"
         },
-        description="Start a VM instance",
-        output=VM_OBJECT_SCHEMA)
+        description="Start a node instance",
+        output=NODE_OBJECT_SCHEMA)
     def stop(request, response):
 
-        project = Controller.instance().getProject(request.match_info["project_id"])
-        vm = project.getVM(request.match_info["vm_id"])
-        yield from vm.stop()
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        yield from node.stop()
         response.set_status(201)
-        response.json(vm)
+        response.json(node)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vms/{vm_id}/suspend",
+        r"/projects/{project_id}/nodes/{node_id}/suspend",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the VM"
+            "node_id": "UUID for the node"
         },
         status_codes={
             201: "Instance created",
             400: "Invalid request"
         },
-        description="Start a VM instance",
-        output=VM_OBJECT_SCHEMA)
+        description="Start a node instance",
+        output=NODE_OBJECT_SCHEMA)
     def suspend(request, response):
 
-        project = Controller.instance().getProject(request.match_info["project_id"])
-        vm = project.getVM(request.match_info["vm_id"])
-        yield from vm.suspend()
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        yield from node.suspend()
         response.set_status(201)
-        response.json(vm)
+        response.json(node)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/vms/{vm_id}/reload",
+        r"/projects/{project_id}/nodes/{node_id}/reload",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the VM"
+            "node_id": "UUID for the node"
         },
         status_codes={
             201: "Instance created",
             400: "Invalid request"
         },
-        description="Reload a VM instance",
-        output=VM_OBJECT_SCHEMA)
+        description="Reload a node instance",
+        output=NODE_OBJECT_SCHEMA)
     def reload(request, response):
 
-        project = Controller.instance().getProject(request.match_info["project_id"])
-        vm = project.getVM(request.match_info["vm_id"])
-        yield from vm.reload()
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        yield from node.reload()
         response.set_status(201)
-        response.json(vm)
+        response.json(node)
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/vms/{vm_id}",
+        r"/projects/{project_id}/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the VM"
+            "node_id": "UUID for the node"
         },
         status_codes={
             201: "Instance deleted",
             400: "Invalid request"
         },
-        description="Delete a VM instance")
+        description="Delete a node instance")
     def delete(request, response):
-        project = Controller.instance().getProject(request.match_info["project_id"])
-        vm = project.getVM(request.match_info["vm_id"])
-        yield from vm.destroy()
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        yield from node.destroy()
         response.set_status(201)

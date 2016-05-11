@@ -36,7 +36,7 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..nios.nio_nat import NIONAT
-from ..base_vm import BaseVM
+from ..base_node import BaseNode
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
@@ -48,14 +48,14 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class QemuVM(BaseVM):
+class QemuVM(BaseNode):
     module_name = 'qemu'
 
     """
     QEMU VM implementation.
 
     :param name: Qemu VM name
-    :param vm_id: Qemu VM identifier
+    :param node_id: Node identifier
     :param project: Project instance
     :param manager: Manager instance
     :param console: TCP console port
@@ -64,9 +64,9 @@ class QemuVM(BaseVM):
     :param console: TCP console port
     """
 
-    def __init__(self, name, vm_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
+    def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
 
-        super().__init__(name, vm_id, project, manager, console=console, console_type=console_type)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
@@ -1448,7 +1448,7 @@ class QemuVM(BaseVM):
     def __json__(self):
         answer = {
             "project_id": self.project.id,
-            "vm_id": self.id,
+            "node_id": self.id,
             "vm_directory": self.working_dir
         }
         # Qemu has a long list of options. The JSON schema is the single source of information

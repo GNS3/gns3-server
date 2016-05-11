@@ -75,7 +75,7 @@ class ProjectHandler:
         })
     def get(request, response):
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
+        project = controller.get_project(request.match_info["project_id"])
         response.json(project)
 
     @classmethod
@@ -92,7 +92,7 @@ class ProjectHandler:
     def commit(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
+        project = controller.get_project(request.match_info["project_id"])
         yield from project.commit()
         response.set_status(204)
 
@@ -110,7 +110,7 @@ class ProjectHandler:
     def close(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
+        project = controller.get_project(request.match_info["project_id"])
         yield from project.close()
         controller.removeProject(project)
         response.set_status(204)
@@ -129,7 +129,7 @@ class ProjectHandler:
     def delete(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
+        project = controller.get_project(request.match_info["project_id"])
         yield from project.delete()
         controller.removeProject(project)
         response.set_status(204)
@@ -148,7 +148,7 @@ class ProjectHandler:
     def notification(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
+        project = controller.get_project(request.match_info["project_id"])
 
         response.content_type = "application/json"
         response.set_status(200)
@@ -179,7 +179,7 @@ class ProjectHandler:
     def notification_ws(request, response):
 
         controller = Controller.instance()
-        project = controller.getProject(request.match_info["project_id"])
+        project = controller.get_project(request.match_info["project_id"])
 
         ws = aiohttp.web.WebSocketResponse()
         yield from ws.prepare(request)

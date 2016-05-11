@@ -58,15 +58,15 @@ def base_params(tmpdir, fake_qemu_bin):
 
 @pytest.fixture
 def vm(http_compute, project, base_params):
-    response = http_compute.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), base_params)
+    response = http_compute.post("/projects/{project_id}/qemu/nodes".format(project_id=project.id), base_params)
     assert response.status == 201
     return response.json
 
 
 def test_qemu_create(http_compute, project, base_params, fake_qemu_bin):
-    response = http_compute.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), base_params)
+    response = http_compute.post("/projects/{project_id}/qemu/nodes".format(project_id=project.id), base_params)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/qemu/vms"
+    assert response.route == "/projects/{project_id}/qemu/nodes"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["qemu_path"] == fake_qemu_bin
@@ -77,9 +77,9 @@ def test_qemu_create_platform(http_compute, project, base_params, fake_qemu_bin)
     base_params["qemu_path"] = None
     base_params["platform"] = "x86_64"
 
-    response = http_compute.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), base_params)
+    response = http_compute.post("/projects/{project_id}/qemu/nodes".format(project_id=project.id), base_params)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/qemu/vms"
+    assert response.route == "/projects/{project_id}/qemu/nodes"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["qemu_path"] == fake_qemu_bin
@@ -91,10 +91,10 @@ def test_qemu_create_with_params(http_compute, project, base_params, fake_qemu_v
     params["ram"] = 1024
     params["hda_disk_image"] = "linux载.img"
 
-    response = http_compute.post("/projects/{project_id}/qemu/vms".format(project_id=project.id), params, example=True)
+    response = http_compute.post("/projects/{project_id}/qemu/nodes".format(project_id=project.id), params, example=True)
 
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/qemu/vms"
+    assert response.route == "/projects/{project_id}/qemu/nodes"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["ram"] == 1024
@@ -103,17 +103,17 @@ def test_qemu_create_with_params(http_compute, project, base_params, fake_qemu_v
 
 
 def test_qemu_get(http_compute, project, vm):
-    response = http_compute.get("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    response = http_compute.get("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"],node_id=vm["node_id"]), example=True)
     assert response.status == 200
-    assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}"
+    assert response.route == "/projects/{project_id}/qemu/nodes/{node_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
-    assert response.json["vm_directory"] == os.path.join(project.path, "project-files", "qemu", vm["vm_id"])
+    assert response.json["vm_directory"] == os.path.join(project.path, "project-files", "qemu", vm["node_id"])
 
 
 def test_qemu_start(http_compute, vm):
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.start", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/start".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 200
         assert response.json["name"] == "PC TEST 1"
@@ -121,35 +121,35 @@ def test_qemu_start(http_compute, vm):
 
 def test_qemu_stop(http_compute, vm):
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.stop", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/stop".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_reload(http_compute, vm):
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.reload", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/reload".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/reload".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_suspend(http_compute, vm):
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.suspend", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/suspend".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/suspend".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_resume(http_compute, vm):
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.resume", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/resume".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/resume".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
 
 def test_qemu_delete(http_compute, vm):
-    with asyncio_patch("gns3server.compute.qemu.Qemu.delete_vm", return_value=True) as mock:
-        response = http_compute.delete("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    with asyncio_patch("gns3server.compute.qemu.Qemu.delete_node", return_value=True) as mock:
+        response = http_compute.delete("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
 
@@ -161,7 +161,7 @@ def test_qemu_update(http_compute, vm, tmpdir, free_console_port, project, fake_
         "ram": 1024,
         "hdb_disk_image": "linux.img"
     }
-    response = http_compute.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), params, example=True)
+    response = http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
@@ -170,35 +170,35 @@ def test_qemu_update(http_compute, vm, tmpdir, free_console_port, project, fake_
 
 
 def test_qemu_nio_create_udp(http_compute, vm):
-    http_compute.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"adapters": 2})
-    response = http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
-                                                                                                                                                           "lport": 4242,
-                                                                                                                                                           "rport": 4343,
-                                                                                                                                                           "rhost": "127.0.0.1"},
+    http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
+    response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
+                                                                                                                                                                   "lport": 4242,
+                                                                                                                                                                   "rport": 4343,
+                                                                                                                                                                   "rhost": "127.0.0.1"},
                                  example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_qemu_nio_create_ethernet(http_compute, vm):
-    http_compute.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"adapters": 2})
-    response = http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_generic_ethernet",
-                                                                                                                                                           "ethernet_device": "eth0",
-                                                                                                                                                           },
+    http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
+    response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_generic_ethernet",
+                                                                                                                                                                   "ethernet_device": "eth0",
+                                                                                                                                                                  },
                                  example=True)
     assert response.status == 409
 
 
 def test_qemu_delete_nio(http_compute, vm):
-    http_compute.put("/projects/{project_id}/qemu/vms/{vm_id}".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"adapters": 2})
-    http_compute.post("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), {"type": "nio_udp",
-                                                                                                                                                "lport": 4242,
-                                                                                                                                                "rport": 4343,
-                                                                                                                                                "rhost": "127.0.0.1"})
-    response = http_compute.delete("/projects/{project_id}/qemu/vms/{vm_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], vm_id=vm["vm_id"]), example=True)
+    http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
+    http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
+                                                                                                                                                        "lport": 4242,
+                                                                                                                                                        "rport": 4343,
+                                                                                                                                                        "rhost": "127.0.0.1"})
+    response = http_compute.delete("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == "/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_qemu_list_binaries(http_compute, vm):
@@ -226,14 +226,14 @@ def test_qemu_list_binaries_filter(http_compute, vm):
 
 def test_vms(http_compute, tmpdir, fake_qemu_vm):
 
-    response = http_compute.get("/qemu/vms")
+    response = http_compute.get("/qemu/nodes")
     assert response.status == 200
     assert response.json == [{"filename": "linux载.img", "path": "linux载.img"}]
 
 
 def test_upload_vm(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/vms/test2", body="TEST", raw=True)
+        response = http_compute.post("/qemu/nodes/test2", body="TEST", raw=True)
         assert response.status == 204
 
     with open(str(tmpdir / "test2")) as f:
@@ -246,7 +246,7 @@ def test_upload_vm(http_compute, tmpdir):
 
 def test_upload_vm_ova(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/vms/test2.ova/test2.vmdk", body="TEST", raw=True)
+        response = http_compute.post("/qemu/nodes/test2.ova/test2.vmdk", body="TEST", raw=True)
         assert response.status == 204
 
     with open(str(tmpdir / "test2.ova" / "test2.vmdk")) as f:
@@ -259,7 +259,7 @@ def test_upload_vm_ova(http_compute, tmpdir):
 
 def test_upload_vm_forbiden_location(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/vms/../../test2", body="TEST", raw=True)
+        response = http_compute.post("/qemu/nodes/../../test2", body="TEST", raw=True)
         assert response.status == 403
 
 
@@ -269,7 +269,7 @@ def test_upload_vm_permission_denied(http_compute, tmpdir):
     os.chmod(str(tmpdir / "test2.tmp"), 0)
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/vms/test2", body="TEST", raw=True)
+        response = http_compute.post("/qemu/nodes/test2", body="TEST", raw=True)
         assert response.status == 409
 
 

@@ -102,7 +102,7 @@ WIC_MATRIX = {"WIC-1ENET": WIC_1ENET,
 
 class Dynamips(BaseManager):
 
-    _VM_CLASS = DynamipsVM
+    _NODE_CLASS = DynamipsVM
     _DEVICE_CLASS = DynamipsDevice
     _ghost_ios_lock = None
 
@@ -142,7 +142,7 @@ class Dynamips(BaseManager):
 
     def release_dynamips_id(self, project_id, dynamips_id):
         """
-        A dynamips id can be reused by another vm
+        A Dynamips id can be reused by another VM
 
         :param project_id: UUID of the project
         :param dynamips_id: Asked id
@@ -231,9 +231,9 @@ class Dynamips(BaseManager):
         :param project: Project instance
         """
 
-        for vm in self._vms.values():
-            if vm.project.id == project.id:
-                yield from vm.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
+        for node in self._nodes.values():
+            if node.project.id == project.id:
+                yield from node.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
 
         for device in self._devices.values():
             if device.project.id == project.id:
@@ -248,10 +248,10 @@ class Dynamips(BaseManager):
         """
 
         # save the configs when the project is committed
-        for vm in self._vms.copy().values():
-            if vm.project.id == project.id:
+        for node in self._nodes.copy().values():
+            if node.project.id == project.id:
                 try:
-                    yield from vm.save_configs()
+                    yield from node.save_configs()
                 except DynamipsError as e:
                     log.warning(e)
                     continue
@@ -273,7 +273,6 @@ class Dynamips(BaseManager):
 
         :param name: Device name
         :param project_id: Project identifier
-        :param vm_id: restore a VM identifier
         """
 
         project = ProjectManager.instance().get_project(project_id)

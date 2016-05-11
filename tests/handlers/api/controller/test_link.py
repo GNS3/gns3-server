@@ -31,7 +31,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
-from gns3server.controller.vm import VM
+from gns3server.controller.node import Node
 from gns3server.controller.link import Link
 
 
@@ -53,19 +53,19 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    vm1 = async_run(project.addVM(compute, None))
-    vm2 = async_run(project.addVM(compute, None))
+    node1 = async_run(project.add_node(compute, None))
+    node2 = async_run(project.add_node(compute, None))
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
-            "vms": [
+            "nodes": [
                 {
-                    "vm_id": vm1.id,
+                    "node_id": node1.id,
                     "adapter_number": 0,
                     "port_number": 3
                 },
                 {
-                    "vm_id": vm2.id,
+                    "node_id": node2.id,
                     "adapter_number": 2,
                     "port_number": 4
                 }
@@ -74,7 +74,7 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     assert mock.called
     assert response.status == 201
     assert response.json["link_id"] is not None
-    assert len(response.json["vms"]) == 2
+    assert len(response.json["nodes"]) == 2
 
 
 def test_start_capture(http_controller, tmpdir, project, compute, async_run):

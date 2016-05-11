@@ -29,7 +29,7 @@ from ....schemas.qemu import QEMU_BINARY_FILTER_SCHEMA
 from ....schemas.qemu import QEMU_BINARY_LIST_SCHEMA
 from ....schemas.qemu import QEMU_CAPABILITY_LIST_SCHEMA
 from ....schemas.qemu import QEMU_IMAGE_CREATE_SCHEMA
-from ....schemas.vm import VM_LIST_IMAGES_SCHEMA
+from ....schemas.node import NODE_LIST_IMAGES_SCHEMA
 from ....compute.qemu import Qemu
 from ....config import Config
 
@@ -42,7 +42,7 @@ class QEMUHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/qemu/vms",
+        r"/projects/{project_id}/qemu/nodes",
         parameters={
             "project_id": "UUID for the project"
         },
@@ -57,14 +57,14 @@ class QEMUHandler:
     def create(request, response):
 
         qemu = Qemu.instance()
-        vm = yield from qemu.create_vm(request.json.pop("name"),
-                                       request.match_info["project_id"],
-                                       request.json.pop("vm_id", None),
-                                       linked_clone=request.json.get("linked_clone", True),
-                                       qemu_path=request.json.pop("qemu_path", None),
-                                       console=request.json.pop("console", None),
-                                       console_type=request.json.pop("console_type", "telnet"),
-                                       platform=request.json.pop("platform", None))
+        vm = yield from qemu.create_node(request.json.pop("name"),
+                                         request.match_info["project_id"],
+                                         request.json.pop("node_id", None),
+                                         linked_clone=request.json.get("linked_clone", True),
+                                         qemu_path=request.json.pop("qemu_path", None),
+                                         console=request.json.pop("console", None),
+                                         console_type=request.json.pop("console_type", "telnet"),
+                                         platform=request.json.pop("platform", None))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
@@ -75,10 +75,10 @@ class QEMUHandler:
 
     @classmethod
     @Route.get(
-        r"/projects/{project_id}/qemu/vms/{vm_id}",
+        r"/projects/{project_id}/qemu/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             200: "Success",
@@ -90,15 +90,15 @@ class QEMUHandler:
     def show(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
     @classmethod
     @Route.put(
-        r"/projects/{project_id}/qemu/vms/{vm_id}",
+        r"/projects/{project_id}/qemu/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             200: "Instance updated",
@@ -112,7 +112,7 @@ class QEMUHandler:
     def update(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
@@ -122,10 +122,10 @@ class QEMUHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/qemu/vms/{vm_id}",
+        r"/projects/{project_id}/qemu/nodes/{node_id}",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             204: "Instance deleted",
@@ -135,15 +135,15 @@ class QEMUHandler:
         description="Delete a Qemu VM instance")
     def delete(request, response):
 
-        yield from Qemu.instance().delete_vm(request.match_info["vm_id"])
+        yield from Qemu.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/qemu/vms/{vm_id}/start",
+        r"/projects/{project_id}/qemu/nodes/{node_id}/start",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "node_id": "UUID for the instance"
         },
         status_codes={
             200: "Instance started",
@@ -155,7 +155,7 @@ class QEMUHandler:
     def start(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         if sys.platform.startswith("linux") and qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
                 and "-no-kvm" not in vm.options:
             pm = ProjectManager.instance()
@@ -166,10 +166,10 @@ class QEMUHandler:
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/qemu/vms/{vm_id}/stop",
+        r"/projects/{project_id}/qemu/nodes/{node_id}/stop",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance"
+            "vm_node": "UUID for the instance"
         },
         status_codes={
             204: "Instance stopped",
@@ -180,16 +180,16 @@ class QEMUHandler:
     def stop(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.stop()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/qemu/vms/{vm_id}/reload",
+        r"/projects/{project_id}/qemu/nodes/{node_id}/reload",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
         },
         status_codes={
             204: "Instance reloaded",
@@ -200,16 +200,16 @@ class QEMUHandler:
     def reload(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.reload()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/qemu/vms/{vm_id}/suspend",
+        r"/projects/{project_id}/qemu/nodes/{node_id}/suspend",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
         },
         status_codes={
             204: "Instance suspended",
@@ -220,16 +220,16 @@ class QEMUHandler:
     def suspend(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.suspend()
         response.set_status(204)
 
     @classmethod
     @Route.post(
-        r"/projects/{project_id}/qemu/vms/{vm_id}/resume",
+        r"/projects/{project_id}/qemu/nodes/{node_id}/resume",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
         },
         status_codes={
             204: "Instance resumed",
@@ -240,15 +240,15 @@ class QEMUHandler:
     def resume(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.resume()
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -263,7 +263,7 @@ class QEMUHandler:
     def create_nio(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_tap", "nio_nat"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
@@ -274,10 +274,10 @@ class QEMUHandler:
 
     @classmethod
     @Route.delete(
-        r"/projects/{project_id}/qemu/vms/{vm_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "UUID for the project",
-            "vm_id": "UUID for the instance",
+            "node_id": "UUID for the instance",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -290,7 +290,7 @@ class QEMUHandler:
     def delete_nio(request, response):
 
         qemu_manager = Qemu.instance()
-        vm = qemu_manager.get_vm(request.match_info["vm_id"], project_id=request.match_info["project_id"])
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
 
@@ -363,27 +363,27 @@ class QEMUHandler:
         response.set_status(201)
 
     @Route.get(
-        r"/qemu/vms",
+        r"/qemu/nodes",
         status_codes={
             200: "List of Qemu images retrieved",
         },
         description="Retrieve the list of Qemu images",
-        output=VM_LIST_IMAGES_SCHEMA)
-    def list_vms(request, response):
+        output=NODE_LIST_IMAGES_SCHEMA)
+    def list_vm_nodes(request, response):
 
         qemu_manager = Qemu.instance()
-        vms = yield from qemu_manager.list_images()
+        vm_nodes = yield from qemu_manager.list_images()
         response.set_status(200)
-        response.json(vms)
+        response.json(vm_nodes)
 
     @Route.post(
-        r"/qemu/vms/{path:.+}",
+        r"/qemu/nodes/{path:.+}",
         status_codes={
             204: "Image uploaded",
         },
         raw=True,
         description="Upload Qemu image.")
-    def upload_vm(request, response):
+    def upload_image(request, response):
 
         qemu_manager = Qemu.instance()
         yield from qemu_manager.write_image(request.match_info["path"], request.content)

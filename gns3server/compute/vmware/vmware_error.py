@@ -19,9 +19,9 @@
 Custom exceptions for the VMware module.
 """
 
-from ..vm_error import VMError
+from ..node_error import NodeError
 
 
-class VMwareError(VMError):
+class VMwareError(NodeError):
 
     pass

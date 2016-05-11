@@ -5,7 +5,7 @@
 
 GET /v2/compute/virtualbox/vms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get all VirtualBox VMs available
+Get all available VirtualBox VMs
 
 Response status codes
 **********************

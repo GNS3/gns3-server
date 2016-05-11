@@ -35,7 +35,7 @@ from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_nat import NIONAT
 from ..adapters.ethernet_adapter import EthernetAdapter
-from ..base_vm import BaseVM
+from ..base_node import BaseNode
 
 if sys.platform.startswith('win'):
     import msvcrt
@@ -45,15 +45,15 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class VirtualBoxVM(BaseVM):
+class VirtualBoxVM(BaseNode):
 
     """
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, vm_id, project, manager, vmname, linked_clone, console=None, adapters=0):
+    def __init__(self, name, node_id, project, manager, vmname, linked_clone, console=None, adapters=0):
 
-        super().__init__(name, vm_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console)
 
         self._maximum_adapters = 8
         self._linked_clone = linked_clone
@@ -75,7 +75,7 @@ class VirtualBoxVM(BaseVM):
     def __json__(self):
 
         json = {"name": self.name,
-                "vm_id": self.id,
+                "node_id": self.id,
                 "console": self.console,
                 "project_id": self.project.id,
                 "vmname": self.vmname,

@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class VMError(Exception):
+class NodeError(Exception):
 
     def __init__(self, message, original_exception=None):
 

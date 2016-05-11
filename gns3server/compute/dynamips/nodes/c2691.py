@@ -35,7 +35,7 @@ class C2691(Router):
     Dynamips c2691 router.
 
     :param name: The name of this router
-    :param vm_id: Router instance identifier
+    :param node_id: Node identifier
     :param project: Project instance
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
@@ -43,9 +43,9 @@ class C2691(Router):
     :param aux: auxiliary console port
     """
 
-    def __init__(self, name, vm_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
 
-        super().__init__(name, vm_id, project, manager, dynamips_id, console, aux, platform="c2691")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, aux, platform="c2691")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128

@@ -31,7 +31,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
-from gns3server.controller.vm import VM
+from gns3server.controller.node import Node
 
 
 @pytest.fixture
@@ -48,20 +48,20 @@ def project(http_controller, async_run):
 
 
 @pytest.fixture
-def vm(project, compute, async_run):
-    vm = VM(project, compute, name="test", vm_type="vpcs")
-    project._vms[vm.id] = vm
-    return vm
+def node(project, compute, async_run):
+    node = Node(project, compute, name="test", node_type="vpcs")
+    project._nodes[node.id] = node
+    return node
 
 
-def test_create_vm(http_controller, tmpdir, project, compute):
+def test_create_node(http_controller, tmpdir, project, compute):
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    response = http_controller.post("/projects/{}/vms".format(project.id), {
+    response = http_controller.post("/projects/{}/nodes".format(project.id), {
         "name": "test",
-        "vm_type": "vpcs",
+        "node_type": "vpcs",
         "compute_id": "example.com",
         "properties": {
                 "startup_script": "echo test"
@@ -72,32 +72,32 @@ def test_create_vm(http_controller, tmpdir, project, compute):
     assert "name" not in response.json["properties"]
 
 
-def test_list_vm(http_controller, tmpdir, project, compute):
+def test_list_node(http_controller, tmpdir, project, compute):
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    response = http_controller.post("/projects/{}/vms".format(project.id), {
+    response = http_controller.post("/projects/{}/nodes".format(project.id), {
         "name": "test",
-        "vm_type": "vpcs",
+        "node_type": "vpcs",
         "compute_id": "example.com",
         "properties": {
                 "startup_script": "echo test"
         }
     })
-    response = http_controller.get("/projects/{}/vms".format(project.id), example=True)
+    response = http_controller.get("/projects/{}/nodes".format(project.id), example=True)
     assert response.status == 200
     assert response.json[0]["name"] == "test"
 
 
-def test_update_vm(http_controller, tmpdir, project, compute, vm):
+def test_update_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     response.json = {"console": 2048}
     compute.put = AsyncioMagicMock(return_value=response)
 
-    response = http_controller.put("/projects/{}/vms/{}".format(project.id, vm.id), {
+    response = http_controller.put("/projects/{}/nodes/{}".format(project.id, node.id), {
         "name": "test",
-        "vm_type": "vpcs",
+        "node_type": "vpcs",
         "compute_id": "example.com",
         "properties": {
                 "startup_script": "echo test"
@@ -108,45 +108,45 @@ def test_update_vm(http_controller, tmpdir, project, compute, vm):
     assert "name" not in response.json["properties"]
 
 
-def test_start_vm(http_controller, tmpdir, project, compute, vm):
+def test_start_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
-    response = http_controller.post("/projects/{}/vms/{}/start".format(project.id, vm.id), example=True)
+    response = http_controller.post("/projects/{}/nodes/{}/start".format(project.id, node.id), example=True)
     assert response.status == 201
-    assert response.json["name"] == vm.name
+    assert response.json["name"] == node.name
 
 
-def test_stop_vm(http_controller, tmpdir, project, compute, vm):
+def test_stop_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
-    response = http_controller.post("/projects/{}/vms/{}/stop".format(project.id, vm.id), example=True)
+    response = http_controller.post("/projects/{}/nodes/{}/stop".format(project.id, node.id), example=True)
     assert response.status == 201
-    assert response.json["name"] == vm.name
+    assert response.json["name"] == node.name
 
 
-def test_suspend_vm(http_controller, tmpdir, project, compute, vm):
+def test_suspend_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
-    response = http_controller.post("/projects/{}/vms/{}/suspend".format(project.id, vm.id), example=True)
+    response = http_controller.post("/projects/{}/nodes/{}/suspend".format(project.id, node.id), example=True)
     assert response.status == 201
-    assert response.json["name"] == vm.name
+    assert response.json["name"] == node.name
 
 
-def test_reload_vm(http_controller, tmpdir, project, compute, vm):
+def test_reload_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
-    response = http_controller.post("/projects/{}/vms/{}/reload".format(project.id, vm.id), example=True)
+    response = http_controller.post("/projects/{}/nodes/{}/reload".format(project.id, node.id), example=True)
     assert response.status == 201
-    assert response.json["name"] == vm.name
+    assert response.json["name"] == node.name
 
 
-def test_delete_vm(http_controller, tmpdir, project, compute, vm):
+def test_delete_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
-    response = http_controller.delete("/projects/{}/vms/{}".format(project.id, vm.id), example=True)
+    response = http_controller.delete("/projects/{}/nodes/{}".format(project.id, node.id), example=True)
     assert response.status == 201

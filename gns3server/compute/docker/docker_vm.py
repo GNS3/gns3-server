@@ -27,9 +27,8 @@ import aiohttp
 import json
 import os
 
-from ...ubridge.hypervisor import Hypervisor
 from .docker_error import *
-from ..base_vm import BaseVM
+from ..base_node import BaseNode
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ...utils.asyncio.telnet_server import AsyncioTelnetServer
@@ -43,11 +42,11 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class DockerVM(BaseVM):
+class DockerVM(BaseNode):
     """Docker container implementation.
 
     :param name: Docker container name
-    :param vm_id: Docker VM identifier
+    :param node_id: Node identifier
     :param project: Project instance
     :param manager: Manager instance
     :param image: Docker image
@@ -59,11 +58,11 @@ class DockerVM(BaseVM):
     :param console_http_path: Url part with the path of the web interface
     """
 
-    def __init__(self, name, vm_id, project, manager, image,
+    def __init__(self, name, node_id, project, manager, image,
                  console=None, aux=None, start_command=None,
                  adapters=None, environment=None, console_type="telnet",
                  console_resolution="1024x768", console_http_port=80, console_http_path="/"):
-        super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
+        super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
         self._image = image
         self._start_command = start_command
@@ -93,7 +92,7 @@ class DockerVM(BaseVM):
     def __json__(self):
         return {
             "name": self._name,
-            "vm_id": self._id,
+            "node_id": self._id,
             "container_id": self._cid,
             "project_id": self._project.id,
             "image": self._image,
@@ -757,7 +756,7 @@ class DockerVM(BaseVM):
 
         adapter = "bridge{}".format(adapter_number)
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
-            raise VMwareError("Cannot start the packet capture: uBridge is not running")
+            raise DockerError("Cannot start the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=adapter, output_file=output_file))
 
     @asyncio.coroutine
@@ -770,7 +769,7 @@ class DockerVM(BaseVM):
 
         adapter = "bridge{}".format(adapter_number)
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
-            raise VMwareError("Cannot stop the packet capture: uBridge is not running")
+            raise DockerError("Cannot stop the packet capture: uBridge is not running")
         yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=adapter))
 
     @asyncio.coroutine

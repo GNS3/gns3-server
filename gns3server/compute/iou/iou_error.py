@@ -19,8 +19,8 @@
 Custom exceptions for the IOU module.
 """
 
-from ..vm_error import VMError
+from ..node_error import NodeError
 
 
-class IOUError(VMError):
+class IOUError(NodeError):
     pass

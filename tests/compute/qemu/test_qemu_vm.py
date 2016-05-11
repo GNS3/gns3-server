@@ -148,7 +148,7 @@ def test_termination_callback(vm, async_run):
         async_run(queue.get(0))  #  Ping
 
         (action, event, kwargs) = async_run(queue.get(0))
-        assert action == "vm.stopped"
+        assert action == "node.stopped"
         assert event == vm
 
 
@@ -167,7 +167,7 @@ def test_termination_callback_error(vm, tmpdir, async_run):
         async_run(queue.get(0))  #  Ping
 
         (action, event, kwargs) = queue.get_nowait()
-        assert action == "vm.stopped"
+        assert action == "node.stopped"
         assert event == vm
 
         (action, event, kwargs) = queue.get_nowait()

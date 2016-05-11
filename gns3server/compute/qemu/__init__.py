@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 class Qemu(BaseManager):
 
-    _VM_CLASS = QemuVM
+    _NODE_CLASS = QemuVM
 
     @staticmethod
     @asyncio.coroutine
@@ -218,10 +218,10 @@ class Qemu(BaseManager):
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):
         """
-        Returns the name of the legacy working directory name for a VM.
+        Returns the name of the legacy working directory name for a node.
 
         :param legacy_vm_id: legacy VM identifier (integer)
-        :param: VM name (not used)
+        :param: node name (not used)
 
         :returns: working directory name
         """

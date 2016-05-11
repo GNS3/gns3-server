@@ -19,9 +19,9 @@
 Custom exceptions for the VPCS module.
 """
 
-from ..vm_error import VMError
+from ..node_error import NodeError
 
 
-class VPCSError(VMError):
+class VPCSError(NodeError):
 
     pass

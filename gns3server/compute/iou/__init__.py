@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 class IOU(BaseManager):
 
-    _VM_CLASS = IOUVM
+    _NODE_CLASS = IOUVM
 
     def __init__(self):
 
@@ -41,35 +41,35 @@ class IOU(BaseManager):
         self._used_application_ids = {}
 
     @asyncio.coroutine
-    def create_vm(self, *args, **kwargs):
+    def create_node(self, *args, **kwargs):
         """
         Creates a new IOU VM.
 
         :returns: IOUVM instance
         """
 
-        vm = yield from super().create_vm(*args, **kwargs)
+        node = yield from super().create_node(*args, **kwargs)
         try:
-            self._used_application_ids[vm.id] = self._free_application_ids.pop(0)
+            self._used_application_ids[node.id] = self._free_application_ids.pop(0)
         except IndexError:
             raise IOUError("Cannot create a new IOU VM (limit of 512 VMs reached on this host)")
-        return vm
+        return node
 
     @asyncio.coroutine
-    def close_vm(self, vm_id, *args, **kwargs):
+    def close_node(self, node_id, *args, **kwargs):
         """
         Closes an IOU VM.
 
         :returns: IOUVM instance
         """
 
-        vm = self.get_vm(vm_id)
-        if vm_id in self._used_application_ids:
-            i = self._used_application_ids[vm_id]
+        node = self.get_node(node_id)
+        if node_id in self._used_application_ids:
+            i = self._used_application_ids[node_id]
             self._free_application_ids.insert(0, i)
-            del self._used_application_ids[vm_id]
-        yield from super().close_vm(vm_id, *args, **kwargs)
-        return vm
+            del self._used_application_ids[node_id]
+        yield from super().close_node(node_id, *args, **kwargs)
+        return node
 
     @asyncio.coroutine
     def project_committed(self, project):
@@ -80,32 +80,32 @@ class IOU(BaseManager):
         """
 
         # save the configs when the project is committed
-        for vm in self._vms.copy().values():
-            if vm.project.id == project.id:
+        for node in self._nodes.copy().values():
+            if node.project.id == project.id:
                 try:
-                    vm.save_configs()
+                    node.save_configs()
                 except IOUError as e:
                     log.warning(e)
                     continue
 
-    def get_application_id(self, vm_id):
+    def get_application_id(self, node_id):
         """
         Get an unique application identifier for IOU.
 
-        :param vm_id: IOU VM identifier
+        :param node_id: Node identifier
 
         :returns: IOU application identifier
         """
 
-        return self._used_application_ids.get(vm_id, 1)
+        return self._used_application_ids.get(node_id, 1)
 
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):
         """
-        Returns the name of the legacy working directory (pre 1.3) name for a VM.
+        Returns the name of the legacy working directory (pre 1.3) name for a node.
 
-        :param legacy_vm_id: legacy VM identifier (integer)
-        :param name: VM name (not used)
+        :param legacy_vm_id: legacy node identifier (integer)
+        :param name: Node name (not used)
 
         :returns: working directory name
         """

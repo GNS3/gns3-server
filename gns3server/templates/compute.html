@@ -19,21 +19,21 @@ socket.onmessage = function (event) {
     Compute status
 </h1>
 The purpose of this page is to help for GNS3 debug. This can be dropped
-in futur GNS3 versions.
+in future GNS3 versions.
 
 <h2>Opened projects</h2>
 <table border="1">
     <tr>
         <th>Name</th>
         <th>ID</td>
-        <th>VMs</th>
+        <th>Nodes</th>
         <th>Clients connected</th>
     </tr>
 {% for project in project_manager.projects %}
 <tr>
     <td>{{project.name}}</td>
     <td>{{project.id}}</td>
-    <td>{{project.vms|length}}</td>    
+    <td>{{project.nodes|length}}</td>
     <td>{{project.listeners|length}}</td>
 </tr>
 {% endfor %}

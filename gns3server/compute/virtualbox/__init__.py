@@ -35,7 +35,7 @@ from .virtualbox_error import VirtualBoxError
 
 class VirtualBox(BaseManager):
 
-    _VM_CLASS = VirtualBoxVM
+    _NODE_CLASS = VirtualBoxVM
 
     def __init__(self):
 
@@ -160,7 +160,7 @@ class VirtualBox(BaseManager):
         Gets VirtualBox VM list.
         """
 
-        vms = []
+        vbox_vms = []
         result = yield from self.execute("list", ["vms"])
         for line in result:
             if len(line) == 0 or line[0] != '"' or line[-1:] != "}":
@@ -182,16 +182,16 @@ class VirtualBox(BaseManager):
                             break
                     except ValueError:
                         continue
-                vms.append({"vmname": vmname, "ram": ram})
-        return vms
+                vbox_vms.append({"vmname": vmname, "ram": ram})
+        return vbox_vms
 
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):
         """
-        Returns the name of the legacy working directory name for a VM.
+        Returns the name of the legacy working directory name for a node.
 
-        :param legacy_vm_id: legacy VM identifier (not used)
-        :param name: VM name
+        :param legacy_vm_id: legacy node identifier (not used)
+        :param name: node name
 
         :returns: working directory name
         """
