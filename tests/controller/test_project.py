@@ -43,9 +43,9 @@ def test_json(tmpdir):
 
 def test_path(tmpdir):
 
-    directory = Config.instance().get_section_config("Server").get("project_directory")
+    directory = Config.instance().get_section_config("Server").get("projects_path")
 
-    with patch("gns3server.compute.project.Project._get_default_project_directory", return_value=directory):
+    with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
         p = Project(project_id=str(uuid4()))
         assert p.path == os.path.join(directory, p.id)
         assert os.path.exists(os.path.join(directory, p.id))

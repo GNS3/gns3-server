@@ -25,7 +25,7 @@ from .vm import VM
 from .udp_link import UDPLink
 from ..notification_queue import NotificationQueue
 from ..config import Config
-from ..utils.path import check_path_allowed
+from ..utils.path import check_path_allowed, get_default_project_directory
 
 
 class Project:
@@ -50,8 +50,7 @@ class Project:
             self._id = project_id
 
         if path is None:
-            location = self._config().get("project_directory", self._get_default_project_directory())
-            path = os.path.join(location, self._id)
+            path = os.path.join(get_default_project_directory(), self._id)
         self.path = path
 
         self._temporary = temporary
@@ -204,22 +203,6 @@ class Project:
         """
         for listener in self._listeners:
             listener.put_nowait((action, event, kwargs))
-
-    @classmethod
-    def _get_default_project_directory(cls):
-        """
-        Return the default location for the project directory
-        depending of the operating system
-        """
-
-        server_config = Config.instance().get_section_config("Server")
-        path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
-        path = os.path.normpath(path)
-        try:
-            os.makedirs(path, exist_ok=True)
-        except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
-        return path
 
     def __json__(self):
 

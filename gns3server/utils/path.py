@@ -21,6 +21,22 @@ import aiohttp
 from ..config import Config
 
 
+def get_default_project_directory():
+    """
+    Return the default location for the project directory
+    depending of the operating system
+    """
+
+    server_config = Config.instance().get_section_config("Server")
+    path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
+    path = os.path.normpath(path)
+    try:
+        os.makedirs(path, exist_ok=True)
+    except OSError as e:
+        raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+    return path
+
+
 def check_path_allowed(path):
     """
     If the server is non local raise an error if
@@ -30,10 +46,10 @@ def check_path_allowed(path):
     """
 
     config = Config.instance().get_section_config("Server")
-    project_directory = config.get("project_directory")
 
+    project_directory = get_default_project_directory()
     if len(os.path.commonprefix([project_directory, path])) == len(project_directory):
         return
 
-    if config.getboolean("local") is False:
+    if "local" in config and config.getboolean("local") is False:
         raise aiohttp.web.HTTPForbidden(text="The path is not allowed")

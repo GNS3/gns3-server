@@ -69,10 +69,10 @@ def test_clean_tmp_directory(async_run):
 
 def test_path(tmpdir):
 
-    directory = Config.instance().get_section_config("Server").get("project_directory")
+    directory = Config.instance().get_section_config("Server").get("projects_path")
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        with patch("gns3server.compute.project.Project._get_default_project_directory", return_value=directory):
+        with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
             p = Project(project_id=str(uuid4()))
             assert p.path == os.path.join(directory, p.id)
             assert os.path.exists(os.path.join(directory, p.id))
@@ -124,7 +124,7 @@ def test_json(tmpdir):
 
 
 def test_vm_working_directory(tmpdir, vm):
-    directory = Config.instance().get_section_config("Server").get("project_directory")
+    directory = Config.instance().get_section_config("Server").get("projects_path")
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         p = Project(project_id=str(uuid4()))
@@ -211,15 +211,6 @@ def test_project_close_temporary_project(loop, manager):
     assert os.path.exists(directory) is False
 
 
-def test_get_default_project_directory(monkeypatch):
-
-    monkeypatch.undo()
-    project = Project(project_id=str(uuid4()))
-    path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
-    assert project._get_default_project_directory() == path
-    assert os.path.exists(path)
-
-
 def test_clean_project_directory(tmpdir):
 
     # A non anonymous project with uuid.
@@ -237,7 +228,7 @@ def test_clean_project_directory(tmpdir):
     with open(str(tmp), 'w+') as f:
         f.write("1")
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         Project.clean_project_directory()
 
     assert os.path.exists(str(project1))
@@ -247,7 +238,7 @@ def test_clean_project_directory(tmpdir):
 
 def test_list_files(tmpdir, loop):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = Project(project_id=str(uuid4()))
         path = project.path
         os.makedirs(os.path.join(path, "vm-1", "dynamips"))

@@ -29,7 +29,7 @@ from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
-from ..utils.path import check_path_allowed
+from ..utils.path import check_path_allowed, get_default_project_directory
 
 
 import logging
@@ -63,7 +63,7 @@ class Project:
         self._used_udp_ports = set()
 
         if path is None:
-            location = self._config().get("project_directory", self._get_default_project_directory())
+            location = get_default_project_directory()
             path = os.path.join(location, self._id)
         try:
             os.makedirs(path, exist_ok=True)
@@ -94,22 +94,6 @@ class Project:
     def is_local(self):
 
         return self._config().getboolean("local", False)
-
-    @classmethod
-    def _get_default_project_directory(cls):
-        """
-        Return the default location for the project directory
-        depending of the operating system
-        """
-
-        server_config = Config.instance().get_section_config("Server")
-        path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
-        path = os.path.normpath(path)
-        try:
-            os.makedirs(path, exist_ok=True)
-        except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
-        return path
 
     @property
     def id(self):
@@ -418,8 +402,7 @@ class Project:
         At startup drop old temporary project. After a crash for example
         """
 
-        config = Config.instance().get_section_config("Server")
-        directory = config.get("project_directory", cls._get_default_project_directory())
+        directory = get_default_project_directory()
         if os.path.exists(directory):
             for project in os.listdir(directory):
                 path = os.path.join(directory, project)

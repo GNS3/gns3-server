@@ -15,18 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import pytest
 import aiohttp
 
-from gns3server.utils.path import check_path_allowed
+from gns3server.utils.path import check_path_allowed, get_default_project_directory
 
 
 def test_check_path_allowed(config, tmpdir):
     config.set("Server", "local", False)
-    config.set("Server", "project_directory", str(tmpdir))
+    config.set("Server", "projects_path", str(tmpdir))
     with pytest.raises(aiohttp.web.HTTPForbidden):
         check_path_allowed("/private")
 
     config.set("Server", "local", True)
     check_path_allowed(str(tmpdir / "hello" / "world"))
     check_path_allowed("/private")
+
+
+def test_get_default_project_directory(config):
+
+    config.clear()
+
+    path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
+    assert get_default_project_directory() == path
+    assert os.path.exists(path)

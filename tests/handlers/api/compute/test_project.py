@@ -201,7 +201,7 @@ def test_close_project_invalid_uuid(http_compute):
 
 def test_get_file(http_compute, tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
     with open(os.path.join(project.path, "hello"), "w+") as f:
@@ -220,7 +220,7 @@ def test_get_file(http_compute, tmpdir):
 
 def test_stream_file(http_compute, tmpdir):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"project_directory": str(tmpdir)}):
+    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
     with open(os.path.join(project.path, "hello"), "w+") as f:
