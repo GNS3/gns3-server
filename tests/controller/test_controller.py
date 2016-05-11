@@ -108,6 +108,15 @@ def test_getCompute(controller, async_run):
         assert controller.getCompute("dsdssd")
 
 
+def test_addComputeLocal(controller, controller_config_path, async_run):
+    """
+    The local node is the controller itself you can not change the informations
+    """
+    Config.instance().set("Server", "local", True)
+    async_run(controller.addCompute("local", host="example.org"))
+    assert controller.getCompute("local").host == "localhost"
+
+
 def test_addProject(controller, async_run):
     uuid1 = str(uuid.uuid4())
     uuid2 = str(uuid.uuid4())

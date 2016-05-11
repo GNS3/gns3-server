@@ -91,13 +91,34 @@ class Controller:
         """
         Add a server to the dictionnary of computes controlled by GNS3
 
+        :param compute_id: Id of the compute node
         :param kwargs: See the documentation of Compute
         """
+
+        # We dissallow to create from the outside the
+        if compute_id == 'local':
+            return self._createLocalCompute()
+
         if compute_id not in self._computes:
             compute = Compute(compute_id=compute_id, controller=self, **kwargs)
             self._computes[compute_id] = compute
             self.save()
         return self._computes[compute_id]
+
+    def _createLocalCompute(self):
+        """
+        Create the local compute node. It's the controller itself
+        """
+        server_config = Config.instance().get_section_config("Server")
+        self._computes["local"] = Compute(
+            compute_id="local",
+            controller=self,
+            protocol=server_config.get("protocol", "http"),
+            host=server_config.get("host", "localhost"),
+            port=server_config.get("port", 3080),
+            user=server_config.get("user", ""),
+            password=server_config.get("password", ""))
+        return self._computes["local"]
 
     @property
     def computes(self):
@@ -113,6 +134,8 @@ class Controller:
         try:
             return self._computes[compute_id]
         except KeyError:
+            if compute_id == "local":
+                return self._createLocalCompute()
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     @asyncio.coroutine
