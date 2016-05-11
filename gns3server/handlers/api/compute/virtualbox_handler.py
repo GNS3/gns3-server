@@ -44,7 +44,7 @@ class VirtualBoxHandler:
     def index(request, response):
 
         vbox_manager = VirtualBox.instance()
-        vms = yield from vbox_manager.list_vms()
+        vms = yield from vbox_manager.list_images()
         response.json(vms)
 
     @classmethod
