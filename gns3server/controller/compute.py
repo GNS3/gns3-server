@@ -51,6 +51,7 @@ class Compute:
         self._controller = controller
         self._setAuth(user, password)
         self._session = aiohttp.ClientSession()
+        self._version = None
 
         # If the compute is local but the compute id is local
         # it's a configuration issue
@@ -70,6 +71,20 @@ class Compute:
             self._auth = aiohttp.BasicAuth(self._user, self._password)
         else:
             self._auth = None
+
+    @property
+    def version(self):
+        """
+        :returns: Version of compute node (string or None if not connected)
+        """
+        return self._version
+
+    @property
+    def connected(self):
+        """
+        :returns: True if compute node is connected
+        """
+        return self._connected
 
     @property
     def id(self):
@@ -160,6 +175,7 @@ class Compute:
 
             if "version" not in response.json:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+            self._version = response.json["version"]
             if parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
                 raise aiohttp.web.HTTPConflict(text="The server {} versions are not compatible {} != {}".format(self._id, __version__, response.json["version"]))
 

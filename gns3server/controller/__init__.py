@@ -115,7 +115,7 @@ class Controller:
             controller=self,
             protocol=server_config.get("protocol", "http"),
             host=server_config.get("host", "localhost"),
-            port=server_config.get("port", 3080),
+            port=server_config.getint("port", 3080),
             user=server_config.get("user", ""),
             password=server_config.get("password", ""))
         return self._computes["local"]

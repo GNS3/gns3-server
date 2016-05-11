@@ -86,6 +86,7 @@ def test_compute_httpQueryNotConnected(compute, async_run):
         mock.assert_any_call("GET", "https://example.com:84/v2/compute/version", headers={'content-type': 'application/json'}, data=None, auth=None)
         mock.assert_any_call("POST", "https://example.com:84/v2/compute/projects", data='{"a": "b"}', headers={'content-type': 'application/json'}, auth=None)
         assert compute._connected
+        assert compute.version == __version__
 
 
 def test_compute_httpQueryNotConnectedInvalidVersion(compute, async_run):
