@@ -138,7 +138,6 @@ def test_addProject_with_compute(controller, async_run):
     controller._computes = {"test1": compute}
 
     project1 = async_run(controller.addProject(project_id=uuid1))
-    compute.post.assert_called_with("/projects", project1)
 
 
 def test_getProject(controller, async_run):
