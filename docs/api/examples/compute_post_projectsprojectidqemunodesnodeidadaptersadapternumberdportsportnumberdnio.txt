@@ -1,0 +1,21 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/e3abe5d8-0f61-41c8-8f76-cd64a3790443/adapters/1/ports/0/nio' -d '{"ethernet_device": "eth0", "type": "nio_generic_ethernet"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/e3abe5d8-0f61-41c8-8f76-cd64a3790443/adapters/1/ports/0/nio HTTP/1.1
+{
+    "ethernet_device": "eth0",
+    "type": "nio_generic_ethernet"
+}
+
+
+HTTP/1.1 409
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 89
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
+
+{
+    "message": "NIO of type nio_generic_ethernet is not supported",
+    "status": 409
+}

@@ -1,0 +1,33 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/7602518d-75f4-4a2a-85a6-ff851e3358d4/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+
+POST /v2/projects/7602518d-75f4-4a2a-85a6-ff851e3358d4/nodes HTTP/1.1
+{
+    "compute_id": "example.com",
+    "name": "test",
+    "node_type": "vpcs",
+    "properties": {
+        "startup_script": "echo test"
+    }
+}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 309
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/nodes
+
+{
+    "compute_id": "example.com",
+    "console": 2048,
+    "console_type": "telnet",
+    "name": "test",
+    "node_id": "571ee68c-aa2f-476c-ad63-c900ba382390",
+    "node_type": "vpcs",
+    "project_id": "7602518d-75f4-4a2a-85a6-ff851e3358d4",
+    "properties": {
+        "startup_script": "echo test"
+    }
+}

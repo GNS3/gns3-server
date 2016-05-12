@@ -1,0 +1,20 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c2edba43-104b-4159-909d-4df1dc262798/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c2edba43-104b-4159-909d-4df1dc262798/adapters/0/ports/0/start_capture HTTP/1.1
+{
+    "capture_file_name": "test.pcap",
+    "data_link_type": "DLT_EN10MB"
+}
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 157
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture
+
+{
+    "pcap_file_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0vou54g1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/tmp/captures/test.pcap"
+}

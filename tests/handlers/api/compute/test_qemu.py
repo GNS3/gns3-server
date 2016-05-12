@@ -103,12 +103,12 @@ def test_qemu_create_with_params(http_compute, project, base_params, fake_qemu_v
 
 
 def test_qemu_get(http_compute, project, vm):
-    response = http_compute.get("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"],node_id=vm["node_id"]), example=True)
+    response = http_compute.get("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 200
     assert response.route == "/projects/{project_id}/qemu/nodes/{node_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
-    assert response.json["vm_directory"] == os.path.join(project.path, "project-files", "qemu", vm["node_id"])
+    assert response.json["node_directory"] == os.path.join(project.path, "project-files", "qemu", vm["node_id"])
 
 
 def test_qemu_start(http_compute, vm):
@@ -185,7 +185,7 @@ def test_qemu_nio_create_ethernet(http_compute, vm):
     http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
     response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_generic_ethernet",
                                                                                                                                                                    "ethernet_device": "eth0",
-                                                                                                                                                                  },
+                                                                                                                                                                   },
                                  example=True)
     assert response.status == 409
 

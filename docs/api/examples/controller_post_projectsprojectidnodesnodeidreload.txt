@@ -1,0 +1,24 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/54b7717b-a6c1-49c3-be0c-f74ef1eac9f6/nodes/8c3bd6f3-7241-4de0-92e6-093dc76dfba9/reload' -d '{}'
+
+POST /v2/projects/54b7717b-a6c1-49c3-be0c-f74ef1eac9f6/nodes/8c3bd6f3-7241-4de0-92e6-093dc76dfba9/reload HTTP/1.1
+{}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 266
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}/reload
+
+{
+    "compute_id": "example.com",
+    "console": null,
+    "console_type": "telnet",
+    "name": "test",
+    "node_id": "8c3bd6f3-7241-4de0-92e6-093dc76dfba9",
+    "node_type": "vpcs",
+    "project_id": "54b7717b-a6c1-49c3-be0c-f74ef1eac9f6",
+    "properties": {}
+}

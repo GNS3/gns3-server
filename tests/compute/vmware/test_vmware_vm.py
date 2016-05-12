@@ -45,10 +45,10 @@ def test_vm(project, manager, vm):
 
 
 def test_json(vm, tmpdir, project):
-    assert vm.__json__()["vm_directory"] is not None
+    assert vm.__json__()["node_directory"] is not None
     project._path = str(tmpdir)
     vm._linked_clone = True
-    assert vm.__json__()["vm_directory"] is not None
+    assert vm.__json__()["node_directory"] is not None
 
 
 def test_start_capture(vm, tmpdir, manager, free_console_port, loop):

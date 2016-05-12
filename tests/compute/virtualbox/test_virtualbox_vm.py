@@ -63,7 +63,7 @@ def test_vm_adapter_add_nio_binding_adapter_not_exist(loop, vm, manager, free_co
 
 
 def test_json(vm, tmpdir, project):
-    assert vm.__json__()["vm_directory"] is None
+    assert vm.__json__()["node_directory"] is None
     project._path = str(tmpdir)
     vm._linked_clone = True
-    assert vm.__json__()["vm_directory"] is not None
+    assert vm.__json__()["node_directory"] is not None

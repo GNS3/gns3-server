@@ -177,7 +177,7 @@ VBOX_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
-        "vm_directory": {
+        "node_directory": {
             "decription": "Path to the VM working directory",
             "type": ["string", "null"]
         },
@@ -222,5 +222,5 @@ VBOX_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "project_id", "vm_directory"]
+    "required": ["name", "node_id", "project_id", "node_directory"]
 }

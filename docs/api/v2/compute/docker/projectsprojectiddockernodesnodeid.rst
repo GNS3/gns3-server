@@ -1,0 +1,84 @@
+/v2/compute/projects/{project_id}/docker/nodes/{node_id}
+------------------------------------------------------------------------------------------------------------------------------------------
+
+.. contents::
+
+DELETE /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Delete a Docker container
+
+Parameters
+**********
+- **node_id**: ID for the container
+- **project_id**: UUID for the project
+
+Response status codes
+**********************
+- **400**: Invalid request
+- **404**: Instance doesn't exist
+- **204**: Instance deleted
+
+
+PUT /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update a Docker instance
+
+Parameters
+**********
+- **node_id**: UUID for the instance
+- **project_id**: UUID for the project
+
+Response status codes
+**********************
+- **200**: Instance updated
+- **400**: Invalid request
+- **404**: Instance doesn't exist
+- **409**: Conflict
+
+Input
+*******
+.. raw:: html
+
+    <table>
+    <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>adapters</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>number of adapters</td>                     </tr>
+    <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>auxilary TCP port</td>                     </tr>
+    <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>console TCP port</td>                     </tr>
+    <tr><td>console_http_path</td>                    <td> </td>                     <td>string</td>                     <td>Path of the web interface</td>                     </tr>
+    <tr><td>console_http_port</td>                    <td> </td>                     <td>integer</td>                     <td>Internal port in the container of the HTTP server</td>                     </tr>
+    <tr><td>console_resolution</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>console resolution for VNC</td>                     </tr>
+    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, http, https</td>                     </tr>
+    <tr><td>environment</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker environment</td>                     </tr>
+    <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Docker container name</td>                     </tr>
+    <tr><td>start_command</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker CMD entry</td>                     </tr>
+    </table>
+
+Output
+*******
+.. raw:: html
+
+    <table>
+    <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>adapters</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>number of adapters</td>                     </tr>
+    <tr><td>aux</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>auxilary TCP port</td>                     </tr>
+    <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>console TCP port</td>                     </tr>
+    <tr><td>console_http_path</td>                    <td> </td>                     <td>string</td>                     <td>Path of the web interface</td>                     </tr>
+    <tr><td>console_http_port</td>                    <td> </td>                     <td>integer</td>                     <td>Internal port in the container of the HTTP server</td>                     </tr>
+    <tr><td>console_resolution</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>console resolution for VNC</td>                     </tr>
+    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, http, https</td>                     </tr>
+    <tr><td>container_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Docker container ID</td>                     </tr>
+    <tr><td>environment</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Docker environment</td>                     </tr>
+    <tr><td>image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Docker image name</td>                     </tr>
+    <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Docker container name</td>                     </tr>
+    <tr><td>node_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Docker container instance UUID</td>                     </tr>
+    <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>start_command</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Docker CMD entry</td>                     </tr>
+    <tr><td>vm_directory</td>                    <td>&#10004;</td>                     <td>string</td>                     <td></td>                     </tr>
+    </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_put_projectsprojectiddockernodesnodeid.txt
+

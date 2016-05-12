@@ -87,9 +87,9 @@ class VirtualBoxVM(BaseNode):
                 "ram": self.ram,
                 "use_any_adapter": self.use_any_adapter}
         if self._linked_clone:
-            json["vm_directory"] = self.working_dir
+            json["node_directory"] = self.working_dir
         else:
-            json["vm_directory"] = None
+            json["node_directory"] = None
         return json
 
     @asyncio.coroutine

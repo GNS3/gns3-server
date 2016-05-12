@@ -229,13 +229,13 @@ DOCKER_OBJECT_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 0,
         },
-        "vm_directory": {
+        "node_directory": {
             "decription": "Path to the VM working directory",
             "type": "string"
         }
     },
     "additionalProperties": False,
-    "required": ["node_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "console_resolution", "start_command", "environment", "vm_directory"]
+    "required": ["node_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "console_resolution", "start_command", "environment", "node_directory"]
 }
 
 

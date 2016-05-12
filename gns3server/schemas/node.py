@@ -87,6 +87,14 @@ NODE_OBJECT_SCHEMA = {
             "description": "Type of node",
             "enum": ["docker", "dynamips", "vpcs", "virtualbox", "vmware", "iou", "qemu"]
         },
+        "node_directory": {
+            "description": "Working directory of the node. Read only",
+            "type": ["null", "string"]
+        },
+        "command_line": {
+            "description": "Command line use to start the node",
+            "type": ["null", "string"]
+        },
         "name": {
             "description": "Node name",
             "type": "string",

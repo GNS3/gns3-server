@@ -203,7 +203,7 @@ class IOUVM(BaseNode):
 
         iou_vm_info = {"name": self.name,
                        "node_id": self.id,
-                       "vm_directory": self.working_dir,
+                       "node_directory": self.working_dir,
                        "console": self._console,
                        "project_id": self.project.id,
                        "path": self.path,

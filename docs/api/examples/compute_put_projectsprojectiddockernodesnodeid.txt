@@ -1,0 +1,36 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e' -d '{"console": 5002, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e HTTP/1.1
+{
+    "console": 5002,
+    "environment": "GNS3=1\nGNS4=0",
+    "name": "test",
+    "start_command": "yes"
+}
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 631
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
+
+{
+    "adapters": 2,
+    "aux": 5001,
+    "console": 5002,
+    "console_http_path": "/",
+    "console_http_port": 80,
+    "console_resolution": "1280x1024",
+    "console_type": "telnet",
+    "container_id": "8bd8153ea8f5",
+    "environment": "GNS3=1\nGNS4=0",
+    "image": "nginx",
+    "name": "test",
+    "node_id": "10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "start_command": "yes",
+    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0vou54g1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e"
+}

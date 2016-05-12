@@ -1,0 +1,48 @@
+/v2/projects/{project_id}/links/{link_id}/start_capture
+------------------------------------------------------------------------------------------------------------------------------------------
+
+.. contents::
+
+POST /v2/projects/**{project_id}**/links/**{link_id}**/start_capture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Start capture on a link instance. By default we consider it as an ethernet link
+
+Parameters
+**********
+- **link_id**: UUID of the link
+- **project_id**: UUID for the project
+
+Response status codes
+**********************
+- **400**: Invalid request
+- **201**: Capture started
+
+Input
+*******
+.. raw:: html
+
+    <table>
+    <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>capture_file_name</td>                    <td> </td>                     <td>string</td>                     <td>Read only propertie. The name of the capture file if capture is running</td>                     </tr>
+    <tr><td>data_link_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: DLT_ATM_RFC1483, DLT_EN10MB, DLT_FRELAY, DLT_C_HDLC</td>                     </tr>
+    </table>
+
+Output
+*******
+.. raw:: html
+
+    <table>
+    <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>capture_file_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only propertie. The name of the capture file if capture is running</td>                     </tr>
+    <tr><td>capture_file_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only propertie. The full path of the capture file if capture is running</td>                     </tr>
+    <tr><td>capturing</td>                    <td> </td>                     <td>boolean</td>                     <td>Read only propertie. True if a capture running on the link</td>                     </tr>
+    <tr><td>link_id</td>                    <td> </td>                     <td>string</td>                     <td>Link identifier</td>                     </tr>
+    <tr><td>nodes</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
+    </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinkslinkidstartcapture.txt
+

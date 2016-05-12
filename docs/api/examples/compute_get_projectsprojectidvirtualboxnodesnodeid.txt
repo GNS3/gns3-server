@@ -1,0 +1,29 @@
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/635ebd8e-23a4-4a8c-97ea-190076434488'
+
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/635ebd8e-23a4-4a8c-97ea-190076434488 HTTP/1.1
+
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 417
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
+
+{
+    "acpi_shutdown": false,
+    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+    "adapters": 0,
+    "console": 5001,
+    "enable_remote_console": false,
+    "headless": false,
+    "name": "VMTEST",
+    "node_id": "635ebd8e-23a4-4a8c-97ea-190076434488",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 0,
+    "use_any_adapter": false,
+    "vm_directory": null,
+    "vmname": "VMTEST"
+}

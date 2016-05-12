@@ -496,9 +496,9 @@ class Project:
                     self._export_project_file(path, z, include_images)
                 else:
                     # We merge the data from all server in the same project-files directory
-                    vm_directory = os.path.join(self._path, "servers", "vm")
-                    if os.path.commonprefix([root, vm_directory]) == vm_directory:
-                        z.write(path, os.path.relpath(path, vm_directory))
+                    node_directory = os.path.join(self._path, "servers", "vm")
+                    if os.path.commonprefix([root, node_directory]) == node_directory:
+                        z.write(path, os.path.relpath(path, node_directory))
                     else:
                         z.write(path, os.path.relpath(path, self._path))
         return z
@@ -590,14 +590,14 @@ class Project:
                     "docker": "DockerVM"
                 }
 
-                vm_directory = os.path.join(self.path, "servers", "vm", "project-files")
+                node_directory = os.path.join(self.path, "servers", "vm", "project-files")
                 vm_server_use = False
 
                 for module, vm_type in modules_to_vm.items():
                     module_directory = os.path.join(self.path, "project-files", module)
                     if os.path.exists(module_directory):
-                        os.makedirs(vm_directory, exist_ok=True)
-                        shutil.move(module_directory, os.path.join(vm_directory, module))
+                        os.makedirs(node_directory, exist_ok=True)
+                        shutil.move(module_directory, os.path.join(node_directory, module))
 
                         # Patch node to use the GNS3 VM
                         for node in topology["topology"]["nodes"]:

@@ -1,0 +1,28 @@
+curl -i -X GET 'http://localhost:3080/v2/projects/89b50c89-a26f-48b5-9948-dcc485949441/nodes'
+
+GET /v2/projects/89b50c89-a26f-48b5-9948-dcc485949441/nodes HTTP/1.1
+
+
+
+HTTP/1.1 200
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 361
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/nodes
+
+[
+    {
+        "compute_id": "example.com",
+        "console": 2048,
+        "console_type": "telnet",
+        "name": "test",
+        "node_id": "5f4ad652-2ffe-44dd-b4a3-0d48b36a25da",
+        "node_type": "vpcs",
+        "project_id": "89b50c89-a26f-48b5-9948-dcc485949441",
+        "properties": {
+            "startup_script": "echo test"
+        }
+    }
+]

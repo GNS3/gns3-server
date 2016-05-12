@@ -470,7 +470,7 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU boot priority",
             "enum": ["c", "d", "n", "cn", "cd"]
         },
-        "vm_directory": {
+        "node_directory": {
             "decription": "Path to the VM working directory",
             "type": "string"
         },
@@ -602,7 +602,7 @@ QEMU_OBJECT_SCHEMA = {
                  "cpu_throttling",
                  "process_priority",
                  "options",
-                 "vm_directory",
+                 "node_directory",
                  "command_line"]
 }
 

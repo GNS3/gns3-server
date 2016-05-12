@@ -1,0 +1,24 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/1c60cc7c-b41f-487f-9953-5287041a7146/nodes/a1648be8-6817-491b-8e07-c839d888e94a/suspend' -d '{}'
+
+POST /v2/projects/1c60cc7c-b41f-487f-9953-5287041a7146/nodes/a1648be8-6817-491b-8e07-c839d888e94a/suspend HTTP/1.1
+{}
+
+
+HTTP/1.1 201
+ACCESS-CONTROL-ALLOW-ORIGIN: *
+CONTENT-LENGTH: 266
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}/suspend
+
+{
+    "compute_id": "example.com",
+    "console": null,
+    "console_type": "telnet",
+    "name": "test",
+    "node_id": "a1648be8-6817-491b-8e07-c839d888e94a",
+    "node_type": "vpcs",
+    "project_id": "1c60cc7c-b41f-487f-9953-5287041a7146",
+    "properties": {}
+}

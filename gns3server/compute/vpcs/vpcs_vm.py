@@ -109,7 +109,7 @@ class VPCSVM(BaseNode):
 
         return {"name": self.name,
                 "node_id": self.id,
-                "vm_directory": self.working_dir,
+                "node_directory": self.working_dir,
                 "status": self.status,
                 "console": self._console,
                 "console_type": "telnet",

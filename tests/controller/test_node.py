@@ -55,6 +55,8 @@ def test_json(node, compute):
         "name": "demo",
         "console": node.console,
         "console_type": node.console_type,
+        "command_line": None,
+        "node_directory": None,
         "properties": node.properties
     }
 

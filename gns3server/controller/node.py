@@ -47,6 +47,8 @@ class Node:
         self._console = console
         self._console_type = console_type
         self._properties = properties
+        self._command_line = None
+        self._node_directory = None
 
     @property
     def id(self):
@@ -130,7 +132,11 @@ class Node:
         for key, value in response.json.items():
             if key == "console":
                 self._console = value
-            elif key in ["console_type", "name", "node_id", "project_id", "vm_directory", "command_line", "status"]:
+            elif key == "node_directory":
+                self._node_directory = value
+            elif key == "command_line":
+                self._command_line = value
+            elif key in ["console_type", "name", "node_id", "project_id", "status"]:
                 pass
             else:
                 self._properties[key] = value
@@ -225,8 +231,10 @@ class Node:
             "project_id": self._project.id,
             "node_id": self._id,
             "node_type": self._node_type,
+            "node_directory": self._node_directory,
             "name": self._name,
             "console": self._console,
             "console_type": self._console_type,
+            "command_line": self._command_line,
             "properties": self._properties
         }
