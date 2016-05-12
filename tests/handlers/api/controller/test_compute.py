@@ -39,7 +39,7 @@ def test_compute_create(http_controller, controller):
 def test_compute_get(http_controller, controller):
 
     params = {
-        "compute_id": "my_compute_id",
+        "compute_id": "my_compute/id",
         "protocol": "http",
         "host": "example.com",
         "port": 84,
@@ -49,7 +49,7 @@ def test_compute_get(http_controller, controller):
     response = http_controller.post("/computes", params)
     assert response.status == 201
 
-    response = http_controller.get("/computes/my_compute_id", example=True)
+    response = http_controller.get("/computes/my_compute/id", example=True)
     assert response.status == 200
     assert response.json["protocol"] == "http"
 

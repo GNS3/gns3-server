@@ -61,20 +61,6 @@ class ComputeHandler:
         response.json([c for c in controller.computes.values()])
 
     @classmethod
-    @Route.get(
-        r"/computes/{compute_id}",
-        description="Get a compute node informations",
-        status_codes={
-            200: "Compute list"
-        },
-        output=COMPUTE_OBJECT_SCHEMA)
-    def get(request, response):
-
-        controller = Controller.instance()
-        compute = controller.get_compute(request.match_info["compute_id"])
-        response.json(compute)
-
-    @classmethod
     @Route.post(
         r"/computes/shutdown",
         description="Shutdown the local compute",
@@ -110,3 +96,17 @@ class ComputeHandler:
         server = WebServer.instance()
         asyncio.async(server.shutdown_server())
         response.set_status(201)
+
+    @classmethod
+    @Route.get(
+        r"/computes/{compute_id:.+}",
+        description="Get a compute node informations",
+        status_codes={
+            200: "Compute list"
+        },
+        output=COMPUTE_OBJECT_SCHEMA)
+    def get(request, response):
+
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+        response.json(compute)
