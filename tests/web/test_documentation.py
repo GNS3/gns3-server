@@ -24,7 +24,7 @@ from gns3server.web.route import Route
 
 def test_documentation_write(tmpdir):
     os.makedirs(str(tmpdir / "api/examples"))
-    with open(str(tmpdir / "api/examples/compute_post_projectsprojectidvirtualboxvms.txt"), "w+") as f:
+    with open(str(tmpdir / "api/examples/compute_post_projectsprojectidvirtualboxnodes.txt"), "w+") as f:
         f.write("curl test")
 
     Documentation(Route, str(tmpdir)).write()
@@ -34,9 +34,9 @@ def test_documentation_write(tmpdir):
     assert os.path.exists(str(tmpdir / "api" / "v2" / "compute" / "virtualbox.rst"))
     assert os.path.exists(str(tmpdir / "api" / "v2" / "compute" / "virtualbox"))
     assert os.path.exists(str(tmpdir / "api" / "v2" / "compute" / "virtualbox" / "virtualboxvms.rst"))
-    with open(str(tmpdir / "api" / "v2" / "compute" / "virtualbox" / "projectsprojectidvirtualboxvms.rst")) as f:
+    with open(str(tmpdir / "api" / "v2" / "compute" / "virtualbox" / "projectsprojectidvirtualboxnodes.rst")) as f:
         content = f.read()
         assert "Sample session" in content
-        assert "literalinclude:: ../../../examples/compute_post_projectsprojectidvirtualboxvms.txt" in content
+        assert "literalinclude:: ../../../examples/compute_post_projectsprojectidvirtualboxnodes.txt" in content
 
     assert os.path.exists(str(tmpdir / "api" / "v2" / "controller" / "compute.rst"))
