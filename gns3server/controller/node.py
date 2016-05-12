@@ -49,10 +49,15 @@ class Node:
         self._properties = properties
         self._command_line = None
         self._node_directory = None
+        self._status = "stopped"
 
     @property
     def id(self):
         return self._id
+
+    @property
+    def status(self):
+        return self._status
 
     @property
     def name(self):
@@ -236,5 +241,6 @@ class Node:
             "console": self._console,
             "console_type": self._console_type,
             "command_line": self._command_line,
-            "properties": self._properties
+            "properties": self._properties,
+            "status": self._status
         }

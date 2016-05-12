@@ -113,6 +113,10 @@ NODE_OBJECT_SCHEMA = {
         "properties": {
             "description": "Properties specific to an emulator",
             "type": "object"
+        },
+        "status": {
+            "description": "Status of the node",
+            "enum": ["stopped", "started"]
         }
     },
     "additionalProperties": False,
