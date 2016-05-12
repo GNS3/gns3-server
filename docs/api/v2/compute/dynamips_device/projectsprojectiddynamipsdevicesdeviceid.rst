@@ -9,8 +9,8 @@ Get a Dynamips device instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **device_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -38,8 +38,8 @@ Update a Dynamips device instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **device_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************
@@ -96,8 +96,8 @@ Delete a Dynamips device instance
 
 Parameters
 **********
-- **project_id**: UUID for the project
 - **device_id**: UUID for the instance
+- **project_id**: UUID for the project
 
 Response status codes
 **********************

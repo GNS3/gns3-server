@@ -1,17 +1,17 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/51200341-1056-4d3b-9d20-51c24269ddbc/links' -d '{"vms": [{"adapter_number": 0, "port_number": 3, "vm_id": "985a6c14-12af-49f3-87db-6e1a57afc78d"}, {"adapter_number": 2, "port_number": 4, "vm_id": "2393894a-afa9-4721-8412-768000fd5139"}]}'
+curl -i -X POST 'http://localhost:3080/v2/projects/4eb295b3-8469-4774-b9b3-3da967577540/links' -d '{"nodes": [{"adapter_number": 0, "node_id": "45db581c-3a36-4d8b-960b-1a1884203e3a", "port_number": 3}, {"adapter_number": 2, "node_id": "b81f027a-aac0-4afa-8b30-73440aa5c8f1", "port_number": 4}]}'
 
-POST /v2/projects/51200341-1056-4d3b-9d20-51c24269ddbc/links HTTP/1.1
+POST /v2/projects/4eb295b3-8469-4774-b9b3-3da967577540/links HTTP/1.1
 {
-    "vms": [
+    "nodes": [
         {
             "adapter_number": 0,
-            "port_number": 3,
-            "vm_id": "985a6c14-12af-49f3-87db-6e1a57afc78d"
+            "node_id": "45db581c-3a36-4d8b-960b-1a1884203e3a",
+            "port_number": 3
         },
         {
             "adapter_number": 2,
-            "port_number": 4,
-            "vm_id": "2393894a-afa9-4721-8412-768000fd5139"
+            "node_id": "b81f027a-aac0-4afa-8b30-73440aa5c8f1",
+            "port_number": 4
         }
     ]
 }
@@ -19,24 +19,27 @@ POST /v2/projects/51200341-1056-4d3b-9d20-51c24269ddbc/links HTTP/1.1
 
 HTTP/1.1 201
 ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 364
+CONTENT-LENGTH: 456
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/links
 
 {
-    "link_id": "7428a49b-5dd3-4f62-841c-6c84410cea43",
-    "vms": [
+    "capture_file_name": null,
+    "capture_file_path": null,
+    "capturing": false,
+    "link_id": "f52acf46-42ed-4a90-a780-2aa6a69a3886",
+    "nodes": [
         {
             "adapter_number": 0,
-            "port_number": 3,
-            "vm_id": "985a6c14-12af-49f3-87db-6e1a57afc78d"
+            "node_id": "45db581c-3a36-4d8b-960b-1a1884203e3a",
+            "port_number": 3
         },
         {
             "adapter_number": 2,
-            "port_number": 4,
-            "vm_id": "2393894a-afa9-4721-8412-768000fd5139"
+            "node_id": "b81f027a-aac0-4afa-8b30-73440aa5c8f1",
+            "port_number": 4
         }
     ]
 }

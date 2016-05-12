@@ -26,7 +26,7 @@ Input
     <tr><td>capture_file_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only propertie. The full path of the capture file if capture is running</td>                     </tr>
     <tr><td>capturing</td>                    <td> </td>                     <td>boolean</td>                     <td>Read only propertie. True if a capture running on the link</td>                     </tr>
     <tr><td>link_id</td>                    <td> </td>                     <td>string</td>                     <td>Link identifier</td>                     </tr>
-    <tr><td>vms</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
+    <tr><td>nodes</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
     </table>
 
 Output
@@ -39,7 +39,7 @@ Output
     <tr><td>capture_file_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only propertie. The full path of the capture file if capture is running</td>                     </tr>
     <tr><td>capturing</td>                    <td> </td>                     <td>boolean</td>                     <td>Read only propertie. True if a capture running on the link</td>                     </tr>
     <tr><td>link_id</td>                    <td> </td>                     <td>string</td>                     <td>Link identifier</td>                     </tr>
-    <tr><td>vms</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
+    <tr><td>nodes</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
     </table>
 
 Sample session

@@ -102,7 +102,7 @@ def test_pcap(http_controller, tmpdir, project, compute, async_run):
     with open(link.capture_file_path, "w+") as f:
         f.write("hello")
     project._links = {link.id: link}
-    response = http_controller.get("/projects/{}/links/{}/pcap".format(project.id, link.id), example=True)
+    response = http_controller.get("/projects/{}/links/{}/pcap".format(project.id, link.id), example=False)
     assert response.body == b"hello"
 
 

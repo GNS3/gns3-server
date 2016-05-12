@@ -51,3 +51,9 @@ Response status codes
 **********************
 - **200**: List of projects
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projects.txt
+
