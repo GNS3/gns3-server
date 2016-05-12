@@ -36,6 +36,24 @@ def test_compute_create(http_controller, controller):
     assert controller.computes["my_compute_id"].host == "example.com"
 
 
+def test_compute_get(http_controller, controller):
+
+    params = {
+        "compute_id": "my_compute_id",
+        "protocol": "http",
+        "host": "example.com",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params)
+    assert response.status == 201
+
+    response = http_controller.get("/computes/my_compute_id", example=True)
+    assert response.status == 200
+    assert response.json["protocol"] == "http"
+
+
 def test_compute_list(http_controller, controller):
 
     params = {
