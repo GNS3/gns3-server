@@ -1,10 +1,10 @@
 Glossary
 ========
 
-VM
----
+Node
+-----
 
-A Virtual Machine (Dynamips, IOU, Qemu, VPCS...)
+A Virtual Machine (Dynamips, IOU, Qemu, VPCS...), a cloud, a builtin device (switch, hub...)
 
 Adapter
 -------

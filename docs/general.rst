@@ -47,7 +47,7 @@ The next step is to create a project.
         "temporary": false
     }
 
-With this project id we can now create two VPCS VM.
+With this project id we can now create two VPCS Node.
 
 .. code-block:: shell-session
 
@@ -103,15 +103,15 @@ communication is made by creating two UDP tunnels.
         "type": "nio_udp"
     }
 
-Now we can start the two VM
+Now we can start the two Node
 
 .. code-block:: shell-session
 
     # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/24d2e16b-fbef-4259-ae34-7bc21a41ee28/start" -d "{}"
     # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/daefc24a-103c-4717-8e01-6517d931c1ae/start" -d '{}'
 
-Everything should be started now. You can connect via telnet to the different VM.
-The port is the field console in the create VM request.
+Everything should be started now. You can connect via telnet to the different Node.
+The port is the field console in the create Node request.
 
 .. code-block:: shell-session
 
@@ -180,14 +180,14 @@ Limitations
 Concurrency
 ------------
 
-A VM can't process multiple request in the same time. But you can make
-multiple request on multiple VM. It's transparent for the client
-when the first request on a VM start a lock is acquire for this VM id
+A node can't process multiple request in the same time. But you can make
+multiple request on multiple node. It's transparent for the client
+when the first request on a Node start a lock is acquire for this node id
 and released for the next request at the end. You can safely send all
 the requests in the same time and let the server manage an efficent concurrency.
 
 We think it can be a little slower for some operations, but it's remove a big
-complexity for the client due to the fact only some command on some VM can be
+complexity for the client due to the fact only some command on some node can be
 concurrent.
 
 
@@ -205,10 +205,9 @@ You can receive notification from the server if you listen the HTTP stream /noti
 
 The available notification are:
     * ping
-    * vm.created
-    * vm.started
-    * vm.stopped
-    * vm.deleted
+    * node.created
+    * node.updated
+    * node.deleted
     * log.error
     * log.warning
     * log.info
