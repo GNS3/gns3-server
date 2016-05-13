@@ -105,7 +105,7 @@ class BaseNode:
     def status(self, status):
 
         self._node_status = status
-        self._project.emit("node.{}".format(status), self)
+        self._project.emit("node.updated", self)
 
     @property
     def command_line(self):

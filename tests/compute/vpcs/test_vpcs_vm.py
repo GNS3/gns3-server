@@ -112,7 +112,7 @@ def test_start(loop, vm, async_run):
                 assert vm.is_running()
                 assert vm.command_line == ' '.join(mock_exec.call_args[0])
         (action, event, kwargs) = async_run(queue.get(0))
-        assert action == "node.started"
+        assert action == "node.updated"
         assert event == vm
 
 
@@ -177,7 +177,7 @@ def test_stop(loop, vm, async_run):
                 async_run(queue.get(0))  #  Started
 
                 (action, event, kwargs) = async_run(queue.get(0))
-                assert action == "node.stopped"
+                assert action == "node.updated"
                 assert event == vm
 
 
