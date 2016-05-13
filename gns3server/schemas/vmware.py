@@ -22,14 +22,14 @@ VMWARE_CREATE_SCHEMA = {
     "type": "object",
     "properties": {
         "node_id": {
-            "description": "VMware VM instance identifier",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "linked_clone": {
-            "description": "either the VM is a linked clone or not",
+            "description": "Whether the VM is a linked clone or not",
             "type": "boolean"
         },
         "name": {
@@ -38,22 +38,22 @@ VMWARE_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "vmx_path": {
-            "description": "path to the vmx file",
+            "description": "Path to the vmx file",
             "type": "string",
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "enable_remote_console": {
-            "description": "enable the remote console",
+            "description": "Enable the remote console",
             "type": "boolean"
         },
         "headless": {
-            "description": "headless mode",
+            "description": "Headless mode",
             "type": "boolean"
         },
         "acpi_shutdown": {
@@ -61,7 +61,7 @@ VMWARE_CREATE_SCHEMA = {
             "type": "boolean"
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": "integer",
             "minimum": 0,
             "maximum": 10,  # maximum adapters support by VMware VMs
@@ -72,11 +72,11 @@ VMWARE_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "use_ubridge": {
-            "description": "use uBridge for network connections",
+            "description": "Use uBridge for network connections",
             "type": "boolean",
         },
         "use_any_adapter": {
-            "description": "allow GNS3 to use any VMware adapter",
+            "description": "Allow GNS3 to use any VMware adapter",
             "type": "boolean",
         },
     },
@@ -95,22 +95,22 @@ VMWARE_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "vmx_path": {
-            "description": "path to the vmx file",
+            "description": "Path to the vmx file",
             "type": "string",
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "enable_remote_console": {
-            "description": "enable the remote console",
+            "description": "Enable the remote console",
             "type": "boolean"
         },
         "headless": {
-            "description": "headless mode",
+            "description": "Headless mode",
             "type": "boolean"
         },
         "acpi_shutdown": {
@@ -118,7 +118,7 @@ VMWARE_UPDATE_SCHEMA = {
             "type": "boolean"
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": "integer",
             "minimum": 0,
             "maximum": 10,  # maximum adapters support by VMware VMs
@@ -129,11 +129,11 @@ VMWARE_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "use_ubridge": {
-            "description": "use uBridge for network connections",
+            "description": "Use uBridge for network connections",
             "type": "boolean",
         },
         "use_any_adapter": {
-            "description": "allow GNS3 to use any VMware adapter",
+            "description": "Allow GNS3 to use any VMware adapter",
             "type": "boolean",
         },
     },
@@ -152,14 +152,14 @@ VMWARE_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "node_id": {
-            "description": "VMware VM instance UUID",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "node_directory": {
-            "decription": "Path to the VM working directory",
+            "decription": "Path to the node working directory",
             "type": ["string", "null"]
         },
         "project_id": {
@@ -170,16 +170,16 @@ VMWARE_OBJECT_SCHEMA = {
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "vmx_path": {
-            "description": "path to the vmx file",
+            "description": "Path to the vmx file",
             "type": "string",
             "minLength": 1,
         },
         "enable_remote_console": {
-            "description": "enable the remote console",
+            "description": "Enable the remote console",
             "type": "boolean"
         },
         "headless": {
-            "description": "headless mode",
+            "description": "Headless mode",
             "type": "boolean"
         },
         "acpi_shutdown": {
@@ -187,7 +187,7 @@ VMWARE_OBJECT_SCHEMA = {
             "type": "boolean"
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": "integer",
             "minimum": 0,
             "maximum": 10,  # maximum adapters support by VMware VMs
@@ -198,15 +198,15 @@ VMWARE_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "use_ubridge": {
-            "description": "use uBridge for network connections",
+            "description": "Use uBridge for network connections",
             "type": "boolean",
         },
         "use_any_adapter": {
-            "description": "allow GNS3 to use any VMware adapter",
+            "description": "Allow GNS3 to use any VMware adapter",
             "type": "boolean",
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"

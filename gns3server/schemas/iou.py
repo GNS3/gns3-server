@@ -27,7 +27,7 @@ IOU_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "node_id": {
-            "description": "IOU VM identifier",
+            "description": "Node UUID",
             "oneOf": [
                 {"type": "string",
                  "minLength": 36,
@@ -37,7 +37,7 @@ IOU_CREATE_SCHEMA = {
             ]
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
@@ -110,7 +110,7 @@ IOU_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
@@ -195,11 +195,11 @@ IOU_OBJECT_SCHEMA = {
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "node_directory": {
-            "decription": "Path to the VM working directory",
+            "description": "Path to the node working directory",
             "type": "string"
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"

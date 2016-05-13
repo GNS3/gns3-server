@@ -27,7 +27,7 @@ DEVICE_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "device_id": {
-            "description": "Dynamips device instance identifier",
+            "description": "Dynamips device UUID",
             "oneOf": [
                 {"type": "string",
                  "minLength": 36,

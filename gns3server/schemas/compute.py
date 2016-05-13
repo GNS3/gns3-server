@@ -38,11 +38,11 @@ COMPUTE_CREATE_SCHEMA = {
             "type": "integer"
         },
         "user": {
-            "description": "User for auth",
+            "description": "User for authentication",
             "type": "string"
         },
         "password": {
-            "description": "Password for auth",
+            "description": "Password for authentication",
             "type": "string"
         }
     },
@@ -72,15 +72,15 @@ COMPUTE_OBJECT_SCHEMA = {
             "type": "integer"
         },
         "user": {
-            "description": "User for auth",
+            "description": "User for authentication",
             "type": "string"
         },
         "connected": {
-            "description": "True if controller is connected to the compute",
+            "description": "Whether the controller is connected to the compute server or not",
             "type": "boolean"
         },
         "version": {
-            "description": "Version of the GNS3 remote compute",
+            "description": "Version of the GNS3 remote compute server",
             "type": ["string", "null"]
         }
     },

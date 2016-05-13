@@ -22,7 +22,7 @@ LINK_OBJECT_SCHEMA = {
     "type": "object",
     "properties": {
         "link_id": {
-            "description": "Link identifier",
+            "description": "Link UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -35,7 +35,7 @@ LINK_OBJECT_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "node_id": {
-                        "description": "VM identifier",
+                        "description": "Node UUID",
                         "type": "string",
                         "minLength": 36,
                         "maxLength": 36,
@@ -55,15 +55,15 @@ LINK_OBJECT_SCHEMA = {
             }
         },
         "capturing": {
-            "description": "Read only propertie. True if a capture running on the link",
+            "description": "Read only property. True if a capture running on the link",
             "type": "boolean"
         },
         "capture_file_name": {
-            "description": "Read only propertie. The name of the capture file if capture is running",
+            "description": "Read only property. The name of the capture file if capture is running",
             "type": ["string", "null"]
         },
         "capture_file_path": {
-            "description": "Read only propertie. The full path of the capture file if capture is running",
+            "description": "Read only property. The full path of the capture file if capture is running",
             "type": ["string", "null"]
         }
     },
@@ -82,7 +82,7 @@ LINK_CAPTURE_SCHEMA = {
             "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC"]
         },
         "capture_file_name": {
-            "description": "Read only propertie. The name of the capture file if capture is running",
+            "description": "Read only property. The name of the capture file if capture is running",
             "type": "string"
         }
     },

@@ -22,7 +22,7 @@ VM_CREATE_SCHEMA = {
     "type": "object",
     "properties": {
         "node_id": {
-            "description": "Node identifier",
+            "description": "Node UUID",
             "oneOf": [
                 {"type": "string",
                  "minLength": 36,
@@ -32,7 +32,7 @@ VM_CREATE_SCHEMA = {
             ]
         },
         "dynamips_id": {
-            "description": "ID to use with Dynamips",
+            "description": "Dynamips ID",
             "type": "integer"
         },
         "name": {
@@ -41,29 +41,29 @@ VM_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "platform": {
-            "description": "platform",
+            "description": "Cisco router platform",
             "type": "string",
             "minLength": 1,
             "pattern": "^c[0-9]{4}$"
         },
         "chassis": {
-            "description": "router chassis model",
+            "description": "Cisco router chassis model",
             "type": "string",
             "minLength": 1,
             "pattern": "^[0-9]{4}(XM)?$"
         },
         "image": {
-            "description": "path to the IOS image",
+            "description": "Path to the IOS image",
             "type": "string",
             "minLength": 1,
         },
         "image_md5sum": {
-            "description": "checksum of the IOS image",
+            "description": "Checksum of the IOS image",
             "type": ["string", "null"],
             "minLength": 1,
         },
         "startup_config": {
-            "description": "path to the IOS startup configuration file",
+            "description": "Path to the IOS startup configuration file",
             "type": "string",
             "minLength": 1,
         },
@@ -72,7 +72,7 @@ VM_CREATE_SCHEMA = {
             "type": "string",
         },
         "private_config": {
-            "description": "path to the IOS private configuration file",
+            "description": "Path to the IOS private configuration file",
             "type": "string",
             "minLength": 1,
         },
@@ -81,11 +81,11 @@ VM_CREATE_SCHEMA = {
             "type": "string",
         },
         "ram": {
-            "description": "amount of RAM in MB",
+            "description": "Amount of RAM in MB",
             "type": "integer"
         },
         "nvram": {
-            "description": "amount of NVRAM in KB",
+            "description": "Amount of NVRAM in KB",
             "type": "integer"
         },
         "mmap": {
@@ -93,11 +93,11 @@ VM_CREATE_SCHEMA = {
             "type": "boolean"
         },
         "sparsemem": {
-            "description": "sparse memory feature",
+            "description": "Sparse memory feature",
             "type": "boolean"
         },
         "clock_divisor": {
-            "description": "clock divisor",
+            "description": "Clock divisor",
             "type": "integer"
         },
         "idlepc": {
@@ -106,53 +106,53 @@ VM_CREATE_SCHEMA = {
             "pattern": "^(0x[0-9a-fA-F]+)?$"
         },
         "idlemax": {
-            "description": "idlemax value",
+            "description": "Idlemax value",
             "type": "integer",
         },
         "idlesleep": {
-            "description": "idlesleep value",
+            "description": "Idlesleep value",
             "type": "integer",
         },
         "exec_area": {
-            "description": "exec area value",
+            "description": "Exec area value",
             "type": "integer",
         },
         "disk0": {
-            "description": "disk0 size in MB",
+            "description": "Disk0 size in MB",
             "type": "integer"
         },
         "disk1": {
-            "description": "disk1 size in MB",
+            "description": "Disk1 size in MB",
             "type": "integer"
         },
         "auto_delete_disks": {
-            "description": "automatically delete nvram and disk files",
+            "description": "Automatically delete nvram and disk files",
             "type": "boolean"
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "type": "integer",
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet"]
         },
         "aux": {
-            "description": "auxiliary console TCP port",
+            "description": "Auxiliary console TCP port",
             "type": "integer",
             "minimum": 1,
             "maximum": 65535
         },
         "mac_addr": {
-            "description": "base MAC address",
+            "description": "Base MAC address",
             "type": "string",
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
         "system_id": {
-            "description": "system ID",
+            "description": "System ID",
             "type": "string",
             "minLength": 1,
         },
@@ -227,11 +227,11 @@ VM_CREATE_SCHEMA = {
             ]
         },
         "startup_config_base64": {
-            "description": "startup configuration base64 encoded",
+            "description": "Startup configuration base64 encoded",
             "type": "string"
         },
         "private_config_base64": {
-            "description": "private configuration base64 encoded",
+            "description": "Private configuration base64 encoded",
             "type": "string"
         },
         # C7200 properties
@@ -281,24 +281,24 @@ VM_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "platform": {
-            "description": "platform",
+            "description": "Cisco router platform",
             "type": "string",
             "minLength": 1,
             "pattern": "^c[0-9]{4}$"
         },
         "chassis": {
-            "description": "router chassis model",
+            "description": "Cisco router chassis model",
             "type": "string",
             "minLength": 1,
             "pattern": "^[0-9]{4}(XM)?$"
         },
         "image": {
-            "description": "path to the IOS image",
+            "description": "Path to the IOS image",
             "type": "string",
             "minLength": 1,
         },
         "image_md5sum": {
-            "description": "checksum of the IOS image",
+            "description": "Checksum of the IOS image",
             "type": ["string", "null"],
             "minLength": 1,
         },
@@ -311,11 +311,11 @@ VM_UPDATE_SCHEMA = {
             "type": "string",
         },
         "ram": {
-            "description": "amount of RAM in MB",
+            "description": "Amount of RAM in MB",
             "type": "integer"
         },
         "nvram": {
-            "description": "amount of NVRAM in KB",
+            "description": "Amount of NVRAM in KB",
             "type": "integer"
         },
         "mmap": {
@@ -323,11 +323,11 @@ VM_UPDATE_SCHEMA = {
             "type": "boolean"
         },
         "sparsemem": {
-            "description": "sparse memory feature",
+            "description": "Sparse memory feature",
             "type": "boolean"
         },
         "clock_divisor": {
-            "description": "clock divisor",
+            "description": "Clock divisor",
             "type": "integer"
         },
         "idlepc": {
@@ -336,53 +336,53 @@ VM_UPDATE_SCHEMA = {
             "pattern": "^(0x[0-9a-fA-F]+)?$"
         },
         "idlemax": {
-            "description": "idlemax value",
+            "description": "Idlemax value",
             "type": "integer",
         },
         "idlesleep": {
-            "description": "idlesleep value",
+            "description": "Idlesleep value",
             "type": "integer",
         },
         "exec_area": {
-            "description": "exec area value",
+            "description": "Exec area value",
             "type": "integer",
         },
         "disk0": {
-            "description": "disk0 size in MB",
+            "description": "Disk0 size in MB",
             "type": "integer"
         },
         "disk1": {
-            "description": "disk1 size in MB",
+            "description": "Disk1 size in MB",
             "type": "integer"
         },
         "auto_delete_disks": {
-            "description": "automatically delete nvram and disk files",
+            "description": "Automatically delete nvram and disk files",
             "type": "boolean"
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "type": "integer",
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet"]
         },
         "aux": {
-            "description": "auxiliary console TCP port",
+            "description": "Auxiliary console TCP port",
             "type": "integer",
             "minimum": 1,
             "maximum": 65535
         },
         "mac_addr": {
-            "description": "base MAC address",
+            "description": "Base MAC address",
             "type": "string",
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
         "system_id": {
-            "description": "system ID",
+            "description": "System ID",
             "type": "string",
             "minLength": 1,
         },
@@ -457,11 +457,11 @@ VM_UPDATE_SCHEMA = {
             ]
         },
         "startup_config_base64": {
-            "description": "startup configuration base64 encoded",
+            "description": "Startup configuration base64 encoded",
             "type": "string"
         },
         "private_config_base64": {
-            "description": "private configuration base64 encoded",
+            "description": "Private configuration base64 encoded",
             "type": "string"
         },
         # C7200 properties
@@ -510,7 +510,7 @@ VM_OBJECT_SCHEMA = {
             "type": "integer"
         },
         "node_id": {
-            "description": "Node instance UUID",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -533,41 +533,41 @@ VM_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "platform": {
-            "description": "platform",
+            "description": "Cisco router platform",
             "type": "string",
             "minLength": 1,
             "pattern": "^c[0-9]{4}$"
         },
         "chassis": {
-            "description": "router chassis model",
+            "description": "Cisco router chassis model",
             "type": "string",
             "minLength": 1,
             "pattern": "^[0-9]{4}(XM)?$"
         },
         "image": {
-            "description": "path to the IOS image",
+            "description": "Path to the IOS image",
             "type": "string",
             "minLength": 1,
         },
         "image_md5sum": {
-            "description": "checksum of the IOS image",
+            "description": "Checksum of the IOS image",
             "type": ["string", "null"],
             "minLength": 1,
         },
         "startup_config": {
-            "description": "path to the IOS startup configuration file",
+            "description": "Path to the IOS startup configuration file",
             "type": "string",
         },
         "private_config": {
-            "description": "path to the IOS private configuration file",
+            "description": "Path to the IOS private configuration file",
             "type": "string",
         },
         "ram": {
-            "description": "amount of RAM in MB",
+            "description": "Amount of RAM in MB",
             "type": "integer"
         },
         "nvram": {
-            "description": "amount of NVRAM in KB",
+            "description": "Amount of NVRAM in KB",
             "type": "integer"
         },
         "mmap": {
@@ -575,11 +575,11 @@ VM_OBJECT_SCHEMA = {
             "type": "boolean"
         },
         "sparsemem": {
-            "description": "sparse memory feature",
+            "description": "Sparse memory feature",
             "type": "boolean"
         },
         "clock_divisor": {
-            "description": "clock divisor",
+            "description": "Clock divisor",
             "type": "integer"
         },
         "idlepc": {
@@ -588,53 +588,53 @@ VM_OBJECT_SCHEMA = {
             "pattern": "^(0x[0-9a-fA-F]+)?$"
         },
         "idlemax": {
-            "description": "idlemax value",
+            "description": "Idlemax value",
             "type": "integer",
         },
         "idlesleep": {
-            "description": "idlesleep value",
+            "description": "Idlesleep value",
             "type": "integer",
         },
         "exec_area": {
-            "description": "exec area value",
+            "description": "Exec area value",
             "type": "integer",
         },
         "disk0": {
-            "description": "disk0 size in MB",
+            "description": "Disk0 size in MB",
             "type": "integer"
         },
         "disk1": {
-            "description": "disk1 size in MB",
+            "description": "Disk1 size in MB",
             "type": "integer"
         },
         "auto_delete_disks": {
-            "description": "automatically delete nvram and disk files",
+            "description": "Automatically delete nvram and disk files",
             "type": "boolean"
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "type": "integer",
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet"]
         },
         "aux": {
-            "description": "auxiliary console TCP port",
+            "description": "Auxiliary console TCP port",
             "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },
         "mac_addr": {
-            "description": "base MAC address",
+            "description": "Base MAC address",
             "type": "string",
             #"minLength": 1,
             #"pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
         "system_id": {
-            "description": "system ID",
+            "description": "System ID",
             "type": "string",
             "minLength": 1,
         },
@@ -709,11 +709,11 @@ VM_OBJECT_SCHEMA = {
             ]
         },
         "startup_config_base64": {
-            "description": "startup configuration base64 encoded",
+            "description": "Startup configuration base64 encoded",
             "type": "string"
         },
         "private_config_base64": {
-            "description": "private configuration base64 encoded",
+            "description": "Private configuration base64 encoded",
             "type": "string"
         },
         # C7200 properties

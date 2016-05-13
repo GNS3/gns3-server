@@ -22,11 +22,11 @@ VERSION_SCHEMA = {
     "additionalProperties": False,
     "properties": {
         "version": {
-            "description": "Version number human readable",
+            "description": "Version number",
             "type": "string",
         },
         "local": {
-            "description": "Either this is a local server",
+            "description": "Whether this is a local server or not",
             "type": "boolean",
         }
     }

@@ -22,7 +22,7 @@ DOCKER_CREATE_SCHEMA = {
     "type": "object",
     "properties": {
         "node_id": {
-            "description": "Docker VM instance identifier",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -34,22 +34,22 @@ DOCKER_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet", "vnc", "http", "https"]
         },
         "console_resolution": {
-            "description": "console resolution for VNC",
+            "description": "Console resolution for VNC",
             "type": ["string", "null"],
             "pattern": "^[0-9]+x[0-9]+$"
         },
         "console_http_port": {
-            "description": "Internal port in the container of the HTTP server",
+            "description": "Internal port in the container for the HTTP server",
             "type": "integer",
         },
         "console_http_path": {
@@ -57,7 +57,7 @@ DOCKER_CREATE_SCHEMA = {
             "type": "string",
         },
         "aux": {
-            "description": "auxilary TCP port",
+            "description": "Auxiliary TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
@@ -73,13 +73,13 @@ DOCKER_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": ["integer", "null"],
             "minimum": 0,
             "maximum": 99,
         },
         "environment": {
-            "description": "Docker environment",
+            "description": "Docker environment variables",
             "type": ["string", "null"],
             "minLength": 0,
         }
@@ -91,7 +91,7 @@ DOCKER_CREATE_SCHEMA = {
 
 DOCKER_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to create a new Docker container",
+    "description": "Request validation to update a Docker container",
     "type": "object",
     "properties": {
         "name": {
@@ -100,13 +100,13 @@ DOCKER_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
         },
         "console_resolution": {
-            "description": "console resolution for VNC",
+            "description": "Console resolution for VNC",
             "type": ["string", "null"],
             "pattern": "^[0-9]+x[0-9]+$"
         },
@@ -115,7 +115,7 @@ DOCKER_UPDATE_SCHEMA = {
             "enum": ["telnet", "vnc", "http", "https"]
         },
         "console_http_port": {
-            "description": "Internal port in the container of the HTTP server",
+            "description": "Internal port in the container for the HTTP server",
             "type": "integer",
         },
         "console_http_path": {
@@ -123,7 +123,7 @@ DOCKER_UPDATE_SCHEMA = {
             "type": "string",
         },
         "aux": {
-            "description": "auxilary TCP port",
+            "description": "Auxiliary TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
@@ -134,12 +134,12 @@ DOCKER_UPDATE_SCHEMA = {
             "minLength": 0,
         },
         "environment": {
-            "description": "Docker environment",
+            "description": "Docker environment variables",
             "type": ["string", "null"],
             "minLength": 0,
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": ["integer", "null"],
             "minimum": 0,
             "maximum": 99,
@@ -150,7 +150,7 @@ DOCKER_UPDATE_SCHEMA = {
 
 DOCKER_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Docker instance",
+    "description": "Docker container instance",
     "type": "object",
     "properties": {
         "name": {
@@ -159,35 +159,35 @@ DOCKER_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "node_id": {
-            "description": "Docker container instance UUID",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "aux": {
-            "description": "auxilary TCP port",
+            "description": "Auxiliary TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "console_resolution": {
-            "description": "console resolution for VNC",
+            "description": "Console resolution for VNC",
             "type": "string",
             "pattern": "^[0-9]+x[0-9]+$"
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet", "vnc", "http", "https"]
         },
         "console_http_port": {
-            "description": "Internal port in the container of the HTTP server",
+            "description": "Internal port in the container for the HTTP server",
             "type": "integer",
         },
         "console_http_path": {
@@ -230,12 +230,23 @@ DOCKER_OBJECT_SCHEMA = {
             "minLength": 0,
         },
         "node_directory": {
-            "decription": "Path to the VM working directory",
+            "description": "Path to the node working directory",
             "type": "string"
         }
     },
     "additionalProperties": False,
-    "required": ["node_id", "project_id", "image", "container_id", "adapters", "aux", "console", "console_type", "console_resolution", "start_command", "environment", "node_directory"]
+    "required": ["node_id",
+                 "project_id",
+                 "image",
+                 "container_id",
+                 "adapters",
+                 "aux",
+                 "console",
+                 "console_type",
+                 "console_resolution",
+                 "start_command",
+                 "environment",
+                 "node_directory"]
 }
 
 

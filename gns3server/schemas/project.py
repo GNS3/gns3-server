@@ -39,7 +39,7 @@ PROJECT_CREATE_SCHEMA = {
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "temporary": {
-            "description": "If project is a temporary project",
+            "description": "Whether the project is a temporary project or not",
             "type": "boolean"
         },
     },
@@ -57,7 +57,7 @@ PROJECT_UPDATE_SCHEMA = {
             "minLength": 1
         },
         "temporary": {
-            "description": "If project is a temporary project",
+            "description": "Whether the project is a temporary project or not",
             "type": "boolean"
         },
         "path": {
@@ -86,7 +86,7 @@ PROJECT_OBJECT_SCHEMA = {
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "temporary": {
-            "description": "If project is a temporary project",
+            "description": "Whether the project is a temporary project or not",
             "type": "boolean"
         },
         "path": {

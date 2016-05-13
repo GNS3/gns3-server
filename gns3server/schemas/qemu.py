@@ -24,7 +24,7 @@ QEMU_CREATE_SCHEMA = {
     "type": "object",
     "properties": {
         "node_id": {
-            "description": "QEMU VM identifier",
+            "description": "Node UUID",
             "oneOf": [
                 {"type": "string",
                  "minLength": 36,
@@ -43,7 +43,7 @@ QEMU_CREATE_SCHEMA = {
             "type": "string",
         },
         "linked_clone": {
-            "description": "either the VM is a linked clone or not",
+            "description": "Whether the VM is a linked clone or not",
             "type": "boolean"
         },
         "qemu_path": {
@@ -56,13 +56,13 @@ QEMU_CREATE_SCHEMA = {
             "enum": QEMU_PLATFORMS + ["null"]
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet", "vnc"]
         },
         "hda_disk_image": {
@@ -126,17 +126,17 @@ QEMU_CREATE_SCHEMA = {
             "enum": ["c", "d", "n", "cn", "cd"]
         },
         "ram": {
-            "description": "amount of RAM in MB",
+            "description": "Amount of RAM in MB",
             "type": ["integer", "null"]
         },
         "cpus": {
-            "description": "number of vCPUs",
+            "description": "Number of vCPUs",
             "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 255,
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": ["integer", "null"],
             "minimum": 0,
             "maximum": 32,
@@ -216,7 +216,7 @@ QEMU_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "usage": {
-            "description": "How to use the qemu VM",
+            "description": "How to use the QEMU VM",
             "type": "string",
         },
         "qemu_path": {
@@ -229,13 +229,13 @@ QEMU_UPDATE_SCHEMA = {
             "enum": QEMU_PLATFORMS + ["null"]
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet", "vnc"]
         },
         "hda_disk_image": {
@@ -299,17 +299,17 @@ QEMU_UPDATE_SCHEMA = {
             "enum": ["c", "d", "n", "cn", "cd"]
         },
         "ram": {
-            "description": "amount of RAM in MB",
+            "description": "Amount of RAM in MB",
             "type": ["integer", "null"]
         },
         "cpus": {
-            "description": "number of vCPUs",
+            "description": "Number of vCPUs",
             "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 255,
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": ["integer", "null"],
             "minimum": 0,
             "maximum": 32,
@@ -383,12 +383,12 @@ QEMU_OBJECT_SCHEMA = {
     "type": "object",
     "properties": {
         "node_id": {
-            "description": "QEMU VM uuid",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 1,
         },
         "project_id": {
-            "description": "Project uuid",
+            "description": "Project UUID",
             "type": "string",
             "minLength": 1,
         },
@@ -398,11 +398,11 @@ QEMU_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "usage": {
-            "description": "How to use the qemu VM",
+            "description": "How to use the QEMU VM",
             "type": "string",
         },
         "qemu_path": {
-            "description": "path to QEMU",
+            "description": "Path to QEMU",
             "type": "string",
             "minLength": 1,
         },
@@ -475,17 +475,17 @@ QEMU_OBJECT_SCHEMA = {
             "type": "string"
         },
         "ram": {
-            "description": "amount of RAM in MB",
+            "description": "Amount of RAM in MB",
             "type": "integer"
         },
         "cpus": {
-            "description": "number of vCPUs",
+            "description": "Number of vCPUs",
             "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 255,
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": "integer",
             "minimum": 0,
             "maximum": 32,
@@ -502,13 +502,13 @@ QEMU_OBJECT_SCHEMA = {
             "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet", "vnc"]
         },
         "initrd": {
@@ -608,10 +608,10 @@ QEMU_OBJECT_SCHEMA = {
 
 QEMU_BINARY_FILTER_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation for a list of qemu capabilities",
+    "description": "Request validation for a list of QEMU capabilities",
     "properties": {
         "archs": {
-            "description": "Architectures to filter binaries by",
+            "description": "Architectures to filter binaries with",
             "type": "array",
             "items": {
                 "enum": QEMU_PLATFORMS
@@ -623,7 +623,7 @@ QEMU_BINARY_FILTER_SCHEMA = {
 
 QEMU_BINARY_LIST_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation for a list of qemu binaries",
+    "description": "Request validation for a list of QEMU binaries",
     "type": "array",
     "items": {
         "$ref": "#/definitions/QemuPath"
@@ -648,7 +648,7 @@ QEMU_BINARY_LIST_SCHEMA = {
 
 QEMU_CAPABILITY_LIST_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation for a list of qemu capabilities",
+    "description": "Request validation for a list of QEMU capabilities",
     "properties": {
         "kvm": {
             "description": "Architectures that KVM is enabled for",
@@ -663,7 +663,7 @@ QEMU_CAPABILITY_LIST_SCHEMA = {
 
 QEMU_IMAGE_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Create a new qemu image. Options can be specific to a format. Read qemu-img manual for more information",
+    "description": "Create a new QEMU image. Options can be specific to a format. Read qemu-img manual for more information",
     "type": "object",
     "properties": {
         "qemu_img": {
@@ -679,7 +679,7 @@ QEMU_IMAGE_CREATE_SCHEMA = {
             "enum": ["qcow2", "qcow", "vpc", "vdi", "vmdk", "raw"]
         },
         "size": {
-            "description": "Image size in M",
+            "description": "Image size in Megabytes",
             "type": "integer"
         },
         "preallocation": {

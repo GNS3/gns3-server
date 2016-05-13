@@ -95,7 +95,7 @@ class Controller:
         :param kwargs: See the documentation of Compute
         """
 
-        # We dissallow to create from the outside the
+        # We disallow to create from the outside the
         if compute_id == 'local':
             return self._createLocalCompute()
 

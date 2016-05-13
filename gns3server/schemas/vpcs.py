@@ -27,7 +27,7 @@ VPCS_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "node_id": {
-            "description": "VPCS VM identifier",
+            "description": "Node UUID",
             "oneOf": [
                 {"type": "string",
                  "minLength": 36,
@@ -37,13 +37,13 @@ VPCS_CREATE_SCHEMA = {
             ]
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet"]
         },
         "startup_script": {
@@ -66,13 +66,13 @@ VPCS_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet"]
         },
         "startup_script": {
@@ -98,7 +98,7 @@ VPCS_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "node_id": {
-            "description": "VPCS VM UUID",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -113,13 +113,13 @@ VPCS_OBJECT_SCHEMA = {
             "enum": ["started", "stopped"]
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "console_type": {
-            "description": "console type",
+            "description": "Console type",
             "enum": ["telnet"]
         },
         "project_id": {

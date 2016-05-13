@@ -22,7 +22,7 @@ VBOX_CREATE_SCHEMA = {
     "type": "object",
     "properties": {
         "node_id": {
-            "description": "VirtualBox VM instance identifier",
+            "description": "Node UUID",
             "oneOf": [
                 {"type": "string",
                  "minLength": 36,
@@ -32,7 +32,7 @@ VBOX_CREATE_SCHEMA = {
             ]
         },
         "linked_clone": {
-            "description": "either the VM is a linked clone or not",
+            "description": "Whether the VM is a linked clone or not",
             "type": "boolean"
         },
         "name": {
@@ -46,13 +46,13 @@ VBOX_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": "integer",
             "minimum": 0,
             "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
         },
         "use_any_adapter": {
-            "description": "allow GNS3 to use any VirtualBox adapter",
+            "description": "Allow GNS3 to use any VirtualBox adapter",
             "type": "boolean",
         },
         "adapter_type": {
@@ -61,13 +61,13 @@ VBOX_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "enable_remote_console": {
-            "description": "enable the remote console",
+            "description": "Enable the remote console",
             "type": "boolean"
         },
         "ram": {
@@ -77,7 +77,7 @@ VBOX_CREATE_SCHEMA = {
             "type": "integer"
         },
         "headless": {
-            "description": "headless mode",
+            "description": "Headless mode",
             "type": "boolean"
         },
         "acpi_shutdown": {
@@ -105,13 +105,13 @@ VBOX_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": "integer",
             "minimum": 0,
             "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
         },
         "use_any_adapter": {
-            "description": "allow GNS3 to use any VirtualBox adapter",
+            "description": "Allow GNS3 to use any VirtualBox adapter",
             "type": "boolean",
         },
         "adapter_type": {
@@ -120,13 +120,13 @@ VBOX_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
         },
         "enable_remote_console": {
-            "description": "enable the remote console",
+            "description": "Enable the remote console",
             "type": "boolean"
         },
         "ram": {
@@ -136,7 +136,7 @@ VBOX_UPDATE_SCHEMA = {
             "type": "integer"
         },
         "headless": {
-            "description": "headless mode",
+            "description": "Headless mode",
             "type": "boolean"
         },
         "acpi_shutdown": {
@@ -159,7 +159,7 @@ VBOX_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "node_id": {
-            "description": "VirtualBox VM instance UUID",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -182,11 +182,11 @@ VBOX_OBJECT_SCHEMA = {
             "type": ["string", "null"]
         },
         "enable_remote_console": {
-            "description": "enable the remote console",
+            "description": "Enable the remote console",
             "type": "boolean"
         },
         "headless": {
-            "description": "headless mode",
+            "description": "Headless mode",
             "type": "boolean"
         },
         "acpi_shutdown": {
@@ -194,13 +194,13 @@ VBOX_OBJECT_SCHEMA = {
             "type": "boolean"
         },
         "adapters": {
-            "description": "number of adapters",
+            "description": "Number of adapters",
             "type": "integer",
             "minimum": 0,
             "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
         },
         "use_any_adapter": {
-            "description": "allow GNS3 to use any VirtualBox adapter",
+            "description": "Allow GNS3 to use any VirtualBox adapter",
             "type": "boolean",
         },
         "adapter_type": {
@@ -209,7 +209,7 @@ VBOX_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "console": {
-            "description": "console TCP port",
+            "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"

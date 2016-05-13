@@ -73,11 +73,14 @@ NODE_OBJECT_SCHEMA = {
             "type": "string"
         },
         "project_id": {
-            "description": "Project identifier",
-            "type": "string"
+            "description": "Project UUID",
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "node_id": {
-            "description": "Node identifier",
+            "description": "Node UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
