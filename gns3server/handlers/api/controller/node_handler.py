@@ -89,6 +89,84 @@ class NodeHandler:
         response.json(node)
 
     @Route.post(
+        r"/projects/{project_id}/nodes/start",
+        parameters={
+            "project_id": "Project UUID"
+        },
+        status_codes={
+            204: "All nodes successfully started",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Start all nodes belonging to the project",
+        output=NODE_OBJECT_SCHEMA)
+    def start_all(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        for node in project.nodes.values():
+            yield from node.start()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/stop",
+        parameters={
+            "project_id": "Project UUID"
+        },
+        status_codes={
+            204: "All nodes successfully stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Stop all nodes belonging to the project",
+        output=NODE_OBJECT_SCHEMA)
+    def stop_all(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        for node in project.nodes.values():
+            yield from node.stop()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/suspend",
+        parameters={
+            "project_id": "Project UUID"
+        },
+        status_codes={
+            204: "All nodes successfully suspended",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Suspend all nodes belonging to the project",
+        output=NODE_OBJECT_SCHEMA)
+    def suspend_all(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        for node in project.nodes.values():
+            yield from node.suspend()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/reload",
+        parameters={
+            "project_id": "Project UUID"
+        },
+        status_codes={
+            204: "All nodes successfully reloaded",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Reload all nodes belonging to the project",
+        output=NODE_OBJECT_SCHEMA)
+    def reload_all(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        for node in project.nodes.values():
+            yield from node.stop()
+        for node in project.nodes.values():
+            yield from node.start()
+        response.set_status(204)
+
+    @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/start",
         parameters={
             "project_id": "Project UUID",

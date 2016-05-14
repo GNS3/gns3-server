@@ -247,6 +247,13 @@ class BaseNode:
 
         raise NotImplementedError
 
+    def suspend(self):
+        """
+        Suspends the node process.
+        """
+
+        raise NotImplementedError
+
     @asyncio.coroutine
     def close(self):
         """

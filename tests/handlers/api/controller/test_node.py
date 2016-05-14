@@ -107,6 +107,33 @@ def test_update_node(http_controller, tmpdir, project, compute, node):
     assert response.json["name"] == "test"
     assert "name" not in response.json["properties"]
 
+def test_start_all_nodes(http_controller, tmpdir, project, compute):
+    response = MagicMock()
+    compute.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/nodes/start".format(project.id), example=True)
+    assert response.status == 204
+
+def test_stop_all_nodes(http_controller, tmpdir, project, compute):
+    response = MagicMock()
+    compute.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/nodes/stop".format(project.id), example=True)
+    assert response.status == 204
+
+def test_suspend_all_nodes(http_controller, tmpdir, project, compute):
+    response = MagicMock()
+    compute.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/nodes/suspend".format(project.id), example=True)
+    assert response.status == 204
+
+def test_reload_all_nodes(http_controller, tmpdir, project, compute):
+    response = MagicMock()
+    compute.post = AsyncioMagicMock()
+
+    response = http_controller.post("/projects/{}/nodes/reload".format(project.id), example=True)
+    assert response.status == 204
 
 def test_start_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
