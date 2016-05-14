@@ -208,6 +208,7 @@ class VirtualBoxVM(BaseNode):
         if self._headless:
             args.extend(["--type", "headless"])
         result = yield from self.manager.execute("startvm", args)
+        self.status = "started"
         log.info("VirtualBox VM '{name}' [{id}] started".format(name=self.name, id=self.id))
         log.debug("Start result: {}".format(result))
 
@@ -243,10 +244,12 @@ class VirtualBoxVM(BaseNode):
             if self.acpi_shutdown:
                 # use ACPI to shutdown the VM
                 result = yield from self._control_vm("acpipowerbutton")
+                self.status = "stopped"
                 log.debug("ACPI shutdown result: {}".format(result))
             else:
                 # power off the VM
                 result = yield from self._control_vm("poweroff")
+                self.status = "stopped"
                 log.debug("Stop result: {}".format(result))
 
             log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
@@ -273,6 +276,7 @@ class VirtualBoxVM(BaseNode):
         vm_state = yield from self._get_vm_state()
         if vm_state == "running":
             yield from self._control_vm("pause")
+            self.status = "suspended"
             log.info("VirtualBox VM '{name}' [{id}] suspended".format(name=self.name, id=self.id))
         else:
             log.warn("VirtualBox VM '{name}' [{id}] cannot be suspended, current state: {state}".format(name=self.name,
@@ -286,6 +290,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         yield from self._control_vm("resume")
+        self.status = "started"
         log.info("VirtualBox VM '{name}' [{id}] resumed".format(name=self.name, id=self.id))
 
     @asyncio.coroutine

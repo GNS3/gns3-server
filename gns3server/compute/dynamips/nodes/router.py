@@ -294,6 +294,7 @@ class Router(BaseNode):
         status = yield from self.get_status()
         if status == "running":
             yield from self._hypervisor.send('vm suspend "{name}"'.format(name=self._name))
+            self.status = "suspended"
             log.info('Router "{name}" [{id}] has been suspended'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine

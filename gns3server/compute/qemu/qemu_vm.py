@@ -1036,6 +1036,7 @@ class QemuVM(BaseNode):
                 raise QemuError("Suspending a QEMU VM is not supported")
             elif vm_status == "running":
                 yield from self._control_vm("stop")
+                self.status = "suspended"
                 log.debug("QEMU VM has been suspended")
             else:
                 log.info("QEMU VM is not running to be suspended, current status is {}".format(vm_status))

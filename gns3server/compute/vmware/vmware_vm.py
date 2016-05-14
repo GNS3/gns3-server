@@ -480,6 +480,7 @@ class VMwareVM(BaseNode):
             self._hw_virtualization = True
 
         self._started = True
+        self.status = "started"
         log.info("VMware VM '{name}' [{id}] started".format(name=self.name, id=self.id))
 
     @asyncio.coroutine
@@ -502,6 +503,7 @@ class VMwareVM(BaseNode):
                     yield from self._control_vm("stop")
         finally:
             self._started = False
+            self.status = "stopped"
 
             self._read_vmx_file()
             if self._use_ubridge:
@@ -538,6 +540,7 @@ class VMwareVM(BaseNode):
         if self.manager.host_type != "ws":
             raise VMwareError("Pausing a VM is only supported by VMware Workstation")
         yield from self._control_vm("pause")
+        self.status = "suspended"
         log.info("VMware VM '{name}' [{id}] paused".format(name=self.name, id=self.id))
 
     @asyncio.coroutine
@@ -549,6 +552,7 @@ class VMwareVM(BaseNode):
         if self.manager.host_type != "ws":
             raise VMwareError("Unpausing a VM is only supported by VMware Workstation")
         yield from self._control_vm("unpause")
+        self.status = "started"
         log.info("VMware VM '{name}' [{id}] resumed".format(name=self.name, id=self.id))
 
     @asyncio.coroutine

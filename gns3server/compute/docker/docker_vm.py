@@ -505,11 +505,12 @@ class DockerVM(BaseNode):
             # t=5 number of seconds to wait before killing the container
             try:
                 yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
-                log.info("Docker container '{name}' [{image}] stopped".format(
-                    name=self._name, image=self._image))
+                log.info("Docker container '{name}' [{image}] stopped".format(name=self._name, image=self._image))
             except DockerHttp304Error:
                 # Container is already stopped
                 pass
+            finally:
+                self.status = "stopped"
         # Ignore runtime error because when closing the server
         except RuntimeError as e:
             log.debug("Docker runtime error when closing: {}".format(str(e)))
@@ -519,17 +520,15 @@ class DockerVM(BaseNode):
     def pause(self):
         """Pauses this Docker container."""
         yield from self.manager.query("POST", "containers/{}/pause".format(self._cid))
-        log.info("Docker container '{name}' [{image}] paused".format(
-            name=self._name, image=self._image))
-        self.status = "paused"
+        self.status = "suspended"
+        log.info("Docker container '{name}' [{image}] paused".format(name=self._name, image=self._image))
 
     @asyncio.coroutine
     def unpause(self):
         """Unpauses this Docker container."""
         yield from self.manager.query("POST", "containers/{}/unpause".format(self._cid))
-        log.info("Docker container '{name}' [{image}] unpaused".format(
-            name=self._name, image=self._image))
         self.status = "started"
+        log.info("Docker container '{name}' [{image}] unpaused".format(name=self._name, image=self._image))
 
     @asyncio.coroutine
     def close(self):
