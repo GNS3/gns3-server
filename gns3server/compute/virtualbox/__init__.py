@@ -155,7 +155,7 @@ class VirtualBox(BaseManager):
                 continue
 
     @asyncio.coroutine
-    def list_images(self):
+    def list_vms(self):
         """
         Gets VirtualBox VM list.
         """

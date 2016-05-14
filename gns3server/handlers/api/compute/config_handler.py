@@ -17,16 +17,15 @@
 
 from aiohttp.web import HTTPForbidden
 
-from ....web.route import Route
-from ....config import Config
+from gns3server.web.route import Route
+from gns3server.config import Config
 
 
 class ConfigHandler:
 
-    @classmethod
     @Route.post(
         r"/config/reload",
-        description="Check if version is the same as the server",
+        description="Reload the server configuration file",
         status_codes={
             201: "Config reload",
             403: "Config reload refused"
@@ -35,6 +34,6 @@ class ConfigHandler:
 
         config = Config.instance()
         if config.get_section_config("Server").getboolean("local", False) is False:
-            raise HTTPForbidden(text="You can only reload the configuration for a local server")
+            raise HTTPForbidden(text="The configuration can only be reloaded on a local server")
         config.reload()
         response.set_status(201)

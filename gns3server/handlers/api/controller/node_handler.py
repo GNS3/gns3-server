@@ -15,9 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ....web.route import Route
-from ....schemas.node import NODE_OBJECT_SCHEMA, NODE_UPDATE_SCHEMA
-from ....controller import Controller
+from gns3server.web.route import Route
+from gns3server.controller import Controller
+
+from gns3server.schemas.node import (
+    NODE_OBJECT_SCHEMA,
+    NODE_UPDATE_SCHEMA
+)
 
 
 class NodeHandler:
@@ -25,11 +29,10 @@ class NodeHandler:
     API entry point for node
     """
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/nodes",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Instance created",
@@ -47,28 +50,27 @@ class NodeHandler:
         response.set_status(201)
         response.json(node)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/nodes",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
-            200: "List of nodes",
+            200: "List of nodes returned",
         },
         description="List nodes of a project")
     def list_nodes(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        response.json([ v for v in project.nodes.values() ])
+        response.json([v for v in project.nodes.values()])
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}/nodes/{node_id}",
         status_codes={
-            201: "Instance created",
-            400: "Invalid request"
+            200: "Instance updated",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
         },
         description="Update a node instance",
         input=NODE_UPDATE_SCHEMA,
@@ -77,25 +79,25 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
 
-        # Ignore this, because we use it only in create
+        # Ignore these because we only use them when creating a node
         request.json.pop("node_id", None)
         request.json.pop("node_type", None)
         request.json.pop("compute_id", None)
 
         yield from node.update(**request.json)
-        response.set_status(201)
+        response.set_status(200)
         response.json(node)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/start",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the node"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
-            201: "Instance created",
-            400: "Invalid request"
+            204: "Instance started",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
         },
         description="Start a node instance",
         output=NODE_OBJECT_SCHEMA)
@@ -104,61 +106,58 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.start()
-        response.set_status(201)
-        response.json(node)
+        response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/stop",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the node"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
-            201: "Instance created",
-            400: "Invalid request"
+            204: "Instance stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
         },
-        description="Start a node instance",
+        description="Stop a node instance",
         output=NODE_OBJECT_SCHEMA)
     def stop(request, response):
 
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.stop()
-        response.set_status(201)
-        response.json(node)
+        response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/suspend",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the node"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
-            201: "Instance created",
-            400: "Invalid request"
+            204: "Instance suspended",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
         },
-        description="Start a node instance",
+        description="Suspend a node instance",
         output=NODE_OBJECT_SCHEMA)
     def suspend(request, response):
 
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.suspend()
-        response.set_status(201)
-        response.json(node)
+        response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/reload",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the node"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
-            201: "Instance created",
-            400: "Invalid request"
+            204: "Instance reloaded",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
         },
         description="Reload a node instance",
         output=NODE_OBJECT_SCHEMA)
@@ -167,23 +166,22 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.reload()
-        response.set_status(201)
-        response.json(node)
+        response.set_status(204)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the node"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
-            201: "Instance deleted",
-            400: "Invalid request"
+            204: "Instance deleted",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
         },
         description="Delete a node instance")
     def delete(request, response):
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.destroy()
-        response.set_status(201)
+        response.set_status(204)

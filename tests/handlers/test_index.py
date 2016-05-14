@@ -33,7 +33,7 @@ def test_index(http_root):
 
 
 def test_controller(http_root, async_run):
-    project = async_run(Controller.instance().addProject(name="test"))
+    project = async_run(Controller.instance().add_project(name="test"))
     response = http_root.get('/controller')
     assert "test" in response.html
     assert response.status == 200
@@ -45,7 +45,7 @@ def test_compute(http_root):
 
 
 def test_project(http_root, async_run):
-    project = async_run(Controller.instance().addProject(name="test"))
+    project = async_run(Controller.instance().add_project(name="test"))
     response = http_root.get('/projects/{}'.format(project.id))
     assert response.status == 200
 

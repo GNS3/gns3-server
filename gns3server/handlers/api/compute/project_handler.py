@@ -22,10 +22,17 @@ import os
 import psutil
 import tempfile
 
-from ....web.route import Route
-from ....schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA, PROJECT_UPDATE_SCHEMA, PROJECT_FILE_LIST_SCHEMA, PROJECT_LIST_SCHEMA
-from ....compute.project_manager import ProjectManager
-from ....compute import MODULES
+from gns3server.web.route import Route
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.compute import MODULES
+
+from gns3server.schemas.project import (
+    PROJECT_OBJECT_SCHEMA,
+    PROJECT_CREATE_SCHEMA,
+    PROJECT_UPDATE_SCHEMA,
+    PROJECT_FILE_LIST_SCHEMA,
+    PROJECT_LIST_SCHEMA
+)
 
 import logging
 log = logging.getLogger()
@@ -33,13 +40,12 @@ log = logging.getLogger()
 
 class ProjectHandler:
 
-    # How many clients has subcribe to notifications
+    # How many clients have subscribed to notifications
     _notifications_listening = {}
 
-    @classmethod
     @Route.get(
         r"/projects",
-        description="List projects opened on the server",
+        description="List all projects opened on the server",
         status_codes={
             200: "Project list",
         },
@@ -51,13 +57,12 @@ class ProjectHandler:
         response.set_status(200)
         response.json(list(pm.projects))
 
-    @classmethod
     @Route.post(
         r"/projects",
         description="Create a new project on the server",
         status_codes={
             201: "Project created",
-            403: "You are not allowed to modify this property",
+            403: "Forbidden to create a project",
             409: "Project already created"
         },
         output=PROJECT_OBJECT_SCHEMA,
@@ -74,12 +79,11 @@ class ProjectHandler:
         response.set_status(201)
         response.json(p)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}",
         description="Get project information",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             200: "Success",
@@ -92,16 +96,15 @@ class ProjectHandler:
         project = pm.get_project(request.match_info["project_id"])
         response.json(project)
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}",
         description="Update a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
-            200: "The project has been updated",
-            403: "You are not allowed to modify this property",
+            200: "Project updated",
+            403: "Forbidden to update this project",
             404: "The project doesn't exist"
         },
         output=PROJECT_OBJECT_SCHEMA,
@@ -118,16 +121,15 @@ class ProjectHandler:
             for module in MODULES:
                 yield from module.instance().project_moved(project)
             yield from project.clean_old_path(old_path)
-        # Very important we need to remove temporary flag after moving the project
+        # Very important: we need to remove temporary flag after moving the project
         project.temporary = request.json.get("temporary", project.temporary)
         response.json(project)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/commit",
         description="Write changes on disk",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             204: "Changes have been written on disk",
@@ -140,15 +142,14 @@ class ProjectHandler:
         yield from project.commit()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/close",
         description="Close a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
-            204: "The project has been closed",
+            204: "Project closed",
             404: "The project doesn't exist"
         })
     def close(request, response):
@@ -160,15 +161,14 @@ class ProjectHandler:
             pm.remove_project(project.id)
             del ProjectHandler._notifications_listening[project.id]
         else:
-            log.warning("Skip project closing, another client is listening for project informations")
+            log.warning("Skip project closing, another client is listening for project notifications")
         response.set_status(204)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}",
         description="Delete a project from disk",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             204: "Changes have been written on disk",
@@ -182,12 +182,11 @@ class ProjectHandler:
         pm.remove_project(project.id)
         response.set_status(204)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/notifications",
-        description="Receive notifications about the projects",
+        description="Receive notifications about the project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             200: "End of stream",
@@ -201,7 +200,7 @@ class ProjectHandler:
         response.content_type = "application/json"
         response.set_status(200)
         response.enable_chunked_encoding()
-        # Very important: do not send a content lenght otherwise QT close the connection but curl can consume the Feed
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
         response.content_length = None
 
         response.start(request)
@@ -226,30 +225,27 @@ class ProjectHandler:
         if project.id in ProjectHandler._notifications_listening:
             ProjectHandler._notifications_listening[project.id] -= 1
 
-    @classmethod
     def _getPingMessage(cls):
         """
-        The ping message is regulary send to the client to
-        keep the connection open. We send with it some informations
-        about server load.
+        Ping messages are regularly sent to the client to
+        keep the connection open. We send with it some information about server load.
 
         :returns: hash
         """
         stats = {}
-        # Non blocking call in order to get cpu usage. First call will return 0
+        # Non blocking call in order to get cpu usage. First call will return 0.
         stats["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
         stats["memory_usage_percent"] = psutil.virtual_memory().percent
         return {"action": "ping", "event": stats}
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/files",
         description="List files of a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
-            200: "Return list of files",
+            200: "Return a list of files",
             404: "The project doesn't exist"
         },
         output=PROJECT_FILE_LIST_SCHEMA)
@@ -261,15 +257,14 @@ class ProjectHandler:
         response.json(files)
         response.set_status(200)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/files/{path:.+}",
-        description="Get a file of a project",
+        description="Get a file from a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
-            200: "Return the file",
+            200: "File returned",
             403: "Permission denied",
             404: "The file doesn't exist"
         })
@@ -280,7 +275,7 @@ class ProjectHandler:
         path = request.match_info["path"]
         path = os.path.normpath(path)
 
-        # Raise error if user try to escape
+        # Raise an error if user try to escape
         if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
         path = os.path.join(project.path, path)
@@ -288,7 +283,7 @@ class ProjectHandler:
         response.content_type = "application/octet-stream"
         response.set_status(200)
         response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
         response.content_length = None
 
         try:
@@ -305,15 +300,14 @@ class ProjectHandler:
         except PermissionError:
             raise aiohttp.web.HTTPForbidden()
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/stream/{path:.+}",
         description="Stream a file from a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
-            200: "Return the file",
+            200: "File returned",
             403: "Permission denied",
             404: "The file doesn't exist"
         })
@@ -324,7 +318,7 @@ class ProjectHandler:
         path = request.match_info["path"]
         path = os.path.normpath(path)
 
-        # Raise error if user try to escape
+        # Raise an error if user try to escape
         if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
         path = os.path.join(project.path, path)
@@ -332,7 +326,7 @@ class ProjectHandler:
         response.content_type = "application/octet-stream"
         response.set_status(200)
         response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
         response.content_length = None
 
         try:
@@ -349,16 +343,15 @@ class ProjectHandler:
         except PermissionError:
             raise aiohttp.web.HTTPForbidden()
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/files/{path:.+}",
-        description="Get a file of a project",
+        description="Write a file to a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         raw=True,
         status_codes={
-            200: "Return the file",
+            200: "File returned",
             403: "Permission denied",
             404: "The path doesn't exist"
         })
@@ -389,16 +382,15 @@ class ProjectHandler:
         except PermissionError:
             raise aiohttp.web.HTTPForbidden()
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/export",
         description="Export a project as a portable archive",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         raw=True,
         status_codes={
-            200: "Return the file",
+            200: "File returned",
             404: "The project doesn't exist"
         })
     def export_project(request, response):
@@ -408,7 +400,7 @@ class ProjectHandler:
         response.content_type = 'application/gns3project'
         response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
         response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
         response.content_length = None
         response.start(request)
 
@@ -418,18 +410,17 @@ class ProjectHandler:
 
         yield from response.write_eof()
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/import",
         description="Import a project from a portable archive",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         raw=True,
         output=PROJECT_OBJECT_SCHEMA,
         status_codes={
             200: "Project imported",
-            403: "You are not allowed to modify this property"
+            403: "Forbidden to import project"
         })
     def import_project(request, response):
 
@@ -437,11 +428,9 @@ class ProjectHandler:
         project_id = request.match_info["project_id"]
         project = pm.create_project(project_id=project_id)
 
-        # We write the content to a temporary location
-        # and after extract all. It could be more optimal to stream
-        # this but it's not implemented in Python.
-        # 
-        # Spooled mean the file is temporary keep in ram until max_size
+        # We write the content to a temporary location and after we extract it all.
+        # It could be more optimal to stream this but it is not implemented in Python.
+        # Spooled means the file is temporary kept in memory until max_size is reached
         try:
             with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
                 while True:

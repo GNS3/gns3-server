@@ -96,9 +96,16 @@ def test_docker_delete(http_compute, vm):
         assert response.status == 204
 
 
-def test_docker_reload(http_compute, vm):
+def test_docker_pause(http_compute, vm):
     with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.pause", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/docker/nodes/{node_id}/suspend".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = http_compute.post("/projects/{project_id}/docker/nodes/{node_id}/pause".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        assert mock.called
+        assert response.status == 204
+
+
+def test_docker_unpause(http_compute, vm):
+    with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.unpause", return_value=True) as mock:
+        response = http_compute.post("/projects/{project_id}/docker/nodes/{node_id}/unpause".format(project_id=vm["project_id"], node_id=vm["node_id"]))
         assert mock.called
         assert response.status == 204
 

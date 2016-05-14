@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,58 +15,51 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ..web.route import Route
-from ..controller import Controller
-from ..compute.port_manager import PortManager
-from ..compute.project_manager import ProjectManager
-from ..version import __version__
+from gns3server.web.route import Route
+from gns3server.controller import Controller
+from gns3server.compute.port_manager import PortManager
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.version import __version__
 
 
 class IndexHandler:
 
-    @classmethod
     @Route.get(
         r"/",
-        description="Home page for GNS3Server"
+        description="Home page of the GNS3 server"
     )
     def index(request, response):
         response.template("index.html")
 
-    @classmethod
     @Route.get(
         r"/compute",
-        description="Ressources used by GNS3 Compute"
+        description="Resources used by the GNS3 compute servers"
     )
     def compute(request, response):
         response.template("compute.html",
                           port_manager=PortManager.instance(),
-                          project_manager=ProjectManager.instance()
-                          )
+                          project_manager=ProjectManager.instance())
 
-    @classmethod
     @Route.get(
         r"/controller",
-        description="Ressources used by GNS3 Controller"
+        description="Resources used by the GNS3 controller server"
     )
     def controller(request, response):
         response.template("controller.html",
-                          controller=Controller.instance()
-                          )
+                          controller=Controller.instance())
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}",
-        description="Ressources used by GNS3 Controller"
+        description="List of the GNS3 projects"
     )
     def project(request, response):
         controller = Controller.instance()
         response.template("project.html",
                           project=controller.get_project(request.match_info["project_id"]))
 
-    @classmethod
     @Route.get(
         r"/v1/version",
-        description="Old API"
+        description="Old 1.0 API"
     )
     def get_v1(request, response):
         response.json({"version": __version__})

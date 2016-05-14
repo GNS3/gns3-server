@@ -18,15 +18,17 @@
 import os
 
 from aiohttp.web import HTTPConflict
-from ....web.route import Route
-from ....schemas.nio import NIO_SCHEMA
-from ....schemas.virtualbox import VBOX_CREATE_SCHEMA
-from ....schemas.virtualbox import VBOX_UPDATE_SCHEMA
-from ....schemas.virtualbox import VBOX_OBJECT_SCHEMA
-from ....schemas.node import NODE_CAPTURE_SCHEMA
-from ....compute.virtualbox import VirtualBox
-from ....compute.project_manager import ProjectManager
+from gns3server.web.route import Route
+from gns3server.schemas.nio import NIO_SCHEMA
+from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
+from gns3server.compute.virtualbox import VirtualBox
+from gns3server.compute.project_manager import ProjectManager
 
+from gns3server.schemas.virtualbox import (
+    VBOX_CREATE_SCHEMA,
+    VBOX_UPDATE_SCHEMA,
+    VBOX_OBJECT_SCHEMA
+)
 
 class VirtualBoxHandler:
 
@@ -34,24 +36,10 @@ class VirtualBoxHandler:
     API entry points for VirtualBox.
     """
 
-    @classmethod
-    @Route.get(
-        r"/virtualbox/vms",
-        status_codes={
-            200: "Success",
-        },
-        description="Get all available VirtualBox VMs")
-    def index(request, response):
-
-        vbox_manager = VirtualBox.instance()
-        vms = yield from vbox_manager.list_images()
-        response.json(vms)
-
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Instance created",
@@ -88,12 +76,11 @@ class VirtualBoxHandler:
         response.set_status(201)
         response.json(vm)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Success",
@@ -108,12 +95,11 @@ class VirtualBoxHandler:
         vm = vbox_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Instance updated",
@@ -153,12 +139,11 @@ class VirtualBoxHandler:
 
         response.json(vm)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance deleted",
@@ -170,16 +155,14 @@ class VirtualBoxHandler:
 
         # check the project_id exists
         ProjectManager.instance().get_project(request.match_info["project_id"])
-
         yield from VirtualBox.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/start",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance started",
@@ -198,12 +181,11 @@ class VirtualBoxHandler:
         yield from vm.start()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/stop",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance stopped",
@@ -218,12 +200,11 @@ class VirtualBoxHandler:
         yield from vm.stop()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/suspend",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance suspended",
@@ -238,12 +219,11 @@ class VirtualBoxHandler:
         yield from vm.suspend()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/resume",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance resumed",
@@ -258,12 +238,11 @@ class VirtualBoxHandler:
         yield from vm.resume()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/reload",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance reloaded",
@@ -281,8 +260,8 @@ class VirtualBoxHandler:
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter where the nio should be added",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -306,12 +285,11 @@ class VirtualBoxHandler:
         response.set_status(201)
         response.json(nio)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter from where the nio should be removed",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -331,8 +309,8 @@ class VirtualBoxHandler:
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter to start a packet capture",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -355,8 +333,8 @@ class VirtualBoxHandler:
     @Route.post(
         r"/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter to stop a packet capture",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -372,3 +350,14 @@ class VirtualBoxHandler:
         vm = vbox_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         vm.stop_capture(int(request.match_info["adapter_number"]))
         response.set_status(204)
+
+    @Route.get(
+        r"/virtualbox/vms",
+        status_codes={
+            200: "Success",
+        },
+        description="Get all available VirtualBox VMs")
+    def get_vms(request, response):
+        vbox_manager = VirtualBox.instance()
+        vms = yield from vbox_manager.list_vms()
+        response.json(vms)

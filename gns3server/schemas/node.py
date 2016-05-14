@@ -18,7 +18,7 @@
 
 NODE_LIST_IMAGES_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "List of disk images",
+    "description": "List of binary images",
     "type": "array",
     "items": [
         {

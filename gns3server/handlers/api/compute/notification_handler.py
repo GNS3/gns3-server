@@ -17,17 +17,16 @@
 
 import asyncio
 
-from ....web.route import Route
-from ....compute.notification_manager import NotificationManager
 from aiohttp.web import WebSocketResponse
+from gns3server.web.route import Route
+from gns3server.compute.notification_manager import NotificationManager
 
 
 class NotificationHandler:
 
-    @classmethod
     @Route.get(
         r"/notifications/ws",
-        description="Send notifications about what happend using websockets")
+        description="Send notifications using Websockets")
     def notifications(request, response):
         notifications = NotificationManager.instance()
         ws = WebSocketResponse()
@@ -36,8 +35,8 @@ class NotificationHandler:
         with notifications.queue() as queue:
             while True:
                 try:
-                    notif = yield from queue.get_json(5)
-                except asyncio.futures.CancelledError as e:
+                    notification = yield from queue.get_json(5)
+                except asyncio.futures.CancelledError:
                     break
-                ws.send_str(notif)
+                ws.send_str(notification)
         return ws

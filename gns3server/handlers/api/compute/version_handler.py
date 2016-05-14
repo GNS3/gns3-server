@@ -15,16 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ....web.route import Route
-from ....config import Config
-from ....schemas.version import VERSION_SCHEMA
-from ....version import __version__
+from gns3server.web.route import Route
+from gns3server.config import Config
+from gns3server.schemas.version import VERSION_SCHEMA
+from gns3server.version import __version__
 from aiohttp.web import HTTPConflict
 
 
 class VersionHandler:
 
-    @classmethod
     @Route.get(
         r"/version",
         description="Retrieve the server version number",
@@ -35,7 +34,6 @@ class VersionHandler:
         local_server = config.get_section_config("Server").getboolean("local", False)
         response.json({"version": __version__, "local": local_server})
 
-    @classmethod
     @Route.post(
         r"/version",
         description="Check if version is the same as the server",

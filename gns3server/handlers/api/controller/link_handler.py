@@ -17,9 +17,13 @@
 
 import aiohttp
 
-from ....web.route import Route
-from ....schemas.link import LINK_OBJECT_SCHEMA, LINK_CAPTURE_SCHEMA
-from ....controller import Controller
+from gns3server.web.route import Route
+from gns3server.controller import Controller
+
+from gns3server.schemas.link import (
+    LINK_OBJECT_SCHEMA,
+    LINK_CAPTURE_SCHEMA
+)
 
 
 class LinkHandler:
@@ -27,11 +31,10 @@ class LinkHandler:
     API entry point for Link
     """
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/links",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Link created",
@@ -51,12 +54,11 @@ class LinkHandler:
         response.set_status(201)
         response.json(link)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/links/{link_id}/start_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "link_id": "UUID of the link"
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
         },
         status_codes={
             201: "Capture started",
@@ -64,7 +66,7 @@ class LinkHandler:
         },
         input=LINK_CAPTURE_SCHEMA,
         output=LINK_OBJECT_SCHEMA,
-        description="Start capture on a link instance. By default we consider it as an ethernet link")
+        description="Start capture on a link instance. By default we consider it as an Ethernet link")
     def start_capture(request, response):
 
         controller = Controller.instance()
@@ -74,12 +76,11 @@ class LinkHandler:
         response.set_status(201)
         response.json(link)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/links/{link_id}/stop_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "link_id": "UUID of the link"
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
         },
         status_codes={
             201: "Capture stopped",
@@ -95,12 +96,11 @@ class LinkHandler:
         response.set_status(201)
         response.json(link)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/links/{link_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "link_id": "UUID of the link"
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
         },
         status_codes={
             204: "Link deleted",
@@ -116,16 +116,15 @@ class LinkHandler:
         response.set_status(204)
         response.json(link)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/links/{link_id}/pcap",
         parameters={
-            "project_id": "UUID for the project",
-            "link_id": "UUID of the link"
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
         },
-        description="Get the pcap from the capture",
+        description="Steam the pcap capture file",
         status_codes={
-            200: "Return the file",
+            200: "File returned",
             403: "Permission denied",
             404: "The file doesn't exist"
         })
@@ -145,7 +144,7 @@ class LinkHandler:
                 response.content_type = "application/vnd.tcpdump.pcap"
                 response.set_status(200)
                 response.enable_chunked_encoding()
-                # Very important: do not send a content length otherwise QT close the connection but curl can consume the Feed
+                # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
                 response.content_length = None
                 response.start(request)
 

@@ -224,16 +224,16 @@ def test_qemu_list_binaries_filter(http_compute, vm):
         assert response.json == ret
 
 
-def test_vms(http_compute, tmpdir, fake_qemu_vm):
+def test_images(http_compute, tmpdir, fake_qemu_vm):
 
-    response = http_compute.get("/qemu/nodes")
+    response = http_compute.get("/qemu/images")
     assert response.status == 200
     assert response.json == [{"filename": "linux载.img", "path": "linux载.img"}]
 
 
-def test_upload_vm(http_compute, tmpdir):
+def test_upload_image(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/nodes/test2", body="TEST", raw=True)
+        response = http_compute.post("/qemu/images/test2", body="TEST", raw=True)
         assert response.status == 204
 
     with open(str(tmpdir / "test2")) as f:
@@ -244,9 +244,9 @@ def test_upload_vm(http_compute, tmpdir):
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-def test_upload_vm_ova(http_compute, tmpdir):
+def test_upload_image_ova(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/nodes/test2.ova/test2.vmdk", body="TEST", raw=True)
+        response = http_compute.post("/qemu/images/test2.ova/test2.vmdk", body="TEST", raw=True)
         assert response.status == 204
 
     with open(str(tmpdir / "test2.ova" / "test2.vmdk")) as f:
@@ -257,19 +257,19 @@ def test_upload_vm_ova(http_compute, tmpdir):
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-def test_upload_vm_forbiden_location(http_compute, tmpdir):
+def test_upload_image_forbiden_location(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/nodes/../../test2", body="TEST", raw=True)
+        response = http_compute.post("/qemu/images/../../test2", body="TEST", raw=True)
         assert response.status == 403
 
 
-def test_upload_vm_permission_denied(http_compute, tmpdir):
+def test_upload_image_permission_denied(http_compute, tmpdir):
     with open(str(tmpdir / "test2.tmp"), "w+") as f:
         f.write("")
     os.chmod(str(tmpdir / "test2.tmp"), 0)
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/nodes/test2", body="TEST", raw=True)
+        response = http_compute.post("/qemu/images/test2", body="TEST", raw=True)
         assert response.status == 409
 
 

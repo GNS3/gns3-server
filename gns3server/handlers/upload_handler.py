@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,17 +22,16 @@ import io
 import tarfile
 import asyncio
 
-from ..config import Config
-from ..web.route import Route
-from ..utils.images import remove_checksum, md5sum
+from gns3server.config import Config
+from gns3server.web.route import Route
+from gns3server.utils.images import remove_checksum, md5sum
 
 
 class UploadHandler:
 
-    @classmethod
     @Route.get(
         r"/upload",
-        description="Manage upload of GNS3 images",
+        description="List binary images",
         api_version=None
     )
     def index(request, response):
@@ -50,10 +49,9 @@ class UploadHandler:
             uploaded_files.append(iourc_path)
         response.template("upload.html", files=uploaded_files)
 
-    @classmethod
     @Route.post(
         r"/upload",
-        description="Manage upload of GNS3 images",
+        description="Upload binary images",
         api_version=None
     )
     def upload(request, response):
@@ -95,16 +93,14 @@ class UploadHandler:
             return
         response.redirect("/upload")
 
-    @classmethod
     @Route.get(
         r"/backup/images.tar",
-        description="Backup GNS3 images",
+        description="Backup binary images",
         api_version=None
     )
     def backup_images(request, response):
         yield from UploadHandler._backup_directory(request, response, UploadHandler.image_directory())
 
-    @classmethod
     @Route.get(
         r"/backup/projects.tar",
         description="Backup GNS3 projects",

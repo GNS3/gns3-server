@@ -151,17 +151,17 @@ def fake_file(tmpdir):
     return path
 
 
-def test_vms(http_compute, tmpdir, fake_dynamips, fake_file):
+def test_images(http_compute, tmpdir, fake_dynamips, fake_file):
 
     with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
-        response = http_compute.get("/dynamips/nodes")
+        response = http_compute.get("/dynamips/images")
     assert response.status == 200
     assert response.json == [{"filename": "7200.bin", "path": "7200.bin"}]
 
 
-def test_upload_vm(http_compute, tmpdir):
+def test_upload_image(http_compute, tmpdir):
     with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/dynamips/nodes/test2", body="TEST", raw=True)
+        response = http_compute.post("/dynamips/images/test2", body="TEST", raw=True)
         assert response.status == 204
 
     with open(str(tmpdir / "test2")) as f:
@@ -172,11 +172,11 @@ def test_upload_vm(http_compute, tmpdir):
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-def test_upload_vm_permission_denied(http_compute, tmpdir):
+def test_upload_image_permission_denied(http_compute, tmpdir):
     with open(str(tmpdir / "test2.tmp"), "w+") as f:
         f.write("")
     os.chmod(str(tmpdir / "test2.tmp"), 0)
 
     with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/dynamips/nodes/test2", body="TEST", raw=True)
+        response = http_compute.post("/dynamips/images/test2", body="TEST", raw=True)
         assert response.status == 409

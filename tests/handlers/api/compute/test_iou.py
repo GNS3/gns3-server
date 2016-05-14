@@ -328,17 +328,17 @@ def test_get_configs_with_startup_config_file(http_compute, project, vm):
     assert response.json["startup_config_content"] == "TEST"
 
 
-def test_vms(http_compute, tmpdir, fake_iou_bin):
+def test_images(http_compute, tmpdir, fake_iou_bin):
 
     with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir)):
-        response = http_compute.get("/iou/nodes", example=True)
+        response = http_compute.get("/iou/images", example=True)
     assert response.status == 200
     assert response.json == [{"filename": "iou.bin", "path": "iou.bin"}]
 
 
-def test_upload_vm(http_compute, tmpdir):
+def test_image_vm(http_compute, tmpdir):
     with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/iou/nodes/test2", body="TEST", raw=True)
+        response = http_compute.post("/iou/images/test2", body="TEST", raw=True)
         assert response.status == 204
 
     with open(str(tmpdir / "test2")) as f:

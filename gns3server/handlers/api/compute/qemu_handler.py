@@ -19,19 +19,23 @@ import sys
 import os.path
 
 from aiohttp.web import HTTPConflict
-from ....web.route import Route
-from ....compute.project_manager import ProjectManager
-from ....schemas.nio import NIO_SCHEMA
-from ....schemas.qemu import QEMU_CREATE_SCHEMA
-from ....schemas.qemu import QEMU_UPDATE_SCHEMA
-from ....schemas.qemu import QEMU_OBJECT_SCHEMA
-from ....schemas.qemu import QEMU_BINARY_FILTER_SCHEMA
-from ....schemas.qemu import QEMU_BINARY_LIST_SCHEMA
-from ....schemas.qemu import QEMU_CAPABILITY_LIST_SCHEMA
-from ....schemas.qemu import QEMU_IMAGE_CREATE_SCHEMA
-from ....schemas.node import NODE_LIST_IMAGES_SCHEMA
-from ....compute.qemu import Qemu
-from ....config import Config
+
+from gns3server.web.route import Route
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.schemas.nio import NIO_SCHEMA
+from gns3server.schemas.node import NODE_LIST_IMAGES_SCHEMA
+from gns3server.compute.qemu import Qemu
+from gns3server.config import Config
+
+from gns3server.schemas.qemu import (
+    QEMU_CREATE_SCHEMA,
+    QEMU_UPDATE_SCHEMA,
+    QEMU_OBJECT_SCHEMA,
+    QEMU_BINARY_LIST_SCHEMA,
+    QEMU_BINARY_FILTER_SCHEMA,
+    QEMU_CAPABILITY_LIST_SCHEMA,
+    QEMU_IMAGE_CREATE_SCHEMA
+)
 
 
 class QEMUHandler:
@@ -40,11 +44,10 @@ class QEMUHandler:
     API entry points for QEMU.
     """
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/qemu/nodes",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Instance created",
@@ -73,12 +76,11 @@ class QEMUHandler:
         response.set_status(201)
         response.json(vm)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/qemu/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Success",
@@ -93,12 +95,11 @@ class QEMUHandler:
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}/qemu/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Instance updated",
@@ -120,12 +121,11 @@ class QEMUHandler:
 
         response.json(vm)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/qemu/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance deleted",
@@ -138,12 +138,11 @@ class QEMUHandler:
         yield from Qemu.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/start",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Instance started",
@@ -156,20 +155,18 @@ class QEMUHandler:
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        if sys.platform.startswith("linux") and qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
-                and "-no-kvm" not in vm.options:
+        if sys.platform.startswith("linux") and qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) and "-no-kvm" not in vm.options:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
                 raise HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
         yield from vm.start()
         response.json(vm)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/stop",
         parameters={
-            "project_id": "UUID for the project",
-            "vm_node": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance stopped",
@@ -184,12 +181,11 @@ class QEMUHandler:
         yield from vm.stop()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/reload",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
         },
         status_codes={
             204: "Instance reloaded",
@@ -204,12 +200,11 @@ class QEMUHandler:
         yield from vm.reload()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/suspend",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
         },
         status_codes={
             204: "Instance suspended",
@@ -224,12 +219,11 @@ class QEMUHandler:
         yield from vm.suspend()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/resume",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
         },
         status_codes={
             204: "Instance resumed",
@@ -247,8 +241,8 @@ class QEMUHandler:
     @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -272,12 +266,11 @@ class QEMUHandler:
         response.set_status(201)
         response.json(nio)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -294,7 +287,6 @@ class QEMUHandler:
         yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
 
-    @classmethod
     @Route.get(
         r"/qemu/binaries",
         status_codes={
@@ -310,7 +302,6 @@ class QEMUHandler:
         binaries = yield from Qemu.binary_list(request.json.get("archs", None))
         response.json(binaries)
 
-    @classmethod
     @Route.get(
         r"/qemu/img-binaries",
         status_codes={
@@ -340,7 +331,6 @@ class QEMUHandler:
             capabilities["kvm"] = kvms
         response.json(capabilities)
 
-    @classmethod
     @Route.post(
         r"/qemu/img",
         status_codes={
@@ -363,28 +353,31 @@ class QEMUHandler:
         response.set_status(201)
 
     @Route.get(
-        r"/qemu/nodes",
+        r"/qemu/images",
         status_codes={
-            200: "List of Qemu images retrieved",
+            200: "List of Qemu images",
         },
         description="Retrieve the list of Qemu images",
         output=NODE_LIST_IMAGES_SCHEMA)
-    def list_vm_nodes(request, response):
+    def list_qemu_images(request, response):
 
         qemu_manager = Qemu.instance()
-        vm_nodes = yield from qemu_manager.list_images()
+        images = yield from qemu_manager.list_images()
         response.set_status(200)
-        response.json(vm_nodes)
+        response.json(images)
 
     @Route.post(
-        r"/qemu/nodes/{path:.+}",
+        r"/qemu/images/{filename:.+}",
+        parameters={
+            "filename": "Image filename"
+        },
         status_codes={
             204: "Image uploaded",
         },
         raw=True,
-        description="Upload Qemu image.")
+        description="Upload Qemu image")
     def upload_image(request, response):
 
         qemu_manager = Qemu.instance()
-        yield from qemu_manager.write_image(request.match_info["path"], request.content)
+        yield from qemu_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)

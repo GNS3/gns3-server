@@ -19,17 +19,23 @@ import os
 import sys
 import base64
 
-from ....web.route import Route
-from ....schemas.nio import NIO_SCHEMA
-from ....schemas.dynamips_vm import VM_CREATE_SCHEMA
-from ....schemas.dynamips_vm import VM_UPDATE_SCHEMA
-from ....schemas.dynamips_vm import VM_OBJECT_SCHEMA
-from ....schemas.dynamips_vm import VM_CONFIGS_SCHEMA
-from ....schemas.node import NODE_CAPTURE_SCHEMA
-from ....schemas.node import NODE_LIST_IMAGES_SCHEMA
-from ....compute.dynamips import Dynamips
-from ....compute.dynamips.dynamips_error import DynamipsError
-from ....compute.project_manager import ProjectManager
+from gns3server.web.route import Route
+from gns3server.schemas.nio import NIO_SCHEMA
+from gns3server.compute.dynamips import Dynamips
+from gns3server.compute.dynamips.dynamips_error import DynamipsError
+from gns3server.compute.project_manager import ProjectManager
+
+from gns3server.schemas.node import (
+    NODE_CAPTURE_SCHEMA,
+    NODE_LIST_IMAGES_SCHEMA,
+)
+
+from gns3server.schemas.dynamips_vm import (
+    VM_CREATE_SCHEMA,
+    VM_UPDATE_SCHEMA,
+    VM_OBJECT_SCHEMA,
+    VM_CONFIGS_SCHEMA
+)
 
 DEFAULT_CHASSIS = {
     "c1700": "1720",
@@ -44,11 +50,10 @@ class DynamipsVMHandler:
     API entry points for Dynamips VMs.
     """
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Instance created",
@@ -66,24 +71,23 @@ class DynamipsVMHandler:
         if platform in DEFAULT_CHASSIS:
             default_chassis = DEFAULT_CHASSIS[platform]
         vm = yield from dynamips_manager.create_node(request.json.pop("name"),
-                                                   request.match_info["project_id"],
-                                                   request.json.get("node_id"),
-                                                   request.json.get("dynamips_id"),
-                                                   platform,
-                                                   console=request.json.get("console"),
-                                                   aux=request.json.get("aux"),
-                                                   chassis=request.json.pop("chassis", default_chassis))
+                                                     request.match_info["project_id"],
+                                                     request.json.get("node_id"),
+                                                     request.json.get("dynamips_id"),
+                                                     platform,
+                                                     console=request.json.get("console"),
+                                                     aux=request.json.get("aux"),
+                                                     chassis=request.json.pop("chassis", default_chassis))
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
         response.set_status(201)
         response.json(vm)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Success",
@@ -98,12 +102,11 @@ class DynamipsVMHandler:
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}/dynamips/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Instance updated",
@@ -121,12 +124,11 @@ class DynamipsVMHandler:
         yield from dynamips_manager.update_vm_settings(vm, request.json)
         response.json(vm)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/dynamips/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance deleted",
@@ -138,16 +140,14 @@ class DynamipsVMHandler:
 
         # check the project_id exists
         ProjectManager.instance().get_project(request.match_info["project_id"])
-
         yield from Dynamips.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/start",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance started",
@@ -166,12 +166,11 @@ class DynamipsVMHandler:
         yield from vm.start()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/stop",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance stopped",
@@ -186,12 +185,11 @@ class DynamipsVMHandler:
         yield from vm.stop()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/suspend",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance suspended",
@@ -206,12 +204,11 @@ class DynamipsVMHandler:
         yield from vm.suspend()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/resume",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance resumed",
@@ -226,12 +223,11 @@ class DynamipsVMHandler:
         yield from vm.resume()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/reload",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance reloaded",
@@ -249,8 +245,8 @@ class DynamipsVMHandler:
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter where the nio should be added",
             "port_number": "Port on the adapter"
         },
@@ -273,12 +269,11 @@ class DynamipsVMHandler:
         response.set_status(201)
         response.json(nio)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter from where the nio should be removed",
             "port_number": "Port on the adapter"
         },
@@ -301,8 +296,8 @@ class DynamipsVMHandler:
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter to start a packet capture",
             "port_number": "Port on the adapter"
         },
@@ -334,8 +329,8 @@ class DynamipsVMHandler:
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter to stop a packet capture",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -356,6 +351,10 @@ class DynamipsVMHandler:
 
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/configs",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        },
         status_codes={
             200: "Configs retrieved",
             400: "Invalid request",
@@ -375,7 +374,7 @@ class DynamipsVMHandler:
             startup_config_content = base64.b64decode(startup_config_base64).decode("utf-8", errors='replace')
             result["startup_config_content"] = startup_config_content
         else:
-            # nvram doesn't contain anything if the router has not been started at least once
+            # The NVRAM doesn't contain anything if the router has not been started at least once
             # in this case just use the startup-config file
             if vm.startup_config:
                 startup_config_path = os.path.join(module_workdir, vm.startup_config)
@@ -392,7 +391,7 @@ class DynamipsVMHandler:
             private_config_content = base64.b64decode(private_config_base64).decode("utf-8", errors='replace')
             result["private_config_content"] = private_config_content
         else:
-            # nvram doesn't contain anything if the router has not been started at least once
+            # The NVRAM doesn't contain anything if the router has not been started at least once
             # in this case just use the private-config file
             if vm.private_config:
                 private_config_path = os.path.join(module_workdir, vm.private_config)
@@ -410,6 +409,10 @@ class DynamipsVMHandler:
 
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/configs/save",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        },
         status_codes={
             200: "Configs saved",
             400: "Invalid request",
@@ -425,6 +428,10 @@ class DynamipsVMHandler:
 
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/idlepc_proposals",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        },
         status_codes={
             200: "Idle-PCs retrieved",
             400: "Invalid request",
@@ -442,6 +449,10 @@ class DynamipsVMHandler:
 
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/auto_idlepc",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        },
         status_codes={
             200: "Best Idle-pc value found",
             400: "Invalid request",
@@ -457,28 +468,31 @@ class DynamipsVMHandler:
         response.json({"idlepc": idlepc})
 
     @Route.get(
-        r"/dynamips/nodes",
+        r"/dynamips/images",
         status_codes={
-            200: "List of Dynamips VM retrieved",
+            200: "List of Dynamips IOS images",
         },
-        description="Retrieve the list of Dynamips VMS",
+        description="Retrieve the list of Dynamips IOS images",
         output=NODE_LIST_IMAGES_SCHEMA)
-    def list_vms(request, response):
+    def list_images(request, response):
 
         dynamips_manager = Dynamips.instance()
-        vms = yield from dynamips_manager.list_images()
+        images = yield from dynamips_manager.list_images()
         response.set_status(200)
-        response.json(vms)
+        response.json(images)
 
     @Route.post(
-        r"/dynamips/nodes/{path}",
+        r"/dynamips/images/{filename:.+}",
+        parameters={
+            "filename": "Image filename"
+        },
         status_codes={
-            204: "Image uploaded",
+            204: "Upload a Dynamips IOS image",
         },
         raw=True,
-        description="Upload Dynamips image")
+        description="Upload a Dynamips IOS image")
     def upload_image(request, response):
 
         dynamips_manager = Dynamips.instance()
-        yield from dynamips_manager.write_image(request.match_info["path"], request.content)
+        yield from dynamips_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)

@@ -18,27 +18,24 @@
 import asyncio
 from aiohttp.web import HTTPForbidden
 
-from ....web.route import Route
-from ....config import Config
-from ....compute.project_manager import ProjectManager
-from ....schemas.compute import COMPUTE_CREATE_SCHEMA, COMPUTE_OBJECT_SCHEMA
-from ....controller import Controller
-from ....controller.compute import Compute
-
+from gns3server.web.route import Route
+from gns3server.config import Config
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.schemas.compute import COMPUTE_CREATE_SCHEMA, COMPUTE_OBJECT_SCHEMA
+from gns3server.controller import Controller
 
 import logging
 log = logging.getLogger(__name__)
 
 
 class ComputeHandler:
-    """API entry points for compute management."""
+    """API entry points for compute server management."""
 
-    @classmethod
     @Route.post(
         r"/computes",
-        description="Register a compute",
+        description="Register a compute server",
         status_codes={
-            201: "Compute added"
+            201: "Compute server added"
         },
         input=COMPUTE_CREATE_SCHEMA,
         output=COMPUTE_OBJECT_SCHEMA)
@@ -48,31 +45,29 @@ class ComputeHandler:
         response.set_status(201)
         response.json(compute)
 
-    @classmethod
     @Route.get(
         r"/computes",
-        description="List compute nodes",
+        description="List of compute server",
         status_codes={
-            200: "Compute list"
+            200: "Compute servers list returned"
         })
     def list(request, response):
 
         controller = Controller.instance()
         response.json([c for c in controller.computes.values()])
 
-    @classmethod
     @Route.post(
         r"/computes/shutdown",
-        description="Shutdown the local compute",
+        description="Shutdown a local compute server",
         status_codes={
-            201: "Compute is shutting down",
-            403: "Compute shutdown refused"
+            201: "Compute server is shutting down",
+            403: "Compute server shutdown refused"
         })
     def shutdown(request, response):
 
         config = Config.instance()
         if config.get_section_config("Server").getboolean("local", False) is False:
-            raise HTTPForbidden(text="You can only stop a local server")
+            raise HTTPForbidden(text="Only a local server can be shutdown")
 
         # close all the projects first
         pm = ProjectManager.instance()
@@ -97,12 +92,12 @@ class ComputeHandler:
         asyncio.async(server.shutdown_server())
         response.set_status(201)
 
-    @classmethod
+
     @Route.get(
         r"/computes/{compute_id:.+}",
-        description="Get a compute node informations",
+        description="Get a compute server information",
         status_codes={
-            200: "Compute list"
+            200: "Compute server information returned"
         },
         output=COMPUTE_OBJECT_SCHEMA)
     def get(request, response):

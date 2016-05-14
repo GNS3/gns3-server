@@ -22,7 +22,6 @@ Docker server module.
 import asyncio
 import logging
 import aiohttp
-import urllib
 import json
 from gns3server.utils import parse_version
 

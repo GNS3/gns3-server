@@ -19,10 +19,13 @@ import aiohttp
 import asyncio
 
 
-from ....web.route import Route
-from ....schemas.project import PROJECT_OBJECT_SCHEMA, PROJECT_CREATE_SCHEMA
-from ....controller import Controller
+from gns3server.web.route import Route
+from gns3server.controller import Controller
 
+from gns3server.schemas.project import (
+    PROJECT_OBJECT_SCHEMA,
+    PROJECT_CREATE_SCHEMA
+)
 
 import logging
 log = logging.getLogger()
@@ -30,7 +33,6 @@ log = logging.getLogger()
 
 class ProjectHandler:
 
-    @classmethod
     @Route.post(
         r"/projects",
         description="Create a new project on the server",
@@ -43,15 +45,13 @@ class ProjectHandler:
     def create_project(request, response):
 
         controller = Controller.instance()
-        project = yield from controller.addProject(
-            name=request.json.get("name"),
-            path=request.json.get("path"),
-            project_id=request.json.get("project_id"),
-            temporary=request.json.get("temporary", False))
+        project = yield from controller.add_project(name=request.json.get("name"),
+                                                    path=request.json.get("path"),
+                                                    project_id=request.json.get("project_id"),
+                                                    temporary=request.json.get("temporary", False))
         response.set_status(201)
         response.json(project)
 
-    @classmethod
     @Route.get(
         r"/projects",
         description="List projects",
@@ -60,17 +60,16 @@ class ProjectHandler:
         })
     def list_projects(request, response):
         controller = Controller.instance()
-        response.json([ p for p in controller.projects.values() ])
+        response.json([p for p in controller.projects.values()])
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}",
-        description="Get the project",
+        description="Get a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
-            200: "The project exist",
+            200: "Project information returned",
             404: "The project doesn't exist"
         })
     def get(request, response):
@@ -78,12 +77,11 @@ class ProjectHandler:
         project = controller.get_project(request.match_info["project_id"])
         response.json(project)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/commit",
         description="Write changes on disk",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             204: "Changes have been written on disk",
@@ -96,12 +94,11 @@ class ProjectHandler:
         yield from project.commit()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/close",
         description="Close a project",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             204: "The project has been closed",
@@ -115,12 +112,11 @@ class ProjectHandler:
         controller.remove_project(project)
         response.set_status(204)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}",
         description="Delete a project from disk",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             204: "Changes have been written on disk",
@@ -134,12 +130,11 @@ class ProjectHandler:
         controller.remove_project(project)
         response.set_status(204)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/notifications",
-        description="Receive notifications about the projects",
+        description="Receive notifications about projects",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             200: "End of stream",
@@ -153,7 +148,7 @@ class ProjectHandler:
         response.content_type = "application/json"
         response.set_status(200)
         response.enable_chunked_encoding()
-        # Very important: do not send a content lenght otherwise QT close the connection but curl can consume the Feed
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
         response.content_length = None
 
         response.start(request)
@@ -165,12 +160,11 @@ class ProjectHandler:
                 except asyncio.futures.CancelledError as e:
                     break
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/notifications/ws",
-        description="Receive notifications about the projects via Websocket",
+        description="Receive notifications about projects from a Websocket",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             200: "End of stream",
@@ -187,8 +181,8 @@ class ProjectHandler:
         with project.queue() as queue:
             while True:
                 try:
-                    notif = yield from queue.get_json(5)
+                    notification = yield from queue.get_json(5)
                 except asyncio.futures.CancelledError as e:
                     break
-                ws.send_str(notif)
+                ws.send_str(notification)
         return ws

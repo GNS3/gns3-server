@@ -15,19 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ....web.route import Route
-from ....compute.port_manager import PortManager
-from ....compute.project_manager import ProjectManager
-from ....utils.interfaces import interfaces
+from gns3server.web.route import Route
+from gns3server.compute.port_manager import PortManager
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.utils.interfaces import interfaces
 
 
 class NetworkHandler:
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/ports/udp",
         parameters={
-            "project_id": "The UUID of the project",
+            "project_id": "Project UUID",
         },
         status_codes={
             201: "UDP port allocated",
@@ -43,7 +42,6 @@ class NetworkHandler:
         response.set_status(201)
         response.json({"udp_port": udp_port})
 
-    @classmethod
     @Route.get(
         r"/interfaces",
         description="List all the network interfaces available on the server")

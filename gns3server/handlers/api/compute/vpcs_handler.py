@@ -16,12 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from aiohttp.web import HTTPConflict
-from ....web.route import Route
-from ....schemas.nio import NIO_SCHEMA
-from ....schemas.vpcs import VPCS_CREATE_SCHEMA
-from ....schemas.vpcs import VPCS_UPDATE_SCHEMA
-from ....schemas.vpcs import VPCS_OBJECT_SCHEMA
-from ....compute.vpcs import VPCS
+from gns3server.web.route import Route
+from gns3server.schemas.nio import NIO_SCHEMA
+from gns3server.compute.vpcs import VPCS
+
+from gns3server.schemas.vpcs import (
+    VPCS_CREATE_SCHEMA,
+    VPCS_UPDATE_SCHEMA,
+    VPCS_OBJECT_SCHEMA
+)
 
 
 class VPCSHandler:
@@ -30,11 +33,10 @@ class VPCSHandler:
     API entry points for VPCS.
     """
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/vpcs/nodes",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Instance created",
@@ -47,20 +49,19 @@ class VPCSHandler:
     def create(request, response):
 
         vpcs = VPCS.instance()
-        node = yield from vpcs.create_node(request.json["name"],
-                                           request.match_info["project_id"],
-                                           request.json.get("node_id"),
-                                           console=request.json.get("console"),
-                                           startup_script=request.json.get("startup_script"))
+        vm = yield from vpcs.create_node(request.json["name"],
+                                         request.match_info["project_id"],
+                                         request.json.get("node_id"),
+                                         console=request.json.get("console"),
+                                         startup_script=request.json.get("startup_script"))
         response.set_status(201)
-        response.json(node)
+        response.json(vm)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/vpcs/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Success",
@@ -75,12 +76,11 @@ class VPCSHandler:
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}/vpcs/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Instance updated",
@@ -100,12 +100,11 @@ class VPCSHandler:
         vm.startup_script = request.json.get("startup_script", vm.startup_script)
         response.json(vm)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/vpcs/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance deleted",
@@ -118,12 +117,11 @@ class VPCSHandler:
         yield from VPCS.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/start",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance started",
@@ -139,12 +137,11 @@ class VPCSHandler:
         yield from vm.start()
         response.json(vm)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/stop",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance stopped",
@@ -159,12 +156,11 @@ class VPCSHandler:
         yield from vm.stop()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/reload",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
         },
         status_codes={
             204: "Instance reloaded",
@@ -182,8 +178,8 @@ class VPCSHandler:
     @Route.post(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port where the nio should be added"
         },
@@ -207,12 +203,11 @@ class VPCSHandler:
         response.set_status(201)
         response.json(nio)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port from where the nio should be removed"
         },

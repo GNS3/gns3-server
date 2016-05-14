@@ -45,7 +45,7 @@ def compute(http_controller, async_run):
 
 @pytest.fixture
 def project(http_controller, async_run):
-    return async_run(Controller.instance().addProject())
+    return async_run(Controller.instance().add_project())
 
 
 def test_create_link(http_controller, tmpdir, project, compute, async_run):

@@ -17,13 +17,17 @@
 
 import os
 import asyncio
-from ....web.route import Route
-from ....schemas.dynamips_device import DEVICE_CREATE_SCHEMA
-from ....schemas.dynamips_device import DEVICE_UPDATE_SCHEMA
-from ....schemas.dynamips_device import DEVICE_OBJECT_SCHEMA
-from ....schemas.dynamips_device import DEVICE_NIO_SCHEMA
-from ....schemas.node import NODE_CAPTURE_SCHEMA
-from ....compute.dynamips import Dynamips
+
+from gns3server.web.route import Route
+from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
+from gns3server.compute.dynamips import Dynamips
+
+from gns3server.schemas.dynamips_device import (
+    DEVICE_CREATE_SCHEMA,
+    DEVICE_UPDATE_SCHEMA,
+    DEVICE_OBJECT_SCHEMA,
+    DEVICE_NIO_SCHEMA
+)
 
 
 class DynamipsDeviceHandler:
@@ -32,11 +36,10 @@ class DynamipsDeviceHandler:
     API entry points for Dynamips devices.
     """
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/dynamips/devices",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Instance created",
@@ -57,12 +60,11 @@ class DynamipsDeviceHandler:
         response.set_status(201)
         response.json(device)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/dynamips/devices/{device_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "device_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "device_id": "Device UUID"
         },
         status_codes={
             200: "Success",
@@ -77,12 +79,11 @@ class DynamipsDeviceHandler:
         device = dynamips_manager.get_device(request.match_info["device_id"], project_id=request.match_info["project_id"])
         response.json(device)
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}/dynamips/devices/{device_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "device_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "device_id": "Device UUID"
         },
         status_codes={
             200: "Instance updated",
@@ -107,12 +108,11 @@ class DynamipsDeviceHandler:
 
         response.json(device)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/dynamips/devices/{device_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "device_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "device_id": "Device UUID"
         },
         status_codes={
             204: "Instance deleted",
@@ -129,8 +129,8 @@ class DynamipsDeviceHandler:
     @Route.post(
         r"/projects/{project_id}/dynamips/devices/{device_id}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "device_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "device_id": "Device UUID",
             "port_number": "Port on the device"
         },
         status_codes={
@@ -162,12 +162,11 @@ class DynamipsDeviceHandler:
         response.set_status(201)
         response.json(nio)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/dynamips/devices/{device_id}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "device_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "device_id": "Device UUID",
             "port_number": "Port on the device"
         },
         status_codes={
@@ -188,8 +187,8 @@ class DynamipsDeviceHandler:
     @Route.post(
         r"/projects/{project_id}/dynamips/devices/{device_id}/ports/{port_number:\d+}/start_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "device_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "device_id": "Device UUID",
             "port_number": "Port on the device"
         },
         status_codes={
@@ -211,8 +210,8 @@ class DynamipsDeviceHandler:
     @Route.post(
         r"/projects/{project_id}/dynamips/devices/{device_id}/ports/{port_number:\d+}/stop_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "device_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "device_id": "Device UUID",
             "port_number": "Port on the device"
         },
         status_codes={

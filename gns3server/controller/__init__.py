@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 
 class Controller:
-    """The controller manage multiple gns3 computes"""
+    """The controller manage multiple gns3 compute servers"""
 
     def __init__(self):
         self._computes = {}
@@ -97,7 +97,7 @@ class Controller:
 
         # We disallow to create from the outside the
         if compute_id == 'local':
-            return self._createLocalCompute()
+            return self._create_local_compute()
 
         if compute_id not in self._computes:
             compute = Compute(compute_id=compute_id, controller=self, **kwargs)
@@ -105,7 +105,7 @@ class Controller:
             self.save()
         return self._computes[compute_id]
 
-    def _createLocalCompute(self):
+    def _create_local_compute(self):
         """
         Create the local compute node. It's the controller itself
         """
@@ -139,7 +139,7 @@ class Controller:
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     @asyncio.coroutine
-    def addProject(self, project_id=None, **kwargs):
+    def add_project(self, project_id=None, **kwargs):
         """
         Create a project or return an existing project
 

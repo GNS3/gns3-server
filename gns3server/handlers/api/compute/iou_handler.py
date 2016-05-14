@@ -18,16 +18,22 @@
 import os
 from aiohttp.web import HTTPConflict
 
-from ....web.route import Route
-from ....schemas.nio import NIO_SCHEMA
-from ....schemas.iou import IOU_CREATE_SCHEMA
-from ....schemas.iou import IOU_START_SCHEMA
-from ....schemas.iou import IOU_UPDATE_SCHEMA
-from ....schemas.iou import IOU_OBJECT_SCHEMA
-from ....schemas.iou import IOU_CONFIGS_SCHEMA
-from ....schemas.node import NODE_LIST_IMAGES_SCHEMA
-from ....schemas.node import NODE_CAPTURE_SCHEMA
-from ....compute.iou import IOU
+from gns3server.web.route import Route
+from gns3server.schemas.nio import NIO_SCHEMA
+from gns3server.compute.iou import IOU
+
+from gns3server.schemas.node import (
+    NODE_CAPTURE_SCHEMA,
+    NODE_LIST_IMAGES_SCHEMA,
+)
+
+from gns3server.schemas.iou import (
+    IOU_CREATE_SCHEMA,
+    IOU_START_SCHEMA,
+    IOU_UPDATE_SCHEMA,
+    IOU_OBJECT_SCHEMA,
+    IOU_CONFIGS_SCHEMA,
+)
 
 
 class IOUHandler:
@@ -36,11 +42,10 @@ class IOUHandler:
     API entry points for IOU.
     """
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/iou/nodes",
         parameters={
-            "project_id": "UUID for the project"
+            "project_id": "Project UUID"
         },
         status_codes={
             201: "Instance created",
@@ -72,19 +77,18 @@ class IOUHandler:
         response.set_status(201)
         response.json(vm)
 
-    @classmethod
     @Route.get(
         r"/projects/{project_id}/iou/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Success",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Get a IOU instance",
+        description="Get an IOU instance",
         output=IOU_OBJECT_SCHEMA)
     def show(request, response):
 
@@ -92,12 +96,11 @@ class IOUHandler:
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(vm)
 
-    @classmethod
     @Route.put(
         r"/projects/{project_id}/iou/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Instance updated",
@@ -105,7 +108,7 @@ class IOUHandler:
             404: "Instance doesn't exist",
             409: "Conflict"
         },
-        description="Update a IOU instance",
+        description="Update an IOU instance",
         input=IOU_UPDATE_SCHEMA,
         output=IOU_OBJECT_SCHEMA)
     def update(request, response):
@@ -122,30 +125,28 @@ class IOUHandler:
             vm.private_config = request.json.get("private_config_content")
         response.json(vm)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/iou/nodes/{node_id}",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance deleted",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Delete a IOU instance")
+        description="Delete an IOU instance")
     def delete(request, response):
 
         yield from IOU.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/start",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             200: "Instance started",
@@ -154,7 +155,7 @@ class IOUHandler:
         },
         input=IOU_START_SCHEMA,
         output=IOU_OBJECT_SCHEMA,
-        description="Start a IOU instance")
+        description="Start an IOU instance")
     def start(request, response):
 
         iou_manager = IOU.instance()
@@ -167,19 +168,18 @@ class IOUHandler:
         yield from vm.start()
         response.json(vm)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/stop",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance"
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
         },
         status_codes={
             204: "Instance stopped",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Stop a IOU instance")
+        description="Stop an IOU instance")
     def stop(request, response):
 
         iou_manager = IOU.instance()
@@ -187,19 +187,18 @@ class IOUHandler:
         yield from vm.stop()
         response.set_status(204)
 
-    @classmethod
     @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/reload",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
         },
         status_codes={
             204: "Instance reloaded",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Reload a IOU instance")
+        description="Reload an IOU instance")
     def reload(request, response):
 
         iou_manager = IOU.instance()
@@ -210,8 +209,8 @@ class IOUHandler:
     @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port where the nio should be added"
         },
@@ -235,12 +234,11 @@ class IOUHandler:
         response.set_status(201)
         response.json(nio)
 
-    @classmethod
     @Route.delete(
         r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Network adapter where the nio is located",
             "port_number": "Port from where the nio should be removed"
         },
@@ -260,8 +258,8 @@ class IOUHandler:
     @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter to start a packet capture",
             "port_number": "Port on the adapter"
         },
@@ -271,7 +269,7 @@ class IOUHandler:
             404: "Instance doesn't exist",
             409: "VM not started"
         },
-        description="Start a packet capture on a IOU VM instance",
+        description="Start a packet capture on an IOU VM instance",
         input=NODE_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
@@ -288,8 +286,8 @@ class IOUHandler:
     @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
-            "project_id": "UUID for the project",
-            "node_id": "UUID for the instance",
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
             "adapter_number": "Adapter to stop a packet capture",
             "port_number": "Port on the adapter (always 0)"
         },
@@ -299,7 +297,7 @@ class IOUHandler:
             404: "Instance doesn't exist",
             409: "VM not started"
         },
-        description="Stop a packet capture on a IOU VM instance")
+        description="Stop a packet capture on an IOU VM instance")
     def stop_capture(request, response):
 
         iou_manager = IOU.instance()
@@ -315,6 +313,10 @@ class IOUHandler:
 
     @Route.get(
         r"/projects/{project_id}/iou/nodes/{node_id}/configs",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
         status_codes={
             200: "Configs retrieved",
             400: "Invalid request",
@@ -352,6 +354,10 @@ class IOUHandler:
 
     @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/configs/save",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
         status_codes={
             200: "Configs saved",
             400: "Invalid request",
@@ -366,28 +372,31 @@ class IOUHandler:
         response.set_status(200)
 
     @Route.get(
-        r"/iou/nodes",
+        r"/iou/images",
         status_codes={
-            200: "List of IOU VM retrieved",
+            200: "List of IOU images",
         },
-        description="Retrieve the list of IOU VMS",
+        description="Retrieve the list of IOU images",
         output=NODE_LIST_IMAGES_SCHEMA)
-    def list_iou_nodes(request, response):
+    def list_iou_images(request, response):
 
         iou_manager = IOU.instance()
-        iou_nodes = yield from iou_manager.list_images()
+        images = yield from iou_manager.list_images()
         response.set_status(200)
-        response.json(iou_nodes)
+        response.json(images)
 
     @Route.post(
-        r"/iou/nodes/{path}",
+        r"/iou/images/{filename:.+}",
+        parameters={
+            "filename": "Image filename"
+        },
         status_codes={
             204: "Image uploaded",
         },
         raw=True,
-        description="Upload IOU image.")
+        description="Upload an IOU image")
     def upload_image(request, response):
 
         iou_manager = IOU.instance()
-        yield from iou_manager.write_image(request.match_info["path"], request.content)
+        yield from iou_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)

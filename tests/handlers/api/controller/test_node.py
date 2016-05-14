@@ -44,7 +44,7 @@ def compute(http_controller, async_run):
 
 @pytest.fixture
 def project(http_controller, async_run):
-    return async_run(Controller.instance().addProject())
+    return async_run(Controller.instance().add_project())
 
 
 @pytest.fixture
@@ -103,7 +103,7 @@ def test_update_node(http_controller, tmpdir, project, compute, node):
                 "startup_script": "echo test"
         }
     }, example=True)
-    assert response.status == 201
+    assert response.status == 200
     assert response.json["name"] == "test"
     assert "name" not in response.json["properties"]
 
@@ -113,17 +113,14 @@ def test_start_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/start".format(project.id, node.id), example=True)
-    assert response.status == 201
-    assert response.json["name"] == node.name
-
+    assert response.status == 204
 
 def test_stop_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/stop".format(project.id, node.id), example=True)
-    assert response.status == 201
-    assert response.json["name"] == node.name
+    assert response.status == 204
 
 
 def test_suspend_node(http_controller, tmpdir, project, compute, node):
@@ -131,8 +128,7 @@ def test_suspend_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/suspend".format(project.id, node.id), example=True)
-    assert response.status == 201
-    assert response.json["name"] == node.name
+    assert response.status == 204
 
 
 def test_reload_node(http_controller, tmpdir, project, compute, node):
@@ -140,8 +136,7 @@ def test_reload_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/reload".format(project.id, node.id), example=True)
-    assert response.status == 201
-    assert response.json["name"] == node.name
+    assert response.status == 204
 
 
 def test_delete_node(http_controller, tmpdir, project, compute, node):
@@ -149,4 +144,4 @@ def test_delete_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.delete("/projects/{}/nodes/{}".format(project.id, node.id), example=True)
-    assert response.status == 201
+    assert response.status == 204
