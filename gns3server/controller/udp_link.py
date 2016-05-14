@@ -108,8 +108,7 @@ class UDPLink(Link):
         """
         Run capture on the best candidate.
 
-        The ideal candidate is a node who support capture on controller
-        server
+        The ideal candidate is a node who support capture on controller server
 
         :returns: Node where the capture should run
         """

@@ -69,9 +69,9 @@ def test_load(controller, controller_config_path, async_run):
 
 def test_isEnabled(controller):
     Config.instance().set("Server", "controller", False)
-    assert not controller.isEnabled()
+    assert not controller.is_enabled()
     Config.instance().set("Server", "controller", True)
-    assert controller.isEnabled()
+    assert controller.is_enabled()
 
 
 def test_addCompute(controller, controller_config_path, async_run):

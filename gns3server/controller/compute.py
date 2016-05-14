@@ -18,8 +18,8 @@
 import aiohttp
 import asyncio
 import json
-from pkg_resources import parse_version
 
+from ..utils import parse_version
 from ..controller.controller_error import ControllerError
 from ..config import Config
 from ..version import __version__

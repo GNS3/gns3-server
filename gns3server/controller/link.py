@@ -33,6 +33,7 @@ class Link:
         self._project = project
         self._capturing = False
         self._capture_file_name = None
+        self._streaming_pcap = None
 
     @asyncio.coroutine
     def add_node(self, node, adapter_number, port_number):
@@ -73,13 +74,12 @@ class Link:
     @asyncio.coroutine
     def _start_streaming_pcap(self):
         """
-        Dump the pcap file on disk
+        Dump a pcap file on disk
         """
         stream = yield from self.read_pcap_from_source()
         with open(self.capture_file_path, "wb+") as f:
             while self._capturing:
-                # We read 1 bytes by 1 otherwise if the traffic stop the remaining data is not read
-                # this is slow
+                # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
                 data = yield from stream.read(1)
                 if data:
                     f.write(data)
@@ -98,7 +98,7 @@ class Link:
     @asyncio.coroutine
     def read_pcap_from_source(self):
         """
-        Return a FileStream of the Pcap from the compute node
+        Return a FileStream of the Pcap from the compute server
         """
         raise NotImplementedError
 
@@ -106,13 +106,12 @@ class Link:
         """
         :returns: File name for a capture on this link
         """
-        capture_file_name = "{}_{}-{}_to_{}_{}-{}".format(
-            self._nodes[0]["node"].name,
-            self._nodes[0]["adapter_number"],
-            self._nodes[0]["port_number"],
-            self._nodes[1]["node"].name,
-            self._nodes[1]["adapter_number"],
-            self._nodes[1]["port_number"])
+        capture_file_name = "{}_{}-{}_to_{}_{}-{}".format(self._nodes[0]["node"].name,
+                                                          self._nodes[0]["adapter_number"],
+                                                          self._nodes[0]["port_number"],
+                                                          self._nodes[1]["node"].name,
+                                                          self._nodes[1]["adapter_number"],
+                                                          self._nodes[1]["port_number"])
         return re.sub("[^0-9A-Za-z_-]", "", capture_file_name) + ".pcap"
 
     @property

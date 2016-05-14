@@ -201,8 +201,7 @@ class Project:
 
     def _update_temporary_file(self):
         """
-        Update the .gns3_temporary file in order to reflect current
-        project status.
+        Update the .gns3_temporary file in order to reflect the current project status.
         """
 
         if not hasattr(self, "_path"):
@@ -224,7 +223,7 @@ class Project:
     def module_working_directory(self, module_name):
         """
         Returns a working directory for the module
-        If the directory doesn't exist, the directory is created.
+        The directory is created if the directory doesn't exist.
 
         :param module_name: name for the module
         :returns: working directory
@@ -335,7 +334,7 @@ class Project:
         """
         Closes the project, and cleanup the disk if cleanup is True
 
-        :param cleanup: If True drop the project directory
+        :param cleanup: Whether to delete the project directory
         """
 
         tasks = []
@@ -431,7 +430,7 @@ class Project:
     @asyncio.coroutine
     def list_files(self):
         """
-        :returns: Array of files in project without temporary files. The files are dictionnary {"path": "test.bin", "md5sum": "aaaaa"}
+        :returns: Array of files in project without temporary files. The files are dictionary {"path": "test.bin", "md5sum": "aaaaa"}
         """
 
         files = []
@@ -479,8 +478,7 @@ class Project:
         """
 
         z = zipstream.ZipFile()
-        # topdown allo to modify the list of directory in order to ignore
-        # directory
+        # topdown allows to modify the list of directory in order to ignore the  directory
         for root, dirs, files in os.walk(self._path, topdown=True):
             # Remove snapshots and capture
             if os.path.split(root)[-1:][0] == "project-files":
@@ -638,4 +636,4 @@ class Project:
                 shutil.move(path, dst)
 
         # Cleanup the project
-        shutil.rmtree(root)
+        shutil.rmtree(root, ignore_errors=True)

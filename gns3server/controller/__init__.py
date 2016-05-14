@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 
 class Controller:
-    """The controller manage multiple gns3 compute servers"""
+    """The controller is responsible to manage one or more compute servers"""
 
     def __init__(self):
         self._computes = {}
@@ -47,17 +47,14 @@ class Controller:
         """
         Save the controller configuration on disk
         """
-        data = {
-            "computes": [{
-                "host": c.host,
-                "port": c.port,
-                "protocol": c.protocol,
-                "user": c.user,
-                "password": c.password,
-                "compute_id": c.id
-            } for c in self._computes.values()],
-            "version": __version__
-        }
+        data = {"computes": [{"host": c.host,
+                              "port": c.port,
+                              "protocol": c.protocol,
+                              "user": c.user,
+                              "password": c.password,
+                              "compute_id": c.id
+                              } for c in self._computes.values()],
+                "version": __version__}
         os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
         with open(self._config_file, 'w+') as f:
             json.dump(data, f, indent=4)
@@ -73,15 +70,15 @@ class Controller:
             with open(self._config_file) as f:
                 data = json.load(f)
         except OSError as e:
-            log.critical("Can not load %s: %s", self._config_file, str(e))
+            log.critical("Cannot load %s: %s", self._config_file, str(e))
             return
         for c in data["computes"]:
             compute_id = c.pop("compute_id")
             yield from self.add_compute(compute_id, **c)
 
-    def isEnabled(self):
+    def is_enabled(self):
         """
-        :returns: True if current instance is the controller
+        :returns: whether the current instance is the controller
         of our GNS3 infrastructure.
         """
         return Config.instance().get_section_config("Server").getboolean("controller")
@@ -89,9 +86,9 @@ class Controller:
     @asyncio.coroutine
     def add_compute(self, compute_id, **kwargs):
         """
-        Add a server to the dictionnary of computes controlled by GNS3
+        Add a server to the dictionary of compute servers controlled by this controller
 
-        :param compute_id: Id of the compute node
+        :param compute_id: Compute server identifier
         :param kwargs: See the documentation of Compute
         """
 
@@ -100,36 +97,35 @@ class Controller:
             return self._create_local_compute()
 
         if compute_id not in self._computes:
-            compute = Compute(compute_id=compute_id, controller=self, **kwargs)
-            self._computes[compute_id] = compute
+            compute_server = Compute(compute_id=compute_id, controller=self, **kwargs)
+            self._computes[compute_id] = compute_server
             self.save()
         return self._computes[compute_id]
 
     def _create_local_compute(self):
         """
-        Create the local compute node. It's the controller itself
+        Create the local compute node. It is the controller itself.
         """
         server_config = Config.instance().get_section_config("Server")
-        self._computes["local"] = Compute(
-            compute_id="local",
-            controller=self,
-            protocol=server_config.get("protocol", "http"),
-            host=server_config.get("host", "localhost"),
-            port=server_config.getint("port", 3080),
-            user=server_config.get("user", ""),
-            password=server_config.get("password", ""))
+        self._computes["local"] = Compute(compute_id="local",
+                                          controller=self,
+                                          protocol=server_config.get("protocol", "http"),
+                                          host=server_config.get("host", "localhost"),
+                                          port=server_config.getint("port", 3080),
+                                          user=server_config.get("user", ""),
+                                          password=server_config.get("password", ""))
         return self._computes["local"]
 
     @property
     def computes(self):
         """
-        :returns: The dictionnary of computes managed by GNS3
+        :returns: The dictionary of compute server managed by this controller
         """
         return self._computes
 
     def get_compute(self, compute_id):
         """
-        Return an compute or raise a 404
+        Returns a compute server or raise a 404 error.
         """
         try:
             return self._computes[compute_id]
@@ -141,21 +137,21 @@ class Controller:
     @asyncio.coroutine
     def add_project(self, project_id=None, **kwargs):
         """
-        Create a project or return an existing project
+        Creates a project or returns an existing project
 
         :param kwargs: See the documentation of Project
         """
         if project_id not in self._projects:
             project = Project(project_id=project_id, **kwargs)
             self._projects[project.id] = project
-            for compute in self._computes.values():
-                yield from project.add_compute(compute)
+            for compute_server in self._computes.values():
+                yield from project.add_compute(compute_server)
             return self._projects[project.id]
         return self._projects[project_id]
 
     def get_project(self, project_id):
         """
-        Return a project or raise a 404
+        Returns a compute server or raise a 404 error.
         """
         try:
             return self._projects[project_id]
@@ -168,7 +164,7 @@ class Controller:
     @property
     def projects(self):
         """
-        :returns: The dictionnary of computes managed by GNS3
+        :returns: The dictionary of computes managed by GNS3
         """
         return self._projects
 
@@ -176,6 +172,7 @@ class Controller:
     def instance():
         """
         Singleton to return only on instance of Controller.
+
         :returns: instance of Controller
         """
 
@@ -195,5 +192,5 @@ class Controller:
             except KeyError:
                 pass
         else:
-            for project in self._projects.values():
-                project.emit(action, event, **kwargs)
+            for project_instance in self._projects.values():
+                project_instance.emit(action, event, **kwargs)

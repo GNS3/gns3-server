@@ -26,7 +26,7 @@ class Qcow2Error(Exception):
 
 class Qcow2:
     """
-    Allow to parse a Qcow2 file
+    Allows to parse a Qcow2 file
     """
 
     def __init__(self, path):

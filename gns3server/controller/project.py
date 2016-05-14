@@ -32,7 +32,7 @@ from ..utils.path import check_path_allowed, get_default_project_directory
 
 class Project:
     """
-    A project inside controller
+    A project inside a controller
 
     :param project_id: force project identifier (None by default auto generate an UUID)
     :param path: path of the project. (None use the standard directory)
@@ -89,7 +89,7 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
 
         if '"' in path:
-            raise aiohttp.web.HTTPForbidden(text="You are not allowed to use \" in the project directory path. It's not supported by Dynamips.")
+            raise aiohttp.web.HTTPForbidden(text="You are not allowed to use \" in the project directory path. Not supported by Dynamips.")
 
         self._path = path
 
@@ -201,7 +201,7 @@ class Project:
 
         :param action: Action name
         :param event: Event to send
-        :param kwargs: Add this meta to the notif (project_id for example)
+        :param kwargs: Add this meta to the notification (project_id for example)
         """
         for listener in self._listeners:
             listener.put_nowait((action, event, kwargs))

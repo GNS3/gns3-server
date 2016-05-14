@@ -15,16 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 from contextlib import contextmanager
-
-
 from ..notification_queue import NotificationQueue
 
 
 class NotificationManager:
     """
     Manage the notification queue where the controller
-    will connect to get notifications from computes
+    will connect to get notifications from compute servers
     """
 
     def __init__(self):
@@ -48,7 +47,7 @@ class NotificationManager:
 
         :param action: Action name
         :param event: Event to send
-        :param kwargs: Add this meta to the notif (project_id for example)
+        :param kwargs: Add this meta to the notification (project_id for example)
         """
         for listener in self._listeners:
             listener.put_nowait((action, event, kwargs))
