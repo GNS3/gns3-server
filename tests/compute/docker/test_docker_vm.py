@@ -239,7 +239,7 @@ def test_create_image_not_available(loop, project, manager):
     call = 0
 
     @asyncio.coroutine
-    def informations():
+    def information():
         nonlocal call
         if call == 0:
             call += 1
@@ -253,8 +253,8 @@ def test_create_image_not_available(loop, project, manager):
     }
 
     vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
-    vm._get_image_informations = MagicMock()
-    vm._get_image_informations.side_effect = informations
+    vm._get_image_information = MagicMock()
+    vm._get_image_information.side_effect = information
 
     with asyncio_patch("gns3server.compute.docker.DockerVM.pull_image", return_value=True) as mock_pull:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
@@ -812,7 +812,7 @@ def test_get_image_informations(project, manager, loop):
     }
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
         vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
-        loop.run_until_complete(asyncio.async(vm._get_image_informations()))
+        loop.run_until_complete(asyncio.async(vm._get_image_information()))
         mock.assert_called_with("GET", "images/ubuntu/json")
 
 

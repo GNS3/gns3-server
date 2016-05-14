@@ -27,16 +27,20 @@ import aiohttp
 import json
 import os
 
-from .docker_error import *
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
+from gns3server.utils.asyncio import wait_for_file_creation
+from gns3server.utils.get_resource import get_resource
+
+from gns3server.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 from ..base_node import BaseNode
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
-from ...utils.asyncio.telnet_server import AsyncioTelnetServer
-from ...utils.asyncio.raw_command_server import AsyncioRawCommandServer
-from ...utils.asyncio import wait_for_file_creation
-from ...utils.get_resource import get_resource
-from ...ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
-
+from .docker_error import (
+    DockerError,
+    DockerHttp304Error,
+    DockerHttp404Error
+)
 
 import logging
 log = logging.getLogger(__name__)
@@ -180,9 +184,9 @@ class DockerVM(BaseNode):
         return "exited"
 
     @asyncio.coroutine
-    def _get_image_informations(self):
+    def _get_image_information(self):
         """
-        :returns: Dictionnary informations about the container image
+        :returns: Dictionary information about the container image
         """
         result = yield from self.manager.query("GET", "images/{}/json".format(self._image))
         return result
@@ -191,9 +195,7 @@ class DockerVM(BaseNode):
         """
         :returns: Return the path that we need to map to local folders
         """
-        binds = []
-
-        binds.append("{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")))
+        binds = ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))]
 
         # We mount our own etc/network
         network_config = self._create_network_config()
@@ -247,11 +249,11 @@ class DockerVM(BaseNode):
         """Creates the Docker container."""
 
         try:
-            image_infos = yield from self._get_image_informations()
+            image_infos = yield from self._get_image_information()
         except DockerHttp404Error:
             log.info("Image %s is missing pulling it from docker hub", self._image)
             yield from self.pull_image(self._image)
-            image_infos = yield from self._get_image_informations()
+            image_infos = yield from self._get_image_information()
 
         params = {
             "Hostname": self._name,
@@ -328,8 +330,7 @@ class DockerVM(BaseNode):
         else:
             yield from self._clean_servers()
 
-            result = yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
-
+            yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
             namespace = yield from self._get_namespace()
 
             yield from self._start_ubridge()
@@ -398,7 +399,7 @@ class DockerVM(BaseNode):
         """
         log.debug("Forward HTTP for %s to %d", self.name, self._console_http_port)
         command = ["docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "nc", "127.0.0.1", str(self._console_http_port)]
-        # We replace the port in the server answer otherwise somelink could be broke
+        # We replace the port in the server answer otherwise some link could be broken
         server = AsyncioRawCommandServer(command, replaces=[
             (
                 '{}'.format(self._console_http_port).encode(),
@@ -443,8 +444,9 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _read_console_output(self, ws, out):
         """
-        Read websocket and forward it to the telnet
-        :params ws: Websocket connection
+        Read Websocket and forward it to the telnet
+
+        :param ws: Websocket connection
         :param out: Output stream
         """
 
