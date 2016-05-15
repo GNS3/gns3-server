@@ -29,7 +29,7 @@ from .vmware_handler import VMwareHandler
 from .config_handler import ConfigHandler
 from .version_handler import VersionHandler
 from .notification_handler import NotificationHandler
-
+from .ethernet_hub_handler import EthernetHubHandler
 
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
     # IOU runs only on Linux but testsuite work on UNIX platform

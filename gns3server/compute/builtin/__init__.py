@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,24 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
+"""
+Builtin nodes server module.
+"""
 
-from .builtin import Builtin
-from .vpcs import VPCS
-from .virtualbox import VirtualBox
-from .dynamips import Dynamips
-from .qemu import Qemu
-from .vmware import VMware
 
-MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware]
+from ..base_manager import BaseManager
+from .builtin_node_factory import BuiltinNodeFactory
 
-if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
+import logging
+log = logging.getLogger(__name__)
 
-    from .docker import Docker
-    MODULES.append(Docker)
 
-    # IOU runs only on Linux but testsuite work on UNIX platform
-    if not sys.platform.startswith("win"):
-        from .iou import IOU
-        MODULES.append(IOU)
+class Builtin(BaseManager):
+
+    _NODE_CLASS = BuiltinNodeFactory
+
+    def __init__(self):
+
+        super().__init__()

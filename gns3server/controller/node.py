@@ -152,8 +152,9 @@ class Node:
         """
         data = copy.copy(self._properties)
         data["name"] = self._name
-        data["console"] = self._console
-        data["console_type"] = self._console_type
+        if self._console:
+            data["console"] = self._console
+            data["console_type"] = self._console_type
 
         # None properties should be send. Because it can mean the emulator doesn't support it
         for key in list(data.keys()):

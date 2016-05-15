@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,24 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
 
-from .builtin import Builtin
-from .vpcs import VPCS
-from .virtualbox import VirtualBox
-from .dynamips import Dynamips
-from .qemu import Qemu
-from .vmware import VMware
+from ..node_error import NodeError
+from .nodes.ethernet_hub import EthernetHub
 
-MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware]
+import logging
+log = logging.getLogger(__name__)
 
-if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
+BUILTIN_NODES = {'ethernet_hub': EthernetHub}
 
-    from .docker import Docker
-    MODULES.append(Docker)
 
-    # IOU runs only on Linux but testsuite work on UNIX platform
-    if not sys.platform.startswith("win"):
-        from .iou import IOU
-        MODULES.append(IOU)
+class BuiltinNodeFactory:
+
+    """
+    Factory to create an builtin object based on the node type.
+    """
+
+    def __new__(cls, name, node_id, project, manager, node_type, **kwargs):
+
+        if node_type not in BUILTIN_NODES:
+            raise NodeError("Unknown node type: {}".format(node_type))
+
+        return BUILTIN_NODES[node_type](name, node_id, project, manager, **kwargs)

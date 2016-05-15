@@ -42,7 +42,7 @@ from ..port_manager import PortManager
 from .dynamips_error import DynamipsError
 from .hypervisor import Hypervisor
 from .nodes.router import Router
-from .dynamips_vm import DynamipsVM
+from .dynamips_vm_factory import DynamipsVMFactory
 from .dynamips_device import DynamipsDevice
 
 # NIOs
@@ -102,7 +102,7 @@ WIC_MATRIX = {"WIC-1ENET": WIC_1ENET,
 
 class Dynamips(BaseManager):
 
-    _NODE_CLASS = DynamipsVM
+    _NODE_CLASS = DynamipsVMFactory
     _DEVICE_CLASS = DynamipsDevice
     _ghost_ios_lock = None
 
@@ -121,7 +121,6 @@ class Dynamips(BaseManager):
         :returns: a free dynamips id
         """
         self._dynamips_ids.setdefault(project_id, set())
-        dynamips_id = 0
         for dynamips_id in range(1, 4097):
             if dynamips_id not in self._dynamips_ids[project_id]:
                 self._dynamips_ids[project_id].add(dynamips_id)

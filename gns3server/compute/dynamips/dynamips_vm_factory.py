@@ -37,7 +37,7 @@ PLATFORMS = {'c1700': C1700,
              'c7200': C7200}
 
 
-class DynamipsVM:
+class DynamipsVMFactory:
 
     """
     Factory to create an Router object based on the correct platform.
