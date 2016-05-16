@@ -119,7 +119,21 @@ class Project:
         if node_id not in self._nodes:
             node = Node(self, compute, node_id=node_id, **kwargs)
             if compute not in self._project_created_on_compute:
-                yield from compute.post("/projects", self)
+                # For a local server we send the project path
+                if compute.id == "local":
+                    yield from compute.post("/projects", {
+                        "name": self._name,
+                        "project_id": self._id,
+                        "temporary": self._temporary,
+                        "path": self._path
+                    })
+                else:
+                    yield from compute.post("/projects", {
+                        "name": self._name,
+                        "project_id": self._id,
+                        "temporary": self._temporary
+                    })
+
                 self._project_created_on_compute.add(compute)
             yield from node.create()
             self._nodes[node.id] = node

@@ -68,6 +68,7 @@ def test_captures_directory(tmpdir):
     assert p.captures_directory == str(tmpdir / "project-files" / "captures")
     assert os.path.exists(p.captures_directory)
 
+
 def test_add_compute(async_run):
     compute = MagicMock()
     project = Project()
@@ -75,8 +76,12 @@ def test_add_compute(async_run):
     assert compute in project._computes
 
 
-def test_add_node(async_run):
+def test_add_node_local(async_run):
+    """
+    For a local server we send the project path
+    """
     compute = MagicMock()
+    compute.id = "local"
     project = Project()
 
     response = MagicMock()
@@ -85,9 +90,40 @@ def test_add_node(async_run):
 
     node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
+    compute.post.assert_any_call('/projects', {
+        "name": project._name,
+        "project_id": project._id,
+        "temporary": project._temporary,
+        "path": project._path
+    })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
-                                       'console_type': 'telnet',
+                                       'startup_config': 'test.cfg',
+                                       'name': 'test'})
+    assert compute in project._project_created_on_compute
+
+
+def test_add_node_non_local(async_run):
+    """
+    For a non local server we do not send the project path
+    """
+    compute = MagicMock()
+    compute.id = "remote"
+    project = Project()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+
+    compute.post.assert_any_call('/projects', {
+        "name": project._name,
+        "project_id": project._id,
+        "temporary": project._temporary
+    })
+    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
+                                 data={'node_id': node.id,
                                        'startup_config': 'test.cfg',
                                        'name': 'test'})
     assert compute in project._project_created_on_compute
