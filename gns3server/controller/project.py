@@ -183,17 +183,17 @@ class Project:
 
     @asyncio.coroutine
     def close(self):
-        for compute in self._computes:
+        for compute in self._project_created_on_compute:
             yield from compute.post("/projects/{}/close".format(self._id))
 
     @asyncio.coroutine
     def commit(self):
-        for compute in self._computes:
+        for compute in self._project_created_on_compute:
             yield from compute.post("/projects/{}/commit".format(self._id))
 
     @asyncio.coroutine
     def delete(self):
-        for compute in self._computes:
+        for compute in self._project_created_on_compute:
             yield from compute.delete("/projects/{}".format(self._id))
         shutil.rmtree(self.path, ignore_errors=True)
 
