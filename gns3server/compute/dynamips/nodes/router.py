@@ -1311,6 +1311,11 @@ class Router(BaseNode):
         """
 
         try:
+            open(output_file, 'w+').close()
+        except OSError as e:
+            raise DynamipsError('Can not write capture to "{}": {}'.format(output_file, str(e)))
+
+        try:
             adapter = self._slots[slot_number]
         except IndexError:
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
