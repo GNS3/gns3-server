@@ -205,7 +205,7 @@ class BaseManager:
                     yield from wait_run_in_executor(shutil.move, legacy_vm_working_path, new_vm_working_path)
                 except OSError as e:
                     raise aiohttp.web.HTTPInternalServerError(text="Could not move vm working directory: {} to {} {}".format(legacy_vm_working_path,
-                                                                                                                             new_vm_working_path,e))
+                                                                                                                             new_vm_working_path, e))
 
         return new_id
 
@@ -309,6 +309,7 @@ class BaseManager:
         """
 
         node = yield from self.close_node(node_id)
+        node.project.emit("node.deleted", node)
         node.project.mark_node_for_destruction(node)
         if node.id in self._nodes:
             del self._nodes[node.id]

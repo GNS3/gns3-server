@@ -193,3 +193,14 @@ def test_list_images_empty(loop, qemu, tmpdir):
 def test_list_images_directory_not_exist(loop, qemu):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value="/bla"):
         assert loop.run_until_complete(qemu.list_images()) == []
+
+
+def test_delete_node(async_run, vpcs, project):
+    project._nodes = set()
+    node_id = str(uuid.uuid4())
+    node = async_run(vpcs.create_node("PC 1", project.id, node_id, console=2222))
+    assert node in project.nodes
+    with patch("gns3server.compute.project.Project.emit") as mock_emit:
+        async_run(vpcs.delete_node(node_id))
+        mock_emit.assert_called_with("node.deleted", node)
+    assert node not in project.nodes
