@@ -121,14 +121,14 @@ class Project:
             if compute not in self._project_created_on_compute:
                 # For a local server we send the project path
                 if compute.id == "local":
-                    yield from compute.post("/projects", {
+                    yield from compute.post("/projects", data={
                         "name": self._name,
                         "project_id": self._id,
                         "temporary": self._temporary,
                         "path": self._path
                     })
                 else:
-                    yield from compute.post("/projects", {
+                    yield from compute.post("/projects", data={
                         "name": self._name,
                         "project_id": self._id,
                         "temporary": self._temporary

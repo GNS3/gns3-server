@@ -90,7 +90,7 @@ def test_add_node_local(async_run):
 
     node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
-    compute.post.assert_any_call('/projects', {
+    compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
         "temporary": project._temporary,
@@ -98,6 +98,7 @@ def test_add_node_local(async_run):
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
+                                       'console_type': 'telnet',
                                        'startup_config': 'test.cfg',
                                        'name': 'test'})
     assert compute in project._project_created_on_compute
@@ -117,13 +118,14 @@ def test_add_node_non_local(async_run):
 
     node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
-    compute.post.assert_any_call('/projects', {
+    compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
         "temporary": project._temporary
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
+                                       'console_type': 'telnet',
                                        'startup_config': 'test.cfg',
                                        'name': 'test'})
     assert compute in project._project_created_on_compute

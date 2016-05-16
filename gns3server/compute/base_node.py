@@ -105,9 +105,7 @@ class BaseNode:
     def status(self, status):
 
         self._node_status = status
-        if status in ("started", "stopped", "suspended"):
-            self.project.emit("node.{status}".format(status=status), {"node_id": self.id})
-        self.project.emit("node.updated", self)  # FIXME: should we send this when we just start/stop/suspend a node?
+        self.project.emit("node.updated", self)
 
     @property
     def command_line(self):
