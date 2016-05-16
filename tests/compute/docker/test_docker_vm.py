@@ -93,7 +93,7 @@ def test_create(loop, project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -133,7 +133,7 @@ def test_create_vnc(loop, project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
                             '/tmp/.X11-unix/:/tmp/.X11-unix/'
                         ],
@@ -175,7 +175,7 @@ def test_create_start_cmd(loop, project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -213,7 +213,7 @@ def test_create_environment(loop, project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -267,7 +267,7 @@ def test_create_image_not_available(loop, project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -484,7 +484,7 @@ def test_update(loop, vm):
         {
             "CapAdd": ["ALL"],
             "Binds": [
-                "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                 "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
@@ -551,7 +551,7 @@ def test_update_running(loop, vm):
         {
             "CapAdd": ["ALL"],
             "Binds": [
-                "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+                "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                 "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
@@ -827,7 +827,7 @@ def test_mount_binds(vm, tmpdir):
 
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
-        "{}:/gns3:ro".format(get_resource("hypervisor/docker/resources")),
+        "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
         "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
         "{}:{}".format(dst, "/test/experimental")
     ]
