@@ -302,6 +302,18 @@ VM_UPDATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1,
         },
+        "dynamips_id": {
+            "description": "Dynamips ID",
+            "type": "integer"
+        },
+        "startup_config": {
+            "description": "Path to the IOS startup configuration file.",
+            "type": "string",
+        },
+        "private_config": {
+            "description": "Path to the IOS private configuration file.",
+            "type": "string",
+        },
         "startup_config_content": {
             "description": "Content of IOS startup configuration file",
             "type": "string",

@@ -143,6 +143,14 @@ IOU_UPDATE_SCHEMA = {
             "description": "Always up ethernet interface",
             "type": ["boolean", "null"]
         },
+        "startup_config": {
+            "description": "Path to the startup-config of IOU",
+            "type": ["string", "null"]
+        },
+        "private_config": {
+            "description": "Path to the private-config of IOU",
+            "type": ["string", "null"]
+        },
         "startup_config_content": {
             "description": "Startup-config of IOU",
             "type": ["string", "null"]
