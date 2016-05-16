@@ -131,7 +131,7 @@ class Controller:
             return self._computes[compute_id]
         except KeyError:
             if compute_id == "local":
-                return self._createLocalCompute()
+                return self._create_local_compute()
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     @asyncio.coroutine

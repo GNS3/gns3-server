@@ -44,6 +44,20 @@ ETHERNET_HUB_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Ethernet hub instance",
     "type": "object",
+    "definitions": {
+        "EthernetSwitchPort": {
+            "description": "Ethernet switch port",
+            "properties": {
+                "port": {
+                    "description": "Port number",
+                    "type": "number",
+                    "minimum": 1
+                },
+            },
+            "required": ["port"],
+            "additionalProperties": False
+        },
+    },
     "properties": {
         "name": {
             "description": "Ethernet hub name",
@@ -51,8 +65,13 @@ ETHERNET_HUB_UPDATE_SCHEMA = {
             "minLength": 1,
         },
         "ports": {
-            "description": "Number of ports",
-            "type": "integer"
+            "type": "array",
+            "items": [
+                {"type": "object",
+                 "oneOf": [
+                     {"$ref": "#/definitions/EthernetSwitchPort"}
+                 ]},
+            ]
         }
     },
     "additionalProperties": False,
@@ -62,6 +81,20 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Ethernet hub instance",
     "type": "object",
+    "definitions": {
+        "EthernetSwitchPort": {
+            "description": "Ethernet switch port",
+            "properties": {
+                "port": {
+                    "description": "Port number",
+                    "type": "integer",
+                    "minimum": 1
+                },
+            },
+            "required": ["port"],
+            "additionalProperties": False
+        },
+    },
     "properties": {
         "node_id": {
             "description": "Node UUID",
@@ -83,8 +116,13 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
             "minLength": 1,
         },
         "ports": {
-            "description": "Number of ports",
-            "type": "integer"
+            "type": "array",
+            "items": [
+                {"type": "object",
+                 "oneOf": [
+                     {"$ref": "#/definitions/EthernetSwitchPort"}
+                 ]},
+            ]
         }
     },
     "additionalProperties": False,
