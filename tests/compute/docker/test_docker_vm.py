@@ -336,7 +336,7 @@ def test_pause(loop, vm):
         loop.run_until_complete(asyncio.async(vm.pause()))
 
     mock.assert_called_with("POST", "containers/e90e34656842/pause")
-    assert vm.status == "paused"
+    assert vm.status == "suspended"
 
 
 def test_unpause(loop, vm):
