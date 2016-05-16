@@ -81,9 +81,7 @@ class DockerHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Start a Docker container",
-        input=DOCKER_CREATE_SCHEMA,
-        output=DOCKER_OBJECT_SCHEMA)
+        description="Start a Docker container")
     def start(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -101,9 +99,7 @@ class DockerHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Stop a Docker container",
-        input=DOCKER_CREATE_SCHEMA,
-        output=DOCKER_OBJECT_SCHEMA)
+        description="Stop a Docker container")
     def stop(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -121,9 +117,7 @@ class DockerHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Restart a Docker container",
-        input=DOCKER_CREATE_SCHEMA,
-        output=DOCKER_OBJECT_SCHEMA)
+        description="Restart a Docker container")
     def reload(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -159,9 +153,7 @@ class DockerHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Pause a Docker container",
-        input=DOCKER_CREATE_SCHEMA,
-        output=DOCKER_OBJECT_SCHEMA)
+        description="Pause a Docker container")
     def pause(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -179,9 +171,7 @@ class DockerHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Unpause a Docker container",
-        input=DOCKER_CREATE_SCHEMA,
-        output=DOCKER_OBJECT_SCHEMA)
+        description="Unpause a Docker container")
     def unpause(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

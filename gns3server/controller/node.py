@@ -154,9 +154,10 @@ class Node:
         data["name"] = self._name
         if self._console:
             data["console"] = self._console
+        if self._console_type:
             data["console_type"] = self._console_type
 
-        # None properties should be send. Because it can mean the emulator doesn't support it
+        # None properties are not be send. Because it can mean the emulator doesn't support it
         for key in list(data.keys()):
             if data[key] is None:
                 del data[key]

@@ -86,6 +86,7 @@ DOCKER_CREATE_SCHEMA = {
 
     },
     "additionalProperties": False,
+    "required": ["name", "image"]
 }
 
 

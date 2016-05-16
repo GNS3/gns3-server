@@ -195,7 +195,7 @@ class DockerVM(BaseNode):
         """
         :returns: Return the path that we need to map to local folders
         """
-        binds = ["{}:/gns3:ro".format(get_resource("hypervisor/docker/resources"))]
+        binds = ["{}:/gns3:ro".format(get_resource("compute/docker/resources"))]
 
         # We mount our own etc/network
         network_config = self._create_network_config()
