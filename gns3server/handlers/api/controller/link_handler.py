@@ -31,6 +31,21 @@ class LinkHandler:
     API entry point for Link
     """
 
+    @Route.get(
+        r"/projects/{project_id}/links",
+        parameters={
+            "project_id": "Project UUID"
+        },
+        status_codes={
+            200: "List of links returned",
+        },
+        description="List links of a project")
+    def list_links(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        response.json([v for v in project.links.values()])
+
     @Route.post(
         r"/projects/{project_id}/links",
         parameters={

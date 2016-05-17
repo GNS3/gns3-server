@@ -77,6 +77,34 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     assert len(response.json["nodes"]) == 2
 
 
+def test_list_link(http_controller, tmpdir, project, compute, async_run):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = async_run(project.add_node(compute, None))
+    node2 = async_run(project.add_node(compute, None))
+
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
+        response = http_controller.post("/projects/{}/links".format(project.id), {
+            "nodes": [
+                {
+                    "node_id": node1.id,
+                    "adapter_number": 0,
+                    "port_number": 3
+                },
+                {
+                    "node_id": node2.id,
+                    "adapter_number": 2,
+                    "port_number": 4
+                }
+            ]
+        })
+    response = http_controller.get("/projects/{}/links".format(project.id), example=True)
+    assert response.status == 200
+    assert len(response.json) == 1
+
+
 def test_start_capture(http_controller, tmpdir, project, compute, async_run):
     link = Link(project)
     project._links = {link.id: link}
