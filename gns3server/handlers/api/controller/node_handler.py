@@ -260,6 +260,5 @@ class NodeHandler:
         description="Delete a node instance")
     def delete(request, response):
         project = Controller.instance().get_project(request.match_info["project_id"])
-        node = project.get_node(request.match_info["node_id"])
-        yield from node.destroy()
+        yield from project.delete_node(request.match_info["node_id"])
         response.set_status(204)

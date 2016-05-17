@@ -89,6 +89,7 @@ def test_add_node_local(async_run):
     compute.post = AsyncioMagicMock(return_value=response)
 
     node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.id in project._nodes
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
@@ -129,6 +130,25 @@ def test_add_node_non_local(async_run):
                                        'startup_config': 'test.cfg',
                                        'name': 'test'})
     assert compute in project._project_created_on_compute
+
+
+def test_delete_node(async_run):
+    """
+    For a local server we send the project path
+    """
+    compute = MagicMock()
+    project = Project()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.id in project._nodes
+    async_run(project.delete_node(node.id))
+    assert node.id not in project._nodes
+
+    compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
 
 
 def test_getVM(async_run):

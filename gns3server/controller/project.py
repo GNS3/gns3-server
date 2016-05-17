@@ -140,6 +140,12 @@ class Project:
             return node
         return self._nodes[node_id]
 
+    @asyncio.coroutine
+    def delete_node(self, node_id):
+        node = self.get_node(node_id)
+        del self._nodes[node.id]
+        yield from node.delete()
+
     def get_node(self, node_id):
         """
         Return the node or raise a 404 if the node is unknown
