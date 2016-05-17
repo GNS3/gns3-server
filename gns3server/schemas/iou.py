@@ -206,11 +206,19 @@ IOU_OBJECT_SCHEMA = {
             "description": "Path to the node working directory",
             "type": "string"
         },
+        "status": {
+            "description": "VM status",
+            "enum": ["started", "stopped", "suspended"]
+        },
         "console": {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
+        },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet"]
         },
         "project_id": {
             "description": "Project UUID",

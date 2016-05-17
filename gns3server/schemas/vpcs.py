@@ -110,7 +110,7 @@ VPCS_OBJECT_SCHEMA = {
         },
         "status": {
             "description": "VM status",
-            "enum": ["started", "stopped"]
+            "enum": ["started", "stopped", "suspended"]
         },
         "console": {
             "description": "Console TCP port",

@@ -397,6 +397,10 @@ QEMU_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "status": {
+            "description": "VM status",
+            "enum": ["started", "stopped", "suspended"]
+        },
         "usage": {
             "description": "How to use the QEMU VM",
             "type": "string",
@@ -603,7 +607,8 @@ QEMU_OBJECT_SCHEMA = {
                  "process_priority",
                  "options",
                  "node_directory",
-                 "command_line"]
+                 "command_line",
+                 "status"]
 }
 
 QEMU_BINARY_FILTER_SCHEMA = {

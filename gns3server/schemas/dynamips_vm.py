@@ -544,6 +544,10 @@ VM_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "status": {
+            "description": "VM status",
+            "enum": ["started", "stopped", "suspended"]
+        },
         "platform": {
             "description": "Cisco router platform",
             "type": "string",

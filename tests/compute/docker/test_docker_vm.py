@@ -63,7 +63,8 @@ def test_json(vm, project):
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
-        'node_directory': vm.working_dir
+        'node_directory': vm.working_dir,
+        'status': 'stopped'
     }
 
 

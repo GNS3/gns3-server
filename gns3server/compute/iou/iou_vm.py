@@ -205,6 +205,8 @@ class IOUVM(BaseNode):
                        "node_id": self.id,
                        "node_directory": self.working_dir,
                        "console": self._console,
+                       "console_type": "telnet",
+                       "status": self.status,
                        "project_id": self.project.id,
                        "path": self.path,
                        "md5sum": gns3server.utils.images.md5sum(self.path),

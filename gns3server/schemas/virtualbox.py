@@ -177,6 +177,10 @@ VBOX_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "status": {
+            "description": "VM status",
+            "enum": ["started", "stopped", "suspended"]
+        },
         "node_directory": {
             "decription": "Path to the VM working directory",
             "type": ["string", "null"]

@@ -91,6 +91,7 @@ class VMwareVM(BaseNode):
                 "adapter_type": self.adapter_type,
                 "use_ubridge": self.use_ubridge,
                 "use_any_adapter": self.use_any_adapter,
+                "status": self.status,
                 "node_directory": self.working_dir}
         return json
 

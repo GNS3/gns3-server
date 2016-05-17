@@ -85,6 +85,7 @@ class VirtualBoxVM(BaseNode):
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "ram": self.ram,
+                "status": self.status,
                 "use_any_adapter": self.use_any_adapter}
         if self._linked_clone:
             json["node_directory"] = self.working_dir

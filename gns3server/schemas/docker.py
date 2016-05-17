@@ -233,7 +233,11 @@ DOCKER_OBJECT_SCHEMA = {
         "node_directory": {
             "description": "Path to the node working directory",
             "type": "string"
-        }
+        },
+        "status": {
+            "description": "VM status",
+            "enum": ["started", "stopped", "suspended"]
+        },
     },
     "additionalProperties": False,
     "required": ["node_id",
@@ -247,7 +251,8 @@ DOCKER_OBJECT_SCHEMA = {
                  "console_resolution",
                  "start_command",
                  "environment",
-                 "node_directory"]
+                 "node_directory",
+                 "status"]
 }
 
 

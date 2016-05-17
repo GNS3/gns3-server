@@ -108,6 +108,7 @@ class DockerVM(BaseNode):
             "console_http_path": self.console_http_path,
             "aux": self.aux,
             "start_command": self.start_command,
+            "status": self.status,
             "environment": self.environment,
             "node_directory": self.working_dir
         }

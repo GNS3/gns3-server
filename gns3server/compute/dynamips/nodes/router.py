@@ -132,6 +132,7 @@ class Router(BaseNode):
                        "disk0": self._disk0,
                        "disk1": self._disk1,
                        "auto_delete_disks": self._auto_delete_disks,
+                       "status": self.status,
                        "console": self.console,
                        "console_type": "telnet",
                        "aux": self.aux,
