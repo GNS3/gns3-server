@@ -113,7 +113,7 @@ class VMware(BaseManager):
             raise VMwareError("vmrun {} is not accessible".format(vmrun_path))
         if not os.access(vmrun_path, os.X_OK):
             raise VMwareError("vmrun is not executable")
-        if os.path.basename(vmrun_path) not in ["vmrun", "vmrun.exe"]:
+        if os.path.basename(vmrun_path).lower() not in ["vmrun", "vmrun.exe"]:
             raise VMwareError("Invalid vmrun executable name {}".format(os.path.basename(vmrun_path)))
 
         self._vmrun_path = vmrun_path
