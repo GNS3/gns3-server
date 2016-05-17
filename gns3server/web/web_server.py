@@ -211,7 +211,8 @@ class WebServer:
         # Allow CORS for this domains
         cors = aiohttp_cors.setup(app, defaults={
             # Default web server for web gui dev
-            "http://localhost:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*")
+            "http://localhost:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
+            "http://gns3.github.io": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*")
         })
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))
