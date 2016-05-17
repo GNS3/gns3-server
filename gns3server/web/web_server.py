@@ -24,6 +24,7 @@ import sys
 import signal
 import asyncio
 import aiohttp
+import aiohttp_cors
 import functools
 import types
 import time
@@ -207,9 +208,14 @@ class WebServer:
             log.debug("ENV %s=%s", key, val)
 
         app = aiohttp.web.Application()
+        # Allow CORS for this domains
+        cors = aiohttp_cors.setup(app, defaults={
+            # Default web server for web gui dev
+            "http://localhost:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*")
+        })
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))
-            app.router.add_route(method, route, handler)
+            cors.add(app.router.add_route(method, route, handler))
         for module in MODULES:
             log.debug("Loading module {}".format(module.__name__))
             m = module.instance()
