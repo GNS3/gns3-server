@@ -31,7 +31,7 @@ DEVICES = {'atm_switch': ATMSwitch,
            'ethernet_hub': EthernetHub}
 
 
-class DynamipsDevice:
+class DynamipsDeviceFactory:
 
     """
     Factory to create an Device object based on the type

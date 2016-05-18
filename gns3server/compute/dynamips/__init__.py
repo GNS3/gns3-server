@@ -43,7 +43,7 @@ from .dynamips_error import DynamipsError
 from .hypervisor import Hypervisor
 from .nodes.router import Router
 from .dynamips_vm_factory import DynamipsVMFactory
-from .dynamips_device import DynamipsDevice
+from .dynamips_device_factory import DynamipsDeviceFactory
 
 # NIOs
 from .nios.nio_udp import NIOUDP
@@ -103,7 +103,7 @@ WIC_MATRIX = {"WIC-1ENET": WIC_1ENET,
 class Dynamips(BaseManager):
 
     _NODE_CLASS = DynamipsVMFactory
-    _DEVICE_CLASS = DynamipsDevice
+    _DEVICE_CLASS = DynamipsDeviceFactory
     _ghost_ios_lock = None
 
     def __init__(self):

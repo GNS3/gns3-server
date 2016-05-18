@@ -153,8 +153,8 @@ class Node:
         data = copy.copy(self._properties)
         data["name"] = self._name
         if self._console:
+            # console is optional for builtin nodes
             data["console"] = self._console
-        if self._console_type:
             data["console_type"] = self._console_type
 
         # None properties are not be send. Because it can mean the emulator doesn't support it

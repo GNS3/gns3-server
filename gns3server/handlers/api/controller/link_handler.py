@@ -64,7 +64,9 @@ class LinkHandler:
         project = controller.get_project(request.match_info["project_id"])
         link = yield from project.add_link()
         for node in request.json["nodes"]:
-            yield from link.add_node(project.get_node(node["node_id"]), node["adapter_number"], node["port_number"])
+            yield from link.add_node(project.get_node(node["node_id"]),
+                                     node.get("adapter_number", 0),
+                                     node.get("port_number", 0))
         yield from link.create()
         response.set_status(201)
         response.json(link)

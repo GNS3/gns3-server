@@ -19,13 +19,14 @@ import os
 
 from gns3server.web.route import Route
 from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
+from gns3server.schemas.nio import NIO_SCHEMA
 from gns3server.compute.builtin import Builtin
+from gns3server.compute.dynamips import Dynamips
 
 from gns3server.schemas.ethernet_hub import (
     ETHERNET_HUB_CREATE_SCHEMA,
     ETHERNET_HUB_UPDATE_SCHEMA,
-    ETHERNET_HUB_OBJECT_SCHEMA,
-    ETHERNET_HUB_NIO_SCHEMA
+    ETHERNET_HUB_OBJECT_SCHEMA
 )
 
 
@@ -50,11 +51,19 @@ class EthernetHubHandler:
         output=ETHERNET_HUB_OBJECT_SCHEMA)
     def create(request, response):
 
-        builtin_manager = Builtin.instance()
-        node = yield from builtin_manager.create_node(request.json.pop("name"),
-                                                      request.match_info["project_id"],
-                                                      request.json.get("node_id"),
-                                                      node_type="ethernet_hub")
+        # Use the Dynamips Ethernet hub to simulate this node
+        dynamips_manager = Dynamips.instance()
+        node = yield from dynamips_manager.create_device(request.json.pop("name"),
+                                                         request.match_info["project_id"],
+                                                         request.json.get("node_id"),
+                                                         device_type="ethernet_hub")
+
+        # On Linux, use the generic hub
+        # builtin_manager = Builtin.instance()
+        # node = yield from builtin_manager.create_node(request.json.pop("name"),
+        #                                               request.match_info["project_id"],
+        #                                               request.json.get("node_id"),
+        #                                               node_type="ethernet_hub")
 
         response.set_status(201)
         response.json(node)
@@ -74,8 +83,11 @@ class EthernetHubHandler:
         output=ETHERNET_HUB_OBJECT_SCHEMA)
     def show(request, response):
 
-        builtin_manager = Builtin.instance()
-        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        dynamips_manager = Dynamips.instance()
+        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+
+        # builtin_manager = Builtin.instance()
+        # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(node)
 
     @Route.put(
@@ -95,16 +107,11 @@ class EthernetHubHandler:
         output=ETHERNET_HUB_OBJECT_SCHEMA)
     def update(request, response):
 
-        builtin_manager = Builtin.instance()
-        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        dynamips_manager = Dynamips.instance()
+        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
-        # if "name" in request.json:
-        #     yield from device.set_name(request.json["name"])
-        #
-        # if "ports" in request.json:
-        #     for port in request.json["ports"]:
-        #         yield from device.set_port_settings(port["port"], port)
-
+        # builtin_manager = Builtin.instance()
+        # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(node)
 
     @Route.delete(
@@ -121,16 +128,18 @@ class EthernetHubHandler:
         description="Delete an Ethernet hub instance")
     def delete(request, response):
 
-        builtin_manager = Builtin.instance()
-        yield from builtin_manager.delete_node(request.match_info["node_id"])
+        dynamips_manager = Dynamips.instance()
+        yield from dynamips_manager.delete_device(request.match_info["node_id"])
+        # builtin_manager = Builtin.instance()
+        # yield from builtin_manager.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
-    # FIXME: introduce adapter number (always 0)?
     @Route.post(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
+            "adapter_number": "Adapter on the hub (always 0)",
             "port_number": "Port on the hub"
         },
         status_codes={
@@ -139,31 +148,32 @@ class EthernetHubHandler:
             404: "Instance doesn't exist"
         },
         description="Add a NIO to an Ethernet hub instance",
-        input=ETHERNET_HUB_NIO_SCHEMA)
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA)
     def create_nio(request, response):
 
-        builtin_manager = Builtin.instance()
-        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = yield from builtin_manager.create_nio(node, request.json["nio"])
+        dynamips_manager = Dynamips.instance()
+        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        nio = yield from dynamips_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
-        # port_settings = request.json.get("port_settings")
-        #
-        # if asyncio.iscoroutinefunction(node.add_nio):
-        #     yield from node.add_nio(nio, port_number)
-        # else:
-        #     node.add_nio(nio, port_number)
-        #
-        # if port_settings:
-        #     yield from node.set_port_settings(port_number, port_settings)
+        port_settings = request.json.get("port_settings")
+        yield from node.add_nio(nio, port_number)
+        if port_settings:
+            yield from node.set_port_settings(port_number, port_settings)
+
+        #builtin_manager = Builtin.instance()
+        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        #nio = yield from builtin_manager.create_nio(node, request.json["nio"])
 
         response.set_status(201)
         response.json(nio)
 
     @Route.delete(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
+            "adapter_number": "Adapter on the hub (always 0)",
             "port_number": "Port on the hub"
         },
         status_codes={
@@ -174,18 +184,21 @@ class EthernetHubHandler:
         description="Remove a NIO from an Ethernet hub instance")
     def delete_nio(request, response):
 
-        builtin_manager = Builtin.instance()
-        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        dynamips_manager = Dynamips.instance()
+        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        #builtin_manager = Builtin.instance()
+        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         nio = yield from node.remove_nio(port_number)
         yield from nio.delete()
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/ports/{port_number:\d+}/start_capture",
+        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
+            "adapter_number": "Adapter on the hub (always 0)",
             "port_number": "Port on the hub"
         },
         status_codes={
@@ -197,18 +210,21 @@ class EthernetHubHandler:
         input=NODE_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
-        builtin_manager = Builtin.instance()
-        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        dynamips_manager = Dynamips.instance()
+        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        #builtin_manager = Builtin.instance()
+        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(node.project.capture_working_directory(), request.json["capture_file_name"])
         yield from node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/ports/{port_number:\d+}/stop_capture",
+        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
+            "adapter_number": "Adapter on the hub (always 0)",
             "port_number": "Port on the hub"
         },
         status_codes={
@@ -219,8 +235,10 @@ class EthernetHubHandler:
         description="Stop a packet capture on an Ethernet hub instance")
     def stop_capture(request, response):
 
-        builtin_manager = Builtin.instance()
-        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        dynamips_manager = Dynamips.instance()
+        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        #builtin_manager = Builtin.instance()
+        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         yield from node.stop_capture(port_number)
         response.set_status(204)

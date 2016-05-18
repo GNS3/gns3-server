@@ -49,7 +49,7 @@ class EthernetHub(Bridge):
     def __json__(self):
 
         return {"name": self.name,
-                "device_id": self.id,
+                "node_id": self.id,
                 "project_id": self.project.id}
 
     @asyncio.coroutine

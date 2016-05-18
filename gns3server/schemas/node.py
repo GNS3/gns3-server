@@ -119,7 +119,7 @@ NODE_OBJECT_SCHEMA = {
         },
         "status": {
             "description": "Status of the node",
-            "enum": ["stopped", "started"]
+            "enum": ["stopped", "started", "suspended"]
         }
     },
     "additionalProperties": False,
