@@ -35,8 +35,8 @@ def compute():
 
 
 @pytest.fixture
-def node(compute):
-    project = Project(str(uuid.uuid4()))
+def node(compute, controller):
+    project = Project(str(uuid.uuid4()), controller=controller)
     node = Node(project, compute,
                 name="demo",
                 node_id=str(uuid.uuid4()),

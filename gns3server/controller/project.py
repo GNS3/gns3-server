@@ -37,8 +37,9 @@ class Project:
     :param temporary: boolean to tell if the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, temporary=False):
+    def __init__(self, name=None, project_id=None, path=None, temporary=False, controller=None):
 
+        self._controller = controller
         self._name = name
         if project_id is None:
             self._id = str(uuid4())
@@ -60,6 +61,10 @@ class Project:
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
+
+    @property
+    def controller(self):
+        return self._controller
 
     @property
     def name(self):
@@ -134,6 +139,7 @@ class Project:
                 self._project_created_on_compute.add(compute)
             yield from node.create()
             self._nodes[node.id] = node
+            self.controller.notification.emit("node.created", node.__json__())
             return node
         return self._nodes[node_id]
 
@@ -141,7 +147,8 @@ class Project:
     def delete_node(self, node_id):
         node = self.get_node(node_id)
         del self._nodes[node.id]
-        yield from node.delete()
+        yield from node.destroy()
+        self.controller.notification.emit("node.deleted", node.__json__())
 
     def get_node(self, node_id):
         """
@@ -167,6 +174,13 @@ class Project:
         link = UDPLink(self)
         self._links[link.id] = link
         return link
+
+    @asyncio.coroutine
+    def delete_link(self, link_id):
+        link = self.get_link(link_id)
+        del self._links[link.id]
+        yield from link.delete()
+        self.controller.notification.emit("link.deleted", link.__json__())
 
     def get_link(self, link_id):
         """

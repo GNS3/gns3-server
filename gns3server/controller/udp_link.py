@@ -69,14 +69,21 @@ class UDPLink(Link):
         """
         Delete the link and free the resources
         """
-        node1 = self._nodes[0]["node"]
-        adapter_number1 = self._nodes[0]["adapter_number"]
-        port_number1 = self._nodes[0]["port_number"]
-        node2 = self._nodes[1]["node"]
-        adapter_number2 = self._nodes[1]["adapter_number"]
-        port_number2 = self._nodes[1]["port_number"]
+        try:
+            node1 = self._nodes[0]["node"]
+            adapter_number1 = self._nodes[0]["adapter_number"]
+            port_number1 = self._nodes[0]["port_number"]
+        except IndexError:
+            return
 
         yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1))
+
+        try:
+            node2 = self._nodes[1]["node"]
+            adapter_number2 = self._nodes[1]["adapter_number"]
+            port_number2 = self._nodes[1]["port_number"]
+        except IndexError:
+            return
         yield from node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2))
 
     @asyncio.coroutine

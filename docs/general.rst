@@ -208,6 +208,9 @@ The available notification are:
     * node.created
     * node.updated
     * node.deleted
+    * link.created
+    * link.updated
+    * link.deleted
     * log.error
     * log.warning
     * log.info

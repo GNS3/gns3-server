@@ -30,8 +30,8 @@ from tests.utils import AsyncioBytesIO
 
 
 @pytest.fixture
-def project():
-    return Project()
+def project(controller):
+    return Project(controller=controller)
 
 
 @pytest.fixture
@@ -73,6 +73,7 @@ def test_json(async_run, project, compute):
     async_run(link.add_node(node2, 1, 3))
     assert link.__json__() == {
         "link_id": link.id,
+        "project_id": project.id,
         "nodes": [
             {
                 "node_id": node1.id,

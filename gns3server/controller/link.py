@@ -45,6 +45,8 @@ class Link:
             "adapter_number": adapter_number,
             "port_number": port_number
         })
+        if len(self._nodes) == 2:
+            self._project.controller.notification.emit("link.created", self.__json__())
 
     @asyncio.coroutine
     def create(self):
@@ -70,6 +72,7 @@ class Link:
         self._capturing = True
         self._capture_file_name = capture_file_name
         self._streaming_pcap = asyncio.async(self._start_streaming_pcap())
+        self._project.controller.notification.emit("link.updated", self.__json__())
 
     @asyncio.coroutine
     def _start_streaming_pcap(self):
@@ -94,6 +97,8 @@ class Link:
         Stop capture on the link
         """
         self._capturing = False
+        self._project.controller.notification.emit("link.updated", self.__json__())
+
 
     @asyncio.coroutine
     def read_pcap_from_source(self):
@@ -142,6 +147,7 @@ class Link:
             })
         return {
             "nodes": res, "link_id": self._id,
+            "project_id": self._project.id,
             "capturing": self._capturing,
             "capture_file_name": self._capture_file_name,
             "capture_file_path": self.capture_file_path

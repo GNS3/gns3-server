@@ -223,7 +223,6 @@ class BaseNode:
         log.info("{module}: {name} [{id}] created".format(module=self.manager.module_name,
                                                           name=self.name,
                                                           id=self.id))
-        self._project.emit("node.created", self)
 
     @asyncio.coroutine
     def delete(self):
@@ -231,7 +230,6 @@ class BaseNode:
         Delete the node (including all its files).
         """
 
-        self._project.emit("node.deleted", self)
         directory = self.project.node_working_directory(self)
         if os.path.exists(directory):
             try:

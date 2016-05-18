@@ -128,10 +128,8 @@ class LinkHandler:
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        link = project.get_link(request.match_info["link_id"])
-        yield from link.delete()
+        yield from project.delete_link(request.match_info["link_id"])
         response.set_status(204)
-        response.json(link)
 
     @Route.get(
         r"/projects/{project_id}/links/{link_id}/pcap",
