@@ -218,7 +218,7 @@ class Dynamips(BaseManager):
                 continue
 
         # Release the dynamips ids if we want to reload the same project
-        # later
+        # later
         if project.id in self._dynamips_ids:
             del self._dynamips_ids[project.id]
 

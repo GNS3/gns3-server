@@ -29,7 +29,7 @@ You can check the server version with a simple curl command:
 
 .. code-block:: shell-session
 
-    # curl "http://localhost:3080/v2/version""
+    # curl "http://localhost:3080/v1/version"
     {
         "version": "2.0.0dev1"
     }
@@ -39,7 +39,7 @@ The next step is to create a project.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v2/projects" -d '{"name": "test"}'
+    # curl -X POST "http://localhost:3080/v1/projects" -d '{"name": "test"}'
     {
         "name": "test",
         "path": null,
@@ -51,7 +51,7 @@ With this project id we can now create two VPCS Node.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v2/projects/994d95b6-7dd4-467b-898c-14cf34900b7b/vms" -d '{"name": "VPCS 1", "vm_type": "vpcs"}'
+    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms" -d '{"name": "VPCS 1"}'
     {
         "console": 2000,
         "name": "VPCS 1",
@@ -59,7 +59,7 @@ With this project id we can now create two VPCS Node.
         "vm_id": "24d2e16b-fbef-4259-ae34-7bc21a41ee28"
     }%
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms" -d '{"name": "VPCS 2"}'
+    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms" -d '{"name": "VPCS 2"}'
     {
         "console": 2001,
         "name": "VPCS 2",
@@ -87,7 +87,7 @@ communication is made by creating two UDP tunnels.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/24d2e16b-fbef-4259-ae34-7bc21a41ee28/adapters/0/ports/0/nio" -d '{"lport": 10000, "rhost": "127.0.0.1", "rport": 10001, "type": "nio_udp"}'
+    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/24d2e16b-fbef-4259-ae34-7bc21a41ee28/adapters/0/ports/0/nio" -d '{"lport": 10000, "rhost": "127.0.0.1", "rport": 10001, "type": "nio_udp"}'
     {
         "lport": 10000,
         "rhost": "127.0.0.1",
@@ -107,7 +107,7 @@ Now we can start the two Node
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/24d2e16b-fbef-4259-ae34-7bc21a41ee28/start" -d "{}"
+    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/24d2e16b-fbef-4259-ae34-7bc21a41ee28/start" -d "{}"
     # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/daefc24a-103c-4717-8e01-6517d931c1ae/start" -d '{}'
 
 Everything should be started now. You can connect via telnet to the different Node.
@@ -115,7 +115,7 @@ The port is the field console in the create Node request.
 
 .. code-block:: shell-session
 
-    # telnet 127.0.0.1 2000
+    # telnet 127.0.0.1 2000
     Trying 127.0.0.1...
     Connected to localhost.
     Escape character is '^]'.
@@ -141,7 +141,7 @@ The port is the field console in the create Node request.
     Good-bye
     Connection closed by foreign host.
 
-    # telnet 127.0.0.1 2001
+    # telnet 127.0.0.1 2001
     telnet 127.0.0.1 2001
     Trying 127.0.0.1...
     Connected to localhost.
@@ -217,5 +217,5 @@ Previous versions
 
 API version 1
 -------------
-Shipped with GNS3 1.3 and 1.4. This API doesn't support the controller system.
+Shipped with GNS3 1.3, 1.4 and 1.5. This API doesn't support the controller system.
 

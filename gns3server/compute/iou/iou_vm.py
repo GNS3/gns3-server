@@ -131,7 +131,7 @@ class IOUVM(BaseNode):
         self._path = self.manager.get_abs_image_path(path)
 
         # In 1.2 users uploaded images to the images roots
-        # after the migration their images are inside images/IOU
+        # after the migration their images are inside images/IOU
         # but old topologies use old path
         if "IOU" not in self._path:
             location, filename = os.path.split(self._path)

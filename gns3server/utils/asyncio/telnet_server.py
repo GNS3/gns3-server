@@ -69,7 +69,7 @@ class AsyncioTelnetServer:
 
         self._binary = binary
         # If echo is true when the client send data
-        # the data is echo on his terminal by telnet otherwise
+        # the data is echo on his terminal by telnet otherwise
         # it's our job (or the wrapped app) to send back the data
         self._echo = echo
 

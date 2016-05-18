@@ -83,8 +83,8 @@ class VirtualBox(BaseManager):
     @asyncio.coroutine
     def execute(self, subcommand, args, timeout=60):
 
-        # We use a lock prevent parallel execution due to strange errors
-        # reported by a user and reproduced by us.
+        # We use a lock prevent parallel execution due to strange errors
+        # reported by a user and reproduced by us.
         # https://github.com/GNS3/gns3-gui/issues/261
         with (yield from self._execute_lock):
             vboxmanage_path = self.vboxmanage_path

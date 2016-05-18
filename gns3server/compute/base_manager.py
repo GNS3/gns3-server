@@ -424,7 +424,7 @@ class BaseManager:
 
             return force_unix_path(path)
         else:
-            # For non local server we disallow using absolute path outside image directory
+            # For non local server we disallow using absolute path outside image directory
             if Config.instance().get_section_config("Server").get("local", False) is False:
                 img_directory = self.config.get_section_config("Server").get("images_path", os.path.expanduser("~/GNS3/images"))
                 img_directory = force_unix_path(img_directory)

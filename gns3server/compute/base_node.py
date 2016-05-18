@@ -70,7 +70,7 @@ class BaseNode:
             else:
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
 
-        # We need to allocate aux before giving a random console port
+        # We need to allocate aux before giving a random console port
         if self._aux is not None:
             self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
 
