@@ -21,11 +21,9 @@ import aiohttp
 import shutil
 
 from uuid import UUID, uuid4
-from contextlib import contextmanager
 
 from .node import Node
 from .udp_link import UDPLink
-from ..notification_queue import NotificationQueue
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
 
@@ -59,7 +57,6 @@ class Project:
         self._computes = set()
         self._nodes = {}
         self._links = {}
-        self._listeners = set()
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
@@ -202,29 +199,6 @@ class Project:
         for compute in self._project_created_on_compute:
             yield from compute.delete("/projects/{}".format(self._id))
         shutil.rmtree(self.path, ignore_errors=True)
-
-    @contextmanager
-    def queue(self):
-        """
-        Get a queue of notifications
-
-        Use it with Python with
-        """
-        queue = NotificationQueue()
-        self._listeners.add(queue)
-        yield queue
-        self._listeners.remove(queue)
-
-    def emit(self, action, event, **kwargs):
-        """
-        Send an event to all the client listening for notifications
-
-        :param action: Action name
-        :param event: Event to send
-        :param kwargs: Add this meta to the notification (project_id for example)
-        """
-        for listener in self._listeners:
-            listener.put_nowait((action, event, kwargs))
 
     @classmethod
     def _get_default_project_directory(cls):

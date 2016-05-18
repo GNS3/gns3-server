@@ -152,7 +152,7 @@ class ProjectHandler:
         response.content_length = None
 
         response.start(request)
-        with project.queue() as queue:
+        with controller.notification.queue(project) as queue:
             while True:
                 try:
                     msg = yield from queue.get_json(5)
@@ -178,7 +178,7 @@ class ProjectHandler:
         ws = aiohttp.web.WebSocketResponse()
         yield from ws.prepare(request)
 
-        with project.queue() as queue:
+        with controller.notification.queue(project) as queue:
             while True:
                 try:
                     notification = yield from queue.get_json(5)

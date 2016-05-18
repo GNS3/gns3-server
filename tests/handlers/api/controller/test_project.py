@@ -35,11 +35,11 @@ from gns3server.controller import Controller
 
 
 @pytest.fixture
-def project(http_controller):
+def project(http_controller, controller):
     u = str(uuid.uuid4())
     query = {"name": "test", "project_id": u}
     response = http_controller.post("/projects", query)
-    return Controller.instance().get_project(u)
+    return controller.get_project(u)
 
 
 def test_create_project_with_path(http_controller, tmpdir):
@@ -121,12 +121,12 @@ def test_close_project(http_controller, project):
         assert project not in Controller.instance().projects
 
 
-def test_notification(http_controller, project, loop):
+def test_notification(http_controller, project, controller, loop):
     @asyncio.coroutine
     def go(future):
         response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)))
         response.body = yield from response.content.read(200)
-        project.emit("node.created", {"a": "b"})
+        controller.notification.emit("node.created", {"a": "b"})
         response.body += yield from response.content.read(50)
         response.close()
         future.set_result(response)
@@ -145,13 +145,13 @@ def test_notification_invalid_id(http_controller):
     assert response.status == 404
 
 
-def test_notification_ws(http_controller, project, async_run):
+def test_notification_ws(http_controller, controller, project, async_run):
     ws = http_controller.websocket("/projects/{project_id}/notifications/ws".format(project_id=project.id))
     answer = async_run(ws.receive())
     answer = json.loads(answer.data)
     assert answer["action"] == "ping"
 
-    project.emit("test", {})
+    controller.notification.emit("test", {})
 
     answer = async_run(ws.receive())
     answer = json.loads(answer.data)

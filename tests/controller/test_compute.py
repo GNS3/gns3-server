@@ -160,13 +160,13 @@ def test_connectNotification(compute, async_run):
             response.tp = aiohttp.MsgType.closed
             return response
 
-    compute._controller = MagicMock()
+    compute._controller._notifications = MagicMock()
     compute._session = AsyncioMagicMock(return_value=ws_mock)
     compute._session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
     ws_mock.receive = receive
     async_run(compute._connect_notification())
 
-    compute._controller.emit.assert_called_with('test', {'a': 1}, compute_id=compute.id, project_id='42')
+    compute._controller.notification.emit.assert_called_with('test', {'a': 1}, compute_id=compute.id, project_id='42')
     assert compute._connected is False
 
 

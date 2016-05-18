@@ -24,6 +24,7 @@ import aiohttp
 from ..config import Config
 from .project import Project
 from .compute import Compute
+from .notification import Notification
 from ..version import __version__
 
 import logging
@@ -36,6 +37,7 @@ class Controller:
     def __init__(self):
         self._computes = {}
         self._projects = {}
+        self._notification = Notification(self)
 
         if sys.platform.startswith("win"):
             config_path = os.path.join(os.path.expandvars("%APPDATA%"), "GNS3")
@@ -117,6 +119,13 @@ class Controller:
         return self._computes["local"]
 
     @property
+    def notification(self):
+        """
+        The notification system
+        """
+        return self._notification
+
+    @property
     def computes(self):
         """
         :returns: The dictionary of compute server managed by this controller
@@ -180,17 +189,3 @@ class Controller:
             Controller._instance = Controller()
         return Controller._instance
 
-    def emit(self, action, event, **kwargs):
-        """
-        Send a notification to clients scoped by projects
-        """
-
-        if "project_id" in kwargs:
-            try:
-                project_id = kwargs.pop("project_id")
-                self._projects[project_id].emit(action, event, **kwargs)
-            except KeyError:
-                pass
-        else:
-            for project_instance in self._projects.values():
-                project_instance.emit(action, event, **kwargs)

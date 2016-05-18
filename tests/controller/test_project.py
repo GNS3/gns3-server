@@ -194,14 +194,3 @@ def test_getLink(async_run):
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
         project.get_link("test")
 
-
-def test_emit(async_run):
-    project = Project()
-    with project.queue() as queue:
-        assert len(project._listeners) == 1
-        async_run(queue.get(0.1))  #  ping
-        project.emit('test', {})
-        notif = async_run(queue.get(5))
-        assert notif == ('test', {}, {})
-
-    assert len(project._listeners) == 0
