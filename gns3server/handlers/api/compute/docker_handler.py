@@ -255,6 +255,7 @@ class DockerHandler:
         container.environment = request.json.get("environment", container.environment)
         container.adapters = request.json.get("adapters", container.adapters)
         yield from container.update()
+        container.updated()
         response.json(container)
 
     @Route.post(

@@ -106,6 +106,7 @@ class DynamipsDeviceHandler:
             for port in request.json["ports"]:
                 yield from device.set_port_settings(port["port"], port)
 
+        device.updated()
         response.json(device)
 
     @Route.delete(

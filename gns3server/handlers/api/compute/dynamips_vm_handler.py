@@ -122,6 +122,7 @@ class DynamipsVMHandler:
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from dynamips_manager.update_vm_settings(vm, request.json)
+        vm.updated()
         response.json(vm)
 
     @Route.delete(

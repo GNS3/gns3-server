@@ -119,6 +119,7 @@ class QEMUHandler:
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
 
+        vm.updated()
         response.json(vm)
 
     @Route.delete(

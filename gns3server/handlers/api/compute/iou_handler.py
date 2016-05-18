@@ -123,6 +123,7 @@ class IOUHandler:
             vm.startup_config = request.json.get("startup_config_content")
         if "private_config_content" in request.json:
             vm.private_config = request.json.get("private_config_content")
+        vm.updated()
         response.json(vm)
 
     @Route.delete(

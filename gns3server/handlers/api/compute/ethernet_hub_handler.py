@@ -112,6 +112,7 @@ class EthernetHubHandler:
 
         # builtin_manager = Builtin.instance()
         # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node.updated()
         response.json(node)
 
     @Route.delete(

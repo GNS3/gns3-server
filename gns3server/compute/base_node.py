@@ -105,6 +105,12 @@ class BaseNode:
     def status(self, status):
 
         self._node_status = status
+        self.updated()
+
+    def updated(self):
+        """
+        Send a updated event
+        """
         self.project.emit("node.updated", self)
 
     @property

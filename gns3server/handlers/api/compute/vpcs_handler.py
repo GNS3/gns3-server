@@ -98,6 +98,7 @@ class VPCSHandler:
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
         vm.startup_script = request.json.get("startup_script", vm.startup_script)
+        vm.updated()
         response.json(vm)
 
     @Route.delete(

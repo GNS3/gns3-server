@@ -30,6 +30,7 @@ from gns3server.schemas.virtualbox import (
     VBOX_OBJECT_SCHEMA
 )
 
+
 class VirtualBoxHandler:
 
     """
@@ -137,6 +138,7 @@ class VirtualBoxHandler:
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
 
+        vm.updated()
         response.json(vm)
 
     @Route.delete(
