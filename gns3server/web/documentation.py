@@ -148,7 +148,7 @@ class Documentation(object):
 
             if "enum" in prop:
                 field_type = "enum"
-                prop['description'] = "Possible values: {}".format(', '.join(prop['enum']))
+                prop['description'] = "Possible values: {}".format(', '.join(map(lambda a: a or "null", prop['enum'])))
             else:
                 field_type = prop.get("type", "")
 

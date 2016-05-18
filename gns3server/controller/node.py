@@ -23,7 +23,7 @@ import uuid
 
 class Node:
 
-    def __init__(self, project, compute, node_id=None, node_type=None, name=None, console=None, console_type="telnet", properties={}):
+    def __init__(self, project, compute, node_id=None, node_type=None, name=None, console=None, console_type=None, properties={}):
         """
         :param project: Project of the node
         :param compute: Compute server where the server will run
@@ -155,6 +155,7 @@ class Node:
         if self._console:
             # console is optional for builtin nodes
             data["console"] = self._console
+        if self._console_type:
             data["console_type"] = self._console_type
 
         # None properties are not be send. Because it can mean the emulator doesn't support it

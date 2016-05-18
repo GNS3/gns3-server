@@ -275,11 +275,7 @@ class ProjectHandler:
         path = request.match_info["path"]
         path = os.path.normpath(path)
 
-<< << << < HEAD: gns3server / handlers / api / compute / project_handler.py
-        # Raise an error if user try to escape
-== == == =
         # Raise error if user try to escape
->>>>>> > 1.5: gns3server / handlers / api / project_handler.py
         if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
         path = os.path.join(project.path, path)
@@ -432,17 +428,9 @@ class ProjectHandler:
         project_id = request.match_info["project_id"]
         project = pm.create_project(project_id=project_id)
 
-<<<<<<< HEAD:gns3server/handlers/api/compute/project_handler.py
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
         # Spooled means the file is temporary kept in memory until max_size is reached
-=======
-        # We write the content to a temporary location
-        # and after extract all. It could be more optimal to stream
-        # this but it's not implemented in Python.
-        #
-        # Spooled mean the file is temporary keep in ram until max_size
->>>>>>> 1.5:gns3server/handlers/api/project_handler.py
         try:
             with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
                 while True:
