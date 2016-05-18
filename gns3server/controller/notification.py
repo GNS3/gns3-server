@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
 from contextlib import contextmanager
 
 from ..notification_queue import NotificationQueue
@@ -42,21 +43,44 @@ class Notification:
         yield queue
         self._listeners[project.id].remove(queue)
 
-    def emit(self, action, event, **kwargs):
+    def dispatch(self, action, event, compute_id):
+        """
+        Notification received from compute node. Send it directly
+        to clients or process it
+
+        :param action: Action name
+        :param event: Event to send
+        :param compute_id: Compute id of the sender
+        """
+        if action == "node.updated":
+            try:
+                # Update controller node data and send the event node.updated
+                project = self._controller.get_project(event["project_id"])
+                node = project.get_node(event["node_id"])
+                node.parse_node_response(event)
+
+                self.emit("node.updated", node.__json__())
+            except aiohttp.web.HTTPNotFound:
+                return
+        elif action == "ping":
+            event["compute_id"] = compute_id
+            self.emit(action, event)
+        else:
+            self.emit(action, event)
+
+    def emit(self, action, event):
         """
         Send a notification to clients scoped by projects
 
         :param action: Action name
         :param event: Event to send
-        :param kwargs: Add this meta to the notification
         """
-        if "project_id" in kwargs:
-            project_id = kwargs.pop("project_id")
-            self._send_event_to_project(project_id, action, event, **kwargs)
+        if "project_id" in event:
+            self._send_event_to_project(event["project_id"], action, event)
         else:
-            self._send_event_to_all(action, event, **kwargs)
+            self._send_event_to_all(action, event)
 
-    def _send_event_to_project(self, project_id, action, event, **kwargs):
+    def _send_event_to_project(self, project_id, action, event):
         """
         Send an event to all the client listening for notifications for
         this project
@@ -64,24 +88,22 @@ class Notification:
         :param project: Project where we need to send the event
         :param action: Action name
         :param event: Event to send
-        :param kwargs: Add this meta to the notification
         """
         try:
             project_listeners = self._listeners[project_id]
         except KeyError:
             return
         for listener in project_listeners:
-            listener.put_nowait((action, event, kwargs))
+            listener.put_nowait((action, event, {}))
 
-    def _send_event_to_all(self, action, event, **kwargs):
+    def _send_event_to_all(self, action, event):
         """
         Send an event to all the client listening for notifications on all
         projects
 
         :param action: Action name
         :param event: Event to send
-        :param kwargs: Add this meta to the notification
         """
         for project_listeners in self._listeners.values():
             for listener in project_listeners:
-                listener.put_nowait((action, event, kwargs))
+                listener.put_nowait((action, event, {}))

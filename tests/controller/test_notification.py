@@ -16,20 +16,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+from unittest.mock import MagicMock
 
 from gns3server.controller.notification import Notification
-from gns3server.controller.project import Project
+from gns3server.controller import Controller
+from tests.utils import AsyncioMagicMock
 
 
-def test_emit_to_all(async_run, controller):
+@pytest.fixture
+def project(async_run):
+    return async_run(Controller.instance().add_project())
+
+
+@pytest.fixture
+def node(project, async_run):
+    compute = MagicMock()
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    return async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+
+
+def test_emit_to_all(async_run, controller, project):
     """
     Send an event to all if we don't have a project id in the event
     """
-    project = Project()
     notif = controller.notification
     with notif.queue(project) as queue:
         assert len(notif._listeners[project.id]) == 1
-        async_run(queue.get(0.1))  #  ping
+        async_run(queue.get(0.1))  # ping
         notif.emit('test', {})
         msg = async_run(queue.get(5))
         assert msg == ('test', {}, {})
@@ -37,19 +53,62 @@ def test_emit_to_all(async_run, controller):
     assert len(notif._listeners[project.id]) == 0
 
 
-def test_emit_to_project(async_run, controller):
+def test_emit_to_project(async_run, controller, project):
     """
     Send an event to a project listeners
     """
-    project = Project()
     notif = controller.notification
     with notif.queue(project) as queue:
         assert len(notif._listeners[project.id]) == 1
-        async_run(queue.get(0.1))  #  ping
+        async_run(queue.get(0.1))  # ping
         # This event has not listener
-        notif.emit('ignore', {}, project_id=42)
-        notif.emit('test', {}, project_id=project.id)
+        notif.emit('ignore', {"project_id": 42})
+        notif.emit('test', {"project_id": project.id})
+        msg = async_run(queue.get(5))
+        assert msg == ('test', {"project_id": project.id}, {})
+
+    assert len(notif._listeners[project.id]) == 0
+
+
+def test_dispatch(async_run, controller, project):
+    notif = controller.notification
+    with notif.queue(project) as queue:
+        assert len(notif._listeners[project.id]) == 1
+        async_run(queue.get(0.1))  # ping
+        notif.dispatch("test", {}, compute_id=1)
         msg = async_run(queue.get(5))
         assert msg == ('test', {}, {})
 
-    assert len(notif._listeners[project.id]) == 0
+
+def test_dispatch_ping(async_run, controller, project):
+    notif = controller.notification
+    with notif.queue(project) as queue:
+        assert len(notif._listeners[project.id]) == 1
+        async_run(queue.get(0.1))  # ping
+        notif.dispatch("ping", {}, compute_id=12)
+        msg = async_run(queue.get(5))
+        assert msg == ('ping', {'compute_id': 12}, {})
+
+
+def test_dispatch_node_updated(async_run, controller, node, project):
+    """
+    When we receive a node.updated notification from compute
+    we need to update the client
+    """
+
+    notif = controller.notification
+    with notif.queue(project) as queue:
+        assert len(notif._listeners[project.id]) == 1
+        async_run(queue.get(0.1))  # ping
+        notif.dispatch("node.updated", {
+            "node_id": node.id,
+            "project_id": project.id,
+            "name": "hello",
+            "startup_config": "ip 192"
+        },
+            compute_id=1)
+        assert node.name == "hello"
+        action, event, _ = async_run(queue.get(5))
+        assert action == "node.updated"
+        assert event["name"] == "hello"
+        assert event["properties"]["startup_config"] == "ip 192"

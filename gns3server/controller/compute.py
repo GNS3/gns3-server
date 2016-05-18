@@ -196,7 +196,7 @@ class Compute:
             msg = json.loads(response.data)
             action = msg.pop("action")
             event = msg.pop("event")
-            self._controller.notification.emit(action, event, compute_id=self.id, **msg)
+            self._controller.notification.dispatch(action, event, compute_id=self.id)
 
     def _getUrl(self, path):
         return "{}://{}:{}/v2/compute{}".format(self._protocol, self._host, self._port, path)

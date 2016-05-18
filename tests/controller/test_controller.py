@@ -156,4 +156,3 @@ def test_getProject(controller, async_run):
     assert controller.get_project(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.get_project("dsdssd")
-

@@ -152,7 +152,7 @@ def test_connectNotification(compute, async_run):
         call += 1
         if call == 1:
             response = MagicMock()
-            response.data = '{"action": "test", "event": {"a": 1}, "project_id": "42"}'
+            response.data = '{"action": "test", "event": {"a": 1}}'
             response.tp = aiohttp.MsgType.text
             return response
         else:
@@ -166,7 +166,7 @@ def test_connectNotification(compute, async_run):
     ws_mock.receive = receive
     async_run(compute._connect_notification())
 
-    compute._controller.notification.emit.assert_called_with('test', {'a': 1}, compute_id=compute.id, project_id='42')
+    compute._controller.notification.dispatch.assert_called_with('test', {'a': 1}, compute_id=compute.id)
     assert compute._connected is False
 
 

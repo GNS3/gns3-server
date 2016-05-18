@@ -102,7 +102,7 @@ class Node:
         data = self._node_data()
         data["node_id"] = self._id
         response = yield from self._compute.post("/projects/{}/{}/nodes".format(self._project.id, self._node_type), data=data)
-        self._parse_node_response(response)
+        self.parse_node_response(response.json)
 
     @asyncio.coroutine
     def update(self, name=None, console=None, console_type="telnet", properties={}):
@@ -128,20 +128,26 @@ class Node:
 
         data = self._node_data()
         response = yield from self.put(None, data=data)
-        self._parse_node_response(response)
+        self.parse_node_response(response.json)
 
-    def _parse_node_response(self, response):
+    def parse_node_response(self, response):
         """
         Update the object with the remote node object
         """
-        for key, value in response.json.items():
+        for key, value in response.items():
             if key == "console":
                 self._console = value
             elif key == "node_directory":
                 self._node_directory = value
             elif key == "command_line":
                 self._command_line = value
-            elif key in ["console_type", "name", "node_id", "project_id", "status"]:
+            elif key == "status":
+                self._status = value
+            elif key == "console_type":
+                self._console_type = value
+            elif key == "name":
+                self._name = value
+            elif key in ["node_id", "project_id"]:
                 pass
             else:
                 self._properties[key] = value

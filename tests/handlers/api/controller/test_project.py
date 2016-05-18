@@ -82,6 +82,7 @@ def test_list_projects(http_controller, tmpdir):
     projects = response.json
     assert projects[0]["name"] == "test"
 
+
 def test_commit_project(http_controller, project):
     with asyncio_patch("gns3server.controller.project.Project.commit", return_value=True) as mock:
         response = http_controller.post("/projects/{project_id}/commit".format(project_id=project.id), example=True)

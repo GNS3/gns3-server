@@ -193,4 +193,3 @@ def test_getLink(async_run):
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
         project.get_link("test")
-

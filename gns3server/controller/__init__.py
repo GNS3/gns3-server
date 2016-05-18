@@ -188,4 +188,3 @@ class Controller:
         if not hasattr(Controller, '_instance') or Controller._instance is None:
             Controller._instance = Controller()
         return Controller._instance
-
