@@ -117,3 +117,24 @@ def test_default_capture_file_name(project, compute, async_run):
     async_run(link.add_node(node1, 0, 4))
     async_run(link.add_node(node2, 1, 3))
     assert link.default_capture_file_name() == "Hello_0-4_to_w0rld_1-3.pcap"
+
+
+def test_start_capture(link, async_run, tmpdir, project, controller):
+    @asyncio.coroutine
+    def fake_reader():
+        return AsyncioBytesIO()
+
+    link.read_pcap_from_source = fake_reader
+    controller._notification = MagicMock()
+    async_run(link.start_capture(capture_file_name="test.pcap"))
+    assert link._capturing
+    assert link._capture_file_name == "test.pcap"
+    controller._notification.emit.assert_called_with("link.updated", link.__json__())
+
+
+def test_stop_capture(link, async_run, tmpdir, project, controller):
+    link._capturing = True
+    controller._notification = MagicMock()
+    async_run(link.stop_capture())
+    assert link._capturing is False
+    controller._notification.emit.assert_called_with("link.updated", link.__json__())

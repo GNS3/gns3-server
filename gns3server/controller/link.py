@@ -99,7 +99,6 @@ class Link:
         self._capturing = False
         self._project.controller.notification.emit("link.updated", self.__json__())
 
-
     @asyncio.coroutine
     def read_pcap_from_source(self):
         """
