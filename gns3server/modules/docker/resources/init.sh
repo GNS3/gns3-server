@@ -17,7 +17,7 @@
 
 #
 # This script is injected into the container and launch before
-# the start command of the container
+# the start command of the container
 #
 OLD_PATH="$PATH"
 PATH=/gns3/bin:/tmp/gns3/bin

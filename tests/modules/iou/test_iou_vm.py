@@ -216,7 +216,7 @@ def test_path(vm, fake_iou_bin):
 def test_path_12_location(vm, fake_iou_bin):
 
     # In 1.2 users uploaded images to the images roots
-    # after the migration their images are inside images/IOU
+    # after the migration their images are inside images/IOU
     # but old topologies use old path
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         vm.path = fake_iou_bin.replace("/IOU", "")

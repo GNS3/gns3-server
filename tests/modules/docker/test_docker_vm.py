@@ -683,7 +683,7 @@ def test_add_ubridge_connection_no_free_interface(loop, vm):
     nio = vm.manager.create_nio(0, nio)
     with pytest.raises(DockerError):
 
-        # We create fake ethernet interfaces for docker
+        # We create fake ethernet interfaces for docker
         interfaces = ["veth-gns3-ext{}".format(index) for index in range(128)]
 
         with patch("psutil.net_if_addrs", return_value=interfaces):

@@ -117,11 +117,11 @@ class Docker(BaseManager):
                 pass
             log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
             if response.status == 304:
-                raise DockerHttp304Error("Docker has returned an error: {} {}".format(response.status, body))
+                raise DockerHttp304Error("Docker has returned an error: {} {}".format(response.status, body))
             elif response.status == 404:
-                raise DockerHttp404Error("Docker has returned an error: {} {}".format(response.status, body))
+                raise DockerHttp404Error("Docker has returned an error: {} {}".format(response.status, body))
             else:
-                raise DockerError("Docker has returned an error: {} {}".format(response.status, body))
+                raise DockerError("Docker has returned an error: {} {}".format(response.status, body))
         return response
 
     @asyncio.coroutine

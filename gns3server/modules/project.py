@@ -533,7 +533,7 @@ class Project:
             if os.path.split(root)[-1:][0] == "project-files":
                 dirs[:] = [d for d in dirs if d not in ("snapshots", "captures")]
 
-            # Ignore log files and OS noise
+            # Ignore log files and OS noise
             files = [f for f in files if not f.endswith('_log.txt') and not f.endswith('.log') and f != '.DS_Store']
 
             for file in files:

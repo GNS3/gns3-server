@@ -18,7 +18,7 @@
 #
 # Install GNS3 on a remote Ubuntu 14.04 LTS server
 # This create a dedicated user and setup all the package
-# and optionnaly a VPN
+# and optionnaly a VPN
 #
 
 function help {
@@ -115,7 +115,7 @@ apt-get update
 log "Upgrade packages"
 apt-get upgrade -y
 
-log " Install GNS3 packages"
+log " Install GNS3 packages"
 apt-get install -y gns3-server
 
 log "Create user GNS3 with /opt/gns3 as home directory"

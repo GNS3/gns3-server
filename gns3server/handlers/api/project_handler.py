@@ -236,7 +236,7 @@ class ProjectHandler:
         :returns: hash
         """
         stats = {}
-        # Non blocking call in order to get cpu usage. First call will return 0
+        # Non blocking call in order to get cpu usage. First call will return 0
         stats["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
         stats["memory_usage_percent"] = psutil.virtual_memory().percent
         return {"action": "ping", "event": stats}
@@ -280,7 +280,7 @@ class ProjectHandler:
         path = request.match_info["path"]
         path = os.path.normpath(path)
 
-        # Raise error if user try to escape
+        # Raise error if user try to escape
         if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
         path = os.path.join(project.path, path)
@@ -325,7 +325,7 @@ class ProjectHandler:
         path = request.match_info["path"]
         path = os.path.normpath(path)
 
-        # Raise error if user try to escape
+        # Raise error if user try to escape
         if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
         path = os.path.join(project.path, path)
@@ -394,10 +394,10 @@ class ProjectHandler:
         project = pm.create_project(project_id=project_id)
 
         # We write the content to a temporary location
-        # and after extract all. It could be more optimal to stream
+        # and after extract all. It could be more optimal to stream
         # this but it's not implemented in Python.
-        # 
-        # Spooled mean the file is temporary keep in ram until max_size
+        #
+        # Spooled mean the file is temporary keep in ram until max_size
         try:
             with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
                 while True:

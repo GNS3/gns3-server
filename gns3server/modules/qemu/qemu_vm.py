@@ -82,8 +82,8 @@ class QemuVM(BaseVM):
             try:
                 self.qemu_path = qemu_path
             except QemuError as e:
-                # If the binary is not found for topologies 1.4 and later
-                # search via the platform otherwise use the binary name
+                # If the binary is not found for topologies 1.4 and later
+                # search via the platform otherwise use the binary name
                 if platform:
                     self.platform = platform
                 else:
