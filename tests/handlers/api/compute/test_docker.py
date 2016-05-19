@@ -62,7 +62,7 @@ def test_docker_create(http_compute, project, base_params):
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
     assert response.json["container_id"] == "8bd8153ea8f5"
-    assert response.json["image"] == "nginx"
+    assert response.json["image"] == "nginx:latest"
     assert response.json["adapters"] == 2
     assert response.json["environment"] == "YES=1\nNO=0"
     assert response.json["console_resolution"] == "1280x1024"
