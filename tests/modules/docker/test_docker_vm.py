@@ -41,7 +41,7 @@ def manager(port_manager):
 
 @pytest.fixture(scope="function")
 def vm(project, manager):
-    vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+    vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
     vm._cid = "e90e34656842"
     vm.allocate_aux = False
     return vm
@@ -50,7 +50,7 @@ def vm(project, manager):
 def test_json(vm, project):
     assert vm.__json__() == {
         'container_id': 'e90e34656842',
-        'image': 'ubuntu',
+        'image': 'ubuntu:latest',
         'name': 'test',
         'project_id': project.id,
         'vm_id': vm.id,
@@ -81,9 +81,9 @@ def test_create(loop, project, manager):
         "Id": "e90e34656806",
         "Warnings": []
     }
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
-            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
             loop.run_until_complete(asyncio.async(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
                 "Tty": True,
@@ -102,10 +102,47 @@ def test_create(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu",
+                "Image": "ubuntu:latest",
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0"
-                ],
+                        ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
+
+
+def test_create_with_tag(loop, project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
+        with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest:16.04")
+            loop.run_until_complete(asyncio.async(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("modules/docker/resources")),
+                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest:16.04",
+                "Env": [
+                    "GNS3_MAX_ETHERNET=eth0"
+                        ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -119,9 +156,9 @@ def test_create_vnc(loop, project, manager):
         "Warnings": []
     }
 
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
-            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", console_type="vnc", console=5900)
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest", console_type="vnc", console=5900)
             vm._start_vnc = MagicMock()
             vm._display = 42
             loop.run_until_complete(asyncio.async(vm.create()))
@@ -143,11 +180,11 @@ def test_create_vnc(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu",
+                "Image": "ubuntu:latest",
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0",
                     "DISPLAY=:42"
-                ],
+                        ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -162,9 +199,9 @@ def test_create_start_cmd(loop, project, manager):
         "Id": "e90e34656806",
         "Warnings": []
     }
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
-            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
             vm._start_command = "/bin/ls"
             loop.run_until_complete(asyncio.async(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
@@ -186,10 +223,10 @@ def test_create_start_cmd(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu",
+                "Image": "ubuntu:latest",
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0"
-                ]
+                        ]
             })
         assert vm._cid == "e90e34656806"
 
@@ -200,9 +237,9 @@ def test_create_environment(loop, project, manager):
         "Id": "e90e34656806",
         "Warnings": []
     }
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
-            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
             vm.environment = "YES=1\nNO=0"
             loop.run_until_complete(asyncio.async(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
@@ -222,12 +259,12 @@ def test_create_environment(loop, project, manager):
                     "GNS3_MAX_ETHERNET=eth0",
                     "YES=1",
                     "NO=0"
-                ],
+                        ],
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu",
+                "Image": "ubuntu:latest",
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -252,7 +289,7 @@ def test_create_image_not_available(loop, project, manager):
         "Warnings": []
     }
 
-    vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+    vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
     vm._get_image_informations = MagicMock()
     vm._get_image_informations.side_effect = informations
 
@@ -276,15 +313,15 @@ def test_create_image_not_available(loop, project, manager):
                 "NetworkDisabled": True,
                 "Name": "test",
                 "Hostname": "test",
-                "Image": "ubuntu",
+                "Image": "ubuntu:latest",
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0"
-                ],
+                        ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
         assert vm._cid == "e90e34656806"
-        mock_pull.assert_called_with("ubuntu")
+        mock_pull.assert_called_with("ubuntu:latest")
 
 
 def test_get_container_state(loop, vm):
@@ -470,7 +507,7 @@ def test_update(loop, vm):
     original_console = vm.console
     original_aux = vm.aux
 
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
             with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock_query:
                 loop.run_until_complete(asyncio.async(vm.update()))
@@ -493,7 +530,7 @@ def test_update(loop, vm):
         "NetworkDisabled": True,
         "Name": "test",
         "Hostname": "test",
-        "Image": "ubuntu",
+        "Image": "ubuntu:latest",
         "Env": [
             "GNS3_MAX_ETHERNET=eth0"
         ],
@@ -518,7 +555,7 @@ def test_update_vnc(loop, vm):
     original_aux = vm.aux
 
     with asyncio_patch("gns3server.modules.docker.DockerVM._start_vnc"):
-        with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+        with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
             with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="stopped"):
                 with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock_query:
                     loop.run_until_complete(asyncio.async(vm.update()))
@@ -537,7 +574,7 @@ def test_update_running(loop, vm):
     original_console = vm.console
     vm.start = MagicMock()
 
-    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.modules.docker.Docker.list_images", return_value=[{"image": "ubuntu:latest"}]) as mock_list_images:
         with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="running"):
             with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock_query:
                 loop.run_until_complete(asyncio.async(vm.update()))
@@ -560,7 +597,7 @@ def test_update_running(loop, vm):
         "NetworkDisabled": True,
         "Name": "test",
         "Hostname": "test",
-        "Image": "ubuntu",
+        "Image": "ubuntu:latest",
         "Env": [
             "GNS3_MAX_ETHERNET=eth0"
         ],
@@ -770,8 +807,8 @@ def test_pull_image(loop, vm):
     mock_query.content.return_value = Response()
 
     with asyncio_patch("gns3server.modules.docker.Docker.http_query", return_value=mock_query) as mock:
-        images = loop.run_until_complete(asyncio.async(vm.pull_image("ubuntu")))
-        mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"})
+        images = loop.run_until_complete(asyncio.async(vm.pull_image("ubuntu:latest")))
+        mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu:latest"})
 
 
 def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
@@ -811,9 +848,9 @@ def test_get_image_informations(project, manager, loop):
     response = {
     }
     with asyncio_patch("gns3server.modules.docker.Docker.query", return_value=response) as mock:
-        vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+        vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
         loop.run_until_complete(asyncio.async(vm._get_image_informations()))
-        mock.assert_called_with("GET", "images/ubuntu/json")
+        mock.assert_called_with("GET", "images/ubuntu:latest/json")
 
 
 def test_mount_binds(vm, tmpdir):

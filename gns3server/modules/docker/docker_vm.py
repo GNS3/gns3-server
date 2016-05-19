@@ -65,6 +65,9 @@ class DockerVM(BaseVM):
                  console_resolution="1024x768", console_http_port=80, console_http_path="/"):
         super().__init__(name, vm_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
+        # If no version is specified force latest
+        if ":" not in image:
+            image = "{}:latest".format(image)
         self._image = image
         self._start_command = start_command
         self._environment = environment
