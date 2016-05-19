@@ -55,6 +55,7 @@ def test_json(node, compute):
         "name": "demo",
         "console": node.console,
         "console_type": node.console_type,
+        "console_host": compute.host,
         "command_line": None,
         "node_directory": None,
         "properties": node.properties,
@@ -172,3 +173,23 @@ def test_post(node, compute, async_run):
 def test_delete(node, compute, async_run):
     async_run(node.delete("/test"))
     compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id))
+
+
+def test_dynamips_idle_pc(node, async_run, compute):
+    node._node_type = "dynamips"
+    response = MagicMock()
+    response.json = {"idlepc": "0x60606f54"}
+    compute.get = AsyncioMagicMock(return_value=response)
+
+    async_run(node.dynamips_auto_idlepc())
+    compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/auto_idlepc".format(node.project.id, node.id))
+
+
+def test_dynamips_idlepc_proposals(node, async_run, compute):
+    node._node_type = "dynamips"
+    response = MagicMock()
+    response.json = ["0x60606f54", "0x30ff6f37"]
+    compute.get = AsyncioMagicMock(return_value=response)
+
+    async_run(node.dynamips_idlepc_proposals())
+    compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id))

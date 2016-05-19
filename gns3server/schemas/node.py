@@ -109,6 +109,11 @@ NODE_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "console_host": {
+            "description": "Console host",
+            "type": "string",
+            "minLength": 1,
+        },
         "console_type": {
             "description": "Console type",
             "enum": ["serial", "vnc", "telnet", None]

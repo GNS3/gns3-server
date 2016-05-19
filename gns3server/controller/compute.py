@@ -157,12 +157,12 @@ class Compute:
         return response.content
 
     @asyncio.coroutine
-    def http_query(self, method, path, data=None):
+    def http_query(self, method, path, data=None, **kwargs):
         if not self._connected:
             yield from self._connect()
         if not self._connected:
             raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
-        response = yield from self._run_http_query(method, path, data=data)
+        response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
     @asyncio.coroutine
@@ -202,8 +202,8 @@ class Compute:
         return "{}://{}:{}/v2/compute{}".format(self._protocol, self._host, self._port, path)
 
     @asyncio.coroutine
-    def _run_http_query(self, method, path, data=None):
-        with aiohttp.Timeout(10):
+    def _run_http_query(self, method, path, data=None, timeout=10):
+        with aiohttp.Timeout(timeout):
             url = self._getUrl(path)
             headers = {'content-type': 'application/json'}
             if data == {}:
@@ -243,19 +243,19 @@ class Compute:
             return response
 
     @asyncio.coroutine
-    def get(self, path):
-        return (yield from self.http_query("GET", path))
+    def get(self, path, **kwargs):
+        return (yield from self.http_query("GET", path, **kwargs))
 
     @asyncio.coroutine
-    def post(self, path, data={}):
-        response = yield from self.http_query("POST", path, data)
+    def post(self, path, data={}, **kwargs):
+        response = yield from self.http_query("POST", path, data, **kwargs)
         return response
 
     @asyncio.coroutine
-    def put(self, path, data={}):
-        response = yield from self.http_query("PUT", path, data)
+    def put(self, path, data={}, **kwargs):
+        response = yield from self.http_query("PUT", path, data, **kwargs)
         return response
 
     @asyncio.coroutine
-    def delete(self, path):
-        return (yield from self.http_query("DELETE", path))
+    def delete(self, path, **kwargs):
+        return (yield from self.http_query("DELETE", path, **kwargs))

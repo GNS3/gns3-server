@@ -628,9 +628,11 @@ class Router(BaseNode):
         """
 
         is_running = yield from self.is_running()
+        was_auto_started = False
         if not is_running:
-            # router is not running
-            raise DynamipsError('Router "{name}" is not running'.format(name=self._name))
+            yield from self.start()
+            was_auto_started = True
+            yield from asyncio.sleep(20)  # leave time to the router to boot
 
         log.info('Router "{name}" [{id}] has started calculating Idle-PC values'.format(name=self._name, id=self._id))
         begin = time.time()
@@ -638,6 +640,8 @@ class Router(BaseNode):
         log.info('Router "{name}" [{id}] has finished calculating Idle-PC values after {time:.4f} seconds'.format(name=self._name,
                                                                                                                   id=self._id,
                                                                                                                   time=time.time() - begin))
+        if was_auto_started:
+            yield from self.stop()
         return idlepcs
 
     @asyncio.coroutine

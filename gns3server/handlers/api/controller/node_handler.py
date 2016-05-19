@@ -262,3 +262,43 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         yield from project.delete_node(request.match_info["node_id"])
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/nodes/{node_id}/dynamips/auto_idlepc",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance reloaded",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Compute the IDLE PC for a Dynamips node")
+    def auto_idlepc(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        idle = yield from node.dynamips_auto_idlepc()
+        response.json(idle)
+        response.set_status(200)
+
+    @Route.get(
+        r"/projects/{project_id}/nodes/{node_id}/dynamips/idlepc_proposals",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance reloaded",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Compute a list of potential idle PC for a node")
+    def idlepc_proposals(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        idle = yield from node.dynamips_idlepc_proposals()
+        response.json(idle)
+        response.set_status(200)

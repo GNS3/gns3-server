@@ -38,6 +38,7 @@ from gns3server.controller.node import Node
 def compute(http_controller, async_run):
     compute = MagicMock()
     compute.id = "example.com"
+    compute.host = "example.org"
     Controller.instance()._computes = {"example.com": compute}
     return compute
 
@@ -107,12 +108,14 @@ def test_update_node(http_controller, tmpdir, project, compute, node):
     assert response.json["name"] == "test"
     assert "name" not in response.json["properties"]
 
+
 def test_start_all_nodes(http_controller, tmpdir, project, compute):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/start".format(project.id), example=True)
     assert response.status == 204
+
 
 def test_stop_all_nodes(http_controller, tmpdir, project, compute):
     response = MagicMock()
@@ -121,12 +124,14 @@ def test_stop_all_nodes(http_controller, tmpdir, project, compute):
     response = http_controller.post("/projects/{}/nodes/stop".format(project.id), example=True)
     assert response.status == 204
 
+
 def test_suspend_all_nodes(http_controller, tmpdir, project, compute):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/suspend".format(project.id), example=True)
     assert response.status == 204
+
 
 def test_reload_all_nodes(http_controller, tmpdir, project, compute):
     response = MagicMock()
@@ -135,12 +140,14 @@ def test_reload_all_nodes(http_controller, tmpdir, project, compute):
     response = http_controller.post("/projects/{}/nodes/reload".format(project.id), example=True)
     assert response.status == 204
 
+
 def test_start_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/start".format(project.id, node.id), example=True)
     assert response.status == 204
+
 
 def test_stop_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
@@ -172,3 +179,23 @@ def test_delete_node(http_controller, tmpdir, project, compute, node):
 
     response = http_controller.delete("/projects/{}/nodes/{}".format(project.id, node.id), example=True)
     assert response.status == 204
+
+
+def test_dynamips_idle_pc(http_controller, tmpdir, project, compute, node):
+    response = MagicMock()
+    response.json = {"idlepc": "0x60606f54"}
+    compute.get = AsyncioMagicMock(return_value=response)
+
+    response = http_controller.get("/projects/{}/nodes/{}/dynamips/auto_idlepc".format(project.id, node.id), example=True)
+    assert response.status == 200
+    assert response.json["idlepc"] == "0x60606f54"
+
+
+def test_dynamips_idlepc_proposals(http_controller, tmpdir, project, compute, node):
+    response = MagicMock()
+    response.json = ["0x60606f54", "0x33805a22"]
+    compute.get = AsyncioMagicMock(return_value=response)
+
+    response = http_controller.get("/projects/{}/nodes/{}/dynamips/idlepc_proposals".format(project.id, node.id), example=True)
+    assert response.status == 200
+    assert response.json == ["0x60606f54", "0x33805a22"]

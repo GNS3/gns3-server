@@ -147,7 +147,7 @@ class Node:
                 self._console_type = value
             elif key == "name":
                 self._name = value
-            elif key in ["node_id", "project_id"]:
+            elif key in ["node_id", "project_id", "console_host"]:
                 pass
             else:
                 self._properties[key] = value
@@ -166,7 +166,7 @@ class Node:
 
         # None properties are not be send. Because it can mean the emulator doesn't support it
         for key in list(data.keys()):
-            if data[key] is None:
+            if data[key] is None or key in ["console_host"]:
                 del data[key]
         return data
 
@@ -236,6 +236,20 @@ class Node:
         else:
             return (yield from self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path)))
 
+    @asyncio.coroutine
+    def dynamips_auto_idlepc(self):
+        """
+        Compute the idle PC for a dynamips node
+        """
+        return (yield from self._compute.get("/projects/{}/{}/nodes/{}/auto_idlepc".format(self._project.id, self._node_type, self._id), timeout=240)).json
+
+    @asyncio.coroutine
+    def dynamips_idlepc_proposals(self):
+        """
+        Compute a list of potential idle PC
+        """
+        return (yield from self._compute.get("/projects/{}/{}/nodes/{}/idlepc_proposals".format(self._project.id, self._node_type, self._id), timeout=240)).json
+
     def __repr__(self):
         return "<gns3server.controller.Node {} {}>".format(self._node_type, self._name)
 
@@ -248,6 +262,7 @@ class Node:
             "node_directory": self._node_directory,
             "name": self._name,
             "console": self._console,
+            "console_host": self._compute.host,
             "console_type": self._console_type,
             "command_line": self._command_line,
             "properties": self._properties,
