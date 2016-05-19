@@ -543,11 +543,16 @@ class DockerVM(BaseVM):
         try:
             if self.console_type == "vnc":
                 if self._x11vnc_process:
-                    self._x11vnc_process.terminate()
-                    self._xvfb_process.terminate()
-                    yield from self._x11vnc_process.wait()
-                    yield from self._xvfb_process.wait()
-
+                    try:
+                        self._x11vnc_process.terminate()
+                        yield from self._x11vnc_process.wait()
+                    except ProcessLookupError:
+                        pass
+                    try:
+                        self._xvfb_process.terminate()
+                        yield from self._xvfb_process.wait()
+                    except ProcessLookupError:
+                        pass
             state = yield from self._get_container_state()
             if state == "paused" or state == "running":
                 yield from self.stop()
