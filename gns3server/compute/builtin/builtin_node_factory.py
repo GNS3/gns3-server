@@ -18,11 +18,13 @@
 
 from ..node_error import NodeError
 from .nodes.ethernet_hub import EthernetHub
+from .nodes.ethernet_switch import EthernetSwitch
 
 import logging
 log = logging.getLogger(__name__)
 
-BUILTIN_NODES = {'ethernet_hub': EthernetHub}
+BUILTIN_NODES = {'ethernet_hub': EthernetHub,
+                 'ethernet_switch': EthernetSwitch}
 
 
 class BuiltinNodeFactory:

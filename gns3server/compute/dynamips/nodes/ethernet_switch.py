@@ -37,33 +37,66 @@ class EthernetSwitch(Device):
     Dynamips Ethernet switch.
 
     :param name: name for this switch
-    :param device_id: Device instance identifier
+    :param node_id: Node instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
+    :param ports: initial switch ports
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, device_id, project, manager, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, ports=None, hypervisor=None):
 
-        super().__init__(name, device_id, project, manager, hypervisor)
+        super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
         self._mappings = {}
+        if ports is None:
+            # create 8 ports by default
+            self._ports = []
+            for port_number in range(1, 9):
+                self._ports.append({"port_number": port_number,
+                                    "name": "Ethernet{}".format(port_number),
+                                    "type": "access",
+                                    "vlan": 1})
+        else:
+            self._ports = ports
 
     def __json__(self):
 
         ethernet_switch_info = {"name": self.name,
-                                "device_id": self.id,
-                                "project_id": self.project.id}
+                                "node_id": self.id,
+                                "project_id": self.project.id,
+                                "ports": self._ports,
+                                "status": "started"}
 
-        ports = []
-        for port_number, settings in self._mappings.items():
-            ports.append({"port": port_number,
-                          "type": settings[0],
-                          "vlan": settings[1],
-                          "ethertype": settings[2] if len(settings) > 2 else ""})
-
-        ethernet_switch_info["ports"] = ports
+        # ports = []
+        # for port_number, settings in self._mappings.items():
+        #     ports.append({"port": port_number,
+        #                   "type": settings[0],
+        #                   "vlan": settings[1],
+        #                   "ethertype": settings[2] if len(settings) > 2 else ""})
+        #
+        # ethernet_switch_info["ports"] = ports
         return ethernet_switch_info
+
+    @property
+    def ports(self):
+        """
+        Ports on this switch
+
+        :returns: ports info
+        """
+
+        return self._ports
+
+    @ports.setter
+    def ports(self, ports):
+        """
+        Set the ports on this switch
+
+        :param ports: ports info
+        """
+
+        self._ports = ports
 
     @asyncio.coroutine
     def create(self):
@@ -149,6 +182,10 @@ class EthernetSwitch(Device):
                                                                                           nio=nio,
                                                                                           port=port_number))
         self._nios[port_number] = nio
+        for port_settings in self._ports:
+            if port_settings["port_number"] == port_number:
+                yield from self.set_port_settings(port_number, port_settings)
+                break
 
     @asyncio.coroutine
     def remove_nio(self, port_number):

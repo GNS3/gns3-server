@@ -105,7 +105,7 @@ class Node:
         self.parse_node_response(response.json)
 
     @asyncio.coroutine
-    def update(self, name=None, console=None, console_type="telnet", properties={}):
+    def update(self, name=None, console=None, console_type=None, properties={}):
         """
         Update the node on the compute server
 

@@ -266,32 +266,33 @@ class Dynamips(BaseManager):
         return self._dynamips_path
 
     @asyncio.coroutine
-    def create_device(self, name, project_id, device_id, device_type, *args, **kwargs):
+    def create_device(self, name, project_id, node_id, device_type, *args, **kwargs):
         """
         Create a new Dynamips device.
 
         :param name: Device name
         :param project_id: Project identifier
+        :param node_id: Node identifier
         """
 
         project = ProjectManager.instance().get_project(project_id)
-        if device_id and isinstance(device_id, int):
+        if node_id and isinstance(node_id, int):
             with (yield from BaseManager._convert_lock):
-                device_id = yield from self.convert_old_project(project, device_id, name)
+                node_id = yield from self.convert_old_project(project, node_id, name)
 
-        if not device_id:
-            device_id = str(uuid4())
+        if not node_id:
+            node_id = str(uuid4())
 
-        device = self._DEVICE_CLASS(name, device_id, project, self, device_type, *args, **kwargs)
+        device = self._DEVICE_CLASS(name, node_id, project, self, device_type, *args, **kwargs)
         yield from device.create()
         self._devices[device.id] = device
         return device
 
-    def get_device(self, device_id, project_id=None):
+    def get_device(self, node_id, project_id=None):
         """
         Returns a device instance.
 
-        :param device_id: Device identifier
+        :param node_id: Node identifier
         :param project_id: Project identifier
 
         :returns: Device instance
@@ -302,14 +303,14 @@ class Dynamips(BaseManager):
             project = ProjectManager.instance().get_project(project_id)
 
         try:
-            UUID(device_id, version=4)
+            UUID(node_id, version=4)
         except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="Device ID} is not a valid UUID".format(device_id))
+            raise aiohttp.web.HTTPBadRequest(text="Node ID {} is not a valid UUID".format(node_id))
 
-        if device_id not in self._devices:
-            raise aiohttp.web.HTTPNotFound(text="Device ID {} doesn't exist".format(device_id))
+        if node_id not in self._devices:
+            raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
 
-        device = self._devices[device_id]
+        device = self._devices[node_id]
         if project_id:
             if device.project.id != project.id:
                 raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't belong to device {}".format(project_id, device.name))
@@ -317,16 +318,16 @@ class Dynamips(BaseManager):
         return device
 
     @asyncio.coroutine
-    def delete_device(self, device_id):
+    def delete_device(self, node_id):
         """
         Delete a device
 
-        :param device_id: Device identifier
+        :param node_id: Node identifier
 
         :returns: Device instance
         """
 
-        device = self.get_device(device_id)
+        device = self.get_device(node_id)
         yield from device.delete()
         del self._devices[device.id]
         return device

@@ -23,21 +23,21 @@ from gns3server.schemas.nio import NIO_SCHEMA
 from gns3server.compute.builtin import Builtin
 from gns3server.compute.dynamips import Dynamips
 
-from gns3server.schemas.ethernet_hub import (
-    ETHERNET_HUB_CREATE_SCHEMA,
-    ETHERNET_HUB_UPDATE_SCHEMA,
-    ETHERNET_HUB_OBJECT_SCHEMA
+from gns3server.schemas.ethernet_switch import (
+    ETHERNET_SWITCH_CREATE_SCHEMA,
+    ETHERNET_SWITCH_UPDATE_SCHEMA,
+    ETHERNET_SWITCH_OBJECT_SCHEMA
 )
 
 
-class EthernetHubHandler:
+class EthernetSwitchHandler:
 
     """
-    API entry points for Ethernet hub.
+    API entry points for Ethernet switch.
     """
 
     @Route.post(
-        r"/projects/{project_id}/ethernet_hub/nodes",
+        r"/projects/{project_id}/ethernet_switch/nodes",
         parameters={
             "project_id": "Project UUID"
         },
@@ -46,31 +46,31 @@ class EthernetHubHandler:
             400: "Invalid request",
             409: "Conflict"
         },
-        description="Create a new Ethernet hub instance",
-        input=ETHERNET_HUB_CREATE_SCHEMA,
-        output=ETHERNET_HUB_OBJECT_SCHEMA)
+        description="Create a new Ethernet switch instance",
+        input=ETHERNET_SWITCH_CREATE_SCHEMA,
+        output=ETHERNET_SWITCH_OBJECT_SCHEMA)
     def create(request, response):
 
-        # Use the Dynamips Ethernet hub to simulate this node
+        # Use the Dynamips Ethernet switch to simulate this node
         dynamips_manager = Dynamips.instance()
         node = yield from dynamips_manager.create_device(request.json.pop("name"),
                                                          request.match_info["project_id"],
                                                          request.json.get("node_id"),
-                                                         device_type="ethernet_hub",
+                                                         device_type="ethernet_switch",
                                                          ports=request.json.get("ports"))
 
-        # On Linux, use the generic hub
+        # On Linux, use the generic switch
         # builtin_manager = Builtin.instance()
         # node = yield from builtin_manager.create_node(request.json.pop("name"),
         #                                               request.match_info["project_id"],
         #                                               request.json.get("node_id"),
-        #                                               node_type="ethernet_hub")
+        #                                               node_type="ethernet_switch")
 
         response.set_status(201)
         response.json(node)
 
     @Route.get(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}",
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID"
@@ -80,8 +80,8 @@ class EthernetHubHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Get an Ethernet hub instance",
-        output=ETHERNET_HUB_OBJECT_SCHEMA)
+        description="Get an Ethernet switch instance",
+        output=ETHERNET_SWITCH_OBJECT_SCHEMA)
     def show(request, response):
 
         dynamips_manager = Dynamips.instance()
@@ -92,7 +92,7 @@ class EthernetHubHandler:
         response.json(node)
 
     @Route.put(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}",
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID"
@@ -103,9 +103,9 @@ class EthernetHubHandler:
             404: "Instance doesn't exist",
             409: "Conflict"
         },
-        description="Update an Ethernet hub instance",
-        input=ETHERNET_HUB_UPDATE_SCHEMA,
-        output=ETHERNET_HUB_OBJECT_SCHEMA)
+        description="Update an Ethernet switch instance",
+        input=ETHERNET_SWITCH_UPDATE_SCHEMA,
+        output=ETHERNET_SWITCH_OBJECT_SCHEMA)
     def update(request, response):
 
         dynamips_manager = Dynamips.instance()
@@ -117,11 +117,12 @@ class EthernetHubHandler:
 
         # builtin_manager = Builtin.instance()
         # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+
         node.updated()
         response.json(node)
 
     @Route.delete(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}",
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID"
@@ -131,7 +132,7 @@ class EthernetHubHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Delete an Ethernet hub instance")
+        description="Delete an Ethernet switch instance")
     def delete(request, response):
 
         dynamips_manager = Dynamips.instance()
@@ -141,19 +142,19 @@ class EthernetHubHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
-            "adapter_number": "Adapter on the hub (always 0)",
-            "port_number": "Port on the hub"
+            "adapter_number": "Adapter on the switch (always 0)",
+            "port_number": "Port on the switch"
         },
         status_codes={
             201: "NIO created",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Add a NIO to an Ethernet hub instance",
+        description="Add a NIO to an Ethernet switch instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
     def create_nio(request, response):
@@ -162,7 +163,10 @@ class EthernetHubHandler:
         node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = yield from dynamips_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
+        #port_settings = request.json.get("port_settings")
         yield from node.add_nio(nio, port_number)
+        #if port_settings:
+        #    yield from node.set_port_settings(port_number, port_settings)
 
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -172,19 +176,19 @@ class EthernetHubHandler:
         response.json(nio)
 
     @Route.delete(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
-            "adapter_number": "Adapter on the hub (always 0)",
-            "port_number": "Port on the hub"
+            "adapter_number": "Adapter on the switch (always 0)",
+            "port_number": "Port on the switch"
         },
         status_codes={
             204: "NIO deleted",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Remove a NIO from an Ethernet hub instance")
+        description="Remove a NIO from an Ethernet switch instance")
     def delete_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
@@ -197,19 +201,19 @@ class EthernetHubHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
-            "adapter_number": "Adapter on the hub (always 0)",
-            "port_number": "Port on the hub"
+            "adapter_number": "Adapter on the switch (always 0)",
+            "port_number": "Port on the switch"
         },
         status_codes={
             200: "Capture started",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Start a packet capture on an Ethernet hub instance",
+        description="Start a packet capture on an Ethernet switch instance",
         input=NODE_CAPTURE_SCHEMA)
     def start_capture(request, response):
 
@@ -223,19 +227,19 @@ class EthernetHubHandler:
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
-            "adapter_number": "Adapter on the hub (always 0)",
-            "port_number": "Port on the hub"
+            "adapter_number": "Adapter on the switch (always 0)",
+            "port_number": "Port on the switch"
         },
         status_codes={
             204: "Capture stopped",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Stop a packet capture on an Ethernet hub instance")
+        description="Stop a packet capture on an Ethernet switch instance")
     def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()

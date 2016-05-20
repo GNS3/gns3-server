@@ -88,7 +88,15 @@ NODE_OBJECT_SCHEMA = {
         },
         "node_type": {
             "description": "Type of node",
-            "enum": ["ethernet_hub", "docker", "dynamips", "vpcs", "virtualbox", "vmware", "iou", "qemu"]
+            "enum": ["ethernet_hub",
+                     "ethernet_switch",
+                     "docker",
+                     "dynamips",
+                     "vpcs",
+                     "virtualbox",
+                     "vmware",
+                     "iou",
+                     "qemu"]
         },
         "node_directory": {
             "description": "Working directory of the node. Read only",

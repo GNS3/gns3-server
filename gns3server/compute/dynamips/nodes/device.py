@@ -28,10 +28,10 @@ class Device:
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, device_id, project, manager, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, hypervisor=None):
 
         self._name = name
-        self._id = device_id
+        self._id = node_id
         self._project = project
         self._manager = manager
         self._hypervisor = hypervisor
@@ -95,6 +95,12 @@ class Device:
         """
 
         return self._manager
+
+    def updated(self):
+        """
+        Send a updated event
+        """
+        self.project.emit("node.updated", self)
 
     def create(self):
         """

@@ -16,12 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-ETHERNET_HUB_CREATE_SCHEMA = {
+ETHERNET_SWITCH_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to create a new Ethernet hub instance",
+    "description": "Request validation to create a new Ethernet switch instance",
     "type": "object",
     "definitions": {
-        "EthernetHubPort": {
+        "EthernetSwitchPort": {
             "description": "Ethernet port",
             "properties": {
                 "name": {
@@ -34,14 +34,26 @@ ETHERNET_HUB_CREATE_SCHEMA = {
                     "type": "integer",
                     "minimum": 1
                 },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["access", "dot1q", "qinq"],
+                },
+                "vlan": {"description": "VLAN number",
+                         "type": "integer",
+                         "minimum": 1
+                         },
+                "ethertype": {
+                    "description": "QinQ Ethertype",
+                    "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
+                },
             },
-            "required": ["name", "port_number"],
+            "required": ["name", "port_number", "type"],
             "additionalProperties": False
         },
     },
     "properties": {
         "name": {
-            "description": "Ethernet hub name",
+            "description": "Ethernet switch name",
             "type": "string",
             "minLength": 1,
         },
@@ -59,7 +71,7 @@ ETHERNET_HUB_CREATE_SCHEMA = {
             "items": [
                 {"type": "object",
                  "oneOf": [
-                     {"$ref": "#/definitions/EthernetHubPort"}
+                     {"$ref": "#/definitions/EthernetSwitchPort"}
                  ]},
             ]
         },
@@ -68,12 +80,12 @@ ETHERNET_HUB_CREATE_SCHEMA = {
     "required": ["name"]
 }
 
-ETHERNET_HUB_OBJECT_SCHEMA = {
+ETHERNET_SWITCH_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Ethernet hub instance",
+    "description": "Ethernet switch instance",
     "type": "object",
     "definitions": {
-        "EthernetHubPort": {
+        "EthernetSwitchPort": {
             "description": "Ethernet port",
             "properties": {
                 "name": {
@@ -86,14 +98,26 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
                     "type": "integer",
                     "minimum": 1
                 },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["access", "dot1q", "qinq"],
+                },
+                "vlan": {"description": "VLAN number",
+                         "type": "integer",
+                         "minimum": 1
+                         },
+                "ethertype": {
+                    "description": "QinQ Ethertype",
+                    "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
+                },
             },
-            "required": ["name", "port_number"],
+            "required": ["name", "port_number", "type"],
             "additionalProperties": False
         },
     },
     "properties": {
         "name": {
-            "description": "Ethernet hub name",
+            "description": "Ethernet switch name",
             "type": "string",
             "minLength": 1,
         },
@@ -116,7 +140,7 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
             "items": [
                 {"type": "object",
                  "oneOf": [
-                     {"$ref": "#/definitions/EthernetHubPort"}
+                     {"$ref": "#/definitions/EthernetSwitchPort"}
                  ]},
             ]
         },
@@ -126,8 +150,8 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "project_id", "ports"]
+    "required": ["name", "node_id", "project_id"]
 }
 
-ETHERNET_HUB_UPDATE_SCHEMA = ETHERNET_HUB_OBJECT_SCHEMA
-del ETHERNET_HUB_UPDATE_SCHEMA["required"]
+ETHERNET_SWITCH_UPDATE_SCHEMA = ETHERNET_SWITCH_OBJECT_SCHEMA
+del ETHERNET_SWITCH_UPDATE_SCHEMA["required"]
