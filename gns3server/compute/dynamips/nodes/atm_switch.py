@@ -37,28 +37,32 @@ class ATMSwitch(Device):
     Dynamips ATM switch.
 
     :param name: name for this switch
-    :param device_id: Device instance identifier
+    :param node_id: Node instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, device_id, project, manager, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, mappings=None, hypervisor=None):
 
-        super().__init__(name, device_id, project, manager, hypervisor)
+        super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
+        self._active_mappings = {}
         self._mappings = {}
+        if mappings:
+            self._mappings = mappings
 
     def __json__(self):
 
         mappings = {}
         for source, destination in self._mappings.items():
-            mappings[str(source)] = str(destination)
+            mappings[source] = destination
 
         return {"name": self.name,
-                "device_id": self.id,
+                "node_id": self.id,
                 "project_id": self.project.id,
-                "mappings": mappings}
+                "mappings": mappings,
+                "status": "started"}
 
     @asyncio.coroutine
     def create(self):
@@ -105,6 +109,16 @@ class ATMSwitch(Device):
 
         return self._mappings
 
+    @mappings.setter
+    def mappings(self, mappings):
+        """
+        Sets port mappings
+
+        :param mappings: mappings list
+        """
+
+        self._mappings = mappings
+
     @asyncio.coroutine
     def delete(self):
         """
@@ -136,6 +150,7 @@ class ATMSwitch(Device):
             return True
         return False
 
+    @asyncio.coroutine
     def add_nio(self, nio, port_number):
         """
         Adds a NIO as new port on ATM switch.
@@ -153,6 +168,7 @@ class ATMSwitch(Device):
                                                                                         port=port_number))
 
         self._nios[port_number] = nio
+        yield from self.set_mappings(self._mappings)
 
     @asyncio.coroutine
     def remove_nio(self, port_number):
@@ -166,18 +182,21 @@ class ATMSwitch(Device):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         # remove VCs mapped with the port
-        for source, destination in self._mappings.copy().items():
-            if len(source) == 3 and len(destination) == 3:
+        pvc_entry = re.compile(r"""^([0-9]*):([0-9]*):([0-9]*)$""")
+        for source, destination in self._active_mappings.copy().items():
+            match_source_pvc = pvc_entry.search(source)
+            match_destination_pvc = pvc_entry.search(destination)
+            if match_source_pvc and match_destination_pvc:
                 # remove the virtual channels mapped with this port/nio
-                source_port, source_vpi, source_vci = source
-                destination_port, destination_vpi, destination_vci = destination
+                source_port, source_vpi, source_vci = map(int, match_source_pvc.group(1, 2, 3))
+                destination_port, destination_vpi, destination_vci = map(int, match_destination_pvc.group(1, 2, 3))
                 if port_number == source_port:
                     yield from self.unmap_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
                     yield from self.unmap_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
             else:
                 # remove the virtual paths mapped with this port/nio
-                source_port, source_vpi = source
-                destination_port, destination_vpi = destination
+                source_port, source_vpi = map(int, source.split(':'))
+                destination_port, destination_vpi = map(int, destination.split(':'))
                 if port_number == source_port:
                     yield from self.unmap_vp(source_port, source_vpi, destination_port, destination_vpi)
                     yield from self.unmap_vp(destination_port, destination_vpi, source_port, source_vpi)
@@ -212,8 +231,8 @@ class ATMSwitch(Device):
                 source_port, source_vpi, source_vci = map(int, match_source_pvc.group(1, 2, 3))
                 destination_port, destination_vpi, destination_vci = map(int, match_destination_pvc.group(1, 2, 3))
                 if self.has_port(destination_port):
-                    if (source_port, source_vpi, source_vci) not in self.mappings and \
-                       (destination_port, destination_vpi, destination_vci) not in self.mappings:
+                    if (source_port, source_vpi, source_vci) not in self._active_mappings and \
+                       (destination_port, destination_vpi, destination_vci) not in self._active_mappings:
                         yield from self.map_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
                         yield from self.map_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
             else:
@@ -221,7 +240,7 @@ class ATMSwitch(Device):
                 source_port, source_vpi = map(int, source.split(':'))
                 destination_port, destination_vpi = map(int, destination.split(':'))
                 if self.has_port(destination_port):
-                    if (source_port, source_vpi) not in self.mappings and (destination_port, destination_vpi) not in self.mappings:
+                    if (source_port, source_vpi) not in self._active_mappings and (destination_port, destination_vpi) not in self._active_mappings:
                         yield from self.map_vp(source_port, source_vpi, destination_port, destination_vpi)
                         yield from self.map_vp(destination_port, destination_vpi, source_port, source_vpi)
 
@@ -258,7 +277,7 @@ class ATMSwitch(Device):
                                                                                                                           port2=port2,
                                                                                                                           vpi2=vpi2))
 
-        self._mappings[(port1, vpi1)] = (port2, vpi2)
+        self._active_mappings["{}:{}".format(port1, vpi1)] = "{}:{}".format(port2, vpi2)
 
     @asyncio.coroutine
     def unmap_vp(self, port1, vpi1, port2, vpi2):
@@ -293,7 +312,7 @@ class ATMSwitch(Device):
                                                                                                                           port2=port2,
                                                                                                                           vpi2=vpi2))
 
-        del self._mappings[(port1, vpi1)]
+        del self._active_mappings["{}:{}".format(port1, vpi1)]
 
     @asyncio.coroutine
     def map_pvc(self, port1, vpi1, vci1, port2, vpi2, vci2):
@@ -334,7 +353,7 @@ class ATMSwitch(Device):
                                                                                                                                                 vpi2=vpi2,
                                                                                                                                                 vci2=vci2))
 
-        self._mappings[(port1, vpi1, vci1)] = (port2, vpi2, vci2)
+        self._active_mappings["{}:{}:{}".format(port1, vpi1, vci1)] = "{}:{}:{}".format(port2, vpi2, vci2)
 
     @asyncio.coroutine
     def unmap_pvc(self, port1, vpi1, vci1, port2, vpi2, vci2):
@@ -374,7 +393,7 @@ class ATMSwitch(Device):
                                                                                                                                                 port2=port2,
                                                                                                                                                 vpi2=vpi2,
                                                                                                                                                 vci2=vci2))
-        del self._mappings[(port1, vpi1, vci1)]
+        del self._active_mappings["{}:{}:{}".format(port1, vpi1, vci1)]
 
     @asyncio.coroutine
     def start_capture(self, port_number, output_file, data_link_type="DLT_ATM_RFC1483"):

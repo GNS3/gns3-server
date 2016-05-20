@@ -90,6 +90,8 @@ NODE_OBJECT_SCHEMA = {
             "description": "Type of node",
             "enum": ["ethernet_hub",
                      "ethernet_switch",
+                     "frame_relay_switch",
+                     "atm_switch",
                      "docker",
                      "dynamips",
                      "vpcs",

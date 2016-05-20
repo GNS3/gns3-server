@@ -20,7 +20,6 @@ import os
 
 from .network_handler import NetworkHandler
 from .project_handler import ProjectHandler
-from .dynamips_device_handler import DynamipsDeviceHandler
 from .dynamips_vm_handler import DynamipsVMHandler
 from .qemu_handler import QEMUHandler
 from .virtualbox_handler import VirtualBoxHandler
@@ -31,6 +30,8 @@ from .version_handler import VersionHandler
 from .notification_handler import NotificationHandler
 from .ethernet_hub_handler import EthernetHubHandler
 from .ethernet_switch_handler import EthernetSwitchHandler
+from .frame_relay_switch_handler import FrameRelaySwitchHandler
+from .atm_switch_handler import ATMSwitchHandler
 
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
     # IOU runs only on Linux but test suite works on UNIX platform

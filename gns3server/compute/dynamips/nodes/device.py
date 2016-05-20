@@ -22,7 +22,7 @@ class Device:
     Base device for switches and hubs
 
     :param name: name for this device
-    :param device_id: Device instance identifier
+    :param node_id: Node instance identifier
     :param project: Project instance
     :param manager: Parent manager
     :param hypervisor: Dynamips hypervisor instance

@@ -36,28 +36,32 @@ class FrameRelaySwitch(Device):
     Dynamips Frame Relay switch.
 
     :param name: name for this switch
-    :param device_id: Device instance identifier
+    :param node_id: Node instance identifier
     :param project: Project instance
     :param manager: Parent VM Manager
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, device_id, project, manager, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, mappings=None, hypervisor=None):
 
-        super().__init__(name, device_id, project, manager, hypervisor)
+        super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
+        self._active_mappings = {}
         self._mappings = {}
+        if mappings:
+            self._mappings = mappings
 
     def __json__(self):
 
         mappings = {}
         for source, destination in self._mappings.items():
-            mappings[str(source)] = str(destination)
+            mappings[source] = destination
 
         return {"name": self.name,
-                "device_id": self.id,
+                "node_id": self.id,
                 "project_id": self.project.id,
-                "mappings": mappings}
+                "mappings": mappings,
+                "status": "started"}
 
     @asyncio.coroutine
     def create(self):
@@ -104,6 +108,16 @@ class FrameRelaySwitch(Device):
 
         return self._mappings
 
+    @mappings.setter
+    def mappings(self, mappings):
+        """
+        Sets port mappings
+
+        :param mappings: mappings list
+        """
+
+        self._mappings = mappings
+
     @asyncio.coroutine
     def delete(self):
         """
@@ -135,6 +149,7 @@ class FrameRelaySwitch(Device):
             return True
         return False
 
+    @asyncio.coroutine
     def add_nio(self, nio, port_number):
         """
         Adds a NIO as new port on Frame Relay switch.
@@ -152,6 +167,7 @@ class FrameRelaySwitch(Device):
                                                                                              port=port_number))
 
         self._nios[port_number] = nio
+        yield from self.set_mappings(self._mappings)
 
     @asyncio.coroutine
     def remove_nio(self, port_number):
@@ -167,9 +183,9 @@ class FrameRelaySwitch(Device):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         # remove VCs mapped with the port
-        for source, destination in self._mappings.copy().items():
-            source_port, source_dlci = source
-            destination_port, destination_dlci = destination
+        for source, destination in self._active_mappings.copy().items():
+            source_port, source_dlci = map(int, source.split(':'))
+            destination_port, destination_dlci = map(int, destination.split(':'))
             if port_number == source_port:
                 yield from self.unmap_vc(source_port, source_dlci, destination_port, destination_dlci)
                 yield from self.unmap_vc(destination_port, destination_dlci, source_port, source_dlci)
@@ -200,7 +216,7 @@ class FrameRelaySwitch(Device):
             source_port, source_dlci = map(int, source.split(':'))
             destination_port, destination_dlci = map(int, destination.split(':'))
             if self.has_port(destination_port):
-                if (source_port, source_dlci) not in self.mappings and (destination_port, destination_dlci) not in self.mappings:
+                if (source_port, source_dlci) not in self._active_mappings and (destination_port, destination_dlci) not in self._active_mappings:
                     yield from self.map_vc(source_port, source_dlci, destination_port, destination_dlci)
                     yield from self.map_vc(destination_port, destination_dlci, source_port, source_dlci)
 
@@ -237,7 +253,7 @@ class FrameRelaySwitch(Device):
                                                                                                                                      port2=port2,
                                                                                                                                      dlci2=dlci2))
 
-        self._mappings[(port1, dlci1)] = (port2, dlci2)
+        self._active_mappings["{}:{}".format(port1, dlci1)] = "{}:{}".format(port2, dlci2)
 
     @asyncio.coroutine
     def unmap_vc(self, port1, dlci1, port2, dlci2):
@@ -271,7 +287,7 @@ class FrameRelaySwitch(Device):
                                                                                                                                      dlci1=dlci1,
                                                                                                                                      port2=port2,
                                                                                                                                      dlci2=dlci2))
-        del self._mappings[(port1, dlci1)]
+        del self._active_mappings["{}:{}".format(port1, dlci1)]
 
     @asyncio.coroutine
     def start_capture(self, port_number, output_file, data_link_type="DLT_FRELAY"):

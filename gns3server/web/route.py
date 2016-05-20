@@ -240,10 +240,8 @@ class Route(object):
                 between the same instance of the node
                 """
 
-                if "node_id" in request.match_info or "device_id" in request.match_info:
+                if "node_id" in request.match_info:
                     node_id = request.match_info.get("node_id")
-                    if node_id is None:
-                        node_id = request.match_info["device_id"]
 
                     if "compute" in request.path:
                         type = "compute"

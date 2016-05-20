@@ -142,6 +142,57 @@ class EthernetSwitchHandler:
         response.set_status(204)
 
     @Route.post(
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/start",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance started",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Start an Ethernet switch")
+    def start(request, response):
+
+        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/stop",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Stop an Ethernet switch")
+    def stop(request, response):
+
+        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/suspend",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance suspended",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Suspend an Ethernet switch")
+    def suspend(request, response):
+
+        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        response.set_status(204)
+
+    @Route.post(
         r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
             "project_id": "Project UUID",
@@ -163,10 +214,7 @@ class EthernetSwitchHandler:
         node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = yield from dynamips_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
-        #port_settings = request.json.get("port_settings")
         yield from node.add_nio(nio, port_number)
-        #if port_settings:
-        #    yield from node.set_port_settings(port_number, port_settings)
 
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

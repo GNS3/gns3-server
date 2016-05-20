@@ -37,9 +37,9 @@ class DynamipsDeviceFactory:
     Factory to create an Device object based on the type
     """
 
-    def __new__(cls, name, device_id, project, manager, device_type, **kwargs):
+    def __new__(cls, name, node_id, project, manager, device_type, **kwargs):
 
         if device_type not in DEVICES:
             raise DynamipsError("Unknown device type: {}".format(device_type))
 
-        return DEVICES[device_type](name, device_id, project, manager, **kwargs)
+        return DEVICES[device_type](name, node_id, project, manager, **kwargs)
