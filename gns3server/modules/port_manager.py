@@ -106,7 +106,7 @@ class PortManager:
         return self._udp_host
 
     @udp_host.setter
-    def host(self, new_host):
+    def udp_host(self, new_host):
 
         self._udp_host = new_host
 
