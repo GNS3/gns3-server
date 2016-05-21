@@ -19,6 +19,7 @@
 Represents a uBridge hypervisor and starts/stops the associated uBridge process.
 """
 
+import sys
 import os
 import subprocess
 import asyncio
@@ -140,6 +141,12 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         yield from self._check_ubridge_version()
+        env = os.environ.copy()
+        if sys.platform.startswith("win"):
+            # add the Npcap directory to $PATH to force Dynamips to use npcap DLL instead of Winpcap (if installed)
+            system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
+            if os.path.isdir(system_root):
+                env["PATH"] = system_root + ';' + env["PATH"]
         try:
             command = self._build_command()
             log.info("starting ubridge: {}".format(command))
@@ -149,7 +156,8 @@ class Hypervisor(UBridgeHypervisor):
                 self._process = yield from asyncio.create_subprocess_exec(*command,
                                                                           stdout=fd,
                                                                           stderr=subprocess.STDOUT,
-                                                                          cwd=self._working_dir)
+                                                                          cwd=self._working_dir,
+                                                                          env=env)
 
             log.info("ubridge started PID={}".format(self._process.pid))
         except (OSError, subprocess.SubprocessError) as e:
