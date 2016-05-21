@@ -603,8 +603,8 @@ class Dynamips(BaseManager):
         elif startup_config_content:
             startup_config_path = self._create_config(vm, default_startup_config_path, startup_config_content)
             yield from vm.set_configs(startup_config_path)
-        # An empty startup config crash dynamips
-        else:
+        elif os.path.isfile(default_startup_config_path) and os.path.getsize(default_startup_config_path) == 0:
+            # An empty startup-config may crash Dynamips
             startup_config_path = self._create_config(vm, default_startup_config_path, "!\n")
             yield from vm.set_configs(startup_config_path)
 
