@@ -270,7 +270,10 @@ class Router(BaseVM):
 
         status = yield from self.get_status()
         if status != "inactive":
-            yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
+            try:
+                yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
+            except DynamipsError as e:
+                log.warn("Could not stop {}: {}".format(self._name, e))
             self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
         yield from self.save_configs()
@@ -335,8 +338,8 @@ class Router(BaseVM):
             try:
                 yield from self.stop()
                 yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
-            except DynamipsError:
-                pass
+            except DynamipsError as e:
+                log.warn("Could not stop and delete {}: {}".format(self._name, e))
             yield from self.hypervisor.stop()
 
         if self._auto_delete_disks:
