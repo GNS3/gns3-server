@@ -1521,7 +1521,6 @@ class Router(BaseVM):
             if startup_config_base64:
                 if not self.startup_config:
                     self._startup_config = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
-
                 try:
                     config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
                     config = "!\n" + config.replace("\r", "")
@@ -1532,13 +1531,11 @@ class Router(BaseVM):
                 except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
-            if private_config_base64:
+            if private_config_base64 and base64.b64decode(private_config_base64) != b'\nkerberos password \nend\n':
                 if not self.private_config:
                     self._private_config = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
-
                 try:
                     config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
-                    config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.private_config)
                     with open(config_path, "wb") as f:
                         log.info("saving private-config to {}".format(self.private_config))
