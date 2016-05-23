@@ -39,6 +39,16 @@ def test_init(compute):
     assert compute.id == "my_compute_id"
 
 
+def test_name():
+    c = Compute("my_compute_id", protocol="https", host="example.com", port=84, controller=MagicMock(), name=None)
+    assert c.name == "https://example.com:84"
+    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
+        c = Compute("local", protocol="https", host="example.com", port=84, controller=MagicMock(), name=None)
+        assert c.name == "local"
+    c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), name="hello")
+    assert c.name == "hello"
+
+
 def test_compute_local(compute):
     """
     If the compute is local but the compute id is local
@@ -174,6 +184,7 @@ def test_json(compute):
     compute.user = "test"
     assert compute.__json__() == {
         "compute_id": "my_compute_id",
+        "name": compute.name,
         "protocol": "https",
         "host": "example.com",
         "port": 84,

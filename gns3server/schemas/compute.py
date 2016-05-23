@@ -25,6 +25,10 @@ COMPUTE_CREATE_SCHEMA = {
             "description": "Server identifier",
             "type": "string"
         },
+        "name": {
+            "description": "Server name",
+            "type": "string"
+        },
         "protocol": {
             "description": "Server protocol",
             "enum": ["http", "https"]
@@ -59,6 +63,10 @@ COMPUTE_OBJECT_SCHEMA = {
             "description": "Server identifier",
             "type": "string"
         },
+        "name": {
+            "description": "Server name",
+            "type": "string"
+        },
         "protocol": {
             "description": "Server protocol",
             "enum": ["http", "https"]
@@ -85,5 +93,5 @@ COMPUTE_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["compute_id", "protocol", "host", "port"]
+    "required": ["compute_id", "protocol", "host", "port", "name"]
 }

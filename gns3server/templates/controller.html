@@ -29,6 +29,7 @@ in futur GNS3 versions.
 <table border="1">
     <tr>
         <th>ID</th>
+        <th>Name</th>
         <th>Version</th>
         <th>Connected</th>
         <th>Protocol</th>
@@ -38,6 +39,7 @@ in futur GNS3 versions.
 {% for compute in controller.computes.values() %}
 <tr>
     <td>{{compute.id}}</td>
+    <td>{{compute.name}}</td>
     <td>{{compute.version}}</td>
     <td>{{compute.connected}}</td>
     <td>{{compute.protocol}}</td>

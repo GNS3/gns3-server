@@ -38,7 +38,7 @@ class Compute:
     A GNS3 compute.
     """
 
-    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=8000, user=None, password=None):
+    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=8000, user=None, password=None, name=None):
         assert controller is not None
         log.info("Create compute %s", compute_id)
         self._id = compute_id
@@ -52,6 +52,7 @@ class Compute:
         self._set_auth(user, password)
         self._session = aiohttp.ClientSession()
         self._version = None
+        self.name = name
 
         # If the compute is local but the compute id is local
         # it's a configuration issue
@@ -78,6 +79,22 @@ class Compute:
         :returns: Version of compute node (string or None if not connected)
         """
         return self._version
+
+    @property
+    def name(self):
+        """
+        :returns: Compute name
+        """
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if name is not None:
+            self._name = name
+        elif self._id == "local":
+            self._name = "local"
+        else:
+            self._name = "{}://{}:{}".format(self._protocol, self._host, self._port)
 
     @property
     def connected(self):
@@ -133,6 +150,7 @@ class Compute:
     def __json__(self):
         return {
             "compute_id": self._id,
+            "name": self._name,
             "protocol": self._protocol,
             "host": self._host,
             "port": self._port,

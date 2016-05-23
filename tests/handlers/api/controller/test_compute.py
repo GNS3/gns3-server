@@ -62,7 +62,8 @@ def test_compute_list(http_controller, controller):
         "host": "example.com",
         "port": 84,
         "user": "julien",
-        "password": "secure"
+        "password": "secure",
+        "name": "My super server"
     }
     response = http_controller.post("/computes", params)
     assert response.status == 201
@@ -78,6 +79,8 @@ def test_compute_list(http_controller, controller):
             'host': 'example.com',
             'port': 84,
             'protocol': 'http',
-            'user': 'julien'
+            'user': 'julien',
+            'name': 'My super server'
+
         }
     ]

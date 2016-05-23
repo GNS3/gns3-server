@@ -63,7 +63,8 @@ def test_load(controller, controller_config_path, async_run):
         "host": "localhost",
         "port": 8000,
         "protocol": "http",
-        "user": "admin"
+        "user": "admin",
+        "name": "http://localhost:8000"
     }
 
 
