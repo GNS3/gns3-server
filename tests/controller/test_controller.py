@@ -76,9 +76,12 @@ def test_isEnabled(controller):
 
 
 def test_addCompute(controller, controller_config_path, async_run):
-    async_run(controller.add_compute("test1"))
+    controller._notification = MagicMock()
+    c = async_run(controller.add_compute("test1"))
+    controller._notification.emit.assert_called_with("compute.created", c.__json__())
     assert len(controller.computes) == 1
     async_run(controller.add_compute("test1"))
+    controller._notification.emit.assert_called_with("compute.updated", c.__json__())
     assert len(controller.computes) == 1
     async_run(controller.add_compute("test2"))
     assert len(controller.computes) == 2

@@ -205,6 +205,9 @@ You can receive notification from the server if you listen the HTTP stream /noti
 
 The available notification are:
     * ping
+    * compute.created
+    * compute.updated
+    * compute.deleted
     * node.created
     * node.updated
     * node.deleted

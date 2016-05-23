@@ -92,7 +92,7 @@ class Compute:
         if name is not None:
             self._name = name
         elif self._id == "local":
-            self._name = "local"
+            self._name = "Local"
         else:
             self._name = "{}://{}:{}".format(self._protocol, self._host, self._port)
 
@@ -199,6 +199,7 @@ class Compute:
 
             self._notifications = asyncio.async(self._connect_notification())
             self._connected = True
+            self._controller.notification.emit("compute.updated", self.__json__())
 
     @asyncio.coroutine
     def _connect_notification(self):

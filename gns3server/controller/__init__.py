@@ -93,15 +93,21 @@ class Controller:
         :param compute_id: Compute server identifier
         :param kwargs: See the documentation of Compute
         """
-
-        # We disallow to create from the outside the
-        if compute_id == 'local':
-            return self._create_local_compute()
-
         if compute_id not in self._computes:
+
+
+            # We disallow to create from the outside the
+            if compute_id == 'local':
+                compute_server = self._create_local_compute()
+                self.notification.emit("compute.created", compute_server.__json__())
+                return compute_server
+
             compute_server = Compute(compute_id=compute_id, controller=self, **kwargs)
             self._computes[compute_id] = compute_server
             self.save()
+            self.notification.emit("compute.created", compute_server.__json__())
+        else:
+            self.notification.emit("compute.updated", self._computes[compute_id].__json__())
         return self._computes[compute_id]
 
     def _create_local_compute(self):

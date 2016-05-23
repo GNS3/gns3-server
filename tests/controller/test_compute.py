@@ -29,8 +29,8 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
 @pytest.fixture
-def compute():
-    compute = Compute("my_compute_id", protocol="https", host="example.com", port=84, controller=MagicMock())
+def compute(controller):
+    compute = Compute("my_compute_id", protocol="https", host="example.com", port=84, controller=controller)
     compute._connected = True
     return compute
 
@@ -44,7 +44,7 @@ def test_name():
     assert c.name == "https://example.com:84"
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         c = Compute("local", protocol="https", host="example.com", port=84, controller=MagicMock(), name=None)
-        assert c.name == "local"
+        assert c.name == "Local"
     c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), name="hello")
     assert c.name == "hello"
 
@@ -86,7 +86,8 @@ def test_compute_httpQueryAuth(compute, async_run):
         assert compute._auth.password == "toor"
 
 
-def test_compute_httpQueryNotConnected(compute, async_run):
+def test_compute_httpQueryNotConnected(compute, controller, async_run):
+    controller._notification = MagicMock()
     compute._connected = False
     response = AsyncioMagicMock()
     response.read = AsyncioMagicMock(return_value=json.dumps({"version": __version__}).encode())
@@ -95,8 +96,9 @@ def test_compute_httpQueryNotConnected(compute, async_run):
         async_run(compute.post("/projects", {"a": "b"}))
         mock.assert_any_call("GET", "https://example.com:84/v2/compute/version", headers={'content-type': 'application/json'}, data=None, auth=None)
         mock.assert_any_call("POST", "https://example.com:84/v2/compute/projects", data='{"a": "b"}', headers={'content-type': 'application/json'}, auth=None)
-        assert compute._connected
-        assert compute.version == __version__
+    assert compute._connected
+    assert compute.version == __version__
+    controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
 
 
 def test_compute_httpQueryNotConnectedInvalidVersion(compute, async_run):
@@ -170,7 +172,7 @@ def test_connectNotification(compute, async_run):
             response.tp = aiohttp.MsgType.closed
             return response
 
-    compute._controller._notifications = MagicMock()
+    compute._controller._notification = MagicMock()
     compute._session = AsyncioMagicMock(return_value=ws_mock)
     compute._session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
     ws_mock.receive = receive
