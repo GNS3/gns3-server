@@ -182,7 +182,7 @@ def test_dynamips_idle_pc(node, async_run, compute):
     compute.get = AsyncioMagicMock(return_value=response)
 
     async_run(node.dynamips_auto_idlepc())
-    compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/auto_idlepc".format(node.project.id, node.id))
+    compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/auto_idlepc".format(node.project.id, node.id), timeout=240)
 
 
 def test_dynamips_idlepc_proposals(node, async_run, compute):
@@ -192,4 +192,4 @@ def test_dynamips_idlepc_proposals(node, async_run, compute):
     compute.get = AsyncioMagicMock(return_value=response)
 
     async_run(node.dynamips_idlepc_proposals())
-    compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id))
+    compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id), timeout=240)
