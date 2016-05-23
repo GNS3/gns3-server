@@ -88,7 +88,8 @@ NODE_OBJECT_SCHEMA = {
         },
         "node_type": {
             "description": "Type of node",
-            "enum": ["ethernet_hub",
+            "enum": ["cloud",
+                     "ethernet_hub",
                      "ethernet_switch",
                      "frame_relay_switch",
                      "atm_switch",

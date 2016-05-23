@@ -15,10 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Hub object that uses the Bridge interface to create a hub with ports.
-"""
-
 import asyncio
 
 from ...node_error import NodeError
@@ -51,6 +47,9 @@ class EthernetSwitch(BaseNode):
 
     @asyncio.coroutine
     def create(self):
+        """
+        Creates this switch.
+        """
 
         super().create()
         log.info('Ethernet switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))

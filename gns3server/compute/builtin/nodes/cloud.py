@@ -24,12 +24,12 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class EthernetHub(BaseNode):
+class Cloud(BaseNode):
 
     """
-    Ethernet hub
+    Cloud.
 
-    :param name: name for this hub
+    :param name: name for this cloud
     :param node_id: Node identifier
     :param project: Project instance
     :param manager: Parent VM Manager
@@ -48,16 +48,16 @@ class EthernetHub(BaseNode):
     @asyncio.coroutine
     def create(self):
         """
-        Creates this hub.
+        Creates this cloud.
         """
 
         super().create()
-        log.info('Ethernet hub "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        log.info('Cloud "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
     def delete(self):
         """
-        Deletes this hub.
+        Deletes this cloud.
         """
 
         raise NotImplementedError()
@@ -65,7 +65,7 @@ class EthernetHub(BaseNode):
     @asyncio.coroutine
     def add_nio(self, nio, port_number):
         """
-        Adds a NIO as new port on this hub.
+        Adds a NIO as new port on this cloud.
 
         :param nio: NIO instance to add
         :param port_number: port to allocate for the NIO
@@ -76,7 +76,7 @@ class EthernetHub(BaseNode):
     @asyncio.coroutine
     def remove_nio(self, port_number):
         """
-        Removes the specified NIO as member of this hub.
+        Removes the specified NIO as member of cloud.
 
         :param port_number: allocated port number
 
