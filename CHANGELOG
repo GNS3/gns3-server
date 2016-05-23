@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.5.0b1 23/05/2016
+
+* Allow an IOS router to stop even the Dynamips hypervisor command fail to be sent. Ref #488.
+* Extract private-config only when necessary (content is different than the default). Fixes #520.
+* Fixes disabling the VPCS relay feature. Fixes #521.
+* Fixes wrong exception in Docker VM implementation.
+* Force Npcap DLL to be used first for Dynamips and uBridge (instead of the one from Winpcap if installed).
+* Fixed startup-config is lost if you change any IOS router settings. Fixes #1233.
+* Fixes check for NPF service and add check for NPCAP service on Windows.
+* Fix ProcessLookupError X11VNC
+* Force tag latest for docker image if no tag is specified
+* Cleanup unbreakable space
+* Do not raise error if vmrun.exe is named vmrun.EXE
+* Load docker api only for Linux
+
 ## 1.5.0a2 10/05/2016
 
 * Fix distribution on PyPi
