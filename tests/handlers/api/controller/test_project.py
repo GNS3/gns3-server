@@ -57,14 +57,6 @@ def test_create_project_without_dir(http_controller):
     assert response.json["name"] == "test"
 
 
-def test_create_temporary_project(http_controller):
-    query = {"name": "test", "project_id": "20010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = http_controller.post("/projects", query)
-    assert response.status == 201
-    assert response.json["project_id"] == "20010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["name"] == "test"
-
-
 def test_create_project_with_uuid(http_controller):
     query = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_controller.post("/projects", query)
