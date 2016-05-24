@@ -168,7 +168,8 @@ def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
             os.system('"{}" -- add adapter vmnet{}'.format(vnetlib_path, vmnet_number))
     os.system("net stop npf")
     os.system("net start npf")
-
+    os.system("net stop npcap")
+    os.system("net start npcap")
 
 def vmnet_unix(args, vmnet_range_start, vmnet_range_end):
     """

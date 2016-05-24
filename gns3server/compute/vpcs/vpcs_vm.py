@@ -420,8 +420,10 @@ class VPCSVM(BaseNode):
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
-        if self._vpcs_version > parse_version("0.8"):
-            command.extend(["-R"])  # disable relay feature of VPCS (starting with VPCS 0.8)
+        if self._vpcs_version >= parse_version("0.8b"):
+            command.extend(["-R"])  # disable the relay feature of VPCS (starting with VPCS 0.8)
+        else:
+            log.warn("The VPCS relay feature could not be disabled because the VPCS version is below 0.8b")
 
         nio = self._ethernet_adapter.get_nio(0)
         if nio:

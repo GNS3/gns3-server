@@ -108,7 +108,6 @@ class IOUVM(BaseNode):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         yield from self.stop()
-        self.save_configs()
 
     @property
     def path(self):
@@ -683,6 +682,7 @@ class IOUVM(BaseNode):
             self._iouyap_process = None
 
         self._started = False
+        self.save_configs()
 
     def _terminate_process_iouyap(self):
         """
@@ -1099,7 +1099,7 @@ class IOUVM(BaseNode):
             if private_config is None:
                 private_config = ''
 
-            # We disallow erasing the startup config file
+            # We disallow erasing the private config file
             if len(private_config) == 0 and os.path.exists(private_config_path):
                 return
 
@@ -1206,18 +1206,16 @@ class IOUVM(BaseNode):
                 config_path = os.path.join(self.working_dir, "startup-config.cfg")
                 try:
                     config = startup_config_content.decode("utf-8", errors="replace")
-                    config = "!\n" + config.replace("\r", "")
                     with open(config_path, "wb") as f:
                         log.info("saving startup-config to {}".format(config_path))
                         f.write(config.encode("utf-8"))
                 except (binascii.Error, OSError) as e:
                     raise IOUError("Could not save the startup configuration {}: {}".format(config_path, e))
 
-            if private_config_content:
+            if private_config_content and private_config_content != b'\nend\n':
                 config_path = os.path.join(self.working_dir, "private-config.cfg")
                 try:
                     config = private_config_content.decode("utf-8", errors="replace")
-                    config = "!\n" + config.replace("\r", "")
                     with open(config_path, "wb") as f:
                         log.info("saving private-config to {}".format(config_path))
                         f.write(config.encode("utf-8"))

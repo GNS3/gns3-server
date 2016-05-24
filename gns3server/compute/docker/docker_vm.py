@@ -34,6 +34,7 @@ from gns3server.utils.get_resource import get_resource
 
 from gns3server.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 from ..base_node import BaseNode
+
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from .docker_error import (

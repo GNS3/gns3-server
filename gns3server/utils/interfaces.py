@@ -138,6 +138,21 @@ def is_interface_up(interface):
         # TODO: Windows & OSX support
         return True
 
+def _check_windows_service(service_name):
+
+    import pywintypes
+    import win32service
+    import win32serviceutil
+
+    try:
+        if win32serviceutil.QueryServiceStatus(service_name, None)[1] != win32service.SERVICE_RUNNING:
+            return False
+    except pywintypes.error as e:
+        if e.winerror == 1060:
+            return False
+        else:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not check if the {} service is running: {}".format(service_name, e.strerror))
+    return True
 
 def interfaces():
     """
@@ -163,19 +178,8 @@ def interfaces():
                             "mac_address": mac_address})
     else:
         try:
-            import pywintypes
-            import win32service
-            import win32serviceutil
-
-            try:
-                if win32serviceutil.QueryServiceStatus("npf", None)[1] != win32service.SERVICE_RUNNING:
-                    raise aiohttp.web.HTTPInternalServerError(text="The NPF service is not running")
-            except pywintypes.error as e:
-                if e[0] == 1060:
-                    raise aiohttp.web.HTTPInternalServerError(text="The NPF service is not installed")
-                else:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not check if the NPF service is running: {}".format(e[2]))
-
+            if not _check_windows_service("npf") and not _check_windows_service("npcap"):
+                raise aiohttp.web.HTTPInternalServerError("The NPF or Npcap is not installed or running")
             results = get_windows_interfaces()
         except ImportError:
             message = "pywin32 module is not installed, please install it on the server to get the available interface names"

@@ -272,7 +272,10 @@ class Router(BaseNode):
 
         status = yield from self.get_status()
         if status != "inactive":
-            yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
+            try:
+                yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
+            except DynamipsError as e:
+                log.warn("Could not stop {}: {}".format(self._name, e))
             self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
         yield from self.save_configs()
@@ -338,8 +341,8 @@ class Router(BaseNode):
             try:
                 yield from self.stop()
                 yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
-            except DynamipsError:
-                pass
+            except DynamipsError as e:
+                log.warn("Could not stop and delete {}: {}".format(self._name, e))
             yield from self.hypervisor.stop()
 
         if self._auto_delete_disks:
@@ -1533,7 +1536,6 @@ class Router(BaseNode):
             if startup_config_base64:
                 if not self.startup_config:
                     self._startup_config = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
-
                 try:
                     config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
                     config = "!\n" + config.replace("\r", "")
@@ -1544,13 +1546,11 @@ class Router(BaseNode):
                 except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
-            if private_config_base64:
+            if private_config_base64 and base64.b64decode(private_config_base64) != b'\nkerberos password \nend\n':
                 if not self.private_config:
                     self._private_config = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
-
                 try:
                     config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
-                    config = "!\n" + config.replace("\r", "")
                     config_path = os.path.join(module_workdir, self.private_config)
                     with open(config_path, "wb") as f:
                         log.info("saving private-config to {}".format(self.private_config))
