@@ -47,8 +47,7 @@ class ProjectHandler:
         controller = Controller.instance()
         project = yield from controller.add_project(name=request.json.get("name"),
                                                     path=request.json.get("path"),
-                                                    project_id=request.json.get("project_id"),
-                                                    temporary=request.json.get("temporary", False))
+                                                    project_id=request.json.get("project_id"))
         response.set_status(201)
         response.json(project)
 

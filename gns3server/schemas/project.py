@@ -37,11 +37,7 @@ PROJECT_CREATE_SCHEMA = {
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-        },
-        "temporary": {
-            "description": "Whether the project is a temporary project or not",
-            "type": "boolean"
-        },
+        }
     },
     "additionalProperties": False,
 }
@@ -55,10 +51,6 @@ PROJECT_UPDATE_SCHEMA = {
             "description": "Project name",
             "type": ["string", "null"],
             "minLength": 1
-        },
-        "temporary": {
-            "description": "Whether the project is a temporary project or not",
-            "type": "boolean"
         },
         "path": {
             "description": "Path of the project on the server (work only with --local)",
@@ -85,10 +77,6 @@ PROJECT_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "temporary": {
-            "description": "Whether the project is a temporary project or not",
-            "type": "boolean"
-        },
         "path": {
             "description": "Project directory",
             "type": ["string", "null"],
@@ -96,7 +84,7 @@ PROJECT_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["project_id", "temporary"]
+    "required": ["project_id"]
 }
 
 PROJECT_LIST_SCHEMA = {

@@ -46,16 +46,14 @@ class Controller:
         self._config_file = os.path.join(config_path, "gns3_controller.conf")
 
         server_config = Config.instance().get_section_config("Server")
-        print(server_config)
         if server_config.getboolean("local", False) is True:
-            print("MMOOOOOOONKEYYYYYY")
             self._computes["local"] = Compute(compute_id="local",
-                                          controller=self,
-                                          protocol=server_config.get("protocol", "http"),
-                                          host=server_config.get("host", "localhost"),
-                                          port=server_config.getint("port", 3080),
-                                          user=server_config.get("user", ""),
-                                          password=server_config.get("password", ""))
+                                              controller=self,
+                                              protocol=server_config.get("protocol", "http"),
+                                              host=server_config.get("host", "localhost"),
+                                              port=server_config.getint("port", 3080),
+                                              user=server_config.get("user", ""),
+                                              password=server_config.get("password", ""))
 
     def save(self):
         """
@@ -106,7 +104,6 @@ class Controller:
         :param kwargs: See the documentation of Compute
         """
         if compute_id not in self._computes:
-
 
             # We disallow to create from the outside the
             if compute_id == 'local':

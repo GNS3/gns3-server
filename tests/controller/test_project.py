@@ -27,9 +27,10 @@ from uuid import uuid4
 from gns3server.controller.project import Project
 from gns3server.config import Config
 
+
 @pytest.fixture
 def project(controller):
-   return Project(controller=controller)
+    return Project(controller=controller)
 
 
 def test_affect_uuid():
@@ -42,7 +43,7 @@ def test_affect_uuid():
 
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False, "path": p.path}
+    assert p.__json__() == {"name": p.name, "project_id": p.id, "path": p.path}
 
 
 def test_path(tmpdir):
@@ -99,7 +100,6 @@ def test_add_node_local(async_run, controller):
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
-        "temporary": project._temporary,
         "path": project._path
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
@@ -127,8 +127,7 @@ def test_add_node_non_local(async_run, controller):
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
-        "project_id": project._id,
-        "temporary": project._temporary
+        "project_id": project._id
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,

@@ -70,7 +70,7 @@ class ProjectManager:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
         return self._projects[project_id]
 
-    def create_project(self, name=None, project_id=None, path=None, temporary=False):
+    def create_project(self, name=None, project_id=None, path=None):
         """
         Create a project and keep a references to it in project manager.
 
@@ -79,7 +79,7 @@ class ProjectManager:
 
         if project_id is not None and project_id in self._projects:
             return self._projects[project_id]
-        project = Project(name=name, project_id=project_id, path=path, temporary=temporary)
+        project = Project(name=name, project_id=project_id, path=path)
         self._projects[project.id] = project
         return project
 

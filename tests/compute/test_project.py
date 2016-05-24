@@ -76,7 +76,6 @@ def test_path(tmpdir):
             p = Project(project_id=str(uuid4()))
             assert p.path == os.path.join(directory, p.id)
             assert os.path.exists(os.path.join(directory, p.id))
-            assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
 def test_init_path(tmpdir):
@@ -84,31 +83,6 @@ def test_init_path(tmpdir):
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         p = Project(path=str(tmpdir), project_id=str(uuid4()))
         assert p.path == str(tmpdir)
-
-
-def test_changing_path_temporary_flag(tmpdir):
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        p = Project(temporary=True, project_id=str(uuid4()))
-        assert os.path.exists(p.path)
-        original_path = p.path
-        assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
-
-        p.path = str(tmpdir)
-
-
-def test_temporary_path():
-    p = Project(temporary=True, project_id=str(uuid4()))
-    assert os.path.exists(p.path)
-    assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
-
-
-def test_remove_temporary_flag():
-    p = Project(temporary=True, project_id=str(uuid4()))
-    assert os.path.exists(p.path)
-    assert os.path.exists(os.path.join(p.path, ".gns3_temporary"))
-    p.temporary = False
-    assert not os.path.exists(os.path.join(p.path, ".gns3_temporary"))
 
 
 def test_changing_path_not_allowed(tmpdir):
@@ -120,7 +94,7 @@ def test_changing_path_not_allowed(tmpdir):
 
 def test_json(tmpdir):
     p = Project(project_id=str(uuid4()))
-    assert p.__json__() == {"name": p.name, "project_id": p.id, "temporary": False}
+    assert p.__json__() == {"name": p.name, "project_id": p.id}
 
 
 def test_node_working_directory(tmpdir, node):
@@ -199,40 +173,6 @@ def test_project_close(loop, node, project):
         loop.run_until_complete(asyncio.async(project.close()))
         assert mock.called
     assert node.id not in node.manager._nodes
-
-
-def test_project_close_temporary_project(loop, manager):
-    """A temporary project is deleted when closed"""
-
-    project = Project(temporary=True, project_id=str(uuid4()))
-    directory = project.path
-    assert os.path.exists(directory)
-    loop.run_until_complete(asyncio.async(project.close()))
-    assert os.path.exists(directory) is False
-
-def test_clean_project_directory(tmpdir):
-
-    # A non anonymous project with uuid.
-    project1 = tmpdir / uuid4()
-    project1.mkdir()
-
-    # A non anonymous project.
-    oldproject = tmpdir / uuid4()
-    oldproject.mkdir()
-
-    # an anonymous project
-    project2 = tmpdir / uuid4()
-    project2.mkdir()
-    tmp = (project2 / ".gns3_temporary")
-    with open(str(tmp), 'w+') as f:
-        f.write("1")
-
-    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
-        Project.clean_project_directory()
-
-    assert os.path.exists(str(project1))
-    assert os.path.exists(str(oldproject))
-    assert not os.path.exists(str(project2))
 
 
 def test_list_files(tmpdir, loop):

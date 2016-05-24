@@ -31,7 +31,6 @@ from gns3server.web.web_server import WebServer
 from gns3server.web.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
-from gns3server.compute.project import Project
 from gns3server.crash_report import CrashReport
 
 
@@ -223,8 +222,6 @@ def run():
     except FileNotFoundError:
         log.critical("The current working directory doesn't exist")
         return
-
-    Project.clean_project_directory()
 
     CrashReport.instance()
     host = server_config["host"]

@@ -44,16 +44,6 @@ def test_create_project_without_dir(http_compute):
     response = http_compute.post("/projects", query, example=True)
     assert response.status == 201
     assert response.json["project_id"] == "10010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["temporary"] is False
-    assert response.json["name"] == "test"
-
-
-def test_create_temporary_project(http_compute):
-    query = {"name": "test", "temporary": True, "project_id": "20010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = http_compute.post("/projects", query)
-    assert response.status == 201
-    assert response.json["project_id"] == "20010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["temporary"] is True
     assert response.json["name"] == "test"
 
 
@@ -66,13 +56,12 @@ def test_create_project_with_uuid(http_compute):
 
 
 def test_show_project(http_compute):
-    query = {"name": "test", "project_id": "40010203-0405-0607-0809-0a0b0c0d0e02", "temporary": False}
+    query = {"name": "test", "project_id": "40010203-0405-0607-0809-0a0b0c0d0e02"}
     response = http_compute.post("/projects", query)
     assert response.status == 201
     response = http_compute.get("/projects/40010203-0405-0607-0809-0a0b0c0d0e02", example=True)
-    assert len(response.json.keys()) == 3
+    assert len(response.json.keys()) == 2
     assert response.json["project_id"] == "40010203-0405-0607-0809-0a0b0c0d0e02"
-    assert response.json["temporary"] is False
     assert response.json["name"] == "test"
 
 
@@ -97,35 +86,7 @@ def test_list_projects(http_compute):
     assert "51010203-0405-0607-0809-0a0b0c0d0e0f" in [p["project_id"] for p in response.json]
 
 
-def test_update_temporary_project(http_compute):
-    query = {"name": "test", "temporary": True, "project_id": "60010203-0405-0607-0809-0a0b0c0d0e0b"}
-    response = http_compute.post("/projects", query)
-    assert response.status == 201
-    query = {"name": "test", "temporary": False}
-    response = http_compute.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
-    assert response.status == 200
-    assert response.json["temporary"] is False
-
-
-def test_update_path_project_temporary(http_compute, tmpdir):
-
-    os.makedirs(str(tmpdir / "a"))
-    os.makedirs(str(tmpdir / "b"))
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        response = http_compute.post("/projects", {"name": "first_name", "path": str(tmpdir / "a"), "temporary": True, "project_id": "70010203-0405-0607-0809-0a0b0c0d0e0b"})
-        assert response.status == 201
-        assert response.json["name"] == "first_name"
-        query = {"name": "second_name", "path": str(tmpdir / "b")}
-        response = http_compute.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
-        assert response.status == 200
-        assert response.json["name"] == "second_name"
-
-        assert not os.path.exists(str(tmpdir / "a"))
-        assert os.path.exists(str(tmpdir / "b"))
-
-
-def test_update_path_project_non_temporary(http_compute, tmpdir):
+def test_update_path_project(http_compute, tmpdir):
 
     os.makedirs(str(tmpdir / "a"))
     os.makedirs(str(tmpdir / "b"))

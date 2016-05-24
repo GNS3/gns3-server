@@ -34,10 +34,9 @@ class Project:
 
     :param project_id: force project identifier (None by default auto generate an UUID)
     :param path: path of the project. (None use the standard directory)
-    :param temporary: boolean to tell if the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, temporary=False, controller=None):
+    def __init__(self, name=None, project_id=None, path=None, controller=None):
 
         self._controller = controller
         self._name = name
@@ -54,7 +53,6 @@ class Project:
             path = os.path.join(get_default_project_directory(), self._id)
         self.path = path
 
-        self._temporary = temporary
         self._computes = set()
         self._nodes = {}
         self._links = {}
@@ -73,10 +71,6 @@ class Project:
     @property
     def id(self):
         return self._id
-
-    @property
-    def temporary(self):
-        return self._temporary
 
     @property
     def path(self):
@@ -126,14 +120,12 @@ class Project:
                     yield from compute.post("/projects", data={
                         "name": self._name,
                         "project_id": self._id,
-                        "temporary": self._temporary,
                         "path": self._path
                     })
                 else:
                     yield from compute.post("/projects", data={
                         "name": self._name,
                         "project_id": self._id,
-                        "temporary": self._temporary
                     })
 
                 self._project_created_on_compute.add(compute)
@@ -235,6 +227,5 @@ class Project:
         return {
             "name": self._name,
             "project_id": self._id,
-            "temporary": self._temporary,
             "path": self._path
         }

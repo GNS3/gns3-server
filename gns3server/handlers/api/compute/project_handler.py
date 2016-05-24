@@ -73,8 +73,7 @@ class ProjectHandler:
         p = pm.create_project(
             name=request.json.get("name"),
             path=request.json.get("path"),
-            project_id=request.json.get("project_id"),
-            temporary=request.json.get("temporary", False)
+            project_id=request.json.get("project_id")
         )
         response.set_status(201)
         response.json(p)
@@ -120,9 +119,6 @@ class ProjectHandler:
             project.path = project_path
             for module in MODULES:
                 yield from module.instance().project_moved(project)
-            yield from project.clean_old_path(old_path)
-        # Very important: we need to remove temporary flag after moving the project
-        project.temporary = request.json.get("temporary", project.temporary)
         response.json(project)
 
     @Route.post(

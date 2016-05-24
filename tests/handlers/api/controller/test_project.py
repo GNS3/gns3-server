@@ -54,16 +54,14 @@ def test_create_project_without_dir(http_controller):
     response = http_controller.post("/projects", query, example=True)
     assert response.status == 201
     assert response.json["project_id"] == "10010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["temporary"] is False
     assert response.json["name"] == "test"
 
 
 def test_create_temporary_project(http_controller):
-    query = {"name": "test", "temporary": True, "project_id": "20010203-0405-0607-0809-0a0b0c0d0e0f"}
+    query = {"name": "test", "project_id": "20010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_controller.post("/projects", query)
     assert response.status == 201
     assert response.json["project_id"] == "20010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["temporary"] is True
     assert response.json["name"] == "test"
 
 

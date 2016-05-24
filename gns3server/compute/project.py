@@ -44,10 +44,9 @@ class Project:
 
     :param project_id: force project identifier (None by default auto generate an UUID)
     :param path: path of the project. (None use the standard directory)
-    :param temporary: boolean to tell if the project is a temporary project (destroy when closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, temporary=False):
+    def __init__(self, name=None, project_id=None, path=None):
 
         self._name = name
         try:
@@ -58,7 +57,6 @@ class Project:
 
         self._nodes = set()
         self._nodes_to_destroy = set()
-        self.temporary = temporary
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
 
@@ -83,8 +81,7 @@ class Project:
 
         return {
             "name": self._name,
-            "project_id": self._id,
-            "temporary": self._temporary
+            "project_id": self._id
         }
 
     def _config(self):
@@ -114,19 +111,6 @@ class Project:
                 raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory path")
 
         self._path = path
-        self._update_temporary_file()
-
-    @asyncio.coroutine
-    def clean_old_path(self, old_path):
-        """
-        Called after a project location change. All the compute should
-        have been notified before
-        """
-        if self._temporary:
-            try:
-                yield from wait_run_in_executor(shutil.rmtree, old_path)
-            except OSError as e:
-                log.warn("Can't remove temporary directory {}: {}".format(old_path, e))
 
     @property
     def name(self):
@@ -144,20 +128,6 @@ class Project:
     def nodes(self):
 
         return self._nodes
-
-    @property
-    def temporary(self):
-
-        return self._temporary
-
-    @temporary.setter
-    def temporary(self, temporary):
-
-        if hasattr(self, 'temporary') and temporary == self._temporary:
-            return
-
-        self._temporary = temporary
-        self._update_temporary_file()
 
     def record_tcp_port(self, port):
         """
@@ -198,27 +168,6 @@ class Project:
 
         if port in self._used_udp_ports:
             self._used_udp_ports.remove(port)
-
-    def _update_temporary_file(self):
-        """
-        Update the .gns3_temporary file in order to reflect the current project status.
-        """
-
-        if not hasattr(self, "_path"):
-            return
-
-        if self._temporary:
-            try:
-                with open(os.path.join(self._path, ".gns3_temporary"), 'w+') as f:
-                    f.write("1")
-            except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not create temporary project: {}".format(e))
-        else:
-            if os.path.exists(os.path.join(self._path, ".gns3_temporary")):
-                try:
-                    os.remove(os.path.join(self._path, ".gns3_temporary"))
-                except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not mark project as no longer temporary: {}".format(e))
 
     def module_working_directory(self, module_name):
         """
@@ -319,7 +268,7 @@ class Project:
 
         for module in self.compute():
             yield from module.instance().project_closing(self)
-        yield from self._close_and_clean(self._temporary)
+        yield from self._close_and_clean(False)
         for module in self.compute():
             yield from module.instance().project_closed(self)
 
@@ -394,20 +343,6 @@ class Project:
         yield from self._close_and_clean(True)
         for module in self.compute():
             yield from module.instance().project_closed(self)
-
-    @classmethod
-    def clean_project_directory(cls):
-        """
-        At startup drop old temporary project. After a crash for example
-        """
-
-        directory = get_default_project_directory()
-        if os.path.exists(directory):
-            for project in os.listdir(directory):
-                path = os.path.join(directory, project)
-                if os.path.exists(os.path.join(path, ".gns3_temporary")):
-                    log.warning("Purge old temporary project {}".format(project))
-                    shutil.rmtree(path)
 
     def compute(self):
         """
