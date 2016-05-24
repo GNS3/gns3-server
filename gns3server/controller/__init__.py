@@ -45,6 +45,18 @@ class Controller:
             config_path = os.path.join(os.path.expanduser("~"), ".config", "GNS3")
         self._config_file = os.path.join(config_path, "gns3_controller.conf")
 
+        server_config = Config.instance().get_section_config("Server")
+        print(server_config)
+        if server_config.getboolean("local", False) is True:
+            print("MMOOOOOOONKEYYYYYY")
+            self._computes["local"] = Compute(compute_id="local",
+                                          controller=self,
+                                          protocol=server_config.get("protocol", "http"),
+                                          host=server_config.get("host", "localhost"),
+                                          port=server_config.getint("port", 3080),
+                                          user=server_config.get("user", ""),
+                                          password=server_config.get("password", ""))
+
     def save(self):
         """
         Save the controller configuration on disk
@@ -98,9 +110,7 @@ class Controller:
 
             # We disallow to create from the outside the
             if compute_id == 'local':
-                compute_server = self._create_local_compute()
-                self.notification.emit("compute.created", compute_server.__json__())
-                return compute_server
+                return None
 
             compute_server = Compute(compute_id=compute_id, controller=self, **kwargs)
             self._computes[compute_id] = compute_server
@@ -109,20 +119,6 @@ class Controller:
         else:
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())
         return self._computes[compute_id]
-
-    def _create_local_compute(self):
-        """
-        Create the local compute node. It is the controller itself.
-        """
-        server_config = Config.instance().get_section_config("Server")
-        self._computes["local"] = Compute(compute_id="local",
-                                          controller=self,
-                                          protocol=server_config.get("protocol", "http"),
-                                          host=server_config.get("host", "localhost"),
-                                          port=server_config.getint("port", 3080),
-                                          user=server_config.get("user", ""),
-                                          password=server_config.get("password", ""))
-        return self._computes["local"]
 
     @property
     def notification(self):
@@ -145,8 +141,6 @@ class Controller:
         try:
             return self._computes[compute_id]
         except KeyError:
-            if compute_id == "local":
-                return self._create_local_compute()
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     @asyncio.coroutine

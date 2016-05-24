@@ -112,13 +112,15 @@ def test_getCompute(controller, async_run):
         assert controller.get_compute("dsdssd")
 
 
-def test_addComputeLocal(controller, controller_config_path, async_run):
+def test_initControllerLocal(controller, controller_config_path, async_run):
     """
     The local node is the controller itself you can not change the informations
     """
+    # The default test controller is not local
+    assert len(controller._computes) == 0
     Config.instance().set("Server", "local", True)
-    async_run(controller.add_compute("local", host="example.org"))
-    assert controller.get_compute("local").host == "localhost"
+    c = Controller()
+    assert len(c._computes) == 1
 
 
 def test_addProject(controller, async_run):
