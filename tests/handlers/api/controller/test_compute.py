@@ -16,7 +16,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-def test_compute_create(http_controller, controller):
+def test_compute_create_without_id(http_controller, controller):
+
+    params = {
+        "protocol": "http",
+        "host": "example.com",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params, example=True)
+    assert response.status == 201
+    assert response.route == "/computes"
+    assert response.json["user"] == "julien"
+    assert response.json["compute_id"] is not None
+    assert "password" not in response.json
+
+    assert len(controller.computes) == 1
+    assert controller.computes[response.json["compute_id"]].host == "example.com"
+
+
+def test_compute_create_with_id(http_controller, controller):
 
     params = {
         "compute_id": "my_compute_id",
@@ -34,6 +54,7 @@ def test_compute_create(http_controller, controller):
 
     assert len(controller.computes) == 1
     assert controller.computes["my_compute_id"].host == "example.com"
+
 
 
 def test_compute_get(http_controller, controller):

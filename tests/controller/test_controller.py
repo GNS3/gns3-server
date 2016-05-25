@@ -77,27 +77,30 @@ def test_isEnabled(controller):
 
 def test_addCompute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
-    c = async_run(controller.add_compute("test1"))
+    c = async_run(controller.add_compute(compute_id="test1"))
     controller._notification.emit.assert_called_with("compute.created", c.__json__())
     assert len(controller.computes) == 1
-    async_run(controller.add_compute("test1"))
+    async_run(controller.add_compute(compute_id="test1"))
     controller._notification.emit.assert_called_with("compute.updated", c.__json__())
     assert len(controller.computes) == 1
-    async_run(controller.add_compute("test2"))
+    async_run(controller.add_compute(compute_id="test2"))
     assert len(controller.computes) == 2
 
 
 def test_deleteCompute(controller, controller_config_path, async_run):
-    c = async_run(controller.add_compute("test1"))
+    c = async_run(controller.add_compute(compute_id="test1"))
     assert len(controller.computes) == 1
     controller._notification = MagicMock()
     async_run(controller.delete_compute("test1"))
     assert len(controller.computes) == 0
     controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
+    with open(controller_config_path) as f:
+        data = json.load(f)
+        assert len(data["computes"]) == 0
 
 
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
-    async_run(controller.add_compute("test1"))
+    async_run(controller.add_compute(compute_id="test1"))
     assert len(controller.computes) == 1
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -105,7 +108,7 @@ def test_addComputeConfigFile(controller, controller_config_path, async_run):
             {
                 'compute_id': 'test1',
                 'host': 'localhost',
-                'port': 8000,
+                'port': 3080,
                 'protocol': 'http',
                 'user': None,
                 'password': None
@@ -114,7 +117,7 @@ def test_addComputeConfigFile(controller, controller_config_path, async_run):
 
 
 def test_getCompute(controller, async_run):
-    compute = async_run(controller.add_compute("test1"))
+    compute = async_run(controller.add_compute(compute_id="test1"))
 
     assert controller.get_compute("test1") == compute
     with pytest.raises(aiohttp.web.HTTPNotFound):

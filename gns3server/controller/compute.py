@@ -18,6 +18,7 @@
 import aiohttp
 import asyncio
 import json
+import uuid
 
 from ..utils import parse_version
 from ..controller.controller_error import ControllerError
@@ -38,10 +39,15 @@ class Compute:
     A GNS3 compute.
     """
 
-    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=8000, user=None, password=None, name=None):
+    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=3080, user=None, password=None, name=None):
         assert controller is not None
         log.info("Create compute %s", compute_id)
-        self._id = compute_id
+
+        if compute_id is None:
+            self._id = str(uuid.uuid4())
+        else:
+            self._id = compute_id
+
         self.protocol = protocol
         self.host = host
         self.port = port

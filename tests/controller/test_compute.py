@@ -47,8 +47,9 @@ def test_name():
         assert c.name == "Local"
     c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), name="hello")
     assert c.name == "hello"
-    c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(),user="azertyuiopqsdfghjklkm")
+    c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), user="azertyuiopqsdfghjklkm")
     assert c.name == "https://azertyuiopq...@example.com:84"
+
 
 def test_compute_local(compute):
     """

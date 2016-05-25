@@ -85,8 +85,7 @@ class Controller:
             log.critical("Cannot load %s: %s", self._config_file, str(e))
             return
         for c in data["computes"]:
-            compute_id = c.pop("compute_id")
-            yield from self.add_compute(compute_id, **c)
+            yield from self.add_compute(**c)
 
     def is_enabled(self):
         """
@@ -96,26 +95,28 @@ class Controller:
         return Config.instance().get_section_config("Server").getboolean("controller")
 
     @asyncio.coroutine
-    def add_compute(self, compute_id, **kwargs):
+    def add_compute(self, **kwargs):
         """
         Add a server to the dictionary of compute servers controlled by this controller
 
         :param compute_id: Compute server identifier
         :param kwargs: See the documentation of Compute
         """
+        compute_id = kwargs.pop("compute_id", None)
         if compute_id not in self._computes:
 
             # We disallow to create from the outside the
             if compute_id == 'local':
                 return None
 
-            compute_server = Compute(compute_id=compute_id, controller=self, **kwargs)
-            self._computes[compute_id] = compute_server
+            compute = Compute(compute_id=compute_id, controller=self, **kwargs)
+            self._computes[compute.id] = compute
             self.save()
-            self.notification.emit("compute.created", compute_server.__json__())
+            self.notification.emit("compute.created", compute.__json__())
+            return compute
         else:
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())
-        return self._computes[compute_id]
+            return self._computes[compute_id]
 
     @asyncio.coroutine
     def delete_compute(self, compute_id):
@@ -125,6 +126,7 @@ class Controller:
         """
         compute = self.get_compute(compute_id)
         del self._computes[compute_id]
+        self.save()
         self.notification.emit("compute.deleted", compute.__json__())
 
     @property
