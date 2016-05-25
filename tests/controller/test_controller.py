@@ -87,6 +87,15 @@ def test_addCompute(controller, controller_config_path, async_run):
     assert len(controller.computes) == 2
 
 
+def test_deleteCompute(controller, controller_config_path, async_run):
+    c = async_run(controller.add_compute("test1"))
+    assert len(controller.computes) == 1
+    controller._notification = MagicMock()
+    async_run(controller.delete_compute("test1"))
+    assert len(controller.computes) == 0
+    controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
+
+
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
     async_run(controller.add_compute("test1"))
     assert len(controller.computes) == 1

@@ -21,7 +21,7 @@ from aiohttp.web import HTTPForbidden
 from gns3server.web.route import Route
 from gns3server.config import Config
 from gns3server.compute.project_manager import ProjectManager
-from gns3server.schemas.compute import COMPUTE_CREATE_SCHEMA, COMPUTE_OBJECT_SCHEMA
+from gns3server.schemas.compute import COMPUTE_CREATE_SCHEMA, COMPUTE_OBJECT_SCHEMA, COMPUTE_UPDATE_SCHEMA
 from gns3server.controller import Controller
 
 import logging
@@ -92,6 +92,26 @@ class ComputeHandler:
         asyncio.async(server.shutdown_server())
         response.set_status(201)
 
+    @Route.put(
+        r"/computes/{compute_id:.+}",
+        description="Get a compute server information",
+        status_codes={
+            200: "Compute server updated",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        input=COMPUTE_UPDATE_SCHEMA,
+        output=COMPUTE_OBJECT_SCHEMA)
+    def update(request, response):
+
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+
+        # Ignore these because we only use them when creating a node
+        request.json.pop("compute_id", None)
+        yield from compute.update(**request.json)
+        response.set_status(200)
+        response.json(compute)
 
     @Route.get(
         r"/computes/{compute_id:.+}",
@@ -105,3 +125,20 @@ class ComputeHandler:
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
         response.json(compute)
+
+    @Route.delete(
+        r"/computes/{compute_id:.+}",
+        parameters={
+            "project_id": "Project UUID",
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            204: "Instance deleted",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Delete a compute instance")
+    def delete(request, response):
+        controller = Controller.instance()
+        yield from controller.delete_compute(request.match_info["compute_id"])
+        response.set_status(204)

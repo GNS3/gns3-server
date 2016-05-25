@@ -42,9 +42,9 @@ class Compute:
         assert controller is not None
         log.info("Create compute %s", compute_id)
         self._id = compute_id
-        self._protocol = protocol
-        self._host = host
-        self._port = port
+        self.protocol = protocol
+        self.host = host
+        self.port = port
         self._user = None
         self._password = None
         self._connected = False
@@ -72,6 +72,15 @@ class Compute:
             self._auth = aiohttp.BasicAuth(self._user, self._password)
         else:
             self._auth = None
+
+    @asyncio.coroutine
+    def update(self, **kwargs):
+        for kw in kwargs:
+            setattr(self, kw, kwargs[kw])
+        if self._session:
+            self._session.close()
+        self._connected = False
+        self._controller.notification.emit("compute.updated", self.__json__())
 
     @property
     def version(self):
@@ -117,6 +126,10 @@ class Compute:
         """
         return self._host
 
+    @host.setter
+    def host(self, host):
+        self._host = host
+
     @property
     def port(self):
         """
@@ -124,12 +137,20 @@ class Compute:
         """
         return self._port
 
+    @port.setter
+    def port(self, port):
+        self._port = port
+
     @property
     def protocol(self):
         """
         :returns: Compute protocol (string)
         """
         return self._protocol
+
+    @protocol.setter
+    def protocol(self, protocol):
+        self._protocol = protocol
 
     @property
     def user(self):

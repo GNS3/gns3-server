@@ -54,6 +54,8 @@ COMPUTE_CREATE_SCHEMA = {
     "required": ["compute_id", "protocol", "host", "port"]
 }
 
+COMPUTE_UPDATE_SCHEMA = COMPUTE_CREATE_SCHEMA
+
 COMPUTE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to a GNS3 compute object instance",
@@ -93,5 +95,5 @@ COMPUTE_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["compute_id", "protocol", "host", "port", "name"]
+    "required": ["compute_id", "protocol", "host", "port", "name", "connected"]
 }

@@ -117,6 +117,16 @@ class Controller:
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())
         return self._computes[compute_id]
 
+    @asyncio.coroutine
+    def delete_compute(self, compute_id):
+        """
+        Delete a compute node
+        :param compute_id: Compute server identifier
+        """
+        compute = self.get_compute(compute_id)
+        del self._computes[compute_id]
+        self.notification.emit("compute.deleted", compute.__json__())
+
     @property
     def notification(self):
         """

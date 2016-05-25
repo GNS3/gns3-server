@@ -201,3 +201,15 @@ def test_streamFile(project, async_run, compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         async_run(compute.steam_file(project, "test/titi"))
     mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/stream/test/titi".format(project.id), auth=None)
+
+
+def test_update(compute, controller, async_run):
+    compute._controller._notification = MagicMock()
+    compute.name = "Test"
+    compute.host = "example.org"
+    compute._connected = True
+    async_run(compute.update(name="Test 2"))
+    assert compute.name == "Test 2"
+    assert compute.host == "example.org"
+    controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
+    assert compute.connected is False
