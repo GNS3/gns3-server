@@ -55,6 +55,7 @@ COMPUTE_CREATE_SCHEMA = {
 }
 
 COMPUTE_UPDATE_SCHEMA = COMPUTE_CREATE_SCHEMA
+del COMPUTE_UPDATE_SCHEMA["required"]
 
 COMPUTE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
