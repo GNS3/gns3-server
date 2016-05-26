@@ -43,11 +43,11 @@ COMPUTE_CREATE_SCHEMA = {
         },
         "user": {
             "description": "User for authentication",
-            "type": "string"
+            "type": ["string", "null"]
         },
         "password": {
             "description": "Password for authentication",
-            "type": "string"
+            "type": ["string", "null"]
         }
     },
     "additionalProperties": False,
@@ -84,7 +84,7 @@ COMPUTE_OBJECT_SCHEMA = {
         },
         "user": {
             "description": "User for authentication",
-            "type": "string"
+            "type": ["string", "null"]
         },
         "connected": {
             "description": "Whether the controller is connected to the compute server or not",
