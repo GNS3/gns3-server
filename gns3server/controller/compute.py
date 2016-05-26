@@ -78,8 +78,12 @@ class Compute:
             self._auth = None
         else:
             self._user = user.strip()
-            self._password = password.strip()
-            self._auth = aiohttp.BasicAuth(self._user, self._password)
+            if password:
+                self._password = password.strip()
+                self._auth = aiohttp.BasicAuth(self._user, self._password)
+            else:
+                self._password = None
+                self._auth = aiohttp.BasicAuth(self._user, "")
 
     @asyncio.coroutine
     def update(self, **kwargs):
