@@ -218,3 +218,10 @@ def test_deleteLink(async_run, project, controller):
     async_run(project.delete_link(link.id))
     controller.notification.emit.assert_any_call("link.deleted", link.__json__())
     assert len(project._links) == 0
+
+
+def test_delete(async_run, project, controller):
+    assert os.path.exists(project.path)
+    async_run(project.delete())
+    assert not os.path.exists(project.path)
+

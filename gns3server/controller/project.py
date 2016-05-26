@@ -202,6 +202,7 @@ class Project:
 
     @asyncio.coroutine
     def delete(self):
+        yield from self.close()
         for compute in self._project_created_on_compute:
             yield from compute.delete("/projects/{}".format(self._id))
         shutil.rmtree(self.path, ignore_errors=True)
