@@ -538,6 +538,14 @@ class Project:
 
             for file in files:
                 path = os.path.join(root, file)
+                # Try open the file
+                try:
+                    open(path).close()
+                except OSError as e:
+                    msg = "Could not export file {}: {}".format(path, e)
+                    log.warn(msg)
+                    self.emit("log.warning", {"message": msg})
+                    continue
                 # We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
                 if file.endswith(".gns3"):
                     self._export_project_file(path, z, include_images)
