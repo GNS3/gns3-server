@@ -300,6 +300,7 @@ class VMwareVM(BaseVM):
         :param adapter_number: adapter number
         """
 
+        block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
@@ -325,10 +326,12 @@ class VMwareVM(BaseVM):
             else:
                 raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
 
-            # TODO: should provide that as an option
-            #if source_mac:
-            #    yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
-            #                                                                                                          mac=source_mac))
+            if block_host_traffic:
+                if source_mac:
+                    yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
+                                                                                                                          mac=source_mac))
+                else:
+                    log.warn("Could not block host network traffic on {} (no MAC address found)".format(vmnet_interface))
 
         elif sys.platform.startswith("darwin"):
             yield from self._ubridge_hypervisor.send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet,
@@ -349,7 +352,7 @@ class VMwareVM(BaseVM):
 
         yield from self._ubridge_hypervisor.send('bridge start {name}'.format(name=vnet))
 
-        # TODO: this only work when using PCAP (NIO Ethernet)
+        # TODO: this only work when using PCAP (NIO Ethernet): current default on Linux is NIO RAW LINUX
         # source_mac = None
         # for interface in interfaces():
         #     if interface["name"] == vmnet_interface:
