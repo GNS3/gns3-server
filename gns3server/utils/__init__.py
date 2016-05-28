@@ -30,19 +30,20 @@ def force_unix_path(path):
     return posixpath.normpath(path)
 
 
-def macaddress_to_int(macaddress):
+def macaddress_to_int(mac_address):
     """
     Convert a macaddress with the format 00:0c:29:11:b0:0a to a int
 
-    :param macaddress: The mac address
+    :param mac_address: The mac address
+
     :returns: Integer
     """
-    return int(macaddress.replace(":", ""), 16)
+    return int(mac_address.replace(":", ""), 16)
 
 
 def int_to_macaddress(integer):
     """
-    Convert an integer to a macaddress
+    Convert an integer to a mac address
     """
     return ":".join(textwrap.wrap("%012x" % (integer), width=2))
 

@@ -28,6 +28,7 @@ import subprocess
 import shlex
 import asyncio
 import socket
+import random
 import gns3server
 
 from gns3server.utils import parse_version
@@ -493,9 +494,9 @@ class QemuVM(BaseVM):
         """
 
         if not mac_address:
-            self._mac_address = "00:00:ab:%s:%s:00" % (self.id[-4:-2], self.id[-2:])
+            self._mac_address = "12:34:%02x:%02x:%02x:00" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         else:
-            self._mac_address = mac_address
+            self._mac_address = mac_address[:8] + ":%02x:%02x:00" % (random.randint(0, 255), random.randint(0, 255))
 
         log.info('QEMU VM "{name}" [{id}]: MAC address changed to {mac_addr}'.format(name=self._name,
                                                                                      id=self._id,
