@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import asyncio
 
 from ...node_error import NodeError
@@ -62,7 +63,8 @@ class Cloud(BaseNode):
                 "node_id": self.id,
                 "project_id": self.project.id,
                 "ports": self._ports,
-                "interfaces": host_interfaces}
+                "interfaces": host_interfaces,
+                "status": "started"}
 
     @property
     def ports(self):
@@ -84,25 +86,103 @@ class Cloud(BaseNode):
 
         self._ports = ports
 
+    @asyncio.coroutine
     def create(self):
         """
         Creates this cloud.
         """
 
-        super().create()
+        yield from self._start_ubridge()
         log.info('Cloud "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
-    def delete(self):
+    @asyncio.coroutine
+    def close(self):
         """
-        Deletes this cloud.
+        Closes this cloud.
         """
+
+        if not (yield from super().close()):
+            return False
 
         for nio in self._nios.values():
             if nio and isinstance(nio, NIOUDP):
                 self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        super().delete()
-        log.info('Cloud "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+        yield from self._stop_ubridge()
+        log.info('Cloud "{name}" [{id}] has been closed'.format(name=self._name, id=self._id))
+
+    @asyncio.coroutine
+    def _add_ubridge_connection(self, nio, port_number):
+        """
+        Creates a connection in uBridge.
+
+        :param nio: NIO instance
+        :param port_number: port number
+        """
+
+        port_info = None
+        for port in self._ports:
+            if port["port_number"] == port_number:
+                port_info = port
+                break
+
+        if not port_info:
+            raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
+                                                                                        port_number=port_number))
+
+        bridge_name = "{}-{}".format(self._id, port_number)
+        yield from self._ubridge_send("bridge create {name}".format(name=bridge_name))
+        if not isinstance(nio, NIOUDP):
+            raise NodeError("Source NIO is not UDP")
+        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
+                                                                                                 lport=nio.lport,
+                                                                                                 rhost=nio.rhost,
+                                                                                                 rport=nio.rport))
+
+        if port_info["type"] in ("ethernet", "tap"):
+            network_interfaces = [interface["name"] for interface in interfaces()]
+            if not port_info["interface"] in network_interfaces:
+                raise NodeError("Interface {} could not be found on this system".format(port_info["interface"]))
+
+            if sys.platform.startswith("win"):
+                windows_interfaces = interfaces()
+                npf = None
+                for interface in windows_interfaces:
+                    if port_info["interface"] == interface["name"]:
+                        npf = interface["id"]
+                if npf:
+                    yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
+                                                                                                        interface=npf))
+                else:
+                    raise NodeError("Could not find NPF id for interface {}".format(port_info["interface"]))
+
+            else:
+
+                if port_info["type"] == "ethernet":
+                    if sys.platform.startswith("linux"):
+                        # use raw sockets on Linux
+                        yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name,
+                                                                                                             interface=port_info["interface"]))
+                    else:
+                        yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
+                                                                                                            interface=port_info["interface"]))
+
+                elif port_info["type"] == "tap":
+                    yield from self._ubridge_send('bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name,
+                                                                                                   interface=port_info["interface"]))
+
+        elif port_info["type"] == "udp":
+            yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
+                                                                                                     lport=port_info["lport"],
+                                                                                                     rhost=port_info["rhost"],
+                                                                                                     rport=port_info["rport"]))
+
+        if nio.capturing:
+            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
+                                                                                             pcap_file=nio.pcap_output_file))
+
+
+        yield from self._ubridge_send('bridge start {name}'.format(name=bridge_name))
 
     @asyncio.coroutine
     def add_nio(self, nio, port_number):
@@ -121,11 +201,18 @@ class Cloud(BaseNode):
                                                                                 nio=nio,
                                                                                 port=port_number))
         self._nios[port_number] = nio
-        for port_settings in self._ports:
-            if port_settings["port_number"] == port_number:
-                #yield from self.set_port_settings(port_number, port_settings)
-                break
+        yield from self._add_ubridge_connection(nio, port_number)
 
+    @asyncio.coroutine
+    def _delete_ubridge_connection(self, port_number):
+        """
+        Deletes a connection in uBridge.
+
+        :param port_number: adapter number
+        """
+
+        bridge_name = "{}-{}".format(self._id, port_number)
+        yield from self._ubridge_send("bridge delete {name}".format(name=bridge_name))
 
     @asyncio.coroutine
     def remove_nio(self, port_number):
@@ -150,6 +237,7 @@ class Cloud(BaseNode):
                                                                                     port=port_number))
 
         del self._nios[port_number]
+        yield from self._delete_ubridge_connection(port_number)
         return nio
 
     @asyncio.coroutine
@@ -162,7 +250,25 @@ class Cloud(BaseNode):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        raise NotImplementedError()
+        if not [port["port_number"] for port in self._ports if port_number == port["port_number"]]:
+            raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
+                                                                                        port_number=port_number))
+
+        if port_number not in self._nios:
+            raise NodeError("Port {} is not connected".format(port_number))
+
+        nio = self._nios[port_number]
+
+        if nio.capturing:
+            raise NodeError("Packet capture is already activated on port {port_number}".format(port_number=port_number))
+        nio.startPacketCapture(output_file)
+        bridge_name = "{}-{}".format(self._id, port_number)
+        yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=bridge_name,
+                                                                                           output_file=output_file))
+        log.info("Cloud '{name}' [{id}]: starting packet capture on port {port_number}".format(name=self.name,
+                                                                                               id=self.id,
+                                                                                               port_number=port_number))
+
 
     @asyncio.coroutine
     def stop_capture(self, port_number):
@@ -172,4 +278,18 @@ class Cloud(BaseNode):
         :param port_number: allocated port number
         """
 
-        raise NotImplementedError()
+        if not [port["port_number"] for port in self._ports if port_number == port["port_number"]]:
+            raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
+                                                                                        port_number=port_number))
+
+        if port_number not in self._nios:
+            raise NodeError("Port {} is not connected".format(port_number))
+
+        nio = self._nios[port_number]
+        nio.stopPacketCapture()
+        bridge_name = "{}-{}".format(self._id, port_number)
+        yield from self._ubridge_send("bridge stop_capture {name}".format(name=bridge_name))
+
+        log.info("Cloud'{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,
+                                                                                               id=self.id,
+                                                                                               port_number=port_number))

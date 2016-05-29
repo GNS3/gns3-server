@@ -416,6 +416,18 @@ class BaseNode:
         return path
 
     @asyncio.coroutine
+    def _ubridge_send(self, command):
+        """
+        Sends a command to uBridge hypervisor.
+
+        :param command: command to send
+        """
+
+        if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
+            raise NodeError("Cannot send command '{}': uBridge is not running".format(command))
+        yield from self._ubridge_hypervisor.send(command)
+
+    @asyncio.coroutine
     def _start_ubridge(self):
         """
         Starts uBridge (handles connections to and from this node).
@@ -432,6 +444,15 @@ class BaseNode:
         yield from self._ubridge_hypervisor.start()
         log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
         yield from self._ubridge_hypervisor.connect()
+
+    @asyncio.coroutine
+    def _stop_ubridge(self):
+        """
+        Stops uBridge.
+        """
+
+        if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+            yield from self._ubridge_hypervisor.stop()
 
     @property
     def hw_virtualization(self):

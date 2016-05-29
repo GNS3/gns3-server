@@ -15,7 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from gns3server.web.route import Route
+from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
 from gns3server.schemas.nio import NIO_SCHEMA
 from gns3server.compute.builtin import Builtin
 
@@ -132,7 +135,7 @@ class CloudHandler:
         description="Start a cloud")
     def start(request, response):
 
-        Builtin.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -149,7 +152,7 @@ class CloudHandler:
         description="Stop a cloud")
     def stop(request, response):
 
-        Builtin.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -166,7 +169,7 @@ class CloudHandler:
         description="Suspend a cloud")
     def suspend(request, response):
 
-        Builtin.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -189,7 +192,7 @@ class CloudHandler:
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = yield from builtin_manager.create_nio(node, request.json["nio"])
+        nio = builtin_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
         yield from node.add_nio(nio, port_number)
         response.set_status(201)
@@ -214,6 +217,51 @@ class CloudHandler:
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        nio = yield from node.remove_nio(port_number)
-        yield from nio.delete()
+        yield from node.remove_nio(port_number)
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/cloud/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter on the cloud (always 0)",
+            "port_number": "Port on the cloud"
+        },
+        status_codes={
+            200: "Capture started",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Start a packet capture on a cloud instance",
+        input=NODE_CAPTURE_SCHEMA)
+    def start_capture(request, response):
+
+        builtin_manager = Builtin.instance()
+        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        pcap_file_path = os.path.join(node.project.capture_working_directory(), request.json["capture_file_name"])
+        yield from node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
+        response.json({"pcap_file_path": pcap_file_path})
+
+    @Route.post(
+        r"/projects/{project_id}/cloud/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter on the cloud (always 0)",
+            "port_number": "Port on the cloud"
+        },
+        status_codes={
+            204: "Capture stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Stop a packet capture on a cloud instance")
+    def stop_capture(request, response):
+
+        builtin_manager = Builtin.instance()
+        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        yield from node.stop_capture(port_number)
         response.set_status(204)
