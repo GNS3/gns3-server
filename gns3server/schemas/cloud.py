@@ -16,13 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+
 CLOUD_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new cloud instance",
     "type": "object",
     "definitions": {
-        "EthernetHubPort": {
-            "description": "Ethernet port",
+        "EthernetInterfacePort": {
+            "description": "Ethernet interface port",
             "properties": {
                 "name": {
                     "description": "Port name",
@@ -34,8 +35,96 @@ CLOUD_CREATE_SCHEMA = {
                     "type": "integer",
                     "minimum": 1
                 },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["ethernet"]
+                },
+                "interface": {
+                    "description": "Ethernet interface name e.g. eth0",
+                    "type": "string",
+                    "minLength": 1
+                },
             },
-            "required": ["name", "port_number"],
+            "required": ["name", "port_number", "type", "interface"],
+            "additionalProperties": False
+        },
+        "TAPInterfacePort": {
+            "description": "TAP interface port",
+            "properties": {
+                "name": {
+                    "description": "Port name",
+                    "type": "string",
+                    "minLength": 1,
+                },
+                "port_number": {
+                    "description": "Port number",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["tap"]
+                },
+                "interface": {
+                    "description": "TAP interface name e.g. tap0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["name", "port_number", "type", "interface"],
+            "additionalProperties": False
+        },
+        "UDPTunnelPort": {
+            "description": "UDP tunnel port",
+            "properties": {
+                "name": {
+                    "description": "Port name",
+                    "type": "string",
+                    "minLength": 1,
+                },
+                "port_number": {
+                    "description": "Port number",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["udp"]
+                },
+                "lport": {
+                    "description": "Local UDP tunnel port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "rhost": {
+                    "description": "Remote UDP tunnel host",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "rport": {
+                    "description": "Remote UDP tunnel port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
+            },
+            "required": ["name", "port_number", "type", "lport", "rhost", "rport"],
+            "additionalProperties": False
+        },
+        "HostInterfaces": {
+            "description": "Interfaces on this host",
+            "properties": {
+                "name": {
+                    "description": "Interface name",
+                    "type": "string",
+                    "minLength": 1,
+                },
+                "type": {
+                    "enum": ["Ethernet", "TAP"]
+                },
+            },
+            "required": ["name", "type"],
             "additionalProperties": False
         },
     },
@@ -54,15 +143,26 @@ CLOUD_CREATE_SCHEMA = {
                  "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"}
             ]
         },
-        # "ports": {
-        #     "type": "array",
-        #     "items": [
-        #         {"type": "object",
-        #          "oneOf": [
-        #              {"$ref": "#/definitions/EthernetHubPort"}
-        #          ]},
-        #     ]
-        # },
+        "ports": {
+            "type": "array",
+            "items": [
+                {"type": "object",
+                 "oneOf": [
+                     {"$ref": "#/definitions/EthernetInterfacePort"},
+                     {"$ref": "#/definitions/TAPInterfacePort"},
+                     {"$ref": "#/definitions/UDPTunnelPort"}
+                 ]},
+            ]
+        },
+        "interfaces": {
+            "type": "array",
+            "items": [
+                {"type": "object",
+                 "oneOf": [
+                     {"$ref": "#/definitions/HostInterfaces"}
+                 ]},
+            ]
+        },
     },
     "additionalProperties": False,
     "required": ["name"]
@@ -73,8 +173,8 @@ CLOUD_OBJECT_SCHEMA = {
     "description": "Cloud instance",
     "type": "object",
     "definitions": {
-        "EthernetHubPort": {
-            "description": "Ethernet port",
+        "EthernetInterfacePort": {
+            "description": "Ethernet interface port",
             "properties": {
                 "name": {
                     "description": "Port name",
@@ -86,8 +186,96 @@ CLOUD_OBJECT_SCHEMA = {
                     "type": "integer",
                     "minimum": 1
                 },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["ethernet"]
+                },
+                "interface": {
+                    "description": "Ethernet interface name e.g. eth0",
+                    "type": "string",
+                    "minLength": 1
+                },
             },
-            "required": ["name", "port_number"],
+            "required": ["name", "port_number", "type", "interface"],
+            "additionalProperties": False
+        },
+        "TAPInterfacePort": {
+            "description": "TAP interface port",
+            "properties": {
+                "name": {
+                    "description": "Port name",
+                    "type": "string",
+                    "minLength": 1,
+                },
+                "port_number": {
+                    "description": "Port number",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["tap"]
+                },
+                "interface": {
+                    "description": "TAP interface name e.g. tap0",
+                    "type": "string",
+                    "minLength": 1
+                },
+            },
+            "required": ["name", "port_number", "type", "interface"],
+            "additionalProperties": False
+        },
+        "UDPTunnelPort": {
+            "description": "UDP tunnel port",
+            "properties": {
+                "name": {
+                    "description": "Port name",
+                    "type": "string",
+                    "minLength": 1,
+                },
+                "port_number": {
+                    "description": "Port number",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "type": {
+                    "description": "Port type",
+                    "enum": ["udp"]
+                },
+                "lport": {
+                    "description": "Local UDP tunnel port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "rhost": {
+                    "description": "Remote UDP tunnel host",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "rport": {
+                    "description": "Remote UDP tunnel port",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
+            },
+            "required": ["name", "port_number", "type", "lport", "rhost", "rport"],
+            "additionalProperties": False
+        },
+        "HostInterfaces": {
+            "description": "Interfaces on this host",
+            "properties": {
+                "name": {
+                    "description": "Interface name",
+                    "type": "string",
+                    "minLength": 1,
+                },
+                "type": {
+                    "enum": ["ethernet", "tap"]
+                },
+            },
+            "required": ["name", "type"],
             "additionalProperties": False
         },
     },
@@ -111,22 +299,33 @@ CLOUD_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        # "ports": {
-        #     "type": "array",
-        #     "items": [
-        #         {"type": "object",
-        #          "oneOf": [
-        #              {"$ref": "#/definitions/EthernetHubPort"}
-        #          ]},
-        #     ]
-        # },
+        "ports": {
+            "type": "array",
+            "items": [
+                {"type": "object",
+                 "oneOf": [
+                     {"$ref": "#/definitions/EthernetInterfacePort"},
+                     {"$ref": "#/definitions/TAPInterfacePort"},
+                     {"$ref": "#/definitions/UDPTunnelPort"}
+                 ]},
+            ]
+        },
+        "interfaces": {
+            "type": "array",
+            "items": [
+                {"type": "object",
+                 "oneOf": [
+                     {"$ref": "#/definitions/HostInterfaces"}
+                 ]},
+            ]
+        },
         "status": {
             "description": "Node status",
             "enum": ["started", "stopped", "suspended"]
         },
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "project_id"] #, "ports"]
+    "required": ["name", "node_id", "project_id", "ports"]
 }
 
 CLOUD_UPDATE_SCHEMA = CLOUD_OBJECT_SCHEMA

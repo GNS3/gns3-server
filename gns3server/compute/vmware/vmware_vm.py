@@ -71,7 +71,7 @@ class VMwareVM(BaseNode):
         self._adapters = 0
         self._ethernet_adapters = {}
         self._adapter_type = "e1000"
-        self._use_ubridge = True
+        self._use_ubridge = True  # TODO: clean this (old ubridge code)
         self._use_any_adapter = False
 
         if not os.path.exists(vmx_path):
@@ -89,7 +89,6 @@ class VMwareVM(BaseNode):
                 "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
-                "use_ubridge": self.use_ubridge,
                 "use_any_adapter": self.use_any_adapter,
                 "status": self.status,
                 "node_directory": self.working_dir}
@@ -739,30 +738,6 @@ class VMwareVM(BaseNode):
         log.info("VMware VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(name=self.name,
                                                                                             id=self.id,
                                                                                             adapter_type=adapter_type))
-
-    @property
-    def use_ubridge(self):
-        """
-        Returns either GNS3 can use uBridge for network connections.
-
-        :returns: boolean
-        """
-
-        return self._use_ubridge
-
-    @use_ubridge.setter
-    def use_ubridge(self, use_ubridge):
-        """
-        Allows GNS3 to use uBridge for network connections.
-
-        :param use_ubridge: boolean
-        """
-
-        if use_ubridge:
-            log.info("VMware VM '{name}' [{id}] will use uBridge for network connections".format(name=self.name, id=self.id))
-        else:
-            log.info("VMware VM '{name}' [{id}] will not use uBridge for network connections".format(name=self.name, id=self.id))
-        self._use_ubridge = use_ubridge
 
     @property
     def use_any_adapter(self):

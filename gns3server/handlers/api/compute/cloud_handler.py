@@ -51,7 +51,8 @@ class CloudHandler:
         node = yield from builtin_manager.create_node(request.json.pop("name"),
                                                       request.match_info["project_id"],
                                                       request.json.get("node_id"),
-                                                      node_type="cloud")
+                                                      node_type="cloud",
+                                                      ports=request.json.get("ports"))
         response.set_status(201)
         response.json(node)
 
@@ -93,6 +94,9 @@ class CloudHandler:
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        for name, value in request.json.items():
+            if hasattr(node, name) and getattr(node, name) != value:
+                setattr(node, name, value)
         node.updated()
         response.json(node)
 

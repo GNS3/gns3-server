@@ -19,6 +19,9 @@ import asyncio
 
 from ...node_error import NodeError
 from ...base_node import BaseNode
+from ...nios.nio_udp import NIOUDP
+
+from gns3server.utils.interfaces import interfaces
 
 import logging
 log = logging.getLogger(__name__)
@@ -35,17 +38,52 @@ class Cloud(BaseNode):
     :param manager: Parent VM Manager
     """
 
-    def __init__(self, name, node_id, project, manager):
+    def __init__(self, name, node_id, project, manager, ports=None):
 
         super().__init__(name, node_id, project, manager)
+        self._nios = {}
+        self._ports = []
+        if ports:
+            self._ports = ports
 
     def __json__(self):
 
+        host_interfaces = []
+        network_interfaces = interfaces()
+        for interface in network_interfaces:
+            interface_type = "ethernet"
+            if interface["name"].startswith("tap"):
+                # found no way to reliably detect a TAP interface
+                interface_type = "tap"
+            host_interfaces.append({"name": interface["name"],
+                                    "type": interface_type})
+
         return {"name": self.name,
                 "node_id": self.id,
-                "project_id": self.project.id}
+                "project_id": self.project.id,
+                "ports": self._ports,
+                "interfaces": host_interfaces}
 
-    @asyncio.coroutine
+    @property
+    def ports(self):
+        """
+        Ports on this cloud.
+
+        :returns: ports info
+        """
+
+        return self._ports
+
+    @ports.setter
+    def ports(self, ports):
+        """
+        Set the ports on this cloud.
+
+        :param ports: ports info
+        """
+
+        self._ports = ports
+
     def create(self):
         """
         Creates this cloud.
@@ -54,13 +92,17 @@ class Cloud(BaseNode):
         super().create()
         log.info('Cloud "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
-    @asyncio.coroutine
     def delete(self):
         """
         Deletes this cloud.
         """
 
-        raise NotImplementedError()
+        for nio in self._nios.values():
+            if nio and isinstance(nio, NIOUDP):
+                self.manager.port_manager.release_udp_port(nio.lport, self._project)
+
+        super().delete()
+        log.info('Cloud "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
     def add_nio(self, nio, port_number):
@@ -71,7 +113,19 @@ class Cloud(BaseNode):
         :param port_number: port to allocate for the NIO
         """
 
-        raise NotImplementedError()
+        if port_number in self._nios:
+            raise NodeError("Port {} isn't free".format(port_number))
+
+        log.info('Cloud "{name}" [{id}]: NIO {nio} bound to port {port}'.format(name=self._name,
+                                                                                id=self._id,
+                                                                                nio=nio,
+                                                                                port=port_number))
+        self._nios[port_number] = nio
+        for port_settings in self._ports:
+            if port_settings["port_number"] == port_number:
+                #yield from self.set_port_settings(port_number, port_settings)
+                break
+
 
     @asyncio.coroutine
     def remove_nio(self, port_number):
@@ -83,7 +137,20 @@ class Cloud(BaseNode):
         :returns: the NIO that was bound to the allocated port
         """
 
-        raise NotImplementedError()
+        if port_number not in self._nios:
+            raise NodeError("Port {} is not allocated".format(port_number))
+
+        nio = self._nios[port_number]
+        if isinstance(nio, NIOUDP):
+            self.manager.port_manager.release_udp_port(nio.lport, self._project)
+
+        log.info('Cloud "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
+                                                                                    id=self._id,
+                                                                                    nio=nio,
+                                                                                    port=port_number))
+
+        del self._nios[port_number]
+        return nio
 
     @asyncio.coroutine
     def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
