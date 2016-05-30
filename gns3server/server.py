@@ -106,7 +106,7 @@ class Server:
 
     def _signal_handling(self):
 
-        def signal_handler(signame):
+        def signal_handler(signame, *args):
             log.warning("Server has got signal {}, exiting...".format(signame))
             asyncio.async(self.shutdown_server())
 
