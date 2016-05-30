@@ -230,41 +230,28 @@ class VMwareVM(BaseNode):
             if self._get_vmx_setting(connected):
                 del self._vmx_pairs[connected]
 
-            # check for adapter type
-            if self._adapter_type != "default":
-                adapter_type = "ethernet{}.virtualdev".format(adapter_number)
-                if adapter_type in self._vmx_pairs and self._vmx_pairs[adapter_type] != self._adapter_type:
-                    raise VMwareError("Existing VMware network adapter {} is not of type {}, please fix or set adapter type to default in GNS3".format(adapter_number,
-                                                                                                                                                       self._adapter_type))
-
-            # # check if any vmnet interface managed by GNS3 is being used on existing VMware adapters
-            # if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
-            #     connection_type = "ethernet{}.connectiontype".format(adapter_number)
-            #     if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("hostonly", "custom"):
-            #         vnet = "ethernet{}.vnet".format(adapter_number)
-            #         if vnet in self._vmx_pairs:
-            #             vmnet = os.path.basename(self._vmx_pairs[vnet])
-            #             #nio = self._ethernet_adapters[adapter_number].get_nio(0)
-            #             if self.manager.is_managed_vmnet(vmnet):
-            #                 raise VMwareError("Network adapter {} is already associated with VMnet interface {} which is managed by GNS3, please remove".format(adapter_number, vmnet))
-
         # then configure VMware network adapters
         self.manager.refresh_vmnet_list(ubridge=self._use_ubridge)
         for adapter_number in range(0, self._adapters):
 
             # add/update the interface
+            if self._adapter_type == "default":
+                # force default to e1000 because some guest OS don't detect the adapter (i.e. Windows 2012 server)
+                # when 'virtualdev' is not set in the VMX file.
+                adapter_type = "e1000"
+            else:
+                adapter_type = self._adapter_type
             ethernet_adapter = {"ethernet{}.present".format(adapter_number): "TRUE",
                                 "ethernet{}.addresstype".format(adapter_number): "generated",
-                                "ethernet{}.generatedaddressoffset".format(adapter_number): "0"}
+                                "ethernet{}.generatedaddressoffset".format(adapter_number): "0",
+                                "ethernet{}.virtualdev".format(adapter_number): adapter_type}
             self._vmx_pairs.update(ethernet_adapter)
-            if self._adapter_type != "default":
-                self._vmx_pairs["ethernet{}.virtualdev".format(adapter_number)] = self._adapter_type
 
             connection_type = "ethernet{}.connectiontype".format(adapter_number)
             if not self._use_any_adapter and connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
                 continue
-            self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
 
+            self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
             if self._use_ubridge:
                 # make sure we have a vmnet per adapter if we use uBridge
                 allocate_vmnet = False
@@ -273,7 +260,7 @@ class VMwareVM(BaseNode):
                 vnet = "ethernet{}.vnet".format(adapter_number)
                 if vnet in self._vmx_pairs:
                     vmnet = os.path.basename(self._vmx_pairs[vnet])
-                    if self.manager.is_managed_vmnet(vmnet) or vmnet == "vmnet0":
+                    if self.manager.is_managed_vmnet(vmnet) or vmnet in ("vmnet0", "vmnet1", "vmnet8"):
                         # vmnet already managed, try to allocate a new one
                         allocate_vmnet = True
                 else:
@@ -313,6 +300,7 @@ class VMwareVM(BaseNode):
         :param adapter_number: adapter number
         """
 
+        block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
@@ -338,10 +326,12 @@ class VMwareVM(BaseNode):
             else:
                 raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
 
-            # TODO: should provide that as an option
-            #if source_mac:
-            #    yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
-            #                                                                                                          mac=source_mac))
+            if block_host_traffic:
+                if source_mac:
+                    yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
+                                                                                                                          mac=source_mac))
+                else:
+                    log.warn("Could not block host network traffic on {} (no MAC address found)".format(vmnet_interface))
 
         elif sys.platform.startswith("darwin"):
             yield from self._ubridge_hypervisor.send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet,
@@ -362,7 +352,7 @@ class VMwareVM(BaseNode):
 
         yield from self._ubridge_hypervisor.send('bridge start {name}'.format(name=vnet))
 
-        # TODO: this only work when using PCAP (NIO Ethernet)
+        # TODO: this only work when using PCAP (NIO Ethernet): current default on Linux is NIO RAW LINUX
         # source_mac = None
         # for interface in interfaces():
         #     if interface["name"] == vmnet_interface:
@@ -510,17 +500,15 @@ class VMwareVM(BaseNode):
                 self._vmnets.clear()
                 # remove the adapters managed by GNS3
                 for adapter_number in range(0, self._adapters):
-                    if self._get_vmx_setting("ethernet{}.vnet".format(adapter_number)) or \
-                       self._get_vmx_setting("ethernet{}.connectiontype".format(adapter_number)) is None:
-                        vnet = "ethernet{}.vnet".format(adapter_number)
+                    vnet = "ethernet{}.vnet".format(adapter_number)
+                    if self._get_vmx_setting(vnet) or self._get_vmx_setting("ethernet{}.connectiontype".format(adapter_number)) is None:
                         if vnet in self._vmx_pairs:
                             vmnet = os.path.basename(self._vmx_pairs[vnet])
                             if not self.manager.is_managed_vmnet(vmnet):
                                 continue
                         log.debug("removing adapter {}".format(adapter_number))
-                        for key in list(self._vmx_pairs.keys()):
-                            if key.startswith("ethernet{}.".format(adapter_number)):
-                                del self._vmx_pairs[key]
+                        self._vmx_pairs[vnet] = "vmnet1"
+                        self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
 
             # re-enable any remaining network adapters
             for adapter_number in range(self._adapters, self._maximum_adapters):

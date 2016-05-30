@@ -434,7 +434,7 @@ class ProjectHandler:
                     if not packet:
                         break
                     temp.write(packet)
-                project.import_zip(temp, gns3vm=bool(request.GET.get("gns3vm", "1")))
+                project.import_zip(temp, gns3vm=bool(int(request.GET.get("gns3vm", "1"))))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
 
