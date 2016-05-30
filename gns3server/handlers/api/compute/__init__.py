@@ -25,7 +25,6 @@ from .qemu_handler import QEMUHandler
 from .virtualbox_handler import VirtualBoxHandler
 from .vpcs_handler import VPCSHandler
 from .vmware_handler import VMwareHandler
-from .config_handler import ConfigHandler
 from .version_handler import VersionHandler
 from .notification_handler import NotificationHandler
 from .cloud_handler import CloudHandler
