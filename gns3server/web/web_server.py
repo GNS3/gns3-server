@@ -177,11 +177,8 @@ class WebServer:
         logger = logging.getLogger("asyncio")
         logger.setLevel(logging.ERROR)
 
-        server_config = Config.instance().get_section_config("Server")
         if sys.platform.startswith("win"):
-            # use the Proactor event loop on Windows
-            loop = asyncio.ProactorEventLoop()
-
+            loop = asyncio.get_event_loop()
             # Add a periodic callback to give a chance to process signals on Windows
             # because asyncio.add_signal_handler() is not supported yet on that platform
             # otherwise the loop runs outside of signal module's ability to trap signals.
@@ -189,6 +186,9 @@ class WebServer:
                 loop.call_later(0.5, wakeup)
             loop.call_later(0.5, wakeup)
             asyncio.set_event_loop(loop)
+
+        server_config = Config.instance().get_section_config("Server")
+
 
         ssl_context = None
         if server_config.getboolean("ssl"):

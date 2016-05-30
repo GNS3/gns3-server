@@ -31,6 +31,13 @@ import gns3server.utils.get_resource
 import os
 import sys
 
+# To avoid strange bug later we switch the event loop before any other operation
+if sys.platform.startswith("win"):
+    import asyncio
+    # use the Proactor event loop on Windows
+    loop = asyncio.ProactorEventLoop()
+
+
 
 def daemonize():
     """
