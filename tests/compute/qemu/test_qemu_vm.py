@@ -31,7 +31,7 @@ from unittest.mock import patch, MagicMock
 from gns3server.compute.qemu.qemu_vm import QemuVM
 from gns3server.compute.qemu.qemu_error import QemuError
 from gns3server.compute.qemu import Qemu
-from gns3server.utils import force_unix_path
+from gns3server.utils import force_unix_path, macaddress_to_int, int_to_macaddress
 from gns3server.compute.notification_manager import NotificationManager
 
 
@@ -432,7 +432,7 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-net",
             "none",
             "-device",
-            "e1000,mac=00:00:ab:0e:0f:00"
+            "e1000,mac={}".format(vm._mac_address)
         ]
 
 
@@ -447,6 +447,7 @@ def test_build_command_without_display(vm, loop, fake_qemu_binary):
 
 def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
 
+    os.environ["DISPLAY"] = "0:0"
     vm.adapters = 2
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
@@ -465,27 +466,35 @@ def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
             "-net",
             "none",
             "-device",
-            "e1000,mac=00:00:ab:0e:0f:00",
+            "e1000,mac={}".format(vm.mac_address),
             "-device",
-            "e1000,mac=00:00:ab:0e:0f:01",
-            "-nographic"
+            "e1000,mac={}".format(int_to_macaddress(macaddress_to_int(vm._mac_address) + 1))
         ]
 
 
 def test_build_command_two_adapters_mac_address(vm, loop, fake_qemu_binary, port_manager):
+    """
+    Should support multiple base vmac address
+    """
 
     vm.adapters = 2
     vm.mac_address = "00:00:ab:0e:0f:09"
+    mac_0 = vm._mac_address
+    mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address))
+    assert mac_0[:8] == "00:00:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
-        assert "e1000,mac=00:00:ab:0e:0f:09" in cmd
-        assert "e1000,mac=00:00:ab:0e:0f:0a" in cmd
+        assert "e1000,mac={}".format(mac_0) in cmd
+        assert "e1000,mac={}".format(mac_1) in cmd
 
-    vm.mac_address = "00:00:ab:0e:0f:0a"
+    vm.mac_address = "00:42:ab:0e:0f:0a"
+    mac_0 = vm._mac_address
+    mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address))
+    assert mac_0[:8] == "00:42:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
-        assert "e1000,mac=00:00:ab:0e:0f:0a" in cmd
-        assert "e1000,mac=00:00:ab:0e:0f:0b" in cmd
+        assert "e1000,mac={}".format(mac_0) in cmd
+        assert "e1000,mac={}".format(mac_1) in cmd
 
 
 # Windows accept this kind of mistake
