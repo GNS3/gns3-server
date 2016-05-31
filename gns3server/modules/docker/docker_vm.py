@@ -129,8 +129,9 @@ class DockerVM(BaseVM):
 
     @start_command.setter
     def start_command(self, command):
-        command = command.strip()
-        if len(command) == 0:
+        if command:
+            command = command.strip()
+        if command is None or len(command) == 0:
             self._start_command = None
         else:
             self._start_command = command
