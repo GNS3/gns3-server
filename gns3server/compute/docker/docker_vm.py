@@ -348,7 +348,7 @@ class DockerVM(BaseNode):
                     except UbridgeNamespaceError:
                         yield from self.stop()
 
-                        # The container can crash soon after the start this mean we can not move the interface to the container namespace
+                        # The container can crash soon after the start, this means we can not move the interface to the container namespace
                         logdata = yield from self._get_log()
                         for line in logdata.split('\n'):
                             log.error(line)
@@ -363,7 +363,10 @@ class DockerVM(BaseNode):
                 yield from self._start_aux()
 
         self.status = "started"
-        log.info("Docker container '{name}' [{image}] started listen for {console_type} on {console}".format(name=self._name, image=self._image, console=self.console, console_type=self.console_type))
+        log.info("Docker container '{name}' [{image}] started listen for {console_type} on {console}".format(name=self._name,
+                                                                                                             image=self._image,
+                                                                                                             console=self.console,
+                                                                                                             console_type=self.console_type))
 
     @asyncio.coroutine
     def _start_aux(self):
@@ -499,9 +502,7 @@ class DockerVM(BaseNode):
 
         try:
             yield from self._clean_servers()
-
-            if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-                yield from self._ubridge_hypervisor.stop()
+            yield from self._stop_ubridge()
 
             state = yield from self._get_container_state()
             if state == "paused":
@@ -584,8 +585,8 @@ class DockerVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError(
-                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name, adapter_number=adapter_number))
+            raise DockerError("Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name,
+                                                                                                           adapter_number=adapter_number))
 
         for index in range(128):
             if "veth-gns3-ext{}".format(index) not in psutil.net_if_addrs():
@@ -594,41 +595,33 @@ class DockerVM(BaseNode):
                 adapter.guest_ifc = "veth-gns3-int{}".format(str(index))
                 break
         if not hasattr(adapter, "ifc"):
-            raise DockerError(
-                "Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(
-                    name=self.name, adapter_number=adapter_number))
+            raise DockerError("Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(name=self.name,
+                                                                                                                                                                    adapter_number=adapter_number))
 
-        yield from self._ubridge_hypervisor.send(
-            'docker create_veth {hostif} {guestif}'.format(
-                guestif=adapter.guest_ifc, hostif=adapter.host_ifc))
+        yield from self._ubridge_send('docker create_veth {hostif} {guestif}'.format(guestif=adapter.guest_ifc, hostif=adapter.host_ifc))
 
         log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.guest_ifc, namespace)
         try:
-            yield from self._ubridge_hypervisor.send(
-                'docker move_to_ns {ifc} {ns} eth{adapter}'.format(
-                    ifc=adapter.guest_ifc, ns=namespace, adapter=adapter_number))
+            yield from self._ubridge_send('docker move_to_ns {ifc} {ns} eth{adapter}'.format(ifc=adapter.guest_ifc,
+                                                                                             ns=namespace,
+                                                                                             adapter=adapter_number))
         except UbridgeError as e:
             raise UbridgeNamespaceError(e)
 
         if isinstance(nio, NIOUDP):
-            yield from self._ubridge_hypervisor.send(
-                'bridge create bridge{}'.format(adapter_number))
-            yield from self._ubridge_hypervisor.send(
-                'bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(
-                    ifc=adapter.host_ifc, adapter=adapter_number))
+            yield from self._ubridge_send('bridge create bridge{}'.format(adapter_number))
+            yield from self._ubridge_send('bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(ifc=adapter.host_ifc, adapter=adapter_number))
 
-            yield from self._ubridge_hypervisor.send(
-                'bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(
-                    adapter=adapter_number, lport=nio.lport, rhost=nio.rhost,
-                    rport=nio.rport))
+            yield from self._ubridge_send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
+                                                                                                              lport=nio.lport,
+                                                                                                              rhost=nio.rhost,
+                                                                                                              rport=nio.rport))
 
             if nio.capturing:
-                yield from self._ubridge_hypervisor.send(
-                    'bridge start_capture bridge{adapter} "{pcap_file}"'.format(
-                        adapter=adapter_number, pcap_file=nio.pcap_output_file))
+                yield from self._ubridge_send('bridge start_capture bridge{adapter} "{pcap_file}"'.format(adapter=adapter_number,
+                                                                                                          pcap_file=nio.pcap_output_file))
 
-            yield from self._ubridge_hypervisor.send(
-                'bridge start bridge{adapter}'.format(adapter=adapter_number))
+            yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
 
     def _delete_ubridge_connection(self, adapter_number):
         """Deletes a connection in uBridge.
@@ -641,12 +634,12 @@ class DockerVM(BaseNode):
         adapter = self._ethernet_adapters[adapter_number]
 
         try:
-            yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
+            yield from self._ubridge_send("bridge delete bridge{name}".format(
                 name=adapter_number))
         except UbridgeError as e:
             log.debug(str(e))
         try:
-            yield from self._ubridge_hypervisor.send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
+            yield from self._ubridge_send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
         except UbridgeError as e:
             log.debug(str(e))
 
@@ -665,17 +658,14 @@ class DockerVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError(
-                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
-                    name=self.name, adapter_number=adapter_number))
+            raise DockerError("Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name,
+                                                                                                           adapter_number=adapter_number))
 
         adapter.add_nio(0, nio)
-        log.info(
-            "Docker container '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(
-                name=self.name,
-                id=self._id,
-                nio=nio,
-                adapter_number=adapter_number))
+        log.info("Docker container '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
+                                                                                                    id=self._id,
+                                                                                                    nio=nio,
+                                                                                                    adapter_number=adapter_number))
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
@@ -689,17 +679,16 @@ class DockerVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError(
-                "Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(
-                    name=self.name, adapter_number=adapter_number))
+            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
 
         adapter.remove_nio(0)
         yield from self._delete_ubridge_connection(adapter_number)
 
-        log.info(
-            "Docker VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(
-                name=self.name, id=self.id, nio=adapter.host_ifc,
-                adapter_number=adapter_number))
+        log.info("Docker VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
+                                                                                                 id=self.id,
+                                                                                                 nio=adapter.host_ifc,
+                                                                                                 adapter_number=adapter_number))
 
     @property
     def adapters(self):
@@ -724,11 +713,9 @@ class DockerVM(BaseNode):
         for adapter_number in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
 
-        log.info(
-            'Docker container "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(
-                name=self._name,
-                id=self._id,
-                adapters=adapters))
+        log.info('Docker container "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(name=self._name,
+                                                                                                              id=self._id,
+                                                                                                              adapters=adapters))
 
     @asyncio.coroutine
     def pull_image(self, image):
@@ -768,7 +755,7 @@ class DockerVM(BaseNode):
         adapter = "bridge{}".format(adapter_number)
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise DockerError("Cannot start the packet capture: uBridge is not running")
-        yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=adapter, output_file=output_file))
+        yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=adapter, output_file=output_file))
 
     @asyncio.coroutine
     def _stop_ubridge_capture(self, adapter_number):
@@ -781,7 +768,7 @@ class DockerVM(BaseNode):
         adapter = "bridge{}".format(adapter_number)
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise DockerError("Cannot stop the packet capture: uBridge is not running")
-        yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=adapter))
+        yield from self._ubridge_send("bridge stop_capture {name}".format(name=adapter))
 
     @asyncio.coroutine
     def start_capture(self, adapter_number, output_file):

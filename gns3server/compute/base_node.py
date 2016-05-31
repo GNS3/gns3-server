@@ -26,6 +26,7 @@ import platform
 
 from ..utils.asyncio import wait_run_in_executor
 from ..ubridge.hypervisor import Hypervisor
+from ..ubridge.ubridge_error import UbridgeError
 from .node_error import NodeError
 
 
@@ -425,7 +426,10 @@ class BaseNode:
 
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise NodeError("Cannot send command '{}': uBridge is not running".format(command))
-        yield from self._ubridge_hypervisor.send(command)
+        try:
+            yield from self._ubridge_hypervisor.send(command)
+        except UbridgeError as e:
+            raise UbridgeError("{}: {}".format(e, self._ubridge_hypervisor.read_stdout()))
 
     @asyncio.coroutine
     def _start_ubridge(self):
@@ -439,7 +443,6 @@ class BaseNode:
         server_config = self._manager.config.get_section_config("Server")
         server_host = server_config.get("host")
         self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
-
         log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
         yield from self._ubridge_hypervisor.start()
         log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))

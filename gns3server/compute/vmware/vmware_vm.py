@@ -304,10 +304,10 @@ class VMwareVM(BaseNode):
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
-        yield from self._ubridge_hypervisor.send("bridge create {name}".format(name=vnet))
+        yield from self._ubridge_send("bridge create {name}".format(name=vnet))
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
         if sys.platform.startswith("linux"):
-            yield from self._ubridge_hypervisor.send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet,
+            yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet,
                                                                                                             interface=vmnet_interface))
         elif sys.platform.startswith("win"):
             windows_interfaces = interfaces()
@@ -321,36 +321,36 @@ class VMwareVM(BaseNode):
                     npf = interface["id"]
                     source_mac = interface["mac_address"]
             if npf:
-                yield from self._ubridge_hypervisor.send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
+                yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
                                                                                                                interface=npf))
             else:
                 raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
 
             if block_host_traffic:
                 if source_mac:
-                    yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
+                    yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
                                                                                                                           mac=source_mac))
                 else:
                     log.warn("Could not block host network traffic on {} (no MAC address found)".format(vmnet_interface))
 
         elif sys.platform.startswith("darwin"):
-            yield from self._ubridge_hypervisor.send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet,
+            yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet,
                                                                                                                interface=vmnet_interface))
         else:
-            yield from self._ubridge_hypervisor.send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
+            yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
                                                                                                            interface=vmnet_interface))
 
         if isinstance(nio, NIOUDP):
-            yield from self._ubridge_hypervisor.send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
+            yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
                                                                                                                 lport=nio.lport,
                                                                                                                 rhost=nio.rhost,
                                                                                                                 rport=nio.rport))
 
         if nio.capturing:
-            yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet,
+            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet,
                                                                                                         pcap_file=nio.pcap_output_file))
 
-        yield from self._ubridge_hypervisor.send('bridge start {name}'.format(name=vnet))
+        yield from self._ubridge_send('bridge start {name}'.format(name=vnet))
 
         # TODO: this only work when using PCAP (NIO Ethernet): current default on Linux is NIO RAW LINUX
         # source_mac = None
@@ -358,7 +358,7 @@ class VMwareVM(BaseNode):
         #     if interface["name"] == vmnet_interface:
         #         source_mac = interface["mac_address"]
         # if source_mac:
-        #     yield from self._ubridge_hypervisor.send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet, mac=source_mac))
+        #     yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet, mac=source_mac))
 
     @asyncio.coroutine
     def _delete_ubridge_connection(self, adapter_number):
@@ -371,7 +371,7 @@ class VMwareVM(BaseNode):
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
-        yield from self._ubridge_hypervisor.send("bridge delete {name}".format(name=vnet))
+        yield from self._ubridge_send("bridge delete {name}".format(name=vnet))
 
     @asyncio.coroutine
     def _start_ubridge_capture(self, adapter_number, output_file):
@@ -387,7 +387,7 @@ class VMwareVM(BaseNode):
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         if not self._ubridge_hypervisor:
             raise VMwareError("Cannot start the packet capture: uBridge is not running")
-        yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
+        yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
                                                                                                       output_file=output_file))
 
     @asyncio.coroutine
@@ -403,7 +403,7 @@ class VMwareVM(BaseNode):
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         if not self._ubridge_hypervisor:
             raise VMwareError("Cannot stop the packet capture: uBridge is not running")
-        yield from self._ubridge_hypervisor.send("bridge stop_capture {name}".format(name=vnet))
+        yield from self._ubridge_send("bridge stop_capture {name}".format(name=vnet))
 
     def check_hw_virtualization(self):
         """
@@ -481,8 +481,7 @@ class VMwareVM(BaseNode):
 
         self._hw_virtualization = False
         self._stop_remote_console()
-        if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            yield from self._ubridge_hypervisor.stop()
+        yield from self._stop_ubridge()
 
         try:
             if (yield from self.is_running()):
