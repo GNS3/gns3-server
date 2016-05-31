@@ -16,24 +16,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import functools
 import asyncio
 import sys
 import os
 
 
 @asyncio.coroutine
-def wait_run_in_executor(func, *args):
+def wait_run_in_executor(func, *args, **kwargs):
     """
     Run blocking code in a different thread and wait
     for the result.
 
     :param func: Run this function in a different thread
     :param args: Parameters of the function
+    :param kwargs: Keyword parameters of the function
     :returns: Return the result of the function
     """
 
     loop = asyncio.get_event_loop()
-    future = loop.run_in_executor(None, func, *args)
+    future = loop.run_in_executor(None, functools.partial(func, *args, **kwargs))
     yield from asyncio.wait([future])
     return future.result()
 

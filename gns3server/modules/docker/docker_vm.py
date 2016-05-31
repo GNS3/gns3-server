@@ -80,6 +80,7 @@ class DockerVM(BaseVM):
         self._console_http_path = console_http_path
         self._console_http_port = console_http_port
         self._console_websocket = None
+        self._volumes = []
 
         if adapters is None:
             self.adapters = 1
@@ -203,6 +204,8 @@ class DockerVM(BaseVM):
         network_config = self._create_network_config()
         binds.append("{}:/etc/network:rw".format(network_config))
 
+        self._volumes = ["/etc/network"]
+
         volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
         if volumes is None:
             return binds
@@ -210,6 +213,7 @@ class DockerVM(BaseVM):
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
             binds.append("{}:{}".format(source, volume))
+            self._volumes.append(volume)
 
         return binds
 
@@ -381,6 +385,25 @@ class DockerVM(BaseVM):
         log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
 
     @asyncio.coroutine
+    def _fix_permissions(self):
+        """
+        Because docker run as root we need to fix permission and ownership to allow user to interact
+        with it from their filesystem and do operation like file delete
+        """
+        for volume in self._volumes:
+            log.debug("Docker container '{name}' [{image}] fix ownership on {path}".format(
+                name=self._name, image=self._image, path=volume))
+            process = yield from asyncio.subprocess.create_subprocess_exec(
+                "docker",
+                "exec",
+                self._cid,
+                "/gns3/bin/busybox",
+                "sh",
+                "-c",
+                "chmod -R u+rX {path} && chown {uid}:{gid} -R {path}".format(uid=os.getuid(), gid=os.getgid(), path=volume))
+            yield from process.wait()
+
+    @asyncio.coroutine
     def _start_vnc(self):
         """
         Start a VNC server for this container
@@ -503,6 +526,8 @@ class DockerVM(BaseVM):
             state = yield from self._get_container_state()
             if state == "paused":
                 yield from self.unpause()
+
+            yield from self._fix_permissions()
 
             # t=5 number of seconds to wait before killing the container
             try:

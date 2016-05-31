@@ -147,6 +147,9 @@ def test_commit(manager, loop):
 
 
 def test_commit_permission_issue(manager, loop):
+    """
+    GNS3 will fix the permission and continue to delete
+    """
     project = Project()
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_vm(vm)
@@ -155,9 +158,7 @@ def test_commit_permission_issue(manager, loop):
     assert len(project._vms_to_destroy) == 1
     assert os.path.exists(directory)
     os.chmod(directory, 0)
-    with pytest.raises(aiohttp.web.HTTPInternalServerError):
-        loop.run_until_complete(asyncio.async(project.commit()))
-    os.chmod(directory, 700)
+    loop.run_until_complete(asyncio.async(project.commit()))
 
 
 def test_project_delete(loop):

@@ -105,7 +105,7 @@ def test_create(loop, project, manager):
                 "Image": "ubuntu:latest",
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0"
-                        ],
+                ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -479,12 +479,14 @@ def test_restart(loop, vm):
 def test_stop(loop, vm):
     vm._ubridge_hypervisor = MagicMock()
     vm._ubridge_hypervisor.is_running.return_value = True
+    vm._fix_permissions = MagicMock()
 
     with asyncio_patch("gns3server.modules.docker.DockerVM._get_container_state", return_value="running"):
         with asyncio_patch("gns3server.modules.docker.Docker.query") as mock_query:
             loop.run_until_complete(asyncio.async(vm.stop()))
             mock_query.assert_called_with("POST", "containers/e90e34656842/stop", params={"t": 5})
     assert vm._ubridge_hypervisor.stop.called
+    assert vm._fix_permissions.called
 
 
 def test_stop_paused_container(loop, vm):
@@ -869,6 +871,7 @@ def test_mount_binds(vm, tmpdir):
         "{}:{}".format(dst, "/test/experimental")
     ]
 
+    assert vm._volumes == ["/etc/network", "/test/experimental"]
     assert os.path.exists(dst)
 
 
@@ -893,6 +896,7 @@ def test_start_aux(vm, loop):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
         loop.run_until_complete(asyncio.async(vm._start_aux()))
+    mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', '/gns3/bin/busybox sh', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
 
 
 def test_create_network_interfaces(vm):
@@ -907,3 +911,12 @@ def test_create_network_interfaces(vm):
     assert "eth0" in content
     assert "eth4" in content
     assert "eth5" not in content
+
+
+def test_fix_permission(vm, loop):
+    vm._volumes = ["/etc"]
+    process = MagicMock()
+    with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=process) as mock_exec:
+        loop.run_until_complete(vm._fix_permissions())
+    mock_exec.assert_called_with('docker', 'exec', 'e90e34656842', '/gns3/bin/busybox', 'sh', '-c', 'chmod -R u+rX /etc && chown {}:{} -R /etc'.format(os.getuid(), os.getgid()))
+    assert process.wait.called

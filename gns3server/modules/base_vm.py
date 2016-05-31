@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import stat
 import logging
 import aiohttp
 import shutil
@@ -224,11 +225,13 @@ class BaseVM:
         """
         Delete the VM (including all its files).
         """
+        def set_rw(operation, name, exc):
+            os.chmod(name, stat.S_IWRITE)
 
         directory = self.project.vm_working_directory(self)
         if os.path.exists(directory):
             try:
-                yield from wait_run_in_executor(shutil.rmtree, directory)
+                yield from wait_run_in_executor(shutil.rmtree, directory, onerror=set_rw)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not delete the VM working directory: {}".format(e))
 
