@@ -33,7 +33,6 @@ from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
 from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
-from ..nios.nio_nat import NIONAT
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
 
@@ -777,7 +776,7 @@ class VirtualBoxVM(BaseNode):
                 yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
-                if not isinstance(nio, NIONAT) and not self._use_any_adapter and attachment not in ("none", "null", "generic"):
+                if not self._use_any_adapter and attachment not in ("none", "null", "generic"):
                     raise VirtualBoxError("Attachment ({}) already configured on adapter {}. "
                                           "Please set it to 'Not attached' to allow GNS3 to use it.".format(attachment,
                                                                                                             adapter_number + 1))
@@ -806,9 +805,6 @@ class VirtualBoxVM(BaseNode):
                     yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
                     yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
                     yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
-                    yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
-                elif isinstance(nio, NIONAT):
-                    yield from self._modify_vm("--nic{} nat".format(adapter_number + 1))
                     yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
 
                 if nio.capturing:
@@ -936,10 +932,6 @@ class VirtualBoxVM(BaseNode):
                 if generic_driver_number not in vm_info and vm_info[generic_driver_number] != "UDPTunnel":
                     log.warning("UDP tunnel has not been set on nic: {}".format(adapter_number + 1))
                     self.project.emit("log.warning", {"message": "UDP tunnel has not been set on nic: {}".format(adapter_number + 1)})
-
-            elif isinstance(nio, NIONAT):
-                yield from self._control_vm("nic{} nat".format(adapter_number + 1))
-                yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
         log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,

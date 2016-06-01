@@ -31,7 +31,6 @@ from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
-from ..nios.nio_nat import NIONAT
 from .nio_vmnet import NIOVMNET
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
@@ -766,31 +765,25 @@ class VMwareVM(BaseNode):
                                                                                                     adapter_number=adapter_number))
 
         self._read_vmx_file()
-        if isinstance(nio, NIONAT):
-            if self._started:
-                raise VMwareError("Sorry, adding a link to NAT for a started VMware VM is not supported")
-            self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "nat"
-            self._write_vmx_file()
-        else:
-            # check if trying to connect to a nat, bridged or host-only adapter
-            if not self._use_any_adapter and self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
-                # check for the connection type
-                connection_type = "ethernet{}.connectiontype".format(adapter_number)
-                if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
-                    raise VMwareError("Attachment ({}) already configured on network adapter {}. "
-                                      "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
-                                                                                                  adapter_number))
+        # check if trying to connect to a nat, bridged or host-only adapter
+        if not self._use_any_adapter and self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
+            # check for the connection type
+            connection_type = "ethernet{}.connectiontype".format(adapter_number)
+            if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
+                raise VMwareError("Attachment ({}) already configured on network adapter {}. "
+                                  "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
+                                                                                              adapter_number))
 
-            if isinstance(nio, NIOVMNET):
-                if self._started:
-                    raise VMwareError("Sorry, adding a link to a started VMware VM is not supported without uBridge enabled")
-                self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = nio.vmnet
-                self._write_vmx_file()
-                if nio.vmnet not in self._vmnets:
-                    self._vmnets.append(nio.vmnet)
-            adapter.add_nio(0, nio)
-            if self._started and self._use_ubridge and self._ubridge_hypervisor:
-                yield from self._add_ubridge_connection(nio, adapter_number)
+        if isinstance(nio, NIOVMNET):
+            if self._started:
+                raise VMwareError("Sorry, adding a link to a started VMware VM is not supported without uBridge enabled")
+            self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = nio.vmnet
+            self._write_vmx_file()
+            if nio.vmnet not in self._vmnets:
+                self._vmnets.append(nio.vmnet)
+        adapter.add_nio(0, nio)
+        if self._started and self._use_ubridge and self._ubridge_hypervisor:
+            yield from self._add_ubridge_connection(nio, adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
                                                                                              id=self.id,

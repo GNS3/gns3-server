@@ -37,7 +37,6 @@ from .project_manager import ProjectManager
 
 from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
-from .nios.nio_nat import NIONAT
 from .nios.nio_generic_ethernet import NIOGenericEthernet
 from ..utils.images import md5sum, remove_checksum
 from .node_error import NodeError
@@ -388,8 +387,6 @@ class BaseManager:
             if not is_interface_up(ethernet_device):
                 raise aiohttp.web.HTTPConflict(text="Ethernet interface {} does not exist or is down".format(ethernet_device))
             nio = NIOGenericEthernet(ethernet_device)
-        elif nio_settings["type"] == "nio_nat":
-            nio = NIONAT()
         assert nio is not None
         return nio
 

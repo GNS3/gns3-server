@@ -36,7 +36,6 @@ from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
-from ..nios.nio_nat import NIONAT
 from ..base_node import BaseNode
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
@@ -1356,8 +1355,6 @@ class QemuVM(BaseNode):
                                                                                                                            nio.lport)])
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
-                    elif isinstance(nio, NIONAT):
-                        network_options.extend(["-net", "user,vlan={},name=gns3-{}".format(adapter_number, adapter_number)])
                 else:
                     network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
 
@@ -1373,8 +1370,6 @@ class QemuVM(BaseNode):
                                                                                                                 nio.lport)])
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-netdev", "tap,id=gns3-{},ifname={},script=no,downscript=no".format(adapter_number, nio.tap_device)])
-                    elif isinstance(nio, NIONAT):
-                        network_options.extend(["-netdev", "user,id=gns3-{}".format(adapter_number)])
                 else:
                     network_options.extend(["-device", "{},mac={}".format(self._adapter_type, mac)])
 
