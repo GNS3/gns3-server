@@ -31,7 +31,6 @@ from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
-from .nio_vmnet import NIOVMNET
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
 
@@ -70,7 +69,6 @@ class VMwareVM(BaseNode):
         self._adapters = 0
         self._ethernet_adapters = {}
         self._adapter_type = "e1000"
-        self._use_ubridge = True  # TODO: clean this (old ubridge code)
         self._use_any_adapter = False
 
         if not os.path.exists(vmx_path):
@@ -230,7 +228,7 @@ class VMwareVM(BaseNode):
                 del self._vmx_pairs[connected]
 
         # then configure VMware network adapters
-        self.manager.refresh_vmnet_list(ubridge=self._use_ubridge)
+        self.manager.refresh_vmnet_list()
         for adapter_number in range(0, self._adapters):
 
             # add/update the interface
@@ -251,38 +249,32 @@ class VMwareVM(BaseNode):
                 continue
 
             self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
-            if self._use_ubridge:
-                # make sure we have a vmnet per adapter if we use uBridge
-                allocate_vmnet = False
+            # make sure we have a vmnet per adapter if we use uBridge
+            allocate_vmnet = False
 
-                # first check if a vmnet is already assigned to the adapter
-                vnet = "ethernet{}.vnet".format(adapter_number)
-                if vnet in self._vmx_pairs:
-                    vmnet = os.path.basename(self._vmx_pairs[vnet])
-                    if self.manager.is_managed_vmnet(vmnet) or vmnet in ("vmnet0", "vmnet1", "vmnet8"):
-                        # vmnet already managed, try to allocate a new one
-                        allocate_vmnet = True
-                else:
-                    # otherwise allocate a new one
+            # first check if a vmnet is already assigned to the adapter
+            vnet = "ethernet{}.vnet".format(adapter_number)
+            if vnet in self._vmx_pairs:
+                vmnet = os.path.basename(self._vmx_pairs[vnet])
+                if self.manager.is_managed_vmnet(vmnet) or vmnet in ("vmnet0", "vmnet1", "vmnet8"):
+                    # vmnet already managed, try to allocate a new one
                     allocate_vmnet = True
-
-                if allocate_vmnet:
-                    try:
-                        vmnet = self.manager.allocate_vmnet()
-                    except:
-                        # clear everything up in case of error (e.g. no enough vmnets)
-                        self._vmnets.clear()
-                        raise
-
-                # mark the vmnet managed by us
-                if vmnet not in self._vmnets:
-                    self._vmnets.append(vmnet)
-                self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
             else:
-                # not connected to anything...
-                vnet = "ethernet{}.vnet".format(adapter_number)
-                if vnet not in self._vmx_pairs:
-                    self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "FALSE"
+                # otherwise allocate a new one
+                allocate_vmnet = True
+
+            if allocate_vmnet:
+                try:
+                    vmnet = self.manager.allocate_vmnet()
+                except:
+                    # clear everything up in case of error (e.g. no enough vmnets)
+                    self._vmnets.clear()
+                    raise
+
+            # mark the vmnet managed by us
+            if vmnet not in self._vmnets:
+                self._vmnets.append(vmnet)
+            self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
 
         # disable remaining network adapters
         for adapter_number in range(self._adapters, self._maximum_adapters):
@@ -429,9 +421,7 @@ class VMwareVM(BaseNode):
         if not ubridge_path or not os.path.isfile(ubridge_path):
             raise VMwareError("ubridge is necessary to start a VMware VM")
 
-        if self._use_ubridge:
-            yield from self._start_ubridge()
-
+        yield from self._start_ubridge()
         self._read_vmx_file()
         # check if there is enough RAM to run
         if "memsize" in self._vmx_pairs:
@@ -446,7 +436,7 @@ class VMwareVM(BaseNode):
             yield from self._control_vm("start")
 
         try:
-            if self._use_ubridge and self._ubridge_hypervisor:
+            if self._ubridge_hypervisor:
                 for adapter_number in range(0, self._adapters):
                     nio = self._ethernet_adapters[adapter_number].get_nio(0)
                     if nio:
@@ -494,19 +484,18 @@ class VMwareVM(BaseNode):
             self.status = "stopped"
 
             self._read_vmx_file()
-            if self._use_ubridge:
-                self._vmnets.clear()
-                # remove the adapters managed by GNS3
-                for adapter_number in range(0, self._adapters):
-                    vnet = "ethernet{}.vnet".format(adapter_number)
-                    if self._get_vmx_setting(vnet) or self._get_vmx_setting("ethernet{}.connectiontype".format(adapter_number)) is None:
-                        if vnet in self._vmx_pairs:
-                            vmnet = os.path.basename(self._vmx_pairs[vnet])
-                            if not self.manager.is_managed_vmnet(vmnet):
-                                continue
-                        log.debug("removing adapter {}".format(adapter_number))
-                        self._vmx_pairs[vnet] = "vmnet1"
-                        self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
+            self._vmnets.clear()
+            # remove the adapters managed by GNS3
+            for adapter_number in range(0, self._adapters):
+                vnet = "ethernet{}.vnet".format(adapter_number)
+                if self._get_vmx_setting(vnet) or self._get_vmx_setting("ethernet{}.connectiontype".format(adapter_number)) is None:
+                    if vnet in self._vmx_pairs:
+                        vmnet = os.path.basename(self._vmx_pairs[vnet])
+                        if not self.manager.is_managed_vmnet(vmnet):
+                            continue
+                    log.debug("removing adapter {}".format(adapter_number))
+                    self._vmx_pairs[vnet] = "vmnet1"
+                    self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
 
             # re-enable any remaining network adapters
             for adapter_number in range(self._adapters, self._maximum_adapters):
@@ -564,8 +553,6 @@ class VMwareVM(BaseNode):
                 for nio in adapter.ports.values():
                     if nio and isinstance(nio, NIOUDP):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
-                    if nio and isinstance(nio, NIOVMNET) and nio.vmnet in self._vmnets:
-                        self._vmnets.remove(nio.vmnet)
         try:
             self.acpi_shutdown = False
             yield from self.stop()
@@ -774,15 +761,8 @@ class VMwareVM(BaseNode):
                                   "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
                                                                                               adapter_number))
 
-        if isinstance(nio, NIOVMNET):
-            if self._started:
-                raise VMwareError("Sorry, adding a link to a started VMware VM is not supported without uBridge enabled")
-            self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = nio.vmnet
-            self._write_vmx_file()
-            if nio.vmnet not in self._vmnets:
-                self._vmnets.append(nio.vmnet)
         adapter.add_nio(0, nio)
-        if self._started and self._use_ubridge and self._ubridge_hypervisor:
+        if self._started and self._ubridge_hypervisor:
             yield from self._add_ubridge_connection(nio, adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -809,16 +789,8 @@ class VMwareVM(BaseNode):
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
-        if isinstance(nio, NIOVMNET):
-            self._read_vmx_file()
-            vnet = "ethernet{}.vnet".format(adapter_number)
-            if vnet in self._vmx_pairs:
-                del self._vmx_pairs[vnet]
-                self._write_vmx_file()
-            if nio.vmnet in self._vmnets:
-                self._vmnets.remove(nio.vmnet)
         adapter.remove_nio(0)
-        if self._started and self._use_ubridge and self._ubridge_hypervisor:
+        if self._started and self._ubridge_hypervisor:
             yield from self._delete_ubridge_connection(adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
@@ -922,9 +894,6 @@ class VMwareVM(BaseNode):
                                                                                                     adapter_number=adapter_number))
 
         nio = adapter.get_nio(0)
-
-        if isinstance(nio, NIOVMNET):
-            raise VMwareError("Sorry, packet capture is not supported without uBridge enabled")
 
         if not nio:
             raise VMwareError("Adapter {} is not connected".format(adapter_number))

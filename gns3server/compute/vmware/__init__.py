@@ -38,8 +38,6 @@ log = logging.getLogger(__name__)
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware.vmware_error import VMwareError
-from gns3server.compute.vmware.nio_vmnet import NIOVMNET
-
 
 class VMware(BaseManager):
 
@@ -336,13 +334,6 @@ class VMware(BaseManager):
                 vmnet_interfaces.remove(vmnet)
 
         self._vmnets = vmnet_interfaces
-
-    def create_nio(self, executable, nio_settings):
-
-        if nio_settings["type"] == "nio_vmnet":
-            return NIOVMNET(nio_settings["vmnet"])
-        else:
-            return super().create_nio(None, nio_settings)
 
     @property
     def host_type(self):
