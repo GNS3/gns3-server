@@ -56,42 +56,6 @@ class ComputeHandler:
         controller = Controller.instance()
         response.json([c for c in controller.computes.values()])
 
-    @Route.post(
-        r"/computes/shutdown",
-        description="Shutdown a local compute server",
-        status_codes={
-            201: "Compute server is shutting down",
-            403: "Compute server shutdown refused"
-        })
-    def shutdown(request, response):
-
-        config = Config.instance()
-        if config.get_section_config("Server").getboolean("local", False) is False:
-            raise HTTPForbidden(text="Only a local server can be shutdown")
-
-        # close all the projects first
-        pm = ProjectManager.instance()
-        projects = pm.projects
-
-        tasks = []
-        for project in projects:
-            tasks.append(asyncio.async(project.close()))
-
-        if tasks:
-            done, _ = yield from asyncio.wait(tasks)
-            for future in done:
-                try:
-                    future.result()
-                except Exception as e:
-                    log.error("Could not close project {}".format(e), exc_info=1)
-                    continue
-
-        # then shutdown the compute itself
-        from gns3server.web.web_server import WebServer
-        server = WebServer.instance()
-        asyncio.async(server.shutdown_server())
-        response.set_status(201)
-
     @Route.put(
         r"/computes/{compute_id:.+}",
         description="Get a compute server information",
