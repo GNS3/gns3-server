@@ -41,7 +41,7 @@ from ..adapters.ethernet_adapter import EthernetAdapter
 from ..adapters.serial_adapter import SerialAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
-from ..nios.nio_generic_ethernet import NIOGenericEthernet
+from ..nios.nio_ethernet import NIOEthernet
 from ..base_node import BaseNode
 from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
@@ -610,7 +610,7 @@ class IOUVM(BaseNode):
                         # TAP interface
                         connection = {"tap_dev": "{tap_device}".format(tap_device=nio.tap_device)}
 
-                    elif isinstance(nio, NIOGenericEthernet):
+                    elif isinstance(nio, NIOEthernet):
                         # Ethernet interface
                         connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
 

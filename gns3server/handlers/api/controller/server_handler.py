@@ -15,10 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ....web.route import Route
-from ....config import Config
-from ....controller import Controller
-from aiohttp.web import HTTPForbidden
+from gns3server.web.route import Route
+from gns3server.config import Config
+from gns3server.controller import Controller
+from gns3server.schemas.version import VERSION_SCHEMA
+from gns3server.version import __version__
+
+from aiohttp.web import HTTPConflict, HTTPForbidden
 
 import asyncio
 import logging
@@ -42,9 +45,9 @@ class ServerHandler:
         if config.get_section_config("Server").getboolean("local", False) is False:
             raise HTTPForbidden(text="You can only stop a local server")
 
-        log.info("Start shuting down the server")
+        log.info("Start shutting down the server")
 
-        # close all the projets first
+        # close all the projects first
         controller = Controller.instance()
         projects = controller.projects
 
@@ -66,3 +69,27 @@ class ServerHandler:
         server = WebServer.instance()
         asyncio.async(server.shutdown_server())
         response.set_status(201)
+
+    @Route.get(
+        r"/server/version",
+        description="Retrieve the server version number",
+        output=VERSION_SCHEMA)
+    def version(request, response):
+
+        config = Config.instance()
+        local_server = config.get_section_config("Server").getboolean("local", False)
+        response.json({"version": __version__, "local": local_server})
+
+    @Route.post(
+        r"/server/version",
+        description="Check if version is the same as the server",
+        output=VERSION_SCHEMA,
+        input=VERSION_SCHEMA,
+        status_codes={
+            200: "Same version",
+            409: "Invalid version"
+        })
+    def check_version(request, response):
+        if request.json["version"] != __version__:
+            raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"], __version__))
+        response.json({"version": __version__})

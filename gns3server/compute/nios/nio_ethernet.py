@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2013 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,38 +16,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Interface for VMnet NIOs.
+Interface for Ethernet NIOs.
 """
 
-from ..nios.nio import NIO
+from .nio import NIO
 
 
-class NIOVMNET(NIO):
+class NIOEthernet(NIO):
 
     """
-    VMnet NIO.
+    Generic Ethernet NIO.
+
+    :param ethernet_device: Ethernet device name (e.g. eth0)
     """
 
-    def __init__(self, vmnet):
+    def __init__(self, ethernet_device):
 
         super().__init__()
-        self._vmnet = vmnet
+        self._ethernet_device = ethernet_device
 
     @property
-    def vmnet(self):
+    def ethernet_device(self):
         """
-        Returns vmnet interface used by this NIO.
+        Returns the Ethernet device used by this NIO.
 
-        :returns: vmnet interface name
+        :returns: the Ethernet device name
         """
 
-        return self._vmnet
+        return self._ethernet_device
 
     def __str__(self):
 
-        return "NIO VMNET"
+        return "NIO Ethernet"
 
     def __json__(self):
 
-        return {"type": "nio_vmnet",
-                "vmnet": self._vmnet}
+        return {"type": "nio_ethernet",
+                "ethernet_device": self._ethernet_device}

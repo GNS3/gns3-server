@@ -143,7 +143,7 @@ class Hypervisor(UBridgeHypervisor):
         yield from self._check_ubridge_version()
         env = os.environ.copy()
         if sys.platform.startswith("win"):
-            # add the Npcap directory to $PATH to force Dynamips to use npcap DLL instead of Winpcap (if installed)
+            # add the Npcap directory to $PATH to force uBridge to use npcap DLL instead of Winpcap (if installed)
             system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
             if os.path.isdir(system_root):
                 env["PATH"] = system_root + ';' + env["PATH"]

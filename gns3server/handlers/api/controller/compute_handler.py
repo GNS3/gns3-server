@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
-from aiohttp.web import HTTPForbidden
-
 from gns3server.web.route import Route
-from gns3server.config import Config
-from gns3server.compute.project_manager import ProjectManager
-from gns3server.schemas.compute import COMPUTE_CREATE_SCHEMA, COMPUTE_OBJECT_SCHEMA, COMPUTE_UPDATE_SCHEMA
 from gns3server.controller import Controller
+
+from gns3server.schemas.compute import (
+    COMPUTE_CREATE_SCHEMA,
+    COMPUTE_OBJECT_SCHEMA,
+    COMPUTE_UPDATE_SCHEMA
+)
 
 import logging
 log = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class ComputeHandler:
 
     @Route.get(
         r"/computes",
-        description="List of compute server",
+        description="List of compute servers",
         status_codes={
             200: "Compute servers list returned"
         })

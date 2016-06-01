@@ -60,8 +60,7 @@ class Compute:
         self._version = None
         self.name = name
 
-        # If the compute is local but the compute id is local
-        # it's a configuration issue
+        # It's a configuration issue if the compute is not configured to be local but the compute id is local
         if compute_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
             raise ComputeError("The local compute is started without --local")
 
@@ -183,7 +182,7 @@ class Compute:
     def password(self):
         return self._password
 
-    @user.setter
+    @password.setter
     def password(self, value):
         self._set_auth(self._user, value)
 
@@ -229,7 +228,7 @@ class Compute:
         Check if remote server is accessible
         """
         if not self._connected:
-            response = yield from self._run_http_query("GET", "/version")
+            response = yield from self._run_http_query("GET", "/server/version")
 
             if "version" not in response.json:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))

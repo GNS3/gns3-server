@@ -228,7 +228,7 @@ class IOUHandler:
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
-        if nio_type not in ("nio_udp", "nio_tap", "nio_generic_ethernet"):
+        if nio_type not in ("nio_udp", "nio_tap", "nio_ethernet", "nio_generic_ethernet"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = iou_manager.create_nio(vm.iouyap_path, request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)

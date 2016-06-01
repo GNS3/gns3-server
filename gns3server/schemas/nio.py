@@ -52,7 +52,7 @@ NIO_SCHEMA = {
             "description": "Generic Ethernet Network Input/Output",
             "properties": {
                 "type": {
-                    "enum": ["nio_generic_ethernet"]
+                    "enum": ["nio_generic_ethernet", "nio_ethernet"]
                 },
                 "ethernet_device": {
                     "description": "Ethernet device name e.g. eth0",

@@ -135,7 +135,7 @@ class PortManager:
         return self._used_udp_ports
 
     @staticmethod
-    def find_unused_port(start_port, end_port, host="127.0.0.1", socket_type="TCP", ignore_ports=[]):
+    def find_unused_port(start_port, end_port, host="127.0.0.1", socket_type="TCP", ignore_ports=None):
         """
         Finds an unused port in a range.
 
@@ -151,7 +151,7 @@ class PortManager:
 
         last_exception = None
         for port in range(start_port, end_port + 1):
-            if port in ignore_ports or port in BANNED_PORTS:
+            if ignore_ports and (port in ignore_ports or port in BANNED_PORTS):
                 continue
 
             try:

@@ -31,7 +31,7 @@ class Qcow2:
 
     def __init__(self, path):
 
-        self.path = path
+        self._path = path
         self._reload()
 
     def _reload(self):
@@ -57,15 +57,14 @@ class Qcow2:
         #     uint32_t nb_snapshots;
         #     uint64_t snapshots_offset;
         # } QCowHeader;
+
         struct_format = ">IIQi"
-
-        with open(self.path, 'rb') as f:
+        with open(self._path, 'rb') as f:
             content = f.read(struct.calcsize(struct_format))
-
             self.magic, self.version, self.backing_file_offset, self.backing_file_size = struct.unpack_from(struct_format, content)
 
         if self.magic != 1363560955:  # The first 4 bytes contain the characters 'Q', 'F', 'I' followed by 0xfb.
-            raise Qcow2Error("Invalid magic for {}".format(self.path))
+            raise Qcow2Error("Invalid magic for {}".format(self._path))
 
     @property
     def backing_file(self):
@@ -74,9 +73,11 @@ class Qcow2:
 
         :returns: None if it's not a linked clone, the path otherwise
         """
-        with open(self.path, 'rb') as f:
+
+        with open(self._path, 'rb') as f:
             f.seek(self.backing_file_offset)
             content = f.read(self.backing_file_size)
+
         path = content.decode()
         if len(path) == 0:
             return None
@@ -90,9 +91,10 @@ class Qcow2:
         :param qemu_img: Path to the qemu-img binary
         :param base_image: Path to the base image
         """
+
         if not os.path.exists(base_image):
             raise FileNotFoundError(base_image)
-        command = [qemu_img, "rebase", "-u", "-b", base_image, self.path]
+        command = [qemu_img, "rebase", "-u", "-b", base_image, self._path]
         process = yield from asyncio.create_subprocess_exec(*command)
         retcode = yield from process.wait()
         if retcode != 0:

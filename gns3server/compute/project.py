@@ -369,7 +369,7 @@ class Project:
         """
 
         files = []
-        for (dirpath, dirnames, filenames) in os.walk(self.path):
+        for dirpath, dirnames, filenames in os.walk(self.path):
             for filename in filenames:
                 if not filename.endswith(".ghost"):
                     path = os.path.relpath(dirpath, self.path)

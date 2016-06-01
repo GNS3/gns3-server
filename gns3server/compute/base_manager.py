@@ -37,7 +37,7 @@ from .project_manager import ProjectManager
 
 from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
-from .nios.nio_generic_ethernet import NIOGenericEthernet
+from .nios.nio_ethernet import NIOEthernet
 from ..utils.images import md5sum, remove_checksum
 from .node_error import NodeError
 
@@ -317,8 +317,7 @@ class BaseManager:
     @staticmethod
     def has_privileged_access(executable):
         """
-        Check if an executable can access Ethernet and TAP devices in
-        RAW mode.
+        Check if an executable have the right to attach to Ethernet and TAP adapters.
 
         :param executable: executable path
 
@@ -382,11 +381,11 @@ class BaseManager:
             # if not self.has_privileged_access(executable):
             #    raise aiohttp.web.HTTPForbidden(text="{} has no privileged access to {}.".format(executable, tap_device))
             nio = NIOTAP(tap_device)
-        elif nio_settings["type"] == "nio_generic_ethernet":
+        elif nio_settings["type"] in ("nio_generic_ethernet", "nio_ethernet"):
             ethernet_device = nio_settings["ethernet_device"]
             if not is_interface_up(ethernet_device):
                 raise aiohttp.web.HTTPConflict(text="Ethernet interface {} does not exist or is down".format(ethernet_device))
-            nio = NIOGenericEthernet(ethernet_device)
+            nio = NIOEthernet(ethernet_device)
         assert nio is not None
         return nio
 

@@ -142,7 +142,7 @@ class Cloud(BaseNode):
         if port_info["type"] in ("ethernet", "tap"):
             network_interfaces = [interface["name"] for interface in interfaces()]
             if not port_info["interface"] in network_interfaces:
-                raise NodeError("Interface {} could not be found on this system".format(port_info["interface"]))
+                raise NodeError("Interface '{}' could not be found on this system".format(port_info["interface"]))
 
             if sys.platform.startswith("win"):
                 windows_interfaces = interfaces()
