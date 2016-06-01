@@ -31,14 +31,13 @@ fi
 #  Restore file permission
 for i in $(echo "$GNS3_VOLUMES" | tr ":" "\n")
 do
-    cd $i
-    if [ -f .gns3_perms ]
+    if [ -f "$i/.gns3_perms" ]
     then
         while IFS=: read PERMS OWNER GROUP FILE
         do
             chmod "$PERMS" "$FILE"
             chown "${OWNER}:${GROUP}" "$FILE"
-        done < .gns3_perms
+        done < "$i/.gns3_perms"
     fi
 done
 
