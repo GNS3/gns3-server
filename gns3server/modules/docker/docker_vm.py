@@ -402,7 +402,7 @@ class DockerVM(BaseVM):
                 "/gns3/bin/busybox",
                 "sh",
                 "-c",
-                "(/gns3/bin/busybox find \"{path}\" -depth -print0 | xargs -0 stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\") && /gns3/bin/busybox chmod -R u+rX \"{path}\" && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\"".format(uid=os.getuid(), gid=os.getgid(), path=volume))
+                "(/gns3/bin/busybox find \"{path}\" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\") && /gns3/bin/busybox chmod -R u+rX \"{path}\" && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\"".format(uid=os.getuid(), gid=os.getgid(), path=volume))
             yield from process.wait()
 
     @asyncio.coroutine
