@@ -294,6 +294,8 @@ class DockerVM(BaseVM):
 
         # Give the information to the container on how many interface should be inside
         params["Env"].append("GNS3_MAX_ETHERNET=eth{}".format(self.adapters - 1))
+        # Give the information to the container the list of volume path mounted
+        params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
         if self._environment:
             params["Env"] += [e.strip() for e in self._environment.split("\n")]

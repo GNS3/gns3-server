@@ -104,7 +104,8 @@ def test_create(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
-                    "GNS3_MAX_ETHERNET=eth0"
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network"
                 ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
@@ -141,8 +142,9 @@ def test_create_with_tag(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest:16.04",
                 "Env": [
-                    "GNS3_MAX_ETHERNET=eth0"
-                        ],
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network"
+                ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -183,8 +185,9 @@ def test_create_vnc(loop, project, manager):
                 "Image": "ubuntu:latest",
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network",
                     "DISPLAY=:42"
-                        ],
+                ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -225,8 +228,9 @@ def test_create_start_cmd(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
-                    "GNS3_MAX_ETHERNET=eth0"
-                        ]
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network"
+                ]
             })
         assert vm._cid == "e90e34656806"
 
@@ -257,6 +261,7 @@ def test_create_environment(loop, project, manager):
                     },
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network",
                     "YES=1",
                     "NO=0"
                         ],
@@ -315,8 +320,9 @@ def test_create_image_not_available(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
-                    "GNS3_MAX_ETHERNET=eth0"
-                        ],
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network"
+                ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -534,7 +540,8 @@ def test_update(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
-            "GNS3_MAX_ETHERNET=eth0"
+            "GNS3_MAX_ETHERNET=eth0",
+            "GNS3_VOLUMES=/etc/network"
         ],
         "Entrypoint": ["/gns3/init.sh"],
         "Cmd": ["/bin/sh"]
@@ -601,7 +608,8 @@ def test_update_running(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
-            "GNS3_MAX_ETHERNET=eth0"
+            "GNS3_MAX_ETHERNET=eth0",
+            "GNS3_VOLUMES=/etc/network"
         ],
         "Entrypoint": ["/gns3/init.sh"],
         "Cmd": ["/bin/sh"]
