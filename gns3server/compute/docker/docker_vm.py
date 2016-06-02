@@ -85,6 +85,7 @@ class DockerVM(BaseNode):
         self._console_http_path = console_http_path
         self._console_http_port = console_http_port
         self._console_websocket = None
+        self._volumes = []
 
         if adapters is None:
             self.adapters = 1
@@ -135,8 +136,9 @@ class DockerVM(BaseNode):
 
     @start_command.setter
     def start_command(self, command):
-        command = command.strip()
-        if len(command) == 0:
+        if command:
+            command = command.strip()
+        if command is None or len(command) == 0:
             self._start_command = None
         else:
             self._start_command = command
@@ -206,6 +208,8 @@ class DockerVM(BaseNode):
         network_config = self._create_network_config()
         binds.append("{}:/etc/network:rw".format(network_config))
 
+        self._volumes = ["/etc/network"]
+
         volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
         if volumes is None:
             return binds
@@ -213,6 +217,7 @@ class DockerVM(BaseNode):
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
             binds.append("{}:{}".format(source, volume))
+            self._volumes.append(volume)
 
         return binds
 
@@ -293,6 +298,8 @@ class DockerVM(BaseNode):
 
         # Give the information to the container on how many interface should be inside
         params["Env"].append("GNS3_MAX_ETHERNET=eth{}".format(self.adapters - 1))
+        # Give the information to the container the list of volume path mounted
+        params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
         if self._environment:
             params["Env"] += [e.strip() for e in self._environment.split("\n")]
@@ -384,6 +391,25 @@ class DockerVM(BaseNode):
         server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
         self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
         log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
+
+    @asyncio.coroutine
+    def _fix_permissions(self):
+        """
+        Because docker run as root we need to fix permission and ownership to allow user to interact
+        with it from their filesystem and do operation like file delete
+        """
+        for volume in self._volumes:
+            log.debug("Docker container '{name}' [{image}] fix ownership on {path}".format(
+                name=self._name, image=self._image, path=volume))
+            process = yield from asyncio.subprocess.create_subprocess_exec(
+                "docker",
+                "exec",
+                self._cid,
+                "/gns3/bin/busybox",
+                "sh",
+                "-c",
+                "(/gns3/bin/busybox find \"{path}\" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\") && /gns3/bin/busybox chmod -R u+rX \"{path}\" && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\"".format(uid=os.getuid(), gid=os.getgid(), path=volume))
+            yield from process.wait()
 
     @asyncio.coroutine
     def _start_vnc(self):
@@ -507,6 +533,8 @@ class DockerVM(BaseNode):
             state = yield from self._get_container_state()
             if state == "paused":
                 yield from self.unpause()
+
+            yield from self._fix_permissions()
 
             # t=5 number of seconds to wait before killing the container
             try:

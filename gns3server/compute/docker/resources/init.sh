@@ -28,6 +28,20 @@ if [ ! -d /tmp/gns3/bin ]; then
 	/gns3/bin/busybox --install -s /tmp/gns3/bin
 fi
 
+#  Restore file permission
+for i in $(echo "$GNS3_VOLUMES" | tr ":" "\n")
+do
+    if [ -f "$i/.gns3_perms" ]
+    then
+        while IFS=: read PERMS OWNER GROUP FILE
+        do
+            chmod "$PERMS" "$FILE"
+            chown "${OWNER}:${GROUP}" "$FILE"
+        done < "$i/.gns3_perms"
+    fi
+done
+
+
 # /etc/hosts
 [ -s /etc/hosts ] || cat > /etc/hosts << __EOF__
 127.0.1.1	$HOSTNAME
@@ -60,3 +74,4 @@ ifup -a -f
 # continue normal docker startup
 PATH="$OLD_PATH"
 exec "$@"
+
