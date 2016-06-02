@@ -61,7 +61,7 @@ def test_compute_create_with_id(http_controller, controller):
 def test_compute_get(http_controller, controller):
 
     params = {
-        "compute_id": "my_compute/id",
+        "compute_id": "my_compute_id",
         "protocol": "http",
         "host": "example.com",
         "port": 84,
@@ -71,7 +71,7 @@ def test_compute_get(http_controller, controller):
     response = http_controller.post("/computes", params)
     assert response.status == 201
 
-    response = http_controller.get("/computes/my_compute/id", example=True)
+    response = http_controller.get("/computes/my_compute_id", example=True)
     assert response.status == 200
     assert response.json["protocol"] == "http"
 
@@ -79,7 +79,7 @@ def test_compute_get(http_controller, controller):
 def test_compute_update(http_controller, controller):
 
     params = {
-        "compute_id": "my_compute/id",
+        "compute_id": "my_compute_id",
         "protocol": "http",
         "host": "example.com",
         "port": 84,
@@ -89,12 +89,12 @@ def test_compute_update(http_controller, controller):
     response = http_controller.post("/computes", params)
     assert response.status == 201
 
-    response = http_controller.get("/computes/my_compute/id")
+    response = http_controller.get("/computes/my_compute_id")
     assert response.status == 200
     assert response.json["protocol"] == "http"
 
     params["protocol"] = "https"
-    response = http_controller.put("/computes/my_compute/id", params, example=True)
+    response = http_controller.put("/computes/my_compute_id", params, example=True)
 
     assert response.status == 200
     assert response.json["protocol"] == "https"
@@ -135,7 +135,7 @@ def test_compute_list(http_controller, controller):
 def test_compute_delete(http_controller, controller):
 
     params = {
-        "compute_id": "my_compute/id",
+        "compute_id": "my_compute_id",
         "protocol": "http",
         "host": "example.com",
         "port": 84,
@@ -148,7 +148,7 @@ def test_compute_delete(http_controller, controller):
     response = http_controller.get("/computes")
     assert len(response.json) == 1
 
-    response = http_controller.delete("/computes/my_compute/id")
+    response = http_controller.delete("/computes/my_compute_id")
     assert response.status == 204
 
     response = http_controller.get("/computes")

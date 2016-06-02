@@ -329,4 +329,4 @@ class Compute:
         Forward a call to the emulator on compute
         """
         res = yield from self.get("/{}/{}".format(type, path))
-        return res
+        return res.json

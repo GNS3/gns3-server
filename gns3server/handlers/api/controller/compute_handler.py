@@ -78,7 +78,7 @@ class ComputeHandler:
         response.json(compute)
 
     @Route.get(
-        r"/computes/{compute_id:.+}/{emulator}/images",
+        r"/computes/{compute_id}/{emulator}/images",
         parameters={
             "compute_id": "Compute UUID"
         },
@@ -94,7 +94,7 @@ class ComputeHandler:
         response.json(images)
 
     @Route.get(
-        r"/computes/{compute_id:.+}/{emulator}/vms",
+        r"/computes/{compute_id}/{emulator}/vms",
         parameters={
             "compute_id": "Compute UUID"
         },
@@ -110,7 +110,7 @@ class ComputeHandler:
         response.json(images)
 
     @Route.get(
-        r"/computes/{compute_id:.+}",
+        r"/computes/{compute_id}",
         description="Get a compute server information",
         status_codes={
             200: "Compute server information returned"
