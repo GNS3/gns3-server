@@ -428,13 +428,12 @@ class BaseManager:
 
         if not os.path.isabs(path):
             orig_path = path
-            s = os.path.split(path)
-
             for directory in self.images_directories():
-                path = os.path.normpath(os.path.join(directory, *s))
-                if os.path.exists(path):
+                path = self._recursive_search_file_in_directory(directory, orig_path)
+                if path:
                     return force_unix_path(path)
             # Not found we return the default directory
+            s = os.path.split(orig_path)
             return force_unix_path(os.path.join(self.get_images_directory(), *s))
 
         # For non local server we disallow using absolute path outside image directory
@@ -446,6 +445,23 @@ class BaseManager:
             if os.path.commonprefix([directory, path]) == directory:
                 return path
         raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, self.get_images_directory()))
+
+    def _recursive_search_file_in_directory(self, directory, searched_file):
+        """
+        Search for a file in directory and is subdirectories
+
+        :returns: Path or None if not found
+        """
+        s = os.path.split(searched_file)
+
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                # If filename is the same
+                if s[1] == file and (s[0] == '' or s[0] == os.path.basename(root)):
+                    path = os.path.normpath(os.path.join(root, s[1]))
+                    if os.path.exists(path):
+                        return path
+        return None
 
     def get_relative_image_path(self, path):
         """
