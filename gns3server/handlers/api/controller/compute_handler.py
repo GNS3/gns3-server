@@ -57,7 +57,7 @@ class ComputeHandler:
         response.json([c for c in controller.computes.values()])
 
     @Route.put(
-        r"/computes/{compute_id:.+}",
+        r"/computes/{compute_id}",
         description="Get a compute server information",
         status_codes={
             200: "Compute server updated",
@@ -107,7 +107,7 @@ class ComputeHandler:
         response.json(compute)
 
     @Route.delete(
-        r"/computes/{compute_id:.+}",
+        r"/computes/{compute_id}",
         parameters={
             "compute_id": "Compute UUID"
         },
