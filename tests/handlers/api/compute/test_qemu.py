@@ -183,7 +183,7 @@ def test_qemu_nio_create_udp(http_compute, vm):
 
 def test_qemu_nio_create_ethernet(http_compute, vm):
     http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
-    response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_generic_ethernet",
+    response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_ethernet",
                                                                                                                                                                    "ethernet_device": "eth0",
                                                                                                                                                                    },
                                  example=True)

@@ -228,7 +228,7 @@ class Compute:
         Check if remote server is accessible
         """
         if not self._connected:
-            response = yield from self._run_http_query("GET", "/server/version")
+            response = yield from self._run_http_query("GET", "/version")
 
             if "version" not in response.json:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))

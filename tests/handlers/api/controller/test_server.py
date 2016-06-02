@@ -36,17 +36,17 @@ def test_shutdown_local(http_controller, web_server, config):
 
     web_server.shutdown_server.return_value = hello()
     config.set("Server", "local", True)
-    response = http_controller.post('/server/shutdown', example=True)
+    response = http_controller.post('/shutdown', example=True)
     assert response.status == 201
     assert web_server.shutdown_server.called
 
 
 def test_shutdown_non_local(http_controller, web_server, config):
     """
-    Dissalow shutdown of a non local GNS3 server
+    Disallow shutdown of a non local GNS3 server
     """
     WebServer._instance = MagicMock()
     config.set("Server", "local", False)
-    response = http_controller.post('/server/shutdown')
+    response = http_controller.post('/shutdown')
     assert response.status == 403
     assert not web_server.shutdown_server.called

@@ -220,24 +220,24 @@ def test_iou_nio_create_udp(http_compute, vm):
 
 
 def test_iou_nio_create_ethernet(http_compute, vm, ethernet_device):
-    response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_generic_ethernet",
+    response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_ethernet",
                                                                                                                                                                   "ethernet_device": ethernet_device,
                                                                                                                                                                  },
                                  example=True)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
-    assert response.json["type"] == "nio_generic_ethernet"
+    assert response.json["type"] == "nio_ethernet"
     assert response.json["ethernet_device"] == ethernet_device
 
 
 def test_iou_nio_create_ethernet_different_port(http_compute, vm, ethernet_device):
-    response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_generic_ethernet",
+    response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_ethernet",
                                                                                                                                                                   "ethernet_device": ethernet_device,
                                                                                                                                                                  },
                                  example=False)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
-    assert response.json["type"] == "nio_generic_ethernet"
+    assert response.json["type"] == "nio_ethernet"
     assert response.json["ethernet_device"] == ethernet_device
 
 

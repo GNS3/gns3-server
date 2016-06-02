@@ -33,7 +33,7 @@ class ServerHandler:
 
     @classmethod
     @Route.post(
-        r"/server/shutdown",
+        r"/shutdown",
         description="Shutdown the local server",
         status_codes={
             201: "Server is shutting down",
@@ -71,7 +71,7 @@ class ServerHandler:
         response.set_status(201)
 
     @Route.get(
-        r"/server/version",
+        r"/version",
         description="Retrieve the server version number",
         output=VERSION_SCHEMA)
     def version(request, response):
@@ -81,7 +81,7 @@ class ServerHandler:
         response.json({"version": __version__, "local": local_server})
 
     @Route.post(
-        r"/server/version",
+        r"/version",
         description="Check if version is the same as the server",
         output=VERSION_SCHEMA,
         input=VERSION_SCHEMA,

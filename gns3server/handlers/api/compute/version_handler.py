@@ -25,7 +25,7 @@ from aiohttp.web import HTTPConflict
 class VersionHandler:
 
     @Route.get(
-        r"/server/version",
+        r"/version",
         description="Retrieve the server version number",
         output=VERSION_SCHEMA)
     def version(request, response):
@@ -35,7 +35,7 @@ class VersionHandler:
         response.json({"version": __version__, "local": local_server})
 
     @Route.post(
-        r"/server/version",
+        r"/version",
         description="Check if version is the same as the server",
         output=VERSION_SCHEMA,
         input=VERSION_SCHEMA,
