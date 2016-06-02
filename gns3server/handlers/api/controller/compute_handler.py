@@ -78,7 +78,7 @@ class ComputeHandler:
         response.json(compute)
 
     @Route.get(
-        r"/computes/{compute_id}/{emulator}/images",
+        r"/computes/{compute_id}/{emulator}/{action}",
         parameters={
             "compute_id": "Compute UUID"
         },
@@ -86,27 +86,11 @@ class ComputeHandler:
             200: "OK",
             404: "Instance doesn't exist"
         },
-        description="Get the list of images available on remote compute")
-    def list_images(request, response):
+        description="Forward call specific to compute node. Read the full compute API for available actions")
+    def forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        images = yield from compute.forward(request.match_info["emulator"], "images")
-        response.json(images)
-
-    @Route.get(
-        r"/computes/{compute_id}/{emulator}/vms",
-        parameters={
-            "compute_id": "Compute UUID"
-        },
-        status_codes={
-            200: "OK",
-            404: "Instance doesn't exist"
-        },
-        description="Get the list of vms available on remote compute for VMware an Virtualbox")
-    def list_vms(request, response):
-        controller = Controller.instance()
-        compute = controller.get_compute(request.match_info["compute_id"])
-        images = yield from compute.forward(request.match_info["emulator"], "vms")
+        images = yield from compute.forward(request.match_info["emulator"], request.match_info["action"])
         response.json(images)
 
     @Route.get(
