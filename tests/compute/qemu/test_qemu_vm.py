@@ -510,10 +510,10 @@ def test_hda_disk_image(vm, tmpdir):
 
     vm.manager.config.set("Server", "images_path", str(tmpdir))
 
-    vm.hda_disk_image = str(tmpdir / "test")
-    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "test"))
-    vm.hda_disk_image = "test"
-    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
+    vm.hda_disk_image = str(tmpdir / "test1")
+    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "test1"))
+    vm.hda_disk_image = "test2"
+    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test2"))
 
 
 def test_hda_disk_image_ova(vm, tmpdir):

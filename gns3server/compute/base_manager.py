@@ -389,6 +389,24 @@ class BaseManager:
         assert nio is not None
         return nio
 
+    def images_directories(self):
+        """
+        Return all directory where we will look for images
+        by priority
+        """
+        server_config = self.config.get_section_config("Server")
+
+        paths = []
+        img_directory = self.get_images_directory()
+        os.makedirs(img_directory, exist_ok=True)
+        paths.append(img_directory)
+        for directory in server_config.get("additional_images_path", "").split(":"):
+            paths.append(directory)
+        # Compatibility with old topologies we look in parent directory
+        paths.append(os.path.normpath(os.path.join(self.get_images_directory(), '..')))
+        # Return only the existings paths
+        return [force_unix_path(p) for p in paths if os.path.exists(p)]
+
     def get_abs_image_path(self, path):
         """
         Get the absolute path of an image
@@ -400,6 +418,7 @@ class BaseManager:
         if not path:
             return ""
 
+        server_config = self.config.get_section_config("Server")
         img_directory = self.get_images_directory()
 
         # Windows path should not be send to a unix server
@@ -408,27 +427,25 @@ class BaseManager:
                 raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
 
         if not os.path.isabs(path):
+            orig_path = path
             s = os.path.split(path)
-            path = os.path.normpath(os.path.join(img_directory, *s))
 
-            # Compatibility with old topologies we look in parent directory
-            # We look at first in new location
-            if not os.path.exists(path):
-                old_path = os.path.normpath(os.path.join(img_directory, '..', *s))
-                if os.path.exists(old_path):
-                    return force_unix_path(old_path)
+            for directory in self.images_directories():
+                path = os.path.normpath(os.path.join(directory, *s))
+                if os.path.exists(path):
+                    return force_unix_path(path)
+            # Not found we return the default directory
+            return force_unix_path(os.path.join(self.get_images_directory(), *s))
 
+        # For non local server we disallow using absolute path outside image directory
+        if server_config.get("local", False) is True:
             return force_unix_path(path)
-        else:
-            # For non local server we disallow using absolute path outside image directory
-            if Config.instance().get_section_config("Server").get("local", False) is False:
-                img_directory = self.config.get_section_config("Server").get("images_path", os.path.expanduser("~/GNS3/images"))
-                img_directory = force_unix_path(img_directory)
-                path = force_unix_path(path)
-                if len(os.path.commonprefix([img_directory, path])) < len(img_directory):
-                    raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
 
-        return force_unix_path(path)
+        path = force_unix_path(path)
+        for directory in self.images_directories():
+            if os.path.commonprefix([directory, path]) == directory:
+                return path
+        raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, self.get_images_directory()))
 
     def get_relative_image_path(self, path):
         """
@@ -442,10 +459,10 @@ class BaseManager:
 
         if not path:
             return ""
-        img_directory = force_unix_path(self.get_images_directory())
         path = force_unix_path(self.get_abs_image_path(path))
-        if os.path.commonprefix([img_directory, path]) == img_directory:
-            return os.path.relpath(path, img_directory)
+        for directory in self.images_directories():
+            if os.path.commonprefix([directory, path]) == directory:
+                return os.path.relpath(path, directory)
         return path
 
     @asyncio.coroutine
