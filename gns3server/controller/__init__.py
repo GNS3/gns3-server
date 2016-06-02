@@ -125,9 +125,16 @@ class Controller:
         :param compute_id: Compute server identifier
         """
         compute = self.get_compute(compute_id)
+        yield from compute.close()
         del self._computes[compute_id]
         self.save()
         self.notification.emit("compute.deleted", compute.__json__())
+
+    @asyncio.coroutine
+    def close(self):
+        log.info("Close controller")
+        for compute in self._computes.values():
+            yield from compute.close()
 
     @property
     def notification(self):

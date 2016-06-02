@@ -91,12 +91,14 @@ def test_deleteCompute(controller, controller_config_path, async_run):
     c = async_run(controller.add_compute(compute_id="test1"))
     assert len(controller.computes) == 1
     controller._notification = MagicMock()
+    c._connected = True
     async_run(controller.delete_compute("test1"))
     assert len(controller.computes) == 0
     controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
         data = json.load(f)
         assert len(data["computes"]) == 0
+    assert c.connected is False
 
 
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
@@ -174,3 +176,10 @@ def test_getProject(controller, async_run):
     assert controller.get_project(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.get_project("dsdssd")
+
+
+def test_close(controller, async_run):
+    c = async_run(controller.add_compute(compute_id="test1"))
+    c._connected = True
+    async_run(controller.close())
+    assert c.connected is False

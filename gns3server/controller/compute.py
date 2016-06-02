@@ -93,6 +93,11 @@ class Compute:
         self._connected = False
         self._controller.notification.emit("compute.updated", self.__json__())
 
+    @asyncio.coroutine
+    def close(self):
+        self._connected = False
+        self._session.close()
+
     @property
     def version(self):
         """

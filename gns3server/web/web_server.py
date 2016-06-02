@@ -91,6 +91,9 @@ class WebServer:
             yield from self._handler.finish_connections()
             self._handler = None
 
+        if Config.instance().get_section_config("Server").getboolean("controller"):
+            yield from Controller.instance().close()
+
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
             m = module.instance()
@@ -182,13 +185,13 @@ class WebServer:
             # Add a periodic callback to give a chance to process signals on Windows
             # because asyncio.add_signal_handler() is not supported yet on that platform
             # otherwise the loop runs outside of signal module's ability to trap signals.
+
             def wakeup():
                 loop.call_later(0.5, wakeup)
             loop.call_later(0.5, wakeup)
             asyncio.set_event_loop(loop)
 
         server_config = Config.instance().get_section_config("Server")
-
 
         ssl_context = None
         if server_config.getboolean("ssl"):

@@ -205,6 +205,12 @@ def test_streamFile(project, async_run, compute):
     mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/stream/test/titi".format(project.id), auth=None)
 
 
+def test_close(compute, async_run):
+    assert compute.connected is True
+    async_run(compute.close())
+    assert compute.connected is False
+
+
 def test_update(compute, controller, async_run):
     compute._controller._notification = MagicMock()
     compute.name = "Test"
