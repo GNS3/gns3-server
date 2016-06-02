@@ -322,3 +322,11 @@ class Compute:
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         return (yield from self.http_query("DELETE", path, **kwargs))
+
+    @asyncio.coroutine
+    def forward(self, type, path):
+        """
+        Forward a call to the emulator on compute
+        """
+        res = yield from self.get("/{}/{}".format(type, path))
+        return res

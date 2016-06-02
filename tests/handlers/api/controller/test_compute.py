@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from tests.utils import asyncio_patch
+
 
 def test_compute_create_without_id(http_controller, controller):
 
@@ -54,7 +56,6 @@ def test_compute_create_with_id(http_controller, controller):
 
     assert len(controller.computes) == 1
     assert controller.computes["my_compute_id"].host == "example.com"
-
 
 
 def test_compute_get(http_controller, controller):
@@ -152,3 +153,41 @@ def test_compute_delete(http_controller, controller):
 
     response = http_controller.get("/computes")
     assert len(response.json) == 0
+
+
+def test_compute_list_images(http_controller, controller):
+
+    params = {
+        "compute_id": "my_compute",
+        "protocol": "http",
+        "host": "example.com",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params)
+    assert response.status == 201
+
+    with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
+        response = http_controller.get("/computes/my_compute/qemu/images")
+        assert response.json == []
+        mock.assert_called_with("qemu", "images")
+
+
+def test_compute_list_vms(http_controller, controller):
+
+    params = {
+        "compute_id": "my_compute",
+        "protocol": "http",
+        "host": "example.com",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params)
+    assert response.status == 201
+
+    with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
+        response = http_controller.get("/computes/my_compute/virtualbox/vms")
+        assert response.json == []
+        mock.assert_called_with("virtualbox", "vms")

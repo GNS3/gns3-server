@@ -221,3 +221,11 @@ def test_update(compute, controller, async_run):
     assert compute.host == "example.org"
     controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
     assert compute.connected is False
+
+
+def test_forward(compute, async_run):
+    response = MagicMock()
+    response.status = 200
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        async_run(compute.forward("qemu", "images"))
+        mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'})

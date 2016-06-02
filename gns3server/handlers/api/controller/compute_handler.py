@@ -78,6 +78,38 @@ class ComputeHandler:
         response.json(compute)
 
     @Route.get(
+        r"/computes/{compute_id:.+}/{emulator}/images",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "OK",
+            404: "Instance doesn't exist"
+        },
+        description="Get the list of images available on remote compute")
+    def list_images(request, response):
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+        images = yield from compute.forward(request.match_info["emulator"], "images")
+        response.json(images)
+
+    @Route.get(
+        r"/computes/{compute_id:.+}/{emulator}/vms",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "OK",
+            404: "Instance doesn't exist"
+        },
+        description="Get the list of vms available on remote compute for VMware an Virtualbox")
+    def list_vms(request, response):
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+        images = yield from compute.forward(request.match_info["emulator"], "vms")
+        response.json(images)
+
+    @Route.get(
         r"/computes/{compute_id:.+}",
         description="Get a compute server information",
         status_codes={
@@ -93,7 +125,6 @@ class ComputeHandler:
     @Route.delete(
         r"/computes/{compute_id:.+}",
         parameters={
-            "project_id": "Project UUID",
             "compute_id": "Compute UUID"
         },
         status_codes={
