@@ -26,8 +26,12 @@ log = logging.getLogger(__name__)
 
 
 class Link:
+    """
+    Base class for links.
+    """
 
     def __init__(self, project):
+
         self._id = str(uuid.uuid4())
         self._nodes = []
         self._project = project
@@ -45,6 +49,7 @@ class Link:
             "adapter_number": adapter_number,
             "port_number": port_number
         })
+
         if len(self._nodes) == 2:
             self._project.controller.notification.emit("link.created", self.__json__())
 
@@ -53,6 +58,7 @@ class Link:
         """
         Create the link
         """
+
         raise NotImplementedError
 
     @asyncio.coroutine
@@ -60,6 +66,7 @@ class Link:
         """
         Delete the link
         """
+
         raise NotImplementedError
 
     @asyncio.coroutine
@@ -69,6 +76,7 @@ class Link:
 
         :returns: Capture object
         """
+
         self._capturing = True
         self._capture_file_name = capture_file_name
         self._streaming_pcap = asyncio.async(self._start_streaming_pcap())
@@ -79,6 +87,7 @@ class Link:
         """
         Dump a pcap file on disk
         """
+
         stream = yield from self.read_pcap_from_source()
         with open(self.capture_file_path, "wb+") as f:
             while self._capturing:
@@ -96,20 +105,23 @@ class Link:
         """
         Stop capture on the link
         """
+
         self._capturing = False
         self._project.controller.notification.emit("link.updated", self.__json__())
 
     @asyncio.coroutine
-    def read_pcap_from_source(self):
+    def _read_pcap_from_source(self):
         """
         Return a FileStream of the Pcap from the compute server
         """
+
         raise NotImplementedError
 
     def default_capture_file_name(self):
         """
         :returns: File name for a capture on this link
         """
+
         capture_file_name = "{}_{}-{}_to_{}_{}-{}".format(self._nodes[0]["node"].name,
                                                           self._nodes[0]["adapter_number"],
                                                           self._nodes[0]["port_number"],
@@ -131,6 +143,7 @@ class Link:
         """
         Get the path of the capture
         """
+
         if self._capture_file_name:
             return os.path.join(self._project.captures_directory, self._capture_file_name)
         else:
@@ -145,7 +158,8 @@ class Link:
                 "port_number": side["port_number"]
             })
         return {
-            "nodes": res, "link_id": self._id,
+            "nodes": res,
+            "link_id": self._id,
             "project_id": self._project.id,
             "capturing": self._capturing,
             "capture_file_name": self._capture_file_name,

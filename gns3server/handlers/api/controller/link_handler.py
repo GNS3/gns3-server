@@ -153,7 +153,6 @@ class LinkHandler:
             raise aiohttp.web.HTTPNotFound(text="pcap file not found")
 
         try:
-            print(link.capture_file_path)
             with open(link.capture_file_path, "rb") as f:
 
                 response.content_type = "application/vnd.tcpdump.pcap"
