@@ -1,12 +1,11 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/96b132df-9ce7-46ef-b8fb-406a3d867c38'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/511d4e03-9127-4185-8d26-113b892e3b4d'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/96b132df-9ce7-46ef-b8fb-406a3d867c38 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/511d4e03-9127-4185-8d26-113b892e3b4d HTTP/1.1
 
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 645
+CONTENT-LENGTH: 702
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -15,12 +14,14 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 {
     "command_line": "",
     "console": 5000,
+    "console_type": "telnet",
     "ethernet_adapters": 2,
     "iourc_path": null,
     "l1_keepalives": false,
     "md5sum": null,
     "name": "PC TEST 1",
-    "node_id": "96b132df-9ce7-46ef-b8fb-406a3d867c38",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz4_fxv1q/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/511d4e03-9127-4185-8d26-113b892e3b4d",
+    "node_id": "511d4e03-9127-4185-8d26-113b892e3b4d",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,
@@ -28,6 +29,6 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "ram": 256,
     "serial_adapters": 2,
     "startup_config": null,
-    "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0vou54g1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/96b132df-9ce7-46ef-b8fb-406a3d867c38"
+    "status": "stopped",
+    "use_default_iou_values": true
 }

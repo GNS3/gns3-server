@@ -5,7 +5,6 @@ GET /v2/compute/qemu/capabilities HTTP/1.1
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 39
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT

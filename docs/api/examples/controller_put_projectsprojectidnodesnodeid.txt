@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/265f0fef-ac97-4c5a-b7a5-a3474d9fcfd1/nodes/ff8a4b59-a8f9-4a79-8a56-d2f8ca5e5598' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/4cc0bd3e-27e6-4e17-9e9e-b996a48aa8bb/nodes/e76db071-66d8-4983-81c4-68367e5b3735' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-PUT /v2/projects/265f0fef-ac97-4c5a-b7a5-a3474d9fcfd1/nodes/ff8a4b59-a8f9-4a79-8a56-d2f8ca5e5598 HTTP/1.1
+PUT /v2/projects/4cc0bd3e-27e6-4e17-9e9e-b996a48aa8bb/nodes/e76db071-66d8-4983-81c4-68367e5b3735 HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -11,23 +11,26 @@ PUT /v2/projects/265f0fef-ac97-4c5a-b7a5-a3474d9fcfd1/nodes/ff8a4b59-a8f9-4a79-8
 }
 
 
-HTTP/1.1 201
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 309
+HTTP/1.1 200
+CONTENT-LENGTH: 419
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}
 
 {
+    "command_line": null,
     "compute_id": "example.com",
     "console": 2048,
-    "console_type": "telnet",
+    "console_host": "example.org",
+    "console_type": null,
     "name": "test",
-    "node_id": "ff8a4b59-a8f9-4a79-8a56-d2f8ca5e5598",
+    "node_directory": null,
+    "node_id": "e76db071-66d8-4983-81c4-68367e5b3735",
     "node_type": "vpcs",
-    "project_id": "265f0fef-ac97-4c5a-b7a5-a3474d9fcfd1",
+    "project_id": "4cc0bd3e-27e6-4e17-9e9e-b996a48aa8bb",
     "properties": {
         "startup_script": "echo test"
-    }
+    },
+    "status": "stopped"
 }

@@ -9,8 +9,7 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes 
 
 
 HTTP/1.1 201
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 411
+CONTENT-LENGTH: 438
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -24,10 +23,11 @@ X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes
     "enable_remote_console": false,
     "headless": false,
     "name": "VM1",
-    "node_id": "a6a4538d-cd54-45f5-a68a-c146eaed264b",
+    "node_directory": null,
+    "node_id": "48d2bb02-9048-497c-8432-a4ff7679e7d7",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
+    "status": "stopped",
     "use_any_adapter": false,
-    "vm_directory": null,
     "vmname": "VM1"
 }

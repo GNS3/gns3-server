@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2800118d-916d-46b6-b4ef-148514ccc000' -d '{"console": 5001, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/9a0f4afe-6c25-4613-87d8-3b0cc4db4fc9' -d '{"console": 5001, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2800118d-916d-46b6-b4ef-148514ccc000 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/9a0f4afe-6c25-4613-87d8-3b0cc4db4fc9 HTTP/1.1
 {
     "console": 5001,
     "ethernet_adapters": 4,
@@ -16,8 +16,7 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2800118d
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 720
+CONTENT-LENGTH: 777
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -26,12 +25,14 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 {
     "command_line": "",
     "console": 5001,
+    "console_type": "telnet",
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpzi3b0o9q/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmrvyb0q5/iourc",
     "l1_keepalives": true,
     "md5sum": null,
     "name": "test",
-    "node_id": "2800118d-916d-46b6-b4ef-148514ccc000",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz4_fxv1q/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/9a0f4afe-6c25-4613-87d8-3b0cc4db4fc9",
+    "node_id": "9a0f4afe-6c25-4613-87d8-3b0cc4db4fc9",
     "nvram": 2048,
     "path": "iou.bin",
     "private_config": null,
@@ -39,6 +40,6 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "ram": 512,
     "serial_adapters": 0,
     "startup_config": "startup-config.cfg",
-    "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0vou54g1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/2800118d-916d-46b6-b4ef-148514ccc000"
+    "status": "stopped",
+    "use_default_iou_values": true
 }

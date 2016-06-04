@@ -9,12 +9,12 @@ Close a project
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************
 - **404**: The project doesn't exist
-- **204**: The project has been closed
+- **204**: Project closed
 
 Sample session
 ***************

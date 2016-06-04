@@ -9,7 +9,7 @@ Get project information
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -25,7 +25,6 @@ Output
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project name</td>                     </tr>
     <tr><td>path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project directory</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
-    <tr><td>temporary</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>If project is a temporary project</td>                     </tr>
     </table>
 
 Sample session
@@ -41,12 +40,12 @@ Update a project
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **200**: The project has been updated
-- **403**: You are not allowed to modify this property
+- **200**: Project updated
+- **403**: Forbidden to update this project
 - **404**: The project doesn't exist
 
 Input
@@ -57,7 +56,6 @@ Input
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project name</td>                     </tr>
     <tr><td>path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path of the project on the server (work only with --local)</td>                     </tr>
-    <tr><td>temporary</td>                    <td> </td>                     <td>boolean</td>                     <td>If project is a temporary project</td>                     </tr>
     </table>
 
 Output
@@ -69,7 +67,6 @@ Output
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project name</td>                     </tr>
     <tr><td>path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project directory</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
-    <tr><td>temporary</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>If project is a temporary project</td>                     </tr>
     </table>
 
 Sample session
@@ -85,7 +82,7 @@ Delete a project from disk
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************

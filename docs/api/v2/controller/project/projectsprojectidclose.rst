@@ -9,7 +9,7 @@ Close a project
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************

@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/db36a6de-debc-4edd-9fcb-639b2a1ca05b' -d '{"console": 5010, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/299b6f05-f4e9-49fb-bc1f-c6d5b3e0d390' -d '{"console": 5010, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/db36a6de-debc-4edd-9fcb-639b2a1ca05b HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/299b6f05-f4e9-49fb-bc1f-c6d5b3e0d390 HTTP/1.1
 {
     "console": 5010,
     "name": "test"
@@ -8,8 +8,7 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/d
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 415
+CONTENT-LENGTH: 442
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -23,10 +22,11 @@ X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
     "enable_remote_console": false,
     "headless": false,
     "name": "test",
-    "node_id": "db36a6de-debc-4edd-9fcb-639b2a1ca05b",
+    "node_directory": null,
+    "node_id": "299b6f05-f4e9-49fb-bc1f-c6d5b3e0d390",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
+    "status": "stopped",
     "use_any_adapter": false,
-    "vm_directory": null,
     "vmname": "VMTEST"
 }

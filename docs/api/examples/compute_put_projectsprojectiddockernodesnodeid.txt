@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e' -d '{"console": 5002, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/37b7b7c7-858b-49ee-a49b-a8def1cf9361' -d '{"console": 5002, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/37b7b7c7-858b-49ee-a49b-a8def1cf9361 HTTP/1.1
 {
     "console": 5002,
     "environment": "GNS3=1\nGNS4=0",
@@ -10,8 +10,7 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/10e0e
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 631
+CONTENT-LENGTH: 665
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -27,10 +26,11 @@ X-ROUTE: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
     "console_type": "telnet",
     "container_id": "8bd8153ea8f5",
     "environment": "GNS3=1\nGNS4=0",
-    "image": "nginx",
+    "image": "nginx:latest",
     "name": "test",
-    "node_id": "10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz4_fxv1q/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/37b7b7c7-858b-49ee-a49b-a8def1cf9361",
+    "node_id": "37b7b7c7-858b-49ee-a49b-a8def1cf9361",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0vou54g1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/10e0eea7-ee6b-4e4f-8bfb-653b70b2fe6e"
+    "status": "stopped"
 }

@@ -5,11 +5,11 @@
 
 GET /v2/projects/**{project_id}**/notifications/ws
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Receive notifications about the projects via Websocket
+Receive notifications about projects from a Websocket
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************

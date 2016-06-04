@@ -1,14 +1,13 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/9d260bc6-62d0-4fcd-bd1b-74a2afa0eff0/start' -d '{"iourc_content": "test"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/14dc1ccf-0e35-4acf-8a84-2669bf4f6b89/start' -d '{"iourc_content": "test"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/9d260bc6-62d0-4fcd-bd1b-74a2afa0eff0/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/14dc1ccf-0e35-4acf-8a84-2669bf4f6b89/start HTTP/1.1
 {
     "iourc_content": "test"
 }
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 709
+CONTENT-LENGTH: 766
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -17,12 +16,14 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/start
 {
     "command_line": "",
     "console": 5000,
+    "console_type": "telnet",
     "ethernet_adapters": 2,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp68swteb4/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpulz6zjj7/iourc",
     "l1_keepalives": false,
     "md5sum": null,
     "name": "PC TEST 1",
-    "node_id": "9d260bc6-62d0-4fcd-bd1b-74a2afa0eff0",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz4_fxv1q/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/14dc1ccf-0e35-4acf-8a84-2669bf4f6b89",
+    "node_id": "14dc1ccf-0e35-4acf-8a84-2669bf4f6b89",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,
@@ -30,6 +31,6 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/start
     "ram": 256,
     "serial_adapters": 2,
     "startup_config": null,
-    "use_default_iou_values": true,
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0vou54g1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/9d260bc6-62d0-4fcd-bd1b-74a2afa0eff0"
+    "status": "stopped",
+    "use_default_iou_values": true
 }

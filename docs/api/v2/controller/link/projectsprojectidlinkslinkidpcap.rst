@@ -5,16 +5,16 @@
 
 GET /v2/projects/**{project_id}**/links/**{link_id}**/pcap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get the pcap from the capture
+Steam the pcap capture file
 
 Parameters
 **********
-- **link_id**: UUID of the link
-- **project_id**: UUID for the project
+- **link_id**: Link UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **200**: Return the file
+- **200**: File returned
 - **403**: Permission denied
 - **404**: The file doesn't exist
 

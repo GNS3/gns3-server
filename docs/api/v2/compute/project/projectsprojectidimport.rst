@@ -9,12 +9,12 @@ Import a project from a portable archive
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************
 - **200**: Project imported
-- **403**: You are not allowed to modify this property
+- **403**: Forbidden to import project
 
 Output
 *******
@@ -25,6 +25,5 @@ Output
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project name</td>                     </tr>
     <tr><td>path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project directory</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
-    <tr><td>temporary</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>If project is a temporary project</td>                     </tr>
     </table>
 

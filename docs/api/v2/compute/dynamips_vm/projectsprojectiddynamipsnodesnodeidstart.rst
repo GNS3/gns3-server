@@ -9,8 +9,8 @@ Start a Dynamips VM instance
 
 Parameters
 **********
-- **node_id**: UUID for the instance
-- **project_id**: UUID for the project
+- **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

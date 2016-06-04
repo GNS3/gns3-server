@@ -5,30 +5,30 @@
 
 GET /v2/compute/projects/**{project_id}**/files/**{path:.+}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get a file of a project
+Get a file from a project
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **200**: Return the file
+- **200**: File returned
 - **403**: Permission denied
 - **404**: The file doesn't exist
 
 
 POST /v2/compute/projects/**{project_id}**/files/**{path:.+}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get a file of a project
+Write a file to a project
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **200**: Return the file
+- **200**: File returned
 - **403**: Permission denied
 - **404**: The path doesn't exist
 

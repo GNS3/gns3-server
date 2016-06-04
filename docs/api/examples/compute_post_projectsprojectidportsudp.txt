@@ -5,7 +5,6 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/ports/udp HTTP/1.
 
 
 HTTP/1.1 201
-ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 25
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT

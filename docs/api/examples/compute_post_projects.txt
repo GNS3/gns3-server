@@ -8,8 +8,7 @@ POST /v2/compute/projects HTTP/1.1
 
 
 HTTP/1.1 201
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 104
+CONTENT-LENGTH: 80
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -17,6 +16,5 @@ X-ROUTE: /v2/compute/projects
 
 {
     "name": "test",
-    "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
-    "temporary": false
+    "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"
 }

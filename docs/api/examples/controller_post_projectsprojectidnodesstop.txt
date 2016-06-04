@@ -1,0 +1,12 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/c2480e16-b293-47b7-aba0-6ed75b9a3fbc/nodes/stop' -d '{}'
+
+POST /v2/projects/c2480e16-b293-47b7-aba0-6ed75b9a3fbc/nodes/stop HTTP/1.1
+{}
+
+
+HTTP/1.1 204
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/nodes/stop
+

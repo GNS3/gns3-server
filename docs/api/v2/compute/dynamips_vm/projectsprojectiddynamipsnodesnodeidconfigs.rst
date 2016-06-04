@@ -7,6 +7,11 @@ GET /v2/compute/projects/**{project_id}**/dynamips/nodes/**{node_id}**/configs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Retrieve the startup and private configs content
 
+Parameters
+**********
+- **node_id**: Node UUID
+- **project_id**: Project UUID
+
 Response status codes
 **********************
 - **200**: Configs retrieved

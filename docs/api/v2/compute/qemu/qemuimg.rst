@@ -25,7 +25,7 @@ Input
     <tr><td>preallocation</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: off, metadata, falloc, full</td>                     </tr>
     <tr><td>qemu_img</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Path to the qemu-img binary</td>                     </tr>
     <tr><td>refcount_bits</td>                    <td> </td>                     <td>integer</td>                     <td></td>                     </tr>
-    <tr><td>size</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Image size in M</td>                     </tr>
+    <tr><td>size</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Image size in Megabytes</td>                     </tr>
     <tr><td>static</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: on, off</td>                     </tr>
     <tr><td>subformat</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: dynamic, fixed, streamOptimized, twoGbMaxExtentSparse, twoGbMaxExtentFlat, monolithicSparse, monolithicFlat</td>                     </tr>
     <tr><td>zeroed_grain</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: on, off</td>                     </tr>

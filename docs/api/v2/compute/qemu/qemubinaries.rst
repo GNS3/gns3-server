@@ -19,7 +19,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>archs</td>                    <td> </td>                     <td>array</td>                     <td>Architectures to filter binaries by</td>                     </tr>
+    <tr><td>archs</td>                    <td> </td>                     <td>array</td>                     <td>Architectures to filter binaries with</td>                     </tr>
     </table>
 
 Sample session

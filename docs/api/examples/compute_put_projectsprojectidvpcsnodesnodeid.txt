@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/c332cfd9-49c6-4e9c-a868-347cde6c5a08' -d '{"console": 5011, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/e1add1ee-b455-4afb-9d08-c75dfe1b4202' -d '{"console": 5011, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/c332cfd9-49c6-4e9c-a868-347cde6c5a08 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/e1add1ee-b455-4afb-9d08-c75dfe1b4202 HTTP/1.1
 {
     "console": 5011,
     "name": "test",
@@ -9,8 +9,7 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/c332cfd
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 503
+CONTENT-LENGTH: 505
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -21,10 +20,10 @@ X-ROUTE: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}
     "console": 5011,
     "console_type": "telnet",
     "name": "test",
-    "node_id": "c332cfd9-49c6-4e9c-a868-347cde6c5a08",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9l92lnh7/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/e1add1ee-b455-4afb-9d08-c75dfe1b4202",
+    "node_id": "e1add1ee-b455-4afb-9d08-c75dfe1b4202",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",
-    "status": "stopped",
-    "vm_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpzf6i_o35/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/c332cfd9-49c6-4e9c-a868-347cde6c5a08"
+    "status": "stopped"
 }

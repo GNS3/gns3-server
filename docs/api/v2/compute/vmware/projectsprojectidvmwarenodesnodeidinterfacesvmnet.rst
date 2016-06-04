@@ -9,8 +9,8 @@ Allocate a VMware VMnet interface on the server
 
 Parameters
 **********
-- **node_id**: UUID for the instance
-- **project_id**: The UUID of the project
+- **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

@@ -5,14 +5,14 @@
 
 POST /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/start_capture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Start a packet capture on a Docker VM instance
+Start a packet capture on a Docker container instance
 
 Parameters
 **********
 - **adapter_number**: Adapter to start a packet capture
+- **node_id**: Node UUID
 - **port_number**: Port on the adapter
-- **node_id**: UUID for the instance
-- **project_id**: UUID for the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************

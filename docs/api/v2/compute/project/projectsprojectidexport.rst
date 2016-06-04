@@ -9,10 +9,10 @@ Export a project as a portable archive
 
 Parameters
 **********
-- **project_id**: The UUID of the project
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **200**: Return the file
+- **200**: File returned
 - **404**: The project doesn't exist
 

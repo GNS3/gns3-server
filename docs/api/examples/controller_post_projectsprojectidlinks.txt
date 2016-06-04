@@ -1,16 +1,16 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/4eb295b3-8469-4774-b9b3-3da967577540/links' -d '{"nodes": [{"adapter_number": 0, "node_id": "45db581c-3a36-4d8b-960b-1a1884203e3a", "port_number": 3}, {"adapter_number": 2, "node_id": "b81f027a-aac0-4afa-8b30-73440aa5c8f1", "port_number": 4}]}'
+curl -i -X POST 'http://localhost:3080/v2/projects/fa91f78d-63fc-4460-bcbd-219f9bf240b2/links' -d '{"nodes": [{"adapter_number": 0, "node_id": "17829f3f-f334-4051-910e-ffc5aa661c02", "port_number": 3}, {"adapter_number": 2, "node_id": "df5b3f33-a535-4f5b-b06a-ccc219e1f0d3", "port_number": 4}]}'
 
-POST /v2/projects/4eb295b3-8469-4774-b9b3-3da967577540/links HTTP/1.1
+POST /v2/projects/fa91f78d-63fc-4460-bcbd-219f9bf240b2/links HTTP/1.1
 {
     "nodes": [
         {
             "adapter_number": 0,
-            "node_id": "45db581c-3a36-4d8b-960b-1a1884203e3a",
+            "node_id": "17829f3f-f334-4051-910e-ffc5aa661c02",
             "port_number": 3
         },
         {
             "adapter_number": 2,
-            "node_id": "b81f027a-aac0-4afa-8b30-73440aa5c8f1",
+            "node_id": "df5b3f33-a535-4f5b-b06a-ccc219e1f0d3",
             "port_number": 4
         }
     ]
@@ -18,8 +18,7 @@ POST /v2/projects/4eb295b3-8469-4774-b9b3-3da967577540/links HTTP/1.1
 
 
 HTTP/1.1 201
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 456
+CONTENT-LENGTH: 514
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -29,17 +28,18 @@ X-ROUTE: /v2/projects/{project_id}/links
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
-    "link_id": "f52acf46-42ed-4a90-a780-2aa6a69a3886",
+    "link_id": "f7c8392b-d888-4824-8099-6f80fe40cef7",
     "nodes": [
         {
             "adapter_number": 0,
-            "node_id": "45db581c-3a36-4d8b-960b-1a1884203e3a",
+            "node_id": "17829f3f-f334-4051-910e-ffc5aa661c02",
             "port_number": 3
         },
         {
             "adapter_number": 2,
-            "node_id": "b81f027a-aac0-4afa-8b30-73440aa5c8f1",
+            "node_id": "df5b3f33-a535-4f5b-b06a-ccc219e1f0d3",
             "port_number": 4
         }
-    ]
+    ],
+    "project_id": "fa91f78d-63fc-4460-bcbd-219f9bf240b2"
 }

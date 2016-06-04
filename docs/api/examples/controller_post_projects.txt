@@ -8,8 +8,7 @@ POST /v2/projects HTTP/1.1
 
 
 HTTP/1.1 201
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 226
+CONTENT-LENGTH: 202
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -17,7 +16,6 @@ X-ROUTE: /v2/projects
 
 {
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpl74b705h/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
-    "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
-    "temporary": false
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp02l33jkt/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"
 }

@@ -5,7 +5,7 @@
 
 GET /v2/compute/notifications/ws
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Send notifications about what happend using websockets
+Send notifications using Websockets
 
 Response status codes
 **********************

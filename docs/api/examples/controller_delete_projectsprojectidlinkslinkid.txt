@@ -1,13 +1,11 @@
-curl -i -X DELETE 'http://localhost:3080/v2/projects/0f015b6f-23a9-4665-8be0-ce1844b26619/links/a34d2f6b-76d7-4ccd-9559-1d349a2bf2f9'
+curl -i -X DELETE 'http://localhost:3080/v2/projects/d442e932-0513-4a89-a2e1-dafa14f7b977/links/ae7ecf27-7018-41fc-9b4a-83785257a36e'
 
-DELETE /v2/projects/0f015b6f-23a9-4665-8be0-ce1844b26619/links/a34d2f6b-76d7-4ccd-9559-1d349a2bf2f9 HTTP/1.1
+DELETE /v2/projects/d442e932-0513-4a89-a2e1-dafa14f7b977/links/ae7ecf27-7018-41fc-9b4a-83785257a36e HTTP/1.1
 
 
 
 HTTP/1.1 204
-ACCESS-CONTROL-ALLOW-ORIGIN: *
-CONTENT-LENGTH: 160
-CONTENT-TYPE: application/json
+CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/links/{link_id}

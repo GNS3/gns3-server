@@ -1,11 +1,10 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/04746a91-7738-491a-829d-6fa0f933f6bb/configs'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/881f5049-8a61-47f6-81b7-aa767592a942/configs'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/04746a91-7738-491a-829d-6fa0f933f6bb/configs HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/881f5049-8a61-47f6-81b7-aa767592a942/configs HTTP/1.1
 
 
 
 HTTP/1.1 200
-ACCESS-CONTROL-ALLOW-ORIGIN: *
 CONTENT-LENGTH: 40
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT

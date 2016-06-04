@@ -1,11 +1,10 @@
-curl -i -X DELETE 'http://localhost:3080/v2/projects/fe508bfa-60cf-446b-99c9-a4a7957f7000/nodes/ab33630f-bf76-46e4-bf72-a103bc6fcb91'
+curl -i -X DELETE 'http://localhost:3080/v2/projects/6442a383-f28e-41bb-a59e-260537f3385e/nodes/0da6c10b-1302-4d73-b60c-d8419586587f'
 
-DELETE /v2/projects/fe508bfa-60cf-446b-99c9-a4a7957f7000/nodes/ab33630f-bf76-46e4-bf72-a103bc6fcb91 HTTP/1.1
+DELETE /v2/projects/6442a383-f28e-41bb-a59e-260537f3385e/nodes/0da6c10b-1302-4d73-b60c-d8419586587f HTTP/1.1
 
 
 
-HTTP/1.1 201
-ACCESS-CONTROL-ALLOW-ORIGIN: *
+HTTP/1.1 204
 CONTENT-LENGTH: 0
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1

@@ -17,8 +17,8 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Either this is a local server</td>                     </tr>
-    <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number human readable</td>                     </tr>
+    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether this is a local server or not</td>                     </tr>
+    <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number</td>                     </tr>
     </table>
 
 Sample session
@@ -43,8 +43,8 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Either this is a local server</td>                     </tr>
-    <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number human readable</td>                     </tr>
+    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether this is a local server or not</td>                     </tr>
+    <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number</td>                     </tr>
     </table>
 
 Output
@@ -53,8 +53,8 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Either this is a local server</td>                     </tr>
-    <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number human readable</td>                     </tr>
+    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether this is a local server or not</td>                     </tr>
+    <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number</td>                     </tr>
     </table>
 
 Sample session
