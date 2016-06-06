@@ -171,7 +171,7 @@ def test_compute_list_images(http_controller, controller):
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
         response = http_controller.get("/computes/my_compute/qemu/images")
         assert response.json == []
-        mock.assert_called_with("qemu", "images")
+        mock.assert_called_with("GET", "qemu", "images")
 
 
 def test_compute_list_vms(http_controller, controller):
@@ -190,4 +190,23 @@ def test_compute_list_vms(http_controller, controller):
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
         response = http_controller.get("/computes/my_compute/virtualbox/vms")
         assert response.json == []
-        mock.assert_called_with("virtualbox", "vms")
+        mock.assert_called_with("GET", "virtualbox", "vms")
+
+
+def test_compute_create_img(http_controller, controller):
+
+    params = {
+        "compute_id": "my_compute",
+        "protocol": "http",
+        "host": "example.com",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params)
+    assert response.status == 201
+
+    params = {"path": "/test"}
+    with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
+        response = http_controller.post("/computes/my_compute/qemu/img", params)
+        mock.assert_called_with("POST", "qemu", "img", data={"path": "/test"})

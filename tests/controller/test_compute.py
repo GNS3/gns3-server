@@ -223,9 +223,17 @@ def test_update(compute, controller, async_run):
     assert compute.connected is False
 
 
-def test_forward(compute, async_run):
+def test_forward_get(compute, async_run):
     response = MagicMock()
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        async_run(compute.forward("qemu", "images"))
+        async_run(compute.forward("GET", "qemu", "images"))
         mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'})
+
+
+def test_forward_post(compute, async_run):
+    response = MagicMock()
+    response.status = 200
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        async_run(compute.forward("POST", "qemu", "img", data={"id": 42}))
+        mock.assert_called_with("POST", "https://example.com:84/v2/compute/qemu/img", auth=None, data='{"id": 42}', headers={'content-type': 'application/json'})

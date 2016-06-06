@@ -87,10 +87,26 @@ class ComputeHandler:
             404: "Instance doesn't exist"
         },
         description="Forward call specific to compute node. Read the full compute API for available actions")
-    def forward(request, response):
+    def get_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        images = yield from compute.forward(request.match_info["emulator"], request.match_info["action"])
+        images = yield from compute.forward("GET", request.match_info["emulator"], request.match_info["action"])
+        response.json(images)
+
+    @Route.post(
+        r"/computes/{compute_id}/{emulator}/{action}",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "OK",
+            404: "Instance doesn't exist"
+        },
+        description="Forward call specific to compute node. Read the full compute API for available actions")
+    def post_forward(request, response):
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+        images = yield from compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=dict(request.json))
         response.json(images)
 
     @Route.get(
