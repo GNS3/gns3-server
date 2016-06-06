@@ -102,6 +102,7 @@ class ComputeHandler:
             200: "OK",
             404: "Instance doesn't exist"
         },
+        raw=True,
         description="Forward call specific to compute node. Read the full compute API for available actions")
     def post_forward(request, response):
         controller = Controller.instance()
