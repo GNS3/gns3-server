@@ -78,7 +78,7 @@ class ComputeHandler:
         response.json(compute)
 
     @Route.get(
-        r"/computes/{compute_id}/{emulator}/{action}",
+        r"/computes/{compute_id}/{emulator}/{action:.+}",
         parameters={
             "compute_id": "Compute UUID"
         },
