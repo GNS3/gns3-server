@@ -95,7 +95,7 @@ def test_create(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -107,7 +107,7 @@ def test_create(loop, project, manager):
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                ],
+                        ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -133,7 +133,7 @@ def test_create_with_tag(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -145,7 +145,7 @@ def test_create_with_tag(loop, project, manager):
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                ],
+                        ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -174,7 +174,7 @@ def test_create_vnc(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
+                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
                             '/tmp/.X11-unix/:/tmp/.X11-unix/'
                         ],
                         "Privileged": True
@@ -188,7 +188,7 @@ def test_create_vnc(loop, project, manager):
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network",
                     "DISPLAY=:42"
-                ],
+                        ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -217,7 +217,7 @@ def test_create_start_cmd(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -231,7 +231,7 @@ def test_create_start_cmd(loop, project, manager):
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                ]
+                        ]
             })
         assert vm._cid == "e90e34656806"
 
@@ -256,7 +256,7 @@ def test_create_environment(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -265,7 +265,7 @@ def test_create_environment(loop, project, manager):
                     "GNS3_VOLUMES=/etc/network",
                     "YES=1",
                     "NO=0"
-                        ],
+                    ],
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
@@ -310,7 +310,7 @@ def test_create_image_not_available(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -322,7 +322,7 @@ def test_create_image_not_available(loop, project, manager):
                 "Env": [
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                ],
+                        ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -530,7 +530,7 @@ def test_update(loop, vm):
             "CapAdd": ["ALL"],
             "Binds": [
                 "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
         },
@@ -598,7 +598,7 @@ def test_update_running(loop, vm):
             "CapAdd": ["ALL"],
             "Binds": [
                 "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
         },
@@ -875,8 +875,8 @@ def test_mount_binds(vm, tmpdir):
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
         "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-        "{}:/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
-        "{}:{}".format(dst, "/test/experimental")
+        "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
+        "{}:/gns3volumes{}".format(dst, "/test/experimental")
     ]
 
     assert vm._volumes == ["/etc/network", "/test/experimental"]
