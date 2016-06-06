@@ -28,9 +28,18 @@ if [ ! -d /tmp/gns3/bin ]; then
 	/gns3/bin/busybox --install -s /tmp/gns3/bin
 fi
 
-#  Restore file permission
+#  Restore file permission and mount volumes
 for i in $(echo "$GNS3_VOLUMES" | tr ":" "\n")
 do
+    # Copy original files if destination is empty (first start)
+    if ! [ "$(ls -A /gns3volumes$i)" ]; then
+        for file in $(ls -A "$i")
+        do
+            cp -a "$i/$file" "/gns3volumes$i/$file"
+        done
+    fi
+
+    mount --bind "/gns3volumes$i" "$i"
     if [ -f "$i/.gns3_perms" ]
     then
         while IFS=: read PERMS OWNER GROUP FILE

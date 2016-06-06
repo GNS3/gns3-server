@@ -202,7 +202,7 @@ class DockerVM(BaseVM):
 
         # We mount our own etc/network
         network_config = self._create_network_config()
-        binds.append("{}:/etc/network:rw".format(network_config))
+        binds.append("{}:/gns3volumes/etc/network:rw".format(network_config))
 
         self._volumes = ["/etc/network"]
 
@@ -212,7 +212,7 @@ class DockerVM(BaseVM):
         for volume in volumes.keys():
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
-            binds.append("{}:{}".format(source, volume))
+            binds.append("{}:/gns3volumes{}".format(source, volume))
             self._volumes.append(volume)
 
         return binds
