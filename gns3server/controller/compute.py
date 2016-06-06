@@ -268,15 +268,22 @@ class Compute:
     def _run_http_query(self, method, path, data=None, timeout=10):
         with aiohttp.Timeout(timeout):
             url = self._getUrl(path)
-            headers = {'content-type': 'application/json'}
+            headers = {}
+            headers['content-type'] = 'application/json'
+            chunked = False
             if data == {}:
                 data = None
             elif data is not None:
                 if hasattr(data, '__json__'):
-                    data = data.__json__()
-                data = json.dumps(data)
+                    data = json.dumps(data.__json__())
+                # Stream the request
+                elif isinstance(data, aiohttp.streams.StreamReader):
+                    chunked = True
+                    headers['content-type'] = 'application/octet-stream'
+                else:
+                    data = json.dumps(data)
 
-            response = yield from self._session.request(method, url, headers=headers, data=data, auth=self._auth)
+            response = yield from self._session.request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
             body = yield from response.read()
             if body:
                 body = body.decode()
@@ -301,7 +308,7 @@ class Compute:
                     response.json = json.loads(body)
                 except ValueError:
                     raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
-            if response.json is None:
+            else:
                 response.json = {}
             return response
 

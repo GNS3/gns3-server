@@ -90,11 +90,11 @@ class ComputeHandler:
     def get_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        images = yield from compute.forward("GET", request.match_info["emulator"], request.match_info["action"])
-        response.json(images)
+        res = yield from compute.forward("GET", request.match_info["emulator"], request.match_info["action"])
+        response.json(res)
 
     @Route.post(
-        r"/computes/{compute_id}/{emulator}/{action}",
+        r"/computes/{compute_id}/{emulator}/{action:.+}",
         parameters={
             "compute_id": "Compute UUID"
         },
@@ -106,8 +106,8 @@ class ComputeHandler:
     def post_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        images = yield from compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=dict(request.json))
-        response.json(images)
+        res = yield from compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=request.content)
+        response.json(res)
 
     @Route.get(
         r"/computes/{compute_id}",

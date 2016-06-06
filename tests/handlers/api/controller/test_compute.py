@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import unittest
 from tests.utils import asyncio_patch
 
 
@@ -209,4 +210,4 @@ def test_compute_create_img(http_controller, controller):
     params = {"path": "/test"}
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
         response = http_controller.post("/computes/my_compute/qemu/img", params)
-        mock.assert_called_with("POST", "qemu", "img", data={"path": "/test"})
+        mock.assert_called_with("POST", "qemu", "img", data=unittest.mock.ANY)
