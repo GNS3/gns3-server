@@ -29,15 +29,10 @@ if [ ! -d /tmp/gns3/bin ]; then
 fi
 
 #  Restore file permission and mount volumes
-for i in $(echo "$GNS3_VOLUMES" | tr ":" "\n")
+echo "$GNS3_VOLUMES" | tr ":" "\n" | while read i
 do
     # Copy original files if destination is empty (first start)
-    if ! [ "$(ls -A /gns3volumes$i)" ]; then
-        for file in $(ls -A "$i")
-        do
-            cp -a "$i/$file" "/gns3volumes$i/$file"
-        done
-    fi
+    [ "$(ls -A "/gns3volumes$i")" ] || cp -a "$i/." "/gns3volumes$i"
 
     mount --bind "/gns3volumes$i" "$i"
     if [ -f "$i/.gns3_perms" ]
