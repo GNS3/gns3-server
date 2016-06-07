@@ -305,16 +305,24 @@ class Compute:
                 body = body.decode()
 
             if response.status >= 300:
+                # Try to decode the GNS3 error
+                try:
+                    msg = json.loads(body)["message"]
+                except (KeyError, json.decoder.JSONDecodeError):
+                    msg = body
+
                 if response.status == 400:
                     raise aiohttp.web.HTTPBadRequest(text="Bad request {} {}".format(url, body))
                 elif response.status == 401:
                     raise aiohttp.web.HTTPUnauthorized(text="Invalid authentication for compute {}".format(self.id))
                 elif response.status == 403:
-                    raise aiohttp.web.HTTPForbidden(text="Forbidden {} {}".format(url, body))
+                    raise aiohttp.web.HTTPForbidden(text=msg)
                 elif response.status == 404:
-                    raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(url))
+                    raise aiohttp.web.HTTPNotFound(text=msg)
                 elif response.status == 409:
-                    raise aiohttp.web.HTTPConflict(text="Conflict {} {}".format(url, body))
+                    raise aiohttp.web.HTTPConflict(text=msg)
+                elif response.status == 500:
+                    raise aiohttp.web.HTTPInternalServerError(text="Internal server error {}".format(url))
                 elif response.status == 503:
                     raise aiohttp.web.HTTPServiceUnavailable(text="Service unavailable {} {}".format(url, body))
                 else:
