@@ -34,6 +34,22 @@ class ComputeError(ControllerError):
     pass
 
 
+class Timeout(aiohttp.Timeout):
+    """
+    Could be removed with aiohttp 0.22 that support None timeout
+    """
+
+    def __enter__(self):
+        if self._timeout:
+            return super().__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._timeout:
+            return super().__exit__(exc_type, exc_val, exc_tb)
+        return self
+
+
 class Compute:
     """
     A GNS3 compute.
@@ -266,7 +282,7 @@ class Compute:
 
     @asyncio.coroutine
     def _run_http_query(self, method, path, data=None, timeout=10):
-        with aiohttp.Timeout(timeout):
+        with Timeout(timeout):
             url = self._getUrl(path)
             headers = {}
             headers['content-type'] = 'application/json'
@@ -335,5 +351,5 @@ class Compute:
         """
         Forward a call to the emulator on compute
         """
-        res = yield from self.http_query(method, "/{}/{}".format(type, path), data=data)
+        res = yield from self.http_query(method, "/{}/{}".format(type, path), data=data, timeout=None)
         return res.json
