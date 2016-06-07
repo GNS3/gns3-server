@@ -24,15 +24,20 @@ PATH=/gns3/bin:/tmp/gns3/bin
 
 # bootstrap busybox commands
 if [ ! -d /tmp/gns3/bin ]; then
-    busybox mkdir -p /tmp/gns3/bin
-    /gns3/bin/busybox --install -s /tmp/gns3/bin
+	busybox mkdir -p /tmp/gns3/bin
+	/gns3/bin/busybox --install -s /tmp/gns3/bin
 fi
 
 #  Restore file permission and mount volumes
-echo "$GNS3_VOLUMES" | tr ":" "\n" | while read i
+for i in $(echo "$GNS3_VOLUMES" | tr ":" "\n")
 do
     # Copy original files if destination is empty (first start)
-    [ "$(ls -A "/gns3volumes$i")" ] || cp -a "$i/." "/gns3volumes$i"
+    if ! [ "$(ls -A /gns3volumes$i)" ]; then
+        for file in $(ls -A "$i")
+        do
+            cp -a "$i/$file" "/gns3volumes$i/$file"
+        done
+    fi
 
     mount --bind "/gns3volumes$i" "$i"
     if [ -f "$i/.gns3_perms" ]
@@ -48,28 +53,28 @@ done
 
 # /etc/hosts
 [ -s /etc/hosts ] || cat > /etc/hosts << __EOF__
-127.0.1.1   $HOSTNAME
-127.0.0.1   localhost
-::1 localhost ip6-localhost ip6-loopback
-fe00::0 ip6-localnet
-ff00::0 ip6-mcastprefix
-ff02::1 ip6-allnodes
-ff02::2 ip6-allrouters
+127.0.1.1	$HOSTNAME
+127.0.0.1	localhost
+::1	localhost ip6-localhost ip6-loopback
+fe00::0	ip6-localnet
+ff00::0	ip6-mcastprefix
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
 __EOF__
 
 # configure loopback interface
 ip link set dev lo up
 
 # Wait for all eth available
-while true
+while true 
 do
     grep $GNS3_MAX_ETHERNET /proc/net/dev > /dev/null && break
     sleep 0.5
-done
+done  
 
 # activate eth interfaces
 sed -n 's/^ *\(eth[0-9]*\):.*/\1/p' < /proc/net/dev | while read dev; do
-    ip link set dev $dev up
+	ip link set dev $dev up
 done
 
 # configure network interfaces
