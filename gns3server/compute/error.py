@@ -39,3 +39,4 @@ class ImageMissingError(Exception):
 
     def __init__(self, image):
         super().__init__("The image {} is missing".format(image))
+        self.image = image

@@ -15,11 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import aiohttp
 import asyncio
 import copy
 import uuid
+import os
 
+
+from .compute import ComputeConflict
+from ..utils.images import images_directories
 
 class Node:
 
@@ -101,8 +105,19 @@ class Node:
         """
         data = self._node_data()
         data["node_id"] = self._id
-        response = yield from self._compute.post("/projects/{}/{}/nodes".format(self._project.id, self._node_type), data=data)
-        self.parse_node_response(response.json)
+        trial = 0
+        while trial != 6:
+            try:
+                response = yield from self._compute.post("/projects/{}/{}/nodes".format(self._project.id, self._node_type), data=data)
+            except ComputeConflict as e:
+                if  e.response.get("exception") == "ImageMissingError":
+                    res = yield from self._upload_missing_image(self._node_type, e.response["image"])
+                    if not res:
+                        raise e
+            else:
+                self.parse_node_response(response.json)
+                return True
+            trial += 1
 
     @asyncio.coroutine
     def update(self, name=None, console=None, console_type=None, properties={}):
@@ -235,6 +250,22 @@ class Node:
             return (yield from self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id)))
         else:
             return (yield from self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path)))
+
+    @asyncio.coroutine
+    def _upload_missing_image(self, type, img):
+        """
+        Search an image on local computer and upload it to remote compute
+        if the image exists
+        """
+        for directory in images_directories(type):
+            image = os.path.join(directory, img)
+            if os.path.exists(image):
+                self.project.controller.notification.emit("log.info", {"message": "Uploading missing image {}".format(img)})
+                with open(image, 'rb') as f:
+                    yield from self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
+                self.project.controller.notification.emit("log.info", {"message": "Upload finished for {}".format(img)})
+                return True
+        return False
 
     @asyncio.coroutine
     def dynamips_auto_idlepc(self):

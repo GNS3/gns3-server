@@ -16,8 +16,33 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from unittest.mock import patch
 
-from gns3server.utils.images import md5sum, remove_checksum
+
+from gns3server.utils import force_unix_path
+from gns3server.utils.images import md5sum, remove_checksum, images_directories
+
+
+def test_images_directories(tmpdir):
+    path1 = tmpdir / "images1" / "QEMU" / "test1.bin"
+    path1.write("1", ensure=True)
+    path1 = force_unix_path(str(path1))
+
+    path2 = tmpdir / "images2" / "test2.bin"
+    path2.write("1", ensure=True)
+    path2 = force_unix_path(str(path2))
+
+    with patch("gns3server.config.Config.get_section_config", return_value={
+            "images_path": str(tmpdir / "images1"),
+            "additional_images_path": "/tmp/null24564:{}".format(tmpdir / "images2"),
+            "local": False}):
+
+        # /tmp/null24564 is ignored because doesn't exists
+        res = images_directories("qemu")
+        assert res[0] == str(tmpdir / "images1" / "QEMU")
+        assert res[1] == str(tmpdir / "images2")
+        assert res[2] == str(tmpdir / "images1")
+        assert len(res) == 3
 
 
 def test_md5sum(tmpdir):

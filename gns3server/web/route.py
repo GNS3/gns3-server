@@ -197,11 +197,16 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409})
-                except (NodeError, UbridgeError, ImageMissingError) as e:
+                except (NodeError, UbridgeError) as e:
                     log.error("Node error detected: {type}".format(type=e.__class__.__name__), exc_info=1)
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409, "exception": e.__class__.__name__})
+                except (ImageMissingError) as e:
+                    log.error("Image missing error detected: {}".format(e.image))
+                    response = Response(request=request, route=route)
+                    response.set_status(409)
+                    response.json({"message": str(e), "status": 409, "image": e.image, "exception": e.__class__.__name__})
                 except asyncio.futures.CancelledError as e:
                     log.error("Request canceled")
                     response = Response(request=request, route=route)

@@ -23,7 +23,7 @@ import asyncio
 from unittest.mock import patch, MagicMock
 
 from gns3server.controller.project import Project
-from gns3server.controller.compute import Compute, ComputeError
+from gns3server.controller.compute import Compute, ComputeError, ComputeConflict
 from gns3server.version import __version__
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
@@ -139,9 +139,19 @@ def test_compute_httpQueryNotConnectedNonGNS3Server2(compute, async_run):
 def test_compute_httpQueryError(compute, async_run):
     response = MagicMock()
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        response.status = 409
+        response.status = 404
 
-        with pytest.raises(aiohttp.web.HTTPConflict):
+        with pytest.raises(aiohttp.web.HTTPNotFound):
+            async_run(compute.post("/projects", {"a": "b"}))
+
+
+def test_compute_httpQueryConflictError(compute, async_run):
+    response = MagicMock()
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        response.status = 409
+        response.read = AsyncioMagicMock(return_value=b'{"message": "Test"}')
+
+        with pytest.raises(ComputeConflict):
             async_run(compute.post("/projects", {"a": "b"}))
 
 

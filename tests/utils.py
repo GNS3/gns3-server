@@ -70,7 +70,10 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
     Magic mock returning coroutine
     """
 
-    def __init__(self, return_value=None, **kwargs):
+    def __init__(self, return_value=None, return_values=None, **kwargs):
+        """
+        :return_values: Array of return value at each call will return the next
+        """
         if return_value:
             future = asyncio.Future()
             future.set_result(return_value)

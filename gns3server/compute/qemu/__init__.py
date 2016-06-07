@@ -38,6 +38,7 @@ log = logging.getLogger(__name__)
 class Qemu(BaseManager):
 
     _NODE_CLASS = QemuVM
+    _NODE_TYPE = "qemu"
 
     @staticmethod
     @asyncio.coroutine

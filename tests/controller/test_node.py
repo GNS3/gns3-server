@@ -18,7 +18,8 @@
 import pytest
 import uuid
 import asyncio
-from unittest.mock import MagicMock
+import os
+from unittest.mock import MagicMock, ANY
 
 
 from tests.utils import AsyncioMagicMock
@@ -77,7 +78,7 @@ def test_create(node, compute, project, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    async_run(node.create())
+    assert async_run(node.create()) is True
     data = {
         "console": 2048,
         "console_type": "vnc",
@@ -88,6 +89,28 @@ def test_create(node, compute, project, async_run):
     compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data)
     assert node._console == 2048
     assert node._properties == {"startup_script": "echo test"}
+
+
+def test_create_image_missing(node, compute, project, async_run):
+    node._console = 2048
+
+    node.__calls = 0
+    @asyncio.coroutine
+    def resp(*args, **kwargs):
+        node.__calls += 1
+        response = MagicMock()
+        if node.__calls == 1:
+            response.status = 409
+            response.json = {"image": "linux.img", "exception": "ImageMissingError"}
+        else:
+            response.status = 200
+        return response
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+    node._upload_missing_image = AsyncioMagicMock(return_value=True)
+
+    assert async_run(node.create()) is True
+    node._upload_missing_image.called is True
 
 
 def test_update(node, compute, project, async_run):
@@ -193,3 +216,16 @@ def test_dynamips_idlepc_proposals(node, async_run, compute):
 
     async_run(node.dynamips_idlepc_proposals())
     compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id), timeout=240)
+
+
+def test_upload_missing_image(compute, controller, async_run, images_dir):
+    project = Project(str(uuid.uuid4()), controller=controller)
+    node = Node(project, compute,
+                name="demo",
+                node_id=str(uuid.uuid4()),
+                node_type="qemu",
+                properties={"hda_disk_image": "linux.img"})
+    open(os.path.join(images_dir, "linux.img"), 'w+').close()
+    assert async_run(node._upload_missing_image("qemu", "linux.img")) is True
+    compute.post.assert_called_with("/qemu/images/linux.img", data=ANY, timeout=None)
+

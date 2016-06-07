@@ -88,28 +88,6 @@ def test_create_node_old_topology(loop, project, tmpdir, vpcs):
             assert f.read() == "1"
 
 
-def test_images_directories(qemu, tmpdir):
-    path1 = tmpdir / "images1" / "QEMU" / "test1.bin"
-    path1.write("1", ensure=True)
-    path1 = force_unix_path(str(path1))
-
-    path2 = tmpdir / "images2" / "test2.bin"
-    path2.write("1", ensure=True)
-    path2 = force_unix_path(str(path2))
-
-    with patch("gns3server.config.Config.get_section_config", return_value={
-            "images_path": str(tmpdir / "images1"),
-            "additional_images_path": "/tmp/null24564:{}".format(tmpdir / "images2"),
-            "local": False}):
-
-        # /tmp/null24564 is ignored because doesn't exists
-        res = qemu.images_directories()
-        assert res[0] == str(tmpdir / "images1" / "QEMU")
-        assert res[1] == str(tmpdir / "images2")
-        assert res[2] == str(tmpdir / "images1")
-        assert len(res) == 3
-
-
 def test_get_abs_image_path(qemu, tmpdir):
     os.makedirs(str(tmpdir / "QEMU"))
     path1 = force_unix_path(str(tmpdir / "test1.bin"))

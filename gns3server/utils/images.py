@@ -18,8 +18,42 @@
 import os
 import hashlib
 
+
+from ..config import Config
+from . import force_unix_path
+
+
 import logging
 log = logging.getLogger(__name__)
+
+
+def images_directories(type):
+    """
+    Return all directory where we will look for images
+    by priority
+
+    :param type: Type of emulator
+    """
+    server_config = Config.instance().get_section_config("Server")
+
+    paths = []
+    img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    if type == "qemu":
+        type_img_directory = os.path.join(img_dir, "QEMU")
+    elif type == "iou":
+        type_img_directory = os.path.join(img_dir, "IOU")
+    elif type == "dynamips":
+        type_img_directory = os.path.join(img_dir, "IOS")
+    else:
+        raise NotImplementedError("%s is not supported", type)
+    os.makedirs(type_img_directory, exist_ok=True)
+    paths.append(type_img_directory)
+    for directory in server_config.get("additional_images_path", "").split(":"):
+        paths.append(directory)
+    # Compatibility with old topologies we look in parent directory
+    paths.append(img_dir)
+    # Return only the existings paths
+    return [force_unix_path(p) for p in paths if os.path.exists(p)]
 
 
 def md5sum(path):

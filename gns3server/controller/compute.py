@@ -19,6 +19,7 @@ import aiohttp
 import asyncio
 import json
 import uuid
+import io
 
 from ..utils import parse_version
 from ..controller.controller_error import ControllerError
@@ -32,6 +33,17 @@ log = logging.getLogger(__name__)
 
 class ComputeError(ControllerError):
     pass
+
+
+class ComputeConflict(aiohttp.web.HTTPConflict):
+    """
+    Raise when the compute send a 409 that we can handle
+
+    :param response: The response of the compute
+    """
+    def __init__(self, response):
+        super().__init__(text=response["message"])
+        self.response = response
 
 
 class Timeout(aiohttp.Timeout):
@@ -293,7 +305,7 @@ class Compute:
                 if hasattr(data, '__json__'):
                     data = json.dumps(data.__json__())
                 # Stream the request
-                elif isinstance(data, aiohttp.streams.StreamReader):
+                elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, io.BufferedIOBase):
                     chunked = True
                     headers['content-type'] = 'application/octet-stream'
                 else:
@@ -306,10 +318,13 @@ class Compute:
 
             if response.status >= 300:
                 # Try to decode the GNS3 error
-                try:
-                    msg = json.loads(body)["message"]
-                except (KeyError, json.decoder.JSONDecodeError):
-                    msg = body
+                if body:
+                    try:
+                        msg = json.loads(body)["message"]
+                    except (KeyError, json.decoder.JSONDecodeError):
+                        msg = body
+                else:
+                    msg = ""
 
                 if response.status == 400:
                     raise aiohttp.web.HTTPBadRequest(text="Bad request {} {}".format(url, body))
@@ -320,7 +335,11 @@ class Compute:
                 elif response.status == 404:
                     raise aiohttp.web.HTTPNotFound(text=msg)
                 elif response.status == 409:
-                    raise aiohttp.web.HTTPConflict(text=msg)
+                    try:
+                        raise ComputeConflict(json.loads(body))
+                    # If the 409 doesn't come from a GNS3 server
+                    except json.decoder.JSONDecodeError:
+                        raise aiohttp.web.HTTPConflict(text=msg)
                 elif response.status == 500:
                     raise aiohttp.web.HTTPInternalServerError(text="Internal server error {}".format(url))
                 elif response.status == 503:

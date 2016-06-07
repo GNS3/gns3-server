@@ -103,6 +103,7 @@ WIC_MATRIX = {"WIC-1ENET": WIC_1ENET,
 class Dynamips(BaseManager):
 
     _NODE_CLASS = DynamipsVMFactory
+    _NODE_TYPE = "dynamips"
     _DEVICE_CLASS = DynamipsDeviceFactory
     _ghost_ios_lock = None
 
