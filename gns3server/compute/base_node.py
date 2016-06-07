@@ -28,7 +28,7 @@ import platform
 from ..utils.asyncio import wait_run_in_executor
 from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
-from .node_error import NodeError
+from .error import NodeError
 
 
 log = logging.getLogger(__name__)

@@ -19,7 +19,6 @@
 class NodeError(Exception):
 
     def __init__(self, message, original_exception=None):
-
         super().__init__(message)
         if isinstance(message, Exception):
             message = str(message)
@@ -27,9 +26,16 @@ class NodeError(Exception):
         self._original_exception = original_exception
 
     def __repr__(self):
-
         return self._message
 
     def __str__(self):
-
         return self._message
+
+
+class ImageMissingError(Exception):
+    """
+    Raised when an image is missing
+    """
+
+    def __init__(self, image):
+        super().__init__("The image {} is missing".format(image))

@@ -506,52 +506,52 @@ def test_build_command_with_invalid_options(vm, loop, fake_qemu_binary):
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
 
 
-def test_hda_disk_image(vm, tmpdir):
+def test_hda_disk_image(vm, images_dir):
 
-    vm.manager.config.set("Server", "images_path", str(tmpdir))
-
-    vm.hda_disk_image = str(tmpdir / "test1")
-    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "test1"))
+    open(os.path.join(images_dir, "test1"), "w+").close()
+    vm.hda_disk_image = os.path.join(images_dir, "test1")
+    assert vm.hda_disk_image == force_unix_path(os.path.join(images_dir, "test1"))
+    open(os.path.join(images_dir, "QEMU", "test2"), "w+").close()
     vm.hda_disk_image = "test2"
-    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test2"))
+    assert vm.hda_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
 
-def test_hda_disk_image_ova(vm, tmpdir):
+def test_hda_disk_image_ova(vm, images_dir):
 
-    vm.manager.config.set("Server", "images_path", str(tmpdir))
-
+    os.makedirs(os.path.join(images_dir, "QEMU", "test.ovf"))
+    open(os.path.join(images_dir, "QEMU", "test.ovf", "test.vmdk"), "w+").close()
     vm.hda_disk_image = "test.ovf/test.vmdk"
-    assert vm.hda_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test.ovf" / "test.vmdk"))
+    assert vm.hda_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test.ovf", "test.vmdk"))
 
 
-def test_hdb_disk_image(vm, tmpdir):
+def test_hdb_disk_image(vm, images_dir):
 
-    vm.manager.config.set("Server", "images_path", str(tmpdir))
-
-    vm.hdb_disk_image = str(tmpdir / "test")
-    assert vm.hdb_disk_image == force_unix_path(str(tmpdir / "test"))
-    vm.hdb_disk_image = "test"
-    assert vm.hdb_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
-
-
-def test_hdc_disk_image(vm, tmpdir):
-
-    vm.manager.config.set("Server", "images_path", str(tmpdir))
-
-    vm.hdc_disk_image = str(tmpdir / "test")
-    assert vm.hdc_disk_image == force_unix_path(str(tmpdir / "test"))
-    vm.hdc_disk_image = "test"
-    assert vm.hdc_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
+    open(os.path.join(images_dir, "test1"), "w+").close()
+    vm.hdb_disk_image = os.path.join(images_dir, "test1")
+    assert vm.hdb_disk_image == force_unix_path(os.path.join(images_dir, "test1"))
+    open(os.path.join(images_dir, "QEMU", "test2"), "w+").close()
+    vm.hdb_disk_image = "test2"
+    assert vm.hdb_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
 
-def test_hdd_disk_image(vm, tmpdir):
+def test_hdc_disk_image(vm, images_dir):
 
-    vm.manager.config.set("Server", "images_path", str(tmpdir))
+    open(os.path.join(images_dir, "test1"), "w+").close()
+    vm.hdc_disk_image = os.path.join(images_dir, "test1")
+    assert vm.hdc_disk_image == force_unix_path(os.path.join(images_dir, "test1"))
+    open(os.path.join(images_dir, "QEMU", "test2"), "w+").close()
+    vm.hdc_disk_image = "test2"
+    assert vm.hdc_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
-    vm.hdd_disk_image = str(tmpdir / "test")
-    assert vm.hdd_disk_image == force_unix_path(str(tmpdir / "test"))
-    vm.hdd_disk_image = "test"
-    assert vm.hdd_disk_image == force_unix_path(str(tmpdir / "QEMU" / "test"))
+
+def test_hdd_disk_image(vm, images_dir):
+
+    open(os.path.join(images_dir, "test1"), "w+").close()
+    vm.hdd_disk_image = os.path.join(images_dir, "test1")
+    assert vm.hdd_disk_image == force_unix_path(os.path.join(images_dir, "test1"))
+    open(os.path.join(images_dir, "QEMU", "test2"), "w+").close()
+    vm.hdd_disk_image = "test2"
+    assert vm.hdd_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
 
 def test_initrd(vm, tmpdir):

@@ -19,7 +19,7 @@
 Custom exceptions for the Dynamips module.
 """
 
-from ..node_error import NodeError
+from ..error import NodeError
 
 
 class DynamipsError(NodeError):

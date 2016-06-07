@@ -26,7 +26,7 @@ from unittest.mock import patch, MagicMock
 from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.vpcs.vpcs_error import VPCSError
-from gns3server.compute.node_error import NodeError
+from gns3server.compute.error import NodeError
 from gns3server.compute.vpcs import VPCS
 
 

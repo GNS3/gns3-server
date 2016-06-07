@@ -38,11 +38,9 @@ def fake_qemu_bin():
 
 
 @pytest.fixture
-def fake_qemu_vm(tmpdir):
+def fake_qemu_vm(images_dir):
 
-    img_dir = Config.instance().get_section_config("Server").get("images_path")
-    img_dir = os.path.join(img_dir, "QEMU")
-    os.makedirs(img_dir)
+    img_dir = os.path.join(images_dir, "QEMU")
     bin_path = os.path.join(img_dir, "linux载.img")
     with open(bin_path, "w+") as f:
         f.write("1")
@@ -154,18 +152,18 @@ def test_qemu_delete(http_compute, vm):
         assert response.status == 204
 
 
-def test_qemu_update(http_compute, vm, tmpdir, free_console_port, project, fake_qemu_vm):
+def test_qemu_update(http_compute, vm, free_console_port, project, fake_qemu_vm):
     params = {
         "name": "test",
         "console": free_console_port,
         "ram": 1024,
-        "hdb_disk_image": "linux.img"
+        "hdb_disk_image": "linux载.img"
     }
     response = http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params, example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
-    assert response.json["hdb_disk_image"] == "linux.img"
+    assert response.json["hdb_disk_image"] == "linux载.img"
     assert response.json["ram"] == 1024
 
 

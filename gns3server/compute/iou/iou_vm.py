@@ -91,6 +91,9 @@ class IOUVM(BaseNode):
         self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
+    def _config(self):
+        return self._manager.config.get_section_config("IOU")
+
     @asyncio.coroutine
     def close(self):
         """
@@ -128,15 +131,6 @@ class IOUVM(BaseNode):
         """
 
         self._path = self.manager.get_abs_image_path(path)
-
-        # In 1.2 users uploaded images to the images roots
-        # after the migration their images are inside images/IOU
-        # but old topologies use old path
-        if "IOU" not in self._path:
-            location, filename = os.path.split(self._path)
-            fix_path = os.path.join(location, "IOU", filename)
-            if os.path.isfile(fix_path):
-                self._path = fix_path
 
     @property
     def use_default_iou_values(self):
@@ -232,7 +226,7 @@ class IOUVM(BaseNode):
         :returns: path to IOUYAP
         """
 
-        path = self._manager.config.get_section_config("IOU").get("iouyap_path", "iouyap")
+        path = self._config().get("iouyap_path", "iouyap")
         if path == "iouyap":
             path = shutil.which("iouyap")
         return path
@@ -245,7 +239,7 @@ class IOUVM(BaseNode):
         :returns: path to IOURC
         """
 
-        iourc_path = self._manager.config.get_section_config("IOU").get("iourc_path")
+        iourc_path = self._config().get("iourc_path")
         if not iourc_path:
             # look for the iourc file in the user home dir.
             path = os.path.join(os.path.expanduser("~/"), ".iourc")
@@ -380,7 +374,7 @@ class IOUVM(BaseNode):
         Checks for a valid IOU key in the iourc file (paranoid mode).
         """
 
-        license_check = self._manager.config.get_section_config("IOU").getboolean("license_check", True)
+        license_check = self._config().getboolean("license_check", True)
         if license_check is False:
             return
 

@@ -19,7 +19,7 @@
 Custom exceptions for the Docker module.
 """
 
-from ..node_error import NodeError
+from ..error import NodeError
 
 
 class DockerError(NodeError):

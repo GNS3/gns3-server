@@ -72,11 +72,10 @@ def iourc_file(tmpdir):
 
 
 @pytest.fixture
-def fake_iou_bin(tmpdir):
+def fake_iou_bin(images_dir):
     """Create a fake IOU image on disk"""
 
-    os.makedirs(str(tmpdir / "IOU"), exist_ok=True)
-    path = str(tmpdir / "IOU" / "iou.bin")
+    path = os.path.join(images_dir, "iou.bin")
     with open(path, "w+") as f:
         f.write('\x7fELF\x01\x01\x01')
     os.chmod(path, stat.S_IREAD | stat.S_IEXEC)
@@ -97,11 +96,11 @@ def test_vm_startup_config_content(project, manager):
     assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"
 
 
-@patch("gns3server.config.Config.get_section_config", return_value={"iouyap_path": "/bin/test_fake"})
+@patch("gns3server.compute.iou.iou_vm.IOUVM._config", return_value={"iouyap_path": "/bin/test_fake"})
 def test_vm_invalid_iouyap_path(project, manager, loop, fake_iou_bin):
     with pytest.raises(IOUError):
         vm = IOUVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
-        vm.path = "iou.bin"
+        vm.path = fake_iou_bin
         loop.run_until_complete(asyncio.async(vm.start()))
 
 
@@ -213,20 +212,8 @@ def test_path(vm, fake_iou_bin):
         assert vm.path == fake_iou_bin
 
 
-def test_path_12_location(vm, fake_iou_bin):
-
-    # In 1.2 users uploaded images to the images roots
-    # after the migration their images are inside images/IOU
-    # but old topologies use old path
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        vm.path = fake_iou_bin.replace("/IOU", "")
-        assert vm.path == fake_iou_bin
-
-
 def test_path_relative(vm, fake_iou_bin, tmpdir):
 
-    config = Config.instance()
-    config.set("Server", "images_path", str(tmpdir))
     vm.path = "iou.bin"
     assert vm.path == fake_iou_bin
 
@@ -235,9 +222,6 @@ def test_path_invalid_bin(vm, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         path = str(tmpdir / "test.bin")
-        with pytest.raises(IOUError):
-            vm.path = path
-            vm._check_requirements()
 
         with open(path, "w+") as f:
             f.write("BUG")

@@ -25,7 +25,7 @@ import traceback
 
 log = logging.getLogger(__name__)
 
-from ..compute.node_error import NodeError
+from ..compute.error import NodeError
 from ..controller.controller_error import ControllerError
 from ..ubridge.ubridge_error import UbridgeError
 from .response import Response
@@ -197,11 +197,11 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409})
-                except (NodeError, UbridgeError) as e:
+                except (NodeError, UbridgeError, ImageMissingError) as e:
                     log.error("Node error detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)
                     response.set_status(409)
-                    response.json({"message": str(e), "status": 409})
+                    response.json({"message": str(e), "status": 409, "exception": str(e.__class__)})
                 except asyncio.futures.CancelledError as e:
                     log.error("Request canceled")
                     response = Response(request=request, route=route)

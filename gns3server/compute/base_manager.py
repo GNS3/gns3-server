@@ -39,7 +39,7 @@ from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
 from .nios.nio_ethernet import NIOEthernet
 from ..utils.images import md5sum, remove_checksum
-from .node_error import NodeError
+from .error import NodeError, ImageMissingError
 
 
 class BaseManager:
@@ -432,18 +432,27 @@ class BaseManager:
                 path = self._recursive_search_file_in_directory(directory, orig_path)
                 if path:
                     return force_unix_path(path)
-            # Not found we return the default directory
+
+            # Not found we try the default directory
             s = os.path.split(orig_path)
-            return force_unix_path(os.path.join(self.get_images_directory(), *s))
+            path = force_unix_path(os.path.join(self.get_images_directory(), *s))
+            if os.path.exists(path):
+                return path
+            raise ImageMissingError(path)
 
         # For non local server we disallow using absolute path outside image directory
         if server_config.get("local", False) is True:
-            return force_unix_path(path)
+            path = force_unix_path(path)
+            if os.path.exists(path):
+                return path
+            raise ImageMissingError(path)
 
         path = force_unix_path(path)
         for directory in self.images_directories():
             if os.path.commonprefix([directory, path]) == directory:
-                return path
+                if os.path.exists(path):
+                    return path
+                raise ImageMissingError(path)
         raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, self.get_images_directory()))
 
     def _recursive_search_file_in_directory(self, directory, searched_file):

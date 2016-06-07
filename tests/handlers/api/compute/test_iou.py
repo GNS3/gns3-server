@@ -29,10 +29,10 @@ pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supp
 
 
 @pytest.fixture
-def fake_iou_bin(tmpdir):
+def fake_iou_bin(images_dir):
     """Create a fake IOU image on disk"""
 
-    path = str(tmpdir / "iou.bin")
+    path = os.path.join(images_dir, "IOU", "iou.bin")
     with open(path, "w+") as f:
         f.write('\x7fELF\x01\x01\x01')
     os.chmod(path, stat.S_IREAD | stat.S_IEXEC)
@@ -222,7 +222,7 @@ def test_iou_nio_create_udp(http_compute, vm):
 def test_iou_nio_create_ethernet(http_compute, vm, ethernet_device):
     response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_ethernet",
                                                                                                                                                                   "ethernet_device": ethernet_device,
-                                                                                                                                                                 },
+                                                                                                                                                                  },
                                  example=True)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
@@ -233,7 +233,7 @@ def test_iou_nio_create_ethernet(http_compute, vm, ethernet_device):
 def test_iou_nio_create_ethernet_different_port(http_compute, vm, ethernet_device):
     response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_ethernet",
                                                                                                                                                                   "ethernet_device": ethernet_device,
-                                                                                                                                                                 },
+                                                                                                                                                                  },
                                  example=False)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
@@ -328,10 +328,9 @@ def test_get_configs_with_startup_config_file(http_compute, project, vm):
     assert response.json["startup_config_content"] == "TEST"
 
 
-def test_images(http_compute, tmpdir, fake_iou_bin):
+def test_images(http_compute, fake_iou_bin):
 
-    with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir)):
-        response = http_compute.get("/iou/images", example=True)
+    response = http_compute.get("/iou/images", example=True)
     assert response.status == 200
     assert response.json == [{"filename": "iou.bin", "path": "iou.bin"}]
 

@@ -19,7 +19,7 @@
 Custom exceptions for the VMware module.
 """
 
-from ..node_error import NodeError
+from ..error import NodeError
 
 
 class VMwareError(NodeError):

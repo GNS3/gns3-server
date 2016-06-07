@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.qemu import Qemu
-from gns3server.compute.node_error import NodeError
+from gns3server.compute.error import NodeError, ImageMissingError
 from gns3server.utils import force_unix_path
 
 
@@ -165,8 +165,8 @@ def test_get_abs_image_additional_image_paths(qemu, tmpdir):
         # Absolute path
         assert qemu.get_abs_image_path(str(path2)) == path2
 
-        # If not found return the default path
-        assert qemu.get_abs_image_path("test4.bin") == os.path.join(qemu.get_images_directory(), "test4.bin")
+        with pytest.raises(ImageMissingError):
+            qemu.get_abs_image_path("test4.bin")
 
 
 def test_get_abs_image_recursive(qemu, tmpdir):

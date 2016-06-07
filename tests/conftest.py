@@ -230,6 +230,18 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
         pass
 
 
+@pytest.fixture
+def images_dir(config):
+    """
+    Get the location of images
+    """
+    path = config.get_section_config("Server").get("images_path")
+    os.makedirs(path, exist_ok=True)
+    os.makedirs(os.path.join(path, "QEMU"))
+    os.makedirs(os.path.join(path, "IOU"))
+    return path
+
+
 @pytest.yield_fixture
 def darwin_platform():
     """

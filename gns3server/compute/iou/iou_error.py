@@ -19,7 +19,7 @@
 Custom exceptions for the IOU module.
 """
 
-from ..node_error import NodeError
+from ..error import NodeError
 
 
 class IOUError(NodeError):

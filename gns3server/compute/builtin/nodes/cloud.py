@@ -18,7 +18,7 @@
 import sys
 import asyncio
 
-from ...node_error import NodeError
+from ...error import NodeError
 from ...base_node import BaseNode
 from ...nios.nio_udp import NIOUDP
 
@@ -181,7 +181,6 @@ class Cloud(BaseNode):
             yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
                                                                                              pcap_file=nio.pcap_output_file))
 
-
         yield from self._ubridge_send('bridge start {name}'.format(name=bridge_name))
 
     @asyncio.coroutine
@@ -269,7 +268,6 @@ class Cloud(BaseNode):
                                                                                                id=self.id,
                                                                                                port_number=port_number))
 
-
     @asyncio.coroutine
     def stop_capture(self, port_number):
         """
@@ -291,5 +289,5 @@ class Cloud(BaseNode):
         yield from self._ubridge_send("bridge stop_capture {name}".format(name=bridge_name))
 
         log.info("Cloud'{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,
-                                                                                               id=self.id,
-                                                                                               port_number=port_number))
+                                                                                              id=self.id,
+                                                                                              port_number=port_number))
