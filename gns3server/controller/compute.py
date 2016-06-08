@@ -396,8 +396,9 @@ class Compute:
         res = yield from self.http_query("GET", "/{}/images".format(type), timeout=120)
         images = res.json
 
-        for path in scan_for_images(type):
-            image = os.path.basename(path)
-            if image not in [i['filename'] for i in images]:
-                images.append({"filename": image, "path": image})
+        if type in ["qemu", "dynamips", "iou"]:
+            for path in scan_for_images(type):
+                image = os.path.basename(path)
+                if image not in [i['filename'] for i in images]:
+                    images.append({"filename": image, "path": image})
         return images
