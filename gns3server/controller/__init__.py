@@ -60,6 +60,7 @@ class Controller:
         Save the controller configuration on disk
         """
         data = {"computes": [{"host": c.host,
+                              "name": c.name,
                               "port": c.port,
                               "protocol": c.protocol,
                               "user": c.user,

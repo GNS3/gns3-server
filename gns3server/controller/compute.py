@@ -123,6 +123,7 @@ class Compute:
             self._session.close()
         self._connected = False
         self._controller.notification.emit("compute.updated", self.__json__())
+        self._controller.save()
 
     @asyncio.coroutine
     def close(self):

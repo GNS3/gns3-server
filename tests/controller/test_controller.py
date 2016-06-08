@@ -102,13 +102,14 @@ def test_deleteCompute(controller, controller_config_path, async_run):
 
 
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
-    async_run(controller.add_compute(compute_id="test1"))
+    async_run(controller.add_compute(compute_id="test1", name="Test"))
     assert len(controller.computes) == 1
     with open(controller_config_path) as f:
         data = json.load(f)
         assert data["computes"] == [
             {
                 'compute_id': 'test1',
+                'name': 'Test',
                 'host': 'localhost',
                 'port': 3080,
                 'protocol': 'http',

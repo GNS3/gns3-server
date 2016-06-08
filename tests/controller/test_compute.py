@@ -223,6 +223,7 @@ def test_close(compute, async_run):
 
 def test_update(compute, controller, async_run):
     compute._controller._notification = MagicMock()
+    compute._controller.save = MagicMock()
     compute.name = "Test"
     compute.host = "example.org"
     compute._connected = True
@@ -231,6 +232,7 @@ def test_update(compute, controller, async_run):
     assert compute.host == "example.org"
     controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
     assert compute.connected is False
+    assert compute._controller.save.called
 
 
 def test_forward_get(compute, async_run):
