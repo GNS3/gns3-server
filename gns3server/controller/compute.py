@@ -90,6 +90,8 @@ class Compute:
         self._session = aiohttp.ClientSession()
         self._version = None
         self.name = name
+        # Websocket for notifications
+        self._ws = None
 
         # It's a configuration issue if the compute is not configured to be local but the compute id is local
         if compute_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
@@ -129,6 +131,9 @@ class Compute:
     def close(self):
         self._connected = False
         self._session.close()
+        if self._ws:
+            yield from self._ws.close()
+            self._ws = None
 
     @property
     def version(self):
@@ -282,9 +287,9 @@ class Compute:
         """
         Connect to the notification stream
         """
-        ws = yield from self._session.ws_connect(self._getUrl("/notifications/ws"))
+        self._ws = yield from self._session.ws_connect(self._getUrl("/notifications/ws"))
         while True:
-            response = yield from ws.receive()
+            response = yield from self._ws.receive()
             if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error:
                 self._connected = False
                 break
@@ -292,6 +297,8 @@ class Compute:
             action = msg.pop("action")
             event = msg.pop("event")
             self._controller.notification.dispatch(action, event, compute_id=self.id)
+        yield from self._ws.close()
+        self._ws = None
 
     def _getUrl(self, path):
         return "{}://{}:{}/v2/compute{}".format(self._protocol, self._host, self._port, path)
