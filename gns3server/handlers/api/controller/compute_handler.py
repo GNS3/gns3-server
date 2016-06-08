@@ -78,6 +78,22 @@ class ComputeHandler:
         response.json(compute)
 
     @Route.get(
+        r"/computes/{compute_id}/{emulator}/images",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "OK",
+            404: "Instance doesn't exist"
+        },
+        description="Return the list of images available on compute and controller for this emulator type")
+    def images(request, response):
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+        res = yield from compute.images(request.match_info["emulator"])
+        response.json(res)
+
+    @Route.get(
         r"/computes/{compute_id}/{emulator}/{action:.+}",
         parameters={
             "compute_id": "Compute UUID"

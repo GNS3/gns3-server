@@ -169,10 +169,10 @@ def test_compute_list_images(http_controller, controller):
     response = http_controller.post("/computes", params)
     assert response.status == 201
 
-    with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
-        response = http_controller.get("/computes/my_compute/qemu/images")
-        assert response.json == []
-        mock.assert_called_with("GET", "qemu", "images")
+    with asyncio_patch("gns3server.controller.compute.Compute.images", return_value=[{"filename": "linux.qcow2"}, {"filename": "asav.qcow2"}]) as mock:
+        response = http_controller.get("/computes/my_compute/qemu/images", example=True)
+        assert response.json == [{"filename": "linux.qcow2"}, {"filename": "asav.qcow2"}]
+        mock.assert_called_with("qemu")
 
 
 def test_compute_list_vms(http_controller, controller):

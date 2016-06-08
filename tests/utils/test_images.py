@@ -20,7 +20,7 @@ from unittest.mock import patch
 
 
 from gns3server.utils import force_unix_path
-from gns3server.utils.images import md5sum, remove_checksum, images_directories
+from gns3server.utils.images import md5sum, remove_checksum, images_directories, scan_for_images
 
 
 def test_images_directories(tmpdir):
@@ -90,3 +90,30 @@ def test_remove_checksum(tmpdir):
     assert not os.path.exists(str(tmpdir / 'hello.md5sum'))
 
     remove_checksum(str(tmpdir / 'not_exists'))
+
+
+def test_scan_for_images(tmpdir):
+    path1 = tmpdir / "images1" / "IOS" / "test1.image"
+    path1.write("1", ensure=True)
+    path1 = force_unix_path(str(path1))
+
+    path2 = tmpdir / "images2" / "test2.image"
+    path2.write("1", ensure=True)
+    path2 = force_unix_path(str(path2))
+
+    path3 = tmpdir / "images1" / "IOU" / "test3.bin"
+    path3.write("1", ensure=True)
+    path3 = force_unix_path(str(path3))
+
+    path4 = tmpdir / "images1" / "QEMU" / "test4.qcow2"
+    path4.write("1", ensure=True)
+    path4 = force_unix_path(str(path4))
+
+    with patch("gns3server.config.Config.get_section_config", return_value={
+            "images_path": str(tmpdir / "images1"),
+            "additional_images_path": "/tmp/null24564:{}".format(tmpdir / "images2"),
+            "local": False}):
+
+        assert scan_for_images("dynamips") == [str(path1), str(path2)]
+        assert scan_for_images("iou") == [str(path3)]
+        assert scan_for_images("qemu") == [str(path4)]

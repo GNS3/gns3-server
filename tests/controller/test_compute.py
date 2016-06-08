@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import os
 import pytest
 import json
 import aiohttp
@@ -247,3 +247,18 @@ def test_forward_post(compute, async_run):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         async_run(compute.forward("POST", "qemu", "img", data={"id": 42}))
         mock.assert_called_with("POST", "https://example.com:84/v2/compute/qemu/img", auth=None, data='{"id": 42}', headers={'content-type': 'application/json'}, chunked=False)
+
+
+def test_images(compute, async_run, images_dir):
+    """
+    Will return image on compute and on controller
+    """
+    response = MagicMock()
+    response.status = 200
+    response.read = AsyncioMagicMock(return_value=json.dumps([{"filename": "linux.qcow2", "path": "linux.qcow2"}]).encode())
+    open(os.path.join(images_dir, "asa.qcow2"), "w+").close()
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        images = async_run(compute.images("qemu"))
+        mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=False)
+
+    assert images == [{"filename": "linux.qcow2", "path": "linux.qcow2"}, {"filename": "asa.qcow2", "path": "asa.qcow2"}]

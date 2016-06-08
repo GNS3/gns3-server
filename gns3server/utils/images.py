@@ -27,6 +27,27 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def scan_for_images(type):
+    """
+    Scan directories for available image for a type
+
+    :param type: emulator type (dynamips, qemu, iou)
+    """
+    files = set()
+    paths = []
+    for directory in images_directories(type):
+        for root, _, filenames in os.walk(directory):
+            for file in filenames:
+                path = os.path.join(root, file)
+                if file not in files:
+                    if (file.endswith(".image") and type == "dynamips") \
+                       or (file.endswith(".bin") and type == "iou") \
+                       or (not file.endswith(".bin") and not file.endswith(".image") and type == "qemu"):
+                        files.add(file)
+                        paths.append(path)
+    return paths
+
+
 def images_directories(type):
     """
     Return all directory where we will look for images

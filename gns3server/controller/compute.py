@@ -19,9 +19,11 @@ import aiohttp
 import asyncio
 import json
 import uuid
+import os
 import io
 
 from ..utils import parse_version
+from ..utils.images import scan_for_images
 from ..controller.controller_error import ControllerError
 from ..config import Config
 from ..version import __version__
@@ -41,6 +43,7 @@ class ComputeConflict(aiohttp.web.HTTPConflict):
 
     :param response: The response of the compute
     """
+
     def __init__(self, response):
         super().__init__(text=response["message"])
         self.response = response
@@ -380,3 +383,20 @@ class Compute:
         """
         res = yield from self.http_query(method, "/{}/{}".format(type, path), data=data, timeout=None)
         return res.json
+
+    @asyncio.coroutine
+    def images(self, type):
+        """
+        Return the list of images available for this type on controller
+        and on the compute node.
+        """
+        images = []
+
+        res = yield from self.http_query("GET", "/{}/images".format(type), timeout=120)
+        images = res.json
+
+        for path in scan_for_images(type):
+            image = os.path.basename(path)
+            if image not in [i['filename'] for i in images]:
+                images.append({"filename": image, "path": image})
+        return images
