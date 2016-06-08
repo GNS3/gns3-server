@@ -9,10 +9,10 @@ Start a packet capture on an Ethernet switch instance
 
 Parameters
 **********
-- **adapter_number**: Adapter on the switch (always 0)
+- **project_id**: Project UUID
 - **node_id**: Node UUID
 - **port_number**: Port on the switch
-- **project_id**: Project UUID
+- **adapter_number**: Adapter on the switch (always 0)
 
 Response status codes
 **********************

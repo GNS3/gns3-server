@@ -9,8 +9,8 @@ Get a Dynamips VM instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -79,8 +79,8 @@ Update a Dynamips VM instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -202,8 +202,8 @@ Delete a Dynamips VM instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************

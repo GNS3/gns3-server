@@ -16,8 +16,14 @@ JSON like that
         "message": "Conflict"
     }
 
+409 error could be display to the user. They are normal behavior
+they are used to warn user about something he should change and
+they are not an internal software error.
+
 Sample session using curl
 =========================
+
+You need to read the :doc:`glossary` before.
 
 .. warning::
 
@@ -29,93 +35,120 @@ You can check the server version with a simple curl command:
 
 .. code-block:: shell-session
 
-    # curl "http://localhost:3080/v1/version"
+    # curl "http://localhost:3080/v2/version"
     {
         "version": "2.0.0dev1"
     }
 
+We will list the computes node where we can run our nodes:
+
+.. code-block:: shell-session
+
+    # curl "http://localhost:3080/v2/computes"
+    [
+        {
+            "compute_id": "local",
+            "connected": true,
+            "host": "127.0.0.1",
+            "name": "Local",
+            "port": 3080,
+            "protocol": "http",
+            "user": "admin"
+        }
+    ]
+
+In this sample we have only one compute where we can run our nodes. This compute as a special id: local. This
+mean it's the local server embed in the GNS3 controller.
 
 The next step is to create a project.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects" -d '{"name": "test"}'
+    # curl -X POST "http://localhost:3080/v2/projects" -d '{"name": "test"}'
     {
         "name": "test",
-        "path": null,
-        "project_id": "994d95b6-7dd4-467b-898c-14cf34900b7b",
-        "temporary": false
+        "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
     }
+
 
 With this project id we can now create two VPCS Node.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms" -d '{"name": "VPCS 1"}'
+    # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes" -d '{"name": "VPCS 1", "node_type": "vpcs", "compute_id": "local"}'
     {
-        "console": 2000,
+        "compute_id": "local",
+        "console": 5000,
+        "console_host": "127.0.0.1",
+        "console_type": "telnet",
         "name": "VPCS 1",
-        "project_id": "42f9feee-3217-4104-981e-85d5f0a806ec",
-        "vm_id": "24d2e16b-fbef-4259-ae34-7bc21a41ee28"
-    }%
+        "node_id": "f124dec0-830a-451e-a314-be50bbd58a00",
+        "node_type": "vpcs",
+        "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
+        "properties": {
+            "startup_script": null,
+            "startup_script_path": null
+        },
+        "status": "stopped"
+    }
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms" -d '{"name": "VPCS 2"}'
+    # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes" -d '{"name": "VPCS 2", "node_type": "vpcs", "compute_id": "local"}'
     {
-        "console": 2001,
+        "compute_id": "local",
+        "console": 5001,
+        "console_host": "127.0.0.1",
+        "console_type": "telnet",
         "name": "VPCS 2",
-        "vm_id": "daefc24a-103c-4717-8e01-6517d931c1ae"
+        "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74",
+        "node_type": "vpcs",
+        "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
+        "properties": {
+            "startup_script": null,
+            "startup_script_path": null
+        },
+        "status": "stopped"
     }
 
-Now we need to link the two VPCS. The first step is to allocate on the remote servers
-two UDP ports.
+The properties dictionnary contains all setting specific to a node type (dynamips, docker, vpcs...)
+
+Now we need to link the two VPCS by connecting their port 0 together.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/ports/udp" -d '{}'
+    # curl -X POST  "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/links" -d '{"nodes": [{"adapter_number": 0, "node_id": "f124dec0-830a-451e-a314-be50bbd58a00", "port_number": 0}, {"adapter_number": 0, "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74", "port_number": 0}]}'
     {
-        "udp_port": 10000
-    }                                                                                  
-    
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/ports/udp" -d '{}'
-    {
-        "udp_port": 10001
+        "capture_file_name": null,
+        "capture_file_path": null,
+        "capturing": false,
+        "link_id": "007f2177-6790-4e1b-ac28-41fa226b2a06",
+        "nodes": [
+            {
+                "adapter_number": 0,
+                "node_id": "f124dec0-830a-451e-a314-be50bbd58a00",
+                "port_number": 0
+            },
+            {
+                "adapter_number": 0,
+                "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74",
+                "port_number": 0
+            }
+        ],
+        "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f"
     }
 
-
-We can create the bidirectionnal communication between the two VPCS. The
-communication is made by creating two UDP tunnels.
+Now we can start the two nodes.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/24d2e16b-fbef-4259-ae34-7bc21a41ee28/adapters/0/ports/0/nio" -d '{"lport": 10000, "rhost": "127.0.0.1", "rport": 10001, "type": "nio_udp"}'
-    {
-        "lport": 10000,
-        "rhost": "127.0.0.1",
-        "rport": 10001,
-        "type": "nio_udp"
-    }
-
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/daefc24a-103c-4717-8e01-6517d931c1ae/adapters/0/ports/0/nio" -d '{"lport": 10001, "rhost": "127.0.0.1", "rport": 10000, "type": "nio_udp"}'
-    {
-        "lport": 10001,
-        "rhost": "127.0.0.1",
-        "rport": 10000,
-        "type": "nio_udp"
-    }
-
-Now we can start the two Node
-
-.. code-block:: shell-session
-
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/24d2e16b-fbef-4259-ae34-7bc21a41ee28/start" -d "{}"
-    # curl -X POST "http://localhost:3080/v1/projects/42f9feee-3217-4104-981e-85d5f0a806ec/vpcs/vms/daefc24a-103c-4717-8e01-6517d931c1ae/start" -d '{}'
+    # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/f124dec0-830a-451e-a314-be50bbd58a00/start" -d "{}"
+    # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/83892a4d-aea0-4350-8b3e-d0af3713da74/start" -d "{}"
 
 Everything should be started now. You can connect via telnet to the different Node.
 The port is the field console in the create Node request.
 
 .. code-block:: shell-session
 
-    # telnet 127.0.0.1 2000
+    # telnet 127.0.0.1 5000
     Trying 127.0.0.1...
     Connected to localhost.
     Escape character is '^]'.
@@ -141,8 +174,7 @@ The port is the field console in the create Node request.
     Good-bye
     Connection closed by foreign host.
 
-    # telnet 127.0.0.1 2001
-    telnet 127.0.0.1 2001
+    # telnet 127.0.0.1 5001
     Trying 127.0.0.1...
     Connected to localhost.
     Escape character is '^]'.
@@ -173,6 +205,25 @@ The port is the field console in the create Node request.
     VPCS> disconnect
     Good-bye
     Connection closed by foreign host.
+
+And we stop the two nodes.
+
+.. code-block:: shell-session
+
+    # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/f124dec0-830a-451e-a314-be50bbd58a00/stop" -d "{}"
+    # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/83892a4d-aea0-4350-8b3e-d0af3713da74/stop" -d "{}"
+
+You can see notification about the changes via the notification feed:
+
+.. code-block:: shell-session
+
+    # curl "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications"
+    {"action": "ping", "event": {"compute_id": "local", "cpu_usage_percent": 35.7, "memory_usage_percent": 80.7}}
+    {"action": "node.updated", "event": {"command_line": "/usr/local/bin/vpcs -p 5001 -m 1 -i 1 -F -R -s 10001 -c 10000 -t 127.0.0.1", "compute_id": "local", "console": 5001, "console_host": "127.0.0.1", "console_type": "telnet", "name": "VPCS 2", "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74", "node_type": "vpcs", "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f", "properties": {"startup_script": null, "startup_script_path": null}, "status": "started"}}
+
+A websocket version is also available on http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications/ws
+
+If you start the server with **--debug** you can see all the requests made by the client and by the controller to the computes nodes.
 
 Limitations
 ============

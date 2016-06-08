@@ -9,8 +9,8 @@ Stop a node instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
