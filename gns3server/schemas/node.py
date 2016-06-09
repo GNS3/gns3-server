@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .label import LABEL_OBJECT_SCHEMA
 
 NODE_LIST_IMAGES_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -136,6 +137,24 @@ NODE_OBJECT_SCHEMA = {
         "status": {
             "description": "Status of the node",
             "enum": ["stopped", "started", "suspended"]
+        },
+        "label": LABEL_OBJECT_SCHEMA,
+        "symbol": {
+            "description": "Symbol of the node",
+            "type": "string",
+            "minLength": 1
+        },
+        "x": {
+            "description": "X position of the node",
+            "type": "number"
+        },
+        "y": {
+            "description": "Y position of the node",
+            "type": "number"
+        },
+        "z": {
+            "description": "Z position of the node",
+            "type": "number"
         }
     },
     "additionalProperties": False,

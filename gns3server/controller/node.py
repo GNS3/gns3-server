@@ -25,18 +25,18 @@ import os
 from .compute import ComputeConflict
 from ..utils.images import images_directories
 
-class Node:
 
-    def __init__(self, project, compute, node_id=None, node_type=None, name=None, console=None, console_type=None, properties={}):
+class Node:
+    # This properties are used only on controller and are not forwarded to the compute
+    CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "symbol", "label", "console_host"]
+
+    def __init__(self, project, compute, node_id=None, node_type=None, **kwargs):
         """
         :param project: Project of the node
         :param compute: Compute server where the server will run
         :param node_id: UUID of the node (integer)
         :param node_type: Type of emulator
-        :param name: Name of the node
-        :param console: TCP port of the console
-        :param console_type: Type of the console (telnet, vnc, serial..)
-        :param properties: Emulator specific properties of the node
+        :param kwargs: Node properties
         """
 
         if node_id is None:
@@ -44,16 +44,31 @@ class Node:
         else:
             self._id = node_id
 
-        self._name = name
         self._project = project
         self._compute = compute
         self._node_type = node_type
-        self._console = console
-        self._console_type = console_type
-        self._properties = properties
+
+        self._name = None
+        self._console = None
+        self._console_type = None
+        self._properties = {}
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
+        self._x = 0
+        self._y = 0
+        self._z = 0
+        self._symbol = ":/symbols/computer.svg"
+        self._label = {
+            "color": "#ff000000",
+            "y": -25.0,
+            "text": "",
+            "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+            "x": -17.0234375
+        }
+        # Update node properties with additional elements
+        for prop in kwargs:
+            setattr(self, prop, kwargs[prop])
 
     @property
     def id(self):
@@ -67,6 +82,12 @@ class Node:
     def name(self):
         return self._name
 
+    @name.setter
+    def name(self, val):
+        self._name = val
+        # The text in label need to be always the node name
+        self._label["text"] = val
+
     @property
     def node_type(self):
         return self._node_type
@@ -75,13 +96,25 @@ class Node:
     def console(self):
         return self._console
 
+    @console.setter
+    def console(self, val):
+        self._console = val
+
     @property
     def console_type(self):
         return self._console_type
 
+    @console_type.setter
+    def console_type(self, val):
+        self._console_type = val
+
     @property
     def properties(self):
         return self._properties
+
+    @properties.setter
+    def properties(self, val):
+        self._properties = val
 
     @property
     def project(self):
@@ -98,6 +131,48 @@ class Node:
         """
         return self._compute.host
 
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, val):
+        self._x = val
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, val):
+        self._y = val
+
+    @property
+    def z(self):
+        return self._z
+
+    @z.setter
+    def z(self, val):
+        self._z = val
+
+    @property
+    def symbol(self):
+        return self._symbol
+
+    @symbol.setter
+    def symbol(self, val):
+        self._symbol = val
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, val):
+        # The text in label need to be always the node name
+        val["text"] = self._name
+        self._label = val
+
     @asyncio.coroutine
     def create(self):
         """
@@ -110,7 +185,7 @@ class Node:
             try:
                 response = yield from self._compute.post("/projects/{}/{}/nodes".format(self._project.id, self._node_type), data=data)
             except ComputeConflict as e:
-                if  e.response.get("exception") == "ImageMissingError":
+                if e.response.get("exception") == "ImageMissingError":
                     res = yield from self._upload_missing_image(self._node_type, e.response["image"])
                     if not res:
                         raise e
@@ -120,30 +195,28 @@ class Node:
             trial += 1
 
     @asyncio.coroutine
-    def update(self, name=None, console=None, console_type=None, properties={}):
+    def update(self, **kwargs):
         """
         Update the node on the compute server
 
-        :param node_id: UUID of the node
-        :param node_type: Type of emulator
-        :param name: Name of the node
-        :param console: TCP port of the console
-        :param console_type: Type of the console (telnet, vnc, serial..)
-        :param properties: Emulator specific properties of the node
-
+        :param kwargs: Node properties
         """
-        if name:
-            self._name = name
-        if console:
-            self._console = console
-        if console_type:
-            self._console_type = console_type
-        if properties != {}:
-            self._properties = properties
 
-        data = self._node_data()
-        response = yield from self.put(None, data=data)
-        self.parse_node_response(response.json)
+        # When updating properties used only on controller we don't need to call the compute
+        update_compute = False
+
+        # Update node properties with additional elements
+        for prop in kwargs:
+            if getattr(self, prop) != kwargs[prop]:
+                if prop not in self.CONTROLLER_ONLY_PROPERTIES:
+                    update_compute = True
+                setattr(self, prop, kwargs[prop])
+
+        self.project.controller.notification.emit("node.updated", self.__json__())
+        if update_compute:
+            data = self._node_data()
+            response = yield from self.put(None, data=data)
+            self.parse_node_response(response.json)
 
     def parse_node_response(self, response):
         """
@@ -181,7 +254,7 @@ class Node:
 
         # None properties are not be send. Because it can mean the emulator doesn't support it
         for key in list(data.keys()):
-            if data[key] is None or key in ["console_host"]:
+            if data[key] is None or data[key] is {} or key in self.CONTROLLER_ONLY_PROPERTIES:
                 del data[key]
         return data
 
@@ -297,5 +370,10 @@ class Node:
             "console_type": self._console_type,
             "command_line": self._command_line,
             "properties": self._properties,
-            "status": self._status
+            "status": self._status,
+            "label": self._label,
+            "x": self._x,
+            "y": self._y,
+            "z": self._z,
+            "symbol": self._symbol
         }

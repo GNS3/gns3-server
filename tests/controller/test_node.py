@@ -60,7 +60,12 @@ def test_json(node, compute):
         "command_line": None,
         "node_directory": None,
         "properties": node.properties,
-        "status": node.status
+        "status": node.status,
+        "x": node.x,
+        "y": node.y,
+        "z": node.z,
+        "symbol": node.symbol,
+        "label": node.label
     }
 
 
@@ -95,6 +100,7 @@ def test_create_image_missing(node, compute, project, async_run):
     node._console = 2048
 
     node.__calls = 0
+
     @asyncio.coroutine
     def resp(*args, **kwargs):
         node.__calls += 1
@@ -113,12 +119,13 @@ def test_create_image_missing(node, compute, project, async_run):
     node._upload_missing_image.called is True
 
 
-def test_update(node, compute, project, async_run):
+def test_update(node, compute, project, async_run, controller):
     response = MagicMock()
     response.json = {"console": 2048}
     compute.put = AsyncioMagicMock(return_value=response)
+    controller._notification = AsyncioMagicMock()
 
-    async_run(node.update(console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo"))
+    async_run(node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo"))
     data = {
         "console": 2048,
         "console_type": "vnc",
@@ -127,7 +134,38 @@ def test_update(node, compute, project, async_run):
     }
     compute.put.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id), data=data)
     assert node._console == 2048
+    assert node.x == 42
     assert node._properties == {"startup_script": "echo test"}
+    controller._notification.emit.assert_called_with("node.updated", node.__json__())
+
+
+def test_update_only_controller(node, compute, project, async_run):
+    """
+    When updating property used only on controller we don't need to
+    call the compute
+    """
+    compute.put = AsyncioMagicMock()
+
+    async_run(node.update(x=42))
+    assert not compute.put.called
+    assert node.x == 42
+
+
+def test_update_no_changes(node, compute, project, async_run):
+    """
+    We don't call the compute node if all compute properties has not changed
+    """
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.put = AsyncioMagicMock(return_value=response)
+
+    async_run(node.update(console=2048, x=42))
+    assert compute.put.called
+
+    compute.put = AsyncioMagicMock()
+    async_run(node.update(console=2048, x=43))
+    assert not compute.put.called
+    assert node.x == 43
 
 
 def test_start(node, compute, project, async_run):
@@ -229,3 +267,14 @@ def test_upload_missing_image(compute, controller, async_run, images_dir):
     assert async_run(node._upload_missing_image("qemu", "linux.img")) is True
     compute.post.assert_called_with("/qemu/images/linux.img", data=ANY, timeout=None)
 
+
+def test_update_label(node):
+    """
+    The text in label need to be always the
+    node name
+    """
+    node.name = "Test"
+    assert node.label["text"] == "Test"
+    node.label = {"text": "Wrong", "x": 12}
+    assert node.label["text"] == "Test"
+    assert node.label["x"] == 12
