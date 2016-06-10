@@ -164,6 +164,8 @@ class Cloud(BaseNode):
                         yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name,
                                                                                                              interface=port_info["interface"]))
                     else:
+                        if sys.platform.startswith("darwin") and port_info["interface"].startswith("en"):
+                            raise NodeError("Connecting to a Wireless adapter is not supported.")
                         yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
                                                                                                             interface=port_info["interface"]))
 
