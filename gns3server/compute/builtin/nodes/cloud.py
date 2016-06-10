@@ -17,12 +17,14 @@
 
 import sys
 import asyncio
+import subprocess
 
 from ...error import NodeError
 from ...base_node import BaseNode
 from ...nios.nio_udp import NIOUDP
 
 from gns3server.utils.interfaces import interfaces
+import gns3server.utils.asyncio
 
 import logging
 log = logging.getLogger(__name__)
@@ -112,6 +114,26 @@ class Cloud(BaseNode):
         log.info('Cloud "{name}" [{id}] has been closed'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
+    def _is_wifi_adapter_osx(self, adapter_name):
+
+        try:
+            output = yield from gns3server.utils.asyncio.subprocess_check_output("networksetup", "-listallhardwareports")
+        except (FileNotFoundError, subprocess.SubprocessError) as e:
+            log.warn("Could not execute networksetup: {}".format(e))
+            return False
+
+        is_wifi = False
+        for line in output.splitlines():
+            if is_wifi:
+                if adapter_name == line.replace("Device: ", ""):
+                    return True
+                is_wifi = False
+            else:
+                if 'Wi-Fi' in line:
+                    is_wifi = True
+        return False
+
+    @asyncio.coroutine
     def _add_ubridge_connection(self, nio, port_number):
         """
         Creates a connection in uBridge.
@@ -164,9 +186,10 @@ class Cloud(BaseNode):
                         yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name,
                                                                                                              interface=port_info["interface"]))
                     else:
-                        if sys.platform.startswith("darwin") and port_info["interface"].startswith("en"):
+                        if sys.platform.startswith("darwin"):
                             # Wireless adapters are not well supported by the libpcap on OSX
-                            raise NodeError("Connecting to a Wireless adapter is not supported.")
+                            if (yield from self._is_wifi_adapter_osx(port_info["interface"])):
+                                raise NodeError("Connecting to a Wireless adapter is not supported on Mac OS")
                         if sys.platform.startswith("darwin") and port_info["interface"].startswith("vmnet"):
                             # Use a special NIO to connect to VMware vmnet interfaces on OSX (libpcap doesn't support them)
                             yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=bridge_name,
