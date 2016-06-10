@@ -43,4 +43,3 @@ def test_file_watcher_not_existing(async_run, tmpdir):
     file.write("b")
     async_run(asyncio.sleep(1.5))
     callback.assert_called_with(str(file))
-

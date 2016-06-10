@@ -23,6 +23,7 @@ class FileWatcher:
     """
     Watch for file change and call the callback when something happen
     """
+
     def __init__(self, path, callback, delay=1):
         if not isinstance(path, str):
             path = str(path)
@@ -32,7 +33,7 @@ class FileWatcher:
         self._closed = False
 
         try:
-            self._mtime = os.stat(path).st_mtime
+            self._mtime = os.stat(path).st_mtime_ns
         except OSError:
             self._mtime = None
         asyncio.get_event_loop().call_later(self._delay, self._check_config_file_change)
@@ -48,9 +49,10 @@ class FileWatcher:
             return
         changed = False
         try:
-            if os.stat(self._path).st_mtime != self._mtime:
+            mtime = os.stat(self._path).st_mtime_ns
+            if mtime != self._mtime:
                 changed = True
-                self._mtime = os.stat(self._path).st_mtime
+                self._mtime = mtime
         except OSError:
             self._mtime = None
         if changed:
@@ -64,5 +66,3 @@ class FileWatcher:
     @callback.setter
     def callback(self, val):
         self._callback = val
-
-
