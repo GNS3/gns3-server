@@ -42,6 +42,10 @@ IOU_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet", None]
+        },
         "path": {
             "description": "Path of iou binary",
             "type": "string"
@@ -114,6 +118,10 @@ IOU_UPDATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": ["integer", "null"]
+        },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet", None]
         },
         "path": {
             "description": "Path of iou binary",
