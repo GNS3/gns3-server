@@ -24,6 +24,8 @@ import os
 import configparser
 import asyncio
 
+from .utils.file_watcher import FileWatcher
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -100,24 +102,13 @@ class Config(object):
         self.read_config()
 
     def _watch_config_file(self):
-        asyncio.get_event_loop().call_later(1, self._check_config_file_change)
+        for file in self._files:
+            self._watched_files[file] = FileWatcher(file, self._config_file_change)
 
-    def _check_config_file_change(self):
-        """
-        Check if configuration file has changed on the disk
-        """
-        changed = False
-        for file in self._watched_files:
-            try:
-                if os.stat(file).st_mtime != self._watched_files[file]:
-                    changed = True
-            except OSError:
-                continue
-        if changed:
-            self.read_config()
-            for section in self._override_config:
-                self.set_section_config(section, self._override_config[section])
-        self._watch_config_file()
+    def _config_file_change(self, path):
+        self.read_config()
+        for section in self._override_config:
+            self.set_section_config(section, self._override_config[section])
 
     def reload(self):
         """
