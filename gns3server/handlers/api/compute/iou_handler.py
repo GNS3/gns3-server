@@ -70,10 +70,6 @@ class IOUHandler:
                 if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):
                     continue
                 setattr(vm, name, value)
-        if "startup_config_content" in request.json:
-            vm.startup_config = request.json.get("startup_config_content")
-        if "private_config_content" in request.json:
-            vm.private_config = request.json.get("private_config_content")
         response.set_status(201)
         response.json(vm)
 
@@ -119,10 +115,6 @@ class IOUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
-        if "startup_config_content" in request.json:
-            vm.startup_config = request.json.get("startup_config_content")
-        if "private_config_content" in request.json:
-            vm.private_config = request.json.get("private_config_content")
         vm.updated()
         response.json(vm)
 
