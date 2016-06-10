@@ -23,6 +23,7 @@ class Pool():
     """
     Limit concurrency for running parallel tasks
     """
+
     def __init__(self, concurrency=5):
         self._tasks = []
         self._concurrency = concurrency
@@ -41,6 +42,9 @@ class Pool():
                 task, args, kwargs = self._tasks.pop(0)
                 pending.add(task(*args, **kwargs))
             (done, pending) = yield from asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                if task.exception():
+                    raise task.exception()
 
 
 def main():
