@@ -165,9 +165,15 @@ class Cloud(BaseNode):
                                                                                                              interface=port_info["interface"]))
                     else:
                         if sys.platform.startswith("darwin") and port_info["interface"].startswith("en"):
+                            # Wireless adapters are not well supported by the libpcap on OSX
                             raise NodeError("Connecting to a Wireless adapter is not supported.")
-                        yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
-                                                                                                            interface=port_info["interface"]))
+                        if sys.platform.startswith("darwin") and port_info["interface"].startswith("vmnet"):
+                            # Use a special NIO to connect to VMware vmnet interfaces on OSX (libpcap doesn't support them)
+                            yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=bridge_name,
+                                                                                                                    interface=port_info["interface"]))
+                        else:
+                            yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
+                                                                                                                interface=port_info["interface"]))
 
                 elif port_info["type"] == "tap":
                     yield from self._ubridge_send('bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name,
