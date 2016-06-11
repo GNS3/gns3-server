@@ -332,7 +332,7 @@ class Compute:
                 if body:
                     try:
                         msg = json.loads(body)["message"]
-                    except (KeyError, json.decoder.JSONDecodeError):
+                    except (KeyError, ValueError):
                         msg = body
                 else:
                     msg = ""
@@ -349,7 +349,7 @@ class Compute:
                     try:
                         raise ComputeConflict(json.loads(body))
                     # If the 409 doesn't come from a GNS3 server
-                    except json.decoder.JSONDecodeError:
+                    except ValueError:
                         raise aiohttp.web.HTTPConflict(text=msg)
                 elif response.status == 500:
                     raise aiohttp.web.HTTPInternalServerError(text="Internal server error {}".format(url))

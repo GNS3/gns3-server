@@ -50,7 +50,7 @@ def project(http_controller, async_run):
 
 @pytest.fixture
 def node(project, compute, async_run):
-    node = Node(project, compute, name="test", node_type="vpcs")
+    node = Node(project, compute, "test", node_type="vpcs")
     project._nodes[node.id] = node
     return node
 

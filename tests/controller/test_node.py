@@ -38,8 +38,7 @@ def compute():
 @pytest.fixture
 def node(compute, controller):
     project = Project(str(uuid.uuid4()), controller=controller)
-    node = Node(project, compute,
-                name="demo",
+    node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="vpcs",
                 console_type="vnc",
@@ -70,7 +69,7 @@ def test_json(node, compute):
 
 
 def test_init_without_uuid(project, compute):
-    node = Node(project, compute,
+    node = Node(project, compute, "demo",
                 node_type="vpcs",
                 console_type="vnc")
     assert node.id is not None
@@ -258,8 +257,7 @@ def test_dynamips_idlepc_proposals(node, async_run, compute):
 
 def test_upload_missing_image(compute, controller, async_run, images_dir):
     project = Project(str(uuid.uuid4()), controller=controller)
-    node = Node(project, compute,
-                name="demo",
+    node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="qemu",
                 properties={"hda_disk_image": "linux.img"})

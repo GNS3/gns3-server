@@ -53,8 +53,8 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node1 = async_run(project.add_node(compute, None))
-    node2 = async_run(project.add_node(compute, None))
+    node1 = async_run(project.add_node(compute, "node1", None))
+    node2 = async_run(project.add_node(compute, "node2", None))
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
@@ -82,8 +82,8 @@ def test_list_link(http_controller, tmpdir, project, compute, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node1 = async_run(project.add_node(compute, None))
-    node2 = async_run(project.add_node(compute, None))
+    node1 = async_run(project.add_node(compute, "node1", None))
+    node2 = async_run(project.add_node(compute, "node2", None))
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {

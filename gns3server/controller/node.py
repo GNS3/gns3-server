@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import asyncio
 import copy
 import uuid
@@ -30,10 +29,11 @@ class Node:
     # This properties are used only on controller and are not forwarded to the compute
     CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "symbol", "label", "console_host"]
 
-    def __init__(self, project, compute, node_id=None, node_type=None, **kwargs):
+    def __init__(self, project, compute, name, node_id=None, node_type=None, **kwargs):
         """
         :param project: Project of the node
         :param compute: Compute server where the server will run
+        :param name: Node name
         :param node_id: UUID of the node (integer)
         :param node_type: Type of emulator
         :param kwargs: Node properties
@@ -48,7 +48,7 @@ class Node:
         self._compute = compute
         self._node_type = node_type
 
-        self._name = None
+        self._name = name
         self._console = None
         self._console_type = None
         self._properties = {}
@@ -83,10 +83,10 @@ class Node:
         return self._name
 
     @name.setter
-    def name(self, val):
-        self._name = val
+    def name(self, new_name):
+        self._name = new_name
         # The text in label need to be always the node name
-        self._label["text"] = val
+        self._label["text"] = new_name
 
     @property
     def node_type(self):
@@ -204,6 +204,9 @@ class Node:
 
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
+
+        # update the node name if present
+        self._project.update_node_name(self, kwargs.get("name"))
 
         # Update node properties with additional elements
         for prop in kwargs:

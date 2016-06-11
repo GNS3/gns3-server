@@ -35,8 +35,8 @@ def test_create(async_run, project):
     compute1 = MagicMock()
     compute2 = MagicMock()
 
-    node1 = Node(project, compute1, node_type="vpcs")
-    node2 = Node(project, compute2, node_type="vpcs")
+    node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node2 = Node(project, compute2, "node2", node_type="vpcs")
 
     link = UDPLink(project)
     async_run(link.add_node(node1, 0, 4))
@@ -86,8 +86,8 @@ def test_delete(async_run, project):
     compute1 = MagicMock()
     compute2 = MagicMock()
 
-    node1 = Node(project, compute1, node_type="vpcs")
-    node2 = Node(project, compute2, node_type="vpcs")
+    node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node2 = Node(project, compute2, "node2", node_type="vpcs")
 
     link = UDPLink(project)
     async_run(link.add_node(node1, 0, 4))
@@ -107,8 +107,8 @@ def test_choose_capture_side(async_run, project):
     compute2 = MagicMock()
     compute2.id = "local"
 
-    node_vpcs = Node(project, compute1, node_type="vpcs")
-    node_iou = Node(project, compute2, node_type="iou")
+    node_vpcs = Node(project, compute1, "node1", node_type="vpcs")
+    node_iou = Node(project, compute2, "node2", node_type="iou")
 
     link = UDPLink(project)
     async_run(link.add_node(node_vpcs, 0, 4))
@@ -116,8 +116,8 @@ def test_choose_capture_side(async_run, project):
 
     assert link._choose_capture_side()["node"] == node_iou
 
-    node_vpcs = Node(project, compute1, node_type="vpcs")
-    node_vpcs2 = Node(project, compute1, node_type="vpcs")
+    node_vpcs = Node(project, compute1, "node1", node_type="vpcs")
+    node_vpcs2 = Node(project, compute1, "node2", node_type="vpcs")
 
     link = UDPLink(project)
     async_run(link.add_node(node_vpcs, 0, 4))
@@ -128,8 +128,8 @@ def test_choose_capture_side(async_run, project):
         link._choose_capture_side()["node"]
 
     # Capture should run on the local node
-    node_iou = Node(project, compute1, node_type="iou")
-    node_iou2 = Node(project, compute2, node_type="iou")
+    node_iou = Node(project, compute1, "node1", node_type="iou")
+    node_iou2 = Node(project, compute2, "node2", node_type="iou")
 
     link = UDPLink(project)
     async_run(link.add_node(node_iou, 0, 4))
@@ -141,8 +141,8 @@ def test_choose_capture_side(async_run, project):
 def test_capture(async_run, project):
     compute1 = MagicMock()
 
-    node_vpcs = Node(project, compute1, node_type="vpcs", name="V1")
-    node_iou = Node(project, compute1, node_type="iou", name="I1")
+    node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
+    node_iou = Node(project, compute1, "I1", node_type="iou")
 
     link = UDPLink(project)
     async_run(link.add_node(node_vpcs, 0, 4))

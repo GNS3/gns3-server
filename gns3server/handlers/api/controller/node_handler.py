@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
+
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.utils.asyncio.pool import Pool
@@ -47,7 +49,7 @@ class NodeHandler:
         controller = Controller.instance()
         compute = controller.get_compute(request.json.pop("compute_id"))
         project = controller.get_project(request.match_info["project_id"])
-        node = yield from project.add_node(compute, request.json.pop("node_id", None), **request.json)
+        node = yield from project.add_node(compute, request.json.pop("name"), request.json.pop("node_id", None), **request.json)
         response.set_status(201)
         response.json(node)
 

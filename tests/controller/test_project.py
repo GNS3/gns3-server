@@ -94,7 +94,7 @@ def test_add_node_local(async_run, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert node.id in project._nodes
 
     compute.post.assert_any_call('/projects', data={
@@ -123,7 +123,7 @@ def test_add_node_non_local(async_run, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
@@ -149,7 +149,7 @@ def test_delete_node(async_run, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert node.id in project._nodes
     async_run(project.delete_node(node.id))
     assert node.id not in project._nodes
@@ -166,7 +166,7 @@ def test_getVM(async_run, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    vm = async_run(project.add_node(compute, None, name="test", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert project.get_node(vm.id) == vm
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
@@ -180,8 +180,8 @@ def test_addLink(async_run, project, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    vm1 = async_run(project.add_node(compute, None, name="test1", node_type="vpcs", properties={"startup_config": "test.cfg"}))
-    vm2 = async_run(project.add_node(compute, None, name="test2", node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm1 = async_run(project.add_node(compute, "test1", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm2 = async_run(project.add_node(compute, "test2", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     controller._notification = MagicMock()
     link = async_run(project.add_link())
     async_run(link.add_node(vm1, 3, 1))

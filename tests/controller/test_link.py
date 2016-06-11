@@ -41,8 +41,8 @@ def compute():
 
 @pytest.fixture
 def link(async_run, project, compute):
-    node1 = Node(project, compute)
-    node2 = Node(project, compute)
+    node1 = Node(project, compute, "node1")
+    node2 = Node(project, compute, "node2")
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))
@@ -51,7 +51,7 @@ def link(async_run, project, compute):
 
 
 def test_addNode(async_run, project, compute):
-    node1 = Node(project, compute)
+    node1 = Node(project, compute, "node1")
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))
@@ -65,8 +65,8 @@ def test_addNode(async_run, project, compute):
 
 
 def test_json(async_run, project, compute):
-    node1 = Node(project, compute)
-    node2 = Node(project, compute)
+    node1 = Node(project, compute, "node1")
+    node2 = Node(project, compute, "node2")
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))
@@ -110,8 +110,8 @@ def test_start_streaming_pcap(link, async_run, tmpdir, project):
 
 
 def test_default_capture_file_name(project, compute, async_run):
-    node1 = Node(project, compute, name="Hello@")
-    node2 = Node(project, compute, name="w0.rld")
+    node1 = Node(project, compute, "Hello@")
+    node2 = Node(project, compute, "w0.rld")
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))
