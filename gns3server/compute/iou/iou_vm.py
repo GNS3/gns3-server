@@ -98,7 +98,7 @@ class IOUVM(BaseNode):
 
     def _nvram_changed(self, path):
         """
-        Called when the NVRAM file as changed
+        Called when the NVRAM file has changed
         """
         self.save_configs()
 
