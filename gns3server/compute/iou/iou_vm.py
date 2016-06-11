@@ -46,9 +46,9 @@ from ..base_node import BaseNode
 from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
 from .ioucon import start_ioucon
+from gns3server.utils.file_watcher import FileWatcher
 import gns3server.utils.asyncio
 import gns3server.utils.images
-
 
 import logging
 import sys
@@ -91,8 +91,16 @@ class IOUVM(BaseNode):
         self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
+        self._nvram_watcher = None
+
     def _config(self):
         return self._manager.config.get_section_config("IOU")
+
+    def _nvram_changed(self, path):
+        """
+        Called when the NVRAM file has changed
+        """
+        self.save_configs()
 
     @asyncio.coroutine
     def close(self):
@@ -424,6 +432,12 @@ class IOUVM(BaseNode):
                                                                                                          self.iourc_path,
                                                                                                          hostname))
 
+    def _nvram_file(self):
+        """
+        Path to the nvram file
+        """
+        return os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+
     def _push_configs_to_nvram(self):
         """
         Push the startup-config and private-config content to the NVRAM.
@@ -431,7 +445,7 @@ class IOUVM(BaseNode):
 
         startup_config_content = self.startup_config_content
         if startup_config_content:
-            nvram_file = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+            nvram_file = self._nvram_file()
             try:
                 if not os.path.exists(nvram_file):
                     open(nvram_file, "a").close()
@@ -489,6 +503,8 @@ class IOUVM(BaseNode):
             # check if there is enough RAM to run
             self.check_available_ram(self.ram)
 
+            self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed)
+
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
 
@@ -544,7 +560,7 @@ class IOUVM(BaseNode):
         Before starting the VM, rename the nvram and vlan.dat files with the correct IOU application identifier.
         """
 
-        destination = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+        destination = self._nvram_file()
         for file_path in glob.glob(os.path.join(glob.escape(self.working_dir), "nvram_*")):
             shutil.move(file_path, destination)
         destination = os.path.join(self.working_dir, "vlan.dat-{:05d}".format(self.application_id))
@@ -643,6 +659,10 @@ class IOUVM(BaseNode):
         """
         Stops the IOU process.
         """
+
+        if self._nvram_watcher:
+            self._nvram_watcher.close()
+            self._nvram_watcher = None
 
         if self.is_running():
             # stop console support

@@ -72,23 +72,6 @@ class IOU(BaseManager):
         yield from super().close_node(node_id, *args, **kwargs)
         return node
 
-    @asyncio.coroutine
-    def project_committed(self, project):
-        """
-        Called when a project has been committed.
-
-        :param project: Project instance
-        """
-
-        # save the configs when the project is committed
-        for node in self._nodes.copy().values():
-            if node.project.id == project.id:
-                try:
-                    node.save_configs()
-                except IOUError as e:
-                    log.warning(e)
-                    continue
-
     def get_application_id(self, node_id):
         """
         Get an unique application identifier for IOU.
