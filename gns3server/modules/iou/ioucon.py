@@ -550,6 +550,8 @@ def send_recv_loop(epoll, console, router, esc_char, stop_event):
                         esc_state = True
                     else:
                         router.write(buf)
+    except ConnectionError as e:
+        pass
     finally:
         router.unregister(epoll)
         console.unregister(epoll)
