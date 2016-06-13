@@ -22,16 +22,19 @@ Set up and run the server.
 import os
 import sys
 import signal
+import socket
+import ipaddress
 import asyncio
 import aiohttp
 import aiohttp_cors
 import functools
-import types
 import time
 import atexit
 
 from .route import Route
 from .request_handler import RequestHandler
+from ..utils.zeroconf import ServiceInfo, Zeroconf
+from ..utils.interfaces import interfaces
 from ..config import Config
 from ..compute import MODULES
 from ..compute.port_manager import PortManager
@@ -47,17 +50,18 @@ log = logging.getLogger(__name__)
 
 class WebServer:
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, service_interface):
 
         self._host = host
         self._port = port
+        self._service_interface = service_interface
         self._loop = None
         self._handler = None
         self._start_time = time.time()
         self._port_manager = PortManager(host)
 
     @staticmethod
-    def instance(host=None, port=None):
+    def instance(host=None, port=None, service_interface=None):
         """
         Singleton to return only one instance of Server.
 
@@ -67,7 +71,8 @@ class WebServer:
         if not hasattr(WebServer, "_instance") or WebServer._instance is None:
             assert host is not None
             assert port is not None
-            WebServer._instance = WebServer(host, port)
+            assert  service_interface is not None
+            WebServer._instance = WebServer(host, port, service_interface)
         return WebServer._instance
 
     @asyncio.coroutine
@@ -172,6 +177,38 @@ class WebServer:
 
         atexit.register(close_asyncio_loop)
 
+    def _start_zeroconf(self):
+        """
+        Starts the zero configuration networking service.
+        """
+
+        service_ip = self._host
+        service_port = self._port
+
+        valid_ip = True
+        try:
+            # test if this is a valid IP address
+            ipaddress.ip_address(valid_ip)
+        except ValueError:
+            valid_ip = False
+
+        if service_ip == "0.0.0.0" or service_ip == "::":
+            valid_ip = False
+
+        if valid_ip is False:
+            # look for the service interface to extract its IP address
+            local_interfaces = [interface for interface in interfaces() if interface["name"] == self._service_interface]
+            if not local_interfaces:
+                log.error("Could not find service interface {}".format(self._service_interface))
+            else:
+                service_ip = local_interfaces[0]["ip_address"]
+
+        # Advertise the server with DNS multicast
+        info = ServiceInfo("_http._tcp.local.", "GNS3VM._http._tcp.local.", socket.inet_aton(service_ip), service_port, 0, 0, properties={})
+        zeroconf = Zeroconf(interfaces=[self._host])
+        zeroconf.register_service(info)
+        return zeroconf, info
+
     def run(self):
         """
         Starts the server.
@@ -236,6 +273,7 @@ class WebServer:
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
 
+        zeroconf, info = self._start_zeroconf()
         try:
             self._loop.run_forever()
         except TypeError as e:
@@ -244,6 +282,8 @@ class WebServer:
             # TypeError: async() takes 1 positional argument but 3 were given
             log.warning("TypeError exception in the loop {}".format(e))
         finally:
+            zeroconf.unregister_service(info)
+            zeroconf.close()
             if self._handler and self._loop.is_running():
                 self._loop.run_until_complete(self._handler.finish_connections())
             server.close()
