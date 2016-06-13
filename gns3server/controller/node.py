@@ -84,6 +84,7 @@ class Node:
 
     @name.setter
     def name(self, new_name):
+        self._project.update_node_name(self, new_name)
         self._name = new_name
         # The text in label need to be always the node name
         self._label["text"] = new_name
@@ -205,19 +206,22 @@ class Node:
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
 
-        # update the node name if present
-        self._project.update_node_name(self, kwargs.get("name"))
-
+        compute_properties = None
         # Update node properties with additional elements
         for prop in kwargs:
             if getattr(self, prop) != kwargs[prop]:
                 if prop not in self.CONTROLLER_ONLY_PROPERTIES:
                     update_compute = True
-                setattr(self, prop, kwargs[prop])
+
+                # We update properties on the compute and wait for the anwser from the compute node
+                if prop == "properties":
+                    compute_properties =  kwargs[prop]
+                else:
+                    setattr(self, prop, kwargs[prop])
 
         self.project.controller.notification.emit("node.updated", self.__json__())
         if update_compute:
-            data = self._node_data()
+            data = self._node_data(properties=compute_properties)
             response = yield from self.put(None, data=data)
             self.parse_node_response(response.json)
 
@@ -243,11 +247,16 @@ class Node:
             else:
                 self._properties[key] = value
 
-    def _node_data(self):
+    def _node_data(self, properties=None):
         """
         Prepare node data to send to the remote controller
+
+        :param properties: If properties is None use actual property otherwise use the parameter
         """
-        data = copy.copy(self._properties)
+        if properties:
+            data = copy.copy(properties)
+        else:
+            data = copy.copy(self._properties)
         data["name"] = self._name
         if self._console:
             # console is optional for builtin nodes

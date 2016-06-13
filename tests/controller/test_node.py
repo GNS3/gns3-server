@@ -138,6 +138,34 @@ def test_update(node, compute, project, async_run, controller):
     controller._notification.emit.assert_called_with("node.updated", node.__json__())
 
 
+def test_update_properties(node, compute, project, async_run, controller):
+    """
+    properties will be updated by the answer from compute
+    """
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.put = AsyncioMagicMock(return_value=response)
+    controller._notification = AsyncioMagicMock()
+
+    async_run(node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "hello world"}, name="demo"))
+    data = {
+        "console": 2048,
+        "console_type": "vnc",
+        "startup_script": "hello world",
+        "name": "demo"
+    }
+    compute.put.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id), data=data)
+    assert node._console == 2048
+    assert node.x == 42
+    assert node._properties == {"startup_script": "echo test"}
+
+    # The notif should contain the old properties because it's the compute that will emit
+    # the correct info
+    node_notif = node.__json__()
+    node_notif["properties"]["startup_config"] = "echo test"
+    controller._notification.emit.assert_called_with("node.updated", node_notif)
+
+
 def test_update_only_controller(node, compute, project, async_run):
     """
     When updating property used only on controller we don't need to
