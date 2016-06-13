@@ -891,7 +891,7 @@ def test_start_vnc(vm, loop):
                 loop.run_until_complete(asyncio.async(vm._start_vnc()))
     assert vm._display is not None
     mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1280x1024x16")
-    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-shared", "-geometry", "1280x1024", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-noncache", "-listen", "127.0.0.1")
+    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-shared", "-geometry", "1280x1024", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-rfbportv6", str(vm.console), "-noncache", "-listen", "127.0.0.1")
     mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
 
 
