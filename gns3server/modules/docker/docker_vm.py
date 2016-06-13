@@ -321,7 +321,7 @@ class DockerVM(BaseVM):
         aux = self.aux
         state = yield from self._get_container_state()
 
-        yield from self.close()
+        yield from self.reset()
         yield from self.create()
         self.console = console
         self.aux = aux
@@ -567,7 +567,10 @@ class DockerVM(BaseVM):
 
         if not (yield from super().close()):
             return False
+        yield from self.reset()
 
+    @asyncio.coroutine
+    def reset(self):
         try:
             if self.console_type == "vnc":
                 if self._x11vnc_process:
