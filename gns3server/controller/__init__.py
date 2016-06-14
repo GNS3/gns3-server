@@ -26,6 +26,7 @@ from .project import Project
 from .compute import Compute
 from .notification import Notification
 from ..version import __version__
+from .topology import load_topology
 
 import logging
 log = logging.getLogger(__name__)
@@ -184,6 +185,29 @@ class Controller:
 
     def remove_project(self, project):
         del self._projects[project.id]
+
+    @asyncio.coroutine
+    def load_project(self, path):
+        """
+        Load a project from a .gns3
+
+        :param path: Path of the .gns3
+        """
+        topo_data = load_topology(path)
+        topology = topo_data.pop("topology")
+        topo_data.pop("version")
+        topo_data.pop("revision")
+        topo_data.pop("type")
+
+        project = yield from self.add_project(path=os.path.dirname(path), **topo_data)
+
+        for compute in topology["computes"]:
+            yield from self.add_compute(**compute)
+        for node in topology["nodes"]:
+            compute = self.get_compute(node.pop("compute_id"))
+            name = node.pop("name")
+            node_id = node.pop("node_id")
+            yield from project.add_node(compute, name, node_id, **node)
 
     @property
     def projects(self):

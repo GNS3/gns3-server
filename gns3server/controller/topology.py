@@ -15,8 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
+import aiohttp
+
 from ..version import __version__
 
+GNS3_FILE_FORMAT_REVISION = 5
 
 def project_to_topology(project):
     """
@@ -31,7 +35,7 @@ def project_to_topology(project):
             "computes": []
         },
         "type": "topology",
-        "revision": 5,
+        "revision": GNS3_FILE_FORMAT_REVISION,
         "version": __version__
     }
 
@@ -44,6 +48,20 @@ def project_to_topology(project):
     for compute in computes:
         if hasattr(compute, "__json__"):
             data["topology"]["computes"].append(compute.__json__())
-    print(data)
     #TODO: check JSON schema
     return data
+
+
+def load_topology(path):
+    """
+    Open a topology file, patch it for last GNS3 release and return it
+    """
+    try:
+        with open(path) as f:
+            topo = json.load(f)
+    except OSError as e:
+        raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
+    #TODO: Check JSON schema
+    if topo["revision"] < GNS3_FILE_FORMAT_REVISION:
+        raise aiohttp.web.HTTPConflict(text="Old GNS3 project are not yet supported")
+    return topo
