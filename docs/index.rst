@@ -5,10 +5,16 @@ Welcome to API documentation!
    The API is not stable, feel free to post comments on our website
    https://gns3.com/
 
+.. WARNING::
+   This documentation are for developers for user documentation go
+   to https://gns3.com/
+
+
 .. toctree::
     general
     glossary
     development
+    file_format
 
 
 Endpoints
