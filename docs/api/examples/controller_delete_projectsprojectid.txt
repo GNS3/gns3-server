@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/projects/df0a6f2c-5db1-48fa-96a2-6d321bafa40c'
+curl -i -X DELETE 'http://localhost:3080/v2/projects/ec3d0a96-da91-4c9b-aef5-3e437438639b'
 
-DELETE /v2/projects/df0a6f2c-5db1-48fa-96a2-6d321bafa40c HTTP/1.1
+DELETE /v2/projects/ec3d0a96-da91-4c9b-aef5-3e437438639b HTTP/1.1
 
 
 

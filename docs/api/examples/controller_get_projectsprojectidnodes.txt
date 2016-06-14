@@ -1,11 +1,11 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/f2f077e5-3a75-4ce4-962a-96d163ebc13d/nodes'
+curl -i -X GET 'http://localhost:3080/v2/projects/b56b2922-9cd6-4640-a39d-4ed03a40e39a/nodes'
 
-GET /v2/projects/f2f077e5-3a75-4ce4-962a-96d163ebc13d/nodes HTTP/1.1
+GET /v2/projects/b56b2922-9cd6-4640-a39d-4ed03a40e39a/nodes HTTP/1.1
 
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 487
+CONTENT-LENGTH: 775
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -18,14 +18,25 @@ X-ROUTE: /v2/projects/{project_id}/nodes
         "console": 2048,
         "console_host": "example.org",
         "console_type": null,
+        "label": {
+            "color": "#ff000000",
+            "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+            "text": "",
+            "x": -17.0234375,
+            "y": -25.0
+        },
         "name": "test",
         "node_directory": null,
-        "node_id": "6a61157a-6210-4bc7-90cc-411007224bb6",
+        "node_id": "4af8f65f-08af-4741-94e4-0e82c666e1a7",
         "node_type": "vpcs",
-        "project_id": "f2f077e5-3a75-4ce4-962a-96d163ebc13d",
+        "project_id": "b56b2922-9cd6-4640-a39d-4ed03a40e39a",
         "properties": {
             "startup_script": "echo test"
         },
-        "status": "stopped"
+        "status": "stopped",
+        "symbol": ":/symbols/computer.svg",
+        "x": 0,
+        "y": 0,
+        "z": 0
     }
 ]

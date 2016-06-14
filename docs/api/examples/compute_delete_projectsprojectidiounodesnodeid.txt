@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/3a447a6a-2bd3-45e9-b688-3a3a796b2c3c'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/37f31e57-9055-43de-95ec-4498ba9600ea'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/3a447a6a-2bd3-45e9-b688-3a3a796b2c3c HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/37f31e57-9055-43de-95ec-4498ba9600ea HTTP/1.1
 
 
 

@@ -1,24 +1,18 @@
-/v2/projects/{project_id}/commit
+/v2/computes/{compute_id}/{emulator}/images
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/projects/**{project_id}**/commit
+GET /v2/computes/**{compute_id}**/**{emulator}**/images
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Write changes on disk
+Return the list of images available on compute and controller for this emulator type
 
 Parameters
 **********
-- **project_id**: Project UUID
+- **compute_id**: Compute UUID
 
 Response status codes
 **********************
-- **404**: The project doesn't exist
-- **204**: Changes have been written on disk
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidcommit.txt
+- **200**: OK
+- **404**: Instance doesn't exist
 

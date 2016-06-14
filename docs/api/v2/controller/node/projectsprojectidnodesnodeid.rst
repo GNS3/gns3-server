@@ -24,6 +24,7 @@ Input
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
     <tr><td>console_host</td>                    <td> </td>                     <td>string</td>                     <td>Console host</td>                     </tr>
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: serial, vnc, telnet, null</td>                     </tr>
+    <tr><td>label</td>                    <td> </td>                     <td>object</td>                     <td></td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Node name</td>                     </tr>
     <tr><td>node_directory</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Working directory of the node. Read only</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
@@ -31,6 +32,10 @@ Input
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>properties</td>                    <td> </td>                     <td>object</td>                     <td>Properties specific to an emulator</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: stopped, started, suspended</td>                     </tr>
+    <tr><td>symbol</td>                    <td> </td>                     <td>string</td>                     <td>Symbol of the node</td>                     </tr>
+    <tr><td>x</td>                    <td> </td>                     <td>number</td>                     <td>X position of the node</td>                     </tr>
+    <tr><td>y</td>                    <td> </td>                     <td>number</td>                     <td>Y position of the node</td>                     </tr>
+    <tr><td>z</td>                    <td> </td>                     <td>number</td>                     <td>Z position of the node</td>                     </tr>
     </table>
 
 Output
@@ -44,6 +49,7 @@ Output
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
     <tr><td>console_host</td>                    <td> </td>                     <td>string</td>                     <td>Console host</td>                     </tr>
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: serial, vnc, telnet, null</td>                     </tr>
+    <tr><td>label</td>                    <td> </td>                     <td>object</td>                     <td></td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Node name</td>                     </tr>
     <tr><td>node_directory</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Working directory of the node. Read only</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
@@ -51,6 +57,10 @@ Output
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>properties</td>                    <td> </td>                     <td>object</td>                     <td>Properties specific to an emulator</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: stopped, started, suspended</td>                     </tr>
+    <tr><td>symbol</td>                    <td> </td>                     <td>string</td>                     <td>Symbol of the node</td>                     </tr>
+    <tr><td>x</td>                    <td> </td>                     <td>number</td>                     <td>X position of the node</td>                     </tr>
+    <tr><td>y</td>                    <td> </td>                     <td>number</td>                     <td>Y position of the node</td>                     </tr>
+    <tr><td>z</td>                    <td> </td>                     <td>number</td>                     <td>Z position of the node</td>                     </tr>
     </table>
 
 Sample session
@@ -66,8 +76,8 @@ Delete a node instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
