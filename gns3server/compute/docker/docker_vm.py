@@ -325,7 +325,7 @@ class DockerVM(BaseNode):
         aux = self.aux
         state = yield from self._get_container_state()
 
-        yield from self.close()
+        yield from self.reset()
         yield from self.create()
         self.console = console
         self.aux = aux
@@ -421,7 +421,8 @@ class DockerVM(BaseNode):
         if shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
             raise DockerError("Please install Xvfb and x11vnc before using the VNC support")
         self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", self._console_resolution + "x16")
-        self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
+        # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
+        self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-rfbportv6", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
 
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         yield from wait_for_file_creation(x11_socket)
@@ -570,7 +571,10 @@ class DockerVM(BaseNode):
 
         if not (yield from super().close()):
             return False
+        yield from self.reset()
 
+    @asyncio.coroutine
+    def reset(self):
         try:
             if self.console_type == "vnc":
                 if self._x11vnc_process:
@@ -587,7 +591,9 @@ class DockerVM(BaseNode):
             state = yield from self._get_container_state()
             if state == "paused" or state == "running":
                 yield from self.stop()
-            yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1})
+            # v – 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false.
+            # force - 1/True/true or 0/False/false, Kill then remove the container. Default false.
+            yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1, "v": 1})
             log.info("Docker container '{name}' [{image}] removed".format(
                 name=self._name, image=self._image))
 

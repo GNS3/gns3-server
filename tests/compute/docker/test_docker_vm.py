@@ -520,7 +520,7 @@ def test_update(loop, vm):
             with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock_query:
                 loop.run_until_complete(asyncio.async(vm.update()))
 
-    mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1})
+    mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call("POST", "containers/create", data={
         "Tty": True,
         "OpenStdin": True,
@@ -588,7 +588,7 @@ def test_update_running(loop, vm):
             with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock_query:
                 loop.run_until_complete(asyncio.async(vm.update()))
 
-    mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1})
+    mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call("POST", "containers/create", data={
         "Tty": True,
         "OpenStdin": True,
@@ -624,7 +624,7 @@ def test_delete(loop, vm):
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
             loop.run_until_complete(asyncio.async(vm.delete()))
-    mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
+        mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
 
 def test_close(loop, vm, port_manager):
@@ -638,7 +638,7 @@ def test_close(loop, vm, port_manager):
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
             loop.run_until_complete(asyncio.async(vm.close()))
-    mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
+        mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
     assert vm._closed is True
     assert "4242" not in port_manager.udp_ports
@@ -653,7 +653,7 @@ def test_close_vnc(loop, vm, port_manager):
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
             loop.run_until_complete(asyncio.async(vm.close()))
-    mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1})
+        mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
     assert vm._closed is True
     assert vm._xvfb_process.terminate.called
@@ -891,7 +891,7 @@ def test_start_vnc(vm, loop):
                 loop.run_until_complete(asyncio.async(vm._start_vnc()))
     assert vm._display is not None
     mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1280x1024x16")
-    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-shared", "-geometry", "1280x1024", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-noncache", "-listen", "127.0.0.1")
+    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-shared", "-geometry", "1280x1024", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-rfbportv6", str(vm.console), "-noncache", "-listen", "127.0.0.1")
     mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
 
 
