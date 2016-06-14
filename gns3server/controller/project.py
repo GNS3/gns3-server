@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import json
 import asyncio
 import aiohttp
 import shutil
@@ -23,9 +24,13 @@ import shutil
 from uuid import UUID, uuid4
 
 from .node import Node
+from .topology import project_to_topology
 from .udp_link import UDPLink
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class Project:
@@ -53,7 +58,6 @@ class Project:
             path = os.path.join(get_default_project_directory(), self._id)
         self.path = path
 
-        self._computes = set()
         self._allocated_node_names = set()
         self._nodes = {}
         self._links = {}
@@ -102,9 +106,12 @@ class Project:
         os.makedirs(path, exist_ok=True)
         return path
 
-    @asyncio.coroutine
-    def add_compute(self, compute):
-        self._computes.add(compute)
+    @property
+    def computes(self):
+        """
+        :return: Dictonnary of computes used by the project
+        """
+        return self._computes
 
     def allocate_node_name(self, base_name):
         """
@@ -207,6 +214,7 @@ class Project:
             yield from node.create()
             self._nodes[node.id] = node
             self.controller.notification.emit("node.created", node.__json__())
+            self.dump()
             return node
         return self._nodes[node_id]
 
@@ -217,6 +225,7 @@ class Project:
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
         yield from node.destroy()
+        self.dump()
         self.controller.notification.emit("node.deleted", node.__json__())
 
     def get_node(self, node_id):
@@ -242,6 +251,7 @@ class Project:
         """
         link = UDPLink(self)
         self._links[link.id] = link
+        self.dump()
         return link
 
     @asyncio.coroutine
@@ -249,6 +259,7 @@ class Project:
         link = self.get_link(link_id)
         del self._links[link.id]
         yield from link.delete()
+        self.dump()
         self.controller.notification.emit("link.deleted", link.__json__())
 
     def get_link(self, link_id):
@@ -295,6 +306,22 @@ class Project:
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         return path
+
+    def dump(self):
+        """
+        Dump topology to disk
+        """
+        try:
+            if self.name is None:
+                filename = "untitled.gns3"
+            else:
+                filename = self.name + ".gns3"
+            topo = project_to_topology(self)
+            log.debug("Write %s", filename)
+            with open(os.path.join(self.path, filename), "w+") as f:
+                json.dump(topo, f, indent=4, sort_keys=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
 
     def __json__(self):
 

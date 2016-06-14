@@ -170,8 +170,6 @@ class Controller:
         if project_id not in self._projects:
             project = Project(project_id=project_id, controller=self, **kwargs)
             self._projects[project.id] = project
-            for compute_server in self._computes.values():
-                yield from project.add_compute(compute_server)
             return self._projects[project.id]
         return self._projects[project_id]
 

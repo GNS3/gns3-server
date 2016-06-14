@@ -215,7 +215,7 @@ class Node:
 
                 # We update properties on the compute and wait for the anwser from the compute node
                 if prop == "properties":
-                    compute_properties =  kwargs[prop]
+                    compute_properties = kwargs[prop]
                 else:
                     setattr(self, prop, kwargs[prop])
 
@@ -224,6 +224,7 @@ class Node:
             data = self._node_data(properties=compute_properties)
             response = yield from self.put(None, data=data)
             self.parse_node_response(response.json)
+        self.project.dump()
 
     def parse_node_response(self, response):
         """
@@ -371,14 +372,14 @@ class Node:
 
     def __json__(self):
         return {
-            "compute_id": self._compute.id,
+            "compute_id": str(self._compute.id),
             "project_id": self._project.id,
             "node_id": self._id,
             "node_type": self._node_type,
             "node_directory": self._node_directory,
             "name": self._name,
             "console": self._console,
-            "console_host": self._compute.host,
+            "console_host": str(self._compute.host),
             "console_type": self._console_type,
             "command_line": self._command_line,
             "properties": self._properties,

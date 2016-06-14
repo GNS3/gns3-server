@@ -74,13 +74,6 @@ def test_captures_directory(tmpdir):
     assert os.path.exists(p.captures_directory)
 
 
-def test_add_compute(async_run):
-    compute = MagicMock()
-    project = Project()
-    async_run(project.add_compute(compute))
-    assert compute in project._computes
-
-
 def test_add_node_local(async_run, controller):
     """
     For a local server we send the project path
@@ -225,3 +218,13 @@ def test_delete(async_run, project, controller):
     async_run(project.delete())
     assert not os.path.exists(project.path)
 
+
+def test_dump():
+    directory = Config.instance().get_section_config("Server").get("projects_path")
+
+    with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
+        p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test")
+        p.dump()
+        with open(os.path.join(directory, p.id, "Test.gns3")) as f:
+            content = f.read()
+            assert "00010203-0405-0607-0809-0a0b0c0d0e0f" in content

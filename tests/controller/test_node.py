@@ -36,8 +36,12 @@ def compute():
 
 
 @pytest.fixture
-def node(compute, controller):
-    project = Project(str(uuid.uuid4()), controller=controller)
+def project(controller):
+    return Project(str(uuid.uuid4()), controller=controller)
+
+
+@pytest.fixture
+def node(compute, project):
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="vpcs",
@@ -48,14 +52,14 @@ def node(compute, controller):
 
 def test_json(node, compute):
     assert node.__json__() == {
-        "compute_id": compute.id,
+        "compute_id": str(compute.id),
         "project_id": node.project.id,
         "node_id": node.id,
         "node_type": node.node_type,
         "name": "demo",
         "console": node.console,
         "console_type": node.console_type,
-        "console_host": compute.host,
+        "console_host": str(compute.host),
         "command_line": None,
         "node_directory": None,
         "properties": node.properties,
@@ -123,6 +127,7 @@ def test_update(node, compute, project, async_run, controller):
     response.json = {"console": 2048}
     compute.put = AsyncioMagicMock(return_value=response)
     controller._notification = AsyncioMagicMock()
+    project.dump = MagicMock()
 
     async_run(node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo"))
     data = {
@@ -136,6 +141,7 @@ def test_update(node, compute, project, async_run, controller):
     assert node.x == 42
     assert node._properties == {"startup_script": "echo test"}
     controller._notification.emit.assert_called_with("node.updated", node.__json__())
+    assert project.dump.called
 
 
 def test_update_properties(node, compute, project, async_run, controller):
