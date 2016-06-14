@@ -114,18 +114,6 @@ def test_update_path_project_non_local(http_compute, tmpdir):
         assert response.status == 403
 
 
-def test_commit_project(http_compute, project):
-    with asyncio_patch("gns3server.compute.project.Project.commit", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/commit".format(project_id=project.id), example=True)
-    assert response.status == 204
-    assert mock.called
-
-
-def test_commit_project_invalid_uuid(http_compute):
-    response = http_compute.post("/projects/{project_id}/commit".format(project_id=uuid.uuid4()))
-    assert response.status == 404
-
-
 def test_delete_project(http_compute, project):
     with asyncio_patch("gns3server.compute.project.Project.delete", return_value=True) as mock:
         response = http_compute.delete("/projects/{project_id}".format(project_id=project.id), example=True)

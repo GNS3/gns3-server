@@ -73,18 +73,6 @@ def test_list_projects(http_controller, tmpdir):
     assert projects[0]["name"] == "test"
 
 
-def test_commit_project(http_controller, project):
-    with asyncio_patch("gns3server.controller.project.Project.commit", return_value=True) as mock:
-        response = http_controller.post("/projects/{project_id}/commit".format(project_id=project.id), example=True)
-    assert response.status == 204
-    assert mock.called
-
-
-def test_commit_project_invalid_uuid(http_controller):
-    response = http_controller.post("/projects/{project_id}/commit".format(project_id=uuid.uuid4()))
-    assert response.status == 404
-
-
 def test_get_project(http_controller, project):
     response = http_controller.get("/projects/{project_id}".format(project_id=project.id), example=True)
     assert response.status == 200

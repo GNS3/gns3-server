@@ -289,16 +289,6 @@ class BaseManager:
         pass
 
     @asyncio.coroutine
-    def project_committed(self, project):
-        """
-        Called when a project is committed.
-
-        :param project: Project instance
-        """
-
-        pass
-
-    @asyncio.coroutine
     def delete_node(self, node_id):
         """
         Delete a node. The node working directory will be destroyed when a commit is received.
@@ -309,7 +299,7 @@ class BaseManager:
 
         node = yield from self.close_node(node_id)
         node.project.emit("node.deleted", node)
-        node.project.mark_node_for_destruction(node)
+        yield from node.project.remove_node(node)
         if node.id in self._nodes:
             del self._nodes[node.id]
         return node

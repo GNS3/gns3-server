@@ -106,43 +106,6 @@ def test_node_working_directory(tmpdir, node):
         assert os.path.exists(p.node_working_directory(node))
 
 
-def test_mark_node_for_destruction(node):
-    project = Project(project_id=str(uuid4()))
-    project.add_node(node)
-    project.mark_node_for_destruction(node)
-    assert len(project._nodes_to_destroy) == 1
-    assert len(project.nodes) == 0
-
-
-def test_commit(manager, loop):
-    project = Project(project_id=str(uuid4()))
-    node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    project.add_node(node)
-    directory = project.node_working_directory(node)
-    project.mark_node_for_destruction(node)
-    assert len(project._nodes_to_destroy) == 1
-    assert os.path.exists(directory)
-    loop.run_until_complete(asyncio.async(project.commit()))
-    assert len(project._nodes_to_destroy) == 0
-    assert os.path.exists(directory) is False
-    assert len(project.nodes) == 0
-
-
-def test_commit_permission_issue(manager, loop):
-    """
-    GNS3 will fix the permission and continue to delete
-    """
-    project = Project(project_id=str(uuid4()))
-    node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    project.add_node(node)
-    directory = project.node_working_directory(node)
-    project.mark_node_for_destruction(node)
-    assert len(project._nodes_to_destroy) == 1
-    assert os.path.exists(directory)
-    os.chmod(directory, 0)
-    loop.run_until_complete(asyncio.async(project.commit()))
-
-
 def test_project_delete(loop):
     project = Project(project_id=str(uuid4()))
     directory = project.path

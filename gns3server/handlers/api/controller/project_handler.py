@@ -77,23 +77,6 @@ class ProjectHandler:
         response.json(project)
 
     @Route.post(
-        r"/projects/{project_id}/commit",
-        description="Write changes on disk",
-        parameters={
-            "project_id": "Project UUID",
-        },
-        status_codes={
-            204: "Changes have been written on disk",
-            404: "The project doesn't exist"
-        })
-    def commit(request, response):
-
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
-        yield from project.commit()
-        response.set_status(204)
-
-    @Route.post(
         r"/projects/{project_id}/close",
         description="Close a project",
         parameters={

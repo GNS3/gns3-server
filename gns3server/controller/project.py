@@ -274,11 +274,6 @@ class Project:
         self._allocated_node_names.clear()
 
     @asyncio.coroutine
-    def commit(self):
-        for compute in self._project_created_on_compute:
-            yield from compute.post("/projects/{}/commit".format(self._id))
-
-    @asyncio.coroutine
     def delete(self):
         yield from self.close()
         for compute in self._project_created_on_compute:

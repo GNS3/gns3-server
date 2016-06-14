@@ -56,7 +56,6 @@ class Project:
         self._id = project_id
 
         self._nodes = set()
-        self._nodes_to_destroy = set()
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
 
@@ -231,14 +230,6 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create the capture working directory: {}".format(e))
         return workdir
 
-    def mark_node_for_destruction(self, node):
-        """
-        :param node: An instance of Node
-        """
-
-        self.remove_node(node)
-        self._nodes_to_destroy.add(node)
-
     def add_node(self, node):
         """
         Adds a node to the project.
@@ -258,6 +249,7 @@ class Project:
         """
 
         if node in self._nodes:
+            yield from node.delete()
             self._nodes.remove(node)
 
     @asyncio.coroutine
@@ -318,19 +310,6 @@ class Project:
             port_manager.release_tcp_port(port, self)
         for port in self._used_udp_ports.copy():
             port_manager.release_udp_port(port, self)
-
-    @asyncio.coroutine
-    def commit(self):
-        """
-        Writes project changes on disk
-        """
-
-        while self._nodes_to_destroy:
-            node = self._nodes_to_destroy.pop()
-            yield from node.delete()
-            self.remove_node(node)
-        for module in self.compute():
-            yield from module.instance().project_committed(self)
 
     @asyncio.coroutine
     def delete(self):
