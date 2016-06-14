@@ -43,7 +43,7 @@ def test_affect_uuid():
 
 def test_json(tmpdir):
     p = Project()
-    assert p.__json__() == {"name": p.name, "project_id": p.id, "path": p.path}
+    assert p.__json__() == {"name": p.name, "project_id": p.id, "path": p.path, "status": "opened"}
 
 
 def test_path(tmpdir):

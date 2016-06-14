@@ -40,12 +40,14 @@ class Project:
 
     :param project_id: force project identifier (None by default auto generate an UUID)
     :param path: path of the project. (None use the standard directory)
+    :param status: Status of the project (opened / closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, controller=None):
+    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened"):
 
         self._controller = controller
         self._name = name
+        self._status = status
         if project_id is None:
             self._id = str(uuid4())
         else:
@@ -81,6 +83,10 @@ class Project:
     @property
     def path(self):
         return self._path
+
+    @property
+    def status(self):
+        return self._status
 
     @path.setter
     def path(self, path):
@@ -355,5 +361,6 @@ class Project:
         return {
             "name": self._name,
             "project_id": self._id,
-            "path": self._path
+            "path": self._path,
+            "status": "opened"
         }

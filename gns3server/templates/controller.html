@@ -7,11 +7,12 @@
 The purpose of this page is to help for GNS3 debug. This can be dropped
 in futur GNS3 versions.
 
-<h2>Opened projects</h2>
+<h2>Projects</h2>
 <table border="1">
     <tr>
         <th>Name</th>
-        <th>ID</td>
+        <th>ID</th>
+        <th>Status</th>
         <th>Nodes</th>
         <th>Links</th>
     </tr>
@@ -19,6 +20,7 @@ in futur GNS3 versions.
 <tr>
     <td><a href="/projects/{{project.id}}">{{project.name}}</a></td>
     <td><a href="/projects/{{project.id}}">{{project.id}}</a></td>
+    <td>{{project.status}}</td>
     <td>{{project.nodes|length}}</td>
     <td>{{project.links|length}}</td>
 </tr>

@@ -81,6 +81,10 @@ PROJECT_OBJECT_SCHEMA = {
             "description": "Project directory",
             "type": ["string", "null"],
             "minLength": 1
+        },
+        "status": {
+            "description": "Project status Read only",
+            "enum": ["opened", "closed"]
         }
     },
     "additionalProperties": False,
