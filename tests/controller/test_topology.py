@@ -64,7 +64,6 @@ def test_basic_topology(tmpdir, async_run, controller):
     assert topo["topology"]["computes"][0] == compute.__json__()
 
 
-
 def test_load_topology(tmpdir):
     data = {
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
@@ -83,6 +82,7 @@ def test_load_topology(tmpdir):
         json.dump(data, f)
     topo = load_topology(path)
     assert topo == data
+
 
 def test_load_topology_file_error(tmpdir):
     path = str(tmpdir / "test.gns3")

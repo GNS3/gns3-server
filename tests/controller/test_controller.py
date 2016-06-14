@@ -21,7 +21,7 @@ import json
 import pytest
 import aiohttp
 from unittest.mock import MagicMock
-from tests.utils import AsyncioMagicMock
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 from gns3server.controller import Controller
 from gns3server.controller.compute import Compute
@@ -204,8 +204,7 @@ def test_load_project(controller, async_run, tmpdir):
                 }
             ],
             "links": [
-                 {
-                    "capturing": True,
+                {
                     "link_id": "c44331d2-2da4-490d-9aad-7f5c126ae271",
                     "nodes": [
                         {"node_id": "c067b922-7f77-4680-ac00-0226c6583598", "adapter_number": 0, "port_number": 0},
@@ -240,15 +239,17 @@ def test_load_project(controller, async_run, tmpdir):
     with open(str(tmpdir / "test.gns3"), "w+") as f:
         json.dump(data, f)
     controller.add_compute = AsyncioMagicMock()
-    mock_project = MagicMock()
-    controller.add_project = AsyncioMagicMock(return_value=mock_project)
     controller._computes["my_remote"] = MagicMock()
 
-    async_run(controller.load_project(str(tmpdir / "test.gns3")))
+    with asyncio_patch("gns3server.controller.node.Node.create") as mock_node_create:
+        async_run(controller.load_project(str(tmpdir / "test.gns3")))
 
     controller.add_compute.assert_called_with(compute_id='my_remote', host='127.0.0.1', name='My remote', port=3080, protocol='http')
-    controller.add_project.assert_called_with(name='Test', project_id='c8d07a5a-134f-4c3f-8599-e35eac85eb17', path=str(tmpdir))
+    project = controller.get_project('c8d07a5a-134f-4c3f-8599-e35eac85eb17')
+    assert project.name == "Test"
+    assert project.path == str(tmpdir)
+    link = project.get_link("c44331d2-2da4-490d-9aad-7f5c126ae271")
+    assert len(link.nodes) == 2
 
-    mock_project.add_node.assert_any_call(controller._computes["my_remote"], 'PC1', '50d66d7b-0dd7-4e9f-b720-6eb621ae6543', node_type='vpcs', properties={'startup_script': 'set pcname PC1\n', 'startup_script_path': 'startup.vpc'})
-    mock_project.add_node.assert_any_call(controller._computes["my_remote"], 'PC2', 'c067b922-7f77-4680-ac00-0226c6583598', node_type='vpcs', properties={'startup_script': 'set pcname PC2\n', 'startup_script_path': 'startup.vpc'})
-
+    node1 = project.get_node("50d66d7b-0dd7-4e9f-b720-6eb621ae6543")
+    assert node1.name == "PC1"

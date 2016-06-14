@@ -22,6 +22,7 @@ from ..version import __version__
 
 GNS3_FILE_FORMAT_REVISION = 5
 
+
 def project_to_topology(project):
     """
     :return: A dictionnary with the topology ready to dump to a .gns3

@@ -24,8 +24,8 @@ from .link import Link
 
 class UDPLink(Link):
 
-    def __init__(self, project):
-        super().__init__(project)
+    def __init__(self, project, link_id=None):
+        super().__init__(project, link_id=link_id)
         self._capture_node = None
 
     @asyncio.coroutine

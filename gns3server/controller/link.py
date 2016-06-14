@@ -30,9 +30,12 @@ class Link:
     Base class for links.
     """
 
-    def __init__(self, project):
+    def __init__(self, project, link_id=None):
 
-        self._id = str(uuid.uuid4())
+        if link_id:
+            self._id = link_id
+        else:
+            self._id = str(uuid.uuid4())
         self._nodes = []
         self._project = project
         self._capturing = False
@@ -133,6 +136,10 @@ class Link:
     @property
     def id(self):
         return self._id
+
+    @property
+    def nodes(self):
+        return self._nodes
 
     @property
     def capturing(self):

@@ -200,14 +200,7 @@ class Controller:
         topo_data.pop("type")
 
         project = yield from self.add_project(path=os.path.dirname(path), **topo_data)
-
-        for compute in topology["computes"]:
-            yield from self.add_compute(**compute)
-        for node in topology["nodes"]:
-            compute = self.get_compute(node.pop("compute_id"))
-            name = node.pop("name")
-            node_id = node.pop("node_id")
-            yield from project.add_node(compute, name, node_id, **node)
+        yield from project.load()
 
     @property
     def projects(self):

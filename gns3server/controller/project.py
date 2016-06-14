@@ -24,10 +24,11 @@ import shutil
 from uuid import UUID, uuid4
 
 from .node import Node
-from .topology import project_to_topology
+from .topology import project_to_topology, load_topology
 from .udp_link import UDPLink
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -245,11 +246,13 @@ class Project:
         return self._nodes
 
     @asyncio.coroutine
-    def add_link(self):
+    def add_link(self, link_id=None):
         """
         Create a link. By default the link is empty
         """
-        link = UDPLink(self)
+        if link_id and link_id in self._links:
+            return self._links[link.id]
+        link = UDPLink(self, link_id=link_id)
         self._links[link.id] = link
         self.dump()
         return link
@@ -307,18 +310,42 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         return path
 
+    def _topology_file(self):
+        if self.name is None:
+            filename = "untitled.gns3"
+        else:
+            filename = self.name + ".gns3"
+        return os.path.join(self.path, filename)
+
+    @asyncio.coroutine
+    def load(self):
+        """
+        Load topology elements
+        """
+        path = self._topology_file()
+        topology = load_topology(path)["topology"]
+        for compute in topology["computes"]:
+            yield from self.controller.add_compute(**compute)
+        for node in topology["nodes"]:
+            compute = self.controller.get_compute(node.pop("compute_id"))
+            name = node.pop("name")
+            node_id = node.pop("node_id")
+            yield from self.add_node(compute, name, node_id, **node)
+        for link_data in topology["links"]:
+            link = yield from self.add_link(link_id=link_data["link_id"])
+            for node_link in link_data["nodes"]:
+                node = self.get_node(node_link["node_id"])
+                yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"])
+
     def dump(self):
         """
         Dump topology to disk
         """
         try:
-            if self.name is None:
-                filename = "untitled.gns3"
-            else:
-                filename = self.name + ".gns3"
             topo = project_to_topology(self)
-            log.debug("Write %s", filename)
-            with open(os.path.join(self.path, filename), "w+") as f:
+            path = self._topology_file()
+            log.debug("Write %s", path)
+            with open(path, "w+") as f:
                 json.dump(topo, f, indent=4, sort_keys=True)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
