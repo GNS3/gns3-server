@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import zlib
 import asyncio
 import os
 
@@ -22,20 +23,43 @@ import os
 class FileWatcher:
     """
     Watch for file change and call the callback when something happen
+
+    :param paths: A path or a list of file to watch
+    :param delay: Delay between file check (seconds)
+    :param strategy: File change strategy (mtime: modification time, hash: hash compute)
     """
 
-    def __init__(self, path, callback, delay=1):
-        if not isinstance(path, str):
-            path = str(path)
-        self._path = path
+    def __init__(self, paths, callback, delay=1, strategy='mtime'):
+        self._paths = []
+        if not isinstance(paths, list):
+            paths = [paths]
+        for path in paths:
+            if not isinstance(path, str):
+                path = str(path)
+            self._paths.append(path)
+
         self._callback = callback
         self._delay = delay
         self._closed = False
+        self._strategy = strategy
 
-        try:
-            self._mtime = os.stat(path).st_mtime_ns
-        except OSError:
-            self._mtime = None
+        if self._strategy == 'mtime':
+            # Store modification time
+            self._mtime = {}
+            for path in self._paths:
+                try:
+                    self._mtime[path] = os.stat(path).st_mtime_ns
+                except OSError:
+                    self._mtime[path] = None
+        else:
+            # Store hash
+            self._hashed = {}
+            for path in self._paths:
+                try:
+                    # Alder32 is a fast bu insecure hash algorithm
+                    self._hashed[path] = zlib.adler32(open(path, 'rb').read())
+                except OSError:
+                    self._hashed[path] = None
         asyncio.get_event_loop().call_later(self._delay, self._check_config_file_change)
 
     def __del__(self):
@@ -48,15 +72,26 @@ class FileWatcher:
         if self._closed:
             return
         changed = False
-        try:
-            mtime = os.stat(self._path).st_mtime_ns
-            if mtime != self._mtime:
-                changed = True
-                self._mtime = mtime
-        except OSError:
-            self._mtime = None
-        if changed:
-            self._callback(self._path)
+
+        for path in self._paths:
+            if self._strategy == 'mtime':
+                try:
+                    mtime = os.stat(path).st_mtime_ns
+                    if mtime != self._mtime[path]:
+                        changed = True
+                        self._mtime[path] = mtime
+                except OSError:
+                    self._mtime[path] = None
+            else:
+                try:
+                    hashc = zlib.adler32(open(path, 'rb').read())
+                    if hashc != self._hashed[path]:
+                        changed = True
+                        self._hashed[path] = hashc
+                except OSError:
+                    self._hashed[path] = None
+            if changed:
+                self._callback(path)
         asyncio.get_event_loop().call_later(self._delay, self._check_config_file_change)
 
     @property

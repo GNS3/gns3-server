@@ -503,7 +503,7 @@ class IOUVM(BaseNode):
             # check if there is enough RAM to run
             self.check_available_ram(self.ram)
 
-            self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed)
+            self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed, delay=10)
 
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()

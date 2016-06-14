@@ -35,6 +35,8 @@ from ...base_node import BaseNode
 from ..dynamips_error import DynamipsError
 from ..nios.nio_udp import NIOUDP
 
+
+from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
 from gns3server.utils.images import md5sum
 
@@ -92,6 +94,7 @@ class Router(BaseNode):
         self._system_id = "FTX0945W0MY"  # processor board ID in IOS
         self._slots = []
         self._ghost_flag = ghost_flag
+        self._memory_watcher = None
 
         if not ghost_flag:
             if not dynamips_id:
@@ -159,6 +162,12 @@ class Router(BaseNode):
                     router_info["wic" + str(wic_slot_number)] = None
 
         return router_info
+
+    def _memory_changed(self, path):
+        """
+        Called when the NVRAM file has changed
+        """
+        asyncio.async(self.save_configs())
 
     @property
     def dynamips_id(self):
@@ -248,6 +257,8 @@ class Router(BaseNode):
             yield from self._hypervisor.send('vm start "{name}"'.format(name=self._name))
             self.status = "started"
             log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))
+
+            self._memory_watcher = FileWatcher(self._memory_files(), self._memory_changed, strategy='hash', delay=30)
             monitor_process(self._hypervisor.process, self._termination_callback)
 
     @asyncio.coroutine
@@ -278,6 +289,9 @@ class Router(BaseNode):
                 log.warn("Could not stop {}: {}".format(self._name, e))
             self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
+        if self._memory_watcher:
+            self._memory_watcher.close()
+            self._memory_watcher = None
         yield from self.save_configs()
 
     @asyncio.coroutine
@@ -1599,3 +1613,10 @@ class Router(BaseNode):
         yield from self._hypervisor.send('vm clean_delete "{}"'.format(self._name))
         self._hypervisor.devices.remove(self)
         log.info('Router "{name}" [{id}] has been deleted (including associated files)'.format(name=self._name, id=self._id))
+
+    def _memory_files(self):
+        project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
+        return [
+            os.path.join(project_dir, "{}_i{}_rom".format(self.platform, self.dynamips_id)),
+            os.path.join(project_dir, "{}_i{}_nvram".format(self.platform, self.dynamips_id))
+        ]
