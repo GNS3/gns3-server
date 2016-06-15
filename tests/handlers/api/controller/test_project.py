@@ -100,11 +100,20 @@ def test_close_project(http_controller, project):
         assert mock.called
 
 
-def test_close_project(http_controller, project):
+def test_open_project(http_controller, project):
     with asyncio_patch("gns3server.controller.project.Project.open", return_value=True) as mock:
         response = http_controller.post("/projects/{project_id}/open".format(project_id=project.id), example=True)
         assert response.status == 201
         assert mock.called
+
+
+def test_load_project(http_controller, project, config):
+    config.set("Server", "local", "true")
+    with asyncio_patch("gns3server.controller.Controller.load_project", return_value=project) as mock:
+        response = http_controller.post("/projects/load".format(project_id=project.id), {"path": "/tmp/test.gns3"}, example=True)
+        assert response.status == 201
+        mock.assert_called_with("/tmp/test.gns3")
+        assert response.json["project_id"] == project.id
 
 
 def test_notification(http_controller, project, controller, loop):

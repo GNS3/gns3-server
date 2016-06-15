@@ -91,6 +91,21 @@ PROJECT_OBJECT_SCHEMA = {
     "required": ["project_id"]
 }
 
+PROJECT_LOAD_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Load a project",
+    "type": "object",
+    "properties": {
+        "path": {
+            "description": ".gns3 path",
+            "type": "string",
+            "minLength": 1
+        }
+    },
+    "additionalProperties": False,
+    "required": ["path"]
+}
+
 PROJECT_LIST_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "List of projects",

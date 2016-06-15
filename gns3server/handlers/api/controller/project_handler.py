@@ -21,9 +21,12 @@ import asyncio
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
+from gns3server.config import Config
+
 
 from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
+    PROJECT_LOAD_SCHEMA,
     PROJECT_CREATE_SCHEMA
 )
 
@@ -85,7 +88,8 @@ class ProjectHandler:
         status_codes={
             204: "The project has been closed",
             404: "The project doesn't exist"
-        })
+        },
+        output=PROJECT_OBJECT_SCHEMA)
     def close(request, response):
 
         controller = Controller.instance()
@@ -103,12 +107,36 @@ class ProjectHandler:
         status_codes={
             201: "The project has been opened",
             404: "The project doesn't exist"
-        })
+        },
+        output=PROJECT_OBJECT_SCHEMA)
     def open(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         yield from project.open()
+        response.set_status(201)
+        response.json(project)
+
+    @Route.post(
+        r"/projects/load",
+        description="Open a project (only local server)",
+        parameters={
+            "path": ".gns3 path",
+        },
+        status_codes={
+            201: "The project has been opened",
+            403: "The server is not the local server"
+        },
+        input=PROJECT_LOAD_SCHEMA,
+        output=PROJECT_OBJECT_SCHEMA)
+    def load(request, response):
+
+        controller = Controller.instance()
+        config = Config.instance()
+        if config.get_section_config("Server").getboolean("local", False) is False:
+            response.set_status(403)
+            return
+        project = yield from controller.load_project(request.json.get("path"),)
         response.set_status(201)
         response.json(project)
 
