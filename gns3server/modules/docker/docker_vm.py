@@ -486,7 +486,9 @@ class DockerVM(BaseVM):
                 out.feed_eof()
                 ws.close()
                 break
+        yield from self.stop()
 
+    @asyncio.coroutine
     def is_running(self):
         """Checks if the container is running.
 
@@ -530,20 +532,21 @@ class DockerVM(BaseVM):
             if state == "paused":
                 yield from self.unpause()
 
-            yield from self._fix_permissions()
-
-            # t=5 number of seconds to wait before killing the container
-            try:
-                yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
-                log.info("Docker container '{name}' [{image}] stopped".format(
-                    name=self._name, image=self._image))
-            except DockerHttp304Error:
-                # Container is already stopped
-                pass
+            if state != "stopped":
+                yield from self._fix_permissions()
+                # t=5 number of seconds to wait before killing the container
+                try:
+                    yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
+                    log.info("Docker container '{name}' [{image}] stopped".format(
+                        name=self._name, image=self._image))
+                except DockerHttp304Error:
+                    # Container is already stopped
+                    pass
         # Ignore runtime error because when closing the server
         except RuntimeError as e:
             log.debug("Docker runtime error when closing: {}".format(str(e)))
             return
+        self.status = "stopped"
 
     @asyncio.coroutine
     def pause(self):
