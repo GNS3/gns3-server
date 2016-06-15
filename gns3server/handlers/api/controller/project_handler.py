@@ -91,8 +91,26 @@ class ProjectHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         yield from project.close()
-        controller.remove_project(project)
-        response.set_status(204)
+        response.set_status(201)
+        response.json(project)
+
+    @Route.post(
+        r"/projects/{project_id}/open",
+        description="Open a project",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        status_codes={
+            201: "The project has been opened",
+            404: "The project doesn't exist"
+        })
+    def open(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        yield from project.open()
+        response.set_status(201)
+        response.json(project)
 
     @Route.delete(
         r"/projects/{project_id}",

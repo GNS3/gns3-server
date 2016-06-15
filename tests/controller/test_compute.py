@@ -205,6 +205,14 @@ def test_json(compute):
         "user": "test",
         "connected": True
     }
+    assert compute.__json__(topology_dump=True) == {
+        "compute_id": "my_compute_id",
+        "name": compute.name,
+        "protocol": "https",
+        "host": "example.com",
+        "port": 84,
+        "user": "test",
+    }
 
 
 def test_streamFile(project, async_run, compute):

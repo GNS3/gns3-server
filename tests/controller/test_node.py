@@ -70,6 +70,20 @@ def test_json(node, compute):
         "symbol": node.symbol,
         "label": node.label
     }
+    assert node.__json__(topology_dump=True) == {
+        "compute_id": str(compute.id),
+        "node_id": node.id,
+        "node_type": node.node_type,
+        "name": "demo",
+        "console": node.console,
+        "console_type": node.console_type,
+        "properties": node.properties,
+        "x": node.x,
+        "y": node.y,
+        "z": node.z,
+        "symbol": node.symbol,
+        "label": node.label
+    }
 
 
 def test_init_without_uuid(project, compute):

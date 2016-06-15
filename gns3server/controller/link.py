@@ -55,6 +55,7 @@ class Link:
 
         if len(self._nodes) == 2:
             self._project.controller.notification.emit("link.created", self.__json__())
+        self._project.dump()
 
     @asyncio.coroutine
     def create(self):
@@ -156,7 +157,10 @@ class Link:
         else:
             return None
 
-    def __json__(self):
+    def __json__(self, topology_dump=False):
+        """
+        :param topology_dump: Filter to keep only properties require for saving on disk
+        """
         res = []
         for side in self._nodes:
             res.append({
@@ -164,6 +168,11 @@ class Link:
                 "adapter_number": side["adapter_number"],
                 "port_number": side["port_number"]
             })
+        if topology_dump:
+            return {
+                "nodes": res,
+                "link_id": self._id
+            }
         return {
             "nodes": res,
             "link_id": self._id,

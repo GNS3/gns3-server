@@ -228,3 +228,12 @@ def test_dump():
         with open(os.path.join(directory, p.id, "Test.gns3")) as f:
             content = f.read()
             assert "00010203-0405-0607-0809-0a0b0c0d0e0f" in content
+
+
+def test_open_close(async_run, controller):
+    project = Project(controller=controller, status="closed")
+    assert project.status == "closed"
+    async_run(project.open())
+    assert project.status == "opened"
+    async_run(project.close())
+    assert project.status == "closed"

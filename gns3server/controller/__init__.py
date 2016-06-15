@@ -92,6 +92,7 @@ class Controller:
         # Preload the list of projects from disk
         server_config = Config.instance().get_section_config("Server")
         projects_path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
+        os.makedirs(projects_path, exist_ok=True)
         try:
             for project_path in os.listdir(projects_path):
                 project_dir = os.path.join(projects_path, project_path)
@@ -101,10 +102,9 @@ class Controller:
                             try:
                                 yield from self.load_project(os.path.join(project_dir, file), load=False)
                             except aiohttp.web_exceptions.HTTPConflict:
-                                pass # Skip not compatible projects
+                                pass  # Skip not compatible projects
         except OSError as e:
             log.error(str(e))
-
 
     def is_enabled(self):
         """
@@ -219,7 +219,7 @@ class Controller:
 
         project = yield from self.add_project(path=os.path.dirname(path), status="closed", **topo_data)
         if load:
-            yield from project.load()
+            yield from project.open()
 
     @property
     def projects(self):

@@ -26,7 +26,7 @@ from gns3server.controller.node import Node
 from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
 
-from tests.utils import AsyncioBytesIO
+from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 
 @pytest.fixture
@@ -54,6 +54,7 @@ def test_addNode(async_run, project, compute):
     node1 = Node(project, compute, "node1")
 
     link = Link(project)
+    project.dump = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
     assert link._nodes == [
         {
@@ -62,6 +63,7 @@ def test_addNode(async_run, project, compute):
             "port_number": 4
         }
     ]
+    assert project.dump.called
 
 
 def test_json(async_run, project, compute):
@@ -89,6 +91,21 @@ def test_json(async_run, project, compute):
         "capturing": False,
         "capture_file_name": None,
         "capture_file_path": None
+    }
+    assert link.__json__(topology_dump=True) == {
+        "link_id": link.id,
+        "nodes": [
+            {
+                "node_id": node1.id,
+                "adapter_number": 0,
+                "port_number": 4
+            },
+            {
+                "node_id": node2.id,
+                "adapter_number": 1,
+                "port_number": 3
+            }
+        ]
     }
 
 

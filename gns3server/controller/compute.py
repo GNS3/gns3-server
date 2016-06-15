@@ -228,7 +228,19 @@ class Compute:
     def password(self, value):
         self._set_auth(self._user, value)
 
-    def __json__(self):
+    def __json__(self, topology_dump=False):
+        """
+        :param topology_dump: Filter to keep only properties require for saving on disk
+        """
+        if topology_dump:
+            return {
+                "compute_id": self._id,
+                "name": self._name,
+                "protocol": self._protocol,
+                "host": self._host,
+                "port": self._port,
+                "user": self._user
+            }
         return {
             "compute_id": self._id,
             "name": self._name,

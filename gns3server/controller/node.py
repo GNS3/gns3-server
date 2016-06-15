@@ -25,6 +25,10 @@ from .compute import ComputeConflict
 from ..utils.images import images_directories
 
 
+import logging
+log = logging.getLogger(__name__)
+
+
 class Node:
     # This properties are used only on controller and are not forwarded to the compute
     CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "symbol", "label", "console_host"]
@@ -68,7 +72,11 @@ class Node:
         }
         # Update node properties with additional elements
         for prop in kwargs:
-            setattr(self, prop, kwargs[prop])
+            try:
+                setattr(self, prop, kwargs[prop])
+            except AttributeError as e:
+                log.critical("Can't set attribute %s", prop)
+                raise e
 
     @property
     def id(self):
@@ -370,7 +378,25 @@ class Node:
     def __repr__(self):
         return "<gns3server.controller.Node {} {}>".format(self._node_type, self._name)
 
-    def __json__(self):
+    def __json__(self, topology_dump=False):
+        """
+        :param topology_dump: Filter to keep only properties require for saving on disk
+        """
+        if topology_dump:
+            return {
+                "compute_id": str(self._compute.id),
+                "node_id": self._id,
+                "node_type": self._node_type,
+                "name": self._name,
+                "console": self._console,
+                "console_type": self._console_type,
+                "properties": self._properties,
+                "label": self._label,
+                "x": self._x,
+                "y": self._y,
+                "z": self._z,
+                "symbol": self._symbol
+            }
         return {
             "compute_id": str(self._compute.id),
             "project_id": self._project.id,

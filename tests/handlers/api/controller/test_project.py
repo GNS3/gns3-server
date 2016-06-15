@@ -47,6 +47,7 @@ def test_create_project_with_path(http_controller, tmpdir):
     assert response.status == 201
     assert response.json["name"] == "test"
     assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+    assert response.json["status"] == "opened"
 
 
 def test_create_project_without_dir(http_controller):
@@ -95,9 +96,15 @@ def test_delete_project_invalid_uuid(http_controller):
 def test_close_project(http_controller, project):
     with asyncio_patch("gns3server.controller.project.Project.close", return_value=True) as mock:
         response = http_controller.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
-        assert response.status == 204
+        assert response.status == 201
         assert mock.called
-        assert project not in Controller.instance().projects
+
+
+def test_close_project(http_controller, project):
+    with asyncio_patch("gns3server.controller.project.Project.open", return_value=True) as mock:
+        response = http_controller.post("/projects/{project_id}/open".format(project_id=project.id), example=True)
+        assert response.status == 201
+        assert mock.called
 
 
 def test_notification(http_controller, project, controller, loop):

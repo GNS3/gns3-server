@@ -60,7 +60,12 @@ class Project:
         if path is None:
             path = os.path.join(get_default_project_directory(), self._id)
         self.path = path
+        self.reset()
 
+    def reset(self):
+        """
+        Called when open/close a project. Cleanup internal stuff
+        """
         self._allocated_node_names = set()
         self._nodes = {}
         self._links = {}
@@ -291,7 +296,8 @@ class Project:
     def close(self):
         for compute in self._project_created_on_compute:
             yield from compute.post("/projects/{}/close".format(self._id))
-        self._allocated_node_names.clear()
+        self.reset()
+        self._status = "closed"
 
     @asyncio.coroutine
     def delete(self):
@@ -324,24 +330,27 @@ class Project:
         return os.path.join(self.path, filename)
 
     @asyncio.coroutine
-    def load(self):
+    def open(self):
         """
         Load topology elements
         """
+        self.reset()
         path = self._topology_file()
-        topology = load_topology(path)["topology"]
-        for compute in topology["computes"]:
-            yield from self.controller.add_compute(**compute)
-        for node in topology["nodes"]:
-            compute = self.controller.get_compute(node.pop("compute_id"))
-            name = node.pop("name")
-            node_id = node.pop("node_id")
-            yield from self.add_node(compute, name, node_id, **node)
-        for link_data in topology["links"]:
-            link = yield from self.add_link(link_id=link_data["link_id"])
-            for node_link in link_data["nodes"]:
-                node = self.get_node(node_link["node_id"])
-                yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"])
+        if os.path.exists(path):
+            topology = load_topology(path)["topology"]
+            for compute in topology["computes"]:
+                yield from self.controller.add_compute(**compute)
+            for node in topology["nodes"]:
+                compute = self.controller.get_compute(node.pop("compute_id"))
+                name = node.pop("name")
+                node_id = node.pop("node_id")
+                yield from self.add_node(compute, name, node_id, **node)
+            for link_data in topology["links"]:
+                link = yield from self.add_link(link_id=link_data["link_id"])
+                for node_link in link_data["nodes"]:
+                    node = self.get_node(node_link["node_id"])
+                    yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"])
+        self._status = "opened"
 
     def dump(self):
         """
@@ -362,5 +371,5 @@ class Project:
             "name": self._name,
             "project_id": self._id,
             "path": self._path,
-            "status": "opened"
+            "status": self._status
         }
