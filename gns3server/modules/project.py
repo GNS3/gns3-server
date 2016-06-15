@@ -434,7 +434,10 @@ class Project:
                 path = os.path.join(directory, project)
                 if os.path.exists(os.path.join(path, ".gns3_temporary")):
                     log.warning("Purge old temporary project {}".format(project))
-                    shutil.rmtree(path)
+                    try:
+                        shutil.rmtree(path)
+                    except OSError as e:
+                        log.error("Error when cleaning {}: {}".format(path, str(e)))
 
     def modules(self):
         """
