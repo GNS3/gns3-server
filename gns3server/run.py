@@ -88,7 +88,6 @@ def parse_arguments(argv):
     parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
     parser.add_argument("--host", help="run on the given host/IP address")
     parser.add_argument("--port", help="run on the given port", type=int)
-    parser.add_argument("--service_interface", help="interface from which to extract the IP address in order to advertise the server via mDNS")
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
     parser.add_argument("--controller", action="store_true", help="start as a GNS3 controller")
     parser.add_argument("--config", help="Configuration file")
@@ -112,7 +111,6 @@ def parse_arguments(argv):
     defaults = {
         "host": config.get("host", "0.0.0.0"),
         "port": config.get("port", 3080),
-        "service_interface": config.get("service_interface", "eth0"),
         "ssl": config.getboolean("ssl", False),
         "certfile": config.get("certfile", ""),
         "certkey": config.get("certkey", ""),
@@ -138,7 +136,6 @@ def set_config(args):
     server_config["allow_remote_console"] = str(args.allow)
     server_config["host"] = args.host
     server_config["port"] = str(args.port)
-    server_config["service_interface"] = str(args.service_interface)
     server_config["ssl"] = str(args.ssl)
     server_config["certfile"] = args.certfile
     server_config["certkey"] = args.certkey
@@ -229,9 +226,8 @@ def run():
     CrashReport.instance()
     host = server_config["host"]
     port = int(server_config["port"])
-    service_interface = server_config["service_interface"]
 
-    server = WebServer.instance(host, port, service_interface)
+    server = WebServer.instance(host, port)
     try:
         server.run()
     except OSError as e:

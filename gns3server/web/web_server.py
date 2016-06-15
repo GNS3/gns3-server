@@ -23,8 +23,10 @@ import os
 import sys
 import signal
 import socket
+import json
 import ipaddress
 import asyncio
+import select
 import aiohttp
 import aiohttp_cors
 import functools
@@ -33,12 +35,11 @@ import atexit
 
 from .route import Route
 from .request_handler import RequestHandler
-from ..utils.zeroconf import ServiceInfo, Zeroconf
-from ..utils.interfaces import interfaces
 from ..config import Config
 from ..compute import MODULES
 from ..compute.port_manager import PortManager
 from ..controller import Controller
+from ..version import __version__
 
 
 # do not delete this import
@@ -50,18 +51,18 @@ log = logging.getLogger(__name__)
 
 class WebServer:
 
-    def __init__(self, host, port, service_interface):
+    def __init__(self, host, port):
 
         self._host = host
         self._port = port
-        self._service_interface = service_interface
         self._loop = None
         self._handler = None
         self._start_time = time.time()
         self._port_manager = PortManager(host)
+        self._running = False
 
     @staticmethod
-    def instance(host=None, port=None, service_interface=None):
+    def instance(host=None, port=None):
         """
         Singleton to return only one instance of Server.
 
@@ -71,8 +72,7 @@ class WebServer:
         if not hasattr(WebServer, "_instance") or WebServer._instance is None:
             assert host is not None
             assert port is not None
-            assert  service_interface is not None
-            WebServer._instance = WebServer(host, port, service_interface)
+            WebServer._instance = WebServer(host, port)
         return WebServer._instance
 
     @asyncio.coroutine
@@ -177,37 +177,52 @@ class WebServer:
 
         atexit.register(close_asyncio_loop)
 
-    def _start_zeroconf(self):
+    def _udp_server_discovery(self):
         """
-        Starts the zero configuration networking service.
+        UDP multicast and broadcast server discovery (Linux only)
         """
 
-        service_ip = self._host
-        service_port = self._port
+        import ctypes
+        uint32_t = ctypes.c_uint32
+        in_addr_t = uint32_t
 
-        valid_ip = True
-        try:
-            # test if this is a valid IP address
-            ipaddress.ip_address(valid_ip)
-        except ValueError:
-            valid_ip = False
+        class in_addr(ctypes.Structure):
+            _fields_ = [('s_addr', in_addr_t)]
 
-        if service_ip == "0.0.0.0" or service_ip == "::":
-            valid_ip = False
+        class in_pktinfo(ctypes.Structure):
+            _fields_ = [('ipi_ifindex', ctypes.c_int),
+                        ('ipi_spec_dst', in_addr),
+                        ('ipi_addr', in_addr)]
 
-        if valid_ip is False:
-            # look for the service interface to extract its IP address
-            local_interfaces = [interface for interface in interfaces() if interface["name"] == self._service_interface]
-            if not local_interfaces:
-                log.error("Could not find service interface {}".format(self._service_interface))
-            else:
-                service_ip = local_interfaces[0]["ip_address"]
+        IP_PKTINFO = 8
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        membership = socket.inet_aton("239.42.42.1") + socket.inet_aton("0.0.0.0")
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, membership)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.setsockopt(socket.SOL_IP, IP_PKTINFO, 1)
+        sock.bind(("0.0.0.0", self._port))
+        log.info("UDP server discovery started on {}:{}".format("0.0.0.0", self._port))
 
-        # Advertise the server with DNS multicast
-        info = ServiceInfo("_http._tcp.local.", "GNS3VM._http._tcp.local.", socket.inet_aton(service_ip), service_port, 0, 0, properties={})
-        zeroconf = Zeroconf(interfaces=[self._host])
-        zeroconf.register_service(info)
-        return zeroconf, info
+        while self._running:
+            ready_to_read, _, _ = select.select([sock], [], [], 1.0)
+            if ready_to_read:
+                data, ancdata, _, address = sock.recvmsg(255, socket.CMSG_LEN(255))
+                cmsg_level, cmsg_type, cmsg_data = ancdata[0]
+                if cmsg_level == socket.SOL_IP and cmsg_type == IP_PKTINFO:
+                    pktinfo = in_pktinfo.from_buffer_copy(cmsg_data)
+                    request_address = ipaddress.IPv4Address(memoryview(pktinfo.ipi_addr).tobytes())
+                    log.debug("UDP server discovery request received on {} using {}".format(socket.if_indextoname(pktinfo.ipi_ifindex),
+                                                                                            request_address))
+                    local_address = ipaddress.IPv4Address(memoryview(pktinfo.ipi_spec_dst).tobytes())
+                    server_info = {"version": __version__,
+                                   "ip": str(local_address),
+                                   "port": self._port}
+                    data = json.dumps(server_info)
+                    sock.sendto(data.encode(), address)
+                    log.debug("Sent server info to {}: {}".format(local_address, data))
+                time.sleep(1) # this is to prevent too many request to slow down the server
+        log.debug("UDP discovery stopped")
 
     def run(self):
         """
@@ -267,13 +282,17 @@ class WebServer:
         self._handler = app.make_handler(handler=RequestHandler)
         server = self._run_application(self._handler, ssl_context)
         self._loop.run_until_complete(server)
+        self._running = True
         self._signal_handling()
         self._exit_handling()
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
 
-        zeroconf, info = self._start_zeroconf()
+        if sys.platform.startswith("linux"):
+           # UDP discovery is only supported on
+           self._loop.run_in_executor(None, self._udp_server_discovery)
+
         try:
             self._loop.run_forever()
         except TypeError as e:
@@ -282,8 +301,7 @@ class WebServer:
             # TypeError: async() takes 1 positional argument but 3 were given
             log.warning("TypeError exception in the loop {}".format(e))
         finally:
-            zeroconf.unregister_service(info)
-            zeroconf.close()
+            self._running = False
             if self._handler and self._loop.is_running():
                 self._loop.run_until_complete(self._handler.finish_connections())
             server.close()
