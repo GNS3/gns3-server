@@ -104,6 +104,7 @@ def test_create(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                 ],
@@ -142,6 +143,7 @@ def test_create_with_tag(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest:16.04",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                 ],
@@ -184,6 +186,7 @@ def test_create_vnc(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network",
                     "DISPLAY=:42"
@@ -228,6 +231,7 @@ def test_create_start_cmd(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                 ]
@@ -260,6 +264,7 @@ def test_create_environment(loop, project, manager):
                         "Privileged": True
                     },
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network",
                     "YES=1",
@@ -320,6 +325,7 @@ def test_create_image_not_available(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                 ],
@@ -540,6 +546,7 @@ def test_update(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
+            "container=docker",
             "GNS3_MAX_ETHERNET=eth0",
             "GNS3_VOLUMES=/etc/network"
         ],
@@ -608,6 +615,7 @@ def test_update_running(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
+            "container=docker",
             "GNS3_MAX_ETHERNET=eth0",
             "GNS3_VOLUMES=/etc/network"
         ],

@@ -275,7 +275,7 @@ class DockerVM(BaseVM):
                 "Binds": self._mount_binds(image_infos)
             },
             "Volumes": {},
-            "Env": [],
+            "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],
             "Entrypoint": image_infos.get("Config", {"Entrypoint": []})["Entrypoint"]
         }
