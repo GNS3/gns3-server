@@ -238,8 +238,7 @@ class Compute:
                 "name": self._name,
                 "protocol": self._protocol,
                 "host": self._host,
-                "port": self._port,
-                "user": self._user
+                "port": self._port
             }
         return {
             "compute_id": self._id,

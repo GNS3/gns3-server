@@ -82,6 +82,11 @@ PROJECT_OBJECT_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1
         },
+        "filename": {
+            "description": "Project filename",
+            "type": ["string", "null"],
+            "minLength": 1
+        },
         "status": {
             "description": "Project status Read only",
             "enum": ["opened", "closed"]

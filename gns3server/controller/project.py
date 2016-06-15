@@ -322,12 +322,14 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         return path
 
-    def _topology_file(self):
+    def _filename(self):
         if self.name is None:
-            filename = "untitled.gns3"
+            return "untitled.gns3"
         else:
-            filename = self.name + ".gns3"
-        return os.path.join(self.path, filename)
+            return self.name + ".gns3"
+
+    def _topology_file(self):
+        return os.path.join(self.path, self._filename())
 
     @asyncio.coroutine
     def open(self):
@@ -371,5 +373,6 @@ class Project:
             "name": self._name,
             "project_id": self._id,
             "path": self._path,
+            "filename": self._filename(),
             "status": self._status
         }

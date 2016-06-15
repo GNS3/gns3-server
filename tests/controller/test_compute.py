@@ -211,7 +211,6 @@ def test_json(compute):
         "protocol": "https",
         "host": "example.com",
         "port": 84,
-        "user": "test",
     }
 
 
