@@ -189,6 +189,7 @@ def test_create_vnc(loop, project, manager):
                     "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network",
+                    "QT_GRAPHICSSYSTEM=native",
                     "DISPLAY=:42"
                 ],
                 "Entrypoint": ["/gns3/init.sh"],
