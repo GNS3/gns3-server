@@ -102,6 +102,7 @@ def parse_arguments(argv):
     parser.add_argument("--log", help="send output to logfile instead of console")
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
     parser.add_argument("--pid", help="store process pid")
+    parser.add_argument("--udpdiscovery", action="store_true", help="allow the server to be discover on the network")
 
     args = parser.parse_args(argv)
     if args.config:
@@ -121,6 +122,7 @@ def parse_arguments(argv):
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
         "logfile": config.getboolean("logfile", ""),
+        "udp_discovery": config.getboolean("udp_discovery", False),
     }
 
     parser.set_defaults(**defaults)
@@ -142,6 +144,7 @@ def set_config(args):
     server_config["record"] = args.record
     server_config["debug"] = str(args.debug)
     server_config["shell"] = str(args.shell)
+    server_config["udp_discovery"] = str(args.udpdiscovery)
     config.set_section_config("Server", server_config)
 
 

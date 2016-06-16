@@ -274,5 +274,6 @@ Previous versions
 
 API version 1
 -------------
-Shipped with GNS3 1.3, 1.4 and 1.5. This API doesn't support the controller system.
+Shipped with GNS3 1.3, 1.4 and 1.5.
+This API doesn't support the controller system and save used a commit system instead of live save.
 

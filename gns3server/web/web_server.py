@@ -59,6 +59,7 @@ class WebServer:
         self._handler = None
         self._start_time = time.time()
         self._port_manager = PortManager(host)
+        self._running = False
 
     @staticmethod
     def instance(host=None, port=None):
@@ -298,7 +299,7 @@ class WebServer:
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
 
-        if sys.platform.startswith("linux"):
+        if sys.platform.startswith("linux") and server_config.getboolean("udp_discovery"):
            # UDP discovery is only supported on Linux
            udp_server_discovery = threading.Thread(target=self._udp_server_discovery, daemon=True)
            udp_server_discovery.start()

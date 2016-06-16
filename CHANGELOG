@@ -1,5 +1,19 @@
 # Change Log
 
+## 1.5.0rc2 15/06/2016
+
+* Fix black screen with Qt app in Docker container
+* Detect when command in the container exit
+* Docker when the aux console exit and restart it
+* Pass by default the environment variable container=docker
+* Fix busybox binary location
+* Avoid loosing console port for Docker
+* Workaround a crash in x11vnc
+* Delete volume when dropping the container
+* Catch connection reset in ioucon
+* Delete vlan.dat for L2IOL during config import. Fixes #1285.
+* Copy original ressources from VOLUMES
+
 ## 1.5.0rc1 01/06/2016
 
 * Save an restore docker permission

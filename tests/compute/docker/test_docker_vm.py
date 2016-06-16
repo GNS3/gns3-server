@@ -105,6 +105,7 @@ def test_create(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                         ],
@@ -143,6 +144,7 @@ def test_create_with_tag(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:16.04",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                         ],
@@ -185,8 +187,10 @@ def test_create_vnc(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network",
+                    "QT_GRAPHICSSYSTEM=native",
                     "DISPLAY=:42"
                         ],
                 "Entrypoint": ["/gns3/init.sh"],
@@ -229,6 +233,7 @@ def test_create_start_cmd(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                         ]
@@ -261,6 +266,7 @@ def test_create_environment(loop, project, manager):
                         "Privileged": True
                     },
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network",
                     "YES=1",
@@ -320,6 +326,7 @@ def test_create_image_not_available(loop, project, manager):
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
+                    "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
                         ],
@@ -540,6 +547,7 @@ def test_update(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
+            "container=docker",
             "GNS3_MAX_ETHERNET=eth0",
             "GNS3_VOLUMES=/etc/network"
         ],
@@ -608,6 +616,7 @@ def test_update_running(loop, vm):
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
+            "container=docker",
             "GNS3_MAX_ETHERNET=eth0",
             "GNS3_VOLUMES=/etc/network"
         ],
@@ -904,7 +913,7 @@ def test_start_aux(vm, loop):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
         loop.run_until_complete(asyncio.async(vm._start_aux()))
-    mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', '/gns3/bin/busybox sh', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+    mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', 'while true; do /gns3/bin/busybox sh; done', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
 
 
 def test_create_network_interfaces(vm):

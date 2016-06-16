@@ -49,7 +49,7 @@ class ServerHandler:
 
         # close all the projects first
         controller = Controller.instance()
-        projects = controller.projects
+        projects = controller.projects.values()
 
         tasks = []
         for project in projects:

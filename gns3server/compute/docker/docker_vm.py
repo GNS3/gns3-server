@@ -279,7 +279,7 @@ class DockerVM(BaseNode):
                 "Binds": self._mount_binds(image_infos)
             },
             "Volumes": {},
-            "Env": [],
+            "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],
             "Entrypoint": image_infos.get("Config", {"Entrypoint": []})["Entrypoint"]
         }
@@ -306,6 +306,7 @@ class DockerVM(BaseNode):
 
         if self._console_type == "vnc":
             yield from self._start_vnc()
+            params["Env"].append("QT_GRAPHICSSYSTEM=native")  # To fix a Qt issue: https://github.com/GNS3/gns3-server/issues/556
             params["Env"].append("DISPLAY=:{}".format(self._display))
             params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
 
@@ -384,7 +385,7 @@ class DockerVM(BaseNode):
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
         process = yield from asyncio.subprocess.create_subprocess_exec(
-            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "/gns3/bin/busybox sh", "/dev/null",
+            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do /gns3/bin/busybox sh; done", "/dev/null",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             stdin=asyncio.subprocess.PIPE)
@@ -493,7 +494,9 @@ class DockerVM(BaseNode):
                 out.feed_eof()
                 ws.close()
                 break
+        yield from self.stop()
 
+    @asyncio.coroutine
     def is_running(self):
         """Checks if the container is running.
 
@@ -535,21 +538,21 @@ class DockerVM(BaseNode):
             if state == "paused":
                 yield from self.unpause()
 
-            yield from self._fix_permissions()
-
-            # t=5 number of seconds to wait before killing the container
-            try:
-                yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
-                log.info("Docker container '{name}' [{image}] stopped".format(name=self._name, image=self._image))
-            except DockerHttp304Error:
-                # Container is already stopped
-                pass
-            finally:
-                self.status = "stopped"
+            if state != "stopped":
+                yield from self._fix_permissions()
+                # t=5 number of seconds to wait before killing the container
+                try:
+                    yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
+                    log.info("Docker container '{name}' [{image}] stopped".format(
+                        name=self._name, image=self._image))
+                except DockerHttp304Error:
+                    # Container is already stopped
+                    pass
         # Ignore runtime error because when closing the server
         except RuntimeError as e:
             log.debug("Docker runtime error when closing: {}".format(str(e)))
             return
+        self.status = "stopped"
 
     @asyncio.coroutine
     def pause(self):
