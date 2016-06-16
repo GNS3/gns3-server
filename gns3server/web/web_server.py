@@ -92,6 +92,7 @@ class WebServer:
         Cleanly shutdown the server.
         """
 
+
         if self._handler:
             yield from self._handler.finish_connections()
             self._handler = None
@@ -114,6 +115,7 @@ class WebServer:
             task.cancel()
 
         self._loop.stop()
+
 
     def _signal_handling(self):
 
@@ -289,8 +291,8 @@ class WebServer:
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
 
-        if sys.platform.startswith("linux"):
-           # UDP discovery is only supported on
+        if sys.platform.startswith("linux") and server_config.getboolean("udp_discovery"):
+           # UDP discovery is only supported on Linux
            self._loop.run_in_executor(None, self._udp_server_discovery)
 
         try:
