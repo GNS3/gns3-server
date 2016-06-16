@@ -188,7 +188,7 @@ def test_close(controller, async_run):
 
 def test_load_project(controller, async_run, tmpdir):
     data = {
-        "name": "Test",
+        "name": "Experience",
         "project_id": "c8d07a5a-134f-4c3f-8599-e35eac85eb17",
         "revision": 5,
         "type": "topology",
@@ -242,11 +242,12 @@ def test_load_project(controller, async_run, tmpdir):
     controller._computes["my_remote"] = MagicMock()
 
     with asyncio_patch("gns3server.controller.node.Node.create") as mock_node_create:
-        async_run(controller.load_project(str(tmpdir / "test.gns3")))
+        project = async_run(controller.load_project(str(tmpdir / "test.gns3")))
 
+    assert project._topology_file() == str(tmpdir / "test.gns3")
     controller.add_compute.assert_called_with(compute_id='my_remote', host='127.0.0.1', name='My remote', port=3080, protocol='http')
     project = controller.get_project('c8d07a5a-134f-4c3f-8599-e35eac85eb17')
-    assert project.name == "Test"
+    assert project.name == "Experience"
     assert project.path == str(tmpdir)
     link = project.get_link("c44331d2-2da4-490d-9aad-7f5c126ae271")
     assert len(link.nodes) == 2

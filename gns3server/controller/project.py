@@ -43,7 +43,7 @@ class Project:
     :param status: Status of the project (opened / closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened"):
+    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None):
 
         self._controller = controller
         self._name = name
@@ -60,6 +60,13 @@ class Project:
         if path is None:
             path = os.path.join(get_default_project_directory(), self._id)
         self.path = path
+
+        if filename is None and name is None:
+            self._filename = "project.gns3"
+        elif filename is not None:
+            self._filename = filename
+        else:
+            self._filename = self.name + ".gns3"
         self.reset()
 
     def reset(self):
@@ -322,14 +329,8 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
         return path
 
-    def _filename(self):
-        if self.name is None:
-            return "untitled.gns3"
-        else:
-            return self.name + ".gns3"
-
     def _topology_file(self):
-        return os.path.join(self.path, self._filename())
+        return os.path.join(self.path, self._filename)
 
     @asyncio.coroutine
     def open(self):
@@ -373,6 +374,6 @@ class Project:
             "name": self._name,
             "project_id": self._id,
             "path": self._path,
-            "filename": self._filename(),
+            "filename": self._filename,
             "status": self._status
         }
