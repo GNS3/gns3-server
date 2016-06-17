@@ -68,6 +68,17 @@ def test_load(controller, controller_config_path, async_run):
     }
 
 
+def test_load_projects(controller, projects_dir, async_run):
+    controller.save()
+
+    os.makedirs(os.path.join(projects_dir, "project1"))
+    with open(os.path.join(projects_dir, "project1", "project1.gns3"), "w+") as f:
+        f.write("")
+    with asyncio_patch("gns3server.controller.Controller.load_project") as mock_load_project:
+        async_run(controller.load())
+    mock_load_project.assert_called_with(os.path.join(projects_dir, "project1", "project1.gns3"), load=False)
+
+
 def test_isEnabled(controller):
     Config.instance().set("Server", "controller", False)
     assert not controller.is_enabled()
@@ -254,3 +265,9 @@ def test_load_project(controller, async_run, tmpdir):
 
     node1 = project.get_node("50d66d7b-0dd7-4e9f-b720-6eb621ae6543")
     assert node1.name == "PC1"
+
+    # Reload the same project should do nothing
+    with asyncio_patch("gns3server.controller.Controller.add_project") as mock_add_project:
+        project = async_run(controller.load_project(str(tmpdir / "test.gns3")))
+    assert not mock_add_project.called
+

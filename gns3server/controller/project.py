@@ -337,6 +337,9 @@ class Project:
         """
         Load topology elements
         """
+        if self._status == "opened":
+            return
+
         self.reset()
         path = self._topology_file()
         if os.path.exists(path):

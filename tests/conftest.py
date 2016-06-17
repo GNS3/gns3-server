@@ -242,6 +242,16 @@ def images_dir(config):
     return path
 
 
+@pytest.fixture
+def projects_dir(config):
+    """
+    Get the location of images
+    """
+    path = config.get_section_config("Server").get("projects_path")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
 @pytest.yield_fixture
 def darwin_platform():
     """
