@@ -15,9 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.handlers.upload_handler import UploadHandler
 from gns3server.handlers.index_handler import IndexHandler
 
 from gns3server.handlers.api.controller import *
 from gns3server.handlers.api.compute import *
-
