@@ -74,7 +74,6 @@ VM_CREATE_SCHEMA = {
         "private_config": {
             "description": "Path to the IOS private configuration file",
             "type": "string",
-            "minLength": 1,
         },
         "private_config_content": {
             "description": "Content of IOS private configuration file",
