@@ -1,10 +1,10 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes' -d '{"hda_disk_image": "linux\u8f7d.img", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2hp1uall/qemu-system-x86_64", "ram": 1024}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes' -d '{"hda_disk_image": "linux\u8f7d.img", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmphi1ia0uh/qemu-system-x86_64", "ram": 1024}'
 
 POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes HTTP/1.1
 {
     "hda_disk_image": "linux\u8f7d.img",
     "name": "PC TEST 1",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2hp1uall/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmphi1ia0uh/qemu-system-x86_64",
     "ram": 1024
 }
 
@@ -46,15 +46,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:dd:80:94:0e:00",
+    "mac_address": "00:dd:80:76:f9:00",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpw2wrgwu7/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/aecfe8cb-5e4d-4c47-befb-705a0750940e",
-    "node_id": "aecfe8cb-5e4d-4c47-befb-705a0750940e",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1za8k4vs/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/c3e67755-c61e-4ff2-b68e-b3bb2d5076f9",
+    "node_id": "c3e67755-c61e-4ff2-b68e-b3bb2d5076f9",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2hp1uall/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmphi1ia0uh/qemu-system-x86_64",
     "ram": 1024,
     "status": "stopped",
     "usage": ""

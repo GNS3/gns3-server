@@ -28,6 +28,7 @@ Input
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS VM name</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td></td>                     <td>Node UUID</td>                     </tr>
     <tr><td>startup_script</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the VPCS startup script</td>                     </tr>
+    <tr><td>startup_script_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path of the VPCS startup script relative to project directory (IGNORED)</td>                     </tr>
     </table>
 
 Output

@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/b56b2922-9cd6-4640-a39d-4ed03a40e39a/nodes'
+curl -i -X GET 'http://localhost:3080/v2/projects/4db04e8e-5df7-4ad1-b89e-f45218f36df9/nodes'
 
-GET /v2/projects/b56b2922-9cd6-4640-a39d-4ed03a40e39a/nodes HTTP/1.1
+GET /v2/projects/4db04e8e-5df7-4ad1-b89e-f45218f36df9/nodes HTTP/1.1
 
 
 
@@ -27,9 +27,9 @@ X-ROUTE: /v2/projects/{project_id}/nodes
         },
         "name": "test",
         "node_directory": null,
-        "node_id": "4af8f65f-08af-4741-94e4-0e82c666e1a7",
+        "node_id": "cc12d10b-8549-4065-8d2f-a8a385a1a5ca",
         "node_type": "vpcs",
-        "project_id": "b56b2922-9cd6-4640-a39d-4ed03a40e39a",
+        "project_id": "4db04e8e-5df7-4ad1-b89e-f45218f36df9",
         "properties": {
             "startup_script": "echo test"
         },
