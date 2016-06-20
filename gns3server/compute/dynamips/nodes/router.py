@@ -1545,7 +1545,14 @@ class Router(BaseNode):
         """
 
         if self.startup_config or self.private_config:
+
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
+            try:
+                config_path = os.path.join(module_workdir, "configs")
+                os.makedirs(config_path, exist_ok=True)
+            except OSError as e:
+                raise DynamipsError("Could could not create configuration directory {}: {}".format(config_path, e))
+
             startup_config_base64, private_config_base64 = yield from self.extract_config()
             if startup_config_base64:
                 if not self.startup_config:
