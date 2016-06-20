@@ -26,6 +26,7 @@ import datetime
 import sys
 import locale
 import argparse
+import psutil
 import asyncio
 
 from gns3server.server import Server
@@ -180,6 +181,21 @@ def pid_lock(path):
         sys.exit(1)
 
 
+def kill_ghosts():
+    """
+    Kill process from previous GNS3 session
+    """
+    detect_process = ["vpcs", "ubridge", "dynamips"]
+    for proc in psutil.process_iter():
+        try:
+            name = proc.name().lower().split(".")[0]
+            if name in detect_process:
+                proc.kill()
+                log.warning("Killed ghost process %s", name)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+
 def run():
     args = parse_arguments(sys.argv[1:])
 
@@ -189,6 +205,7 @@ def run():
 
     if args.pid:
         pid_lock(args.pid)
+        kill_ghosts()
 
     level = logging.INFO
     if args.debug:
