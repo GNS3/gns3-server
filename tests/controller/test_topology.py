@@ -37,7 +37,8 @@ def test_project_to_topology_empty(tmpdir):
         "topology": {
             "nodes": [],
             "links": [],
-            "computes": []
+            "computes": [],
+            "items": []
         },
         "type": "topology",
         "version": __version__
@@ -57,11 +58,14 @@ def test_basic_topology(tmpdir, async_run, controller):
     async_run(link.add_node(node1, 0, 0))
     async_run(link.add_node(node2, 0, 0))
 
+    item = async_run(project.add_item(svg="<svg></svg>"))
+
     topo = project_to_topology(project)
     assert len(topo["topology"]["nodes"]) == 2
     assert node1.__json__(topology_dump=True) in topo["topology"]["nodes"]
     assert topo["topology"]["links"][0] == link.__json__(topology_dump=True)
     assert topo["topology"]["computes"][0] == compute.__json__(topology_dump=True)
+    assert topo["topology"]["items"][0] == item.__json__(topology_dump=True)
 
 
 def test_load_topology(tmpdir):
@@ -72,7 +76,8 @@ def test_load_topology(tmpdir):
         "topology": {
             "nodes": [],
             "links": [],
-            "computes": []
+            "computes": [],
+            "items": []
         },
         "type": "topology",
         "version": __version__}

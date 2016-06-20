@@ -24,6 +24,7 @@ import shutil
 from uuid import UUID, uuid4
 
 from .node import Node
+from .item import Item
 from .topology import project_to_topology, load_topology
 from .udp_link import UDPLink
 from ..config import Config
@@ -76,6 +77,7 @@ class Project:
         self._allocated_node_names = set()
         self._nodes = {}
         self._links = {}
+        self._items = {}
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
@@ -263,6 +265,44 @@ class Project:
         """
         return self._nodes
 
+    @property
+    def items(self):
+        """
+        :returns: Dictionary of the items
+        """
+        return self._items
+
+    @asyncio.coroutine
+    def add_item(self, item_id=None, **kwargs):
+        """
+        Create an item or return an existing item
+
+        :param kwargs: See the documentation of item
+        """
+        if item_id not in self._items:
+            item = Item(self, item_id=item_id, **kwargs)
+            self._items[item.id] = item
+            self.controller.notification.emit("item.created", item.__json__())
+            self.dump()
+            return item
+        return self._items[item_id]
+
+    def get_item(self, item_id):
+        """
+        Return the Item or raise a 404 if the item is unknown
+        """
+        try:
+            return self._items[item_id]
+        except KeyError:
+            raise aiohttp.web.HTTPNotFound(text="Item ID {} doesn't exist".format(item_id))
+
+    @asyncio.coroutine
+    def delete_item(self, item_id):
+        item = self.get_item(item_id)
+        del self._items[item.id]
+        self.dump()
+        self.controller.notification.emit("item.deleted", item.__json__())
+
     @asyncio.coroutine
     def add_link(self, link_id=None):
         """
@@ -344,18 +384,21 @@ class Project:
         path = self._topology_file()
         if os.path.exists(path):
             topology = load_topology(path)["topology"]
-            for compute in topology["computes"]:
+            for compute in topology.get("computes", []):
                 yield from self.controller.add_compute(**compute)
-            for node in topology["nodes"]:
+            for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
                 node_id = node.pop("node_id")
                 yield from self.add_node(compute, name, node_id, **node)
-            for link_data in topology["links"]:
+            for link_data in topology.get("links", []):
                 link = yield from self.add_link(link_id=link_data["link_id"])
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"])
+
+            for item_data in topology.get("items", []):
+                item = yield from self.add_item(**item_data)
         self._status = "opened"
 
     def dump(self):
@@ -381,3 +424,6 @@ class Project:
             "filename": self._filename,
             "status": self._status
         }
+
+    def __repr__(self):
+        return "<gns3server.controller.Project {} {}>".format(self._name, self._id)

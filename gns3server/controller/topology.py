@@ -33,7 +33,8 @@ def project_to_topology(project):
         "topology": {
             "nodes": [],
             "links": [],
-            "computes": []
+            "computes": [],
+            "items": []
         },
         "type": "topology",
         "revision": GNS3_FILE_FORMAT_REVISION,
@@ -46,6 +47,8 @@ def project_to_topology(project):
         data["topology"]["nodes"].append(node.__json__(topology_dump=True))
     for link in project.links.values():
         data["topology"]["links"].append(link.__json__(topology_dump=True))
+    for item in project.items.values():
+        data["topology"]["items"].append(item.__json__(topology_dump=True))
     for compute in computes:
         if hasattr(compute, "__json__"):
             data["topology"]["computes"].append(compute.__json__(topology_dump=True))
