@@ -101,14 +101,17 @@ class Docker(BaseManager):
         """
         data = json.dumps(data)
         url = "http://docker/" + path
-        response = yield from aiohttp.request(
-            method,
-            url,
-            connector=(yield from self.connector()),
-            params=params,
-            data=data,
-            headers={"content-type": "application/json", },
-        )
+        try:
+            response = yield from aiohttp.request(
+                method,
+                url,
+                connector=(yield from self.connector()),
+                params=params,
+                data=data,
+                headers={"content-type": "application/json", },
+            )
+        except aiohttp.ClientResponseError as e:
+            raise DockerError("Docker has returned an error: {}".format(str(e)))
         if response.status >= 300:
             body = yield from response.read()
             try:
