@@ -11,6 +11,9 @@ Welcome to API documentation!
 
 This documentation cover the GNS3 API and ressources for GNS3 developers.
 
+
+If you want a quick demo on how to use the API read: :doc:`curl`
+
 API
 ----
 .. toctree::

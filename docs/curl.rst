@@ -1,9 +1,9 @@
 Sample session using curl
 =========================
 
-You need to read the :doc:`glossary`, and doc:`general` before.
+You need to read the :doc:`glossary`, and :doc:`general` before.
 
-Full endpoints list is available: doc:`endpoints`
+Full endpoints list is available: :doc:`endpoints`
 
 .. warning::
 
