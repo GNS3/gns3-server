@@ -24,7 +24,7 @@ class Shape:
     Shape are visual element not used by the network emulation. Like
     text, images, rectangle... They are pure SVG elements.
     """
-    def __init__(self, project, shape_id=None, svg="<svg></svg>", x=0, y=0, z=0):
+    def __init__(self, project, shape_id=None, svg="<svg></svg>", x=0, y=0, z=0, rotation=0):
         self.svg = svg
         self._project = project
         if shape_id is None:
@@ -34,6 +34,7 @@ class Shape:
         self._x = x
         self._y = y
         self._z = z
+        self._rotation = rotation
 
     @property
     def id(self):
@@ -71,6 +72,14 @@ class Shape:
     def z(self, val):
         self._z = val
 
+    @property
+    def rotation(self):
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, val):
+        self._rotation = val
+
     @asyncio.coroutine
     def update(self, **kwargs):
         """
@@ -96,6 +105,7 @@ class Shape:
                 "x": self._x,
                 "y": self._y,
                 "z": self._z,
+                "rotation": self._rotation,
                 "svg": self._svg
             }
         return {
@@ -104,6 +114,7 @@ class Shape:
             "x": self._x,
             "y": self._y,
             "z": self._z,
+            "rotation": self._rotation,
             "svg": self._svg
         }
 

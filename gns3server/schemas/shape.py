@@ -47,6 +47,12 @@ SHAPE_OBJECT_SCHEMA = {
             "description": "Z property",
             "type": "integer"
         },
+        "rotation": {
+            "description": "Rotation of the element",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 360
+        },
         "svg": {
             "description": "SVG content of the shape",
             "type": "string",
