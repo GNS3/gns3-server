@@ -24,8 +24,8 @@ class Shape:
     Shape are visual element not used by the network emulation. Like
     text, images, rectangle... They are pure SVG elements.
     """
-    def __init__(self, project, shape_id=None, svg=None, x=0, y=0, z=0):
-        self.svg = "<svg></svg>"
+    def __init__(self, project, shape_id=None, svg="<svg></svg>", x=0, y=0, z=0):
+        self.svg = svg
         self._project = project
         if shape_id is None:
             self._id = str(uuid.uuid4())
@@ -74,9 +74,9 @@ class Shape:
     @asyncio.coroutine
     def update(self, **kwargs):
         """
-        Update the node on the compute server
+        Update the shape
 
-        :param kwargs: Node properties
+        :param kwargs: Shape properties
         """
 
         # Update node properties with additional elements
@@ -96,6 +96,7 @@ class Shape:
                 "x": self._x,
                 "y": self._y,
                 "z": self._z,
+                "svg": self._svg
             }
         return {
             "project_id": self._project.id,
@@ -103,6 +104,7 @@ class Shape:
             "x": self._x,
             "y": self._y,
             "z": self._z,
+            "svg": self._svg
         }
 
     def __repr__(self):

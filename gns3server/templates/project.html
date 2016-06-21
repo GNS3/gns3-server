@@ -26,7 +26,7 @@ in futur GNS3 versions.
 <table border="1">
     <tr>
         <th>Name</th>
-        <th>ID</td>
+        <th>ID</th>
         <th>Compute</th>
         <th>Console</th>
     </tr>
@@ -43,9 +43,9 @@ in futur GNS3 versions.
 <h2>Links</h2>
 <table border="1">
     <tr>
-        <th>ID</td>
-        <th>Capture</td>
-        <th>PCAP</td>
+        <th>ID</th>
+        <th>Capture</th>
+        <th>PCAP</th>
     </tr>
 {% for link in project.links.values() %}
 <tr>
@@ -55,6 +55,25 @@ in futur GNS3 versions.
 </tr>
 {% endfor %}
 </table>
+
+
+<h2>Shapes</h2>
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Position</th>
+        <th>Content</th>
+    </tr>
+{% for shape in project.shapes.values() %}
+<tr>
+    <td>{{shape.id}}</td>
+    <td>{{shape.x}}, {{shape.y}}, {{shape.z}}</td>
+    <td>{{shape.svg}}</td>
+</tr>
+{% endfor %}
+</table>
+
+
 
 <h2>Notifications</h2>
 <div id="notifications">

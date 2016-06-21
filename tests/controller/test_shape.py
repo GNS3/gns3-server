@@ -54,13 +54,15 @@ def test_json(project):
         "project_id": project.id,
         "x": i.x,
         "y": i.y,
-        "z": i.z
+        "z": i.z,
+        "svg": i.svg
     }
     assert i.__json__(topology_dump=True) == {
         "shape_id": i.id,
         "x": i.x,
         "y": i.y,
-        "z": i.z
+        "z": i.z,
+        "svg": i.svg
     }
 
 
