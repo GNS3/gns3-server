@@ -10,8 +10,8 @@ Add a NIO to a Qemu VM instance
 Parameters
 **********
 - **adapter_number**: Network adapter where the nio is located
-- **port_number**: Port on the adapter (always 0)
 - **project_id**: Project UUID
+- **port_number**: Port on the adapter (always 0)
 - **node_id**: Node UUID
 
 Response status codes
@@ -34,8 +34,8 @@ Remove a NIO from a Qemu VM instance
 Parameters
 **********
 - **adapter_number**: Network adapter where the nio is located
-- **port_number**: Port on the adapter (always 0)
 - **project_id**: Project UUID
+- **port_number**: Port on the adapter (always 0)
 - **node_id**: Node UUID
 
 Response status codes

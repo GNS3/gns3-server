@@ -10,8 +10,8 @@ Stop a packet capture on an Ethernet hub instance
 Parameters
 **********
 - **adapter_number**: Adapter on the hub (always 0)
-- **port_number**: Port on the hub
 - **project_id**: Project UUID
+- **port_number**: Port on the hub
 - **node_id**: Node UUID
 
 Response status codes

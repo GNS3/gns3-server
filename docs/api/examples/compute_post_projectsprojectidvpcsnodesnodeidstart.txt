@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/30cfeaee-1e13-4445-8784-f1ca0d3eb628/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/c81aadc7-87b8-4e81-a523-723c33bd31c0/start' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/30cfeaee-1e13-4445-8784-f1ca0d3eb628/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/c81aadc7-87b8-4e81-a523-723c33bd31c0/start HTTP/1.1
 {}
 
 
@@ -16,8 +16,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}/start
     "console": 5009,
     "console_type": "telnet",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz3c34_yf/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/30cfeaee-1e13-4445-8784-f1ca0d3eb628",
-    "node_id": "30cfeaee-1e13-4445-8784-f1ca0d3eb628",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i3ldkip/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/c81aadc7-87b8-4e81-a523-723c33bd31c0",
+    "node_id": "c81aadc7-87b8-4e81-a523-723c33bd31c0",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": null,
     "startup_script_path": null,

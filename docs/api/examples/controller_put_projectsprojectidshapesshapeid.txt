@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/eac9bc49-0ec5-4839-831e-0b8a896e29c3/shapes/10b825e2-feb2-46ac-80b2-5c82007e0949' -d '{"x": 42}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/43e74bf9-fc2f-4229-b2e8-b0868848579f/shapes/9f09cf79-5d99-4b0e-9994-c0a12982259c' -d '{"x": 42}'
 
-PUT /v2/projects/eac9bc49-0ec5-4839-831e-0b8a896e29c3/shapes/10b825e2-feb2-46ac-80b2-5c82007e0949 HTTP/1.1
+PUT /v2/projects/43e74bf9-fc2f-4229-b2e8-b0868848579f/shapes/9f09cf79-5d99-4b0e-9994-c0a12982259c HTTP/1.1
 {
     "x": 42
 }
@@ -14,8 +14,8 @@ SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/shapes/{shape_id}
 
 {
-    "project_id": "eac9bc49-0ec5-4839-831e-0b8a896e29c3",
-    "shape_id": "10b825e2-feb2-46ac-80b2-5c82007e0949",
+    "project_id": "43e74bf9-fc2f-4229-b2e8-b0868848579f",
+    "shape_id": "9f09cf79-5d99-4b0e-9994-c0a12982259c",
     "x": 42,
     "y": 20,
     "z": 0

@@ -10,8 +10,8 @@ Add a NIO to an Ethernet switch instance
 Parameters
 **********
 - **adapter_number**: Adapter on the switch (always 0)
-- **port_number**: Port on the switch
 - **project_id**: Project UUID
+- **port_number**: Port on the switch
 - **node_id**: Node UUID
 
 Response status codes
@@ -28,8 +28,8 @@ Remove a NIO from an Ethernet switch instance
 Parameters
 **********
 - **adapter_number**: Adapter on the switch (always 0)
-- **port_number**: Port on the switch
 - **project_id**: Project UUID
+- **port_number**: Port on the switch
 - **node_id**: Node UUID
 
 Response status codes

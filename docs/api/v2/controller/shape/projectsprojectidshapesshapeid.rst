@@ -9,8 +9,8 @@ Create a new shape instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **shape_id**: Shape UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -58,8 +58,8 @@ Delete a shape instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **shape_id**: Shape UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

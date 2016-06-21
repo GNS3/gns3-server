@@ -2,59 +2,28 @@ Welcome to API documentation!
 ======================================
 
 .. WARNING::
-   The API is not stable, feel free to post comments on our website
-   https://gns3.com/
-
-.. WARNING::
    This documentation are for developers for user documentation go
    to https://gns3.com/
 
+   The API is not stable, feel free to post comments on our website
+   https://gns3.com/
 
+
+This documentation cover the GNS3 API and ressources for GNS3 developers.
+
+API
+----
 .. toctree::
+    :maxdepth: 2
+    
     general
     glossary
+    curl
+    endpoints
+
+GNS3 developements
+------------------
+.. toctree::
     development
     file_format
-
-
-Endpoints
-------------
-
-GNS3 expose two type of endpoints:
-
-  * Controller
-  * Compute
-
-Controller API Endpoints
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-The controller manage all the running topologies. The controller
-has knowledge of everything on in GNS3. If you want to create and
-manage a topology it's here. The controller will call the compute API
-when needed.
-
-In a standard GNS3 installation you have one controller and one or many
-computes.
-
-.. toctree::
-   :glob:
-   :maxdepth: 2
-   
-   api/v2/controller/*
-
-
-Compute API Endpoints
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The compute is the GNS3 process running on a server and controlling
-the VM process.
-
-.. WARNING::
-    Consider this endpoints as a private API used by the controller.
-
-.. toctree::
-   :glob:
-   :maxdepth: 2
-   
-   api/v2/compute/*
 
