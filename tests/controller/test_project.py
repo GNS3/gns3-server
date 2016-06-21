@@ -213,30 +213,30 @@ def test_deleteLink(async_run, project, controller):
     assert len(project._links) == 0
 
 
-def test_addItem(async_run, project, controller):
+def test_addShape(async_run, project, controller):
     controller.notification.emit = MagicMock()
 
-    item = async_run(project.add_item(None, svg="<svg></svg>"))
-    assert len(project._items) == 1
-    controller.notification.emit.assert_any_call("item.created", item.__json__())
+    shape = async_run(project.add_shape(None, svg="<svg></svg>"))
+    assert len(project._shapes) == 1
+    controller.notification.emit.assert_any_call("shape.created", shape.__json__())
 
 
-def test_getItem(async_run, project):
-    item = async_run(project.add_item(None))
-    assert project.get_item(item.id) == item
+def test_getShape(async_run, project):
+    shape = async_run(project.add_shape(None))
+    assert project.get_shape(shape.id) == shape
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
-        project.get_item("test")
+        project.get_shape("test")
 
 
-def test_deleteItem(async_run, project, controller):
-    assert len(project._items) == 0
-    item = async_run(project.add_item())
-    assert len(project._items) == 1
+def test_deleteShape(async_run, project, controller):
+    assert len(project._shapes) == 0
+    shape = async_run(project.add_shape())
+    assert len(project._shapes) == 1
     controller._notification = MagicMock()
-    async_run(project.delete_item(item.id))
-    controller.notification.emit.assert_any_call("item.deleted", item.__json__())
-    assert len(project._items) == 0
+    async_run(project.delete_shape(shape.id))
+    controller.notification.emit.assert_any_call("shape.deleted", shape.__json__())
+    assert len(project._shapes) == 0
 
 
 def test_delete(async_run, project, controller):

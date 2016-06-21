@@ -22,7 +22,7 @@ import uuid
 from tests.utils import AsyncioMagicMock
 
 
-from gns3server.controller.item import Item
+from gns3server.controller.shape import Shape
 from gns3server.controller.project import Project
 
 
@@ -32,43 +32,43 @@ def project(controller, async_run):
 
 
 @pytest.fixture
-def item(project):
-    return Item(project, None, svg="<svg></svg>")
+def shape(project):
+    return Shape(project, None, svg="<svg></svg>")
 
 
 def test_init_without_uuid(project):
-    item = Item(project, None, svg="<svg></svg>")
-    assert item.id is not None
+    shape = Shape(project, None, svg="<svg></svg>")
+    assert shape.id is not None
 
 
 def test_init_with_uuid(project):
     id = str(uuid.uuid4())
-    item = Item(project, id, svg="<svg></svg>")
-    assert item.id == id
+    shape = Shape(project, id, svg="<svg></svg>")
+    assert shape.id == id
 
 
 def test_json(project):
-    i = Item(project, None, svg="<svg></svg>")
+    i = Shape(project, None, svg="<svg></svg>")
     assert i.__json__() == {
-        "item_id": i.id,
+        "shape_id": i.id,
         "project_id": project.id,
         "x": i.x,
         "y": i.y,
         "z": i.z
     }
     assert i.__json__(topology_dump=True) == {
-        "item_id": i.id,
+        "shape_id": i.id,
         "x": i.x,
         "y": i.y,
         "z": i.z
     }
 
 
-def test_update(item, project, async_run, controller):
+def test_update(shape, project, async_run, controller):
     controller._notification = AsyncioMagicMock()
     project.dump = MagicMock()
 
-    async_run(item.update(x=42))
-    assert item.x == 42
-    controller._notification.emit.assert_called_with("item.updated", item.__json__())
+    async_run(shape.update(x=42))
+    assert shape.x == 42
+    controller._notification.emit.assert_called_with("shape.updated", shape.__json__())
     assert project.dump.called

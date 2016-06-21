@@ -24,7 +24,7 @@ import shutil
 from uuid import UUID, uuid4
 
 from .node import Node
-from .item import Item
+from .shape import Shape
 from .topology import project_to_topology, load_topology
 from .udp_link import UDPLink
 from ..config import Config
@@ -77,7 +77,7 @@ class Project:
         self._allocated_node_names = set()
         self._nodes = {}
         self._links = {}
-        self._items = {}
+        self._shapes = {}
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
@@ -266,42 +266,42 @@ class Project:
         return self._nodes
 
     @property
-    def items(self):
+    def shapes(self):
         """
-        :returns: Dictionary of the items
+        :returns: Dictionary of the shapes
         """
-        return self._items
+        return self._shapes
 
     @asyncio.coroutine
-    def add_item(self, item_id=None, **kwargs):
+    def add_shape(self, shape_id=None, **kwargs):
         """
-        Create an item or return an existing item
+        Create an shape or return an existing shape
 
-        :param kwargs: See the documentation of item
+        :param kwargs: See the documentation of shape
         """
-        if item_id not in self._items:
-            item = Item(self, item_id=item_id, **kwargs)
-            self._items[item.id] = item
-            self.controller.notification.emit("item.created", item.__json__())
+        if shape_id not in self._shapes:
+            shape = Shape(self, shape_id=shape_id, **kwargs)
+            self._shapes[shape.id] = shape
+            self.controller.notification.emit("shape.created", shape.__json__())
             self.dump()
-            return item
-        return self._items[item_id]
+            return shape
+        return self._shapes[shape_id]
 
-    def get_item(self, item_id):
+    def get_shape(self, shape_id):
         """
-        Return the Item or raise a 404 if the item is unknown
+        Return the Shape or raise a 404 if the shape is unknown
         """
         try:
-            return self._items[item_id]
+            return self._shapes[shape_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Item ID {} doesn't exist".format(item_id))
+            raise aiohttp.web.HTTPNotFound(text="Shape ID {} doesn't exist".format(shape_id))
 
     @asyncio.coroutine
-    def delete_item(self, item_id):
-        item = self.get_item(item_id)
-        del self._items[item.id]
+    def delete_shape(self, shape_id):
+        shape = self.get_shape(shape_id)
+        del self._shapes[shape.id]
         self.dump()
-        self.controller.notification.emit("item.deleted", item.__json__())
+        self.controller.notification.emit("shape.deleted", shape.__json__())
 
     @asyncio.coroutine
     def add_link(self, link_id=None):
@@ -397,8 +397,8 @@ class Project:
                     node = self.get_node(node_link["node_id"])
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"])
 
-            for item_data in topology.get("items", []):
-                item = yield from self.add_item(**item_data)
+            for shape_data in topology.get("shapes", []):
+                shape = yield from self.add_shape(**shape_data)
         self._status = "opened"
 
     def dump(self):

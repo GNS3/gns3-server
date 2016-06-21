@@ -265,9 +265,9 @@ The available notification are:
     * link.created
     * link.updated
     * link.deleted
-    * item.created
-    * item.updated
-    * item.deleted
+    * shape.created
+    * shape.updated
+    * shape.deleted
     * log.error
     * log.warning
     * log.info

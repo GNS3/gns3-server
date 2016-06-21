@@ -20,4 +20,4 @@ from .project_handler import ProjectHandler
 from .node_handler import NodeHandler
 from .link_handler import LinkHandler
 from .server_handler import ServerHandler
-from .item_handler import ItemHandler
+from .shape_handler import ShapeHandler

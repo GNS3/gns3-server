@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-ITEM_OBJECT_SCHEMA = {
+SHAPE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "An item object",
+    "description": "An shape object",
     "type": "object",
     "properties": {
-        "item_id": {
-            "description": "Link UUID",
+        "shape_id": {
+            "description": "Shape UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -48,7 +48,7 @@ ITEM_OBJECT_SCHEMA = {
             "type": "integer"
         },
         "svg": {
-            "description": "SVG content of the item",
+            "description": "SVG content of the shape",
             "type": "string",
             "pattern": "^<.+>$"
         }

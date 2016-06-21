@@ -19,18 +19,18 @@ import asyncio
 import uuid
 
 
-class Item:
+class Shape:
     """
-    Item are visual element not used by the network emulation. Like
+    Shape are visual element not used by the network emulation. Like
     text, images, rectangle... They are pure SVG elements.
     """
-    def __init__(self, project, item_id=None, svg=None, x=0, y=0, z=0):
+    def __init__(self, project, shape_id=None, svg=None, x=0, y=0, z=0):
         self.svg = "<svg></svg>"
         self._project = project
-        if item_id is None:
+        if shape_id is None:
             self._id = str(uuid.uuid4())
         else:
-            self._id = item_id
+            self._id = shape_id
         self._x = x
         self._y = y
         self._z = z
@@ -83,7 +83,7 @@ class Item:
         for prop in kwargs:
             if getattr(self, prop) != kwargs[prop]:
                 setattr(self, prop, kwargs[prop])
-        self._project.controller.notification.emit("item.updated", self.__json__())
+        self._project.controller.notification.emit("shape.updated", self.__json__())
         self._project.dump()
 
     def __json__(self, topology_dump=False):
@@ -92,20 +92,20 @@ class Item:
         """
         if topology_dump:
             return {
-                "item_id": self._id,
+                "shape_id": self._id,
                 "x": self._x,
                 "y": self._y,
                 "z": self._z,
             }
         return {
             "project_id": self._project.id,
-            "item_id": self._id,
+            "shape_id": self._id,
             "x": self._x,
             "y": self._y,
             "z": self._z,
         }
 
     def __repr__(self):
-        return "<gns3server.controller.Item {}>".format(self._id)
+        return "<gns3server.controller.Shape {}>".format(self._id)
 
 

@@ -20,88 +20,88 @@ import aiohttp
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 
-from gns3server.schemas.item import (
-    ITEM_OBJECT_SCHEMA,
+from gns3server.schemas.shape import (
+    SHAPE_OBJECT_SCHEMA,
 )
 
 
-class ItemHandler:
+class ShapeHandler:
     """
-    API entry point for Item
+    API entry point for Shape
     """
 
     @Route.get(
-        r"/projects/{project_id}/items",
+        r"/projects/{project_id}/shapes",
         parameters={
             "project_id": "Project UUID"
         },
         status_codes={
-            200: "List of items returned",
+            200: "List of shapes returned",
         },
-        description="List items of a project")
-    def list_items(request, response):
+        description="List shapes of a project")
+    def list_shapes(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        response.json([v for v in project.items.values()])
+        response.json([v for v in project.shapes.values()])
 
     @Route.post(
-        r"/projects/{project_id}/items",
+        r"/projects/{project_id}/shapes",
         parameters={
             "project_id": "Project UUID"
         },
         status_codes={
-            201: "Item created",
+            201: "Shape created",
             400: "Invalid request"
         },
-        description="Create a new item instance",
-        input=ITEM_OBJECT_SCHEMA,
-        output=ITEM_OBJECT_SCHEMA)
+        description="Create a new shape instance",
+        input=SHAPE_OBJECT_SCHEMA,
+        output=SHAPE_OBJECT_SCHEMA)
     def create(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        item = yield from project.add_item(**request.json)
+        shape = yield from project.add_shape(**request.json)
         response.set_status(201)
-        response.json(item)
+        response.json(shape)
 
     @Route.put(
-        r"/projects/{project_id}/items/{item_id}",
+        r"/projects/{project_id}/shapes/{shape_id}",
         parameters={
             "project_id": "Project UUID",
-            "item_id": "Item UUID"
+            "shape_id": "Shape UUID"
         },
         status_codes={
-            201: "Item updated",
+            201: "Shape updated",
             400: "Invalid request"
         },
-        description="Create a new item instance",
-        input=ITEM_OBJECT_SCHEMA,
-        output=ITEM_OBJECT_SCHEMA)
+        description="Create a new shape instance",
+        input=SHAPE_OBJECT_SCHEMA,
+        output=SHAPE_OBJECT_SCHEMA)
     def update(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        item = project.get_item(request.match_info["item_id"])
-        yield from item.update(**request.json)
+        shape = project.get_shape(request.match_info["shape_id"])
+        yield from shape.update(**request.json)
         response.set_status(201)
-        response.json(item)
+        response.json(shape)
 
     @Route.delete(
-        r"/projects/{project_id}/items/{item_id}",
+        r"/projects/{project_id}/shapes/{shape_id}",
         parameters={
             "project_id": "Project UUID",
-            "item_id": "Item UUID"
+            "shape_id": "Shape UUID"
         },
         status_codes={
-            204: "Item deleted",
+            204: "Shape deleted",
             400: "Invalid request"
         },
-        description="Delete a item instance")
+        description="Delete a shape instance")
     def delete(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        yield from project.delete_item(request.match_info["item_id"])
+        yield from project.delete_shape(request.match_info["shape_id"])
         response.set_status(204)
 
