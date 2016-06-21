@@ -49,8 +49,11 @@ class Docker(BaseManager):
     @asyncio.coroutine
     def connector(self):
         if not self._connected or self._connector.closed:
+            if not sys.platform.startswith("linux"):
+                raise DockerError("Docker is supported only on Linux")
+
             try:
-                self._connector = aiohttp.connector.UnixConnector(self._server_url)
+                self._connector = aiohttp.connector.UnixConnector(self._server_url, conn_timeout=2)
                 self._connected = True
                 version = yield from self.query("GET", "version")
             except (aiohttp.errors.ClientOSError, FileNotFoundError):
