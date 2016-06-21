@@ -1,0 +1,22 @@
+curl -i -X GET 'http://localhost:3080/v2/projects/50626c07-f12d-4dbf-9e51-1da3854e620a/shapes'
+
+GET /v2/projects/50626c07-f12d-4dbf-9e51-1da3854e620a/shapes HTTP/1.1
+
+
+
+HTTP/1.1 200
+CONTENT-LENGTH: 186
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/shapes
+
+[
+    {
+        "project_id": "50626c07-f12d-4dbf-9e51-1da3854e620a",
+        "shape_id": "82374821-e50d-4b2f-adcf-ab77216b5014",
+        "x": 10,
+        "y": 20,
+        "z": 0
+    }
+]

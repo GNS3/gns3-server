@@ -1,0 +1,22 @@
+curl -i -X PUT 'http://localhost:3080/v2/projects/eac9bc49-0ec5-4839-831e-0b8a896e29c3/shapes/10b825e2-feb2-46ac-80b2-5c82007e0949' -d '{"x": 42}'
+
+PUT /v2/projects/eac9bc49-0ec5-4839-831e-0b8a896e29c3/shapes/10b825e2-feb2-46ac-80b2-5c82007e0949 HTTP/1.1
+{
+    "x": 42
+}
+
+
+HTTP/1.1 201
+CONTENT-LENGTH: 154
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/shapes/{shape_id}
+
+{
+    "project_id": "eac9bc49-0ec5-4839-831e-0b8a896e29c3",
+    "shape_id": "10b825e2-feb2-46ac-80b2-5c82007e0949",
+    "x": 42,
+    "y": 20,
+    "z": 0
+}

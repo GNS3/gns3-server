@@ -1,0 +1,12 @@
+curl -i -X DELETE 'http://localhost:3080/v2/projects/a1d87587-dbed-4ba0-91e7-d8a46e511115/shapes/5f3a80ed-f145-41d3-b4b3-c086990ae9e0'
+
+DELETE /v2/projects/a1d87587-dbed-4ba0-91e7-d8a46e511115/shapes/5f3a80ed-f145-41d3-b4b3-c086990ae9e0 HTTP/1.1
+
+
+
+HTTP/1.1 204
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/shapes/{shape_id}
+
