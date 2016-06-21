@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/a6fbcc14-c824-4524-84e1-b8f6e86614cc' -d '{"console": 5001, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/548df6a0-7750-485c-a2a6-9a4bdbda76da' -d '{"console": 5001, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/a6fbcc14-c824-4524-84e1-b8f6e86614cc HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/548df6a0-7750-485c-a2a6-9a4bdbda76da HTTP/1.1
 {
     "console": 5001,
     "ethernet_adapters": 4,
@@ -27,12 +27,12 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "console": 5001,
     "console_type": "telnet",
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp74v4muyi/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpgyk7lrbu/iourc",
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpeiiori6h/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/a6fbcc14-c824-4524-84e1-b8f6e86614cc",
-    "node_id": "a6fbcc14-c824-4524-84e1-b8f6e86614cc",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp8nhhxswp/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/548df6a0-7750-485c-a2a6-9a4bdbda76da",
+    "node_id": "548df6a0-7750-485c-a2a6-9a4bdbda76da",
     "nvram": 2048,
     "path": "iou.bin",
     "private_config": null,

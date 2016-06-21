@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/28470b00-1d97-4c41-87fa-59cdfc48b569/close' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/6f9549e2-f117-40c7-84b9-d400ef5cb1c7/close' -d '{}'
 
-POST /v2/projects/28470b00-1d97-4c41-87fa-59cdfc48b569/close HTTP/1.1
+POST /v2/projects/6f9549e2-f117-40c7-84b9-d400ef5cb1c7/close HTTP/1.1
 {}
 
 
@@ -14,7 +14,7 @@ X-ROUTE: /v2/projects/{project_id}/close
 {
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpm2mpk9nl/projects/28470b00-1d97-4c41-87fa-59cdfc48b569",
-    "project_id": "28470b00-1d97-4c41-87fa-59cdfc48b569",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpfa6tjshf/projects/6f9549e2-f117-40c7-84b9-d400ef5cb1c7",
+    "project_id": "6f9549e2-f117-40c7-84b9-d400ef5cb1c7",
     "status": "opened"
 }
