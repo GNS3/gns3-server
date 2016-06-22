@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/031195a7-0811-40ca-8cf2-77625c495e2a' -d '{"console": 5001, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d203c06f-67aa-4236-aff5-a2395f723648' -d '{"console": 5001, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/031195a7-0811-40ca-8cf2-77625c495e2a HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d203c06f-67aa-4236-aff5-a2395f723648 HTTP/1.1
 {
     "console": 5001,
     "hdb_disk_image": "linux\u8f7d.img",
@@ -46,15 +46,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:dd:80:5e:2a:00",
+    "mac_address": "00:dd:80:36:48:00",
     "name": "test",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp_i3ldkip/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/031195a7-0811-40ca-8cf2-77625c495e2a",
-    "node_id": "031195a7-0811-40ca-8cf2-77625c495e2a",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9fnsio97/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/d203c06f-67aa-4236-aff5-a2395f723648",
+    "node_id": "d203c06f-67aa-4236-aff5-a2395f723648",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpvmjtewa8/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp14s6lxxw/qemu-system-x86_64",
     "ram": 1024,
     "status": "stopped",
     "usage": ""

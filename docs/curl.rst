@@ -20,6 +20,10 @@ You can check the server version with a simple curl command:
         "version": "2.0.0dev1"
     }
 
+
+List computes
+##############
+
 We will list the computes node where we can run our nodes:
 
 .. code-block:: shell-session
@@ -40,6 +44,9 @@ We will list the computes node where we can run our nodes:
 In this sample we have only one compute where we can run our nodes. This compute as a special id: local. This
 mean it's the local server embed in the GNS3 controller.
 
+Create project
+###############
+
 The next step is to create a project.
 
 .. code-block:: shell-session
@@ -50,6 +57,8 @@ The next step is to create a project.
         "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
     }
 
+Create nodes
+#############
 
 With this project id we can now create two VPCS Node.
 
@@ -91,6 +100,9 @@ With this project id we can now create two VPCS Node.
 
 The properties dictionnary contains all setting specific to a node type (dynamips, docker, vpcs...)
 
+Link nodes
+###########
+
 Now we need to link the two VPCS by connecting their port 0 together.
 
 .. code-block:: shell-session
@@ -116,12 +128,18 @@ Now we need to link the two VPCS by connecting their port 0 together.
         "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f"
     }
 
+Start nodes
+###########
+
 Now we can start the two nodes.
 
 .. code-block:: shell-session
 
     # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/f124dec0-830a-451e-a314-be50bbd58a00/start" -d "{}"
     # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/83892a4d-aea0-4350-8b3e-d0af3713da74/start" -d "{}"
+
+Connect to nodes
+#################
 
 Everything should be started now. You can connect via telnet to the different Node.
 The port is the field console in the create Node request.
@@ -186,12 +204,34 @@ The port is the field console in the create Node request.
     Good-bye
     Connection closed by foreign host.
 
+
+Stop nodes
+##########
+
 And we stop the two nodes.
 
 .. code-block:: shell-session
 
     # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/f124dec0-830a-451e-a314-be50bbd58a00/stop" -d "{}"
     # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/83892a4d-aea0-4350-8b3e-d0af3713da74/stop" -d "{}"
+
+
+Add a visual element
+######################
+
+When you want add visual elements to the topology like rectangle, circle, images you can just send a raw SVG.
+This will display a red square in the middle of your topologies:
+
+
+.. code-block:: shell-session
+
+    # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/shapes" -d '{"x":0, "y": 12, "svg": "<svg width=\"50\" height=\"50\"><rect width=\"50\" height=\"50\" style=\"fill: #ff0000\"></rect></svg>"}'
+
+Tips: you can embed png/jpg... by using a base64 encoding in the SVG.
+
+
+Notifications
+#############
 
 You can see notification about the changes via the notification feed:
 
@@ -202,5 +242,11 @@ You can see notification about the changes via the notification feed:
     {"action": "node.updated", "event": {"command_line": "/usr/local/bin/vpcs -p 5001 -m 1 -i 1 -F -R -s 10001 -c 10000 -t 127.0.0.1", "compute_id": "local", "console": 5001, "console_host": "127.0.0.1", "console_type": "telnet", "name": "VPCS 2", "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74", "node_type": "vpcs", "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f", "properties": {"startup_script": null, "startup_script_path": null}, "status": "started"}}
 
 A websocket version is also available on http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications/ws
+
+
+How to found the endpoints?
+###########################
+
+Full endpoints list is available: :doc:`endpoints`
 
 If you start the server with **--debug** you can see all the requests made by the client and by the controller to the computes nodes.

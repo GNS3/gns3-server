@@ -24,6 +24,7 @@ class Shape:
     Shape are visual element not used by the network emulation. Like
     text, images, rectangle... They are pure SVG elements.
     """
+
     def __init__(self, project, shape_id=None, svg="<svg></svg>", x=0, y=0, z=0, rotation=0):
         self.svg = svg
         self._project = project
@@ -127,5 +128,3 @@ class Shape:
 
     def __repr__(self):
         return "<gns3server.controller.Shape {}>".format(self._id)
-
-

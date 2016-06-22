@@ -9,8 +9,8 @@ Create a new shape instance
 
 Parameters
 **********
-- **shape_id**: Shape UUID
 - **project_id**: Project UUID
+- **shape_id**: Shape UUID
 
 Response status codes
 **********************
@@ -24,6 +24,7 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
     <tr><td>shape_id</td>                    <td> </td>                     <td>string</td>                     <td>Shape UUID</td>                     </tr>
     <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the shape</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
@@ -38,6 +39,7 @@ Output
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
     <tr><td>shape_id</td>                    <td> </td>                     <td>string</td>                     <td>Shape UUID</td>                     </tr>
     <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the shape</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
@@ -58,8 +60,8 @@ Delete a shape instance
 
 Parameters
 **********
-- **shape_id**: Shape UUID
 - **project_id**: Project UUID
+- **shape_id**: Shape UUID
 
 Response status codes
 **********************

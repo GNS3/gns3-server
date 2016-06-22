@@ -61,5 +61,3 @@ SHAPE_OBJECT_SCHEMA = {
     },
     "additionalProperties": False
 }
-
-

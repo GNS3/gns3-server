@@ -9,10 +9,10 @@ Start a packet capture on an IOU VM instance
 
 Parameters
 **********
-- **adapter_number**: Adapter to start a packet capture
 - **project_id**: Project UUID
 - **port_number**: Port on the adapter
 - **node_id**: Node UUID
+- **adapter_number**: Adapter to start a packet capture
 
 Response status codes
 **********************
