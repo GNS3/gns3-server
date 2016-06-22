@@ -72,7 +72,21 @@ def test_update(shape, project, async_run, controller):
     controller._notification = AsyncioMagicMock()
     project.dump = MagicMock()
 
-    async_run(shape.update(x=42))
+    async_run(shape.update(x=42, svg="<svg><rect></rect></svg>"))
     assert shape.x == 42
-    controller._notification.emit.assert_called_with("shape.updated", shape.__json__())
+    args, kwargs = controller._notification.emit.call_args
+    assert args[0] == "shape.updated"
+    # JSON
+    assert args[1]["x"] == 42
+    assert args[1]["svg"] == "<svg><rect></rect></svg>"
+
+    async_run(shape.update(x=12, svg="<svg><rect></rect></svg>"))
+    assert shape.x == 12
+    args, kwargs = controller._notification.emit.call_args
+    assert args[0] == "shape.updated"
+    # JSON
+    assert args[1]["x"] == 12
+    # To avoid spamming client with large data we don't send the svg if the SVG didn't change
+    assert "svg" not in args[1]
+
     assert project.dump.called

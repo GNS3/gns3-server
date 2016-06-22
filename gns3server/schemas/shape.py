@@ -56,7 +56,7 @@ SHAPE_OBJECT_SCHEMA = {
         "svg": {
             "description": "SVG content of the shape",
             "type": "string",
-            "pattern": "^<.+>$"
+            "pattern": "^<(.|[\r\n])+>$"
         }
     },
     "additionalProperties": False

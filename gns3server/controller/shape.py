@@ -89,10 +89,17 @@ class Shape:
         """
 
         # Update node properties with additional elements
+        svg_changed = False
         for prop in kwargs:
             if getattr(self, prop) != kwargs[prop]:
+                if prop == "svg":
+                    # To avoid spamming client with large data we don't send the svg if the SVG didn't change
+                    svg_changed = True
                 setattr(self, prop, kwargs[prop])
-        self._project.controller.notification.emit("shape.updated", self.__json__())
+        data = self.__json__()
+        if not svg_changed:
+            del data["svg"]
+        self._project.controller.notification.emit("shape.updated", data)
         self._project.dump()
 
     def __json__(self, topology_dump=False):
