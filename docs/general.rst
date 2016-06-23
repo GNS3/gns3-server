@@ -1,6 +1,50 @@
 General
 ################
 
+Architecture
+============
+
+GNS3 is splitted in four part:
+
+    * the GUI (project gns3-gui, gns3-web)
+    * the controller (project gns3-server)
+    * the compute (project gns3-server)
+    * the emulators (qemu, iou, dynamips...)
+
+
+The controller pilot everything it's the part that manage the state
+of a project, save it on disk. Onlye one controller exists.
+
+
+The GUI display the topology. The GUI has only direct contact with
+the controller.
+
+The compute are where emulator are executed. If the compute is on
+the same server as the controller, they are in the same process.
+
+
+For each node of the topology will start an emulator instance.
+
+
+A small schema::
+
+    +---------------+                  +----------+     +------+
+    |               |                  | COMPUTE  +-----> QEMU |
+    |  GNS3 GUI     |              +---> SERVER 1 |     +------+
+    |  QT interface +-----+        |   +----------+
+    |               |     |        |                    +---+
+    +---------------+    +v--------++               +--->IOU|
+                         |CONTROLLER|               |   +---+
+          +---------+    +^--------++  +---------+  |
+          | GNS3 WEB+-----+        |   | COMPUTE +--+
+          +---------+              +---> SERVER 2+--+   +--------+
+                                       +---------+  +--->DYNAMIPS|
+                                                        +--------+
+
+
+If you want to pilot GNS3 you need to use the controller API.
+
+
 Communications
 ===============
 
