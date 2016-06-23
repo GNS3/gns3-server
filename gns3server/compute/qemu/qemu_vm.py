@@ -75,6 +75,7 @@ class QemuVM(BaseNode):
         self._monitor = None
         self._stdout_file = ""
         self._execute_lock = asyncio.Lock()
+        self._local_udp_tunnels = {}
 
         # QEMU VM settings
         if qemu_path:
@@ -882,8 +883,17 @@ class QemuVM(BaseNode):
                                                                                   stdout=fd,
                                                                                   stderr=subprocess.STDOUT,
                                                                                   cwd=self.working_dir)
-                    log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
 
+                    if self.use_ubridge:
+                        yield from self._start_ubridge()
+                        for adapter_number, adapter in enumerate(self._ethernet_adapters):
+                            nio = adapter.get_nio(0)
+                            if nio:
+                                yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
+                                                                            self._local_udp_tunnels[adapter_number][1],
+                                                                            nio)
+
+                    log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
                     self.status = "started"
                     monitor_process(self._process, self._termination_callback)
                 except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
@@ -919,6 +929,7 @@ class QemuVM(BaseNode):
         Stops this QEMU VM.
         """
 
+        yield from self._stop_ubridge()
         with (yield from self._execute_lock):
             # stop the QEMU process
             self._hw_virtualization = False
@@ -1003,6 +1014,11 @@ class QemuVM(BaseNode):
                     if nio and isinstance(nio, NIOUDP):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
+        for udp_tunnel in self._local_udp_tunnels.values():
+            self.manager.port_manager.release_udp_port(udp_tunnel[0].lport, self._project)
+            self.manager.port_manager.release_udp_port(udp_tunnel[1].lport, self._project)
+        self._local_udp_tunnels = {}
+
     @asyncio.coroutine
     def _get_vm_status(self):
         """
@@ -1081,27 +1097,12 @@ class QemuVM(BaseNode):
                                                                                                  adapter_number=adapter_number))
 
         if self.is_running():
-            raise QemuError("Sorry, adding a link to a started Qemu VM is not supported.")
-            # FIXME: does the code below work? very undocumented feature...
-            # dynamically configure an UDP tunnel on the QEMU VM adapter
-            # if nio and isinstance(nio, NIOUDP):
-            #     if self._legacy_networking:
-            #         yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_number, adapter_number))
-            #         yield from self._control_vm("host_net_add udp vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
-            #                                                                                                               adapter_number,
-            #                                                                                                               nio.lport,
-            #                                                                                                               nio.rport,
-            #                                                                                                               nio.rhost))
-            #     else:
-            #         # Apparently there is a bug in Qemu...
-            #         # netdev_add [user|tap|socket|hubport|netmap],id=str[,prop=value][,...] -- add host network device
-            #         # netdev_del id -- remove host network device
-            #         yield from self._control_vm("netdev_del gns3-{}".format(adapter_number))
-            #         yield from self._control_vm("netdev_add socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
-            #                                                                                                     nio.rhost,
-            #                                                                                                     nio.rport,
-            #                                                                                                     self._host,
-            #                                                                                                     nio.lport))
+            if self.ubridge:
+                yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
+                                                            self._local_udp_tunnels[adapter_number][1],
+                                                            nio)
+            else:
+                raise QemuError("Sorry, adding a link to a started Qemu VM is not supported without using uBridge.")
 
         adapter.add_nio(0, nio)
         log.info('QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(name=self._name,
@@ -1126,21 +1127,83 @@ class QemuVM(BaseNode):
                                                                                                  adapter_number=adapter_number))
 
         if self.is_running():
-            # FIXME: does the code below work? very undocumented feature...
-            # dynamically disable the QEMU VM adapter
-            yield from self._control_vm("host_net_remove {} gns3-{}".format(adapter_number, adapter_number))
-            yield from self._control_vm("host_net_add user vlan={},name=gns3-{}".format(adapter_number, adapter_number))
+            if self.ubridge:
+                yield from self._ubridge_send("bridge delete {name}".format(name="QEMU-{}-{}".format(self._id, adapter_number)))
+            else:
+                raise QemuError("Sorry, removing a link to a started Qemu VM is not supported without using uBridge.")
 
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
+
         log.info('QEMU VM "{name}" [{id}]: {nio} removed from adapter {adapter_number}'.format(name=self._name,
                                                                                                id=self._id,
                                                                                                nio=nio,
                                                                                                adapter_number=adapter_number))
         return nio
 
+    @asyncio.coroutine
+    def start_capture(self, adapter_number, output_file):
+        """
+        Starts a packet capture.
+
+        :param adapter_number: adapter number
+        :param output_file: PCAP destination file for the capture
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except IndexError:
+            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
+                                                                                                 adapter_number=adapter_number))
+
+        if not self.use_ubridge:
+            raise QemuError("uBridge must be enabled in order to start packet capture")
+
+        nio = adapter.get_nio(0)
+
+        if not nio:
+            raise QemuError("Adapter {} is not connected".format(adapter_number))
+
+        if nio.capturing:
+            raise QemuError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
+
+        nio.startPacketCapture(output_file)
+
+        if self.is_running() and self.ubridge:
+            yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="QEMU-{}-{}".format(self._id, adapter_number),
+                                                                                               output_file=output_file))
+
+        log.info("QEMU VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                       id=self.id,
+                                                                                                       adapter_number=adapter_number))
+
+    def stop_capture(self, adapter_number):
+        """
+        Stops a packet capture.
+
+        :param adapter_number: adapter number
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except IndexError:
+            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
+                                                                                                 adapter_number=adapter_number))
+        nio = adapter.get_nio(0)
+
+        if not nio:
+            raise QemuError("Adapter {} is not connected".format(adapter_number))
+
+        nio.stopPacketCapture()
+
+        if self.is_running() and self.ubridge:
+            yield from self._ubridge_send('bridge stop_capture {name}'.format(name="QEMU-{}-{}".format(self._id, adapter_number)))
+
+        log.info("QEMU VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
+                                                                                                       id=self.id,
+                                                                                                       adapter_number=adapter_number))
     @property
     def started(self):
         """
@@ -1332,7 +1395,14 @@ class QemuVM(BaseNode):
 
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
-            nio = adapter.get_nio(0)
+
+            if self.use_ubridge:
+                # use a local UDP tunnel to connect to uBridge instead
+                if adapter_number not in self._local_udp_tunnels:
+                    self._local_udp_tunnels[adapter_number] = self._create_local_udp_tunnel()
+                nio = self._local_udp_tunnels[adapter_number][0]
+            else:
+                nio = adapter.get_nio(0)
             if self._legacy_networking:
                 # legacy QEMU networking syntax (-net)
                 if nio:

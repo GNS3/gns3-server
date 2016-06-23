@@ -25,9 +25,11 @@ import tempfile
 import psutil
 import platform
 
+from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor
 from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
+from .nios.nio_udp import NIOUDP
 from .error import NodeError
 
 
@@ -490,6 +492,58 @@ class BaseNode:
 
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             yield from self._ubridge_hypervisor.stop()
+
+    @asyncio.coroutine
+    def _add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
+        """
+        Creates a connection in uBridge.
+
+        :param bridge_name: bridge name in uBridge
+        :param source_nio: source NIO instance
+        :param destination_nio: destination NIO instance
+        """
+
+        yield from self._ubridge_send("bridge create {name}".format(name=bridge_name))
+
+        if not isinstance(destination_nio, NIOUDP):
+            raise NodeError("Destination NIO is not UDP")
+
+        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
+                                                                                                 lport=source_nio.lport,
+                                                                                                 rhost=source_nio.rhost,
+                                                                                                 rport=source_nio.rport))
+
+        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
+                                                                                                 lport=destination_nio.lport,
+                                                                                                 rhost=destination_nio.rhost,
+                                                                                                 rport=destination_nio.rport))
+
+        if destination_nio.capturing:
+            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
+                                                                                             pcap_file=destination_nio.pcap_output_file))
+
+        yield from self._ubridge_send('bridge start {name}'.format(name=bridge_name))
+
+    def _create_local_udp_tunnel(self):
+        """
+        Creates a local UDP tunnel (pair of 2 NIOs, one for each direction)
+
+        :returns: source NIO and destination NIO.
+        """
+
+        m = PortManager.instance()
+        lport = m.get_free_udp_port(self.project)
+        rport = m.get_free_udp_port(self.project)
+        source_nio_settings = {'lport': lport, 'rhost': '127.0.0.1', 'rport': rport, 'type': 'nio_udp'}
+        destination_nio_settings = {'lport': rport, 'rhost': '127.0.0.1', 'rport': lport, 'type': 'nio_udp'}
+        source_nio = self.manager.create_nio(self.ubridge_path, source_nio_settings)
+        destination_nio = self.manager.create_nio(self.ubridge_path, destination_nio_settings)
+        log.info("{module}: '{name}' [{id}]:local UDP tunnel created between port {port1} and {port2}".format(module=self.manager.module_name,
+                                                                                                              name=self.name,
+                                                                                                              id=self.id,
+                                                                                                              port1=lport,
+                                                                                                              port2=rport))
+        return source_nio, destination_nio
 
     @property
     def hw_virtualization(self):

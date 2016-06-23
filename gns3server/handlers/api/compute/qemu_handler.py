@@ -23,9 +23,13 @@ from aiohttp.web import HTTPConflict
 from gns3server.web.route import Route
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.schemas.nio import NIO_SCHEMA
-from gns3server.schemas.node import NODE_LIST_IMAGES_SCHEMA
 from gns3server.compute.qemu import Qemu
 from gns3server.config import Config
+
+from gns3server.schemas.node import (
+    NODE_LIST_IMAGES_SCHEMA,
+    NODE_CAPTURE_SCHEMA
+)
 
 from gns3server.schemas.qemu import (
     QEMU_CREATE_SCHEMA,
@@ -286,6 +290,53 @@ class QEMUHandler:
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to start a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "Capture started",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+        },
+        description="Start a packet capture on a Qemu VM instance",
+        input=NODE_CAPTURE_SCHEMA)
+    def start_capture(request, response):
+
+        qemu_manager = Qemu.instance()
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
+        yield from vm.start_capture(adapter_number, pcap_file_path)
+        response.json({"pcap_file_path": pcap_file_path})
+
+
+    @Route.post(
+        r"/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to stop a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            204: "Capture stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+        },
+        description="Stop a packet capture on a Qemu VM instance")
+    def stop_capture(request, response):
+
+        qemu_manager = Qemu.instance()
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        yield from vm.stop_capture(adapter_number)
         response.set_status(204)
 
     @Route.get(

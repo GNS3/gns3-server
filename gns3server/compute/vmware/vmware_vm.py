@@ -298,8 +298,7 @@ class VMwareVM(BaseNode):
         yield from self._ubridge_send("bridge create {name}".format(name=vnet))
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
         if sys.platform.startswith("linux"):
-            yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet,
-                                                                                                            interface=vmnet_interface))
+            yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         elif sys.platform.startswith("win"):
             windows_interfaces = interfaces()
             npf = None
@@ -312,34 +311,30 @@ class VMwareVM(BaseNode):
                     npf = interface["id"]
                     source_mac = interface["mac_address"]
             if npf:
-                yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
-                                                                                                               interface=npf))
+                yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet, interface=npf))
             else:
                 raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
 
             if block_host_traffic:
                 if source_mac:
-                    yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet,
-                                                                                                                          mac=source_mac))
+                    yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet, mac=source_mac))
                 else:
                     log.warn("Could not block host network traffic on {} (no MAC address found)".format(vmnet_interface))
 
         elif sys.platform.startswith("darwin"):
-            yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet,
-                                                                                                               interface=vmnet_interface))
+            yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
             yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
                                                                                                            interface=vmnet_interface))
 
         if isinstance(nio, NIOUDP):
             yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
-                                                                                                                lport=nio.lport,
-                                                                                                                rhost=nio.rhost,
-                                                                                                                rport=nio.rport))
+                                                                                                     lport=nio.lport,
+                                                                                                     rhost=nio.rhost,
+                                                                                                     rport=nio.rport))
 
         if nio.capturing:
-            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet,
-                                                                                                        pcap_file=nio.pcap_output_file))
+            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet, pcap_file=nio.pcap_output_file))
 
         yield from self._ubridge_send('bridge start {name}'.format(name=vnet))
 

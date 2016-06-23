@@ -19,8 +19,8 @@ import os
 from aiohttp.web import HTTPConflict
 from gns3server.web.route import Route
 from gns3server.schemas.nio import NIO_SCHEMA
-from gns3server.compute.vpcs import VPCS
 from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
+from gns3server.compute.vpcs import VPCS
 
 from gns3server.schemas.vpcs import (
     VPCS_CREATE_SCHEMA,
@@ -227,7 +227,6 @@ class VPCSHandler:
         yield from vm.port_remove_nio_binding(int(request.match_info["port_number"]))
         response.set_status(204)
 
-
     @Route.post(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
         parameters={
@@ -244,6 +243,7 @@ class VPCSHandler:
         description="Start a packet capture on a VPCS instance",
         input=NODE_CAPTURE_SCHEMA)
     def start_capture(request, response):
+
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
@@ -267,6 +267,7 @@ class VPCSHandler:
         },
         description="Stop a packet capture on a VPCS instance")
     def stop_capture(request, response):
+
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])

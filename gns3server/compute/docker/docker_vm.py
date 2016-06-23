@@ -48,7 +48,8 @@ log = logging.getLogger(__name__)
 
 
 class DockerVM(BaseNode):
-    """Docker container implementation.
+    """
+    Docker container implementation.
 
     :param name: Docker container name
     :param node_id: Node identifier
@@ -63,13 +64,13 @@ class DockerVM(BaseNode):
     :param console_http_path: Url part with the path of the web interface
     """
 
-    def __init__(self, name, node_id, project, manager, image,
-                 console=None, aux=None, start_command=None,
-                 adapters=None, environment=None, console_type="telnet",
-                 console_resolution="1024x768", console_http_port=80, console_http_path="/"):
+    def __init__(self, name, node_id, project, manager, image, console=None, aux=None, start_command=None,
+                 adapters=None, environment=None, console_type="telnet", console_resolution="1024x768",
+                 console_http_port=80, console_http_path="/"):
+
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
-        # If no version is specified force latest
+        # force the latest image if no version is specified
         if ":" not in image:
             image = "{}:latest".format(image)
         self._image = image
@@ -91,11 +92,9 @@ class DockerVM(BaseNode):
         else:
             self.adapters = adapters
 
-        log.debug(
-            "{module}: {name} [{image}] initialized.".format(
-                module=self.manager.module_name,
-                name=self.name,
-                image=self._image))
+        log.debug("{module}: {name} [{image}] initialized.".format(module=self.manager.module_name,
+                                                                   name=self.name,
+                                                                   image=self._image))
 
     def __json__(self):
         return {
@@ -401,14 +400,13 @@ class DockerVM(BaseNode):
         for volume in self._volumes:
             log.debug("Docker container '{name}' [{image}] fix ownership on {path}".format(
                 name=self._name, image=self._image, path=volume))
-            process = yield from asyncio.subprocess.create_subprocess_exec(
-                "docker",
-                "exec",
-                self._cid,
-                "/gns3/bin/busybox",
-                "sh",
-                "-c",
-                "(/gns3/bin/busybox find \"{path}\" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\") && /gns3/bin/busybox chmod -R u+rX \"{path}\" && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\"".format(uid=os.getuid(), gid=os.getgid(), path=volume))
+            process = yield from asyncio.subprocess.create_subprocess_exec("docker",
+                                                                           "exec",
+                                                                           self._cid,
+                                                                           "/gns3/bin/busybox",
+                                                                           "sh",
+                                                                           "-c",
+                                                                           "(/gns3/bin/busybox find \"{path}\" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\") && /gns3/bin/busybox chmod -R u+rX \"{path}\" && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\"".format(uid=os.getuid(), gid=os.getgid(), path=volume))
             yield from process.wait()
 
     @asyncio.coroutine
@@ -614,10 +612,11 @@ class DockerVM(BaseNode):
         """
         Creates a connection in uBridge.
 
-        :param nio: NIO instance or None if it's a dummu interface (if an interface is missing in ubridge you can't see it via ifconfig in the container)
+        :param nio: NIO instance or None if it's a dummy interface (if an interface is missing in ubridge you can't see it via ifconfig in the container)
         :param adapter_number: adapter number
         :param namespace: Container namespace (pid)
         """
+
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
@@ -670,8 +669,7 @@ class DockerVM(BaseNode):
         adapter = self._ethernet_adapters[adapter_number]
 
         try:
-            yield from self._ubridge_send("bridge delete bridge{name}".format(
-                name=adapter_number))
+            yield from self._ubridge_send("bridge delete bridge{name}".format(name=adapter_number))
         except UbridgeError as e:
             log.debug(str(e))
         try:

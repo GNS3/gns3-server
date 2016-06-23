@@ -122,11 +122,11 @@ class UDPLink(Link):
 
         # use the local node first to save bandwidth
         for node in self._nodes:
-            if node["node"].compute.id == "local" and node["node"].node_type not in ["qemu"]:
+            if node["node"].compute.id == "local" and node["node"].node_type not in [""]:  # FIXME
                 return node
 
         for node in self._nodes:
-            if node["node"].node_type not in ["qemu"]:
+            if node["node"].node_type not in [""]:  # FIXME
                 return node
 
         raise aiohttp.web.HTTPConflict(text="Capture is not supported for this link")

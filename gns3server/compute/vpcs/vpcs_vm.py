@@ -32,7 +32,6 @@ from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.asyncio import subprocess_check_output
 from gns3server.utils import parse_version
-from gns3server.compute.port_manager import PortManager
 
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -259,7 +258,7 @@ class VPCSVM(BaseNode):
                 if self.use_ubridge:
                     yield from self._start_ubridge()
                     if nio:
-                        yield from self._add_ubridge_connection(self._local_udp_tunnel[1], nio)
+                        yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
@@ -359,37 +358,6 @@ class VPCSVM(BaseNode):
         return False
 
     @asyncio.coroutine
-    def _add_ubridge_connection(self, source_nio, destination_nio):
-        """
-        Creates a connection in uBridge.
-
-        :param nio: NIO instance
-        :param port_number: port number
-        """
-
-        bridge_name = "VPCS-{}".format(self._id)
-        yield from self._ubridge_send("bridge create {name}".format(name=bridge_name))
-
-        if not isinstance(destination_nio, NIOUDP):
-            raise VPCSError("Destination NIO is not UDP")
-
-        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
-                                                                                                 lport=source_nio.lport,
-                                                                                                 rhost=source_nio.rhost,
-                                                                                                 rport=source_nio.rport))
-
-        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
-                                                                                                 lport=destination_nio.lport,
-                                                                                                 rhost=destination_nio.rhost,
-                                                                                                 rport=destination_nio.rport))
-
-        if destination_nio.capturing:
-            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
-                                                                                             pcap_file=destination_nio.pcap_output_file))
-
-        yield from self._ubridge_send('bridge start {name}'.format(name=bridge_name))
-
-    @asyncio.coroutine
     def port_add_nio_binding(self, port_number, nio):
         """
         Adds a port NIO binding.
@@ -408,24 +376,9 @@ class VPCSVM(BaseNode):
                                                                                   nio=nio,
                                                                                   port_number=port_number))
         if self._started and self.ubridge:
-            yield from self._add_ubridge_connection(self._local_udp_tunnel[1], nio)
+            yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
         return nio
-
-    def _create_local_udp_tunnel(self):
-
-        m = PortManager.instance()
-        lport = m.get_free_udp_port(self.project)
-        rport = m.get_free_udp_port(self.project)
-        source_nio_settings = {'lport': lport, 'rhost': '127.0.0.1', 'rport': rport, 'type': 'nio_udp'}
-        destination_nio_settings = {'lport': rport, 'rhost': '127.0.0.1', 'rport': lport, 'type': 'nio_udp'}
-        source_nio = self.manager.create_nio(self.ubridge_path, source_nio_settings)
-        destination_nio = self.manager.create_nio(self.ubridge_path, destination_nio_settings)
-        self._local_udp_tunnel = (source_nio, destination_nio)
-        log.info('VPCS "{name}" [{id}]: local UDP tunnel created between port {port1} and {port2}'.format(name=self._name,
-                                                                                                          id=self.id,
-                                                                                                          port1=lport,
-                                                                                                          port2=rport))
 
     @asyncio.coroutine
     def port_remove_nio_binding(self, port_number):
@@ -460,7 +413,7 @@ class VPCSVM(BaseNode):
         """
         Starts a packet capture.
 
-        :param port_number: adapter number
+        :param port_number: port number
         :param output_file: PCAP destination file for the capture
         """
 
@@ -489,6 +442,7 @@ class VPCSVM(BaseNode):
                                                                                               id=self.id,
                                                                                               port_number=port_number))
 
+    @asyncio.coroutine
     def stop_capture(self, port_number):
         """
         Stops a packet capture.
@@ -562,7 +516,8 @@ class VPCSVM(BaseNode):
 
         if self.use_ubridge:
             # use the local UDP tunnel to uBridge instead
-            self._create_local_udp_tunnel()
+            if not self._local_udp_tunnel:
+                self._local_udp_tunnel = self._create_local_udp_tunnel()
             nio = self._local_udp_tunnel[0]
         else:
             nio = self._ethernet_adapter.get_nio(0)

@@ -19,6 +19,7 @@
 Docker server module.
 """
 
+import sys
 import asyncio
 import logging
 import aiohttp
