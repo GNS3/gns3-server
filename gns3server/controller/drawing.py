@@ -19,19 +19,19 @@ import asyncio
 import uuid
 
 
-class Shape:
+class Drawing:
     """
-    Shape are visual element not used by the network emulation. Like
+    Drawing are visual element not used by the network emulation. Like
     text, images, rectangle... They are pure SVG elements.
     """
 
-    def __init__(self, project, shape_id=None, svg="<svg></svg>", x=0, y=0, z=0, rotation=0):
+    def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=0, rotation=0):
         self.svg = svg
         self._project = project
-        if shape_id is None:
+        if drawing_id is None:
             self._id = str(uuid.uuid4())
         else:
-            self._id = shape_id
+            self._id = drawing_id
         self._x = x
         self._y = y
         self._z = z
@@ -84,9 +84,9 @@ class Shape:
     @asyncio.coroutine
     def update(self, **kwargs):
         """
-        Update the shape
+        Update the drawing
 
-        :param kwargs: Shape properties
+        :param kwargs: Drawing properties
         """
 
         # Update node properties with additional elements
@@ -100,7 +100,7 @@ class Shape:
         data = self.__json__()
         if not svg_changed:
             del data["svg"]
-        self._project.controller.notification.emit("shape.updated", data)
+        self._project.controller.notification.emit("drawing.updated", data)
         self._project.dump()
 
     def __json__(self, topology_dump=False):
@@ -109,7 +109,7 @@ class Shape:
         """
         if topology_dump:
             return {
-                "shape_id": self._id,
+                "drawing_id": self._id,
                 "x": self._x,
                 "y": self._y,
                 "z": self._z,
@@ -118,7 +118,7 @@ class Shape:
             }
         return {
             "project_id": self._project.id,
-            "shape_id": self._id,
+            "drawing_id": self._id,
             "x": self._x,
             "y": self._y,
             "z": self._z,
@@ -127,4 +127,4 @@ class Shape:
         }
 
     def __repr__(self):
-        return "<gns3server.controller.Shape {}>".format(self._id)
+        return "<gns3server.controller.Drawing {}>".format(self._id)

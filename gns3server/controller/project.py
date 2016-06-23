@@ -24,7 +24,7 @@ import shutil
 from uuid import UUID, uuid4
 
 from .node import Node
-from .shape import Shape
+from .drawing import Drawing
 from .topology import project_to_topology, load_topology
 from .udp_link import UDPLink
 from ..config import Config
@@ -77,7 +77,7 @@ class Project:
         self._allocated_node_names = set()
         self._nodes = {}
         self._links = {}
-        self._shapes = {}
+        self._drawings = {}
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
@@ -266,42 +266,42 @@ class Project:
         return self._nodes
 
     @property
-    def shapes(self):
+    def drawings(self):
         """
-        :returns: Dictionary of the shapes
+        :returns: Dictionary of the drawings
         """
-        return self._shapes
+        return self._drawings
 
     @asyncio.coroutine
-    def add_shape(self, shape_id=None, **kwargs):
+    def add_drawing(self, drawing_id=None, **kwargs):
         """
-        Create an shape or return an existing shape
+        Create an drawing or return an existing drawing
 
-        :param kwargs: See the documentation of shape
+        :param kwargs: See the documentation of drawing
         """
-        if shape_id not in self._shapes:
-            shape = Shape(self, shape_id=shape_id, **kwargs)
-            self._shapes[shape.id] = shape
-            self.controller.notification.emit("shape.created", shape.__json__())
+        if drawing_id not in self._drawings:
+            drawing = Drawing(self, drawing_id=drawing_id, **kwargs)
+            self._drawings[drawing.id] = drawing
+            self.controller.notification.emit("drawing.created", drawing.__json__())
             self.dump()
-            return shape
-        return self._shapes[shape_id]
+            return drawing
+        return self._drawings[drawing_id]
 
-    def get_shape(self, shape_id):
+    def get_drawing(self, drawing_id):
         """
-        Return the Shape or raise a 404 if the shape is unknown
+        Return the Drawing or raise a 404 if the drawing is unknown
         """
         try:
-            return self._shapes[shape_id]
+            return self._drawings[drawing_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Shape ID {} doesn't exist".format(shape_id))
+            raise aiohttp.web.HTTPNotFound(text="Drawing ID {} doesn't exist".format(drawing_id))
 
     @asyncio.coroutine
-    def delete_shape(self, shape_id):
-        shape = self.get_shape(shape_id)
-        del self._shapes[shape.id]
+    def delete_drawing(self, drawing_id):
+        drawing = self.get_drawing(drawing_id)
+        del self._drawings[drawing.id]
         self.dump()
-        self.controller.notification.emit("shape.deleted", shape.__json__())
+        self.controller.notification.emit("drawing.deleted", drawing.__json__())
 
     @asyncio.coroutine
     def add_link(self, link_id=None):
@@ -397,8 +397,8 @@ class Project:
                     node = self.get_node(node_link["node_id"])
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"])
 
-            for shape_data in topology.get("shapes", []):
-                shape = yield from self.add_shape(**shape_data)
+            for drawing_data in topology.get("drawings", []):
+                drawing = yield from self.add_drawing(**drawing_data)
         self._status = "opened"
 
     def dump(self):

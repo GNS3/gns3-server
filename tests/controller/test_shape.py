@@ -22,7 +22,7 @@ import uuid
 from tests.utils import AsyncioMagicMock
 
 
-from gns3server.controller.shape import Shape
+from gns3server.controller.drawing import Drawing
 from gns3server.controller.project import Project
 
 
@@ -32,25 +32,25 @@ def project(controller, async_run):
 
 
 @pytest.fixture
-def shape(project):
-    return Shape(project, None, svg="<svg></svg>")
+def drawing(project):
+    return Drawing(project, None, svg="<svg></svg>")
 
 
 def test_init_without_uuid(project):
-    shape = Shape(project, None, svg="<svg></svg>")
-    assert shape.id is not None
+    drawing = Drawing(project, None, svg="<svg></svg>")
+    assert drawing.id is not None
 
 
 def test_init_with_uuid(project):
     id = str(uuid.uuid4())
-    shape = Shape(project, id, svg="<svg></svg>")
-    assert shape.id == id
+    drawing = Drawing(project, id, svg="<svg></svg>")
+    assert drawing.id == id
 
 
 def test_json(project):
-    i = Shape(project, None, svg="<svg></svg>")
+    i = Drawing(project, None, svg="<svg></svg>")
     assert i.__json__() == {
-        "shape_id": i.id,
+        "drawing_id": i.id,
         "project_id": project.id,
         "x": i.x,
         "y": i.y,
@@ -59,7 +59,7 @@ def test_json(project):
         "rotation": i.rotation
     }
     assert i.__json__(topology_dump=True) == {
-        "shape_id": i.id,
+        "drawing_id": i.id,
         "x": i.x,
         "y": i.y,
         "z": i.z,
@@ -68,22 +68,22 @@ def test_json(project):
     }
 
 
-def test_update(shape, project, async_run, controller):
+def test_update(drawing, project, async_run, controller):
     controller._notification = AsyncioMagicMock()
     project.dump = MagicMock()
 
-    async_run(shape.update(x=42, svg="<svg><rect></rect></svg>"))
-    assert shape.x == 42
+    async_run(drawing.update(x=42, svg="<svg><rect></rect></svg>"))
+    assert drawing.x == 42
     args, kwargs = controller._notification.emit.call_args
-    assert args[0] == "shape.updated"
+    assert args[0] == "drawing.updated"
     # JSON
     assert args[1]["x"] == 42
     assert args[1]["svg"] == "<svg><rect></rect></svg>"
 
-    async_run(shape.update(x=12, svg="<svg><rect></rect></svg>"))
-    assert shape.x == 12
+    async_run(drawing.update(x=12, svg="<svg><rect></rect></svg>"))
+    assert drawing.x == 12
     args, kwargs = controller._notification.emit.call_args
-    assert args[0] == "shape.updated"
+    assert args[0] == "drawing.updated"
     # JSON
     assert args[1]["x"] == 12
     # To avoid spamming client with large data we don't send the svg if the SVG didn't change

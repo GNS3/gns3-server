@@ -1,11 +1,11 @@
-/v2/projects/{project_id}/shapes
+/v2/projects/{project_id}/drawings
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v2/projects/**{project_id}**/shapes
+GET /v2/projects/**{project_id}**/drawings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-List shapes of a project
+List drawings of a project
 
 Parameters
 **********
@@ -13,18 +13,18 @@ Parameters
 
 Response status codes
 **********************
-- **200**: List of shapes returned
+- **200**: List of drawings returned
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../../examples/controller_get_projectsprojectidshapes.txt
+.. literalinclude:: ../../../examples/controller_get_projectsprojectiddrawings.txt
 
 
-POST /v2/projects/**{project_id}**/shapes
+POST /v2/projects/**{project_id}**/drawings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create a new shape instance
+Create a new drawing instance
 
 Parameters
 **********
@@ -33,7 +33,7 @@ Parameters
 Response status codes
 **********************
 - **400**: Invalid request
-- **201**: Shape created
+- **201**: Drawing created
 
 Input
 *******
@@ -43,8 +43,8 @@ Input
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
-    <tr><td>shape_id</td>                    <td> </td>                     <td>string</td>                     <td>Shape UUID</td>                     </tr>
-    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the shape</td>                     </tr>
+    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
+    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the drawing</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y property</td>                     </tr>
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z property</td>                     </tr>
@@ -58,8 +58,8 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
-    <tr><td>shape_id</td>                    <td> </td>                     <td>string</td>                     <td>Shape UUID</td>                     </tr>
-    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the shape</td>                     </tr>
+    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
+    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the drawing</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y property</td>                     </tr>
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z property</td>                     </tr>
@@ -69,5 +69,5 @@ Sample session
 ***************
 
 
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidshapes.txt
+.. literalinclude:: ../../../examples/controller_post_projectsprojectiddrawings.txt
 

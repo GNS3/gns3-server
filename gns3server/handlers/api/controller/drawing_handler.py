@@ -20,88 +20,88 @@ import aiohttp
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 
-from gns3server.schemas.shape import (
-    SHAPE_OBJECT_SCHEMA,
+from gns3server.schemas.drawing import (
+    DRAWING_OBJECT_SCHEMA,
 )
 
 
-class ShapeHandler:
+class DrawingHandler:
     """
-    API entry point for Shape
+    API entry point for Drawing
     """
 
     @Route.get(
-        r"/projects/{project_id}/shapes",
+        r"/projects/{project_id}/drawings",
         parameters={
             "project_id": "Project UUID"
         },
         status_codes={
-            200: "List of shapes returned",
+            200: "List of drawings returned",
         },
-        description="List shapes of a project")
-    def list_shapes(request, response):
+        description="List drawings of a project")
+    def list_drawings(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        response.json([v for v in project.shapes.values()])
+        response.json([v for v in project.drawings.values()])
 
     @Route.post(
-        r"/projects/{project_id}/shapes",
+        r"/projects/{project_id}/drawings",
         parameters={
             "project_id": "Project UUID"
         },
         status_codes={
-            201: "Shape created",
+            201: "Drawing created",
             400: "Invalid request"
         },
-        description="Create a new shape instance",
-        input=SHAPE_OBJECT_SCHEMA,
-        output=SHAPE_OBJECT_SCHEMA)
+        description="Create a new drawing instance",
+        input=DRAWING_OBJECT_SCHEMA,
+        output=DRAWING_OBJECT_SCHEMA)
     def create(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        shape = yield from project.add_shape(**request.json)
+        drawing = yield from project.add_drawing(**request.json)
         response.set_status(201)
-        response.json(shape)
+        response.json(drawing)
 
     @Route.put(
-        r"/projects/{project_id}/shapes/{shape_id}",
+        r"/projects/{project_id}/drawings/{drawing_id}",
         parameters={
             "project_id": "Project UUID",
-            "shape_id": "Shape UUID"
+            "drawing_id": "Drawing UUID"
         },
         status_codes={
-            201: "Shape updated",
+            201: "Drawing updated",
             400: "Invalid request"
         },
-        description="Create a new shape instance",
-        input=SHAPE_OBJECT_SCHEMA,
-        output=SHAPE_OBJECT_SCHEMA)
+        description="Create a new drawing instance",
+        input=DRAWING_OBJECT_SCHEMA,
+        output=DRAWING_OBJECT_SCHEMA)
     def update(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        shape = project.get_shape(request.match_info["shape_id"])
-        yield from shape.update(**request.json)
+        drawing = project.get_drawing(request.match_info["drawing_id"])
+        yield from drawing.update(**request.json)
         response.set_status(201)
-        response.json(shape)
+        response.json(drawing)
 
     @Route.delete(
-        r"/projects/{project_id}/shapes/{shape_id}",
+        r"/projects/{project_id}/drawings/{drawing_id}",
         parameters={
             "project_id": "Project UUID",
-            "shape_id": "Shape UUID"
+            "drawing_id": "Drawing UUID"
         },
         status_codes={
-            204: "Shape deleted",
+            204: "Drawing deleted",
             400: "Invalid request"
         },
-        description="Delete a shape instance")
+        description="Delete a drawing instance")
     def delete(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        yield from project.delete_shape(request.match_info["shape_id"])
+        yield from project.delete_drawing(request.match_info["drawing_id"])
         response.set_status(204)
 

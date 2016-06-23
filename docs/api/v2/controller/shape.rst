@@ -1,8 +1,8 @@
-Shape
+Drawing
 -----------------------------
 
 .. toctree::
    :glob:
    :maxdepth: 2
 
-   shape/*
+   drawing/*

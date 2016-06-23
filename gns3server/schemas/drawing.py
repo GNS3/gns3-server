@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-SHAPE_OBJECT_SCHEMA = {
+DRAWING_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "An shape object",
+    "description": "An drawing object",
     "type": "object",
     "properties": {
-        "shape_id": {
-            "description": "Shape UUID",
+        "drawing_id": {
+            "description": "Drawing UUID",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
@@ -54,7 +54,7 @@ SHAPE_OBJECT_SCHEMA = {
             "maximum": 360
         },
         "svg": {
-            "description": "SVG content of the shape",
+            "description": "SVG content of the drawing",
             "type": "string",
             "pattern": "^<(.|[\r\n])+>$"
         }

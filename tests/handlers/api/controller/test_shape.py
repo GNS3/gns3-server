@@ -30,7 +30,7 @@ from tests.utils import asyncio_patch
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
-from gns3server.controller.shape import Shape
+from gns3server.controller.drawing import Drawing
 
 
 
@@ -39,49 +39,49 @@ def project(http_controller, async_run):
     return async_run(Controller.instance().add_project())
 
 
-def test_create_shape(http_controller, tmpdir, project, async_run):
+def test_create_drawing(http_controller, tmpdir, project, async_run):
 
-    response = http_controller.post("/projects/{}/shapes".format(project.id), {
+    response = http_controller.post("/projects/{}/drawings".format(project.id), {
         "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
         "x": 10,
         "y": 20,
         "z": 0
     }, example=True)
     assert response.status == 201
-    assert response.json["shape_id"] is not None
+    assert response.json["drawing_id"] is not None
 
 
-def test_update_shape(http_controller, tmpdir, project, async_run):
+def test_update_drawing(http_controller, tmpdir, project, async_run):
 
-    response = http_controller.post("/projects/{}/shapes".format(project.id), {
+    response = http_controller.post("/projects/{}/drawings".format(project.id), {
         "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
         "x": 10,
         "y": 20,
         "z": 0
     },)
-    response = http_controller.put("/projects/{}/shapes/{}".format(project.id, response.json["shape_id"]), {
+    response = http_controller.put("/projects/{}/drawings/{}".format(project.id, response.json["drawing_id"]), {
         "x": 42,
     }, example=True)
     assert response.status == 201
     assert response.json["x"] == 42
 
 
-def test_list_shape(http_controller, tmpdir, project, async_run):
-    response = http_controller.post("/projects/{}/shapes".format(project.id), {
+def test_list_drawing(http_controller, tmpdir, project, async_run):
+    response = http_controller.post("/projects/{}/drawings".format(project.id), {
         "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
         "x": 10,
         "y": 20,
         "z": 0
     }, example=False)
-    response = http_controller.get("/projects/{}/shapes".format(project.id), example=True)
+    response = http_controller.get("/projects/{}/drawings".format(project.id), example=True)
     assert response.status == 200
     assert len(response.json) == 1
 
 
-def test_delete_shape(http_controller, tmpdir, project, async_run):
+def test_delete_drawing(http_controller, tmpdir, project, async_run):
 
-    shape = Shape(project)
-    project._shapes = {shape.id: shape}
-    response = http_controller.delete("/projects/{}/shapes/{}".format(project.id, shape.id), example=True)
+    drawing = Drawing(project)
+    project._drawings = {drawing.id: drawing}
+    response = http_controller.delete("/projects/{}/drawings/{}".format(project.id, drawing.id), example=True)
     assert response.status == 204
-    assert shape.id not in project._shapes
+    assert drawing.id not in project._drawings

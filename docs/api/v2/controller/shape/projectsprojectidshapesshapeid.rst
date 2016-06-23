@@ -1,21 +1,21 @@
-/v2/projects/{project_id}/shapes/{shape_id}
+/v2/projects/{project_id}/drawings/{drawing_id}
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-PUT /v2/projects/**{project_id}**/shapes/**{shape_id}**
+PUT /v2/projects/**{project_id}**/drawings/**{drawing_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create a new shape instance
+Create a new drawing instance
 
 Parameters
 **********
 - **project_id**: Project UUID
-- **shape_id**: Shape UUID
+- **drawing_id**: Drawing UUID
 
 Response status codes
 **********************
 - **400**: Invalid request
-- **201**: Shape updated
+- **201**: Drawing updated
 
 Input
 *******
@@ -25,8 +25,8 @@ Input
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
-    <tr><td>shape_id</td>                    <td> </td>                     <td>string</td>                     <td>Shape UUID</td>                     </tr>
-    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the shape</td>                     </tr>
+    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
+    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the drawing</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y property</td>                     </tr>
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z property</td>                     </tr>
@@ -40,8 +40,8 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
-    <tr><td>shape_id</td>                    <td> </td>                     <td>string</td>                     <td>Shape UUID</td>                     </tr>
-    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the shape</td>                     </tr>
+    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
+    <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the drawing</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y property</td>                     </tr>
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z property</td>                     </tr>
@@ -51,26 +51,26 @@ Sample session
 ***************
 
 
-.. literalinclude:: ../../../examples/controller_put_projectsprojectidshapesshapeid.txt
+.. literalinclude:: ../../../examples/controller_put_projectsprojectiddrawingsdrawingid.txt
 
 
-DELETE /v2/projects/**{project_id}**/shapes/**{shape_id}**
+DELETE /v2/projects/**{project_id}**/drawings/**{drawing_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Delete a shape instance
+Delete a drawing instance
 
 Parameters
 **********
 - **project_id**: Project UUID
-- **shape_id**: Shape UUID
+- **drawing_id**: Drawing UUID
 
 Response status codes
 **********************
 - **400**: Invalid request
-- **204**: Shape deleted
+- **204**: Drawing deleted
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../../examples/controller_delete_projectsprojectidshapesshapeid.txt
+.. literalinclude:: ../../../examples/controller_delete_projectsprojectiddrawingsdrawingid.txt
 

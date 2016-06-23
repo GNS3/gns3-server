@@ -108,9 +108,9 @@ The available notification are:
     * link.created
     * link.updated
     * link.deleted
-    * shape.created
-    * shape.updated
-    * shape.deleted
+    * drawing.created
+    * drawing.updated
+    * drawing.deleted
     * log.error
     * log.warning
     * log.info
