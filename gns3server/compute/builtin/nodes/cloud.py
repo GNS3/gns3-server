@@ -162,9 +162,6 @@ class Cloud(BaseNode):
                                                                                                  rport=nio.rport))
 
         if port_info["type"] in ("ethernet", "tap"):
-            network_interfaces = [interface["name"] for interface in interfaces()]
-            if not port_info["interface"] in network_interfaces:
-                raise NodeError("Interface '{}' could not be found on this system".format(port_info["interface"]))
 
             if sys.platform.startswith("win"):
                 windows_interfaces = interfaces()
@@ -181,6 +178,10 @@ class Cloud(BaseNode):
             else:
 
                 if port_info["type"] == "ethernet":
+                    network_interfaces = [interface["name"] for interface in interfaces()]
+                    if not port_info["interface"] in network_interfaces:
+                        raise NodeError("Interface '{}' could not be found on this system".format(port_info["interface"]))
+
                     if sys.platform.startswith("linux"):
                         # use raw sockets on Linux
                         yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name,
