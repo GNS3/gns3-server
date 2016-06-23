@@ -78,8 +78,9 @@ class Controller:
         """
         Reload the controller configuration from disk
         """
+
         if not os.path.exists(self._config_file):
-            return
+            self.save()
         try:
             with open(self._config_file) as f:
                 data = json.load(f)
