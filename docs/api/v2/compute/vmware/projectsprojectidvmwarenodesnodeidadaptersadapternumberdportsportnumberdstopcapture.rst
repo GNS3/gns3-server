@@ -9,8 +9,8 @@ Stop a packet capture on a VMware VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **port_number**: Port on the adapter (always 0)
+- **project_id**: Project UUID
 - **node_id**: Node UUID
 - **adapter_number**: Adapter to stop a packet capture
 

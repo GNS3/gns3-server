@@ -1,0 +1,12 @@
+curl -i -X DELETE 'http://localhost:3080/v2/projects/15658c41-0703-4425-b8ce-2f716e71bd1d/drawings/8e948655-f788-4a52-9502-e86df1f61d91'
+
+DELETE /v2/projects/15658c41-0703-4425-b8ce-2f716e71bd1d/drawings/8e948655-f788-4a52-9502-e86df1f61d91 HTTP/1.1
+
+
+
+HTTP/1.1 204
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/drawings/{drawing_id}
+

@@ -23,9 +23,9 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
-    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
     <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the drawing</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y property</td>                     </tr>
@@ -38,9 +38,9 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>rotation</td>                    <td> </td>                     <td>integer</td>                     <td>Rotation of the element</td>                     </tr>
-    <tr><td>drawing_id</td>                    <td> </td>                     <td>string</td>                     <td>Drawing UUID</td>                     </tr>
     <tr><td>svg</td>                    <td> </td>                     <td>string</td>                     <td>SVG content of the drawing</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X property</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y property</td>                     </tr>

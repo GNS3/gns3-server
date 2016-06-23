@@ -9,8 +9,8 @@ Add a NIO to a IOU instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **port_number**: Port where the nio should be added
+- **project_id**: Project UUID
 - **node_id**: Node UUID
 - **adapter_number**: Network adapter where the nio is located
 
@@ -33,8 +33,8 @@ Remove a NIO from a IOU instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **port_number**: Port from where the nio should be removed
+- **project_id**: Project UUID
 - **node_id**: Node UUID
 - **adapter_number**: Network adapter where the nio is located
 

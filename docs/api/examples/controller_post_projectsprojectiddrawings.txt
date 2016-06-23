@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/e82d1e06-4235-41dc-9a57-0cd0672692f0/drawings' -d '{"svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>", "x": 10, "y": 20, "z": 0}'
+curl -i -X POST 'http://localhost:3080/v2/projects/0dec118e-f2ca-4537-ac58-cb341dbe3f8b/drawings' -d '{"svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>", "x": 10, "y": 20, "z": 0}'
 
-POST /v2/projects/e82d1e06-4235-41dc-9a57-0cd0672692f0/drawings HTTP/1.1
+POST /v2/projects/0dec118e-f2ca-4537-ac58-cb341dbe3f8b/drawings HTTP/1.1
 {
     "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
     "x": 10,
@@ -10,16 +10,16 @@ POST /v2/projects/e82d1e06-4235-41dc-9a57-0cd0672692f0/drawings HTTP/1.1
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 321
+CONTENT-LENGTH: 323
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/drawings
 
 {
-    "project_id": "e82d1e06-4235-41dc-9a57-0cd0672692f0",
+    "drawing_id": "5344d9d7-8fbe-477d-99fd-ece78ea894cd",
+    "project_id": "0dec118e-f2ca-4537-ac58-cb341dbe3f8b",
     "rotation": 0,
-    "drawing_id": "66594d41-524e-4dfd-a07b-3186ed392c86",
     "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
     "x": 10,
     "y": 20,

@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/3876626a-cb4f-4bed-bfd3-dc905ab97be6/links'
+curl -i -X GET 'http://localhost:3080/v2/projects/67687ce9-3517-4c71-903f-91fbc0cfb2a9/links'
 
-GET /v2/projects/3876626a-cb4f-4bed-bfd3-dc905ab97be6/links HTTP/1.1
+GET /v2/projects/67687ce9-3517-4c71-903f-91fbc0cfb2a9/links HTTP/1.1
 
 
 
@@ -16,19 +16,19 @@ X-ROUTE: /v2/projects/{project_id}/links
         "capture_file_name": null,
         "capture_file_path": null,
         "capturing": false,
-        "link_id": "f4df9060-2a0b-4bb5-9181-31f0a202c9ce",
+        "link_id": "722ac0d2-d2cf-430f-9c8f-f8a905d5c59f",
         "nodes": [
             {
                 "adapter_number": 0,
-                "node_id": "991bcb7a-7772-4b7a-95ef-ec6c2ccbcea7",
+                "node_id": "85b5fa5c-2ca6-4c69-a826-ac48dec6467c",
                 "port_number": 3
             },
             {
                 "adapter_number": 2,
-                "node_id": "58feb337-36f6-45bb-b0f3-d776ea1f7b8c",
+                "node_id": "36847aff-f1e8-4d6e-be88-d8bb782acc2a",
                 "port_number": 4
             }
         ],
-        "project_id": "3876626a-cb4f-4bed-bfd3-dc905ab97be6"
+        "project_id": "67687ce9-3517-4c71-903f-91fbc0cfb2a9"
     }
 ]

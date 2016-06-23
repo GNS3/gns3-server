@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/fe9e03ad-db69-4b6a-8435-cf2374aa4158'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/dd1cb202-82d6-4915-b5a8-068a01f254de'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/fe9e03ad-db69-4b6a-8435-cf2374aa4158 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/dd1cb202-82d6-4915-b5a8-068a01f254de HTTP/1.1
 
 
 
@@ -20,7 +20,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
     "headless": false,
     "name": "VMTEST",
     "node_directory": null,
-    "node_id": "fe9e03ad-db69-4b6a-8435-cf2374aa4158",
+    "node_id": "dd1cb202-82d6-4915-b5a8-068a01f254de",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",
