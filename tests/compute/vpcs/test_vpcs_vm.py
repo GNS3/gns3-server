@@ -21,9 +21,9 @@ import asyncio
 import os
 import sys
 
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 from gns3server.utils import parse_version
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, ANY
 
 from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 from gns3server.compute.vpcs.vpcs_error import VPCSError
@@ -39,9 +39,10 @@ def manager(port_manager):
 
 
 @pytest.fixture(scope="function")
-def vm(project, manager):
+def vm(project, manager, ubridge_path):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     vm._vpcs_version = parse_version("0.9")
+    vm._start_ubridge = AsyncioMagicMock()
     return vm
 
 
@@ -104,9 +105,9 @@ def test_start(loop, vm, async_run):
                                                   '-F',
                                                   '-R',
                                                   '-s',
-                                                  '4242',
+                                                  ANY,
                                                   '-c',
-                                                  '4243',
+                                                  ANY,
                                                   '-t',
                                                   '127.0.0.1')
                 assert vm.is_running()
@@ -138,9 +139,9 @@ def test_start_0_6_1(loop, vm):
                                               '1',
                                               '-F',
                                               '-s',
-                                              '4242',
+                                              ANY,
                                               '-c',
-                                              '4243',
+                                              ANY,
                                               '-t',
                                               '127.0.0.1')
             assert vm.is_running()

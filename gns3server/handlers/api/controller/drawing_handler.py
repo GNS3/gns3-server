@@ -104,4 +104,3 @@ class DrawingHandler:
         project = controller.get_project(request.match_info["project_id"])
         yield from project.delete_drawing(request.match_info["drawing_id"])
         response.set_status(204)
-

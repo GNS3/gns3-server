@@ -108,6 +108,9 @@ class VPCSVM(BaseNode):
         if not path:
             raise VPCSError("No path to a VPCS executable has been set")
 
+        # This raise an error if ubridge is not available
+        ubridge_path = self.ubridge_path
+
         if not os.path.isfile(path):
             raise VPCSError("VPCS program '{}' is not accessible".format(path))
 

@@ -205,6 +205,7 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     os.makedirs(os.path.join(tmppath, 'projects'))
     config.set("Server", "projects_path", os.path.join(tmppath, 'projects'))
     config.set("Server", "images_path", os.path.join(tmppath, 'images'))
+    config.set("Server", "ubridge_path", os.path.join(tmppath, 'bin', 'ubridge'))
     config.set("Server", "auth", False)
     config.set("Server", "controller", True)
 
@@ -249,6 +250,17 @@ def projects_dir(config):
     """
     path = config.get_section_config("Server").get("projects_path")
     os.makedirs(path, exist_ok=True)
+    return path
+
+
+@pytest.fixture
+def ubridge_path(config):
+    """
+    Get the location of a fake ubridge
+    """
+    path = config.get_section_config("Server").get("ubridge_path")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    open(path, 'w+').close()
     return path
 
 

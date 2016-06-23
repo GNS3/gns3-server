@@ -123,10 +123,6 @@ def test_choose_capture_side(async_run, project):
     async_run(link.add_node(node_vpcs, 0, 4))
     async_run(link.add_node(node_vpcs2, 3, 1))
 
-    # VPCS doesn't support capture
-    with pytest.raises(aiohttp.web.HTTPConflict):
-        link._choose_capture_side()["node"]
-
     # Capture should run on the local node
     node_iou = Node(project, compute1, "node1", node_type="iou")
     node_iou2 = Node(project, compute2, "node2", node_type="iou")
@@ -151,7 +147,7 @@ def test_capture(async_run, project):
     capture = async_run(link.start_capture())
     assert link.capturing
 
-    compute1.post.assert_any_call("/projects/{}/iou/nodes/{}/adapters/3/ports/1/start_capture".format(project.id, node_iou.id), data={
+    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/start_capture".format(project.id, node_vpcs.id), data={
         "capture_file_name": link.default_capture_file_name(),
         "data_link_type": "DLT_EN10MB"
     })
@@ -159,7 +155,7 @@ def test_capture(async_run, project):
     capture = async_run(link.stop_capture())
     assert link.capturing is False
 
-    compute1.post.assert_any_call("/projects/{}/iou/nodes/{}/adapters/3/ports/1/stop_capture".format(project.id, node_iou.id))
+    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/stop_capture".format(project.id, node_vpcs.id))
 
 
 def test_read_pcap_from_source(project, async_run):
