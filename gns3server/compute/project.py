@@ -240,6 +240,26 @@ class Project:
 
         self._nodes.add(node)
 
+    def get_node(self, node_id):
+        """
+        Returns a Node instance.
+
+        :param node_id: Node identifier
+
+        :returns: Node instance
+        """
+
+        try:
+            UUID(node_id, version=4)
+        except ValueError:
+            raise aiohttp.web.HTTPBadRequest(text="Node ID {} is not a valid UUID".format(node_id))
+
+        for node in self._nodes:
+            if node.id == node_id:
+                return node
+
+        raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
+
     def remove_node(self, node):
         """
         Removes a node from the project.

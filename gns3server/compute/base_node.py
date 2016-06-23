@@ -48,7 +48,7 @@ class BaseNode:
     :param allocate_aux: Boolean if true will allocate an aux console port
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False, use_ubridge=True):
 
         self._name = name
         self._usage = ""
@@ -61,6 +61,7 @@ class BaseNode:
         self._temporary_directory = None
         self._hw_virtualization = False
         self._ubridge_hypervisor = None
+        self._use_ubridge = use_ubridge
         self._closed = False
         self._node_status = "stopped"
         self._command_line = ""
@@ -271,10 +272,9 @@ class BaseNode:
         if self._closed:
             return False
 
-        log.info("{module}: '{name}' [{id}]: is closing".format(
-            module=self.manager.module_name,
-            name=self.name,
-            id=self.id))
+        log.info("{module}: '{name}' [{id}]: is closing".format(module=self.manager.module_name,
+                                                                name=self.name,
+                                                                id=self.id))
 
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
@@ -404,6 +404,36 @@ class BaseNode:
                                                                                         console_type=console_type))
 
     @property
+    def use_ubridge(self):
+        """
+        Returns if uBridge is used for this node or not
+
+        :returns: boolean
+        """
+
+        return self._use_ubridge
+
+    @property
+    def ubridge(self):
+        """
+        Returns the uBridge hypervisor.
+
+        :returns: path to uBridge
+        """
+
+        return self._ubridge_hypervisor
+
+    @ubridge.setter
+    def ubridge(self, ubride_hypervisor):
+        """
+        Set an uBridge hypervisor.
+
+        :param ubride_hypervisor: uBridge hypervisor
+        """
+
+        self._ubridge_hypervisor = ubride_hypervisor
+
+    @property
     def ubridge_path(self):
         """
         Returns the uBridge executable path.
@@ -445,7 +475,8 @@ class BaseNode:
 
         server_config = self._manager.config.get_section_config("Server")
         server_host = server_config.get("host")
-        self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
+        if not self._ubridge_hypervisor:
+            self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
         log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
         yield from self._ubridge_hypervisor.start()
         log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))

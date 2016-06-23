@@ -77,7 +77,6 @@ class DockerVM(BaseNode):
         self._environment = environment
         self._cid = None
         self._ethernet_adapters = []
-        self._ubridge_hypervisor = None
         self._temporary_directory = None
         self._telnet_servers = []
         self._x11vnc_process = None

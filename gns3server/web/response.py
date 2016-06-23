@@ -17,7 +17,6 @@
 
 import json
 import jsonschema
-import asyncio
 import aiohttp.web
 import asyncio
 import logging

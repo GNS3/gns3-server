@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from aiohttp.web import HTTPConflict
 from gns3server.web.route import Route
 from gns3server.schemas.nio import NIO_SCHEMA
 from gns3server.compute.vpcs import VPCS
+from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
 
 from gns3server.schemas.vpcs import (
     VPCS_CREATE_SCHEMA,
@@ -200,7 +202,7 @@ class VPCSHandler:
         if nio_type not in ("nio_udp", "nio_tap"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vpcs_manager.create_nio(vm.vpcs_path, request.json)
-        vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
+        yield from vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -222,5 +224,51 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        vm.port_remove_nio_binding(int(request.match_info["port_number"]))
+        yield from vm.port_remove_nio_binding(int(request.match_info["port_number"]))
+        response.set_status(204)
+
+
+    @Route.post(
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to start a packet capture",
+            "port_number": "Port on the adapter"
+        },
+        status_codes={
+            200: "Capture started",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+        },
+        description="Start a packet capture on a VPCS instance",
+        input=NODE_CAPTURE_SCHEMA)
+    def start_capture(request, response):
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
+        yield from vm.start_capture(port_number, pcap_file_path)
+        response.json({"pcap_file_path": pcap_file_path})
+
+
+    @Route.post(
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to stop a packet capture",
+            "port_number": "Port on the adapter"
+        },
+        status_codes={
+            204: "Capture stopped",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+        },
+        description="Stop a packet capture on a VPCS instance")
+    def stop_capture(request, response):
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        yield from vm.stop_capture(port_number)
         response.set_status(204)
