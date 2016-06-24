@@ -290,7 +290,7 @@ class DockerVM(BaseVM):
                 params["Cmd"] = []
         if len(params["Cmd"]) == 0 and len(params["Entrypoint"]) == 0:
             params["Cmd"] = ["/bin/sh"]
-        params["Entrypoint"].insert(0, "/gns3/init.sh")
+        params["Entrypoint"].insert(0, "/gns3/init.sh")  # FIXME /gns3/init.sh is not found?
 
         # Give the information to the container on how many interface should be inside
         params["Env"].append("GNS3_MAX_ETHERNET=eth{}".format(self.adapters - 1))
@@ -670,11 +670,8 @@ class DockerVM(BaseVM):
 
         :param adapter_number: adapter number
         """
-        if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
-            return
 
         adapter = self._ethernet_adapters[adapter_number]
-
         try:
             yield from self._ubridge_hypervisor.send("bridge delete bridge{name}".format(
                 name=adapter_number))
@@ -704,6 +701,18 @@ class DockerVM(BaseVM):
                 "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
                     name=self.name, adapter_number=adapter_number))
 
+        if self.status == "started" and self.ubridge and self.ubridge.is_running():
+            # the container is running, let's add the UDP tunnel to connect to another node
+            yield from self._ubridge_send('bridge create bridge{}'.format(adapter_number))
+            yield from self._ubridge_send('bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(ifc=adapter.host_ifc, adapter=adapter_number))
+
+            yield from self._ubridge_send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
+                                                                                                              lport=nio.lport,
+                                                                                                              rhost=nio.rhost,
+                                                                                                              rport=nio.rport))
+
+            yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
+
         adapter.add_nio(0, nio)
         log.info(
             "Docker container '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(
@@ -729,7 +738,12 @@ class DockerVM(BaseVM):
                     name=self.name, adapter_number=adapter_number))
 
         adapter.remove_nio(0)
-        yield from self._delete_ubridge_connection(adapter_number)
+        if self.status == "started" and self.ubridge and self.ubridge.is_running():
+            # the container is running, just delete the UDP tunnel so we can reconnect it later if needed
+            yield from self._ubridge_send("bridge delete bridge{name}".format(name=adapter_number))
+        else:
+            # the container is not running, let's completely delete the connection
+            yield from self._delete_ubridge_connection(adapter_number)
 
         log.info(
             "Docker VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(
@@ -843,7 +857,7 @@ class DockerVM(BaseVM):
 
         nio.startPacketCapture(output_file)
 
-        if self.status == "started":
+        if self.status == "started" and self.ubridge and self.ubridge.is_running():
             yield from self._start_ubridge_capture(adapter_number, output_file)
 
         log.info("Docker VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
@@ -870,7 +884,7 @@ class DockerVM(BaseVM):
 
         nio.stopPacketCapture()
 
-        if self.status == "started":
+        if self.status == "started" and self.ubridge and self.ubridge.is_running():
             yield from self._stop_ubridge_capture(adapter_number)
 
         log.info("Docker VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
