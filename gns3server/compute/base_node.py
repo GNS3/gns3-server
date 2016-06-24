@@ -31,6 +31,7 @@ from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
 from .nios.nio_udp import NIOUDP
 from .error import NodeError
+from ..config import Config
 
 
 log = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ class BaseNode:
     :param allocate_aux: Boolean if true will allocate an aux console port
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False, use_ubridge=True):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False):
 
         self._name = name
         self._usage = ""
@@ -63,11 +64,14 @@ class BaseNode:
         self._temporary_directory = None
         self._hw_virtualization = False
         self._ubridge_hypervisor = None
-        self._use_ubridge = use_ubridge
         self._closed = False
         self._node_status = "stopped"
         self._command_line = ""
         self._allocate_aux = allocate_aux
+
+        # check if the node will use uBridge or not
+        server_config = Config.instance().get_section_config("Server")
+        self._use_ubridge = server_config.getboolean("use_ubridge")
 
         if self._console is not None:
             if console_type == "vnc":
@@ -102,7 +106,9 @@ class BaseNode:
 
     @property
     def status(self):
-        """Return current node status"""
+        """
+        Returns current node status
+        """
 
         return self._node_status
 
@@ -114,13 +120,15 @@ class BaseNode:
 
     def updated(self):
         """
-        Send a updated event
+        Sends an updated event
         """
         self.project.emit("node.updated", self)
 
     @property
     def command_line(self):
-        """Return command used to start the node"""
+        """
+        Returns command used to start the node
+        """
 
         return self._command_line
 
