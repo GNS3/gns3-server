@@ -13,7 +13,7 @@ GNS3 is splitted in four part:
 
 
 The controller pilot everything it's the part that manage the state
-of a project, save it on disk. Onlye one controller exists.
+of a project, save it on disk. Only one controller exists.
 
 
 The GUI display the topology. The GUI has only direct contact with
