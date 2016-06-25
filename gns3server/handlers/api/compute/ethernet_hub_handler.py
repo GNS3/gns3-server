@@ -217,7 +217,7 @@ class EthernetHubHandler:
 
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        #nio = yield from builtin_manager.create_nio(node, request.json["nio"])
+        #nio = yield from builtin_manager.create_nio(request.json["nio"])
 
         response.set_status(201)
         response.json(nio)

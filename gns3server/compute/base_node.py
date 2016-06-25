@@ -544,8 +544,8 @@ class BaseNode:
         rport = m.get_free_udp_port(self.project)
         source_nio_settings = {'lport': lport, 'rhost': '127.0.0.1', 'rport': rport, 'type': 'nio_udp'}
         destination_nio_settings = {'lport': rport, 'rhost': '127.0.0.1', 'rport': lport, 'type': 'nio_udp'}
-        source_nio = self.manager.create_nio(self.ubridge_path, source_nio_settings)
-        destination_nio = self.manager.create_nio(self.ubridge_path, destination_nio_settings)
+        source_nio = self.manager.create_nio(source_nio_settings)
+        destination_nio = self.manager.create_nio(destination_nio_settings)
         log.info("{module}: '{name}' [{id}]:local UDP tunnel created between port {port1} and {port2}".format(module=self.manager.module_name,
                                                                                                               name=self.name,
                                                                                                               id=self.id,

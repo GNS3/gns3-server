@@ -192,7 +192,7 @@ class CloudHandler:
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = builtin_manager.create_nio(node, request.json)
+        nio = builtin_manager.create_nio(request.json)
         port_number = int(request.match_info["port_number"])
         yield from node.add_nio(nio, port_number)
         response.set_status(201)

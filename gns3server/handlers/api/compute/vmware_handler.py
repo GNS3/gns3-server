@@ -255,7 +255,7 @@ class VMwareHandler:
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_vmnet", "nio_nat"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
-        nio = vmware_manager.create_nio(None, request.json)
+        nio = vmware_manager.create_nio(request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)

@@ -1096,13 +1096,12 @@ class QemuVM(BaseNode):
             raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                  adapter_number=adapter_number))
 
-        if self.is_running():
-            if self.ubridge:
-                yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
-                                                            self._local_udp_tunnels[adapter_number][1],
-                                                            nio)
-            else:
-                raise QemuError("Sorry, adding a link to a started Qemu VM is not supported without using uBridge.")
+        if self.ubridge and self.ubridge.is_running():
+            yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
+                                                         self._local_udp_tunnels[adapter_number][1],
+                                                         nio)
+        elif self.is_running():
+            raise QemuError("Sorry, adding a link to a started Qemu VM is not supported without using uBridge.")
 
         adapter.add_nio(0, nio)
         log.info('QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(name=self._name,
@@ -1126,11 +1125,10 @@ class QemuVM(BaseNode):
             raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                  adapter_number=adapter_number))
 
-        if self.is_running():
-            if self.ubridge:
-                yield from self._ubridge_send("bridge delete {name}".format(name="QEMU-{}-{}".format(self._id, adapter_number)))
-            else:
-                raise QemuError("Sorry, removing a link to a started Qemu VM is not supported without using uBridge.")
+        if self.ubridge and self.ubridge.is_running():
+            yield from self._ubridge_send("bridge delete {name}".format(name="QEMU-{}-{}".format(self._id, adapter_number)))
+        elif self.is_running():
+            raise QemuError("Sorry, removing a link to a started Qemu VM is not supported without using uBridge.")
 
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
@@ -1171,7 +1169,7 @@ class QemuVM(BaseNode):
 
         nio.startPacketCapture(output_file)
 
-        if self.is_running() and self.ubridge:
+        if self.ubridge and self.ubridge.is_running():
             yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="QEMU-{}-{}".format(self._id, adapter_number),
                                                                                                output_file=output_file))
 
@@ -1198,7 +1196,7 @@ class QemuVM(BaseNode):
 
         nio.stopPacketCapture()
 
-        if self.is_running() and self.ubridge:
+        if self.ubridge and self.ubridge.is_running():
             yield from self._ubridge_send('bridge stop_capture {name}'.format(name="QEMU-{}-{}".format(self._id, adapter_number)))
 
         log.info("QEMU VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,

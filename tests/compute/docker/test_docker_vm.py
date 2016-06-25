@@ -411,7 +411,7 @@ def test_start(loop, vm, manager, free_console_port):
     vm._add_ubridge_connection = AsyncioMagicMock()
     vm._start_console = AsyncioMagicMock()
 
-    nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
@@ -430,7 +430,7 @@ def test_start_namespace_failed(loop, vm, manager, free_console_port):
     assert vm.status != "started"
     vm.adapters = 1
 
-    nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
@@ -641,7 +641,7 @@ def test_close(loop, vm, port_manager):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
@@ -685,7 +685,7 @@ def test_add_ubridge_connection(loop, vm):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
     nio.startPacketCapture("/tmp/capture.pcap")
     vm._ubridge_hypervisor = MagicMock()
 
@@ -725,7 +725,7 @@ def test_add_ubridge_connection_invalid_adapter_number(loop, vm):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
         loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 12, 42)))
 
@@ -736,7 +736,7 @@ def test_add_ubridge_connection_no_free_interface(loop, vm):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
 
         # We create fake ethernet interfaces for docker
@@ -753,7 +753,7 @@ def test_delete_ubridge_connection(loop, vm):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
 
     loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
     loop.run_until_complete(asyncio.async(vm._delete_ubridge_connection(0)))
@@ -770,7 +770,7 @@ def test_adapter_add_nio_binding(vm, loop):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     assert vm._ethernet_adapters[0].get_nio(0) == nio
 
@@ -780,7 +780,7 @@ def test_adapter_add_nio_binding_invalid_adapter(vm, loop):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
         loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(12, nio)))
 
@@ -790,7 +790,7 @@ def test_adapter_remove_nio_binding(vm, loop):
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(0, nio)
+    nio = vm.manager.create_nio(nio)
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     with asyncio_patch("gns3server.compute.docker.DockerVM._delete_ubridge_connection") as delete_ubridge_mock:
         loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(0)))
@@ -833,7 +833,7 @@ def test_pull_image(loop, vm):
 def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
-    nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     loop.run_until_complete(asyncio.async(vm.start_capture(0, output_file)))
     assert vm._ethernet_adapters[0].get_nio(0).capturing
@@ -842,7 +842,7 @@ def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
 def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
-    nio = manager.create_nio(0, {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     loop.run_until_complete(vm.start_capture(0, output_file))
     assert vm._ethernet_adapters[0].get_nio(0).capturing

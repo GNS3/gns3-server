@@ -128,7 +128,7 @@ def test_stop(loop, vm, running_subprocess_mock):
     process.wait.return_value = future
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-        nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+        nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
         vm.adapter_add_nio_binding(0, nio)
         loop.run_until_complete(asyncio.async(vm.start()))
         assert vm.is_running()
@@ -192,7 +192,7 @@ def test_suspend(loop, vm):
 
 
 def test_add_nio_binding_udp(vm, loop):
-    nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     assert nio.lport == 4242
 
@@ -200,13 +200,13 @@ def test_add_nio_binding_udp(vm, loop):
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_add_nio_binding_ethernet(vm, loop, ethernet_device):
     with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
-        nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_ethernet", "ethernet_device": ethernet_device})
+        nio = Qemu.instance().create_nio({"type": "nio_ethernet", "ethernet_device": ethernet_device})
         loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
         assert nio.ethernet_device == ethernet_device
 
 
 def test_port_remove_nio_binding(vm, loop):
-    nio = Qemu.instance().create_nio(vm.qemu_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(0)))
     assert vm._ethernet_adapters[0].ports[0] is None

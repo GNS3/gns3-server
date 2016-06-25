@@ -338,7 +338,7 @@ class BaseManager:
 
         return False
 
-    def create_nio(self, executable, nio_settings):
+    def create_nio(self, nio_settings):
         """
         Creates a new NIO.
 
