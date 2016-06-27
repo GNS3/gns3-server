@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.5.0 27/06/2016
+
+* Fix import of project with no disk
+* Allow for (a lot) more docker container ports. Fixes #593.
+* Raise an error if you try to use Docker on non Linux host
+* Fix a crash in Docker if daemon stop to respond
+* Fix a crash if Dynamips router has no initial configuration
+* Kill ghosts process at startup (Dynamips, VPCS, Ubridge)
+
 ## 1.5.0rc2 15/06/2016
 
 * Fix black screen with Qt app in Docker container
