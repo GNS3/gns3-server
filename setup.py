@@ -57,8 +57,6 @@ setup(
         ]
     },
     packages=find_packages(".", exclude=["docs", "tests"]),
-    package_data={"gns3server": ["templates/upload.html"]},
-    include_package_data=True,
     platforms="any",
     classifiers=[
         "Development Status :: 4 - Beta",
