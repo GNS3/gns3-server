@@ -1,5 +1,6 @@
+#!/usr/bin/env python
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,10 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-from gns3server.handlers.index_handler import IndexHandler
-from gns3server.handlers.static_handler import StaticHandler
+import os
 
 
-from gns3server.handlers.api.controller import *
-from gns3server.handlers.api.compute import *
+from gns3server.controller.symbols import Symbols
+from gns3server.utils.get_resource import get_resource
+
+
+def test_list():
+    symbols = Symbols()
+    assert {
+        'symbol_id': ':/symbols/firewall.svg',
+        'url': '/static/builtin_symbols/firewall.svg',
+        'filename': 'firewall.svg',
+        'builtin': True
+    } in symbols.list()
+    assert symbols

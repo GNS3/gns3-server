@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -15,9 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.handlers.index_handler import IndexHandler
-from gns3server.handlers.static_handler import StaticHandler
+import aiohttp
+import os
+from unittest.mock import patch
 
 
-from gns3server.handlers.api.controller import *
-from gns3server.handlers.api.compute import *
+def test_get(http_root):
+    response = http_root.get('/static/builtin_symbols/firewall.svg')
+    assert response.status == 200
+    assert response.headers['CONTENT-LENGTH'] == '9381'
+    assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
+    assert '</svg>' in response.html
+
+    response = http_root.get('/static/builtin_symbols/../main.py')
+    assert response.status == 404
+
+    response = http_root.get('/static/builtin_symbols/404.png')
+    assert response.status == 404

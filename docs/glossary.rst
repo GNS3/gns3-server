@@ -37,3 +37,7 @@ Compute
 The process running on each server with GNS3. The GNS3 compute node
 is controlled by the GNS3 controller.
 
+
+Symbol
+------
+Symbol are the icon used for nodes.

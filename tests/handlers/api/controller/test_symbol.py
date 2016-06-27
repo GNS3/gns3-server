@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -14,10 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-from gns3server.handlers.index_handler import IndexHandler
-from gns3server.handlers.static_handler import StaticHandler
+from gns3server.config import Config
 
 
-from gns3server.handlers.api.controller import *
-from gns3server.handlers.api.compute import *
+def test_symbols(http_controller):
+    response = http_controller.get('/symbols', example=True)
+    assert response.status == 200
+    assert {
+        'symbol_id': ':/symbols/firewall.svg',
+        'url': '/static/builtin_symbols/firewall.svg',
+        'filename': 'firewall.svg',
+        'builtin': True
+    } in response.json

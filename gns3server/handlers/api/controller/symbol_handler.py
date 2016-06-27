@@ -1,5 +1,6 @@
+#!/usr/bin/env python
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,10 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from gns3server.web.route import Route
+from gns3server.controller import Controller
 
-from gns3server.handlers.index_handler import IndexHandler
-from gns3server.handlers.static_handler import StaticHandler
+
+import logging
+log = logging.getLogger(__name__)
 
 
-from gns3server.handlers.api.controller import *
-from gns3server.handlers.api.compute import *
+class SymbolHandler:
+    """API entry points for symbols management."""
+
+    @Route.get(
+        r"/symbols",
+        description="List of symbols",
+        status_codes={
+            200: "Symbols list returned"
+        })
+    def list(request, response):
+
+        controller = Controller.instance()
+        response.json(controller.symbols.list())

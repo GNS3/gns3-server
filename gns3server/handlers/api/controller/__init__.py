@@ -21,3 +21,4 @@ from .node_handler import NodeHandler
 from .link_handler import LinkHandler
 from .server_handler import ServerHandler
 from .drawing_handler import DrawingHandler
+from .symbol_handler import SymbolHandler

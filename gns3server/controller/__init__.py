@@ -25,6 +25,7 @@ from ..config import Config
 from .project import Project
 from .compute import Compute
 from .notification import Notification
+from .symbols import Symbols
 from ..version import __version__
 from .topology import load_topology
 
@@ -39,6 +40,7 @@ class Controller:
         self._computes = {}
         self._projects = {}
         self._notification = Notification(self)
+        self.symbols = Symbols()
 
         if sys.platform.startswith("win"):
             config_path = os.path.join(os.path.expandvars("%APPDATA%"), "GNS3")
