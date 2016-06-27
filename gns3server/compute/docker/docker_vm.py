@@ -623,7 +623,7 @@ class DockerVM(BaseNode):
             raise DockerError("Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name,
                                                                                                            adapter_number=adapter_number))
 
-        for index in range(128):
+        for index in range(4096):
             if "veth-gns3-ext{}".format(index) not in psutil.net_if_addrs():
                 adapter.ifc = "eth{}".format(str(index))
                 adapter.host_ifc = "veth-gns3-ext{}".format(str(index))

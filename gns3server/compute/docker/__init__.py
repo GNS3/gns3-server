@@ -24,6 +24,7 @@ import asyncio
 import logging
 import aiohttp
 import json
+import sys
 from gns3server.utils import parse_version
 
 log = logging.getLogger(__name__)

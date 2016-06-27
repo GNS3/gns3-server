@@ -529,7 +529,6 @@ class Project:
                     "iou": "IOUDevice",
                     "docker": "DockerVM"
                 }
-
                 node_directory = os.path.join(self.path, "servers", "vm", "project-files")
                 vm_server_use = False
 
@@ -539,11 +538,11 @@ class Project:
                         os.makedirs(node_directory, exist_ok=True)
                         shutil.move(module_directory, os.path.join(node_directory, module))
 
-                        # Patch node to use the GNS3 VM
-                        for node in topology["topology"]["nodes"]:
-                            if node["type"] == vm_type:
-                                node["server_id"] = 2
-                        vm_server_use = True
+                    # Patch node to use the GNS3 VM
+                    for node in topology["topology"]["nodes"]:
+                        if node["type"] == vm_type:
+                            node["server_id"] = 2
+                    vm_server_use = True
 
                 # We use the GNS3 VM. We need to add the server to the list
                 if vm_server_use:
