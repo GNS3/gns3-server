@@ -49,4 +49,5 @@ def test_upload(http_controller, symbols_dir):
     with open(os.path.join(symbols_dir, "test2")) as f:
         assert f.read() == "TEST"
 
-
+    response = http_controller.get('/symbols/test2/raw')
+    assert response.status == 200

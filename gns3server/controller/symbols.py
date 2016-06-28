@@ -54,7 +54,7 @@ class Symbols:
                     'filename': file,
                     'builtin': False,
                 })
-                self._symbols_path[symbol_id] = os.path.join(get_resource("symbols"), file)
+                self._symbols_path[symbol_id] = os.path.join(directory, file)
 
         symbols.sort(key=lambda x: x["filename"])
 

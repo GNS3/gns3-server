@@ -68,5 +68,6 @@ class SymbolHandler:
                 if not packet:
                     break
                 f.write(packet)
+        # Reset the symbol list
+        controller.symbols.list()
         response.set_status(204)
-
