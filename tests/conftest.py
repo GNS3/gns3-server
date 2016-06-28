@@ -204,6 +204,7 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     port_manager._instance = port_manager
     os.makedirs(os.path.join(tmppath, 'projects'))
     config.set("Server", "projects_path", os.path.join(tmppath, 'projects'))
+    config.set("Server", "symbols_path", os.path.join(tmppath, 'symbols'))
     config.set("Server", "images_path", os.path.join(tmppath, 'images'))
     config.set("Server", "ubridge_path", os.path.join(tmppath, 'bin', 'ubridge'))
     config.set("Server", "auth", False)
@@ -240,6 +241,17 @@ def images_dir(config):
     os.makedirs(path, exist_ok=True)
     os.makedirs(os.path.join(path, "QEMU"))
     os.makedirs(os.path.join(path, "IOU"))
+    return path
+
+
+@pytest.fixture
+def symbols_dir(config):
+    """
+    Get the location of symbols
+    """
+    path = config.get_section_config("Server").get("symbols_path")
+    os.makedirs(path, exist_ok=True)
+    print(path)
     return path
 
 

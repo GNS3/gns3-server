@@ -16,22 +16,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from unittest.mock import patch
 
 
 from gns3server.controller.symbols import Symbols
 from gns3server.utils.get_resource import get_resource
 
 
-def test_list():
+def test_list(symbols_dir):
+
+    print(symbols_dir)
+    with open(os.path.join(symbols_dir, "linux.svg"), "w+") as f:
+        pass
+
     symbols = Symbols()
     assert {
         'symbol_id': ':/symbols/firewall.svg',
         'filename': 'firewall.svg',
         'builtin': True
     } in symbols.list()
-    assert symbols
+    assert {
+        'symbol_id': 'linux.svg',
+        'filename': 'linux.svg',
+        'builtin': False
+    } in symbols.list()
 
 
 def test_get_path():
     symbols = Symbols()
     assert symbols.get_path(':/symbols/firewall.svg') == get_resource("symbols/firewall.svg")
+
+
+
