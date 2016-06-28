@@ -40,9 +40,10 @@ class Symbols:
                 'symbol_id': symbol_id,
                 'filename': file,
                 'builtin': True,
-                'url': '/static/builtin_symbols/' + file
             })
             self._symbols_path[symbol_id] = os.path.join(get_resource("symbols"), file)
+        symbols.sort(key=lambda x: x["filename"])
+
         #TODO: support ~/GNS3/symbols directory
         return symbols
 

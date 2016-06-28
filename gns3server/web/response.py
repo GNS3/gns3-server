@@ -17,11 +17,14 @@
 
 import json
 import jsonschema
+import aiohttp
 import aiohttp.web
+import mimetypes
 import asyncio
 import logging
-import sys
 import jinja2
+import sys
+import os
 
 from ..utils.get_resource import get_resource
 from ..version import __version__
@@ -101,6 +104,35 @@ class Response(aiohttp.web.Response):
                 log.error("Invalid output query. JSON schema error: {}".format(e.message))
                 raise aiohttp.web.HTTPBadRequest(text="{}".format(e))
         self.body = json.dumps(answer, indent=4, sort_keys=True).encode('utf-8')
+
+    @asyncio.coroutine
+    def file(self, path):
+        """
+        Return a file as a response
+        """
+        ct, encoding = mimetypes.guess_type(path)
+        if not ct:
+            ct = 'application/octet-stream'
+        if encoding:
+            self.headers[aiohttp.hdrs.CONTENT_ENCODING] = encoding
+        self.content_type = ct
+
+        st = os.stat(path)
+        self.last_modified = st.st_mtime
+        self.content_length = st.st_size
+
+        with open(path, 'rb') as fobj:
+            self.start(self._request)
+            chunk_size = 4096
+            chunk = fobj.read(chunk_size)
+            while chunk:
+                self.write(chunk)
+                yield from self.drain()
+                chunk = fobj.read(chunk_size)
+
+            if chunk:
+                self.write(chunk[:count])
+                yield from self.drain()
 
     def redirect(self, url):
         """

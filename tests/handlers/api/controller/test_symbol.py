@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import urllib.parse
+
 from gns3server.config import Config
 
 
@@ -23,7 +25,17 @@ def test_symbols(http_controller):
     assert response.status == 200
     assert {
         'symbol_id': ':/symbols/firewall.svg',
-        'url': '/static/builtin_symbols/firewall.svg',
         'filename': 'firewall.svg',
         'builtin': True
     } in response.json
+
+
+def test_get(http_controller):
+    response = http_controller.get('/symbols/' + urllib.parse.quote(':/symbols/firewall.svg') + '/raw')
+    assert response.status == 200
+    assert response.headers['CONTENT-LENGTH'] == '9381'
+    assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
+    assert '</svg>' in response.html
+
+    response = http_controller.get('/symbols/404.png/raw')
+    assert response.status == 404

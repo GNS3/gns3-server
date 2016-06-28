@@ -26,8 +26,12 @@ def test_list():
     symbols = Symbols()
     assert {
         'symbol_id': ':/symbols/firewall.svg',
-        'url': '/static/builtin_symbols/firewall.svg',
         'filename': 'firewall.svg',
         'builtin': True
     } in symbols.list()
     assert symbols
+
+
+def test_get_path():
+    symbols = Symbols()
+    assert symbols.get_path(':/symbols/firewall.svg') == get_resource("symbols/firewall.svg")

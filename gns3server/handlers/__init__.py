@@ -16,7 +16,6 @@
 
 
 from gns3server.handlers.index_handler import IndexHandler
-from gns3server.handlers.static_handler import StaticHandler
 
 
 from gns3server.handlers.api.controller import *

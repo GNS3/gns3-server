@@ -36,3 +36,17 @@ class SymbolHandler:
 
         controller = Controller.instance()
         response.json(controller.symbols.list())
+
+    @Route.get(
+        r"/symbols/{symbol_id:.+}/raw",
+        description="Get the symbol file",
+        status_codes={
+            200: "Symbol returned"
+        })
+    def raw(request, response):
+
+        controller = Controller.instance()
+        try:
+            yield from response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
+        except KeyError:
+            response.set_status(404)
