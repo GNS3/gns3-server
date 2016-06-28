@@ -43,7 +43,7 @@ class Symbols:
                 'builtin': True,
             })
             self._symbols_path[symbol_id] = os.path.join(get_resource("symbols"), file)
-        directory = self._symbol_path()
+        directory = self.symbols_path()
         if directory:
             for file in os.listdir(directory):
                 if file.startswith('.'):
@@ -56,12 +56,11 @@ class Symbols:
                 })
                 self._symbols_path[symbol_id] = os.path.join(get_resource("symbols"), file)
 
-
         symbols.sort(key=lambda x: x["filename"])
 
         return symbols
 
-    def _symbol_path(self):
+    def symbols_path(self):
         directory = os.path.expanduser(Config.instance().get_section_config("Server").get("symbols_path", "~/GNS3/symbols"))
         if directory:
             os.makedirs(directory, exist_ok=True)

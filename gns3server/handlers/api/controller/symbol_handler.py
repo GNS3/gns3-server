@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 
@@ -50,3 +51,22 @@ class SymbolHandler:
             yield from response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
         except KeyError:
             response.set_status(404)
+
+    @Route.post(
+        r"/symbols/{symbol_id:.+}/raw",
+        description="Write the symbol file",
+        status_codes={
+            200: "Symbol returned"
+        },
+        raw=True)
+    def upload(request, response):
+        controller = Controller.instance()
+        path = os.path.join(controller.symbols.symbols_path(), os.path.basename(request.match_info["symbol_id"]))
+        with open(path, 'wb+') as f:
+            while True:
+                packet = yield from request.content.read(512)
+                if not packet:
+                    break
+                f.write(packet)
+        response.set_status(204)
+

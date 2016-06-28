@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import urllib.parse
 
 from gns3server.config import Config
@@ -39,3 +40,13 @@ def test_get(http_controller):
 
     response = http_controller.get('/symbols/404.png/raw')
     assert response.status == 404
+
+
+def test_upload(http_controller, symbols_dir):
+    response = http_controller.post("/symbols/test2/raw", body="TEST", raw=True)
+    assert response.status == 204
+
+    with open(os.path.join(symbols_dir, "test2")) as f:
+        assert f.read() == "TEST"
+
+

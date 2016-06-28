@@ -25,7 +25,6 @@ from gns3server.utils.get_resource import get_resource
 
 def test_list(symbols_dir):
 
-    print(symbols_dir)
     with open(os.path.join(symbols_dir, "linux.svg"), "w+") as f:
         pass
 
@@ -45,6 +44,3 @@ def test_list(symbols_dir):
 def test_get_path():
     symbols = Symbols()
     assert symbols.get_path(':/symbols/firewall.svg') == get_resource("symbols/firewall.svg")
-
-
-
