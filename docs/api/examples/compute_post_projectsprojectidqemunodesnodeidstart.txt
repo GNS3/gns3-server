@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/15b9b8b9-323e-4d35-b9d0-7c64aaeed44f/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/26feaf3b-7983-4c48-938f-8dc4ba10afa5/start' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/15b9b8b9-323e-4d35-b9d0-7c64aaeed44f/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/26feaf3b-7983-4c48-938f-8dc4ba10afa5/start HTTP/1.1
 {}
 
 
@@ -41,15 +41,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:dd:80:d4:4f:00",
+    "mac_address": "00:dd:80:af:a5:00",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp25s35np5/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/15b9b8b9-323e-4d35-b9d0-7c64aaeed44f",
-    "node_id": "15b9b8b9-323e-4d35-b9d0-7c64aaeed44f",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp7hg5dyd9/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/26feaf3b-7983-4c48-938f-8dc4ba10afa5",
+    "node_id": "26feaf3b-7983-4c48-938f-8dc4ba10afa5",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpp70x6fp9/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmppxlqz2q6/qemu-system-x86_64",
     "ram": 256,
     "status": "stopped",
     "usage": ""

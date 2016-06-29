@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/6e3e0c35-b31d-4138-915f-89f53d1d002f/start' -d '{"iourc_content": "test"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/b48c7121-655b-4fa5-b0e9-f513c063067a/start' -d '{"iourc_content": "test"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/6e3e0c35-b31d-4138-915f-89f53d1d002f/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/b48c7121-655b-4fa5-b0e9-f513c063067a/start HTTP/1.1
 {
     "iourc_content": "test"
 }
@@ -18,12 +18,12 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/start
     "console": 5000,
     "console_type": "telnet",
     "ethernet_adapters": 2,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp34e4nwfi/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpggab7jn1/iourc",
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmphmhjfjyj/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/6e3e0c35-b31d-4138-915f-89f53d1d002f",
-    "node_id": "6e3e0c35-b31d-4138-915f-89f53d1d002f",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp3wi0bosu/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/b48c7121-655b-4fa5-b0e9-f513c063067a",
+    "node_id": "b48c7121-655b-4fa5-b0e9-f513c063067a",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,

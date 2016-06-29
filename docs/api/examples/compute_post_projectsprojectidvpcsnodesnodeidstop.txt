@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/cbc88db4-2cfa-4998-aeea-185de00e528e/stop' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/71a56900-2afe-48ee-808f-59c376bf90a6/stop' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/cbc88db4-2cfa-4998-aeea-185de00e528e/stop HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/71a56900-2afe-48ee-808f-59c376bf90a6/stop HTTP/1.1
 {}
 
 

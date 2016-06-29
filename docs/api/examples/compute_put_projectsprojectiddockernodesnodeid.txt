@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/45040e87-83ba-4925-a11e-a0f7dc5e7774' -d '{"console": 5002, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/5dd5ecf8-66a4-4f18-a040-469bdb8168e7' -d '{"console": 5002, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/45040e87-83ba-4925-a11e-a0f7dc5e7774 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/5dd5ecf8-66a4-4f18-a040-469bdb8168e7 HTTP/1.1
 {
     "console": 5002,
     "environment": "GNS3=1\nGNS4=0",
@@ -28,8 +28,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
     "environment": "GNS3=1\nGNS4=0",
     "image": "nginx:latest",
     "name": "test",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmphmhjfjyj/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/45040e87-83ba-4925-a11e-a0f7dc5e7774",
-    "node_id": "45040e87-83ba-4925-a11e-a0f7dc5e7774",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp3wi0bosu/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/docker/5dd5ecf8-66a4-4f18-a040-469bdb8168e7",
+    "node_id": "5dd5ecf8-66a4-4f18-a040-469bdb8168e7",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
     "status": "stopped"

@@ -7,7 +7,7 @@ Node
 A Virtual Machine (Dynamips, IOU, Qemu, VPCS...), a cloud, a builtin device (switch, hub...)
 
 Drawing
------
+--------
 
 Drawing are visual element not used by the network emulation. Like
 text, images, rectangle... They are pure SVG elements.

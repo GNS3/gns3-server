@@ -23,7 +23,6 @@ It's also used for unittest the HTTP implementation.
 from gns3server.config import Config
 
 
-
 def test_settings(http_controller):
     query = {"test": True}
     response = http_controller.post('/settings', query, example=True)
@@ -31,4 +30,3 @@ def test_settings(http_controller):
     response = http_controller.get('/settings', example=True)
     assert response.status == 200
     assert response.json == query
-

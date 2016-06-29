@@ -114,6 +114,7 @@ The available notification are:
     * log.error
     * log.warning
     * log.info
+    * settings.updated
 
 Previous versions
 =================
