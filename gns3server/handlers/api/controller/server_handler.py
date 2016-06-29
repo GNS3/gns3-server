@@ -108,6 +108,8 @@ class ServerHandler:
             201: "Writed"
         })
     def write_settings(request, response):
-        Controller.instance().settings = request.json
-        response.json(Controller.instance().settings)
+        controller = Controller.instance()
+        controller.settings = request.json
+        controller.save()
+        response.json(controller.settings)
         response.set_status(201)
