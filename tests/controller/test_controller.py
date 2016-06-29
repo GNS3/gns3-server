@@ -107,6 +107,14 @@ def test_addCompute(controller, controller_config_path, async_run):
     assert len(controller.computes) == 2
 
 
+def test_addDuplicateCompute(controller, controller_config_path, async_run):
+    controller._notification = MagicMock()
+    c = async_run(controller.add_compute(compute_id="test1", name="Test"))
+    assert len(controller.computes) == 1
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        async_run(controller.add_compute(compute_id="test2", name="Test"))
+
+
 def test_deleteCompute(controller, controller_config_path, async_run):
     c = async_run(controller.add_compute(compute_id="test1"))
     assert len(controller.computes) == 1
@@ -168,6 +176,16 @@ def test_addProject(controller, async_run):
     assert len(controller.projects) == 1
     async_run(controller.add_project(project_id=uuid2))
     assert len(controller.projects) == 2
+
+
+def test_addDuplicateProject(controller, async_run):
+    uuid1 = str(uuid.uuid4())
+    uuid2 = str(uuid.uuid4())
+
+    async_run(controller.add_project(project_id=uuid1, name="Test"))
+    assert len(controller.projects) == 1
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        async_run(controller.add_project(project_id=uuid2, name="Test"))
 
 
 def test_remove_project(controller, async_run):

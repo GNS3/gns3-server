@@ -135,21 +135,25 @@ class Controller:
         return Config.instance().get_section_config("Server").getboolean("controller")
 
     @asyncio.coroutine
-    def add_compute(self, **kwargs):
+    def add_compute(self, compute_id=None, name=None, **kwargs):
         """
         Add a server to the dictionary of compute servers controlled by this controller
 
         :param compute_id: Compute server identifier
+        :param name: Compute name
         :param kwargs: See the documentation of Compute
         """
-        compute_id = kwargs.pop("compute_id", None)
         if compute_id not in self._computes:
 
             # We disallow to create from the outside the
             if compute_id == 'local':
                 return None
 
-            compute = Compute(compute_id=compute_id, controller=self, **kwargs)
+            for compute in self._computes.values():
+                if name and compute.name == name:
+                    raise aiohttp.web.HTTPConflict(text="Compute name {} is duplicate".format(name))
+
+            compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
             self.save()
             self.notification.emit("compute.created", compute.__json__())
@@ -200,14 +204,20 @@ class Controller:
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     @asyncio.coroutine
-    def add_project(self, project_id=None, **kwargs):
+    def add_project(self, project_id=None, name=None, **kwargs):
         """
         Creates a project or returns an existing project
 
+        :param project_id: Project ID
+        :param name: Project name
         :param kwargs: See the documentation of Project
         """
         if project_id not in self._projects:
-            project = Project(project_id=project_id, controller=self, **kwargs)
+
+            for project in self._projects.values():
+                if name and project.name == name:
+                    raise aiohttp.web.HTTPConflict(text="Project name {} is duplicate".format(name))
+            project = Project(project_id=project_id, controller=self, name=name, **kwargs)
             self._projects[project.id] = project
             return self._projects[project.id]
         return self._projects[project_id]
