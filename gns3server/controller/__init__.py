@@ -41,6 +41,8 @@ class Controller:
         self._projects = {}
         self._notification = Notification(self)
         self.symbols = Symbols()
+        # Store settings shared by the different GUI will be replace by dedicated API later
+        self._settings = {}
 
         if sys.platform.startswith("win"):
             config_path = os.path.join(os.path.expandvars("%APPDATA%"), "GNS3")
@@ -70,6 +72,7 @@ class Controller:
                               "password": c.password,
                               "compute_id": c.id
                               } for c in self._computes.values()],
+                "settings": self._settings,
                 "version": __version__}
         os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
         with open(self._config_file, 'w+') as f:
@@ -89,6 +92,9 @@ class Controller:
         except OSError as e:
             log.critical("Cannot load %s: %s", self._config_file, str(e))
             return
+        if "settings" in data:
+            self._settings = data["settings"]
+
         for c in data["computes"]:
             yield from self.add_compute(**c)
 
@@ -108,6 +114,18 @@ class Controller:
                                 pass  # Skip not compatible projects
         except OSError as e:
             log.error(str(e))
+
+    @property
+    def settings(self):
+        """
+        Store settings shared by the different GUI will be replace by dedicated API later. Dictionnary
+        """
+        return self._settings
+
+    @settings.setter
+    def settings(self, val):
+        self._settings = val
+        self.notification.emit("settings.updated", val)
 
     def is_enabled(self):
         """

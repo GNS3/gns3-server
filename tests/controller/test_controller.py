@@ -37,6 +37,7 @@ def test_save(controller, controller_config_path):
         data = json.load(f)
         assert data["computes"] == []
         assert data["version"] == __version__
+        assert data["settings"] == {}
 
 
 def test_load(controller, controller_config_path, async_run):
@@ -53,10 +54,12 @@ def test_load(controller, controller_config_path, async_run):
             "compute_id": "test1"
         }
     ]
+    data["settings"] = {"IOU": True}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
     async_run(controller.load())
     assert len(controller.computes) == 1
+    assert controller.settings["IOU"]
     assert controller.computes["test1"].__json__() == {
         "compute_id": "test1",
         "connected": False,
@@ -66,6 +69,12 @@ def test_load(controller, controller_config_path, async_run):
         "user": "admin",
         "name": "http://admin@localhost:8000"
     }
+
+
+def test_settings(controller):
+    controller._notification = MagicMock()
+    controller.settings = {"a": 1}
+    controller._notification.emit.assert_called_with("settings.updated", {"a": 1})
 
 
 def test_load_projects(controller, projects_dir, async_run):
@@ -270,4 +279,3 @@ def test_load_project(controller, async_run, tmpdir):
     with asyncio_patch("gns3server.controller.Controller.add_project") as mock_add_project:
         project = async_run(controller.load_project(str(tmpdir / "test.gns3")))
     assert not mock_add_project.called
-

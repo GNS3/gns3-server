@@ -93,3 +93,21 @@ class ServerHandler:
         if request.json["version"] != __version__:
             raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"], __version__))
         response.json({"version": __version__})
+
+    @Route.get(
+        r"/settings",
+        description="Retrieve gui settings from the server. Temporary will we removed in later release")
+    def read_settings(request, response):
+
+        response.json(Controller.instance().settings)
+
+    @Route.post(
+        r"/settings",
+        description="Write gui settings on the server. Temporary will we removed in later releas",
+        status_codes={
+            201: "Writed"
+        })
+    def write_settings(request, response):
+        Controller.instance().settings = request.json
+        response.json(Controller.instance().settings)
+        response.set_status(201)
