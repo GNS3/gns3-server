@@ -90,6 +90,18 @@ COMPUTE_OBJECT_SCHEMA = {
             "description": "Whether the controller is connected to the compute server or not",
             "type": "boolean"
         },
+        "cpu_usage_percent": {
+            "description": "CPU usage of the compute. Read only",
+            "type": ["number", "null"],
+            "maximum": 100,
+            "minimum": 0
+        },
+        "memory_usage_percent": {
+            "description": "RAM usage of the compute. Read only",
+            "type": ["number", "null"],
+            "maximum": 100,
+            "minimum": 0
+        },
         "version": {
             "description": "Version of the GNS3 remote compute server",
             "type": ["string", "null"]

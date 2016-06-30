@@ -127,8 +127,9 @@ def test_compute_list(http_controller, controller):
             'port': 84,
             'protocol': 'http',
             'user': 'julien',
-            'name': 'My super server'
-
+            'name': 'My super server',
+            'cpu_usage_percent': None,
+            'memory_usage_percent': None
         }
     ]
 

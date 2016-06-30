@@ -67,7 +67,9 @@ def test_load(controller, controller_config_path, async_run):
         "port": 8000,
         "protocol": "http",
         "user": "admin",
-        "name": "http://admin@localhost:8000"
+        "name": "http://admin@localhost:8000",
+        "cpu_usage_percent": None,
+        "memory_usage_percent": None
     }
 
 

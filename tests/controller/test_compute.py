@@ -194,6 +194,43 @@ def test_connectNotification(compute, async_run):
     assert compute._connected is False
 
 
+def test_connectNotificationPing(compute, async_run):
+    """
+    When we receive a ping from a compute we update
+    the compute memory and CPU usage
+    """
+    ws_mock = AsyncioMagicMock()
+
+    call = 0
+
+    @asyncio.coroutine
+    def receive():
+        nonlocal call
+        call += 1
+        if call == 1:
+            response = MagicMock()
+            response.data = '{"action": "ping", "event": {"cpu_usage_percent": 35.7, "memory_usage_percent": 80.7}}'
+            response.tp = aiohttp.MsgType.text
+            return response
+        else:
+            response = MagicMock()
+            response.tp = aiohttp.MsgType.closed
+            return response
+
+    compute._controller._notification = MagicMock()
+    compute._session = AsyncioMagicMock(return_value=ws_mock)
+    compute._session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
+    ws_mock.receive = receive
+    async_run(compute._connect_notification())
+
+    assert not compute._controller.notification.dispatch.called
+    assert compute.cpu_usage_percent == 35.7
+    assert compute.memory_usage_percent == 80.7
+    args, _ = compute._controller.notification.emit.call_args
+    assert args[0] == "compute.updated"
+    assert args[1]["memory_usage_percent"] == 80.7
+
+
 def test_json(compute):
     compute.user = "test"
     assert compute.__json__() == {
@@ -203,6 +240,8 @@ def test_json(compute):
         "host": "example.com",
         "port": 84,
         "user": "test",
+        "cpu_usage_percent": None,
+        "memory_usage_percent": None,
         "connected": True
     }
     assert compute.__json__(topology_dump=True) == {
