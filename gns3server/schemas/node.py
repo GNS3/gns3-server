@@ -146,15 +146,15 @@ NODE_OBJECT_SCHEMA = {
         },
         "x": {
             "description": "X position of the node",
-            "type": "number"
+            "type": "integer"
         },
         "y": {
             "description": "Y position of the node",
-            "type": "number"
+            "type": "integer"
         },
         "z": {
             "description": "Z position of the node",
-            "type": "number"
+            "type": "integer"
         }
     },
     "additionalProperties": False,

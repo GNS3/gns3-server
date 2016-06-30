@@ -214,6 +214,8 @@ class Node:
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
 
+        old_json = self.__json__()
+
         compute_properties = None
         # Update node properties with additional elements
         for prop in kwargs:
@@ -227,7 +229,9 @@ class Node:
                 else:
                     setattr(self, prop, kwargs[prop])
 
-        self.project.controller.notification.emit("node.updated", self.__json__())
+        # We send notif only if object has changed
+        if old_json != self.__json__():
+            self.project.controller.notification.emit("node.updated", self.__json__())
         if update_compute:
             data = self._node_data(properties=compute_properties)
             response = yield from self.put(None, data=data)
@@ -392,9 +396,9 @@ class Node:
                 "console_type": self._console_type,
                 "properties": self._properties,
                 "label": self._label,
-                "x": self._x,
-                "y": self._y,
-                "z": self._z,
+                "x": int(self._x),
+                "y": int(self._y),
+                "z": int(self._z),
                 "symbol": self._symbol
             }
         return {
@@ -411,8 +415,8 @@ class Node:
             "properties": self._properties,
             "status": self._status,
             "label": self._label,
-            "x": self._x,
-            "y": self._y,
-            "z": self._z,
+            "x": int(self._x),
+            "y": int(self._y),
+            "z": int(self._z),
             "symbol": self._symbol
         }
