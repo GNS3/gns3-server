@@ -1,11 +1,11 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/bf96bdd7-49de-45f8-8b48-0d7bb2ce1392'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/f03a53b5-8b6d-437f-8e13-272ddf22692d'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/bf96bdd7-49de-45f8-8b48-0d7bb2ce1392 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/f03a53b5-8b6d-437f-8e13-272ddf22692d HTTP/1.1
 
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 732
+CONTENT-LENGTH: 720
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -13,15 +13,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
 {
     "command_line": "",
-    "console": 5000,
+    "console": 5711,
     "console_type": "telnet",
     "ethernet_adapters": 2,
     "iourc_path": null,
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp3wi0bosu/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/iou/bf96bdd7-49de-45f8-8b48-0d7bb2ce1392",
-    "node_id": "bf96bdd7-49de-45f8-8b48-0d7bb2ce1392",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-49/test_json4/project-files/iou/f03a53b5-8b6d-437f-8e13-272ddf22692d",
+    "node_id": "f03a53b5-8b6d-437f-8e13-272ddf22692d",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,

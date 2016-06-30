@@ -167,7 +167,7 @@ The port is the field console in the create Node request.
     Checking for duplicate address...
     PC1 : 192.168.1.1 255.255.255.0
 
-    VPCS> disconnect 
+    VPCS> disconnect
 
     Good-bye
     Connection closed by foreign host.
@@ -242,6 +242,8 @@ You can see notification about the changes via the notification feed:
     {"action": "node.updated", "event": {"command_line": "/usr/local/bin/vpcs -p 5001 -m 1 -i 1 -F -R -s 10001 -c 10000 -t 127.0.0.1", "compute_id": "local", "console": 5001, "console_host": "127.0.0.1", "console_type": "telnet", "name": "VPCS 2", "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74", "node_type": "vpcs", "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f", "properties": {"startup_script": null, "startup_script_path": null}, "status": "started"}}
 
 A websocket version is also available on http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications/ws
+
+Read :doc:`notifications` for more informations
 
 
 How to found the endpoints?

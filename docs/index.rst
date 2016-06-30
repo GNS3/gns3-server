@@ -22,6 +22,7 @@ API
     general
     glossary
     curl
+    notifications
     endpoints
 
 GNS3 developements

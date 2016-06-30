@@ -12,7 +12,7 @@ PUT /v2/computes/my_compute_id HTTP/1.1
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 195
+CONTENT-LENGTH: 260
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -21,7 +21,9 @@ X-ROUTE: /v2/computes/{compute_id}
 {
     "compute_id": "my_compute_id",
     "connected": false,
+    "cpu_usage_percent": null,
     "host": "example.com",
+    "memory_usage_percent": null,
     "name": "http://julien@example.com:84",
     "port": 84,
     "protocol": "https",

@@ -9,10 +9,10 @@ Stop a packet capture on a VPCS instance
 
 Parameters
 **********
-- **port_number**: Port on the adapter
-- **project_id**: Project UUID
-- **node_id**: Node UUID
 - **adapter_number**: Adapter to stop a packet capture
+- **project_id**: Project UUID
+- **port_number**: Port on the adapter
+- **node_id**: Node UUID
 
 Response status codes
 **********************

@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/2643d960-e139-4c49-94e8-5aa36da47e4c/drawings' -d '{"svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>", "x": 10, "y": 20, "z": 0}'
+curl -i -X POST 'http://localhost:3080/v2/projects/84a7dff6-a2ef-46dd-aece-0f68b7a761f3/drawings' -d '{"svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>", "x": 10, "y": 20, "z": 0}'
 
-POST /v2/projects/2643d960-e139-4c49-94e8-5aa36da47e4c/drawings HTTP/1.1
+POST /v2/projects/84a7dff6-a2ef-46dd-aece-0f68b7a761f3/drawings HTTP/1.1
 {
     "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
     "x": 10,
@@ -17,8 +17,8 @@ SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/drawings
 
 {
-    "drawing_id": "ea2442e1-888f-4cbf-b534-cc22654ab90f",
-    "project_id": "2643d960-e139-4c49-94e8-5aa36da47e4c",
+    "drawing_id": "6dd8c8c3-3e23-4aa3-9105-1616c3478a56",
+    "project_id": "84a7dff6-a2ef-46dd-aece-0f68b7a761f3",
     "rotation": 0,
     "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
     "x": 10,

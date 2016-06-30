@@ -1,8 +1,8 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/b7923dd9-b67b-4feb-95f4-dd98665cb0c0' -d '{"console": 5010, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/c0869edb-3133-4d7d-8c00-c20800eb22d9' -d '{"console": 5721, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/b7923dd9-b67b-4feb-95f4-dd98665cb0c0 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/c0869edb-3133-4d7d-8c00-c20800eb22d9 HTTP/1.1
 {
-    "console": 5010,
+    "console": 5721,
     "name": "test"
 }
 
@@ -18,12 +18,12 @@ X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
     "acpi_shutdown": false,
     "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
     "adapters": 0,
-    "console": 5010,
+    "console": 5721,
     "enable_remote_console": false,
     "headless": false,
     "name": "test",
     "node_directory": null,
-    "node_id": "b7923dd9-b67b-4feb-95f4-dd98665cb0c0",
+    "node_id": "c0869edb-3133-4d7d-8c00-c20800eb22d9",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",

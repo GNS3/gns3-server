@@ -95,26 +95,10 @@ the API over HTTPS.
 Notifications
 =============
 
+
 You can receive notification from the server if you listen the HTTP stream /notifications or the websocket.
 
-The available notification are:
-    * ping
-    * compute.created
-    * compute.updated
-    * compute.deleted
-    * node.created
-    * node.updated
-    * node.deleted
-    * link.created
-    * link.updated
-    * link.deleted
-    * drawing.created
-    * drawing.updated
-    * drawing.deleted
-    * log.error
-    * log.warning
-    * log.info
-    * settings.updated
+Read :doc:`notifications` for more informations
 
 Previous versions
 =================

@@ -9,10 +9,10 @@ Start a packet capture on a cloud instance
 
 Parameters
 **********
-- **port_number**: Port on the cloud
-- **project_id**: Project UUID
-- **node_id**: Node UUID
 - **adapter_number**: Adapter on the cloud (always 0)
+- **project_id**: Project UUID
+- **port_number**: Port on the cloud
+- **node_id**: Node UUID
 
 Response status codes
 **********************

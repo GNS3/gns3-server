@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/cc65d1ae-7624-4308-a024-6ce262c5771a/reload' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/690bb17e-b4b5-461c-be5f-5a5ee2a2accf/reload' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/cc65d1ae-7624-4308-a024-6ce262c5771a/reload HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/690bb17e-b4b5-461c-be5f-5a5ee2a2accf/reload HTTP/1.1
 {}
 
 

@@ -112,3 +112,10 @@ def test_dispatch_node_updated(async_run, controller, node, project):
         assert action == "node.updated"
         assert event["name"] == "hello"
         assert event["properties"]["startup_config"] == "ip 192"
+
+
+def test_various_notification(controller):
+    notif = controller.notification
+    notif.emit("log.info", {"message": "Image uploaded"})
+    notif.emit("log.warning", {"message": "Warning ASA 8 is not officialy supported by GNS3"})
+    notif.emit("log.error", {"message": "Permission denied on /tmp"})

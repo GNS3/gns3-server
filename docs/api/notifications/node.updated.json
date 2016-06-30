@@ -1,0 +1,25 @@
+{
+    "command_line": null,
+    "compute_id": "example.com",
+    "console": null,
+    "console_host": "example.org",
+    "console_type": null,
+    "label": {
+        "color": "#ff000000",
+        "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+        "text": "",
+        "x": -17.0234375,
+        "y": -25.0
+    },
+    "name": "test",
+    "node_directory": null,
+    "node_id": "373d4ce5-13aa-46df-9556-1d177106ab80",
+    "node_type": "vpcs",
+    "project_id": "f56c0169-3bae-45c3-80d2-a222679db430",
+    "properties": {},
+    "status": "stopped",
+    "symbol": ":/symbols/computer.svg",
+    "x": 0,
+    "y": 0,
+    "z": 0
+}

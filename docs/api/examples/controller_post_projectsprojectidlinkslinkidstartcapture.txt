@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/2c6943d4-b951-40e9-9622-82972566258e/links/0a9b95b9-7c56-4f6d-af89-34f540073f2f/start_capture' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/eabbad3e-53b1-4777-9101-24f361dfa19f/links/df5438b4-1301-4c64-ba87-4367722a03a7/start_capture' -d '{}'
 
-POST /v2/projects/2c6943d4-b951-40e9-9622-82972566258e/links/0a9b95b9-7c56-4f6d-af89-34f540073f2f/start_capture HTTP/1.1
+POST /v2/projects/eabbad3e-53b1-4777-9101-24f361dfa19f/links/df5438b4-1301-4c64-ba87-4367722a03a7/start_capture HTTP/1.1
 {}
 
 
@@ -15,7 +15,7 @@ X-ROUTE: /v2/projects/{project_id}/links/{link_id}/start_capture
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
-    "link_id": "0a9b95b9-7c56-4f6d-af89-34f540073f2f",
+    "link_id": "df5438b4-1301-4c64-ba87-4367722a03a7",
     "nodes": [],
-    "project_id": "2c6943d4-b951-40e9-9622-82972566258e"
+    "project_id": "eabbad3e-53b1-4777-9101-24f361dfa19f"
 }

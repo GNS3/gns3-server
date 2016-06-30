@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import aiohttp
 from contextlib import contextmanager
 
@@ -75,6 +76,19 @@ class Notification:
         :param action: Action name
         :param event: Event to send
         """
+
+        # If use in tests for documentation we save a sample
+        if os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
+            os.makedirs("docs/api/notifications", exist_ok=True)
+            try:
+                import json
+                data = json.dumps(event, indent=4, sort_keys=True)
+                if "MagicMock" not in data:
+                    with open(os.path.join("docs/api/notifications", action + ".json"), 'w+') as f:
+                        f.write(data)
+            except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
+                pass
+
         if "project_id" in event:
             self._send_event_to_project(event["project_id"], action, event)
         else:

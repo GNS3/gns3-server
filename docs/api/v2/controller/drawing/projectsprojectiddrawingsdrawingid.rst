@@ -9,8 +9,8 @@ Create a new drawing instance
 
 Parameters
 **********
-- **drawing_id**: Drawing UUID
 - **project_id**: Project UUID
+- **drawing_id**: Drawing UUID
 
 Response status codes
 **********************
@@ -60,8 +60,8 @@ Delete a drawing instance
 
 Parameters
 **********
-- **drawing_id**: Drawing UUID
 - **project_id**: Project UUID
+- **drawing_id**: Drawing UUID
 
 Response status codes
 **********************

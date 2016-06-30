@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -28,7 +28,7 @@ export PYTEST_BUILD_DOCUMENTATION=1
 rm -Rf docs/api/
 mkdir -p docs/api/examples
 
-py.test -v tests/handlers
+py.test -v tests
 
 export PYTHONPATH=.
 python3 gns3server/web/documentation.py
