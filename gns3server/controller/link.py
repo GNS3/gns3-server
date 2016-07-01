@@ -43,18 +43,38 @@ class Link:
         self._streaming_pcap = None
 
     @asyncio.coroutine
-    def add_node(self, node, adapter_number, port_number):
+    def add_node(self, node, adapter_number, port_number, label=None):
         """
         Add a node to the link
         """
+
+        if label is None:
+            label = {
+                "x": -10,
+                "y": -10,
+                "text": "{}/{}".format(adapter_number, port_number),
+                "style": "font-size: 10; font-style: Verdana"
+            }
+
         self._nodes.append({
             "node": node,
             "adapter_number": adapter_number,
-            "port_number": port_number
+            "port_number": port_number,
+            "label": label
         })
 
         if len(self._nodes) == 2:
             self._project.controller.notification.emit("link.created", self.__json__())
+
+        self._project.dump()
+
+    @asyncio.coroutine
+    def update_node(self, node, adapter_number, port_number, label=None):
+        for port in self._nodes:
+            if port["node"] == node:
+                if label:
+                    port["label"] = label
+        self._project.controller.notification.emit("link.updated", self.__json__())
         self._project.dump()
 
     @asyncio.coroutine
@@ -166,7 +186,8 @@ class Link:
             res.append({
                 "node_id": side["node"].id,
                 "adapter_number": side["adapter_number"],
-                "port_number": side["port_number"]
+                "port_number": side["port_number"],
+                "label": side["label"]
             })
         if topology_dump:
             return {

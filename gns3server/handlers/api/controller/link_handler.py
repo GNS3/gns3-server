@@ -66,8 +66,35 @@ class LinkHandler:
         for node in request.json["nodes"]:
             yield from link.add_node(project.get_node(node["node_id"]),
                                      node.get("adapter_number", 0),
-                                     node.get("port_number", 0))
+                                     node.get("port_number", 0),
+                                     label=node.get("label"))
         yield from link.create()
+        response.set_status(201)
+        response.json(link)
+
+    @Route.put(
+        r"/projects/{project_id}/links/{link_id}",
+        parameters={
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
+        },
+        status_codes={
+            201: "Link updated",
+            400: "Invalid request"
+        },
+        description="Update a link instance",
+        input=LINK_OBJECT_SCHEMA,
+        output=LINK_OBJECT_SCHEMA)
+    def update(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
+        for node in request.json["nodes"]:
+            yield from link.update_node(project.get_node(node["node_id"]),
+                                     node.get("adapter_number", 0),
+                                     node.get("port_number", 0),
+                                     label=node.get("label"))
         response.set_status(201)
         response.json(link)
 

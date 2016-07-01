@@ -50,20 +50,53 @@ def link(async_run, project, compute):
     return link
 
 
-def test_addNode(async_run, project, compute):
+def test_add_node(async_run, project, compute):
     node1 = Node(project, compute, "node1")
 
     link = Link(project)
+    link._project.controller.notification.emit = MagicMock()
     project.dump = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
     assert link._nodes == [
         {
             "node": node1,
             "adapter_number": 0,
-            "port_number": 4
+            "port_number": 4,
+            'label': {
+                'y': -10,
+                'text': '0/4',
+                'x': -10,
+                'style': 'font-size: 10; font-style: Verdana'
+            }
         }
     ]
     assert project.dump.called
+    assert not link._project.controller.notification.emit.called
+
+    # We call link.created only when both side are created
+    node2 = Node(project, compute, "node2")
+    async_run(link.add_node(node2, 0, 4))
+
+    link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
+
+
+def test_update_node(async_run, project, compute):
+    node1 = Node(project, compute, "node1")
+
+    link = Link(project)
+    async_run(link.add_node(node1, 0, 4))
+    label = {
+        'y': -42,
+        'text': '0/4',
+        'x': -10,
+        'style': 'font-size: 10; font-style: Verdana'
+    }
+    project.dump = AsyncioMagicMock()
+    link._project.controller.notification.emit = MagicMock()
+    async_run(link.update_node(node1, 0, 4, label=label))
+    assert link._nodes[0]["label"]["y"] == -42
+    assert project.dump.called
+    link._project.controller.notification.emit.assert_called_with("link.updated", link.__json__())
 
 
 def test_json(async_run, project, compute):
@@ -80,12 +113,24 @@ def test_json(async_run, project, compute):
             {
                 "node_id": node1.id,
                 "adapter_number": 0,
-                "port_number": 4
+                "port_number": 4,
+                'label': {
+                    'y': -10,
+                    'text': '0/4',
+                    'x': -10,
+                    'style': 'font-size: 10; font-style: Verdana'
+                }
             },
             {
                 "node_id": node2.id,
                 "adapter_number": 1,
-                "port_number": 3
+                "port_number": 3,
+                'label': {
+                    'y': -10,
+                    'text': '1/3',
+                    'x': -10,
+                    'style': 'font-size: 10; font-style: Verdana'
+                }
             }
         ],
         "capturing": False,
@@ -98,12 +143,24 @@ def test_json(async_run, project, compute):
             {
                 "node_id": node1.id,
                 "adapter_number": 0,
-                "port_number": 4
+                "port_number": 4,
+                'label': {
+                    'y': -10,
+                    'text': '0/4',
+                    'x': -10,
+                    'style': 'font-size: 10; font-style: Verdana'
+                }
             },
             {
                 "node_id": node2.id,
                 "adapter_number": 1,
-                "port_number": 3
+                "port_number": 3,
+                'label': {
+                    'y': -10,
+                    'text': '1/3',
+                    'x': -10,
+                    'style': 'font-size: 10; font-style: Verdana'
+                }
             }
         ]
     }

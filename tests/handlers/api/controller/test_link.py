@@ -62,7 +62,12 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
                 {
                     "node_id": node1.id,
                     "adapter_number": 0,
-                    "port_number": 3
+                    "port_number": 3,
+                    "label": {
+                        "text": "Text",
+                        "x": 42,
+                        "y": 0
+                    }
                 },
                 {
                     "node_id": node2.id,
@@ -75,6 +80,60 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     assert response.status == 201
     assert response.json["link_id"] is not None
     assert len(response.json["nodes"]) == 2
+    assert response.json["nodes"][0]["label"]["x"] == 42
+
+
+def test_update_link(http_controller, tmpdir, project, compute, async_run):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = async_run(project.add_node(compute, "node1", None))
+    node2 = async_run(project.add_node(compute, "node2", None))
+
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
+        response = http_controller.post("/projects/{}/links".format(project.id), {
+            "nodes": [
+                {
+                    "node_id": node1.id,
+                    "adapter_number": 0,
+                    "port_number": 3,
+                    "label": {
+                        "text": "Text",
+                        "x": 42,
+                        "y": 0
+                    }
+                },
+                {
+                    "node_id": node2.id,
+                    "adapter_number": 2,
+                    "port_number": 4
+                }
+            ]
+        })
+    link_id = response.json["link_id"]
+    assert response.json["nodes"][0]["label"]["x"] == 42
+    response = http_controller.put("/projects/{}/links/{}".format(project.id, link_id), {
+        "nodes": [
+            {
+                "node_id": node1.id,
+                "adapter_number": 0,
+                "port_number": 3,
+                "label": {
+                    "text": "Hello",
+                    "x": 64,
+                    "y": 0
+                }
+            },
+            {
+                "node_id": node2.id,
+                "adapter_number": 2,
+                "port_number": 4
+            }
+        ]
+    })
+    assert response.status == 201
+    assert response.json["nodes"][0]["label"]["x"] == 64
 
 
 def test_list_link(http_controller, tmpdir, project, compute, async_run):

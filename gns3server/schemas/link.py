@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .label import LABEL_OBJECT_SCHEMA
+
 
 LINK_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -55,7 +57,8 @@ LINK_OBJECT_SCHEMA = {
                     "port_number": {
                         "description": "Port number",
                         "type": "integer"
-                    }
+                    },
+                    "label": LABEL_OBJECT_SCHEMA
                 },
                 "required": ["node_id", "adapter_number", "port_number"],
                 "additionalProperties": False
