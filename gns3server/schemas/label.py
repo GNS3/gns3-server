@@ -18,19 +18,19 @@
 LABEL_OBJECT_SCHEMA = {
     "type": "object",
     "properties": {
-        "color": {
-            "type": "string",
-            "pattern": "^#[0-9a-f]{6,8}$"
-        },
-        "font": {
-            "type": "string",
-            "minLength": 1
-        },
         "text": {"type": "string"},
-        "x": {"type": "number"},
-        "y": {"type": "number"},
-        "z": {"type": "number"},
-        "rotation": {"type": "number"}
+        "style": {
+            "description": "SVG style attribute",
+            "type": "string"
+        },
+        "x": {
+            "description": "Relative X position of the label",
+            "type": "integer"
+        },
+        "y": {
+            "description": "Relative Y position of the label",
+            "type": "integer"
+        },
     },
     "required": [
         "text",

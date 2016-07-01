@@ -67,6 +67,8 @@ def test_json(node, compute):
         "x": node.x,
         "y": node.y,
         "z": node.z,
+        "width": node.width,
+        "height": node.height,
         "symbol": node.symbol,
         "label": node.label
     }
@@ -81,6 +83,8 @@ def test_json(node, compute):
         "x": node.x,
         "y": node.y,
         "z": node.z,
+        "width": node.width,
+        "height": node.height,
         "symbol": node.symbol,
         "label": node.label
     }
@@ -186,7 +190,6 @@ def test_update_properties(node, compute, project, async_run, controller):
     controller._notification.emit.assert_called_with("node.updated", node_notif)
 
 
-
 def test_update_only_controller(node, controller, compute, project, async_run):
     """
     When updating property used only on controller we don't need to
@@ -204,7 +207,6 @@ def test_update_only_controller(node, controller, compute, project, async_run):
     controller._notification = AsyncioMagicMock()
     async_run(node.update(x=42))
     assert not controller._notification.emit.called
-
 
 
 def test_update_no_changes(node, compute, project, async_run):

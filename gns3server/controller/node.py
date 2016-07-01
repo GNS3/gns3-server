@@ -59,16 +59,17 @@ class Node:
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
+        self._width = 70
+        self._height = 70
         self._x = 0
         self._y = 0
         self._z = 0
         self._symbol = ":/symbols/computer.svg"
         self._label = {
-            "color": "#ff000000",
-            "y": -25.0,
+            "y": -25,
             "text": "",
-            "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
-            "x": -17.0234375
+            "style": "",
+            "x": -17
         }
         # Update node properties with additional elements
         for prop in kwargs:
@@ -163,6 +164,22 @@ class Node:
     @z.setter
     def z(self, val):
         self._z = val
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, val):
+        self._width = val
+
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, val):
+        self._height = val
 
     @property
     def symbol(self):
@@ -396,9 +413,11 @@ class Node:
                 "console_type": self._console_type,
                 "properties": self._properties,
                 "label": self._label,
-                "x": int(self._x),
-                "y": int(self._y),
-                "z": int(self._z),
+                "x": self._x,
+                "y": self._y,
+                "z": self._z,
+                "width": self._width,
+                "height": self._height,
                 "symbol": self._symbol
             }
         return {
@@ -415,8 +434,10 @@ class Node:
             "properties": self._properties,
             "status": self._status,
             "label": self._label,
-            "x": int(self._x),
-            "y": int(self._y),
-            "z": int(self._z),
+            "x": self._x,
+            "y": self._y,
+            "z": self._z,
+            "width": self._width,
+            "height": self._height,
             "symbol": self._symbol
         }

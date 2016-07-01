@@ -144,6 +144,14 @@ NODE_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1
         },
+        "width": {
+            "description": "Width of the node",
+            "type": "integer"
+        },
+        "height": {
+            "description": "Height of the node",
+            "type": "integer"
+        },
         "x": {
             "description": "X position of the node",
             "type": "integer"
