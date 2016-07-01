@@ -70,11 +70,14 @@ class Link:
         self._project.dump()
 
     @asyncio.coroutine
-    def update_node(self, node, adapter_number, port_number, label=None):
-        for port in self._nodes:
-            if port["node"] == node:
-                if label:
-                    port["label"] = label
+    def update_nodes(self, nodes):
+        for node_data in nodes:
+            node = self._project.get_node(node_data["node_id"])
+            for port in self._nodes:
+                if port["node"] == node:
+                    label = node_data.get("label")
+                    if label:
+                        port["label"] = label
         self._project.controller.notification.emit("link.updated", self.__json__())
         self._project.dump()
 

@@ -81,8 +81,9 @@ def test_add_node(async_run, project, compute):
     link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
 
 
-def test_update_node(async_run, project, compute):
+def test_update_nodes(async_run, project, compute):
     node1 = Node(project, compute, "node1")
+    project._nodes[node1.id] = node1
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))
@@ -95,7 +96,7 @@ def test_update_node(async_run, project, compute):
     }
     project.dump = AsyncioMagicMock()
     link._project.controller.notification.emit = MagicMock()
-    async_run(link.update_node(node1, 0, 4, label=label))
+    async_run(link.update_nodes([{"node_id": node1.id, "label": label}]))
     assert link._nodes[0]["label"]["y"] == -42
     assert project.dump.called
     link._project.controller.notification.emit.assert_called_with("link.updated", link.__json__())
