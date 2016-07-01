@@ -395,7 +395,7 @@ class Project:
                 link = yield from self.add_link(link_id=link_data["link_id"])
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
-                    yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"])
+                    yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"))
 
             for drawing_data in topology.get("drawings", []):
                 drawing = yield from self.add_drawing(**drawing_data)
