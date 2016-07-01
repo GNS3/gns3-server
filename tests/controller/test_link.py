@@ -66,6 +66,7 @@ def test_add_node(async_run, project, compute):
                 'y': -10,
                 'text': '0/4',
                 'x': -10,
+                'rotation': 0,
                 'style': 'font-size: 10; font-style: Verdana'
             }
         }
@@ -89,6 +90,7 @@ def test_update_node(async_run, project, compute):
         'y': -42,
         'text': '0/4',
         'x': -10,
+        'rotation': 0,
         'style': 'font-size: 10; font-style: Verdana'
     }
     project.dump = AsyncioMagicMock()
@@ -118,6 +120,7 @@ def test_json(async_run, project, compute):
                     'y': -10,
                     'text': '0/4',
                     'x': -10,
+                    'rotation': 0,
                     'style': 'font-size: 10; font-style: Verdana'
                 }
             },
@@ -129,6 +132,7 @@ def test_json(async_run, project, compute):
                     'y': -10,
                     'text': '1/3',
                     'x': -10,
+                    'rotation': 0,
                     'style': 'font-size: 10; font-style: Verdana'
                 }
             }
@@ -148,6 +152,7 @@ def test_json(async_run, project, compute):
                     'y': -10,
                     'text': '0/4',
                     'x': -10,
+                    'rotation': 0,
                     'style': 'font-size: 10; font-style: Verdana'
                 }
             },
@@ -159,6 +164,7 @@ def test_json(async_run, project, compute):
                     'y': -10,
                     'text': '1/3',
                     'x': -10,
+                    'rotation': 0,
                     'style': 'font-size: 10; font-style: Verdana'
                 }
             }

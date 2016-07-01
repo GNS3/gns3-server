@@ -52,6 +52,7 @@ class Link:
             label = {
                 "x": -10,
                 "y": -10,
+                "rotation": 0,
                 "text": "{}/{}".format(adapter_number, port_number),
                 "style": "font-size: 10; font-style: Verdana"
             }
