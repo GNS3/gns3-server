@@ -31,6 +31,10 @@ LABEL_OBJECT_SCHEMA = {
             "description": "Relative Y position of the label",
             "type": "integer"
         },
+        "rotation": {
+            "description": "Rotation of the label",
+            "type": "integer"
+        },
     },
     "required": [
         "text",

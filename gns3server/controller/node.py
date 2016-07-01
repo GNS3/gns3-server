@@ -68,8 +68,9 @@ class Node:
         self._label = {
             "y": -25,
             "text": "",
-            "style": "",
-            "x": -17
+            "style": "font-size: 10;font-familly: Verdana",
+            "x": -17,
+            "rotation": 0
         }
         # Update node properties with additional elements
         for prop in kwargs:
