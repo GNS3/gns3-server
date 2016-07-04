@@ -180,7 +180,7 @@ class Route(object):
                 except aiohttp.web.HTTPBadRequest as e:
                     response = Response(request=request, route=route)
                     response.set_status(e.status)
-                    response.json({"message": e.text, "status": e.status, "path": route, "request": request.json})
+                    response.json({"message": e.text, "status": e.status, "path": route, "request": request.json, "method": request.method})
                 except aiohttp.web.HTTPException as e:
                     response = Response(request=request, route=route)
                     response.set_status(e.status)
