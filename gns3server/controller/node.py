@@ -400,6 +400,11 @@ class Node:
     def __repr__(self):
         return "<gns3server.controller.Node {} {}>".format(self._node_type, self._name)
 
+    def __eq__(self, other):
+        if not isinstance(other, Node):
+            return False
+        return self.id == other.id and other.project.id == self.project.id
+
     def __json__(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk

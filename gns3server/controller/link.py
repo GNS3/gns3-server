@@ -164,7 +164,7 @@ class Link:
 
     @property
     def nodes(self):
-        return self._nodes
+        return [ node['node'] for node in self._nodes ]
 
     @property
     def capturing(self):
@@ -180,6 +180,11 @@ class Link:
             return os.path.join(self._project.captures_directory, self._capture_file_name)
         else:
             return None
+
+    def __eq__(self, other):
+        if not isinstance(other, Link):
+            return False
+        return self.id == other.id
 
     def __json__(self, topology_dump=False):
         """

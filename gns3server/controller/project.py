@@ -243,6 +243,11 @@ class Project:
     def delete_node(self, node_id):
 
         node = self.get_node(node_id)
+
+        for link in list(self._links.values()):
+            if node in link.nodes:
+                yield from self.delete_link(link.id)
+
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
         yield from node.destroy()

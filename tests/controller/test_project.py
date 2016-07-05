@@ -151,6 +151,32 @@ def test_delete_node(async_run, controller):
     controller.notification.emit.assert_any_call("node.deleted", node.__json__())
 
 
+def test_delete_node_delete_link(async_run, controller):
+    """
+    Delete a node delete all the node connected
+    """
+    compute = MagicMock()
+    project = Project(controller=controller)
+    controller._notification = MagicMock()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+
+    link = async_run(project.add_link())
+    async_run(link.add_node(node, 0, 0))
+
+    async_run(project.delete_node(node.id))
+    assert node.id not in project._nodes
+    assert link.id not in project._links
+
+    compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
+    controller.notification.emit.assert_any_call("node.deleted", node.__json__())
+    controller.notification.emit.assert_any_call("link.deleted", link.__json__())
+
+
 def test_getVM(async_run, controller):
     compute = MagicMock()
     project = Project(controller=controller)

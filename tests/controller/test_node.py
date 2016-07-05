@@ -50,6 +50,13 @@ def node(compute, project):
     return node
 
 
+def test_eq(compute, project, node, controller):
+    assert node == Node(project, compute, "demo", node_id=node.id)
+    assert node != "a"
+    assert node != Node(project, compute, "demo", node_id=str(uuid.uuid4()))
+    assert node != Node( Project(str(uuid.uuid4()), controller=controller), compute, "demo", node_id=node.id)
+
+
 def test_json(node, compute):
     assert node.__json__() == {
         "compute_id": str(compute.id),

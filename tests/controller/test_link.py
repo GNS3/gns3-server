@@ -50,6 +50,12 @@ def link(async_run, project, compute):
     return link
 
 
+def test_eq(project, link, controller):
+    assert link == Link(project, link_id=link.id)
+    assert link != "a"
+    assert link != Link(project)
+
+
 def test_add_node(async_run, project, compute):
     node1 = Node(project, compute, "node1")
 
