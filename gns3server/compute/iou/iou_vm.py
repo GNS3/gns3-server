@@ -679,7 +679,10 @@ class IOUVM(BaseNode):
                 except asyncio.TimeoutError:
                     if self._iou_process.returncode is None:
                         log.warn("IOU process {} is still running... killing it".format(self._iou_process.pid))
-                        self._iou_process.kill()
+                        try:
+                            self._iou_process.kill()
+                        except ProcessLookupError:
+                            pass
             self._iou_process = None
 
         if self.is_iouyap_running():

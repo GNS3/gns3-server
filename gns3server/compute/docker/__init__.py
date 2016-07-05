@@ -114,7 +114,7 @@ class Docker(BaseManager):
                 data=data,
                 headers={"content-type": "application/json", },
             )
-        except aiohttp.ClientResponseError as e:
+        except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))
         if response.status >= 300:
             body = yield from response.read()

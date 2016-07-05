@@ -624,10 +624,10 @@ class DockerVM(BaseNode):
                                                                                                            adapter_number=adapter_number))
 
         for index in range(4096):
-            if "veth-gns3-ext{}".format(index) not in psutil.net_if_addrs():
+            if "veth-gns3-e{}".format(index) not in psutil.net_if_addrs():
                 adapter.ifc = "eth{}".format(str(index))
-                adapter.host_ifc = "veth-gns3-ext{}".format(str(index))
-                adapter.guest_ifc = "veth-gns3-int{}".format(str(index))
+                adapter.host_ifc = "veth-gns3-e{}".format(str(index))
+                adapter.guest_ifc = "veth-gns3-i{}".format(str(index))
                 break
         if not hasattr(adapter, "ifc"):
             raise DockerError("Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(name=self.name,
@@ -663,6 +663,8 @@ class DockerVM(BaseNode):
 
         :param adapter_number: adapter number
         """
+        if not self.ubridge:
+            return
 
         adapter = self._ethernet_adapters[adapter_number]
         try:
@@ -703,6 +705,18 @@ class DockerVM(BaseNode):
                                                                                                               rport=nio.rport))
 
             yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
+
+        if self.status == "started" and self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+            # the container is running, let's add the UDP tunnel to connect to another node
+            yield from self._ubridge_hypervisor.send('bridge create bridge{}'.format(adapter_number))
+            yield from self._ubridge_hypervisor.send('bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(ifc=adapter.host_ifc, adapter=adapter_number))
+
+            yield from self._ubridge_hypervisor.send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
+                                                                                                                         lport=nio.lport,
+                                                                                                                         rhost=nio.rhost,
+                                                                                                                         rport=nio.rport))
+
+            yield from self._ubridge_hypervisor.send('bridge start bridge{adapter}'.format(adapter=adapter_number))
 
         adapter.add_nio(0, nio)
         log.info("Docker container '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
