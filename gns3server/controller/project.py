@@ -44,11 +44,12 @@ class Project:
     :param status: Status of the project (opened / closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None):
+    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None, auto_start=False):
 
         self._controller = controller
         assert name is not None
         self._name = name
+        self._auto_start = False
         self._status = status
         if project_id is None:
             self._id = str(uuid4())
@@ -80,6 +81,10 @@ class Project:
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
+
+    @property
+    def auto_start(self):
+        return self._auto_start
 
     @property
     def controller(self):

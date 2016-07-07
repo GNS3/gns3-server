@@ -1,0 +1,72 @@
+{
+    "auto_start": false,
+    "name": "testqemu",
+    "project_id": "a3ca8a82-6b11-4c8e-b20d-c9e94286054c",
+    "revision": 4,
+    "topology": {
+        "nodes": [
+            {
+                "description": "QEMU VM",
+                "id": 1,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "MicroCore-1",
+                    "x": -4.1875,
+                    "y": -25.0
+                },
+                "linked_clone": true,
+                "port_name_format": "Ethernet{0}",
+                "ports": [
+                    {
+                        "adapter_number": 0,
+                        "id": 1,
+                        "name": "Ethernet0",
+                        "port_number": 0
+                    }
+                ],
+                "properties": {
+                    "acpi_shutdown": false,
+                    "adapter_type": "e1000",
+                    "adapters": 1,
+                    "boot_priority": "c",
+                    "console": 5000,
+                    "console_type": "telnet",
+                    "cpu_throttling": 0,
+                    "cpus": 1,
+                    "hda_disk_image": "core-linux-6.4-internet-0.1.img",
+                    "hda_disk_image_md5sum": "8ebc5a6ec53a1c05b7aa101b5ceefe31",
+                    "hda_disk_interface": "ide",
+                    "hdb_disk_interface": "ide",
+                    "hdc_disk_interface": "ide",
+                    "hdd_disk_interface": "ide",
+                    "legacy_networking": false,
+                    "mac_address": "00:05:4c:01:e9:00",
+                    "name": "MicroCore-1",
+                    "options": "-nographic",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/usr/local/bin/qemu-system-x86_64",
+                    "ram": 256
+                },
+                "server_id": 3,
+                "type": "QemuVM",
+                "vm_id": "426face4-7f73-436b-88fa-050e3ee101e9",
+                "x": -88.5,
+                "y": -102.5
+            }
+        ],
+        "servers": [
+            {
+                "host": "127.0.0.1",
+                "id": 3,
+                "local": true,
+                "port": 3080,
+                "protocol": "http",
+                "vm": false
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1dev1"
+}

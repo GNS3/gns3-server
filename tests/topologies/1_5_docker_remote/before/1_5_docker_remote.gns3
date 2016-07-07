@@ -1,7 +1,7 @@
 {
     "auto_start": false,
-    "name": "untitled",
-    "project_id": "926e5c9e-887c-41b2-9214-fbd5fb628fe8",
+    "name": "1_5_docker_remote",
+    "project_id": "8182b710-c6bf-4e51-8e2e-213cce952797",
     "revision": 4,
     "topology": {
         "nodes": [

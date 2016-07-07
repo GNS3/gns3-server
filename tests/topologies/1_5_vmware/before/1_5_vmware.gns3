@@ -1,0 +1,60 @@
+{
+    "auto_start": false,
+    "name": "1_5_vmware",
+    "project_id": "4be1f3e5-76e5-4223-93b7-f37f4091549e",
+    "revision": 4,
+    "topology": {
+        "nodes": [
+            {
+                "description": "VMware VM",
+                "id": 1,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "GNS3 VM",
+                    "x": 5.125,
+                    "y": -25.0
+                },
+                "linked_clone": false,
+                "port_name_format": "Ethernet{0}",
+                "ports": [
+                    {
+                        "adapter_number": 0,
+                        "id": 1,
+                        "name": "Ethernet0",
+                        "port_number": 0
+                    }
+                ],
+                "properties": {
+                    "acpi_shutdown": false,
+                    "adapter_type": "e1000",
+                    "adapters": 1,
+                    "console": 2000,
+                    "enable_remote_console": false,
+                    "headless": false,
+                    "name": "GNS3 VM",
+                    "use_any_adapter": false,
+                    "use_ubridge": true,
+                    "vmx_path": "/Users/bob/Documents/Virtual Machines.localized/GNS3 VM.vmwarevm/GNS3 VM.vmx"
+                },
+                "server_id": 3,
+                "type": "VMwareVM",
+                "vm_id": "9e06d0ce-e8df-4f38-bdfa-7c83e19a91c1",
+                "x": 7,
+                "y": 8
+            }
+        ],
+        "servers": [
+            {
+                "host": "127.0.0.1",
+                "id": 3,
+                "local": true,
+                "port": 3080,
+                "protocol": "http",
+                "vm": false
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1dev1"
+}

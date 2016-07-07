@@ -1,0 +1,83 @@
+{
+    "auto_start": false,
+    "name": "1_5_vpcs",
+    "project_id": "62fc7a04-ae65-4003-a9e6-a046b1996f0e",
+    "revision": 5,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "local",
+                "host": "127.0.0.1",
+                "name": "Local",
+                "port": 3080,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [
+            {
+                "link_id": "ANYUUID",
+                "nodes": [
+                    {
+                        "adapter_number": 0,
+                        "node_id": "b570a150-c09f-47d9-8d32-9ca5b03234d6",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
+                        "port_number": 0
+                    }
+                ]
+            }
+        ],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": 5000,
+                "console_type": "telnet",
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "PC1",
+                    "x": 18,
+                    "y": -25
+                },
+                "name": "PC1",
+                "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
+                "node_type": "vpcs",
+                "properties": {
+                    "startup_script_path": "startup.vpc"
+                },
+                "symbol": ":/symbols/vpcs_guest.svg",
+                "x": -87,
+                "y": -65,
+                "z": 1
+            },
+            {
+                "compute_id": "local",
+                "console": 5001,
+                "console_type": "telnet",
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "PC2",
+                    "x": 18,
+                    "y": -25
+                },
+                "name": "PC2",
+                "node_id": "b570a150-c09f-47d9-8d32-9ca5b03234d6",
+                "node_type": "vpcs",
+                "properties": {
+                    "startup_script_path": "startup.vpc"
+                },
+                "symbol": ":/symbols/vpcs_guest.svg",
+                "x": 123,
+                "y": -65,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "ANYSTR"
+}

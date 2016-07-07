@@ -1,0 +1,60 @@
+{
+    "auto_start": false,
+    "name": "1_5_virtualbox",
+    "project_id": "bf00c459-05a5-45c0-950c-3f6150a20703",
+    "revision": 4,
+    "topology": {
+        "nodes": [
+            {
+                "description": "VirtualBox VM",
+                "id": 1,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "debian",
+                    "x": 11.1015625,
+                    "y": -25.0
+                },
+                "linked_clone": false,
+                "port_name_format": "Ethernet{0}",
+                "ports": [
+                    {
+                        "adapter_number": 0,
+                        "id": 1,
+                        "name": "Ethernet0",
+                        "port_number": 0
+                    }
+                ],
+                "properties": {
+                    "acpi_shutdown": false,
+                    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+                    "adapters": 1,
+                    "console": 5000,
+                    "enable_remote_console": false,
+                    "headless": false,
+                    "name": "debian",
+                    "ram": 512,
+                    "use_any_adapter": false,
+                    "vmname": "debian"
+                },
+                "server_id": 3,
+                "type": "VirtualBoxVM",
+                "vm_id": "af5fa728-85da-44f1-b17a-e99a65a7037e",
+                "x": -48.5,
+                "y": -43.5
+            }
+        ],
+        "servers": [
+            {
+                "host": "127.0.0.1",
+                "id": 3,
+                "local": true,
+                "port": 3080,
+                "protocol": "http",
+                "vm": false
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1dev1"
+}

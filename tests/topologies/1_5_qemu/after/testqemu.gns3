@@ -1,0 +1,63 @@
+{
+    "name": "testqemu",
+    "project_id": "a3ca8a82-6b11-4c8e-b20d-c9e94286054c",
+    "revision": 5,
+    "auto_start": false,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "local",
+                "host": "127.0.0.1",
+                "name": "Local",
+                "port": 3080,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": 5000,
+                "console_type": "telnet",
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "MicroCore-1",
+                    "x": -4,
+                    "y": -25
+                },
+                "name": "MicroCore-1",
+                "node_id": "426face4-7f73-436b-88fa-050e3ee101e9",
+                "node_type": "qemu",
+                "properties": {
+                    "acpi_shutdown": false,
+                    "adapter_type": "e1000",
+                    "adapters": 1,
+                    "boot_priority": "c",
+                    "cpu_throttling": 0,
+                    "cpus": 1,
+                    "hda_disk_image": "core-linux-6.4-internet-0.1.img",
+                    "hda_disk_image_md5sum": "8ebc5a6ec53a1c05b7aa101b5ceefe31",
+                    "hda_disk_interface": "ide",
+                    "hdb_disk_interface": "ide",
+                    "hdc_disk_interface": "ide",
+                    "hdd_disk_interface": "ide",
+                    "legacy_networking": false,
+                    "mac_address": "00:05:4c:01:e9:00",
+                    "options": "-nographic",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/usr/local/bin/qemu-system-x86_64",
+                    "ram": 256
+                },
+                "symbol": ":/symbols/qemu_guest.svg",
+                "x": -88,
+                "y": -102,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "2.0.0dev1"
+}

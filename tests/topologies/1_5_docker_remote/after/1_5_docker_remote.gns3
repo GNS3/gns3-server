@@ -1,0 +1,50 @@
+{
+    "name": "1_5_docker_remote",
+    "project_id": "8182b710-c6bf-4e51-8e2e-213cce952797",
+    "revision": 5,
+    "auto_start": false,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "ANYUUID",
+                "host": "127.0.0.1",
+                "name": "Remote 2",
+                "port": 8001,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [],
+        "nodes": [
+            {
+                "compute_id": "ANYUUID",
+                "console": 6001,
+                "console_type": "telnet",
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "remote_busybox-1",
+                    "x": -20,
+                    "y": -25
+                },
+                "name": "remote_busybox-1",
+                "node_id": "d397ef5a-84f1-4b6b-9d44-671937ec7781",
+                "node_type": "docker",
+                "properties": {
+                    "adapters": 1,
+                    "aux": 6002,
+                    "console_http_path": "/",
+                    "console_http_port": 80,
+                    "console_resolution": "1024x768",
+                    "image": "busybox:latest"
+                },
+                "symbol": ":/symbols/docker_guest.svg",
+                "x": -53,
+                "y": -69,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "2.0.0dev1"
+}

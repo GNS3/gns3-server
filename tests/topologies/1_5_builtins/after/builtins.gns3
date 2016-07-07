@@ -1,0 +1,197 @@
+{
+    "name": "builtins",
+    "project_id": "644e3892-4a50-4457-9601-2234d4842169",
+    "revision": 5,
+    "auto_start": false,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "local",
+                "host": "127.0.0.1",
+                "name": "Local",
+                "port": 3080,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": null,
+                "console_type": null,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "ATM1",
+                    "x": 6,
+                    "y": -25
+                },
+                "name": "ATM1",
+                "node_id": "ANYUUID",
+                "node_type": "atm_switch",
+                "properties": {
+                    "mappings": {
+                      "1:0:100": "10:0:200"
+                    }
+                },
+                "symbol": ":/symbols/atm_switch.svg",
+                "x": -398,
+                "y": -219,
+                "z": 1
+            },
+            {
+                "compute_id": "local",
+                "console": null,
+                "console_type": null,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "HUB1",
+                    "x": 17,
+                    "y": -25
+                },
+                "name": "HUB1",
+                "node_id": "ANYUUID",
+                "node_type": "ethernet_hub",
+                "properties": {
+                    "ports": [
+                        {
+                            "name": "Ethernet1",
+                            "port_number": 1
+                        },
+                        {
+                            "name": "Ethernet2",
+                            "port_number": 2
+                        },
+                        {
+                            "name": "Ethernet3",
+                            "port_number": 3
+                        },
+                        {
+                            "name": "Ethernet4",
+                            "port_number": 4
+                        },
+                        {
+                            "name": "Ethernet5",
+                            "port_number": 5
+                        },
+                        {
+                            "name": "Ethernet6",
+                            "port_number": 6
+                        },
+                        {
+                            "name": "Ethernet7",
+                            "port_number": 7
+                        },
+                        {
+                            "name": "Ethernet8",
+                            "port_number": 8
+                        }
+                    ]
+                },
+                "symbol": ":/symbols/hub.svg",
+                "x": -176,
+                "y": -209,
+                "z": 1
+            },
+            {
+                "compute_id": "local",
+                "console": null,
+                "console_type": null,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "SW1",
+                    "x": 20,
+                    "y": -25
+                },
+                "name": "SW1",
+                "node_id": "ANYUUID",
+                "node_type": "ethernet_switch",
+                "properties": {
+                    "ports": [
+                        {
+                            "name": "Ethernet1",
+                            "port_number": 1,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet2",
+                            "port_number": 2,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet3",
+                            "port_number": 3,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet4",
+                            "port_number": 4,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet5",
+                            "port_number": 5,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet6",
+                            "port_number": 6,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet7",
+                            "port_number": 7,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet8",
+                            "port_number": 8,
+                            "type": "access",
+                            "vlan": 1
+                        }
+                    ]
+                },
+                "symbol": ":/symbols/ethernet_switch.svg",
+                "x": 5,
+                "y": -206,
+                "z": 1
+            },
+            {
+                "compute_id": "local",
+                "console": null,
+                "console_type": null,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "FR1",
+                    "x": 11,
+                    "y": -25
+                },
+                "name": "FR1",
+                "node_id": "ANYUUID",
+                "node_type": "frame_relay_switch",
+                "properties": {
+                    "mappings": {
+                      "1:101": "10:202"
+                    }
+                },
+                "symbol": ":/symbols/frame_relay_switch.svg",
+                "x": 294,
+                "y": -209,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "2.0.0dev1"
+}

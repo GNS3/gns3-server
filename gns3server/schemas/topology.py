@@ -41,6 +41,10 @@ TOPOLOGY_SCHEMA = {
             "description": "Type of file. It's always topology",
             "enum": ["topology"]
         },
+        "auto_start": {
+            "description": "Start the topology when opened",
+            "type": "boolean"
+        },
         "revision": {
             "description": "Version of the .gns3 specification.",
             "type": "integer"

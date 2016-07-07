@@ -1,0 +1,52 @@
+{
+    "auto_start": false,
+    "name": "1_5_virtualbox",
+    "project_id": "bf00c459-05a5-45c0-950c-3f6150a20703",
+    "revision": 5,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "local",
+                "host": "127.0.0.1",
+                "name": "Local",
+                "port": 3080,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": 5000,
+                "console_type": "telnet",
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "debian",
+                    "x": 11,
+                    "y": -25
+                },
+                "name": "debian",
+                "node_id": "af5fa728-85da-44f1-b17a-e99a65a7037e",
+                "node_type": "virtualbox",
+                "properties": {
+                    "acpi_shutdown": false,
+                    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+                    "adapters": 1,
+                    "enable_remote_console": false,
+                    "headless": false,
+                    "ram": 512,
+                    "use_any_adapter": false,
+                    "vmname": "debian"
+                },
+                "symbol": ":/symbols/vbox_guest.svg",
+                "x": -48,
+                "y": -43,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "2.0.0dev1"
+}

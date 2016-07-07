@@ -34,6 +34,7 @@ def test_project_to_topology_empty(tmpdir):
     assert topo == {
         "project_id": project.id,
         "name": "Test",
+        "auto_start": False,
         "revision": 5,
         "topology": {
             "nodes": [],
@@ -106,11 +107,15 @@ def test_load_topology_file_error_schema_error(tmpdir):
         topo = load_topology(path)
 
 
-def test_load_old_topology(tmpdir):
+def test_load_newer_topology(tmpdir):
+    """
+    If a topology is design for a more recent GNS3 version
+    we disallow the loading.
+    """
     data = {
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
-        "revision": 4,
+        "revision": 42,
         "topology": {
         },
         "type": "topology",

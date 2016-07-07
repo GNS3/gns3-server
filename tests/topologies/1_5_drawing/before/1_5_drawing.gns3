@@ -1,0 +1,38 @@
+{
+    "auto_start": false,
+    "name": "1_5_drawing",
+    "project_id": null,
+    "revision": 4,
+    "topology": {
+        "ellipses": [
+            {
+                "border_style": 2,
+                "height": 200.0,
+                "width": 200.0,
+                "x": 179.0,
+                "y": -44.0
+            }
+        ],
+        "notes": [
+            {
+                "color": "#ff000000",
+                "font": "TypeWriter,10,-1,5,75,1,0,0,0,0",
+                "text": "Test",
+                "x": -151.0,
+                "y": 93.0
+            }
+        ],
+        "rectangles": [
+            {
+                "border_color": "#c80000",
+                "color": "#18ffff",
+                "height": 100.0,
+                "width": 200.0,
+                "x": -210.0,
+                "y": -108.0
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1dev1"
+}
