@@ -32,6 +32,7 @@ from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_nat import NIONAT
+from ..nios.nio_tap import NIOTAP
 from .nio_vmnet import NIOVMNET
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_vm import BaseVM
@@ -345,6 +346,8 @@ class VMwareVM(BaseVM):
                                                                                                                 lport=nio.lport,
                                                                                                                 rhost=nio.rhost,
                                                                                                                 rport=nio.rport))
+        elif isinstance(nio, NIOTAP):
+            yield from self._ubridge_hypervisor.send('bridge add_nio_tap {name} {tap}'.format(name=vnet, tap=nio.tap_device))
 
         if nio.capturing:
             yield from self._ubridge_hypervisor.send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet,
