@@ -238,6 +238,10 @@ QEMU_UPDATE_SCHEMA = {
             "description": "Console type",
             "enum": ["telnet", "vnc"]
         },
+        "linked_clone": {
+            "description": "Whether the VM is a linked clone or not",
+            "type": "boolean"
+        },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
             "type": "string",
