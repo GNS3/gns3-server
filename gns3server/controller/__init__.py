@@ -201,6 +201,9 @@ class Controller:
         try:
             return self._computes[compute_id]
         except KeyError:
+            server_config = Config.instance().get_section_config("Server")
+            if compute_id == "local" and server_config.getboolean("local", False) is False:
+                raise aiohttp.web.HTTPNotFound(text="You try to use a node on the local server but the controller is not started with --local")
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     @asyncio.coroutine
