@@ -60,7 +60,8 @@ def _get_windows_interfaces_from_registry():
                                "name": name,
                                "ip_address": ip_address,
                                "mac_address": "",  # TODO: find MAC address in registry
-                               "netcard": netcard})
+                               "netcard": netcard,
+                               "type": "ethernet"})
             winreg.CloseKey(hkeyinterface)
             winreg.CloseKey(hkeycon)
             winreg.CloseKey(hkeycard)
@@ -101,7 +102,8 @@ def get_windows_interfaces():
                                    "name": adapter.NetConnectionID,
                                    "ip_address": ip_address,
                                    "mac_address": adapter.MACAddress,
-                                   "netcard": adapter.name})
+                                   "netcard": adapter.name,
+                                   "type": "ethernet"})
     except (AttributeError, pywintypes.com_error):
         log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")
         return _get_windows_interfaces_from_registry()
@@ -166,16 +168,21 @@ def interfaces():
         for interface in sorted(psutil.net_if_addrs().keys()):
             ip_address = ""
             mac_address = ""
+            interface_type = "ethernet"
             for addr in psutil.net_if_addrs()[interface]:
                 # get the first available IPv4 address only
                 if addr.family == socket.AF_INET:
                     ip_address = addr.address
                 if addr.family == psutil.AF_LINK:
                     mac_address = addr.address
+            if interface.startswith("tap"):
+                # found no way to reliably detect a TAP interface
+                interface_type = "tap"
             results.append({"id": interface,
                             "name": interface,
                             "ip_address": ip_address,
-                            "mac_address": mac_address})
+                            "mac_address": mac_address,
+                            "type": interface_type})
     else:
         try:
             if not _check_windows_service("npf") and not _check_windows_service("npcap"):

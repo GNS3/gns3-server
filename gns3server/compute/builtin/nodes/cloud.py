@@ -54,12 +54,8 @@ class Cloud(BaseNode):
         host_interfaces = []
         network_interfaces = interfaces()
         for interface in network_interfaces:
-            interface_type = "ethernet"
-            if interface["name"].startswith("tap"):
-                # found no way to reliably detect a TAP interface
-                interface_type = "tap"
             host_interfaces.append({"name": interface["name"],
-                                    "type": interface_type})
+                                    "type": interface["type"]})
 
         return {"name": self.name,
                 "node_id": self.id,
