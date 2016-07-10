@@ -43,7 +43,7 @@ class NetworkHandler:
         response.json({"udp_port": udp_port})
 
     @Route.get(
-        r"/interfaces",
+        r"/network/interfaces",
         description="List all the network interfaces available on the server")
     def network_interfaces(request, response):
 
