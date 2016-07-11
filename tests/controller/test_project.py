@@ -30,20 +30,20 @@ from gns3server.config import Config
 
 @pytest.fixture
 def project(controller):
-    return Project(controller=controller)
+    return Project(controller=controller, name="Test")
 
 
 def test_affect_uuid():
-    p = Project()
+    p = Project(name="Test")
     assert len(p.id) == 36
 
-    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
+    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test 2")
     assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
 def test_json(tmpdir):
-    p = Project()
-    assert p.__json__() == {"name": p.name, "project_id": p.id, "path": p.path, "status": "opened", "filename": "project.gns3"}
+    p = Project(name="Test")
+    assert p.__json__() == {"name": "Test", "project_id": p.id, "path": p.path, "status": "opened", "filename": "Test.gns3"}
 
 
 def test_path(tmpdir):
@@ -51,25 +51,25 @@ def test_path(tmpdir):
     directory = Config.instance().get_section_config("Server").get("projects_path")
 
     with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-        p = Project(project_id=str(uuid4()))
+        p = Project(project_id=str(uuid4()), name="Test")
         assert p.path == os.path.join(directory, p.id)
         assert os.path.exists(os.path.join(directory, p.id))
 
 
 def test_init_path(tmpdir):
 
-    p = Project(path=str(tmpdir), project_id=str(uuid4()))
+    p = Project(path=str(tmpdir), project_id=str(uuid4()), name="Test")
     assert p.path == str(tmpdir)
 
 
 def test_changing_path_with_quote_not_allowed(tmpdir):
     with pytest.raises(aiohttp.web.HTTPForbidden):
-        p = Project(project_id=str(uuid4()))
+        p = Project(project_id=str(uuid4()), name="Test")
         p.path = str(tmpdir / "project\"53")
 
 
 def test_captures_directory(tmpdir):
-    p = Project(path=str(tmpdir))
+    p = Project(path=str(tmpdir), name="Test")
     assert p.captures_directory == str(tmpdir / "project-files" / "captures")
     assert os.path.exists(p.captures_directory)
 
@@ -80,7 +80,7 @@ def test_add_node_local(async_run, controller):
     """
     compute = MagicMock()
     compute.id = "local"
-    project = Project(controller=controller)
+    project = Project(controller=controller, name="Test")
     controller._notification = MagicMock()
 
     response = MagicMock()
@@ -109,7 +109,7 @@ def test_add_node_non_local(async_run, controller):
     """
     compute = MagicMock()
     compute.id = "remote"
-    project = Project(controller=controller)
+    project = Project(controller=controller, name="Test")
     controller._notification = MagicMock()
 
     response = MagicMock()
@@ -135,7 +135,7 @@ def test_delete_node(async_run, controller):
     For a local server we send the project path
     """
     compute = MagicMock()
-    project = Project(controller=controller)
+    project = Project(controller=controller, name="Test")
     controller._notification = MagicMock()
 
     response = MagicMock()
@@ -156,7 +156,7 @@ def test_delete_node_delete_link(async_run, controller):
     Delete a node delete all the node connected
     """
     compute = MagicMock()
-    project = Project(controller=controller)
+    project = Project(controller=controller, name="Test")
     controller._notification = MagicMock()
 
     response = MagicMock()
@@ -179,7 +179,7 @@ def test_delete_node_delete_link(async_run, controller):
 
 def test_getVM(async_run, controller):
     compute = MagicMock()
-    project = Project(controller=controller)
+    project = Project(controller=controller, name="Test")
 
     response = MagicMock()
     response.json = {"console": 2048}
@@ -283,7 +283,7 @@ def test_dump():
 
 
 def test_open_close(async_run, controller):
-    project = Project(controller=controller, status="closed")
+    project = Project(controller=controller, status="closed", name="Test")
     assert project.status == "closed"
     async_run(project.open())
     assert project.status == "opened"

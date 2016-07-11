@@ -108,5 +108,5 @@ COMPUTE_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["compute_id", "protocol", "host", "port", "name", "connected"]
+    "required": ["compute_id", "protocol", "host", "port", "name"]
 }

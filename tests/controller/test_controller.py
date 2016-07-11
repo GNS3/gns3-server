@@ -168,15 +168,15 @@ def test_initControllerLocal(controller, controller_config_path, async_run):
     assert len(c._computes) == 1
 
 
-def test_addProject(controller, async_run):
+def test_add_project(controller, async_run):
     uuid1 = str(uuid.uuid4())
     uuid2 = str(uuid.uuid4())
 
-    async_run(controller.add_project(project_id=uuid1))
+    async_run(controller.add_project(project_id=uuid1, name="Test"))
     assert len(controller.projects) == 1
-    async_run(controller.add_project(project_id=uuid1))
+    async_run(controller.add_project(project_id=uuid1, name="Test"))
     assert len(controller.projects) == 1
-    async_run(controller.add_project(project_id=uuid2))
+    async_run(controller.add_project(project_id=uuid2, name="Test 2"))
     assert len(controller.projects) == 2
 
 
@@ -193,7 +193,7 @@ def test_addDuplicateProject(controller, async_run):
 def test_remove_project(controller, async_run):
     uuid1 = str(uuid.uuid4())
 
-    project1 = async_run(controller.add_project(project_id=uuid1))
+    project1 = async_run(controller.add_project(project_id=uuid1, name="Test"))
     assert len(controller.projects) == 1
 
     controller.remove_project(project1)
@@ -207,13 +207,13 @@ def test_addProject_with_compute(controller, async_run):
     compute.post = MagicMock()
     controller._computes = {"test1": compute}
 
-    project1 = async_run(controller.add_project(project_id=uuid1))
+    project1 = async_run(controller.add_project(project_id=uuid1, name="Test"))
 
 
 def test_getProject(controller, async_run):
     uuid1 = str(uuid.uuid4())
 
-    project = async_run(controller.add_project(project_id=uuid1))
+    project = async_run(controller.add_project(project_id=uuid1, name="Test"))
     assert controller.get_project(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.get_project("dsdssd")
@@ -234,6 +234,7 @@ def test_load_project(controller, async_run, tmpdir):
         "type": "topology",
         "version": "2.0.0dev1",
         "topology": {
+            "drawings": [],
             "computes": [
                 {
                     "compute_id": "my_remote",

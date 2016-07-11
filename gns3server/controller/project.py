@@ -47,6 +47,7 @@ class Project:
     def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None):
 
         self._controller = controller
+        assert name is not None
         self._name = name
         self._status = status
         if project_id is None:
@@ -62,9 +63,7 @@ class Project:
             path = os.path.join(get_default_project_directory(), self._id)
         self.path = path
 
-        if filename is None and name is None:
-            self._filename = "project.gns3"
-        elif filename is not None:
+        if filename is not None:
             self._filename = filename
         else:
             self._filename = self.name + ".gns3"

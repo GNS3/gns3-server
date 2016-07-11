@@ -17,13 +17,14 @@
 
 import re
 import os.path
+import json
 import os
 
 from gns3server.handlers import *
 from gns3server.web.route import Route
 
 
-class Documentation(object):
+class Documentation:
 
     """Extract API documentation as Sphinx compatible files"""
 
@@ -36,6 +37,11 @@ class Documentation(object):
         self._directory = directory
 
     def write(self):
+        with open(os.path.join(self._directory, "gns3_file.json"), "w+") as f:
+            from gns3server.schemas.topology import TOPOLOGY_SCHEMA
+            print("Dump .gns3 schema")
+            print(TOPOLOGY_SCHEMA)
+            json.dump(TOPOLOGY_SCHEMA, f, indent=4)
         self.write_documentation("compute")
         # Controller documentation
         self.write_documentation("controller")

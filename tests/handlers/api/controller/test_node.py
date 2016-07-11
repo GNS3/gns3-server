@@ -45,7 +45,7 @@ def compute(http_controller, async_run):
 
 @pytest.fixture
 def project(http_controller, async_run):
-    return async_run(Controller.instance().add_project())
+    return async_run(Controller.instance().add_project(name="Test"))
 
 
 @pytest.fixture

@@ -45,7 +45,7 @@ def compute(http_controller, async_run):
 
 @pytest.fixture
 def project(http_controller, async_run):
-    return async_run(Controller.instance().add_project())
+    return async_run(Controller.instance().add_project(name="Test"))
 
 
 def test_create_link(http_controller, tmpdir, project, compute, async_run):
@@ -53,8 +53,8 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node1 = async_run(project.add_node(compute, "node1", None))
-    node2 = async_run(project.add_node(compute, "node2", None))
+    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
@@ -88,8 +88,8 @@ def test_update_link(http_controller, tmpdir, project, compute, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node1 = async_run(project.add_node(compute, "node1", None))
-    node2 = async_run(project.add_node(compute, "node2", None))
+    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
@@ -141,8 +141,8 @@ def test_list_link(http_controller, tmpdir, project, compute, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node1 = async_run(project.add_node(compute, "node1", None))
-    node2 = async_run(project.add_node(compute, "node2", None))
+    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {

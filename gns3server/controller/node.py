@@ -43,6 +43,8 @@ class Node:
         :param kwargs: Node properties
         """
 
+        assert node_type
+
         if node_id is None:
             self._id = str(uuid.uuid4())
         else:

@@ -28,7 +28,7 @@ from gns3server.controller.project import Project
 
 @pytest.fixture
 def project(controller, async_run):
-    return async_run(controller.add_project())
+    return async_run(controller.add_project(name="Test"))
 
 
 @pytest.fixture

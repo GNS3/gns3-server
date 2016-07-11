@@ -35,7 +35,7 @@ from gns3server.controller.drawing import Drawing
 
 @pytest.fixture
 def project(http_controller, async_run):
-    return async_run(Controller.instance().add_project())
+    return async_run(Controller.instance().add_project(name="Test"))
 
 
 def test_create_drawing(http_controller, tmpdir, project, async_run):

@@ -31,7 +31,7 @@ from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 @pytest.fixture
 def project(controller):
-    return Project(controller=controller)
+    return Project(controller=controller, name="Test")
 
 
 @pytest.fixture
@@ -41,8 +41,8 @@ def compute():
 
 @pytest.fixture
 def link(async_run, project, compute):
-    node1 = Node(project, compute, "node1")
-    node2 = Node(project, compute, "node2")
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node2 = Node(project, compute, "node2", node_type="qemu")
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))
@@ -57,7 +57,7 @@ def test_eq(project, link, controller):
 
 
 def test_add_node(async_run, project, compute):
-    node1 = Node(project, compute, "node1")
+    node1 = Node(project, compute, "node1", node_type="qemu")
 
     link = Link(project)
     link._project.controller.notification.emit = MagicMock()
@@ -81,14 +81,14 @@ def test_add_node(async_run, project, compute):
     assert not link._project.controller.notification.emit.called
 
     # We call link.created only when both side are created
-    node2 = Node(project, compute, "node2")
+    node2 = Node(project, compute, "node2", node_type="qemu")
     async_run(link.add_node(node2, 0, 4))
 
     link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
 
 
 def test_update_nodes(async_run, project, compute):
-    node1 = Node(project, compute, "node1")
+    node1 = Node(project, compute, "node1", node_type="qemu")
     project._nodes[node1.id] = node1
 
     link = Link(project)
@@ -109,8 +109,8 @@ def test_update_nodes(async_run, project, compute):
 
 
 def test_json(async_run, project, compute):
-    node1 = Node(project, compute, "node1")
-    node2 = Node(project, compute, "node2")
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node2 = Node(project, compute, "node2", node_type="qemu")
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))
@@ -197,8 +197,8 @@ def test_start_streaming_pcap(link, async_run, tmpdir, project):
 
 
 def test_default_capture_file_name(project, compute, async_run):
-    node1 = Node(project, compute, "Hello@")
-    node2 = Node(project, compute, "w0.rld")
+    node1 = Node(project, compute, "Hello@", node_type="qemu")
+    node2 = Node(project, compute, "w0.rld", node_type="qemu")
 
     link = Link(project)
     async_run(link.add_node(node1, 0, 4))

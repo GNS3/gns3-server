@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+import uuid
 import pytest
 import aiohttp
 from unittest.mock import MagicMock
@@ -23,7 +24,7 @@ from tests.utils import asyncio_patch
 
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
-from gns3server.controller.topology import project_to_topology, load_topology
+from gns3server.controller.topology import project_to_topology, load_topology, GNS3_FILE_FORMAT_REVISION
 from gns3server.version import __version__
 
 
@@ -51,8 +52,8 @@ def test_basic_topology(tmpdir, async_run, controller):
     compute.http_query = MagicMock()
 
     with asyncio_patch("gns3server.controller.node.Node.create"):
-        node1 = async_run(project.add_node(compute, "Node 1", "node_1"))
-        node2 = async_run(project.add_node(compute, "Node 2", "node_2"))
+        node1 = async_run(project.add_node(compute, "Node 1", str(uuid.uuid4()), node_type="qemu"))
+        node2 = async_run(project.add_node(compute, "Node 2", str(uuid.uuid4()), node_type="qemu"))
 
     link = async_run(project.add_link())
     async_run(link.add_node(node1, 0, 0))
@@ -91,6 +92,16 @@ def test_load_topology(tmpdir):
 
 def test_load_topology_file_error(tmpdir):
     path = str(tmpdir / "test.gns3")
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        topo = load_topology(path)
+
+
+def test_load_topology_file_error_schema_error(tmpdir):
+    path = str(tmpdir / "test.gns3")
+    with open(path, "w+") as f:
+        json.dump({
+            "revision": GNS3_FILE_FORMAT_REVISION
+        }, f)
     with pytest.raises(aiohttp.web.HTTPConflict):
         topo = load_topology(path)
 

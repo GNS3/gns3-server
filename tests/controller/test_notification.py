@@ -25,7 +25,7 @@ from tests.utils import AsyncioMagicMock
 
 @pytest.fixture
 def project(async_run):
-    return async_run(Controller.instance().add_project())
+    return async_run(Controller.instance().add_project(name="Test"))
 
 
 @pytest.fixture
