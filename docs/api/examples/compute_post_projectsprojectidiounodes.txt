@@ -1,16 +1,16 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes' -d '{"name": "PC TEST 1", "node_id": "b3134bc0-c871-4824-9d50-c92bf3cbe55f", "path": "iou.bin", "startup_config_content": "hostname test"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes' -d '{"name": "PC TEST 1", "node_id": "d9ee0d78-5698-48b0-b563-f573f10b0c2f", "path": "iou.bin", "startup_config_content": "hostname test"}'
 
 POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes HTTP/1.1
 {
     "name": "PC TEST 1",
-    "node_id": "b3134bc0-c871-4824-9d50-c92bf3cbe55f",
+    "node_id": "d9ee0d78-5698-48b0-b563-f573f10b0c2f",
     "path": "iou.bin",
     "startup_config_content": "hostname test"
 }
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 736
+CONTENT-LENGTH: 737
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -25,8 +25,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-49/test_json4/project-files/iou/b3134bc0-c871-4824-9d50-c92bf3cbe55f",
-    "node_id": "b3134bc0-c871-4824-9d50-c92bf3cbe55f",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-524/test_json4/project-files/iou/d9ee0d78-5698-48b0-b563-f573f10b0c2f",
+    "node_id": "d9ee0d78-5698-48b0-b563-f573f10b0c2f",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,

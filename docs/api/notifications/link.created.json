@@ -2,18 +2,32 @@
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
-    "link_id": "0b37f142-dae6-4c6c-9f83-fa2169dbdc06",
+    "link_id": "ca9142e8-9684-4b31-b9c4-68eaec0f0b0d",
     "nodes": [
         {
             "adapter_number": 0,
-            "node_id": "7ad6abb3-3daa-4617-8d49-cbb7fe1797db",
+            "label": {
+                "rotation": 0,
+                "style": "font-size: 10; font-style: Verdana",
+                "text": "0/3",
+                "x": -10,
+                "y": -10
+            },
+            "node_id": "c4812669-53d7-4098-bc90-76be0ff7bf1a",
             "port_number": 3
         },
         {
             "adapter_number": 2,
-            "node_id": "ee0b77d8-5042-4010-ab55-91b52c35f392",
+            "label": {
+                "rotation": 0,
+                "style": "font-size: 10; font-style: Verdana",
+                "text": "2/4",
+                "x": -10,
+                "y": -10
+            },
+            "node_id": "0d0bfaee-1d67-4909-be6a-c0d2ae16521d",
             "port_number": 4
         }
     ],
-    "project_id": "12024b7e-cb63-4f67-898f-2a9858a6589e"
+    "project_id": "87658726-db5c-47e0-9f4b-1688f4f9b04e"
 }

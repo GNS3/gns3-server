@@ -1,19 +1,31 @@
 {
-    "capture_file_name": "V1_0-4_to_I1_3-1.pcap",
-    "capture_file_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9sl1mhpc/projects/555df717-1a35-4203-84e2-8523b8d75cb4/project-files/captures/V1_0-4_to_I1_3-1.pcap",
+    "capture_file_name": null,
+    "capture_file_path": null,
     "capturing": false,
-    "link_id": "2e6bfd5e-174b-4833-ad60-2174b33e9b21",
+    "link_id": "994ee8ac-e59d-45bd-947a-33e38826e021",
     "nodes": [
         {
             "adapter_number": 0,
-            "node_id": "d490f5cb-d3a9-42bd-b074-88f472948b0e",
-            "port_number": 4
+            "label": {
+                "text": "Hello",
+                "x": 64,
+                "y": 0
+            },
+            "node_id": "c293dc3c-d7e2-402c-89c5-a04aa51965f6",
+            "port_number": 3
         },
         {
-            "adapter_number": 3,
-            "node_id": "b2848d9f-6542-4298-9d28-09d8d0062aef",
-            "port_number": 1
+            "adapter_number": 2,
+            "label": {
+                "rotation": 0,
+                "style": "font-size: 10; font-style: Verdana",
+                "text": "2/4",
+                "x": -10,
+                "y": -10
+            },
+            "node_id": "fbb9bec7-3f67-4d2e-85af-79ccfa06156f",
+            "port_number": 4
         }
     ],
-    "project_id": "555df717-1a35-4203-84e2-8523b8d75cb4"
+    "project_id": "303f4f73-d0ab-4ff5-9b89-a1f6b8b0bbc9"
 }

@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/2678aeb4-0618-41d2-81c7-5adb0e44a499'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/56a1b0b7-45be-44ba-aa79-141421ee39e4'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/2678aeb4-0618-41d2-81c7-5adb0e44a499 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/56a1b0b7-45be-44ba-aa79-141421ee39e4 HTTP/1.1
 
 
 
@@ -16,8 +16,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}
     "console": 5720,
     "console_type": "telnet",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9qob6cob/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/2678aeb4-0618-41d2-81c7-5adb0e44a499",
-    "node_id": "2678aeb4-0618-41d2-81c7-5adb0e44a499",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpq7gacfaj/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/56a1b0b7-45be-44ba-aa79-141421ee39e4",
+    "node_id": "56a1b0b7-45be-44ba-aa79-141421ee39e4",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": null,
     "startup_script_path": null,

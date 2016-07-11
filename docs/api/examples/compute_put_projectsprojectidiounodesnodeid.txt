@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/addcf831-79be-49c8-818c-b984a721f2ab' -d '{"console": 5712, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/26d3b8b2-71be-427d-bce7-48c0e48d7647' -d '{"console": 5712, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/addcf831-79be-49c8-818c-b984a721f2ab HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/26d3b8b2-71be-427d-bce7-48c0e48d7647 HTTP/1.1
 {
     "console": 5712,
     "ethernet_adapters": 4,
@@ -16,7 +16,7 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/addcf831
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 795
+CONTENT-LENGTH: 796
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -27,12 +27,12 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "console": 5712,
     "console_type": "telnet",
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpia0c1pau/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpndfoeh4v/iourc",
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-49/test_json4/project-files/iou/addcf831-79be-49c8-818c-b984a721f2ab",
-    "node_id": "addcf831-79be-49c8-818c-b984a721f2ab",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-524/test_json4/project-files/iou/26d3b8b2-71be-427d-bce7-48c0e48d7647",
+    "node_id": "26d3b8b2-71be-427d-bce7-48c0e48d7647",
     "nvram": 2048,
     "path": "iou.bin",
     "private_config": null,

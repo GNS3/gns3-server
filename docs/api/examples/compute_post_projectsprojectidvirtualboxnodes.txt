@@ -24,7 +24,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes
     "headless": false,
     "name": "VM1",
     "node_directory": null,
-    "node_id": "b6c304fa-95fe-4d16-af59-cee90a19b5b3",
+    "node_id": "9efb0e5a-665f-4233-bf0e-09e82f796525",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",

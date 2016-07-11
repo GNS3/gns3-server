@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/b146a1d0-8961-4614-85d5-a351db2f06cd'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/ea36b1d0-f063-49b5-bdd9-9a77e7a00e15'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/b146a1d0-8961-4614-85d5-a351db2f06cd HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/ea36b1d0-f063-49b5-bdd9-9a77e7a00e15 HTTP/1.1
 
 
 

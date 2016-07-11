@@ -124,6 +124,7 @@ Input
     <tr><td>kernel_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU kernel image path</td>                     </tr>
     <tr><td>kernel_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU kernel image checksum</td>                     </tr>
     <tr><td>legacy_networking</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Use QEMU legagy networking commands (-net syntax)</td>                     </tr>
+    <tr><td>linked_clone</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the VM is a linked clone or not</td>                     </tr>
     <tr><td>mac_address</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU MAC address</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU VM instance name</td>                     </tr>
     <tr><td>options</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Additional QEMU options</td>                     </tr>

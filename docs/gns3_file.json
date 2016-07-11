@@ -1,0 +1,444 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "The topology",
+    "type": "object",
+    "required": [
+        "project_id",
+        "type",
+        "revision",
+        "version",
+        "name",
+        "topology"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "project_id": {
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+            "minLength": 36,
+            "description": "Project UUID",
+            "maxLength": 36,
+            "type": "string"
+        },
+        "topology": {
+            "additionalProperties": false,
+            "required": [
+                "nodes",
+                "links",
+                "drawings",
+                "computes"
+            ],
+            "description": "The topology content",
+            "type": "object",
+            "properties": {
+                "computes": {
+                    "items": {
+                        "required": [
+                            "compute_id",
+                            "protocol",
+                            "host",
+                            "port",
+                            "name"
+                        ],
+                        "description": "Request validation to a GNS3 compute object instance",
+                        "type": "object",
+                        "properties": {
+                            "connected": {
+                                "description": "Whether the controller is connected to the compute server or not",
+                                "type": "boolean"
+                            },
+                            "host": {
+                                "description": "Server host",
+                                "type": "string"
+                            },
+                            "protocol": {
+                                "enum": [
+                                    "http",
+                                    "https"
+                                ],
+                                "description": "Server protocol"
+                            },
+                            "memory_usage_percent": {
+                                "description": "RAM usage of the compute. Read only",
+                                "maximum": 100,
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": 0
+                            },
+                            "user": {
+                                "description": "User for authentication",
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "version": {
+                                "description": "Version of the GNS3 remote compute server",
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "cpu_usage_percent": {
+                                "description": "CPU usage of the compute. Read only",
+                                "maximum": 100,
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": 0
+                            },
+                            "port": {
+                                "description": "Server port",
+                                "type": "integer"
+                            },
+                            "compute_id": {
+                                "description": "Server identifier",
+                                "type": "string"
+                            },
+                            "name": {
+                                "description": "Server name",
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "$schema": "http://json-schema.org/draft-04/schema#"
+                    },
+                    "description": "Computes servers",
+                    "type": "array"
+                },
+                "drawings": {
+                    "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                            "project_id": {
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+                                "minLength": 36,
+                                "description": "Project UUID",
+                                "maxLength": 36,
+                                "type": "string"
+                            },
+                            "x": {
+                                "description": "X property",
+                                "type": "integer"
+                            },
+                            "drawing_id": {
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+                                "minLength": 36,
+                                "description": "Drawing UUID",
+                                "maxLength": 36,
+                                "type": "string"
+                            },
+                            "y": {
+                                "description": "Y property",
+                                "type": "integer"
+                            },
+                            "svg": {
+                                "description": "SVG content of the drawing",
+                                "pattern": "^<(.|[\r\n])+>$",
+                                "type": "string"
+                            },
+                            "rotation": {
+                                "description": "Rotation of the element",
+                                "maximum": 360,
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "z": {
+                                "description": "Z property",
+                                "type": "integer"
+                            }
+                        },
+                        "description": "An drawing object",
+                        "type": "object",
+                        "$schema": "http://json-schema.org/draft-04/schema#"
+                    },
+                    "description": "Drawings elements",
+                    "type": "array"
+                },
+                "links": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "description": "A link object",
+                        "type": "object",
+                        "required": [
+                            "nodes"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                            "project_id": {
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+                                "minLength": 36,
+                                "description": "Project UUID",
+                                "maxLength": 36,
+                                "type": "string"
+                            },
+                            "capturing": {
+                                "description": "Read only property. True if a capture running on the link",
+                                "type": "boolean"
+                            },
+                            "link_id": {
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+                                "minLength": 36,
+                                "description": "Link UUID",
+                                "maxLength": 36,
+                                "type": "string"
+                            },
+                            "capture_file_name": {
+                                "description": "Read only property. The name of the capture file if capture is running",
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "nodes": {
+                                "items": {
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "node_id",
+                                        "adapter_number",
+                                        "port_number"
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "adapter_number": {
+                                            "description": "Adapter number",
+                                            "type": "integer"
+                                        },
+                                        "label": {
+                                            "additionalProperties": false,
+                                            "required": [
+                                                "text",
+                                                "x",
+                                                "y"
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "style": {
+                                                    "description": "SVG style attribute",
+                                                    "type": "string"
+                                                },
+                                                "y": {
+                                                    "description": "Relative Y position of the label",
+                                                    "type": "integer"
+                                                },
+                                                "x": {
+                                                    "description": "Relative X position of the label",
+                                                    "type": "integer"
+                                                },
+                                                "text": {
+                                                    "type": "string"
+                                                },
+                                                "rotation": {
+                                                    "description": "Rotation of the label",
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        },
+                                        "port_number": {
+                                            "description": "Port number",
+                                            "type": "integer"
+                                        },
+                                        "node_id": {
+                                            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+                                            "minLength": 36,
+                                            "description": "Node UUID",
+                                            "maxLength": 36,
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "description": "List of the VMS",
+                                "type": "array"
+                            },
+                            "capture_file_path": {
+                                "description": "Read only property. The full path of the capture file if capture is running",
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    },
+                    "description": "Link elements",
+                    "type": "array"
+                },
+                "nodes": {
+                    "items": {
+                        "description": "A node object",
+                        "type": "object",
+                        "properties": {
+                            "x": {
+                                "description": "X position of the node",
+                                "type": "integer"
+                            },
+                            "y": {
+                                "description": "Y position of the node",
+                                "type": "integer"
+                            },
+                            "node_directory": {
+                                "description": "Working directory of the node. Read only",
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "properties": {
+                                "description": "Properties specific to an emulator",
+                                "type": "object"
+                            },
+                            "command_line": {
+                                "description": "Command line use to start the node",
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "symbol": {
+                                "minLength": 1,
+                                "description": "Symbol of the node",
+                                "type": "string"
+                            },
+                            "name": {
+                                "minLength": 1,
+                                "description": "Node name",
+                                "type": "string"
+                            },
+                            "project_id": {
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+                                "minLength": 36,
+                                "description": "Project UUID",
+                                "maxLength": 36,
+                                "type": "string"
+                            },
+                            "console": {
+                                "description": "Console TCP port",
+                                "maximum": 65535,
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "console_host": {
+                                "minLength": 1,
+                                "description": "Console host",
+                                "type": "string"
+                            },
+                            "status": {
+                                "enum": [
+                                    "stopped",
+                                    "started",
+                                    "suspended"
+                                ],
+                                "description": "Status of the node"
+                            },
+                            "console_type": {
+                                "enum": [
+                                    "serial",
+                                    "vnc",
+                                    "telnet",
+                                    null
+                                ],
+                                "description": "Console type"
+                            },
+                            "node_type": {
+                                "enum": [
+                                    "cloud",
+                                    "ethernet_hub",
+                                    "ethernet_switch",
+                                    "frame_relay_switch",
+                                    "atm_switch",
+                                    "docker",
+                                    "dynamips",
+                                    "vpcs",
+                                    "virtualbox",
+                                    "vmware",
+                                    "iou",
+                                    "qemu"
+                                ],
+                                "description": "Type of node"
+                            },
+                            "label": {
+                                "additionalProperties": false,
+                                "required": [
+                                    "text",
+                                    "x",
+                                    "y"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "style": {
+                                        "description": "SVG style attribute",
+                                        "type": "string"
+                                    },
+                                    "y": {
+                                        "description": "Relative Y position of the label",
+                                        "type": "integer"
+                                    },
+                                    "x": {
+                                        "description": "Relative X position of the label",
+                                        "type": "integer"
+                                    },
+                                    "text": {
+                                        "type": "string"
+                                    },
+                                    "rotation": {
+                                        "description": "Rotation of the label",
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "width": {
+                                "description": "Width of the node",
+                                "type": "integer"
+                            },
+                            "compute_id": {
+                                "description": "Compute identifier",
+                                "type": "string"
+                            },
+                            "height": {
+                                "description": "Height of the node",
+                                "type": "integer"
+                            },
+                            "z": {
+                                "description": "Z position of the node",
+                                "type": "integer"
+                            },
+                            "node_id": {
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
+                                "minLength": 36,
+                                "description": "Node UUID",
+                                "maxLength": 36,
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "$schema": "http://json-schema.org/draft-04/schema#"
+                    },
+                    "description": "Nodes elements",
+                    "type": "array"
+                }
+            }
+        },
+        "type": {
+            "enum": [
+                "topology"
+            ],
+            "description": "Type of file. It's always topology"
+        },
+        "version": {
+            "description": "Version of the GNS3 software which have update the file for the last time",
+            "type": "string"
+        },
+        "revision": {
+            "description": "Version of the .gns3 specification.",
+            "type": "integer"
+        },
+        "name": {
+            "description": "Name of the project",
+            "type": "string"
+        }
+    }
+}

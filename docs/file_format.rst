@@ -29,6 +29,10 @@ The revision is the version of file format:
 * 2: GNS3 1.3
 * 1: GNS3 1.0, 1.1, 1.2 (Not mentionned in the topology file)
 
+And the full JSON schema:
+
+.. literalinclude:: gns3_file.json
+
 
 The .net
 #########

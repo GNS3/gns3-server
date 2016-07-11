@@ -1,16 +1,21 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/c42b72eb-76d4-4827-82be-83afe23c357a/links' -d '{"nodes": [{"adapter_number": 0, "node_id": "bc277490-eec3-4347-90bc-9ddfb320be28", "port_number": 3}, {"adapter_number": 2, "node_id": "9be1db1b-816f-482f-b1c4-26687f32b0de", "port_number": 4}]}'
+curl -i -X POST 'http://localhost:3080/v2/projects/8b10f40a-8be8-4706-be27-f596f6102d51/links' -d '{"nodes": [{"adapter_number": 0, "label": {"text": "Text", "x": 42, "y": 0}, "node_id": "ff1e3b4a-b3c6-4940-a5da-dbb732633249", "port_number": 3}, {"adapter_number": 2, "node_id": "fa2ca2d9-7d50-4f83-8f5f-9b76f0000b49", "port_number": 4}]}'
 
-POST /v2/projects/c42b72eb-76d4-4827-82be-83afe23c357a/links HTTP/1.1
+POST /v2/projects/8b10f40a-8be8-4706-be27-f596f6102d51/links HTTP/1.1
 {
     "nodes": [
         {
             "adapter_number": 0,
-            "node_id": "bc277490-eec3-4347-90bc-9ddfb320be28",
+            "label": {
+                "text": "Text",
+                "x": 42,
+                "y": 0
+            },
+            "node_id": "ff1e3b4a-b3c6-4940-a5da-dbb732633249",
             "port_number": 3
         },
         {
             "adapter_number": 2,
-            "node_id": "9be1db1b-816f-482f-b1c4-26687f32b0de",
+            "node_id": "fa2ca2d9-7d50-4f83-8f5f-9b76f0000b49",
             "port_number": 4
         }
     ]
@@ -18,7 +23,7 @@ POST /v2/projects/c42b72eb-76d4-4827-82be-83afe23c357a/links HTTP/1.1
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 514
+CONTENT-LENGTH: 846
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -28,18 +33,30 @@ X-ROUTE: /v2/projects/{project_id}/links
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
-    "link_id": "f517c22e-88b0-4bd5-abf4-443e1c67b7da",
+    "link_id": "3dbdcec5-4c9a-4ddb-8a38-2ea2fc31a970",
     "nodes": [
         {
             "adapter_number": 0,
-            "node_id": "bc277490-eec3-4347-90bc-9ddfb320be28",
+            "label": {
+                "text": "Text",
+                "x": 42,
+                "y": 0
+            },
+            "node_id": "ff1e3b4a-b3c6-4940-a5da-dbb732633249",
             "port_number": 3
         },
         {
             "adapter_number": 2,
-            "node_id": "9be1db1b-816f-482f-b1c4-26687f32b0de",
+            "label": {
+                "rotation": 0,
+                "style": "font-size: 10; font-style: Verdana",
+                "text": "2/4",
+                "x": -10,
+                "y": -10
+            },
+            "node_id": "fa2ca2d9-7d50-4f83-8f5f-9b76f0000b49",
             "port_number": 4
         }
     ],
-    "project_id": "c42b72eb-76d4-4827-82be-83afe23c357a"
+    "project_id": "8b10f40a-8be8-4706-be27-f596f6102d51"
 }

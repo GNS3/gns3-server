@@ -1,9 +1,9 @@
-/v2/compute/interfaces
+/v2/compute/network/interfaces
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v2/compute/interfaces
+GET /v2/compute/network/interfaces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 List all the network interfaces available on the server
 
@@ -15,5 +15,5 @@ Sample session
 ***************
 
 
-.. literalinclude:: ../../../examples/compute_get_interfaces.txt
+.. literalinclude:: ../../../examples/compute_get_networkinterfaces.txt
 
