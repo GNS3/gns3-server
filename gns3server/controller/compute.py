@@ -352,48 +352,48 @@ class Compute:
                     data = json.dumps(data)
 
             response = yield from self._session.request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
-            body = yield from response.read()
+        body = yield from response.read()
+        if body:
+            body = body.decode()
+
+        if response.status >= 300:
+            # Try to decode the GNS3 error
             if body:
-                body = body.decode()
-
-            if response.status >= 300:
-                # Try to decode the GNS3 error
-                if body:
-                    try:
-                        msg = json.loads(body)["message"]
-                    except (KeyError, ValueError):
-                        msg = body
-                else:
-                    msg = ""
-
-                if response.status == 400:
-                    raise aiohttp.web.HTTPBadRequest(text="Bad request {} {}".format(url, body))
-                elif response.status == 401:
-                    raise aiohttp.web.HTTPUnauthorized(text="Invalid authentication for compute {}".format(self.id))
-                elif response.status == 403:
-                    raise aiohttp.web.HTTPForbidden(text=msg)
-                elif response.status == 404:
-                    raise aiohttp.web.HTTPNotFound(text=msg)
-                elif response.status == 409:
-                    try:
-                        raise ComputeConflict(json.loads(body))
-                    # If the 409 doesn't come from a GNS3 server
-                    except ValueError:
-                        raise aiohttp.web.HTTPConflict(text=msg)
-                elif response.status == 500:
-                    raise aiohttp.web.HTTPInternalServerError(text="Internal server error {}".format(url))
-                elif response.status == 503:
-                    raise aiohttp.web.HTTPServiceUnavailable(text="Service unavailable {} {}".format(url, body))
-                else:
-                    raise NotImplementedError("{} status code is not supported".format(response.status))
-            if body and len(body):
                 try:
-                    response.json = json.loads(body)
-                except ValueError:
-                    raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+                    msg = json.loads(body)["message"]
+                except (KeyError, ValueError):
+                    msg = body
             else:
-                response.json = {}
-            return response
+                msg = ""
+
+            if response.status == 400:
+                raise aiohttp.web.HTTPBadRequest(text="Bad request {} {}".format(url, body))
+            elif response.status == 401:
+                raise aiohttp.web.HTTPUnauthorized(text="Invalid authentication for compute {}".format(self.id))
+            elif response.status == 403:
+                raise aiohttp.web.HTTPForbidden(text=msg)
+            elif response.status == 404:
+                raise aiohttp.web.HTTPNotFound(text=msg)
+            elif response.status == 409:
+                try:
+                    raise ComputeConflict(json.loads(body))
+                # If the 409 doesn't come from a GNS3 server
+                except ValueError:
+                    raise aiohttp.web.HTTPConflict(text=msg)
+            elif response.status == 500:
+                raise aiohttp.web.HTTPInternalServerError(text="Internal server error {}".format(url))
+            elif response.status == 503:
+                raise aiohttp.web.HTTPServiceUnavailable(text="Service unavailable {} {}".format(url, body))
+            else:
+                raise NotImplementedError("{} status code is not supported".format(response.status))
+        if body and len(body):
+            try:
+                response.json = json.loads(body)
+            except ValueError:
+                raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+        else:
+            response.json = {}
+        return response
 
     @asyncio.coroutine
     def get(self, path, **kwargs):

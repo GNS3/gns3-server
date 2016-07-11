@@ -289,6 +289,14 @@ def test_forward_get(compute, async_run):
         mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=False)
 
 
+def test_forward_404(compute, async_run):
+    response = MagicMock()
+    response.status = 404
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+            async_run(compute.forward("GET", "qemu", "images"))
+
+
 def test_forward_post(compute, async_run):
     response = MagicMock()
     response.status = 200
