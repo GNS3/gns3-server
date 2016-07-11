@@ -32,16 +32,18 @@ log = logging.getLogger(__name__)
 
 class VirtualBoxGNS3VM(BaseGNS3VM):
 
-    def __init__(self, vmname, port):
+    def __init__(self):
 
-        super().__init__(vmname, port)
+        super().__init__()
+        self._engine = "virtualbox"
         self._virtualbox_manager = VirtualBox()
 
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=60):
 
         try:
-            return (yield from self._virtualbox_manager.execute(subcommand, args, timeout))
+            result = yield from self._virtualbox_manager.execute(subcommand, args, timeout)
+            return (''.join(result))
         except VirtualBoxError as e:
             raise GNS3VMError("Error while executing VBoxManage command: {}".format(e))
 
@@ -139,6 +141,14 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         return False
 
     @asyncio.coroutine
+    def list(self):
+        """
+        List all VirtualBox VMs
+        """
+
+        return (yield from self._virtualbox_manager.list_vms())
+
+    @asyncio.coroutine
     def start(self):
         """
         Start the GNS3 VM.
@@ -221,7 +231,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             raise GNS3VMError("Not IP address could be found in the GNS3 VM for eth{}".format(hostonly_interface_number - 1))
 
     @asyncio.coroutine
-    def stop(self, force=False):
+    def stop(self):
         """
         Stops the GNS3 VM.
         """

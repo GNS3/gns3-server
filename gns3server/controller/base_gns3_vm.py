@@ -20,13 +20,27 @@ import asyncio
 
 class BaseGNS3VM:
 
-    def __init__(self, vmname, port):
+    def __init__(self):
 
-        self._vmname = vmname
+        self._vmname = None
         self._ip_address = None
-        self._port = port
+        self._port = 3080
         self._headless = False
+        self._vcpus = 1
+        self._ram = 1024
         self._running = False
+
+    def __json__(self):
+
+        settings = {"vmname": self._vmname,
+                    "ip_address": self._ip_address,
+                    "port": self._port,
+                    "headless": self._headless,
+                    "vcpus": self._vcpus,
+                    "ram": self._ram,
+                    "engine": self._engine}
+
+        return settings
 
     @property
     def vmname(self):
@@ -128,6 +142,64 @@ class BaseGNS3VM:
 
         self._headless = value
 
+    @property
+    def vcpus(self):
+        """
+        Returns the number of allocated vCPUs.
+
+        :returns: number of vCPUs.
+        """
+
+        return self._vcpus
+
+    @vcpus.setter
+    def vcpus(self, new_vcpus):
+        """
+        Sets the number of allocated vCPUs.
+
+        :param new_vcpus: new number of vCPUs.
+        """
+
+        self._vcpus = new_vcpus
+
+    @property
+    def ram(self):
+        """
+        Returns the amount of allocated RAM.
+
+        :returns: number of vCPUs.
+        """
+
+        return self._ram
+
+    @ram.setter
+    def ram(self, new_ram):
+        """
+        Sets the the amount of allocated RAM.
+
+        :param new_ram: new amount of RAM.
+        """
+
+        self._ram = new_ram
+
+    @property
+    def engine(self):
+        """
+        Returns the engine (virtualization technology used to run the GNS3 VM).
+
+        :returns: engine name
+        """
+
+        return self._engine
+
+    @asyncio.coroutine
+    def list(self):
+        """
+        List all VMs
+        """
+
+        raise NotImplementedError
+
     @asyncio.coroutine
     def start(self):
         """
@@ -135,7 +207,6 @@ class BaseGNS3VM:
         """
 
         raise NotImplementedError
-
 
     @asyncio.coroutine
     def stop(self, force=False):
@@ -145,26 +216,14 @@ class BaseGNS3VM:
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def set_vcpus(self, vcpus):
+    @classmethod
+    def instance(cls):
         """
-        Set the number of vCPU cores for the GNS3 VM.
+        Singleton to return only one instance of BaseGNS3VM.
 
-        :param vcpus: number of vCPU cores
-
-        :returns: boolean
+        :returns: instance of BaseGNS3VM
         """
 
-        raise NotImplementedError
-
-    @asyncio.coroutine
-    def set_ram(self, ram):
-        """
-        Set the RAM amount for the GNS3 VM.
-
-        :param ram: amount of memory
-
-        :returns: boolean
-        """
-
-        raise NotImplementedError
+        if not hasattr(cls, "_instance") or cls._instance is None:
+            cls._instance = cls()
+        return cls._instance

@@ -31,19 +31,47 @@ log = logging.getLogger(__name__)
 
 class VMwareGNS3VM(BaseGNS3VM):
 
-    def __init__(self, vmname, port, vmx_path=None):
+    def __init__(self):
 
-        super().__init__(vmname, port)
-        self._vmx_path = vmx_path
+        super().__init__()
+        self._engine = "vmware"
         self._vmware_manager = VMware()
+        self._vmx_path = None
 
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=60):
 
         try:
-            return (yield from self._vmware_manager.execute(subcommand, args, timeout))
+            result = yield from self._vmware_manager.execute(subcommand, args, timeout)
+            return (''.join(result))
         except VMwareError as e:
             raise GNS3VMError("Error while executing VMware command: {}".format(e))
+
+    @asyncio.coroutine
+    def _set_vcpus_ram(self, vcpus, ram):
+        """
+        Set the number of vCPU cores and amount of RAM for the GNS3 VM.
+
+        :param vcpus: number of vCPU cores
+        :param ram: amount of RAM
+        """
+
+        try:
+            pairs = VMware.parse_vmware_file(self._vmx_path)
+            pairs["numvcpus"] = str(vcpus)
+            pairs["memsize"] = str(ram)
+            VMware.write_vmx_file(self._vmx_path, pairs)
+            log.info("GNS3 VM vCPU count set to {} and RAM amount set to {}".format(vcpus, ram))
+        except OSError as e:
+            raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
+
+    @asyncio.coroutine
+    def list(self):
+        """
+        List all VMware VMs
+        """
+
+        return (yield from self._vmware_manager.list_vms())
 
     @asyncio.coroutine
     def start(self):
@@ -51,11 +79,20 @@ class VMwareGNS3VM(BaseGNS3VM):
         Starts the GNS3 VM.
         """
 
+        vms = yield from self.list()
+        for vm in vms:
+            if vm["vmname"] == self.vmname:
+                self._vmx_path = vm["vmx_path"]
+                break
+
         # check we have a valid VMX file path
         if not self._vmx_path:
-            raise GNS3VMError("GNS3 VM is not configured", True)
+            raise GNS3VMError("GNS3 VM is not configured")
         if not os.path.exists(self._vmx_path):
-            raise GNS3VMError("VMware VMX file {} doesn't exist".format(self._vmx_path), True)
+            raise GNS3VMError("VMware VMX file {} doesn't exist".format(self._vmx_path))
+
+        # set the number of vCPUs and amount of RAM  # FIXME
+        # yield from self._set_vcpus_ram(self.vcpus, self.ram)
 
         # start the VM
         args = [self._vmx_path]
@@ -67,6 +104,7 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         # check if the VMware guest tools are installed
         vmware_tools_state = yield from self._execute("checkToolsState", [self._vmx_path])
+        print(vmware_tools_state)
         if vmware_tools_state not in ("installed", "running"):
             raise GNS3VMError("VMware tools are not installed in {}".format(self.vmname))
 
@@ -76,45 +114,13 @@ class VMwareGNS3VM(BaseGNS3VM):
         log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
 
     @asyncio.coroutine
-    def stop(self, force=False):
+    def stop(self):
         """
         Stops the GNS3 VM.
         """
 
         if self._vmx_path is None:
-            raise GNS3VMError("No vm path configured, can't stop the VM")
+            raise GNS3VMError("No VMX path configured, can't stop the VM")
         yield from self._execute("stop", [self._vmx_path, "soft"])
         log.info("GNS3 VM has been stopped")
         self.running = False
-
-    @asyncio.coroutine
-    def set_vcpus(self, vcpus):
-        """
-        Set the number of vCPU cores for the GNS3 VM.
-
-        :param vcpus: number of vCPU cores
-        """
-
-        try:
-            pairs = VMware.parse_vmware_file(self._vmx_path)
-            pairs["numvcpus"] = str(vcpus)
-            VMware.write_vmx_file(self._vmx_path, pairs)
-            log.info("GNS3 VM vCPU count set to {}".format(vcpus))
-        except OSError as e:
-            raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
-
-    @asyncio.coroutine
-    def set_ram(self, ram):
-        """
-        Set the RAM amount for the GNS3 VM.
-
-        :param ram: amount of memory
-        """
-
-        try:
-            pairs = VMware.parse_vmware_file(self._vmx_path)
-            pairs["memsize"] = str(ram)
-            VMware.write_vmx_file(self._vmx_path, pairs)
-            log.info("GNS3 VM RAM amount set to {}".format(ram))
-        except OSError as e:
-            raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
