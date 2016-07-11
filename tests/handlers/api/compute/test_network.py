@@ -28,6 +28,6 @@ def test_udp_allocation(http_compute, project):
 # Netfifaces is not available on Travis
 @pytest.mark.skipif(os.environ.get("TRAVIS", False) is not False, reason="Not supported on Travis")
 def test_interfaces(http_compute):
-    response = http_compute.get('/interfaces', example=True)
+    response = http_compute.get('/network/interfaces', example=True)
     assert response.status == 200
     assert isinstance(response.json, list)
