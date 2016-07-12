@@ -218,6 +218,8 @@ class Node:
                     res = yield from self._upload_missing_image(self._node_type, e.response["image"])
                     if not res:
                         raise e
+                else:
+                    raise e
             else:
                 self.parse_node_response(response.json)
                 return True
