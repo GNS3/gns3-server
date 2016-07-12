@@ -80,58 +80,6 @@ VMWARE_CREATE_SCHEMA = {
     "required": ["name", "vmx_path", "linked_clone"],
 }
 
-VMWARE_UPDATE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to update a VMware VM instance",
-    "type": "object",
-    "properties": {
-        "name": {
-            "description": "VMware VM instance name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "vmx_path": {
-            "description": "Path to the vmx file",
-            "type": "string",
-            "minLength": 1,
-        },
-        "console": {
-            "description": "Console TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": "integer"
-        },
-        "enable_remote_console": {
-            "description": "Enable the remote console",
-            "type": "boolean"
-        },
-        "headless": {
-            "description": "Headless mode",
-            "type": "boolean"
-        },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown",
-            "type": "boolean"
-        },
-        "adapters": {
-            "description": "Number of adapters",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 10,  # maximum adapters support by VMware VMs
-        },
-        "adapter_type": {
-            "description": "VMware adapter type",
-            "type": "string",
-            "minLength": 1,
-        },
-        "use_any_adapter": {
-            "description": "Allow GNS3 to use any VMware adapter",
-            "type": "boolean",
-        },
-    },
-    "additionalProperties": False,
-}
-
 
 VMWARE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -203,7 +151,10 @@ VMWARE_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "linked_clone": {
+            "description": "Whether the VM is a linked clone or not",
+            "type": "boolean"
+        }
     },
-    "additionalProperties": False,
-    "required": ["name", "node_id", "project_id"]
+    "additionalProperties": False
 }

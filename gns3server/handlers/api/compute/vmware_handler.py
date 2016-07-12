@@ -26,7 +26,6 @@ from gns3server.compute.project_manager import ProjectManager
 
 from gns3server.schemas.vmware import (
     VMWARE_CREATE_SCHEMA,
-    VMWARE_UPDATE_SCHEMA,
     VMWARE_OBJECT_SCHEMA
 )
 
@@ -100,7 +99,7 @@ class VMwareHandler:
             409: "Conflict"
         },
         description="Update a VMware VM instance",
-        input=VMWARE_UPDATE_SCHEMA,
+        input=VMWARE_OBJECT_SCHEMA,
         output=VMWARE_OBJECT_SCHEMA)
     def update(request, response):
 
