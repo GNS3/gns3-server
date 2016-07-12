@@ -1,0 +1,58 @@
+{
+    "auto_start": false,
+    "name": "untitled",
+    "project_id": "926e5c9e-887c-41b2-9214-fbd5fb628fe8",
+    "revision": 4,
+    "topology": {
+        "nodes": [
+            {
+                "description": "Docker container",
+                "id": 1,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "remote_busybox-1",
+                    "x": -20.4453125,
+                    "y": -25.0
+                },
+                "ports": [
+                    {
+                        "adapter_number": 0,
+                        "id": 1,
+                        "name": "eth0",
+                        "port_number": 0
+                    }
+                ],
+                "properties": {
+                    "adapters": 1,
+                    "aux": 6002,
+                    "console": 6001,
+                    "console_http_path": "/",
+                    "console_http_port": 80,
+                    "console_resolution": "1024x768",
+                    "console_type": "telnet",
+                    "image": "busybox:latest",
+                    "name": "remote_busybox-1"
+                },
+                "server_id": 2,
+                "type": "DockerVM",
+                "vm_id": "d397ef5a-84f1-4b6b-9d44-671937ec7781",
+                "x": -53.5,
+                "y": -69.5
+            }
+        ],
+        "servers": [
+            {
+                "host": "127.0.0.1",
+                "id": 2,
+                "local": false,
+                "port": 8001,
+                "protocol": "http",
+                "user": "",
+                "vm": false
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1dev1"
+}

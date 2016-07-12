@@ -89,66 +89,6 @@ DOCKER_CREATE_SCHEMA = {
     "required": ["name", "image"]
 }
 
-
-DOCKER_UPDATE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to update a Docker container",
-    "type": "object",
-    "properties": {
-        "name": {
-            "description": "Docker container name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "console": {
-            "description": "Console TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": ["integer", "null"]
-        },
-        "console_resolution": {
-            "description": "Console resolution for VNC",
-            "type": ["string", "null"],
-            "pattern": "^[0-9]+x[0-9]+$"
-        },
-        "console_type": {
-            "description": "console type",
-            "enum": ["telnet", "vnc", "http", "https"]
-        },
-        "console_http_port": {
-            "description": "Internal port in the container for the HTTP server",
-            "type": "integer",
-        },
-        "console_http_path": {
-            "description": "Path of the web interface",
-            "type": "string",
-        },
-        "aux": {
-            "description": "Auxiliary TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": ["integer", "null"]
-        },
-        "start_command": {
-            "description": "Docker CMD entry",
-            "type": ["string", "null"],
-            "minLength": 0,
-        },
-        "environment": {
-            "description": "Docker environment variables",
-            "type": ["string", "null"],
-            "minLength": 0,
-        },
-        "adapters": {
-            "description": "Number of adapters",
-            "type": ["integer", "null"],
-            "minimum": 0,
-            "maximum": 99,
-        }
-    },
-    "additionalProperties": False,
-}
-
 DOCKER_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Docker container instance",
@@ -196,21 +136,21 @@ DOCKER_OBJECT_SCHEMA = {
             "type": "string",
         },
         "container_id": {
-            "description": "Docker container ID",
+            "description": "Docker container ID Read only",
             "type": "string",
             "minLength": 12,
             "maxLength": 64,
             "pattern": "^[a-f0-9]+$"
         },
         "project_id": {
-            "description": "Project UUID",
+            "description": "Project UUID Read only",
             "type": "string",
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
         "image": {
-            "description": "Docker image name",
+            "description": "Docker image name  Read only",
             "type": "string",
             "minLength": 1,
         },
@@ -231,28 +171,15 @@ DOCKER_OBJECT_SCHEMA = {
             "minLength": 0,
         },
         "node_directory": {
-            "description": "Path to the node working directory",
+            "description": "Path to the node working directory  Read only",
             "type": "string"
         },
         "status": {
-            "description": "VM status",
+            "description": "VM status Read only",
             "enum": ["started", "stopped", "suspended"]
         },
     },
     "additionalProperties": False,
-    "required": ["node_id",
-                 "project_id",
-                 "image",
-                 "container_id",
-                 "adapters",
-                 "aux",
-                 "console",
-                 "console_type",
-                 "console_resolution",
-                 "start_command",
-                 "environment",
-                 "node_directory",
-                 "status"]
 }
 
 

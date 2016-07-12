@@ -26,7 +26,6 @@ from gns3server.schemas.nio import NIO_SCHEMA
 from gns3server.schemas.docker import (
     DOCKER_CREATE_SCHEMA,
     DOCKER_OBJECT_SCHEMA,
-    DOCKER_UPDATE_SCHEMA,
     DOCKER_LIST_IMAGES_SCHEMA
 )
 
@@ -238,7 +237,7 @@ class DockerHandler:
             409: "Conflict"
         },
         description="Update a Docker instance",
-        input=DOCKER_UPDATE_SCHEMA,
+        input=DOCKER_OBJECT_SCHEMA,
         output=DOCKER_OBJECT_SCHEMA)
     def update(request, response):
 
