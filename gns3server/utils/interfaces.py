@@ -138,6 +138,7 @@ def is_interface_up(interface):
         # TODO: Windows & OSX support
         return True
 
+
 def _check_windows_service(service_name):
 
     import pywintypes
@@ -153,6 +154,7 @@ def _check_windows_service(service_name):
         else:
             raise aiohttp.web.HTTPInternalServerError(text="Could not check if the {} service is running: {}".format(service_name, e.strerror))
     return True
+
 
 def interfaces():
     """
@@ -178,13 +180,19 @@ def interfaces():
                             "mac_address": mac_address})
     else:
         try:
+            service_installed = True
             if not _check_windows_service("npf") and not _check_windows_service("npcap"):
-                raise aiohttp.web.HTTPInternalServerError("The NPF or Npcap is not installed or running")
-            results = get_windows_interfaces()
+                service_installed = False
+            else:
+                results = get_windows_interfaces()
         except ImportError:
             message = "pywin32 module is not installed, please install it on the server to get the available interface names"
             raise aiohttp.web.HTTPInternalServerError(text=message)
         except Exception as e:
             log.error("uncaught exception {type}".format(type=type(e)), exc_info=1)
             raise aiohttp.web.HTTPInternalServerError(text="uncaught exception: {}".format(e))
+
+        if service_installed is False:
+            raise aiohttp.web.HTTPInternalServerError(text="The Winpcap or Npcap is not installed or running")
+
     return results
