@@ -1,0 +1,56 @@
+{
+    "auto_start": false,
+    "name": "1_5_cloud",
+    "project_id": "467ce18d-4848-494a-88d2-4f53ddaca111",
+    "revision": 4,
+    "topology": {
+        "nodes": [
+            {
+                "description": "Cloud",
+                "id": 1,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "Cloud 1",
+                    "x": 55.6015625,
+                    "y": -25.0
+                },
+                "ports": [
+                    {
+                        "id": 2,
+                        "name": "nio_gen_eth:bridge0",
+                        "stub": true
+                    },
+                    {
+                        "id": 1,
+                        "name": "nio_tap:tap0",
+                        "stub": true
+                    }
+                ],
+                "properties": {
+                    "name": "Cloud 1",
+                    "nios": [
+                        "nio_tap:tap0",
+                        "nio_gen_eth:bridge0"
+                    ]
+                },
+                "server_id": 3,
+                "type": "Cloud",
+                "x": 57,
+                "y": -2
+            }
+        ],
+        "servers": [
+            {
+                "host": "127.0.0.1",
+                "id": 3,
+                "local": true,
+                "port": 3080,
+                "protocol": "http",
+                "vm": false
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1dev1"
+}

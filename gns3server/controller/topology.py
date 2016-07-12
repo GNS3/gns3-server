@@ -217,8 +217,7 @@ def _convert_1_3_later(topo):
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/vbox_guest.svg"
         elif old_node["type"] == "Cloud":
-            node["node_type"] = "cloud"
-            node["symbol"] = ":/symbols/cloud.svg"
+            _create_cloud(node, old_node)
         else:
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 
@@ -374,3 +373,33 @@ def _convert_label(label):
         "x": int(label["x"]),
         "y": int(label["y"])
     }
+
+
+def _create_cloud(node, old_node):
+    node["node_type"] = "cloud"
+    node["symbol"] = ":/symbols/cloud.svg"
+    node["console_type"] = None
+    node["console"] = None
+    del old_node["properties"]["nios"]
+
+    ports = []
+    for old_port in old_node.get("ports", []):
+        if old_port["name"].startswith("nio_gen_eth"):
+            port_type = "ethernet"
+        elif old_port["name"].startswith("nio_gen_linux"):
+            port_type = "ethernet"
+        elif old_port["name"].startswith("nio_tap"):
+            port_type = "tap"
+        else:
+            raise NotImplementedError("The conversion of cloud with {} is not supporterd".format(old_port["name"]))
+
+        port = {
+            "interface": old_port["name"].split(":")[1],
+            "name": old_port["name"].split(":")[1],
+            "port_number": len(ports) + 1,
+            "type": port_type
+        }
+        ports.append(port)
+
+    node["properties"]["ports"] = ports
+    node["properties"]["interfaces"] = []
