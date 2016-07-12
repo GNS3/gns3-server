@@ -216,6 +216,9 @@ def _convert_1_3_later(topo):
             node["node_type"] = "virtualbox"
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/vbox_guest.svg"
+        elif old_node["type"] == "Cloud":
+            node["node_type"] = "cloud"
+            node["symbol"] = ":/symbols/cloud.svg"
         else:
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 

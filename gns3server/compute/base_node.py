@@ -452,7 +452,7 @@ class BaseNode:
         """
 
         path = self._manager.config.get_section_config("Server").get("ubridge_path", "ubridge")
-        if path == "ubridge":
+        if path == "ubridge" or path == "None":
             path = shutil.which("ubridge")
 
         if path is None or len(path) == 0:
@@ -479,6 +479,9 @@ class BaseNode:
         """
         Starts uBridge (handles connections to and from this node).
         """
+
+        if self.ubridge_path is None:
+            raise NodeError("uBridge is not available")
 
         if not self._manager.has_privileged_access(self.ubridge_path):
             raise NodeError("uBridge requires root access or capability to interact with network adapters")
