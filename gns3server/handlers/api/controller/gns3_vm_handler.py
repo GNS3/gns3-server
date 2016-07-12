@@ -73,6 +73,7 @@ class GNS3VMHandler:
         for name, value in request.json.items():
             if hasattr(gns3_vm, name) and getattr(gns3_vm, name) != value:
                 setattr(gns3_vm, name, value)
+        gns3_vm.save()
         response.json(gns3_vm)
 
     @Route.post(
