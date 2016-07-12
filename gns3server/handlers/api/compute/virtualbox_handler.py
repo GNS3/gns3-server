@@ -26,7 +26,6 @@ from gns3server.compute.project_manager import ProjectManager
 
 from gns3server.schemas.virtualbox import (
     VBOX_CREATE_SCHEMA,
-    VBOX_UPDATE_SCHEMA,
     VBOX_OBJECT_SCHEMA
 )
 
@@ -109,7 +108,7 @@ class VirtualBoxHandler:
             409: "Conflict"
         },
         description="Update a VirtualBox VM instance",
-        input=VBOX_UPDATE_SCHEMA,
+        input=VBOX_OBJECT_SCHEMA,
         output=VBOX_OBJECT_SCHEMA)
     def update(request, response):
 

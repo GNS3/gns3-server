@@ -89,64 +89,6 @@ VBOX_CREATE_SCHEMA = {
     "required": ["name", "vmname", "linked_clone"],
 }
 
-VBOX_UPDATE_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to update a VirtualBox VM instance",
-    "type": "object",
-    "properties": {
-        "name": {
-            "description": "VirtualBox VM instance name",
-            "type": "string",
-            "minLength": 1,
-        },
-        "vmname": {
-            "description": "VirtualBox VM name (in VirtualBox itself)",
-            "type": "string",
-            "minLength": 1,
-        },
-        "adapters": {
-            "description": "Number of adapters",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
-        },
-        "use_any_adapter": {
-            "description": "Allow GNS3 to use any VirtualBox adapter",
-            "type": "boolean",
-        },
-        "adapter_type": {
-            "description": "VirtualBox adapter type",
-            "type": "string",
-            "minLength": 1,
-        },
-        "console": {
-            "description": "Console TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": "integer"
-        },
-        "enable_remote_console": {
-            "description": "Enable the remote console",
-            "type": "boolean"
-        },
-        "ram": {
-            "description": "Amount of RAM",
-            "minimum": 0,
-            "maximum": 65535,
-            "type": "integer"
-        },
-        "headless": {
-            "description": "Headless mode",
-            "type": "boolean"
-        },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown",
-            "type": "boolean"
-        },
-    },
-    "additionalProperties": False,
-}
-
 
 VBOX_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -224,7 +166,10 @@ VBOX_OBJECT_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "linked_clone": {
+            "description": "Whether the VM is a linked clone or not",
+            "type": "boolean"
+        }
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "project_id", "node_directory"]
 }
