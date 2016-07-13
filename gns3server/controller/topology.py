@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import json
 import jsonschema
 import uuid
@@ -90,7 +91,7 @@ def load_topology(path):
         # If it's an old GNS3 file we need to convert it
         # first we backup the file
         shutil.copy(path, path + ".backup")
-        topo = _convert_1_3_later(topo)
+        topo = _convert_1_3_later(topo, path)
         with open(path, "w+") as f:
             json.dump(topo, f)
     elif topo["revision"] > GNS3_FILE_FORMAT_REVISION:
@@ -99,12 +100,14 @@ def load_topology(path):
     return topo
 
 
-def _convert_1_3_later(topo):
+def _convert_1_3_later(topo, topo_path):
     """
-    Convert topologies to the new file format
+    Convert topologies from 1_3 to the new file format
 
     Look in tests/topologies/README.rst for instructions to test changes here
     """
+    topo_dir = os.path.dirname(topo_path)
+
     new_topo = {
         "type": "topology",
         "revision": GNS3_FILE_FORMAT_REVISION,
@@ -326,6 +329,12 @@ def _convert_1_3_later(topo):
             "svg": svg
         }
         new_topo["topology"]["drawings"].append(new_rectangle)
+
+    # Convert instructions.txt to README.txt
+    instructions_path = os.path.join(topo_dir, "instructions.txt")
+    readme_path = os.path.join(topo_dir, "README.txt")
+    if os.path.exists(instructions_path) and not os.path.exists(readme_path):
+        shutil.move(instructions_path, readme_path)
 
     return new_topo
 
