@@ -1,0 +1,17 @@
+{
+    "auto_start": false,
+    "name": "1_5_image",
+    "project_id": null,
+    "revision": 4,
+    "topology": {
+        "images": [
+            {
+                "path": "images/gns3_logo.png",
+                "x": -64,
+                "y": -64
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1dev1"
+}

@@ -307,10 +307,30 @@ def _convert_1_3_later(topo, topo_path):
             "x": int(note["x"]),
             "y": int(note["y"]),
             "z": int(note.get("z", 0)),
-            "rotation": int(ellipse.get("rotation", 0)),
+            "rotation": int(note.get("rotation", 0)),
             "svg": svg
         }
         new_topo["topology"]["drawings"].append(new_note)
+
+    # Images
+    for image in topo.get("images", []):
+        img_path = image["path"]
+        # Absolute image path are rewrite to project specific image
+        if os.path.abspath(img_path):
+            try:
+                os.makedirs(os.path.join(topo_dir, "images"), exist_ok=True)
+                shutil.copy(img_path, os.path.join(topo_dir, "images", os.path.basename(img_path)))
+            except OSError:
+                pass
+        new_image = {
+            "drawing_id": str(uuid.uuid4()),
+            "x": int(image["x"]),
+            "y": int(image["y"]),
+            "z": int(image.get("z", 0)),
+            "rotation": int(image.get("rotation", 0)),
+            "svg": os.path.basename(img_path)
+        }
+        new_topo["topology"]["drawings"].append(new_image)
 
     # Rectangles
     for rectangle in topo.get("rectangles", []):
@@ -325,7 +345,7 @@ def _convert_1_3_later(topo, topo_path):
             "x": int(rectangle["x"]),
             "y": int(rectangle["y"]),
             "z": int(rectangle.get("z", 0)),
-            "rotation": int(ellipse.get("rotation", 0)),
+            "rotation": int(rectangle.get("rotation", 0)),
             "svg": svg
         }
         new_topo["topology"]["drawings"].append(new_rectangle)

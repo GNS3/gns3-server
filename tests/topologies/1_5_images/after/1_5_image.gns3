@@ -1,0 +1,23 @@
+{
+    "auto_start": false,
+    "name": "1_5_image",
+    "project_id": "ANYUUID",
+    "revision": 5,
+    "topology": {
+        "computes": [],
+        "drawings": [
+            {
+                "drawing_id": "ANYUUID",
+                "rotation": 0,
+                "svg": "gns3_logo.png",
+                "x": -64,
+                "y": -64,
+                "z": 0
+            }
+        ],
+        "links": [],
+        "nodes": []
+    },
+    "type": "topology",
+    "version": "ANYSTR"
+}
