@@ -106,6 +106,9 @@ def compare_dict(path, source, reference):
         elif isinstance(val, list):
             assert len(val) == len(source[key]), "Not enough value in {} ({}/{}) it shoud be {} not {}".format(key, len(val), len(source[key]), val, source[key])
             for idx, element in enumerate(source[key]):
-                compare_dict(path + key + "/", element, val[idx])
+                if isinstance(element, dict):
+                    compare_dict(path + key + "/", element, val[idx])
+                else:
+                    assert element == val[idx]
         else:
             assert False, "Value type for {} is not supported".format(key)

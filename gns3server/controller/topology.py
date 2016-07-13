@@ -159,7 +159,15 @@ def _convert_1_3_later(topo, topo_path):
         node["name"] = old_node["label"]["text"]
         node["label"] = _convert_label(old_node["label"])
         node["node_id"] = old_node.get("vm_id", str(uuid.uuid4()))
+
         node["symbol"] = old_node.get("symbol", None)
+        # Compatibility with <= 1.3
+        if node["symbol"] is None and "default_symbol" in old_node:
+            if old_node["default_symbol"].endswith("normal.svg"):
+                node["symbol"] = old_node["default_symbol"][:-11] + ".svg"
+            else:
+                node["symbol"] = old_node["default_symbol"]
+
         node["x"] = int(old_node["x"])
         node["y"] = int(old_node["y"])
         node["z"] = int(old_node.get("z", 1))
@@ -393,8 +401,12 @@ def _convert_label(label):
         style += "font-style: italic;"
     color = label["color"]
 
-    style += "fill: #" + color[-6:] + ";"
-    style += "fill-opacity: {};".format(round(1.0 / 255 * int(color[:3][-2:], base=16), 2))
+    if len(color) == 9:
+        style += "fill: #" + color[-6:] + ";"
+        style += "fill-opacity: {};".format(round(1.0 / 255 * int(color[:3][-2:], base=16), 2))
+    else:
+        style += "fill: #" + color[-6:] + ";"
+        style += "fill-opacity: {};".format(1.0)
     return {
         "text": label["text"],
         "rotation": 0,
