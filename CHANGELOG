@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.5.1 07/07/2016
+
+* Increase the number of interface for docker
+* Add the method in the bad request answer
+* Fix a rare crash in IOU
+* Fix a crash when docker is used but not installed
+* Backport Docker node hot linking
+* Allows hot-linking for Docker containers. Ref #267.
+
 ## 1.5.0 27/06/2016
 
 * Fix import of project with no disk

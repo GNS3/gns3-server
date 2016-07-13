@@ -326,7 +326,7 @@ class VMwareVM(BaseNode):
             yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
             yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
-                                                                                                           interface=vmnet_interface))
+                                                                                                interface=vmnet_interface))
 
         if isinstance(nio, NIOUDP):
             yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
@@ -375,7 +375,7 @@ class VMwareVM(BaseNode):
         if not self._ubridge_hypervisor:
             raise VMwareError("Cannot start the packet capture: uBridge is not running")
         yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
-                                                                                                      output_file=output_file))
+                                                                                           output_file=output_file))
 
     @asyncio.coroutine
     def _stop_ubridge_capture(self, adapter_number):
