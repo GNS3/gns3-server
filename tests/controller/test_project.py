@@ -265,6 +265,20 @@ def test_deleteDrawing(async_run, project, controller):
     assert len(project._drawings) == 0
 
 
+def test_cleanPictures(async_run, project, controller):
+    """
+    When a project is close old pictures should be removed
+    """
+
+    drawing = async_run(project.add_drawing())
+    drawing._svg = "test.png"
+    open(os.path.join(project.pictures_directory, "test.png"), "w+").close()
+    open(os.path.join(project.pictures_directory, "test2.png"), "w+").close()
+    async_run(project.close())
+    assert os.path.exists(os.path.join(project.pictures_directory, "test.png"))
+    assert not os.path.exists(os.path.join(project.pictures_directory, "test2.png"))
+
+
 def test_delete(async_run, project, controller):
     assert os.path.exists(project.path)
     async_run(project.delete())

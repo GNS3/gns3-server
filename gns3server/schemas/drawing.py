@@ -55,8 +55,7 @@ DRAWING_OBJECT_SCHEMA = {
         },
         "svg": {
             "description": "SVG content of the drawing",
-            "type": "string",
-            "pattern": "^<(.|[\r\n])+>$"
+            "type": "string"
         }
     },
     "additionalProperties": False

@@ -15,8 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import hashlib
 import asyncio
+import base64
 import uuid
+import re
+import os
+import xml.etree.ElementTree as ET
+
+
+from gns3server.utils.picture import get_size
+
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class Drawing:
@@ -26,12 +38,12 @@ class Drawing:
     """
 
     def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=0, rotation=0):
-        self.svg = svg
         self._project = project
         if drawing_id is None:
             self._id = str(uuid.uuid4())
         else:
             self._id = drawing_id
+        self.svg = svg
         self._x = x
         self._y = y
         self._z = z
@@ -42,12 +54,79 @@ class Drawing:
         return self._id
 
     @property
+    def ressource_filename(self):
+        """
+        If the svg content has been dump to an external file return is name otherwise None
+        """
+        if "<svg" not in self._svg:
+            return self._svg
+        return None
+
+    @property
     def svg(self):
+        if "<svg" not in self._svg:
+            try:
+                filename = os.path.basename(self._svg)
+                with open(os.path.join(self._project.pictures_directory, filename), "rb") as f:
+                    data = f.read()
+                    try:
+                        return data.decode()
+                    except UnicodeError:
+                        width, height = get_size(data)
+                        return "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" height=\"{height}\" width=\"{width}\">\n<image height=\"{height}\" width=\"{width}\" xlink:href=\"data:image/{extension};base64,{b64}\" />\n</svg>".format(b64=base64.b64encode(data).decode(), extension=filename.split(".")[1], width=width, height=width)
+            except OSError:
+                log.warning("Image file %s missing", filename)
+                return "<svg></svg>"
         return self._svg
 
     @svg.setter
     def svg(self, value):
-        self._svg = value
+        """
+        Set SVG field value.
+
+        If the svg has embed base64 element we will extract them
+        to disk in order to avoid duplication of content
+        """
+
+        if len(value) < 500:
+            self._svg = value
+            return
+
+        root = ET.fromstring(value)
+        # SVG is the default namespace no need to prefix it
+        ET.register_namespace('xmlns', "http://www.w3.org/2000/svg")
+        ET.register_namespace('xmlns:xlink', "http://www.w3.org/1999/xlink")
+
+        if len(root.findall("{http://www.w3.org/2000/svg}image")) == 1:
+            href = "{http://www.w3.org/1999/xlink}href"
+            elem = root.find("{http://www.w3.org/2000/svg}image")
+            if elem.get(href, "").startswith("data:image/"):
+                changed = True
+                data = elem.get(href, "")
+                extension = re.sub(r"[^a-z0-9]", "", data.split(";")[0].split("/")[1].lower())
+
+                data = base64.decodebytes(data.split(",", 1)[1].encode())
+
+                # We compute an hash of the image file to avoid duplication
+                filename = hashlib.md5(data).hexdigest() + "." + extension
+                elem.set(href, filename)
+
+                file_path = os.path.join(self._project.pictures_directory, filename)
+                if not os.path.exists(file_path):
+                    with open(file_path, "wb+") as f:
+                        f.write(data)
+                value = filename
+
+        # We dump also large svg on disk to keep .gns3 small
+        if len(value) > 1000:
+            filename = hashlib.md5(value.encode()).hexdigest() + ".svg"
+            file_path = os.path.join(self._project.pictures_directory, filename)
+            if not os.path.exists(file_path):
+                with open(file_path, "w+") as f:
+                    f.write(value)
+            self._svg = filename
+        else:
+            self._svg = value
 
     @property
     def x(self):
@@ -123,7 +202,7 @@ class Drawing:
             "y": self._y,
             "z": self._z,
             "rotation": self._rotation,
-            "svg": self._svg
+            "svg": self.svg
         }
 
     def __repr__(self):

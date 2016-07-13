@@ -125,9 +125,18 @@ class Project:
     @property
     def captures_directory(self):
         """
-        Location of the captures file
+        Location of the captures files
         """
         path = os.path.join(self._path, "project-files", "captures")
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    @property
+    def pictures_directory(self):
+        """
+        Location of the images files
+        """
+        path = os.path.join(self._path, "project-files", "images")
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -352,8 +361,24 @@ class Project:
     def close(self):
         for compute in self._project_created_on_compute:
             yield from compute.post("/projects/{}/close".format(self._id))
+        self._cleanPictures()
         self.reset()
         self._status = "closed"
+
+    def _cleanPictures(self):
+        """
+        Delete unused images
+        """
+
+        try:
+            pictures = set(os.listdir(self.pictures_directory))
+            for drawing in self._drawings.values():
+                pictures.remove(drawing.ressource_filename)
+
+            for pict in pictures:
+                os.remove(os.path.join(self.pictures_directory, pict))
+        except OSError as e:
+            log.warning(str(e))
 
     @asyncio.coroutine
     def delete(self):
