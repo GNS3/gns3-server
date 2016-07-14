@@ -70,5 +70,5 @@
         ]
     },
     "type": "topology",
-    "version": "2.0.0dev1"
+    "version": "ANYSTR"
 }
