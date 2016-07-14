@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/62d319e5-3bbc-4adf-b981-cf70111f88f2/nodes/1ee47c03-c07a-4675-9c81-29bd154fcda5' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/6a7e6d00-3e6c-42b8-9d00-80bd8cf349af/nodes/ea04239b-a376-4748-9da2-2dd5fef1e8c0' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-PUT /v2/projects/62d319e5-3bbc-4adf-b981-cf70111f88f2/nodes/1ee47c03-c07a-4675-9c81-29bd154fcda5 HTTP/1.1
+PUT /v2/projects/6a7e6d00-3e6c-42b8-9d00-80bd8cf349af/nodes/ea04239b-a376-4748-9da2-2dd5fef1e8c0 HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -34,9 +34,9 @@ X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "1ee47c03-c07a-4675-9c81-29bd154fcda5",
+    "node_id": "ea04239b-a376-4748-9da2-2dd5fef1e8c0",
     "node_type": "vpcs",
-    "project_id": "62d319e5-3bbc-4adf-b981-cf70111f88f2",
+    "project_id": "6a7e6d00-3e6c-42b8-9d00-80bd8cf349af",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

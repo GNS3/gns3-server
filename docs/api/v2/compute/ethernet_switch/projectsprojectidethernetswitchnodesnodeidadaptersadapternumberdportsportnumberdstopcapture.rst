@@ -9,10 +9,10 @@ Stop a packet capture on an Ethernet switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
-- **adapter_number**: Adapter on the switch (always 0)
 - **port_number**: Port on the switch
 - **node_id**: Node UUID
+- **adapter_number**: Adapter on the switch (always 0)
+- **project_id**: Project UUID
 
 Response status codes
 **********************

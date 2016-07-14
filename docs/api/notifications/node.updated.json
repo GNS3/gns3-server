@@ -1,0 +1,29 @@
+{
+    "command_line": null,
+    "compute_id": "remote1",
+    "console": 2048,
+    "console_host": "example.org",
+    "console_type": null,
+    "height": 70,
+    "label": {
+        "rotation": 0,
+        "style": "font-size: 10;font-familly: Verdana",
+        "text": "",
+        "x": -17,
+        "y": -25
+    },
+    "name": "test",
+    "node_directory": null,
+    "node_id": "eb568d98-56e6-4ba8-8d45-62cdf10610e2",
+    "node_type": "vpcs",
+    "project_id": "d3ac3171-aa3b-4b46-a325-8891812f2180",
+    "properties": {
+        "startup_config": "test.cfg"
+    },
+    "status": "stopped",
+    "symbol": ":/symbols/computer.svg",
+    "width": 70,
+    "x": 0,
+    "y": 0,
+    "z": 0
+}

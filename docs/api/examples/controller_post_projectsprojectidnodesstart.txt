@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/93db4de6-676c-4a1f-9cb1-fa0056e00f22/nodes/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/946aeb66-69ba-4f4e-a90a-05bff3fedb07/nodes/start' -d '{}'
 
-POST /v2/projects/93db4de6-676c-4a1f-9cb1-fa0056e00f22/nodes/start HTTP/1.1
+POST /v2/projects/946aeb66-69ba-4f4e-a90a-05bff3fedb07/nodes/start HTTP/1.1
 {}
 
 

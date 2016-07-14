@@ -31,6 +31,8 @@ def project(async_run):
 @pytest.fixture
 def node(project, async_run):
     compute = MagicMock()
+    compute.id = "remote1"
+    compute.host = "example.org"
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
@@ -114,8 +116,9 @@ def test_dispatch_node_updated(async_run, controller, node, project):
         assert event["properties"]["startup_config"] == "ip 192"
 
 
-def test_various_notification(controller):
+def test_various_notification(controller, node):
     notif = controller.notification
     notif.emit("log.info", {"message": "Image uploaded"})
     notif.emit("log.warning", {"message": "Warning ASA 8 is not officialy supported by GNS3"})
     notif.emit("log.error", {"message": "Permission denied on /tmp"})
+    notif.emit("node.updated", node.__json__())

@@ -9,10 +9,10 @@ Stop a packet capture on a cloud instance
 
 Parameters
 **********
-- **project_id**: Project UUID
-- **adapter_number**: Adapter on the cloud (always 0)
 - **port_number**: Port on the cloud
 - **node_id**: Node UUID
+- **adapter_number**: Adapter on the cloud (always 0)
+- **project_id**: Project UUID
 
 Response status codes
 **********************

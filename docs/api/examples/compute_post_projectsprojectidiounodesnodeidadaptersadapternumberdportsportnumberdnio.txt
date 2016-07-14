@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/04767c6c-f689-4c0d-964e-a28818fef452/adapters/1/ports/0/nio' -d '{"ethernet_device": "bridge0", "type": "nio_ethernet"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/7f61de6b-5445-4dc8-b59a-acbed677c8e5/adapters/1/ports/0/nio' -d '{"ethernet_device": "bridge0", "type": "nio_ethernet"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/04767c6c-f689-4c0d-964e-a28818fef452/adapters/1/ports/0/nio HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/7f61de6b-5445-4dc8-b59a-acbed677c8e5/adapters/1/ports/0/nio HTTP/1.1
 {
     "ethernet_device": "bridge0",
     "type": "nio_ethernet"
