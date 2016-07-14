@@ -73,6 +73,41 @@ def test_load(controller, controller_config_path, async_run):
     }
 
 
+def test_import_computes(controller, controller_config_path, async_run):
+    """
+    At first start the server should import the
+    computes from the gns3_gui
+    """
+    gns3_gui_conf = {
+        "Servers": {
+            "remote_servers": [
+                {
+                    "host": "127.0.0.1",
+                    "password": "",
+                    "port": 3081,
+                    "protocol": "http",
+                    "url": "http://127.0.0.1:3081",
+                    "user": ""
+                }
+            ]
+        }
+    }
+    config_dir = os.path.dirname(controller_config_path)
+    os.makedirs(config_dir, exist_ok=True)
+    with open(os.path.join(config_dir, "gns3_gui.conf"), "w+") as f:
+        json.dump(gns3_gui_conf, f)
+
+    async_run(controller.load())
+    assert len(controller.computes) == 1
+    compute = list(controller.computes.values())[0]
+    assert compute.host == "127.0.0.1"
+    assert compute.port == 3081
+    assert compute.protocol == "http"
+    assert compute.name == "http://127.0.0.1:3081"
+    assert compute.user is None
+    assert compute.password is None
+
+
 def test_settings(controller):
     controller._notification = MagicMock()
     controller.settings = {"a": 1}

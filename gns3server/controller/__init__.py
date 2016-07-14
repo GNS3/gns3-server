@@ -85,6 +85,7 @@ class Controller:
         """
 
         if not os.path.exists(self._config_file):
+            yield from self._import_gns3_gui_conf()
             self.save()
         try:
             with open(self._config_file) as f:
@@ -114,6 +115,26 @@ class Controller:
                                 pass  # Skip not compatible projects
         except OSError as e:
             log.error(str(e))
+
+    @asyncio.coroutine
+    def _import_gns3_gui_conf(self):
+        """
+        Import old config from GNS3 GUI
+        """
+        config_file = os.path.join(os.path.dirname(self._config_file), "gns3_gui.conf")
+        if os.path.exists(config_file):
+            with open(config_file) as f:
+                data = json.load(f)
+                for remote in data.get("Servers", {}).get("remote_servers", []):
+                    print("a")
+                    yield from self.add_compute(
+                        host=remote.get("host", "localhost"),
+                        port=remote.get("port", 3080),
+                        protocol=remote.get("protocol", "http"),
+                        name=remote.get("url"),
+                        user=remote.get("user"),
+                        password=remote.get("password")
+                    )
 
     @property
     def settings(self):
