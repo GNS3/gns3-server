@@ -50,6 +50,30 @@ def node(compute, project):
     return node
 
 
+def test_name(compute, project):
+    """
+    If node use a name template generate names
+    """
+    node = Node(project, compute, "PC",
+                node_id=str(uuid.uuid4()),
+                node_type="vpcs",
+                console_type="vnc",
+                properties={"startup_script": "echo test"})
+    assert node.name == "PC"
+    node = Node(project, compute, "PC{0}",
+                node_id=str(uuid.uuid4()),
+                node_type="vpcs",
+                console_type="vnc",
+                properties={"startup_script": "echo test"})
+    assert node.name == "PC1"
+    node = Node(project, compute, "PC{0}",
+                node_id=str(uuid.uuid4()),
+                node_type="vpcs",
+                console_type="vnc",
+                properties={"startup_script": "echo test"})
+    assert node.name == "PC2"
+
+
 def test_eq(compute, project, node, controller):
     assert node == Node(project, compute, "demo1", node_id=node.id, node_type="qemu")
     assert node != "a"

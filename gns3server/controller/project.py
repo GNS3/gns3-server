@@ -147,33 +147,6 @@ class Project:
         """
         return self._computes
 
-    def allocate_node_name(self, base_name):
-        """
-        Allocates a new unique name for a node in this project.
-
-        :param base_name: base name for the node which will be completed with a unique number.
-
-        :returns: allocated name or None if one could not be found
-        """
-
-        if '{0}' in base_name or '{id}' in base_name:
-            # base name is a template, replace {0} or {id} by an unique identifier
-            for number in range(1, 1000000):
-                name = base_name.format(number, id=number)
-                if name not in self._allocated_node_names:
-                    self._allocated_node_names.add(name)
-                    return name
-        else:
-            if base_name not in self._allocated_node_names:
-                return base_name
-            # base name is not unique, let's find a unique name by appending a number
-            for number in range(1, 1000000):
-                name = base_name + str(number)
-                if name not in self._allocated_node_names:
-                    self._allocated_node_names.add(name)
-                    return name
-        return None
-
     def remove_allocated_node_name(self, name):
         """
         Removes an allocated node name
@@ -184,15 +157,36 @@ class Project:
         if name in self._allocated_node_names:
             self._allocated_node_names.remove(name)
 
-    def update_allocated_node_name(self, name):
+    def update_allocated_node_name(self, base_name):
         """
-        Updates a node name
+        Updates a node name or generate a new if no node
+        name is available.
 
-        :param name: new node name
+        :param base_name: new node base name
         """
 
-        self.remove_allocated_node_name(name)
-        self._allocated_node_names.add(name)
+        if base_name is None:
+            return None
+        self.remove_allocated_node_name(base_name)
+        if '{0}' in base_name or '{id}' in base_name:
+            # base name is a template, replace {0} or {id} by an unique identifier
+            for number in range(1, 1000000):
+                name = base_name.format(number, id=number)
+                if name not in self._allocated_node_names:
+                    self._allocated_node_names.add(name)
+                    return name
+        else:
+            if base_name not in self._allocated_node_names:
+                self._allocated_node_names.add(base_name)
+                return base_name
+            # base name is not unique, let's find a unique name by appending a number
+            for number in range(1, 1000000):
+                name = base_name + str(number)
+                if name not in self._allocated_node_names:
+                    self._allocated_node_names.add(name)
+                    return name
+        raise aiohttp.web.HTTPConflict(text="A node name could not be allocated (node limit reached?)")
+
 
     def has_allocated_node_name(self, name):
         """
@@ -210,11 +204,8 @@ class Project:
     def update_node_name(self, node, new_name):
 
         if new_name and node.name != new_name:
-            if self.has_allocated_node_name(new_name):
-                raise aiohttp.web.HTTPConflict(text="{} node name is already allocated in this project".format(new_name))
-            self.update_allocated_node_name(new_name)
-            return True
-        return False
+            return self.update_allocated_node_name(new_name)
+        return new_name
 
     @asyncio.coroutine
     def add_node(self, compute, name, node_id, **kwargs):
@@ -224,11 +215,6 @@ class Project:
         :param kwargs: See the documentation of node
         """
         if node_id not in self._nodes:
-
-            name = self.allocate_node_name(name)
-            if not name:
-                raise aiohttp.web.HTTPConflict(text="A node name could not be allocated (node limit reached?)")
-
             node = Node(self, compute, name, node_id=node_id, **kwargs)
             if compute not in self._project_created_on_compute:
                 # For a local server we send the project path

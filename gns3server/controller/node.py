@@ -98,10 +98,9 @@ class Node:
 
     @name.setter
     def name(self, new_name):
-        self._project.update_node_name(self, new_name)
-        self._name = new_name
+        self._name = self._project.update_node_name(self, new_name)
         # The text in label need to be always the node name
-        self._label["text"] = new_name
+        self._label["text"] = self._name
 
     @property
     def node_type(self):
@@ -278,7 +277,7 @@ class Node:
             elif key == "console_type":
                 self._console_type = value
             elif key == "name":
-                self._name = value
+                self.name = value
             elif key in ["node_id", "project_id", "console_host"]:
                 pass
             else:
