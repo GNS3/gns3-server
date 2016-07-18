@@ -51,10 +51,10 @@ def node(compute, project):
 
 
 def test_eq(compute, project, node, controller):
-    assert node == Node(project, compute, "demo", node_id=node.id, node_type="qemu")
+    assert node == Node(project, compute, "demo1", node_id=node.id, node_type="qemu")
     assert node != "a"
-    assert node != Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="qemu")
-    assert node != Node(Project(str(uuid.uuid4()), controller=controller), compute, "demo", node_id=node.id, node_type="qemu")
+    assert node != Node(project, compute, "demo2", node_id=str(uuid.uuid4()), node_type="qemu")
+    assert node != Node(Project(str(uuid.uuid4()), controller=controller), compute, "demo3", node_id=node.id, node_type="qemu")
 
 
 def test_json(node, compute):

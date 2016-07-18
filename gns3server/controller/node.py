@@ -54,7 +54,15 @@ class Node:
         self._compute = compute
         self._node_type = node_type
 
-        self._name = name
+        self._label = {
+            "y": -25,
+            "text": "",
+            "style": "font-size: 10;font-familly: Verdana",
+            "x": -17,
+            "rotation": 0
+        }
+        self._name = None
+        self.name = name
         self._console = None
         self._console_type = None
         self._properties = {}
@@ -67,13 +75,7 @@ class Node:
         self._y = 0
         self._z = 0
         self._symbol = ":/symbols/computer.svg"
-        self._label = {
-            "y": -25,
-            "text": "",
-            "style": "font-size: 10;font-familly: Verdana",
-            "x": -17,
-            "rotation": 0
-        }
+
         # Update node properties with additional elements
         for prop in kwargs:
             try:

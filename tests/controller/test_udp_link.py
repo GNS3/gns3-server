@@ -116,16 +116,16 @@ def test_choose_capture_side(async_run, project):
 
     assert link._choose_capture_side()["node"] == node_iou
 
-    node_vpcs = Node(project, compute1, "node1", node_type="vpcs")
-    node_vpcs2 = Node(project, compute1, "node2", node_type="vpcs")
+    node_vpcs = Node(project, compute1, "node3", node_type="vpcs")
+    node_vpcs2 = Node(project, compute1, "node4", node_type="vpcs")
 
     link = UDPLink(project)
     async_run(link.add_node(node_vpcs, 0, 4))
     async_run(link.add_node(node_vpcs2, 3, 1))
 
     # Capture should run on the local node
-    node_iou = Node(project, compute1, "node1", node_type="iou")
-    node_iou2 = Node(project, compute2, "node2", node_type="iou")
+    node_iou = Node(project, compute1, "node5", node_type="iou")
+    node_iou2 = Node(project, compute2, "node6", node_type="iou")
 
     link = UDPLink(project)
     async_run(link.add_node(node_iou, 0, 4))
