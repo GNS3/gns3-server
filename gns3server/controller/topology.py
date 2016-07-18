@@ -227,6 +227,8 @@ def _convert_1_3_later(topo, topo_path):
             node["node_type"] = "virtualbox"
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/vbox_guest.svg"
+        elif old_node["type"] == "IOUDevice":
+            node["node_type"] = "iou"
         elif old_node["type"] == "Cloud":
             _create_cloud(node, old_node)
         else:
