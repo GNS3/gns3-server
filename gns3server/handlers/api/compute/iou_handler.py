@@ -30,7 +30,6 @@ from gns3server.schemas.node import (
 from gns3server.schemas.iou import (
     IOU_CREATE_SCHEMA,
     IOU_START_SCHEMA,
-    IOU_UPDATE_SCHEMA,
     IOU_OBJECT_SCHEMA,
     IOU_CONFIGS_SCHEMA,
 )
@@ -105,7 +104,7 @@ class IOUHandler:
             409: "Conflict"
         },
         description="Update an IOU instance",
-        input=IOU_UPDATE_SCHEMA,
+        input=IOU_OBJECT_SCHEMA,
         output=IOU_OBJECT_SCHEMA)
     def update(request, response):
 
