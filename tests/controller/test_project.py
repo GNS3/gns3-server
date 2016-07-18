@@ -56,6 +56,17 @@ def test_path(tmpdir):
         assert os.path.exists(os.path.join(directory, p.id))
 
 
+def test_path_exist(tmpdir):
+    """
+    Should raise an error when you try to owerwrite
+    an existing project
+    """
+    os.makedirs(str(tmpdir / "demo"))
+    with pytest.raises(aiohttp.web.HTTPForbidden):
+        p = Project(name="Test", path=str(tmpdir / "demo"))
+
+
+
 def test_init_path(tmpdir):
 
     p = Project(path=str(tmpdir), project_id=str(uuid4()), name="Test")
@@ -69,8 +80,8 @@ def test_changing_path_with_quote_not_allowed(tmpdir):
 
 
 def test_captures_directory(tmpdir):
-    p = Project(path=str(tmpdir), name="Test")
-    assert p.captures_directory == str(tmpdir / "project-files" / "captures")
+    p = Project(path=str(tmpdir / "capturestest"), name="Test")
+    assert p.captures_directory == str(tmpdir / "capturestest" / "project-files" / "captures")
     assert os.path.exists(p.captures_directory)
 
 

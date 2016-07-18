@@ -51,6 +51,12 @@ class Project:
         self._name = name
         self._auto_start = False
         self._status = status
+
+        # Disallow overwrite of existing project
+        if project_id is None and path is not None:
+            if os.path.exists(path):
+                raise aiohttp.web.HTTPForbidden(text="The path {} already exist.".format(path))
+
         if project_id is None:
             self._id = str(uuid4())
         else:
@@ -186,7 +192,6 @@ class Project:
                     self._allocated_node_names.add(name)
                     return name
         raise aiohttp.web.HTTPConflict(text="A node name could not be allocated (node limit reached?)")
-
 
     def has_allocated_node_name(self, name):
         """
