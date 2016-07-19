@@ -33,8 +33,8 @@ class VMwareGNS3VM(BaseGNS3VM):
 
     def __init__(self):
 
-        super().__init__()
         self._engine = "vmware"
+        super().__init__()
         self._vmware_manager = VMware()
         self._vmx_path = None
 
