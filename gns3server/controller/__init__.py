@@ -126,7 +126,6 @@ class Controller:
             with open(config_file) as f:
                 data = json.load(f)
                 for remote in data.get("Servers", {}).get("remote_servers", []):
-                    print("a")
                     yield from self.add_compute(
                         host=remote.get("host", "localhost"),
                         port=remote.get("port", 3080),
@@ -166,8 +165,8 @@ class Controller:
         """
         if compute_id not in self._computes:
 
-            # We disallow to create from the outside the
-            if compute_id == 'local':
+            # We disallow to create from the outside the local and VM server
+            if compute_id == 'local' or compute_id == 'vm':
                 return None
 
             for compute in self._computes.values():
@@ -178,6 +177,13 @@ class Controller:
             self._computes[compute.id] = compute
             self.save()
             self.notification.emit("compute.created", compute.__json__())
+
+            #FIXME: temporary before the remote GNS3 VM support is back
+            if "vm" not in self._computes and not hasattr(sys, "_called_from_test"):
+                compute_vm = Compute(compute_id="vm", controller=self, name="GNS3 VM", **kwargs)
+                self._computes[compute_vm.id] = compute_vm
+                self.notification.emit("compute.created", compute_vm.__json__())
+
             return compute
         else:
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())
