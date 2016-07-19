@@ -556,9 +556,9 @@ class Project:
                     # We merge the data from all server in the same project-files directory
                     vm_directory = os.path.join(self._path, "servers", "vm")
                     if os.path.commonprefix([root, vm_directory]) == vm_directory:
-                        z.write(path, os.path.relpath(path, vm_directory))
+                        z.write(path, os.path.relpath(path, vm_directory), compress_type=zipfile.ZIP_DEFLATED)
                     else:
-                        z.write(path, os.path.relpath(path, self._path))
+                        z.write(path, os.path.relpath(path, self._path), compress_type=zipfile.ZIP_DEFLATED)
         return z
 
     def _export_images(self, image, type, z):
