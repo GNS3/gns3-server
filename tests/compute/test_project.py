@@ -182,10 +182,6 @@ def test_export(tmpdir):
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))
 
-    # The .gns3 should be renamed project.gns3 in order to simplify import
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
-        f.write("{}")
-
     with open(os.path.join(path, "vm-1", "dynamips", "test"), 'w+') as f:
         f.write("HELLO")
     with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), 'w+') as f:
@@ -205,84 +201,8 @@ def test_export(tmpdir):
             content = myfile.read()
             assert content == b"HELLO"
 
-        assert 'test.gns3' not in myzip.namelist()
-        assert 'project.gns3' in myzip.namelist()
         assert 'project-files/snapshots/test' not in myzip.namelist()
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
-
-
-def test_export_fix_path(tmpdir):
-    """
-    Fix absolute image path
-    """
-
-    project = Project(project_id=str(uuid.uuid4()))
-    path = project.path
-
-    topology = {
-        "topology": {
-            "nodes": [
-                    {
-                        "properties": {
-                            "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
-                        },
-                        "type": "C3725"
-                    }
-            ]
-        }
-    }
-
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
-        json.dump(topology, f)
-
-    z = project.export()
-    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
-        for data in z:
-            f.write(data)
-
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
-        with myzip.open("project.gns3") as myfile:
-            content = myfile.read().decode()
-            topology = json.loads(content)
-    assert topology["topology"]["nodes"][0]["properties"]["image"] == "c3725-adventerprisek9-mz.124-25d.image"
-
-
-def test_export_with_images(tmpdir):
-    """
-    Fix absolute image path
-    """
-    project_id = str(uuid.uuid4())
-    project = Project(project_id=project_id)
-    path = project.path
-
-    os.makedirs(str(tmpdir / "IOS"))
-    with open(str(tmpdir / "IOS" / "test.image"), "w+") as f:
-        f.write("AAA")
-
-    topology = {
-        "topology": {
-            "nodes": [
-                    {
-                        "properties": {
-                            "image": "test.image"
-                        },
-                        "type": "C3725"
-                    }
-            ]
-        }
-    }
-
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
-        json.dump(topology, f)
-
-    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
-        z = project.export(include_images=True)
-        with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
-            for data in z:
-                f.write(data)
-
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
-        myzip.getinfo("images/IOS/test.image")
 
 
 def test_export_with_vm(tmpdir):

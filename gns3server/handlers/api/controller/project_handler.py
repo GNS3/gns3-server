@@ -214,3 +214,32 @@ class ProjectHandler:
                     break
                 ws.send_str(notification)
         return ws
+
+    @Route.get(
+        r"/projects/{project_id}/export",
+        description="Export a project as a portable archive",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        raw=True,
+        status_codes={
+            200: "File returned",
+            404: "The project doesn't exist"
+        })
+    def export_project(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+
+        response.content_type = 'application/gns3project'
+        response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
+        response.content_length = None
+        response.start(request)
+
+        for data in project.export(include_images=bool(request.GET.get("include_images", "0"))):
+            response.write(data)
+            yield from response.drain()
+
+        yield from response.write_eof()

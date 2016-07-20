@@ -17,8 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import uuid
+import json
 import pytest
 import aiohttp
+import zipfile
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock
 from unittest.mock import patch
@@ -64,7 +67,6 @@ def test_path_exist(tmpdir):
     os.makedirs(str(tmpdir / "demo"))
     with pytest.raises(aiohttp.web.HTTPForbidden):
         p = Project(name="Test", path=str(tmpdir / "demo"))
-
 
 
 def test_init_path(tmpdir):
@@ -314,3 +316,107 @@ def test_open_close(async_run, controller):
     assert project.status == "opened"
     async_run(project.close())
     assert project.status == "closed"
+
+
+def test_export(tmpdir, project):
+    path = project.path
+    os.makedirs(os.path.join(path, "vm-1", "dynamips"))
+
+    # The .gns3 should be renamed project.gns3 in order to simplify import
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        f.write("{}")
+
+    with open(os.path.join(path, "vm-1", "dynamips", "test"), 'w+') as f:
+        f.write("HELLO")
+    with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), 'w+') as f:
+        f.write("LOG")
+    os.makedirs(os.path.join(path, "project-files", "snapshots"))
+    with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
+        f.write("WORLD")
+
+    z = project.export()
+
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        with myzip.open("vm-1/dynamips/test") as myfile:
+            content = myfile.read()
+            assert content == b"HELLO"
+
+        assert 'test.gns3' not in myzip.namelist()
+        assert 'project.gns3' in myzip.namelist()
+        assert 'project-files/snapshots/test' not in myzip.namelist()
+        assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
+
+
+def test_export_fix_path(tmpdir, project):
+    """
+    Fix absolute image path
+    """
+
+    path = project.path
+
+    topology = {
+        "topology": {
+            "nodes": [
+                    {
+                        "properties": {
+                            "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
+                        },
+                        "node_type": "dynamips"
+                    }
+            ]
+        }
+    }
+
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    z = project.export()
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        with myzip.open("project.gns3") as myfile:
+            content = myfile.read().decode()
+            topology = json.loads(content)
+    assert topology["topology"]["nodes"][0]["properties"]["image"] == "c3725-adventerprisek9-mz.124-25d.image"
+
+
+def test_export_with_images(tmpdir, project):
+    """
+    Fix absolute image path
+    """
+    path = project.path
+
+    os.makedirs(str(tmpdir / "IOS"))
+    with open(str(tmpdir / "IOS" / "test.image"), "w+") as f:
+        f.write("AAA")
+
+    topology = {
+        "topology": {
+            "nodes": [
+                    {
+                        "properties": {
+                            "image": "test.image"
+                        },
+                        "node_type": "dynamips"
+                    }
+            ]
+        }
+    }
+
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+        z = project.export(include_images=True)
+        with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+            for data in z:
+                f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        myzip.getinfo("images/IOS/test.image")

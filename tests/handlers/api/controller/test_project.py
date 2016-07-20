@@ -24,6 +24,7 @@ import os
 import asyncio
 import aiohttp
 import pytest
+import zipfile
 import json
 
 
@@ -153,3 +154,23 @@ def test_notification_ws(http_controller, controller, project, async_run):
     assert answer["action"] == "test"
 
     async_run(http_controller.close())
+
+
+def test_export(http_controller, tmpdir, loop, project):
+
+    os.makedirs(project.path, exist_ok=True)
+    with open(os.path.join(project.path, 'a'), 'w+') as f:
+        f.write('hello')
+
+    response = http_controller.get("/projects/{project_id}/export".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
+    assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
+
+    with open(str(tmpdir / 'project.zip'), 'wb+') as f:
+        f.write(response.body)
+
+    with zipfile.ZipFile(str(tmpdir / 'project.zip')) as myzip:
+        with myzip.open("a") as myfile:
+            content = myfile.read()
+            assert content == b"hello"

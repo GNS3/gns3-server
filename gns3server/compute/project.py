@@ -406,7 +406,7 @@ class Project:
         The file will be read chunk by chunk when you iterate on
         the zip.
 
-        It will ignore some files like snapshots and
+        It will ignore some files like snapshots and tmp
 
         :returns: ZipStream object
         """
@@ -443,12 +443,11 @@ class Project:
                         z.write(path, os.path.relpath(path, self._path), compress_type=zipfile.ZIP_DEFLATED)
         return z
 
-    def _export_images(self, image, type, z):
+    def _export_images(self, image, z):
         """
         Take a project file (.gns3) and export images to the zip
 
         :param image: Image path
-        :param type: Type of image
         :param z: Zipfile instance for the export
         """
         from . import MODULES
@@ -488,7 +487,7 @@ class Project:
                         if prop.endswith("image"):
                             node["properties"][prop] = os.path.basename(value)
                             if include_images is True:
-                                self._export_images(value, node["type"], z)
+                                self._export_images(value, z)
         z.writestr("project.gns3", json.dumps(topology).encode())
 
     def import_zip(self, stream, gns3vm=True):
