@@ -154,6 +154,7 @@ def test_notification_ws(http_controller, controller, project, async_run):
     assert answer["action"] == "test"
 
     async_run(http_controller.close())
+    ws.close()
 
 
 def test_export(http_controller, tmpdir, loop, project):
