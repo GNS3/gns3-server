@@ -439,6 +439,12 @@ class Project:
         :returns: ZipStream object
         """
         z = zipstream.ZipFile()
+
+        # First we process the .gns3 in order to be sure we don't have an error
+        for file in os.listdir(self._path):
+            if file.endswith(".gns3"):
+                self._export_project_file(os.path.join(self._path, file), z, include_images)
+
         for root, dirs, files in os.walk(self._path, topdown=True):
             # Remove snapshots and capture
             if os.path.split(root)[-1:][0] == "project-files":
@@ -457,9 +463,8 @@ class Project:
                     log.warn(msg)
                     self.emit("log.warning", {"message": msg})
                     continue
-            # We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
             if file.endswith(".gns3"):
-                self._export_project_file(path, z, include_images)
+                pass
             else:
                 z.write(path, os.path.relpath(path, self._path), compress_type=zipfile.ZIP_DEFLATED)
         return z
@@ -467,6 +472,8 @@ class Project:
     def _export_project_file(self, path, z, include_images):
         """
         Take a project file (.gns3) and patch it for the export
+
+        We rename the .gns3 project.gns3 to avoid the task to the client to guess the file name
 
         :param path: Path of the .gns3
         """
@@ -478,12 +485,15 @@ class Project:
             topology = json.load(f)
         if "topology" in topology and "nodes" in topology["topology"]:
             for node in topology["topology"]["nodes"]:
+                if node["node_type"] in ["virtualbox", "vmware", "cloud"]:
+                    raise aiohttp.web.HTTPConflict(text="Topology with a {} could not be exported".format(node["node_type"]))
+
                 if "properties" in node and node["node_type"] != "Docker":
                     for prop, value in node["properties"].items():
                         if prop.endswith("image"):
                             node["properties"][prop] = os.path.basename(value)
                             if include_images is True:
-                                images.append(value)
+                                images.add(value)
 
         for image in images:
             self._export_images(image, z)

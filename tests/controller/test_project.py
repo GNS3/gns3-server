@@ -351,6 +351,30 @@ def test_export(tmpdir, project):
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
 
 
+def test_export_disallow_some_type(tmpdir, project):
+    """
+    Fix absolute image path
+    """
+
+    path = project.path
+
+    topology = {
+        "topology": {
+            "nodes": [
+                    {
+                        "node_type": "virtualbox"
+                    }
+            ]
+        }
+    }
+
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        z = project.export()
+
+
 def test_export_fix_path(tmpdir, project):
     """
     Fix absolute image path
