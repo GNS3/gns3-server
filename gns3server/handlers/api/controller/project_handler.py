@@ -231,7 +231,6 @@ class ProjectHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
 
-
         started = False
 
         for data in project.export(include_images=bool(request.GET.get("include_images", "0"))):

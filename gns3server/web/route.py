@@ -161,15 +161,15 @@ class Route(object):
                 if response:
                     return response
 
-                # Non API call
-                if api_version is None or raw is True:
-                    response = Response(request=request, route=route, output_schema=output_schema)
-
-                    yield from func(request, response)
-                    return response
-
-                # API call
                 try:
+                    # Non API call
+                    if api_version is None or raw is True:
+                        response = Response(request=request, route=route, output_schema=output_schema)
+
+                        yield from func(request, response)
+                        return response
+
+                    # API call
                     if "controller" in func.__module__ and server_config.getboolean("controller", False) is False:
                         raise aiohttp.web.HTTPForbidden(text="The server is not a controller")
 
