@@ -185,8 +185,8 @@ def test_connectNotification(compute, async_run):
             return response
 
     compute._controller._notification = MagicMock()
-    compute._session = AsyncioMagicMock(return_value=ws_mock)
-    compute._session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
+    compute._http_session = AsyncioMagicMock(return_value=ws_mock)
+    compute._http_session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
     ws_mock.receive = receive
     async_run(compute._connect_notification())
 
@@ -218,8 +218,8 @@ def test_connectNotificationPing(compute, async_run):
             return response
 
     compute._controller._notification = MagicMock()
-    compute._session = AsyncioMagicMock(return_value=ws_mock)
-    compute._session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
+    compute._http_session = AsyncioMagicMock(return_value=ws_mock)
+    compute._http_session.ws_connect = AsyncioMagicMock(return_value=ws_mock)
     ws_mock.receive = receive
     async_run(compute._connect_notification())
 

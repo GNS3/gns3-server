@@ -87,7 +87,7 @@ class Compute:
         self._connected = False
         self._controller = controller
         self._set_auth(user, password)
-        self._session = aiohttp.ClientSession()
+        self._http_session = None
         self._version = None
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
@@ -99,8 +99,14 @@ class Compute:
         if compute_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
             raise ComputeError("The local compute is started without --local")
 
+    def _session(self):
+        if self._http_session is None or self._http_session.closed is True:
+            self._http_session = aiohttp.ClientSession()
+        return self._http_session
+
     def __del__(self):
-        self._session.close()
+        if self._http_session:
+            self._http_session.close()
 
     def _set_auth(self, user, password):
         """
@@ -123,8 +129,8 @@ class Compute:
     def update(self, **kwargs):
         for kw in kwargs:
             setattr(self, kw, kwargs[kw])
-        if self._session:
-            self._session.close()
+        if self._http_session:
+            self._http_session.close()
         self._connected = False
         self._controller.notification.emit("compute.updated", self.__json__())
         self._controller.save()
@@ -132,7 +138,8 @@ class Compute:
     @asyncio.coroutine
     def close(self):
         self._connected = False
-        self._session.close()
+        if self._http_session:
+            self._http_session.close()
         if self._ws:
             yield from self._ws.close()
             self._ws = None
@@ -273,7 +280,7 @@ class Compute:
         """
 
         url = self._getUrl("/projects/{}/stream/{}".format(project.id, path))
-        response = yield from self._session.request("GET", url, auth=self._auth)
+        response = yield from self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
             raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
         return response.content
@@ -310,7 +317,7 @@ class Compute:
         """
         Connect to the notification stream
         """
-        self._ws = yield from self._session.ws_connect(self._getUrl("/notifications/ws"))
+        self._ws = yield from self._session().ws_connect(self._getUrl("/notifications/ws"))
         while True:
             response = yield from self._ws.receive()
             if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error:
@@ -351,7 +358,7 @@ class Compute:
                 else:
                     data = json.dumps(data)
 
-            response = yield from self._session.request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
+            response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
         body = yield from response.read()
         if body:
             body = body.decode()
