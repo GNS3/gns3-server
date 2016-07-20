@@ -167,6 +167,21 @@ def test_get_file(http_compute, tmpdir):
     assert response.status == 403
 
 
+def test_write_file(http_compute, tmpdir):
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
+        project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
+
+    response = http_compute.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="world", raw=True)
+    assert response.status == 200
+
+    with open(os.path.join(project.path, "hello")) as f:
+        assert f.read() == "world"
+
+    response = http_compute.post("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    assert response.status == 403
+
+
 def test_stream_file(http_compute, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):

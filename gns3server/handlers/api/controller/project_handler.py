@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import aiohttp
 import asyncio
 
@@ -249,3 +250,85 @@ class ProjectHandler:
             yield from response.drain()
 
         yield from response.write_eof()
+
+    @Route.get(
+        r"/projects/{project_id}/files/{path:.+}",
+        description="Get a file from a project. Beware you have warranty to be able to access only to file global to the project (for example README.txt)",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    def get_file(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        path = request.match_info["path"]
+        path = os.path.normpath(path)
+
+        # Raise error if user try to escape
+        if path[0] == ".":
+            raise aiohttp.web.HTTPForbidden
+        path = os.path.join(project.path, path)
+
+        response.content_type = "application/octet-stream"
+        response.set_status(200)
+        response.enable_chunked_encoding()
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
+        response.content_length = None
+
+        try:
+            with open(path, "rb") as f:
+                response.start(request)
+                while True:
+                    data = f.read(4096)
+                    if not data:
+                        break
+                    yield from response.write(data)
+
+        except FileNotFoundError:
+            raise aiohttp.web.HTTPNotFound()
+        except PermissionError:
+            raise aiohttp.web.HTTPForbidden()
+
+    @Route.post(
+        r"/projects/{project_id}/files/{path:.+}",
+        description="Write a file to a project",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        raw=True,
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The path doesn't exist"
+        })
+    def write_file(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        path = request.match_info["path"]
+        path = os.path.normpath(path)
+
+        # Raise error if user try to escape
+        if path[0] == ".":
+            raise aiohttp.web.HTTPForbidden
+        path = os.path.join(project.path, path)
+
+        response.set_status(200)
+
+        try:
+            with open(path, 'wb+') as f:
+                while True:
+                    packet = yield from request.content.read(512)
+                    if not packet:
+                        break
+                    f.write(packet)
+
+        except FileNotFoundError:
+            raise aiohttp.web.HTTPNotFound()
+        except PermissionError:
+            raise aiohttp.web.HTTPForbidden()

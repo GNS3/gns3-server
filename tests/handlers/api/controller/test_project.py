@@ -175,3 +175,30 @@ def test_export(http_controller, tmpdir, loop, project):
         with myzip.open("a") as myfile:
             content = myfile.read()
             assert content == b"hello"
+
+
+def test_get_file(http_controller, tmpdir, loop, project):
+    os.makedirs(project.path, exist_ok=True)
+    with open(os.path.join(project.path, 'hello'), 'w+') as f:
+        f.write('world')
+
+    response = http_controller.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.body == b"world"
+
+    response = http_controller.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
+    assert response.status == 404
+
+    response = http_controller.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    assert response.status == 403
+
+
+def test_write_file(http_controller, tmpdir, project):
+    response = http_controller.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="world", raw=True)
+    assert response.status == 200
+
+    with open(os.path.join(project.path, "hello")) as f:
+        assert f.read() == "world"
+
+    response = http_controller.post("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    assert response.status == 403
