@@ -438,6 +438,11 @@ class Project:
 
         :returns: ZipStream object
         """
+
+        # To avoid issue with data not saved we disallow the export of a running topologie
+        if self.is_running():
+            raise aiohttp.web.HTTPConflict(text="Running topology could not be exported")
+
         z = zipstream.ZipFile()
 
         # First we process the .gns3 in order to be sure we don't have an error
@@ -522,11 +527,19 @@ class Project:
             else:
                 path = os.path.join(img_directory, image)
 
-            # FIXME: av
             if os.path.exists(path):
                 arcname = os.path.join("images", directory, os.path.basename(image))
                 z.write(path, arcname)
                 break
+
+    def is_running(self):
+        """
+        If a node is started or paused return True
+        """
+        for node in self._nodes.values():
+            if node.status != "stopped":
+                return True
+        return False
 
     def dump(self):
         """

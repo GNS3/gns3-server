@@ -36,6 +36,19 @@ def project(controller):
     return Project(controller=controller, name="Test")
 
 
+@pytest.fixture
+def node(controller, project, async_run):
+    compute = MagicMock()
+    compute.id = "local"
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    return node
+
+
 def test_affect_uuid():
     p = Project(name="Test")
     assert len(p.id) == 36
@@ -351,9 +364,34 @@ def test_export(tmpdir, project):
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
 
 
+def test_export_disallow_running(tmpdir, project, node):
+    """
+    Dissallow export when a node is running
+    """
+
+    path = project.path
+
+    topology = {
+        "topology": {
+            "nodes": [
+                    {
+                        "node_type": "dynamips"
+                    }
+            ]
+        }
+    }
+
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    node._status = "started"
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        z = project.export()
+
+
 def test_export_disallow_some_type(tmpdir, project):
     """
-    Fix absolute image path
+    Dissalow export for some node type
     """
 
     path = project.path
@@ -444,3 +482,13 @@ def test_export_with_images(tmpdir, project):
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         myzip.getinfo("images/IOS/test.image")
+
+
+def test_is_running(project, async_run, node):
+    """
+    If a node is started or paused return True
+    """
+
+    assert project.is_running() is False
+    node._status = "started"
+    assert project.is_running() is True
