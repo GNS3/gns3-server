@@ -270,7 +270,23 @@ class Compute:
         }
 
     @asyncio.coroutine
-    def steam_file(self, project, path):
+    def download_file(self, project, path):
+        """
+        Read file of a project and download it
+
+        :param project: A project object
+        :param path: The path of the file in the project
+        :returns: A file stream
+        """
+
+        url = self._getUrl("/projects/{}/files/{}".format(project.id, path))
+        response = yield from self._session().request("GET", url, auth=self._auth)
+        if response.status == 404:
+            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
+        return response.content
+
+    @asyncio.coroutine
+    def stream_file(self, project, path):
         """
         Read file of a project and stream it
 
@@ -447,3 +463,13 @@ class Compute:
                 if image not in [i['filename'] for i in images]:
                     images.append({"filename": image, "path": image})
         return images
+
+    @asyncio.coroutine
+    def list_files(self, project):
+        """
+        List files in the project on computes
+        """
+        path = "/projects/{}/files".format(project.id)
+        res = yield from self.http_query("GET", path, timeout=120)
+        return res.json
+

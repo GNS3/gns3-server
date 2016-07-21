@@ -138,4 +138,4 @@ class UDPLink(Link):
         """
         if self._capture_node:
             compute = self._capture_node["node"].compute
-            return compute.steam_file(self._project, "tmp/captures/" + self._capture_file_name)
+            return compute.stream_file(self._project, "tmp/captures/" + self._capture_file_name)

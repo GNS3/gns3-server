@@ -27,7 +27,7 @@ from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock
 
 from gns3server.controller.project import Project
-from gns3server.controller.export_project import export_project
+from gns3server.controller.export_project import export_project, _filter_files
 
 
 @pytest.fixture
@@ -48,7 +48,16 @@ def node(controller, project, async_run):
     return node
 
 
-def test_export(tmpdir, project):
+def test_filter_files():
+    assert not _filter_files("hello/world")
+    assert _filter_files("project-files/tmp")
+    assert _filter_files("project-files/test_log.txt")
+    assert _filter_files("project-files/test.log")
+    assert _filter_files("test/project-files/snapshots")
+    assert _filter_files("test/project-files/snapshots/test.gns3p")
+
+
+def test_export(tmpdir, project, async_run):
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))
 
@@ -64,7 +73,7 @@ def test_export(tmpdir, project):
     with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
         f.write("WORLD")
 
-    z = export_project(project)
+    z = async_run(export_project(project, str(tmpdir)))
 
     with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
         for data in z:
@@ -81,7 +90,7 @@ def test_export(tmpdir, project):
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
 
 
-def test_export_disallow_running(tmpdir, project, node):
+def test_export_disallow_running(tmpdir, project, node, async_run):
     """
     Dissallow export when a node is running
     """
@@ -103,10 +112,10 @@ def test_export_disallow_running(tmpdir, project, node):
 
     node._status = "started"
     with pytest.raises(aiohttp.web.HTTPConflict):
-        z = export_project(project)
+        z = async_run(export_project(project, str(tmpdir)))
 
 
-def test_export_disallow_some_type(tmpdir, project):
+def test_export_disallow_some_type(tmpdir, project, async_run):
     """
     Dissalow export for some node type
     """
@@ -127,10 +136,10 @@ def test_export_disallow_some_type(tmpdir, project):
         json.dump(topology, f)
 
     with pytest.raises(aiohttp.web.HTTPConflict):
-        z = export_project(project)
+        z = async_run(export_project(project, str(tmpdir)))
 
 
-def test_export_fix_path(tmpdir, project):
+def test_export_fix_path(tmpdir, project, async_run):
     """
     Fix absolute image path
     """
@@ -153,7 +162,7 @@ def test_export_fix_path(tmpdir, project):
     with open(os.path.join(path, "test.gns3"), 'w+') as f:
         json.dump(topology, f)
 
-    z = export_project(project)
+    z = async_run(export_project(project, str(tmpdir)))
     with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
         for data in z:
             f.write(data)
@@ -165,7 +174,7 @@ def test_export_fix_path(tmpdir, project):
     assert topology["topology"]["nodes"][0]["properties"]["image"] == "c3725-adventerprisek9-mz.124-25d.image"
 
 
-def test_export_with_images(tmpdir, project):
+def test_export_with_images(tmpdir, project, async_run):
     """
     Fix absolute image path
     """
@@ -192,7 +201,7 @@ def test_export_with_images(tmpdir, project):
         json.dump(topology, f)
 
     with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
-        z = export_project(project, include_images=True)
+        z = async_run(export_project(project, str(tmpdir), include_images=True))
         with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
             for data in z:
                 f.write(data)

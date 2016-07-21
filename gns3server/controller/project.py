@@ -149,9 +149,9 @@ class Project:
     @property
     def computes(self):
         """
-        :return: Dictonnary of computes used by the project
+        :return: List of computes used by the project
         """
-        return self._computes
+        return self._project_created_on_compute
 
     def remove_allocated_node_name(self, name):
         """

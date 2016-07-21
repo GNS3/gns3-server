@@ -17,12 +17,15 @@
 
 import os
 import json
+import asyncio
 import aiohttp
 import zipfile
+import tempfile
 import zipstream
 
 
-def export_project(project, include_images=False):
+@asyncio.coroutine
+def export_project(project, temporary_dir, include_images=False):
     """
     Export the project as zip. It's a ZipStream object.
     The file will be read chunk by chunk when you iterate on
@@ -30,6 +33,7 @@ def export_project(project, include_images=False):
 
     It will ignore some files like snapshots and
 
+    :param temporary_dir: A temporary dir where to store intermediate data
     :returns: ZipStream object
     """
 
@@ -45,12 +49,7 @@ def export_project(project, include_images=False):
             _export_project_file(project, os.path.join(project._path, file), z, include_images)
 
     for root, dirs, files in os.walk(project._path, topdown=True):
-        # Remove snapshots and capture
-        if os.path.split(root)[-1:][0] == "project-files":
-            dirs[:] = [d for d in dirs if d not in ("snapshots", "tmp")]
-
-        # Ignore log files and OS noise
-        files = [f for f in files if not f.endswith('_log.txt') and not f.endswith('.log') and f != '.DS_Store']
+        files = [f for f in files if not _filter_files(os.path.join(root, f))]
 
         for file in files:
             path = os.path.join(root, file)
@@ -66,7 +65,42 @@ def export_project(project, include_images=False):
             pass
         else:
             z.write(path, os.path.relpath(path, project._path), compress_type=zipfile.ZIP_DEFLATED)
+
+    for compute in project.computes:
+        if compute.id == "vm":
+            compute_files = yield from compute.list_files(project)
+            for compute_file in compute_files:
+                if not _filter_files(compute_file["path"]):
+                    (fp, temp_path) = tempfile.mkstemp(dir=temporary_dir)
+                    stream = yield from compute.download_file(project, compute_file["path"])
+                    while True:
+                        data = yield from stream.read(512)
+                        if not data:
+                            break
+                        fp.write(data)
+                    z.write(temp_path, arcname=compute_file["path"], compress_type=zipfile.ZIP_DEFLATED)
     return z
+
+
+def _filter_files(path):
+    """
+    :returns: True if file should not be included in the final archive
+    """
+    s = os.path.normpath(path).split(os.path.sep)
+    try:
+        i = s.index("project-files")
+        if s[i + 1] in ("tmp", "captures", "snapshots"):
+            return True
+    except (ValueError, IndexError):
+        pass
+
+    file_name = os.path.basename(path)
+    # Ignore log files and OS noises
+    if file_name.endswith('_log.txt') or file_name.endswith('.log') or file_name == '.DS_Store':
+        return True
+
+    return False
+
 
 
 def _export_project_file(project, path, z, include_images):

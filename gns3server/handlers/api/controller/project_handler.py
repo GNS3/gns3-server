@@ -235,24 +235,23 @@ class ProjectHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
 
-        started = False
 
-        for data in export_project(project, include_images=bool(request.GET.get("include_images", "0"))):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            datas = yield from export_project(project, tmp_dir, include_images=bool(request.GET.get("include_images", "0")))
             # We need to do that now because export could failed and raise an HTTP error
             # that why response start need to be the later possible
-            if not started:
-                response.content_type = 'application/gns3project'
-                response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
-                response.enable_chunked_encoding()
-                # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-                response.content_length = None
-                response.start(request)
-                started = True
+            response.content_type = 'application/gns3project'
+            response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
+            response.enable_chunked_encoding()
+            # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
+            response.content_length = None
+            response.start(request)
 
-            response.write(data)
-            yield from response.drain()
+            for data in datas:
+                response.write(data)
+                yield from response.drain()
 
-        yield from response.write_eof()
+            yield from response.write_eof()
 
     @Route.post(
         r"/projects/{project_id}/import",
