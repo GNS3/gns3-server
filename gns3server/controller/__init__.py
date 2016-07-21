@@ -116,6 +116,15 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
+    def images_path(self):
+        """
+        Get the image storage directory
+        """
+        server_config = Config.instance().get_section_config("Server")
+        images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/projects"))
+        os.makedirs(images_path, exist_ok=True)
+        return images_path
+
     @asyncio.coroutine
     def _import_gns3_gui_conf(self):
         """
@@ -290,7 +299,7 @@ class Controller:
         """
         Generate a free project name base on the base name
         """
-        names = [ p.name for p in self._projects.values() ]
+        names = [p.name for p in self._projects.values()]
         if base_name not in names:
             return base_name
         i = 1

@@ -52,7 +52,7 @@ def test_import_project(async_run, tmpdir, controller):
         project = async_run(import_project(controller, project_id, f))
 
     assert project.name == "test"
-    assert project.id == project_id # The project should changed
+    assert project.id == project_id  # The project should changed
 
     assert os.path.exists(os.path.join(project.path, "b.png"))
     assert not os.path.exists(os.path.join(project.path, "project.gns3"))
@@ -66,4 +66,35 @@ def test_import_project(async_run, tmpdir, controller):
     assert project.name != "test"
 
 
+def test_import_with_images(tmpdir, async_run, controller):
 
+    project_id = str(uuid.uuid4())
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "topology": {
+        },
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    with open(str(tmpdir / "test.image"), 'w+') as f:
+        f.write("B")
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+        myzip.write(str(tmpdir / "test.image"), "images/IOS/test.image")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f))
+
+    print(project._config().get("images_path"))
+    # TEST import images
+    assert not os.path.exists(os.path.join(project.path, "images/IOS/test.image"))
+
+    path = os.path.join(project._config().get("images_path"), "IOS", "test.image")
+    assert os.path.exists(path), path

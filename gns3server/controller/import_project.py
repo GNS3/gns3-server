@@ -18,6 +18,7 @@
 import os
 import json
 import uuid
+import shutil
 import asyncio
 import zipfile
 import aiohttp
@@ -29,8 +30,9 @@ from ..config import Config
 Handle the import of project from a .gns3project
 """
 
+
 @asyncio.coroutine
-def import_project(controller, project_id, stream, gns3vm=True):
+def import_project(controller, project_id, stream):
     """
     Import a project contain in a zip file
 
@@ -64,6 +66,24 @@ def import_project(controller, project_id, stream, gns3vm=True):
             json.dump(topology, f, indent=4)
         os.remove(os.path.join(path, "project.gns3"))
 
-    project = yield from controller.load_project(dot_gns3_path)
+        if os.path.exists(os.path.join(path, "images")):
+            _import_images(controller, path)
+
+    project = yield from controller.load_project(dot_gns3_path, load=False)
     return project
 
+
+def _import_images(controller, path):
+    """
+    Copy images to the images directory or delete them if they
+    already exists.
+    """
+    image_dir = controller.images_path()
+
+    root = os.path.join(path, "images")
+    for (dirpath, dirnames, filenames) in os.walk(root):
+        for filename in filenames:
+            path = os.path.join(dirpath, filename)
+            dst = os.path.join(image_dir, os.path.relpath(path, root))
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.move(path, dst)
