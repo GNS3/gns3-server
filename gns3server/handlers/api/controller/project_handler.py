@@ -18,10 +18,12 @@
 import os
 import aiohttp
 import asyncio
-
+import tempfile
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
+from gns3server.controller.project import Project
+from gns3server.controller.import_project import import_project
 from gns3server.config import Config
 
 
@@ -251,6 +253,39 @@ class ProjectHandler:
 
         yield from response.write_eof()
 
+    @Route.post(
+        r"/projects/{project_id}/import",
+        description="Import a project from a portable archive",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        raw=True,
+        output=PROJECT_OBJECT_SCHEMA,
+        status_codes={
+            200: "Project imported",
+            403: "Forbidden to import project"
+        })
+    def import_project(request, response):
+
+        controller = Controller.instance()
+
+        # We write the content to a temporary location and after we extract it all.
+        # It could be more optimal to stream this but it is not implemented in Python.
+        # Spooled means the file is temporary kept in memory until max_size is reached
+        try:
+            with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
+                while True:
+                    packet = yield from request.content.read(512)
+                    if not packet:
+                        break
+                    temp.write(packet)
+                project = yield from import_project(controller, request.match_info["project_id"], temp, gns3vm=bool(int(request.GET.get("gns3vm", "1"))))
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
+
+        response.json(project)
+        response.set_status(201)
+
     @Route.get(
         r"/projects/{project_id}/files/{path:.+}",
         description="Get a file from a project. Beware you have warranty to be able to access only to file global to the project (for example README.txt)",
@@ -332,3 +367,5 @@ class ProjectHandler:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
             raise aiohttp.web.HTTPForbidden()
+
+

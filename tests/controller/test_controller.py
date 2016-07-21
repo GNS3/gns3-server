@@ -335,3 +335,13 @@ def test_load_project(controller, async_run, tmpdir):
     with asyncio_patch("gns3server.controller.Controller.add_project") as mock_add_project:
         project = async_run(controller.load_project(str(tmpdir / "test.gns3")))
     assert not mock_add_project.called
+
+
+def test_get_free_project_name(controller, async_run):
+
+    async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test"))
+    assert controller.get_free_project_name("Test") == "Test-1"
+    async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test-1"))
+    assert controller.get_free_project_name("Test") == "Test-2"
+    assert controller.get_free_project_name("Hello") == "Hello"
+

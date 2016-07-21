@@ -409,7 +409,7 @@ class ProjectHandler:
 
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
-        # Spooled means the file is temporary kept in memory until max_size is reached
+        # Spooled means the file is temporary kept in memory until max_size is reached
         try:
             with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
                 while True:

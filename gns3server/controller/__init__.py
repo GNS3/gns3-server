@@ -286,6 +286,20 @@ class Controller:
             yield from project.open()
         return project
 
+    def get_free_project_name(self, base_name):
+        """
+        Generate a free project name base on the base name
+        """
+        names = [ p.name for p in self._projects.values() ]
+        if base_name not in names:
+            return base_name
+        i = 1
+        while "{}-{}".format(base_name, i) in names:
+            i += 1
+            if i > 1000000:
+                raise aiohttp.web.HTTPConflict(text="A project name could not be allocated (node limit reached?)")
+        return "{}-{}".format(base_name, i)
+
     @property
     def projects(self):
         """

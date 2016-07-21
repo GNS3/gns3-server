@@ -221,12 +221,12 @@ def test_export(http_compute, tmpdir, loop, project):
             assert content == b"hello"
 
 
-def test_import(http_compute, tmpdir, loop, project):
+def test_import(http_compute, tmpdir, loop):
 
     with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
         myzip.writestr("demo", b"hello")
 
-    project_id = project.id
+    project_id = str(uuid.uuid4())
 
     with open(str(tmpdir / "test.zip"), "rb") as f:
         response = http_compute.post("/projects/{project_id}/import".format(project_id=project_id), body=f.read(), raw=True)
