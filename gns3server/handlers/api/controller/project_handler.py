@@ -24,6 +24,7 @@ from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
 from gns3server.controller.import_project import import_project
+from gns3server.controller.export_project import export_project
 from gns3server.config import Config
 
 
@@ -236,7 +237,7 @@ class ProjectHandler:
 
         started = False
 
-        for data in project.export(include_images=bool(request.GET.get("include_images", "0"))):
+        for data in export_project(project, include_images=bool(request.GET.get("include_images", "0"))):
             # We need to do that now because export could failed and raise an HTTP error
             # that why response start need to be the later possible
             if not started:
