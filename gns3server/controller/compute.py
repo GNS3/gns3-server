@@ -303,12 +303,14 @@ class Compute:
             response = yield from self._run_http_query("GET", "/version")
 
             if "version" not in response.json:
+                self._http_session.close()
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
             self._version = response.json["version"]
             if parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
+                self._http_session.close()
                 raise aiohttp.web.HTTPConflict(text="The server {} versions are not compatible {} != {}".format(self._id, __version__, response.json["version"]))
 
-            self._notifications = asyncio.async(self._connect_notification())
+            self._notifications = asyncio.gather(self._connect_notification())
             self._connected = True
             self._controller.notification.emit("compute.updated", self.__json__())
 
