@@ -22,7 +22,6 @@ import zipfile
 import zipstream
 
 
-
 def export_project(project, include_images=False):
     """
     Export the project as zip. It's a ZipStream object.
@@ -128,5 +127,3 @@ def _export_images(project, image, z):
             arcname = os.path.join("images", directory, os.path.basename(image))
             z.write(path, arcname)
             break
-
-

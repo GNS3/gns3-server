@@ -199,5 +199,3 @@ def test_export_with_images(tmpdir, project):
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         myzip.getinfo("images/IOS/test.image")
-
-
