@@ -207,7 +207,7 @@ def test_write_file(http_controller, tmpdir, project):
 def test_import(http_controller, tmpdir, controller):
 
     with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
-        myzip.writestr("project.gns3", b'{"version": "2.0.0", "name": "test"}')
+        myzip.writestr("project.gns3", b'{"project_id": "c6992992-ac72-47dc-833b-54aa334bcd05", "version": "2.0.0", "name": "test"}')
         myzip.writestr("demo", b"hello")
 
     project_id = str(uuid.uuid4())

@@ -68,6 +68,9 @@ def test_import_project(async_run, tmpdir, controller):
 
 
 def test_import_upgrade(async_run, tmpdir, controller):
+    """
+    Topology made for previous GNS3 version are upgraded during the process
+    """
     project_id = str(uuid.uuid4())
 
     topology = {
