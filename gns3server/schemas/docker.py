@@ -82,8 +82,14 @@ DOCKER_CREATE_SCHEMA = {
             "description": "Docker environment variables",
             "type": ["string", "null"],
             "minLength": 0,
+        },
+        "container_id": {
+            "description": "Docker container ID Read only",
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]+$"
         }
-
     },
     "additionalProperties": False,
     "required": ["name", "image"]
