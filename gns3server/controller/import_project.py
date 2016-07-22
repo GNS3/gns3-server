@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import json
 import uuid
 import shutil
@@ -62,6 +63,12 @@ def import_project(controller, project_id, stream):
 
         topology = load_topology(os.path.join(path, "project.gns3"))
         topology["name"] = project_name
+
+        # For some VM type we move them to the GNS3 VM if it's not a Linux host
+        if not sys.platform.startswith("linux"):
+            for node in topology["topology"]["nodes"]:
+                if node["node_type"] in ("docker", "qemu", "iou"):
+                    node["compute_id"] = "vm"
 
         dot_gns3_path = os.path.join(path, project_name + ".gns3")
         # We change the project_id to avoid erasing the project

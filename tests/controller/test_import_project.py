@@ -126,3 +126,94 @@ def test_import_with_images(tmpdir, async_run, controller):
 
     path = os.path.join(project._config().get("images_path"), "IOS", "test.image")
     assert os.path.exists(path), path
+
+
+
+def test_import_iou_non_linux(linux_platform, async_run, tmpdir, controller):
+    """
+    On non linux host IOU should be local
+    """
+    project_id = str(uuid.uuid4())
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "type": "topology",
+        "topology": {
+             "nodes": [
+                  {
+                      "compute_id": "local",
+                      "node_type": "iou",
+                      "properties": {}
+                  }
+            ],
+            "links": [],
+            "computes": [],
+            "drawings": []
+        },
+        "revision": 5,
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f))
+
+    with open(os.path.join(project.path, "test.gns3")) as f:
+        topo = json.load(f)
+        assert topo["topology"]["nodes"][0]["compute_id"] == "local"
+
+
+
+def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
+    """
+    On non linux host IOU should be moved to the GNS3 VM
+    """
+    project_id = str(uuid.uuid4())
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "type": "topology",
+        "topology": {
+             "nodes": [
+                  {
+                      "compute_id": "local",
+                      "node_type": "iou",
+                      "properties": {}
+                  },
+                  {
+                      "compute_id": "local",
+                      "node_type": "vpcs",
+                      "properties": {}
+                  }
+             ],
+            "links": [],
+            "computes": [],
+            "drawings": []
+        },
+        "revision": 5,
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f))
+
+    with open(os.path.join(project.path, "test.gns3")) as f:
+        topo = json.load(f)
+        assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
+        assert topo["topology"]["nodes"][1]["compute_id"] == "local"
+

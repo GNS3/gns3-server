@@ -111,7 +111,7 @@ def test_export(tmpdir, project, async_run):
 
         with myzip.open("project.gns3") as myfile:
             topo = json.loads(myfile.read().decode())["topology"]
-            assert topo["nodes"][0]["compute_id"] == "local" # All node should have compute_id local after export
+            assert topo["nodes"][0]["compute_id"] == "local"  # All node should have compute_id local after export
             assert topo["computes"] == []
 
 
