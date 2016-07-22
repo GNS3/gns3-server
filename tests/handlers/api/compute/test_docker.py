@@ -46,7 +46,8 @@ def mock_connection():
 def vm(http_compute, project, base_params):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]) as mock_list:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}) as mock:
-            response = http_compute.post("/projects/{project_id}/docker/nodes".format(project_id=project.id), base_params)
+            with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="exited") as mock:
+                response = http_compute.post("/projects/{project_id}/docker/nodes".format(project_id=project.id), base_params)
     if response.status != 201:
         print(response.body)
     assert response.status == 201
