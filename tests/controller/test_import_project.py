@@ -21,8 +21,11 @@ import json
 import zipfile
 
 
+from tests.utils import asyncio_patch, AsyncioMagicMock
+
 from gns3server.controller.project import Project
-from gns3server.controller.import_project import import_project
+from gns3server.controller.import_project import import_project, _move_files_to_compute
+
 from gns3server.version import __version__
 
 
@@ -174,6 +177,7 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
     On non linux host IOU should be moved to the GNS3 VM
     """
     project_id = str(uuid.uuid4())
+    controller._computes["vm"] = AsyncioMagicMock()
 
     topology = {
         "project_id": str(uuid.uuid4()),
@@ -183,6 +187,7 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
             "nodes": [
                 {
                     "compute_id": "local",
+                    "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
                     "node_type": "iou",
                     "properties": {}
                 },
@@ -208,9 +213,27 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
         myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
 
     with open(zip_path, "rb") as f:
-        project = async_run(import_project(controller, project_id, f))
+        with asyncio_patch("gns3server.controller.import_project._move_files_to_compute") as mock:
+            project = async_run(import_project(controller, project_id, f))
+            mock.assert_called_with(controller._computes["vm"], project_id, project.path, 'project-files/iou/0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b')
+            controller._computes["vm"].post.assert_called_with('/projects', data={'name': 'test', 'project_id': project_id})
 
     with open(os.path.join(project.path, "test.gns3")) as f:
         topo = json.load(f)
         assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
         assert topo["topology"]["nodes"][1]["compute_id"] == "local"
+
+
+def test_move_files_to_compute(tmpdir, async_run):
+    project_id = str(uuid.uuid4())
+
+    os.makedirs(str(tmpdir / "project-files" / "docker"))
+    (tmpdir / "project-files" / "docker" / "test").open("w").close()
+    (tmpdir / "project-files" / "docker" / "test2").open("w").close()
+
+    with asyncio_patch("gns3server.controller.import_project._upload_file") as mock:
+        async_run(_move_files_to_compute(None, project_id, str(tmpdir), "project-files/docker"))
+
+    mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test"), "project-files/docker/test")
+    mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test2"), "project-files/docker/test2")
+    assert not os.path.exists(str(tmpdir / "project-files" / "docker"))

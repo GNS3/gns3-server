@@ -66,10 +66,24 @@ def import_project(controller, project_id, stream):
 
         # For some VM type we move them to the GNS3 VM if it's not a Linux host
         if not sys.platform.startswith("linux"):
+            vm_created = False
+
             for node in topology["topology"]["nodes"]:
                 if node["node_type"] in ("docker", "qemu", "iou"):
                     node["compute_id"] = "vm"
 
+                    # Project created on the remote GNS3 VM?
+                    if not vm_created:
+                        compute = controller.get_compute("vm")
+                        yield from compute.post("/projects", data={
+                            "name": project_name,
+                            "project_id": project_id,
+                        })
+                        vm_created = True
+
+                    yield from _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
+
+        # And we dump the updated.gns3
         dot_gns3_path = os.path.join(path, project_name + ".gns3")
         # We change the project_id to avoid erasing the project
         topology["project_id"] = project_id
@@ -82,6 +96,31 @@ def import_project(controller, project_id, stream):
 
     project = yield from controller.load_project(dot_gns3_path, load=False)
     return project
+
+
+@asyncio.coroutine
+def _move_files_to_compute(compute, project_id, directory, files_path):
+    """
+    Move the files to a remote compute
+    """
+    for (dirpath, dirnames, filenames) in os.walk(os.path.join(directory, files_path)):
+        for filename in filenames:
+            path = os.path.join(dirpath, filename)
+            dst = os.path.relpath(path, directory)
+            yield from _upload_file(compute, project_id, path, dst)
+    shutil.rmtree(directory)
+
+@asyncio.coroutine
+def _upload_file(compute, project_id, file_path, path):
+    """
+    Upload a file to a remote project
+
+    :param file_path: File path on the controller file system
+    :param path: File path on the remote system relative to project directory
+    """
+    path = "/projects/{}/files/path".format(project_id, path.replace("\\", "/"))
+    with open(file_path, "rb") as f:
+        yield from compute.http_query("POST", path, f, timeout=None)
 
 
 def _import_images(controller, path):
