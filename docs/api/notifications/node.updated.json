@@ -8,15 +8,15 @@
     "label": {
         "rotation": 0,
         "style": "font-size: 10;font-familly: Verdana",
-        "text": "",
+        "text": "test",
         "x": -17,
         "y": -25
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "eb568d98-56e6-4ba8-8d45-62cdf10610e2",
+    "node_id": "c10d4f21-4f52-4de2-a84c-a5beeff49e95",
     "node_type": "vpcs",
-    "project_id": "d3ac3171-aa3b-4b46-a325-8891812f2180",
+    "project_id": "3f125837-0591-45d3-8740-e054e2222710",
     "properties": {
         "startup_config": "test.cfg"
     },

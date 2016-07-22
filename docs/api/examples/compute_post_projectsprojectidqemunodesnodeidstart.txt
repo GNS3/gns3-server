@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/5f361fdf-df83-4aa7-b28d-17887634bb6b/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/00459e30-4fac-41cf-bbef-2a5dba39f47c/start' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/5f361fdf-df83-4aa7-b28d-17887634bb6b/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/00459e30-4fac-41cf-bbef-2a5dba39f47c/start HTTP/1.1
 {}
 
 
@@ -19,7 +19,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
     "cdrom_image": "",
     "cdrom_image_md5sum": null,
     "command_line": "",
-    "console": 5711,
+    "console": 5712,
     "console_type": "telnet",
     "cpu_throttling": 0,
     "cpus": 1,
@@ -41,15 +41,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:dd:80:bb:6b:00",
+    "mac_address": "00:dd:80:f4:7c:00",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpzqod7tpw/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/5f361fdf-df83-4aa7-b28d-17887634bb6b",
-    "node_id": "5f361fdf-df83-4aa7-b28d-17887634bb6b",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpm3d7sd4g/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/00459e30-4fac-41cf-bbef-2a5dba39f47c",
+    "node_id": "00459e30-4fac-41cf-bbef-2a5dba39f47c",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpcdk456cd/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpohgwih_d/qemu-system-x86_64",
     "ram": 256,
     "status": "stopped",
     "usage": ""

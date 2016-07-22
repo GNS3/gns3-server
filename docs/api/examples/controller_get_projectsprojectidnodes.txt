@@ -1,11 +1,11 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/ba784a62-27bb-49ce-b801-e5bf16dd4bf1/nodes'
+curl -i -X GET 'http://localhost:3080/v2/projects/1e2f0577-9ba9-4c61-9a57-f85f2dd81cc7/nodes'
 
-GET /v2/projects/ba784a62-27bb-49ce-b801-e5bf16dd4bf1/nodes HTTP/1.1
+GET /v2/projects/1e2f0577-9ba9-4c61-9a57-f85f2dd81cc7/nodes HTTP/1.1
 
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 806
+CONTENT-LENGTH: 810
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -22,15 +22,15 @@ X-ROUTE: /v2/projects/{project_id}/nodes
         "label": {
             "rotation": 0,
             "style": "font-size: 10;font-familly: Verdana",
-            "text": "",
+            "text": "test",
             "x": -17,
             "y": -25
         },
         "name": "test",
         "node_directory": null,
-        "node_id": "dd18808b-0499-4da2-a17e-550949de0591",
+        "node_id": "9dab4635-2ad4-4b19-b222-3810f483b977",
         "node_type": "vpcs",
-        "project_id": "ba784a62-27bb-49ce-b801-e5bf16dd4bf1",
+        "project_id": "1e2f0577-9ba9-4c61-9a57-f85f2dd81cc7",
         "properties": {
             "startup_script": "echo test"
         },

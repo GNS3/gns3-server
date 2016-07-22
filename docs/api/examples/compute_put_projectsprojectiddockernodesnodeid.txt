@@ -1,8 +1,8 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/40be906f-c587-494d-b845-c87db90737b1' -d '{"console": 5713, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/8bd7d0bb-a0cc-4f5d-b8dd-bd0039a0f169' -d '{"console": 5714, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/40be906f-c587-494d-b845-c87db90737b1 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/8bd7d0bb-a0cc-4f5d-b8dd-bd0039a0f169 HTTP/1.1
 {
-    "console": 5713,
+    "console": 5714,
     "environment": "GNS3=1\nGNS4=0",
     "name": "test",
     "start_command": "yes"
@@ -18,8 +18,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
 
 {
     "adapters": 2,
-    "aux": 5712,
-    "console": 5713,
+    "aux": 5713,
+    "console": 5714,
     "console_http_path": "/",
     "console_http_port": 80,
     "console_resolution": "1280x1024",
@@ -28,8 +28,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
     "environment": "GNS3=1\nGNS4=0",
     "image": "nginx:latest",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1130/test_json4/project-files/docker/40be906f-c587-494d-b845-c87db90737b1",
-    "node_id": "40be906f-c587-494d-b845-c87db90737b1",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1615/test_json4/project-files/docker/8bd7d0bb-a0cc-4f5d-b8dd-bd0039a0f169",
+    "node_id": "8bd7d0bb-a0cc-4f5d-b8dd-bd0039a0f169",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
     "status": "stopped"

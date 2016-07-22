@@ -128,7 +128,6 @@ def test_import_with_images(tmpdir, async_run, controller):
     assert os.path.exists(path), path
 
 
-
 def test_import_iou_non_linux(linux_platform, async_run, tmpdir, controller):
     """
     On non linux host IOU should be local
@@ -140,12 +139,12 @@ def test_import_iou_non_linux(linux_platform, async_run, tmpdir, controller):
         "name": "test",
         "type": "topology",
         "topology": {
-             "nodes": [
-                  {
-                      "compute_id": "local",
-                      "node_type": "iou",
-                      "properties": {}
-                  }
+            "nodes": [
+                {
+                    "compute_id": "local",
+                    "node_type": "iou",
+                    "properties": {}
+                }
             ],
             "links": [],
             "computes": [],
@@ -170,7 +169,6 @@ def test_import_iou_non_linux(linux_platform, async_run, tmpdir, controller):
         assert topo["topology"]["nodes"][0]["compute_id"] == "local"
 
 
-
 def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
     """
     On non linux host IOU should be moved to the GNS3 VM
@@ -182,18 +180,18 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
         "name": "test",
         "type": "topology",
         "topology": {
-             "nodes": [
-                  {
-                      "compute_id": "local",
-                      "node_type": "iou",
-                      "properties": {}
-                  },
-                  {
-                      "compute_id": "local",
-                      "node_type": "vpcs",
-                      "properties": {}
-                  }
-             ],
+            "nodes": [
+                {
+                    "compute_id": "local",
+                    "node_type": "iou",
+                    "properties": {}
+                },
+                {
+                    "compute_id": "local",
+                    "node_type": "vpcs",
+                    "properties": {}
+                }
+            ],
             "links": [],
             "computes": [],
             "drawings": []
@@ -216,4 +214,3 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
         topo = json.load(f)
         assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
         assert topo["topology"]["nodes"][1]["compute_id"] == "local"
-

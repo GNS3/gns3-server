@@ -9,10 +9,10 @@ Start a packet capture on an Ethernet hub instance
 
 Parameters
 **********
-- **port_number**: Port on the hub
-- **node_id**: Node UUID
-- **adapter_number**: Adapter on the hub (always 0)
 - **project_id**: Project UUID
+- **node_id**: Node UUID
+- **port_number**: Port on the hub
+- **adapter_number**: Adapter on the hub (always 0)
 
 Response status codes
 **********************

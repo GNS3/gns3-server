@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/2473b969-a5a8-4448-aa8b-69225a48133a/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X POST 'http://localhost:3080/v2/projects/9349f15d-1bdb-4a0b-8f67-16af020d4463/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-POST /v2/projects/2473b969-a5a8-4448-aa8b-69225a48133a/nodes HTTP/1.1
+POST /v2/projects/9349f15d-1bdb-4a0b-8f67-16af020d4463/nodes HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -12,7 +12,7 @@ POST /v2/projects/2473b969-a5a8-4448-aa8b-69225a48133a/nodes HTTP/1.1
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 686
+CONTENT-LENGTH: 690
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -28,15 +28,15 @@ X-ROUTE: /v2/projects/{project_id}/nodes
     "label": {
         "rotation": 0,
         "style": "font-size: 10;font-familly: Verdana",
-        "text": "",
+        "text": "test",
         "x": -17,
         "y": -25
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "d396a010-d75f-44ca-b943-1bbd9352a3ea",
+    "node_id": "f7c9e8dd-be7d-4733-ad67-6ecd27d476c6",
     "node_type": "vpcs",
-    "project_id": "2473b969-a5a8-4448-aa8b-69225a48133a",
+    "project_id": "9349f15d-1bdb-4a0b-8f67-16af020d4463",
     "properties": {
         "startup_script": "echo test"
     },

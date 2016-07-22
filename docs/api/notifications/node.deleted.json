@@ -8,15 +8,15 @@
     "label": {
         "rotation": 0,
         "style": "font-size: 10;font-familly: Verdana",
-        "text": "",
+        "text": "test",
         "x": -17,
         "y": -25
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "e32f99c7-128d-4003-ba94-94cd3c005c9e",
+    "node_id": "65b24f26-b0a1-416b-9a00-822e256954e9",
     "node_type": "vpcs",
-    "project_id": "1df6389f-befc-4f18-9dce-dc3679ffc4c2",
+    "project_id": "9f98296f-7740-45a2-a40f-e6db8c356318",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/b397906a-a988-47ec-a843-2a970d875ac0'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/e4f6564d-1d40-4840-80c2-ecea2f29a14a'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/b397906a-a988-47ec-a843-2a970d875ac0 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/e4f6564d-1d40-4840-80c2-ecea2f29a14a HTTP/1.1
 
 
 
@@ -13,15 +13,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
 {
     "command_line": "",
-    "console": 5711,
+    "console": 5712,
     "console_type": "telnet",
     "ethernet_adapters": 2,
     "iourc_path": null,
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1130/test_json4/project-files/iou/b397906a-a988-47ec-a843-2a970d875ac0",
-    "node_id": "b397906a-a988-47ec-a843-2a970d875ac0",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1615/test_json4/project-files/iou/e4f6564d-1d40-4840-80c2-ecea2f29a14a",
+    "node_id": "e4f6564d-1d40-4840-80c2-ecea2f29a14a",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,

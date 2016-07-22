@@ -1,8 +1,8 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/000a9b96-c2f2-433a-b60b-a292388363e2' -d '{"console": 5712, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/99fcf923-1d1f-451f-808d-0562446ab983' -d '{"console": 5713, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/000a9b96-c2f2-433a-b60b-a292388363e2 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/99fcf923-1d1f-451f-808d-0562446ab983 HTTP/1.1
 {
-    "console": 5712,
+    "console": 5713,
     "ethernet_adapters": 4,
     "iourc_content": "test",
     "l1_keepalives": true,
@@ -24,15 +24,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
 {
     "command_line": "",
-    "console": 5712,
+    "console": 5713,
     "console_type": "telnet",
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1i3dv2rj/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmprys_zk85/iourc",
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1130/test_json4/project-files/iou/000a9b96-c2f2-433a-b60b-a292388363e2",
-    "node_id": "000a9b96-c2f2-433a-b60b-a292388363e2",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1615/test_json4/project-files/iou/99fcf923-1d1f-451f-808d-0562446ab983",
+    "node_id": "99fcf923-1d1f-451f-808d-0562446ab983",
     "nvram": 2048,
     "path": "iou.bin",
     "private_config": null,

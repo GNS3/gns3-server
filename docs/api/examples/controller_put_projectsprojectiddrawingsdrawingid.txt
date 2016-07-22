@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/1b8627ab-0930-4284-a88e-493f2c68b921/drawings/bafaf7a8-25f8-439a-8c73-7652bb389aef' -d '{"x": 42}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/488ca1f9-a404-43d3-87e9-ec82f1e33fb7/drawings/7a33ad88-12fd-4d5e-a373-0d9220c71f5a' -d '{"x": 42}'
 
-PUT /v2/projects/1b8627ab-0930-4284-a88e-493f2c68b921/drawings/bafaf7a8-25f8-439a-8c73-7652bb389aef HTTP/1.1
+PUT /v2/projects/488ca1f9-a404-43d3-87e9-ec82f1e33fb7/drawings/7a33ad88-12fd-4d5e-a373-0d9220c71f5a HTTP/1.1
 {
     "x": 42
 }
@@ -14,8 +14,8 @@ SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/drawings/{drawing_id}
 
 {
-    "drawing_id": "bafaf7a8-25f8-439a-8c73-7652bb389aef",
-    "project_id": "1b8627ab-0930-4284-a88e-493f2c68b921",
+    "drawing_id": "7a33ad88-12fd-4d5e-a373-0d9220c71f5a",
+    "project_id": "488ca1f9-a404-43d3-87e9-ec82f1e33fb7",
     "rotation": 0,
     "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
     "x": 42,

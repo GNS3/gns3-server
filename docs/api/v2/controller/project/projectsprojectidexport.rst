@@ -1,20 +1,18 @@
-/v2/compute/projects/{project_id}/cloud/nodes/{node_id}/suspend
+/v2/projects/{project_id}/export
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/compute/projects/**{project_id}**/cloud/nodes/**{node_id}**/suspend
+GET /v2/projects/**{project_id}**/export
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend a cloud
+Export a project as a portable archive
 
 Parameters
 **********
 - **project_id**: Project UUID
-- **node_id**: Node UUID
 
 Response status codes
 **********************
-- **400**: Invalid request
-- **404**: Instance doesn't exist
-- **204**: Instance suspended
+- **200**: File returned
+- **404**: The project doesn't exist
 

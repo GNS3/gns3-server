@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/17850018-125c-4c94-acc0-8f7fed551b85'
+curl -i -X GET 'http://localhost:3080/v2/projects/7e9f04f0-3d50-4e8e-acf0-0181436113a2'
 
-GET /v2/projects/17850018-125c-4c94-acc0-8f7fed551b85 HTTP/1.1
+GET /v2/projects/7e9f04f0-3d50-4e8e-acf0-0181436113a2 HTTP/1.1
 
 
 
@@ -14,7 +14,7 @@ X-ROUTE: /v2/projects/{project_id}
 {
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmprvgpe8o0/projects/17850018-125c-4c94-acc0-8f7fed551b85",
-    "project_id": "17850018-125c-4c94-acc0-8f7fed551b85",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpckxarug_/projects/7e9f04f0-3d50-4e8e-acf0-0181436113a2",
+    "project_id": "7e9f04f0-3d50-4e8e-acf0-0181436113a2",
     "status": "opened"
 }
