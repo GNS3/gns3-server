@@ -64,7 +64,26 @@ def test_export(tmpdir, project, async_run):
 
     # The .gns3 should be renamed project.gns3 in order to simplify import
     with open(os.path.join(path, "test.gns3"), 'w+') as f:
-        f.write("{}")
+        data = {
+            "topology": {
+                "computes": [
+                    {
+                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
+                        "host": "127.0.0.1",
+                        "name": "Remote 1",
+                        "port": 8001,
+                        "protocol": "http"
+                    }
+                ],
+                "nodes": [
+                    {
+                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
+                        "node_type": "vpcs"
+                    }
+                ]
+            }
+        }
+        json.dump(data, f)
 
     with open(os.path.join(path, "vm-1", "dynamips", "test"), 'w+') as f:
         f.write("HELLO")
@@ -89,6 +108,11 @@ def test_export(tmpdir, project, async_run):
         assert 'project.gns3' in myzip.namelist()
         assert 'project-files/snapshots/test' not in myzip.namelist()
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
+
+        with myzip.open("project.gns3") as myfile:
+            topo = json.loads(myfile.read().decode())["topology"]
+            assert topo["nodes"][0]["compute_id"] == "local" # All node should have compute_id local after export
+            assert topo["computes"] == []
 
 
 def test_export_vm(tmpdir, project, async_run, controller):

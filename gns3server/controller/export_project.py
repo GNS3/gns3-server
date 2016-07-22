@@ -123,6 +123,8 @@ def _export_project_file(project, path, z, include_images):
             if node["node_type"] in ["virtualbox", "vmware", "cloud"]:
                 raise aiohttp.web.HTTPConflict(text="Topology with a {} could not be exported".format(node["node_type"]))
 
+            node["compute_id"] = "local" # To make project portable all node by default run on local
+
             if "properties" in node and node["node_type"] != "Docker":
                 for prop, value in node["properties"].items():
                     if prop.endswith("image"):
@@ -130,8 +132,13 @@ def _export_project_file(project, path, z, include_images):
                         if include_images is True:
                             images.add(value)
 
+    if "topology" in topology:
+        topology["topology"]["computes"] = [] # Strip compute informations because could contain secret info like password
+
     for image in images:
         _export_images(project, image, z)
+
+
     z.writestr("project.gns3", json.dumps(topology).encode())
 
 
