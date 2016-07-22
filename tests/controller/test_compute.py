@@ -261,6 +261,14 @@ def test_streamFile(project, async_run, compute):
     mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/stream/test/titi".format(project.id), auth=None)
 
 
+def test_downloadFile(project, async_run, compute):
+    response = MagicMock()
+    response.status = 200
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        async_run(compute.download_file(project, "test/titi"))
+    mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/files/test/titi".format(project.id), auth=None)
+
+
 def test_close(compute, async_run):
     assert compute.connected is True
     async_run(compute.close())
@@ -318,3 +326,13 @@ def test_images(compute, async_run, images_dir):
         mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=False)
 
     assert images == [{"filename": "linux.qcow2", "path": "linux.qcow2"}, {"filename": "asa.qcow2", "path": "asa.qcow2"}]
+
+
+def test_list_files(project, async_run, compute):
+    res = [{"path": "test"}]
+    response = AsyncioMagicMock()
+    response.read = AsyncioMagicMock(return_value=json.dumps(res).encode())
+    response.status = 200
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        assert async_run(compute.list_files(project)) == res
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/projects/{}/files".format(project.id), auth=None, chunked=False, data=None, headers={'content-type': 'application/json'})

@@ -235,7 +235,6 @@ class ProjectHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
 
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             datas = yield from export_project(project, tmp_dir, include_images=bool(request.GET.get("include_images", "0")))
             # We need to do that now because export could failed and raise an HTTP error

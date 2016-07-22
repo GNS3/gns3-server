@@ -23,6 +23,7 @@ import zipfile
 
 from gns3server.controller.project import Project
 from gns3server.controller.import_project import import_project
+from gns3server.version import __version__
 
 
 def test_import_project(async_run, tmpdir, controller):
@@ -66,6 +67,32 @@ def test_import_project(async_run, tmpdir, controller):
     assert project.name != "test"
 
 
+def test_import_upgrade(async_run, tmpdir, controller):
+    project_id = str(uuid.uuid4())
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "topology": {
+        },
+        "version": "1.4.2"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f))
+
+    with open(os.path.join(project.path, "test.gns3")) as f:
+        topo = json.load(f)
+        assert topo["version"] == __version__
+
+
 def test_import_with_images(tmpdir, async_run, controller):
 
     project_id = str(uuid.uuid4())
@@ -92,8 +119,6 @@ def test_import_with_images(tmpdir, async_run, controller):
     with open(zip_path, "rb") as f:
         project = async_run(import_project(controller, project_id, f))
 
-    print(project._config().get("images_path"))
-    # TEST import images
     assert not os.path.exists(os.path.join(project.path, "images/IOS/test.image"))
 
     path = os.path.join(project._config().get("images_path"), "IOS", "test.image")

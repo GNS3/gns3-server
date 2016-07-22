@@ -24,6 +24,7 @@ import zipfile
 import aiohttp
 
 from ..config import Config
+from .topology import load_topology
 
 
 """
@@ -51,15 +52,18 @@ def import_project(controller, project_id, stream):
         try:
             topology = json.loads(myzip.read("project.gns3").decode())
             # If the project name is already used we generate a new one
-            topology["name"] = controller.get_free_project_name(topology["name"])
+            project_name = controller.get_free_project_name(topology["name"])
         except KeyError:
             raise aiohttp.web.HTTPConflict(text="Can't import topology the .gns3 is corrupted or missing")
 
-        path = os.path.join(projects_path, topology["name"])
+        path = os.path.join(projects_path, project_name)
         os.makedirs(path)
         myzip.extractall(path)
 
-        dot_gns3_path = os.path.join(path, topology["name"] + ".gns3")
+        topology = load_topology(os.path.join(path, "project.gns3"))
+        topology["name"] = project_name
+
+        dot_gns3_path = os.path.join(path, project_name + ".gns3")
         # We change the project_id to avoid erasing the project
         topology["project_id"] = project_id
         with open(dot_gns3_path, "w+") as f:

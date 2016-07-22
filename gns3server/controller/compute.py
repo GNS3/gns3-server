@@ -71,6 +71,7 @@ class Compute:
     """
 
     def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=3080, user=None, password=None, name=None):
+        self._http_session = None
         assert controller is not None
         log.info("Create compute %s", compute_id)
 
@@ -87,7 +88,6 @@ class Compute:
         self._connected = False
         self._controller = controller
         self._set_auth(user, password)
-        self._http_session = None
         self._version = None
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
@@ -472,4 +472,3 @@ class Compute:
         path = "/projects/{}/files".format(project.id)
         res = yield from self.http_query("GET", path, timeout=120)
         return res.json
-
