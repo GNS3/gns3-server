@@ -44,8 +44,7 @@ def import_project(controller, project_id, stream):
     :param gns3vm: True move Docker, IOU and Qemu to the GNS3 VM
     :returns: Project
     """
-    server_config = Config.instance().get_section_config("Server")
-    projects_path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
+    projects_path = controller.projects_directory()
     os.makedirs(projects_path, exist_ok=True)
 
     with zipfile.ZipFile(stream) as myzip:
@@ -108,7 +107,8 @@ def _move_files_to_compute(compute, project_id, directory, files_path):
             path = os.path.join(dirpath, filename)
             dst = os.path.relpath(path, directory)
             yield from _upload_file(compute, project_id, path, dst)
-    shutil.rmtree(directory)
+    shutil.rmtree(os.path.join(directory, files_path))
+
 
 @asyncio.coroutine
 def _upload_file(compute, project_id, file_path, path):
@@ -118,7 +118,7 @@ def _upload_file(compute, project_id, file_path, path):
     :param file_path: File path on the controller file system
     :param path: File path on the remote system relative to project directory
     """
-    path = "/projects/{}/files/path".format(project_id, path.replace("\\", "/"))
+    path = "/projects/{}/files/{}".format(project_id, path.replace("\\", "/"))
     with open(file_path, "rb") as f:
         yield from compute.http_query("POST", path, f, timeout=None)
 

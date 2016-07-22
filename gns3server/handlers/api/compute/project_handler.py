@@ -349,6 +349,7 @@ class ProjectHandler:
         response.set_status(200)
 
         try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb+') as f:
                 while True:
                     packet = yield from request.content.read(512)

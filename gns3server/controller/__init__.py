@@ -305,11 +305,17 @@ class Controller:
         if base_name not in names:
             return base_name
         i = 1
-        while "{}-{}".format(base_name, i) in names:
+
+        projects_path = self.projects_directory()
+
+        while True:
+            new_name = "{}-{}".format(base_name, i)
+            if new_name not in names and not os.path.exists(os.path.join(projects_path, new_name)):
+                break
             i += 1
             if i > 1000000:
                 raise aiohttp.web.HTTPConflict(text="A project name could not be allocated (node limit reached?)")
-        return "{}-{}".format(base_name, i)
+        return new_name
 
     @property
     def projects(self):
@@ -317,6 +323,10 @@ class Controller:
         :returns: The dictionary of computes managed by GNS3
         """
         return self._projects
+
+    def projects_directory(self):
+        server_config = Config.instance().get_section_config("Server")
+        return os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
 
     @staticmethod
     def instance():
