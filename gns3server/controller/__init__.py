@@ -244,6 +244,12 @@ class Controller:
                 raise aiohttp.web.HTTPNotFound(text="You try to use a node on the GNS3 VM server but the GNS3 is not configured")
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
+    def has_compute(self, compute_id):
+        """
+        Return True if the compute exist in the controller
+        """
+        return compute_id in self._computes
+
     @asyncio.coroutine
     def add_project(self, project_id=None, name=None, **kwargs):
         """

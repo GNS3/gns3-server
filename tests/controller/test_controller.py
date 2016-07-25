@@ -192,6 +192,13 @@ def test_getCompute(controller, async_run):
         assert controller.get_compute("dsdssd")
 
 
+def test_has_compute(controller, async_run):
+    compute = async_run(controller.add_compute(compute_id="test1"))
+
+    assert controller.has_compute("test1")
+    assert not controller.has_compute("test2")
+
+
 def test_initControllerLocal(controller, controller_config_path, async_run):
     """
     The local node is the controller itself you can not change the informations
@@ -344,4 +351,3 @@ def test_get_free_project_name(controller, async_run):
     async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test-1"))
     assert controller.get_free_project_name("Test") == "Test-2"
     assert controller.get_free_project_name("Hello") == "Hello"
-

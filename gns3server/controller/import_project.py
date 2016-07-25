@@ -74,8 +74,9 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
 
         # Modify the compute id of the node depending of compute capacity
         if not keep_compute_id:
-            # For some VM type we move them to the GNS3 VM if it's not a Linux host
-            if not sys.platform.startswith("linux"):
+            # For some VM type we move them to the GNS3 VM if possible
+            # unless it's a linux host without GNS3 VM
+            if not sys.platform.startswith("linux") or controller.has_compute("vm"):
                 for node in topology["topology"]["nodes"]:
                     if node["node_type"] in ("docker", "qemu", "iou"):
                         node["compute_id"] = "vm"

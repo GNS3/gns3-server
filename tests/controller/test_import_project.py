@@ -131,9 +131,9 @@ def test_import_with_images(tmpdir, async_run, controller):
     assert os.path.exists(path), path
 
 
-def test_import_iou_linux(linux_platform, async_run, tmpdir, controller):
+def test_import_iou_linux_no_vm(linux_platform, async_run, tmpdir, controller):
     """
-    On non linux host IOU should be local
+    On non linux host IOU should be local if we don't have a GNS3 VM
     """
     project_id = str(uuid.uuid4())
 
@@ -170,6 +170,49 @@ def test_import_iou_linux(linux_platform, async_run, tmpdir, controller):
     with open(os.path.join(project.path, "test.gns3")) as f:
         topo = json.load(f)
         assert topo["topology"]["nodes"][0]["compute_id"] == "local"
+
+
+def test_import_iou_linux_with_vm(linux_platform, async_run, tmpdir, controller):
+    """
+    On non linux host IOU should be vm if we have a GNS3 VM configured
+    """
+    project_id = str(uuid.uuid4())
+    controller._computes["vm"] = AsyncioMagicMock()
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "type": "topology",
+        "topology": {
+            "nodes": [
+                {
+                    "compute_id": "local",
+                    "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
+                    "node_type": "iou",
+                    "properties": {}
+                }
+            ],
+            "links": [],
+            "computes": [],
+            "drawings": []
+        },
+        "revision": 5,
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f))
+
+    with open(os.path.join(project.path, "test.gns3")) as f:
+        topo = json.load(f)
+        assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
 
 
 def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
