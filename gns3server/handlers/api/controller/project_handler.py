@@ -268,6 +268,14 @@ class ProjectHandler:
 
         controller = Controller.instance()
 
+        if request.get("path"):
+            config = Config.instance()
+            if config.get_section_config("Server").getboolean("local", False) is False:
+                response.set_status(403)
+                return
+        path = request.json.get("path")
+        name = request.json.get("name")
+
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
         # Spooled means the file is temporary kept in memory until max_size is reached
@@ -278,7 +286,7 @@ class ProjectHandler:
                     if not packet:
                         break
                     temp.write(packet)
-                project = yield from import_project(controller, request.match_info["project_id"], temp)
+                project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
 

@@ -21,6 +21,7 @@ import jsonschema
 import asyncio
 import aiohttp
 import logging
+import urllib
 import traceback
 
 log = logging.getLogger(__name__)
@@ -36,8 +37,9 @@ from ..config import Config
 @asyncio.coroutine
 def parse_request(request, input_schema):
     """Parse body of request and raise HTTP errors in case of problems"""
+
     content_length = request.content_length
-    if content_length is not None and content_length > 0:
+    if content_length is not None and content_length > 0 and input_schema:
         body = yield from request.read()
         try:
             request.json = json.loads(body.decode('utf-8'))
@@ -46,13 +48,21 @@ def parse_request(request, input_schema):
             raise aiohttp.web.HTTPBadRequest(text="Invalid JSON {}".format(e))
     else:
         request.json = {}
-    try:
-        jsonschema.validate(request.json, input_schema)
-    except jsonschema.ValidationError as e:
-        log.error("Invalid input query. JSON schema error: {}".format(e.message))
-        raise aiohttp.web.HTTPBadRequest(text="Invalid JSON: {} in schema: {}".format(
-            e.message,
-            json.dumps(e.schema)))
+
+    # Parse the query string
+    if len(request.query_string) > 0:
+        for (k, v) in urllib.parse.parse_qs(request.query_string).items():
+            request.json[k] = v[0]
+
+    if input_schema:
+        try:
+            jsonschema.validate(request.json, input_schema)
+        except jsonschema.ValidationError as e:
+            log.error("Invalid input query. JSON schema error: {}".format(e.message))
+            raise aiohttp.web.HTTPBadRequest(text="Invalid JSON: {} in schema: {}".format(
+                e.message,
+                json.dumps(e.schema)))
+
     return request
 
 
@@ -166,6 +176,7 @@ class Route(object):
                     if api_version is None or raw is True:
                         response = Response(request=request, route=route, output_schema=output_schema)
 
+                        request = yield from parse_request(request, None)
                         yield from func(request, response)
                         return response
 
