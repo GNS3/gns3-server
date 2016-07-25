@@ -34,17 +34,23 @@ Handle the import of project from a .gns3project
 
 
 @asyncio.coroutine
-def import_project(controller, project_id, stream):
+def import_project(controller, project_id, stream, location=None, name=None):
     """
     Import a project contain in a zip file
 
     You need to handle OSerror exceptions
 
+    :param controller: GNS3 Controller
+    :param project_id: ID of the project to import
     :param stream: A io.BytesIO of the zipfile
-    :param gns3vm: True move Docker, IOU and Qemu to the GNS3 VM
+    :param location: Parent directory for the project if None put in the default directory
+    :param name: Wanted project name, generate one from the .gns3 if None
     :returns: Project
     """
-    projects_path = controller.projects_directory()
+    if location:
+        projects_path = location
+    else:
+        projects_path = controller.projects_directory()
     os.makedirs(projects_path, exist_ok=True)
 
     with zipfile.ZipFile(stream) as myzip:
@@ -52,7 +58,10 @@ def import_project(controller, project_id, stream):
         try:
             topology = json.loads(myzip.read("project.gns3").decode())
             # If the project name is already used we generate a new one
-            project_name = controller.get_free_project_name(topology["name"])
+            if name:
+                project_name = controller.get_free_project_name(name)
+            else:
+                project_name = controller.get_free_project_name(topology["name"])
         except KeyError:
             raise aiohttp.web.HTTPConflict(text="Can't import topology the .gns3 is corrupted or missing")
 

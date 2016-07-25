@@ -237,3 +237,37 @@ def test_move_files_to_compute(tmpdir, async_run):
     mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test"), "project-files/docker/test")
     mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test2"), "project-files/docker/test2")
     assert not os.path.exists(str(tmpdir / "project-files" / "docker"))
+
+
+def test_import_project_name_and_location(async_run, tmpdir, controller):
+    """
+    Import a project with a different location and name
+    """
+    project_id = str(uuid.uuid4())
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "topology": {
+        },
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f, name="hello", location=str(tmpdir / "test")))
+
+    assert project.name == "hello"
+
+    assert os.path.exists(str(tmpdir / "test" / "hello" / "hello.gns3"))
+
+    # A new project name is generated when you import twice the same name
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, str(uuid.uuid4()), f, name="hello", location=str(tmpdir / "test")))
+    assert project.name == "hello-1"
