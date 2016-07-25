@@ -17,9 +17,11 @@
 
 import os
 import json
+import uuid
+import shutil
 import asyncio
 import aiohttp
-import shutil
+import tempfile
 
 from uuid import UUID, uuid4
 
@@ -29,10 +31,24 @@ from .topology import project_to_topology, load_topology
 from .udp_link import UDPLink
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
+from .export_project import export_project
+from .import_project import import_project
 
 
 import logging
 log = logging.getLogger(__name__)
+
+
+def open_required(func):
+    """
+    Use this decorator to raise an error if the project is not opened
+    """
+
+    def wrapper(self, *args, **kwargs):
+        if self._status == "closed":
+            raise aiohttp.web.HTTPForbidden(text="The project is not opened")
+        return func(self, *args, **kwargs)
+    return wrapper
 
 
 class Project:
@@ -74,7 +90,12 @@ class Project:
             self._filename = filename
         else:
             self._filename = self.name + ".gns3"
+
         self.reset()
+
+        # At project creation we write an empty .gns3
+        if not os.path.exists(self._topology_file()):
+            self.dump()
 
     def reset(self):
         """
@@ -212,6 +233,7 @@ class Project:
             return self.update_allocated_node_name(new_name)
         return new_name
 
+    @open_required
     @asyncio.coroutine
     def add_node(self, compute, name, node_id, **kwargs):
         """
@@ -243,6 +265,7 @@ class Project:
             return node
         return self._nodes[node_id]
 
+    @open_required
     @asyncio.coroutine
     def delete_node(self, node_id):
 
@@ -258,6 +281,7 @@ class Project:
         self.dump()
         self.controller.notification.emit("node.deleted", node.__json__())
 
+    @open_required
     def get_node(self, node_id):
         """
         Return the node or raise a 404 if the node is unknown
@@ -281,6 +305,7 @@ class Project:
         """
         return self._drawings
 
+    @open_required
     @asyncio.coroutine
     def add_drawing(self, drawing_id=None, **kwargs):
         """
@@ -296,6 +321,7 @@ class Project:
             return drawing
         return self._drawings[drawing_id]
 
+    @open_required
     def get_drawing(self, drawing_id):
         """
         Return the Drawing or raise a 404 if the drawing is unknown
@@ -305,6 +331,7 @@ class Project:
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="Drawing ID {} doesn't exist".format(drawing_id))
 
+    @open_required
     @asyncio.coroutine
     def delete_drawing(self, drawing_id):
         drawing = self.get_drawing(drawing_id)
@@ -312,6 +339,7 @@ class Project:
         self.dump()
         self.controller.notification.emit("drawing.deleted", drawing.__json__())
 
+    @open_required
     @asyncio.coroutine
     def add_link(self, link_id=None):
         """
@@ -324,6 +352,7 @@ class Project:
         self.dump()
         return link
 
+    @open_required
     @asyncio.coroutine
     def delete_link(self, link_id):
         link = self.get_link(link_id)
@@ -332,6 +361,7 @@ class Project:
         self.dump()
         self.controller.notification.emit("link.deleted", link.__json__())
 
+    @open_required
     def get_link(self, link_id):
         """
         Return the Link or raise a 404 if the link is unknown
@@ -371,6 +401,7 @@ class Project:
         except OSError as e:
             log.warning(str(e))
 
+    @open_required
     @asyncio.coroutine
     def delete(self):
         yield from self.close()
@@ -406,6 +437,8 @@ class Project:
             return
 
         self.reset()
+        self._status = "opened"
+
         path = self._topology_file()
         if os.path.exists(path):
             topology = load_topology(path)["topology"]
@@ -424,7 +457,29 @@ class Project:
 
             for drawing_data in topology.get("drawings", []):
                 drawing = yield from self.add_drawing(**drawing_data)
-        self._status = "opened"
+
+    @open_required
+    @asyncio.coroutine
+    def duplicate(self, name=None, location=None):
+        """
+        Duplicate a project
+
+        It's the save as feature of the 1.X. It's implemented on top of the
+        export / import features. It will generate a gns3p and reimport it.
+        It's a little slower but we have only one implementation to maintain.
+
+        :param name: Name of the new project. A new one will be generated in case of conflicts
+        :param location: Parent directory of the new project
+        """
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+            with open(os.path.join(tmpdir, "project.gns3p"), "wb+") as f:
+                for data in zipstream:
+                    f.write(data)
+            with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
+                project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+        return project
 
     def is_running(self):
         """

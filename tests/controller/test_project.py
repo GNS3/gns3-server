@@ -203,7 +203,7 @@ def test_delete_node_delete_link(async_run, controller):
     controller.notification.emit.assert_any_call("link.deleted", link.__json__())
 
 
-def test_getVM(async_run, controller):
+def test_get_node(async_run, controller):
     compute = MagicMock()
     project = Project(controller=controller, name="Test")
 
@@ -216,6 +216,11 @@ def test_getVM(async_run, controller):
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
         project.get_node("test")
+
+    # Raise an error if the project is not opened
+    async_run(project.close())
+    with pytest.raises(aiohttp.web.HTTPForbidden):
+        project.get_node(vm.id)
 
 
 def test_addLink(async_run, project, controller):
@@ -339,3 +344,32 @@ def test_is_running(project, async_run, node):
     assert project.is_running() is False
     node._status = "started"
     assert project.is_running() is True
+
+
+def test_duplicate(project, async_run, controller):
+    """
+    Duplicate a project, the node should remain on the remote server
+    if they were on remote server
+    """
+    compute = MagicMock()
+    compute.id = "remote"
+    compute.list_files = AsyncioMagicMock(return_value=[])
+    controller._computes["remote"] = compute
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    remote_vpcs = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+
+    # We allow node not allowed for standard import / export
+    remote_virtualbox = async_run(project.add_node(compute, "test", None, node_type="virtualbox", properties={"startup_config": "test.cfg"}))
+
+    new_project = async_run(project.duplicate(name="Hello"))
+    assert new_project.id != project.id
+    assert new_project.name == "Hello"
+
+    async_run(new_project.open())
+
+    assert new_project.get_node(remote_vpcs.id).compute.id == "remote"
+    assert new_project.get_node(remote_virtualbox.id).compute.id == "remote"

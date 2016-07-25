@@ -131,7 +131,7 @@ def test_import_with_images(tmpdir, async_run, controller):
     assert os.path.exists(path), path
 
 
-def test_import_iou_non_linux(linux_platform, async_run, tmpdir, controller):
+def test_import_iou_linux(linux_platform, async_run, tmpdir, controller):
     """
     On non linux host IOU should be local
     """
@@ -224,6 +224,49 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
         assert topo["topology"]["nodes"][1]["compute_id"] == "local"
 
 
+def test_import_keep_compute_id(windows_platform, async_run, tmpdir, controller):
+    """
+    On linux host IOU should be moved to the GNS3 VM
+    """
+    project_id = str(uuid.uuid4())
+    controller._computes["vm"] = AsyncioMagicMock()
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "type": "topology",
+        "topology": {
+            "nodes": [
+                {
+                    "compute_id": "local",
+                    "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
+                    "node_type": "iou",
+                    "properties": {}
+                }
+            ],
+            "links": [],
+            "computes": [],
+            "drawings": []
+        },
+        "revision": 5,
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f, keep_compute_id=True))
+
+    with open(os.path.join(project.path, "test.gns3")) as f:
+        topo = json.load(f)
+        assert topo["topology"]["nodes"][0]["compute_id"] == "local"
+
+
 def test_move_files_to_compute(tmpdir, async_run):
     project_id = str(uuid.uuid4())
 
@@ -261,11 +304,11 @@ def test_import_project_name_and_location(async_run, tmpdir, controller):
         myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
 
     with open(zip_path, "rb") as f:
-        project = async_run(import_project(controller, project_id, f, name="hello", location=str(tmpdir / "test")))
+        project = async_run(import_project(controller, project_id, f, name="hello", location=str(tmpdir / "hello")))
 
     assert project.name == "hello"
 
-    assert os.path.exists(str(tmpdir / "test" / "hello" / "hello.gns3"))
+    assert os.path.exists(str(tmpdir / "hello" / "hello.gns3"))
 
     # A new project name is generated when you import twice the same name
     with open(zip_path, "rb") as f:

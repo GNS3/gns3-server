@@ -220,3 +220,10 @@ def test_import(http_controller, tmpdir, controller):
     with open(os.path.join(project.path, "demo")) as f:
         content = f.read()
     assert content == "hello"
+
+
+def test_duplicate(http_controller, tmpdir, loop, project):
+
+    response = http_controller.post("/projects/{project_id}/duplicate".format(project_id=project.id), {"name": "hello"}, example=True)
+    assert response.status == 201
+    assert response.json["name"] == "hello"

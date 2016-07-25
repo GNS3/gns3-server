@@ -34,7 +34,7 @@ Handle the import of project from a .gns3project
 
 
 @asyncio.coroutine
-def import_project(controller, project_id, stream, location=None, name=None):
+def import_project(controller, project_id, stream, location=None, name=None, keep_compute_id=False):
     """
     Import a project contain in a zip file
 
@@ -45,13 +45,9 @@ def import_project(controller, project_id, stream, location=None, name=None):
     :param stream: A io.BytesIO of the zipfile
     :param location: Parent directory for the project if None put in the default directory
     :param name: Wanted project name, generate one from the .gns3 if None
+    :param keep_compute_id: If true do not touch the compute id
     :returns: Project
     """
-    if location:
-        projects_path = location
-    else:
-        projects_path = controller.projects_directory()
-    os.makedirs(projects_path, exist_ok=True)
 
     with zipfile.ZipFile(stream) as myzip:
 
@@ -65,31 +61,42 @@ def import_project(controller, project_id, stream, location=None, name=None):
         except KeyError:
             raise aiohttp.web.HTTPConflict(text="Can't import topology the .gns3 is corrupted or missing")
 
-        path = os.path.join(projects_path, project_name)
+        if location:
+            path = location
+        else:
+            projects_path = controller.projects_directory()
+            path = os.path.join(projects_path, project_name)
         os.makedirs(path)
         myzip.extractall(path)
 
         topology = load_topology(os.path.join(path, "project.gns3"))
         topology["name"] = project_name
 
-        # For some VM type we move them to the GNS3 VM if it's not a Linux host
-        if not sys.platform.startswith("linux"):
-            vm_created = False
+        # Modify the compute id of the node depending of compute capacity
+        if not keep_compute_id:
+            # For some VM type we move them to the GNS3 VM if it's not a Linux host
+            if not sys.platform.startswith("linux"):
+                for node in topology["topology"]["nodes"]:
+                    if node["node_type"] in ("docker", "qemu", "iou"):
+                        node["compute_id"] = "vm"
+            else:
+                for node in topology["topology"]["nodes"]:
+                    node["compute_id"] = "local"
 
-            for node in topology["topology"]["nodes"]:
-                if node["node_type"] in ("docker", "qemu", "iou"):
-                    node["compute_id"] = "vm"
+        compute_created = set()
+        for node in topology["topology"]["nodes"]:
 
-                    # Project created on the remote GNS3 VM?
-                    if not vm_created:
-                        compute = controller.get_compute("vm")
-                        yield from compute.post("/projects", data={
-                            "name": project_name,
-                            "project_id": project_id,
-                        })
-                        vm_created = True
+            if node["compute_id"] != "local":
+                # Project created on the remote GNS3 VM?
+                if node["compute_id"] not in compute_created:
+                    compute = controller.get_compute(node["compute_id"])
+                    yield from compute.post("/projects", data={
+                        "name": project_name,
+                        "project_id": project_id,
+                    })
+                    compute_created.add(node["compute_id"])
 
-                    yield from _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
+                yield from _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
 
         # And we dump the updated.gns3
         dot_gns3_path = os.path.join(path, project_name + ".gns3")
@@ -111,12 +118,14 @@ def _move_files_to_compute(compute, project_id, directory, files_path):
     """
     Move the files to a remote compute
     """
-    for (dirpath, dirnames, filenames) in os.walk(os.path.join(directory, files_path)):
-        for filename in filenames:
-            path = os.path.join(dirpath, filename)
-            dst = os.path.relpath(path, directory)
-            yield from _upload_file(compute, project_id, path, dst)
-    shutil.rmtree(os.path.join(directory, files_path))
+    location = os.path.join(directory, files_path)
+    if os.path.exists(location):
+        for (dirpath, dirnames, filenames) in os.walk(location):
+            for filename in filenames:
+                path = os.path.join(dirpath, filename)
+                dst = os.path.relpath(path, directory)
+                yield from _upload_file(compute, project_id, path, dst)
+        shutil.rmtree(os.path.join(directory, files_path))
 
 
 @asyncio.coroutine

@@ -236,7 +236,7 @@ class ProjectHandler:
         project = controller.get_project(request.match_info["project_id"])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            datas = yield from export_project(project, tmp_dir, include_images=bool(request.GET.get("include_images", "0")))
+            datas = yield from export_project(project, tmp_dir, include_images=bool(request.get("include_images", "0")))
             # We need to do that now because export could failed and raise an HTTP error
             # that why response start need to be the later possible
             response.content_type = 'application/gns3project'
@@ -283,6 +283,38 @@ class ProjectHandler:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
 
         response.json(project)
+        response.set_status(201)
+
+    @Route.post(
+        r"/projects/{project_id}/duplicate",
+        description="Duplicate a project",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        input=PROJECT_CREATE_SCHEMA,
+        output=PROJECT_OBJECT_SCHEMA,
+        status_codes={
+            201: "Project duplicate",
+            403: "The server is not the local server",
+            404: "The project doesn't exist"
+        })
+    def duplicate(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+
+        if request.json.get("path"):
+            config = Config.instance()
+            if config.get_section_config("Server").getboolean("local", False) is False:
+                response.set_status(403)
+                return
+            location = request.json.get("path")
+        else:
+            location = None
+
+        new_project = yield from project.duplicate(name=request.json.get("name"), location=location)
+
+        response.json(new_project)
         response.set_status(201)
 
     @Route.get(

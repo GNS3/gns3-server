@@ -74,7 +74,7 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
         """
         :return_values: Array of return value at each call will return the next
         """
-        if return_value:
+        if return_value is not None:
             future = asyncio.Future()
             future.set_result(return_value)
             kwargs["return_value"] = future

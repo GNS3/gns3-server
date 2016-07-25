@@ -200,6 +200,7 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
 
     with pytest.raises(aiohttp.web.HTTPConflict):
         z = async_run(export_project(project, str(tmpdir)))
+        z = async_run(export_project(project, str(tmpdir), allow_all_nodes=True))
 
 
 def test_export_fix_path(tmpdir, project, async_run):
@@ -271,3 +272,44 @@ def test_export_with_images(tmpdir, project, async_run):
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         myzip.getinfo("images/IOS/test.image")
+
+
+def test_export_keep_compute_id(tmpdir, project, async_run):
+    """
+    If we want to restore the same computes we could ask to keep them
+    in the file
+    """
+
+    with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
+        data = {
+            "topology": {
+                "computes": [
+                    {
+                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
+                        "host": "127.0.0.1",
+                        "name": "Remote 1",
+                        "port": 8001,
+                        "protocol": "http"
+                    }
+                ],
+                "nodes": [
+                    {
+                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
+                        "node_type": "vpcs"
+                    }
+                ]
+            }
+        }
+        json.dump(data, f)
+
+    z = async_run(export_project(project, str(tmpdir), keep_compute_id=True))
+
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        with myzip.open("project.gns3") as myfile:
+            topo = json.loads(myfile.read().decode())["topology"]
+            assert topo["nodes"][0]["compute_id"] == "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0"
+            assert len(topo["computes"]) == 1

@@ -25,7 +25,7 @@ import zipstream
 
 
 @asyncio.coroutine
-def export_project(project, temporary_dir, include_images=False):
+def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
     """
     Export the project as zip. It's a ZipStream object.
     The file will be read chunk by chunk when you iterate on
@@ -34,6 +34,8 @@ def export_project(project, temporary_dir, include_images=False):
     It will ignore some files like snapshots and
 
     :param temporary_dir: A temporary dir where to store intermediate data
+    :param keep_compute_id: If false replace all compute id by local it's the standard behavior for .gns3project to make them portable
+    :param allow_all_nodes: Allow all nodes type to be include in the zip even if not portable default False
     :returns: ZipStream object
     """
 
@@ -46,7 +48,7 @@ def export_project(project, temporary_dir, include_images=False):
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
         if file.endswith(".gns3"):
-            _export_project_file(project, os.path.join(project._path, file), z, include_images)
+            _export_project_file(project, os.path.join(project._path, file), z, include_images, keep_compute_id, allow_all_nodes)
 
     for root, dirs, files in os.walk(project._path, topdown=True):
         files = [f for f in files if not _filter_files(os.path.join(root, f))]
@@ -61,10 +63,10 @@ def export_project(project, temporary_dir, include_images=False):
                 log.warn(msg)
                 project.emit("log.warning", {"message": msg})
                 continue
-        if file.endswith(".gns3"):
-            pass
-        else:
-            z.write(path, os.path.relpath(path, project._path), compress_type=zipfile.ZIP_DEFLATED)
+            if file.endswith(".gns3"):
+                pass
+            else:
+                z.write(path, os.path.relpath(path, project._path), compress_type=zipfile.ZIP_DEFLATED)
 
     for compute in project.computes:
         if compute.id != "local":
@@ -104,7 +106,7 @@ def _filter_files(path):
     return False
 
 
-def _export_project_file(project, path, z, include_images):
+def _export_project_file(project, path, z, include_images, keep_compute_id, allow_all_nodes):
     """
     Take a project file (.gns3) and patch it for the export
 
@@ -118,22 +120,26 @@ def _export_project_file(project, path, z, include_images):
 
     with open(path) as f:
         topology = json.load(f)
-    if "topology" in topology and "nodes" in topology["topology"]:
-        for node in topology["topology"]["nodes"]:
-            if node["node_type"] in ["virtualbox", "vmware", "cloud"]:
-                raise aiohttp.web.HTTPConflict(text="Topology with a {} could not be exported".format(node["node_type"]))
-
-            node["compute_id"] = "local"  # To make project portable all node by default run on local
-
-            if "properties" in node and node["node_type"] != "Docker":
-                for prop, value in node["properties"].items():
-                    if prop.endswith("image"):
-                        node["properties"][prop] = os.path.basename(value)
-                        if include_images is True:
-                            images.add(value)
 
     if "topology" in topology:
-        topology["topology"]["computes"] = []  # Strip compute informations because could contain secret info like password
+        if "nodes" in topology["topology"]:
+            for node in topology["topology"]["nodes"]:
+                if not allow_all_nodes and node["node_type"] in ["virtualbox", "vmware", "cloud"]:
+                    raise aiohttp.web.HTTPConflict(text="Topology with a {} could not be exported".format(node["node_type"]))
+
+                if not keep_compute_id:
+                    node["compute_id"] = "local"  # To make project portable all node by default run on local
+
+                if "properties" in node and node["node_type"] != "Docker":
+                    for prop, value in node["properties"].items():
+                        if prop.endswith("image"):
+                            if not keep_compute_id:  # If we keep the original compute we can keep the image path
+                                node["properties"][prop] = os.path.basename(value)
+                            if include_images is True:
+                                images.add(value)
+
+        if not keep_compute_id:
+            topology["topology"]["computes"] = []  # Strip compute informations because could contain secret info like password
 
     for image in images:
         _export_images(project, image, z)
