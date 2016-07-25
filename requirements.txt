@@ -2,6 +2,6 @@ jsonschema>=2.4.0
 aiohttp>=0.21.6
 aiohttp_cors>=0.4.0
 Jinja2>=2.7.3
-raven>=5.2.0
+raven>=5.23.0
 psutil>=3.0.0
 zipstream>=1.1.3

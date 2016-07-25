@@ -23,6 +23,7 @@ import platform
 
 try:
     import raven
+    from raven.transport.http import HTTPTransport
     RAVEN_AVAILABLE = True
 except ImportError:
     # raven is not installed with deb package in order to simplify packaging
@@ -80,7 +81,7 @@ class CrashReport:
         server_config = Config.instance().get_section_config("Server")
         if server_config.getboolean("report_errors"):
             if self._client is None:
-                self._client = raven.Client(CrashReport.DSN, release=__version__, raise_send_errors=True)
+                self._client = raven.Client(CrashReport.DSN, release=__version__, raise_send_errors=True, transport=HTTPTransport)
             if request is not None:
                 self._client.http_context({
                     "method": request.method,
