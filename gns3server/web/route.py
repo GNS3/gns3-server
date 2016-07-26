@@ -35,11 +35,11 @@ from ..config import Config
 
 
 @asyncio.coroutine
-def parse_request(request, input_schema):
+def parse_request(request, input_schema, raw):
     """Parse body of request and raise HTTP errors in case of problems"""
 
     content_length = request.content_length
-    if content_length is not None and content_length > 0 and input_schema:
+    if content_length is not None and content_length > 0 and not raw:
         body = yield from request.read()
         try:
             request.json = json.loads(body.decode('utf-8'))
@@ -176,7 +176,7 @@ class Route(object):
                     if api_version is None or raw is True:
                         response = Response(request=request, route=route, output_schema=output_schema)
 
-                        request = yield from parse_request(request, None)
+                        request = yield from parse_request(request, None, raw)
                         yield from func(request, response)
                         return response
 
@@ -184,7 +184,7 @@ class Route(object):
                     if "controller" in func.__module__ and server_config.getboolean("controller", False) is False:
                         raise aiohttp.web.HTTPForbidden(text="The server is not a controller")
 
-                    request = yield from parse_request(request, input_schema)
+                    request = yield from parse_request(request, input_schema, raw)
                     record_file = server_config.get("record")
                     if record_file:
                         try:
