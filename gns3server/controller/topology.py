@@ -230,7 +230,9 @@ def _convert_1_3_later(topo, topo_path):
         elif old_node["type"] == "IOUDevice":
             node["node_type"] = "iou"
         elif old_node["type"] == "Cloud":
-            _create_cloud(node, old_node)
+            _create_cloud(node, old_node, ":/symbols/cloud.svg")
+        elif old_node["type"] == "Host":
+            _create_cloud(node, old_node, ":/symbols/computer.svg")
         else:
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 
@@ -418,9 +420,9 @@ def _convert_label(label):
     }
 
 
-def _create_cloud(node, old_node):
+def _create_cloud(node, old_node, icon):
     node["node_type"] = "cloud"
-    node["symbol"] = ":/symbols/cloud.svg"
+    node["symbol"] = icon
     node["console_type"] = None
     node["console"] = None
     del old_node["properties"]["nios"]
