@@ -91,6 +91,10 @@ def _filter_files(path):
     :returns: True if file should not be included in the final archive
     """
     s = os.path.normpath(path).split(os.path.sep)
+
+    if path.endswith("snapshots"):
+        return True
+
     try:
         i = s.index("project-files")
         if s[i + 1] in ("tmp", "captures", "snapshots"):

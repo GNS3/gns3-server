@@ -54,6 +54,7 @@ def test_filter_files():
     assert _filter_files("project-files/tmp")
     assert _filter_files("project-files/test_log.txt")
     assert _filter_files("project-files/test.log")
+    assert _filter_files("test/snapshots")
     assert _filter_files("test/project-files/snapshots")
     assert _filter_files("test/project-files/snapshots/test.gns3p")
 

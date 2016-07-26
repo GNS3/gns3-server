@@ -43,7 +43,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
     :param controller: GNS3 Controller
     :param project_id: ID of the project to import
     :param stream: A io.BytesIO of the zipfile
-    :param location: Parent directory for the project if None put in the default directory
+    :param location: Directory for the project if None put in the default directory
     :param name: Wanted project name, generate one from the .gns3 if None
     :param keep_compute_id: If true do not touch the compute id
     :returns: Project
@@ -53,11 +53,16 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
 
         try:
             topology = json.loads(myzip.read("project.gns3").decode())
-            # If the project name is already used we generate a new one
-            if name:
-                project_name = controller.get_free_project_name(name)
+
+            # We import the project on top of an existing project (snapshots)
+            if topology["project_id"] == project_id:
+                project_name = topology["name"]
             else:
-                project_name = controller.get_free_project_name(topology["name"])
+                # If the project name is already used we generate a new one
+                if name:
+                    project_name = controller.get_free_project_name(name)
+                else:
+                    project_name = controller.get_free_project_name(topology["name"])
         except KeyError:
             raise aiohttp.web.HTTPConflict(text="Can't import topology the .gns3 is corrupted or missing")
 
@@ -66,7 +71,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
         else:
             projects_path = controller.projects_directory()
             path = os.path.join(projects_path, project_name)
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
         myzip.extractall(path)
 
         topology = load_topology(os.path.join(path, "project.gns3"))

@@ -373,3 +373,60 @@ def test_duplicate(project, async_run, controller):
 
     assert new_project.get_node(remote_vpcs.id).compute.id == "remote"
     assert new_project.get_node(remote_virtualbox.id).compute.id == "remote"
+
+
+def test_snapshots(project):
+    """
+    List the snapshots
+    """
+    os.makedirs(os.path.join(project.path, "snapshots"))
+    open(os.path.join(project.path, "snapshots", "test1_260716_103713.gns3project"), "w+").close()
+    project.reset()
+
+    assert len(project.snapshots) == 1
+    assert list(project.snapshots.values())[0].name == "test1"
+
+
+def test_get_snapshot(project):
+    os.makedirs(os.path.join(project.path, "snapshots"))
+    open(os.path.join(project.path, "snapshots", "test1.gns3project"), "w+").close()
+    project.reset()
+
+    snapshot = list(project.snapshots.values())[0]
+    assert project.get_snapshot(snapshot.id) == snapshot
+
+    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+        project.get_snapshot("BLU")
+
+
+def test_delete_snapshot(project, async_run):
+    os.makedirs(os.path.join(project.path, "snapshots"))
+    open(os.path.join(project.path, "snapshots", "test1_260716_103713.gns3project"), "w+").close()
+    project.reset()
+
+    snapshot = list(project.snapshots.values())[0]
+    assert project.get_snapshot(snapshot.id) == snapshot
+
+    async_run(project.delete_snapshot(snapshot.id))
+
+    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+        project.get_snapshot(snapshot.id)
+
+    assert not os.path.exists(os.path.join(project.path, "snapshots", "test1.gns3project"))
+
+
+def test_snapshot(project, async_run):
+    """
+    Create a snapshot
+    """
+    assert len(project.snapshots) == 0
+
+    snapshot = async_run(project.snapshot("test1"))
+    assert snapshot.name == "test1"
+
+    assert len(project.snapshots) == 1
+    assert list(project.snapshots.values())[0].name == "test1"
+
+    # Raise a conflict if name is already use
+    with pytest.raises(aiohttp.web_exceptions.HTTPConflict):
+        snapshot = async_run(project.snapshot("test1"))

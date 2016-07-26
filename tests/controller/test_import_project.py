@@ -56,7 +56,7 @@ def test_import_project(async_run, tmpdir, controller):
         project = async_run(import_project(controller, project_id, f))
 
     assert project.name == "test"
-    assert project.id == project_id  # The project should changed
+    assert project.id == project_id
 
     assert os.path.exists(os.path.join(project.path, "b.png"))
     assert not os.path.exists(os.path.join(project.path, "project.gns3"))
@@ -68,6 +68,41 @@ def test_import_project(async_run, tmpdir, controller):
     with open(zip_path, "rb") as f:
         project = async_run(import_project(controller, str(uuid.uuid4()), f))
     assert project.name != "test"
+
+
+def test_import_project_override(async_run, tmpdir, controller):
+    """
+    In the case of snapshot we will import a project for
+    override the previous keeping the same project id & location
+    """
+    project_id = str(uuid.uuid4())
+
+    topology = {
+        "project_id": project_id,
+        "name": "test",
+        "topology": {
+        },
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f, location=str(tmpdir)))
+
+    assert project.name == "test"
+    assert project.id == project_id
+
+    # Overide the project with same project
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f, location=str(tmpdir)))
+    assert project.id == project_id
+    assert project.name == "test"
 
 
 def test_import_upgrade(async_run, tmpdir, controller):

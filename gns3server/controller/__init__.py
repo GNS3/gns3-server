@@ -296,9 +296,9 @@ class Controller:
         topo_data.pop("type")
 
         if topo_data["project_id"] in self._projects:
-            project = self._projects[topo_data["project_id"]]
-        else:
-            project = yield from self.add_project(path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data)
+            self.remove_project(self._projects[topo_data["project_id"]])
+
+        project = yield from self.add_project(path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data)
         if load:
             yield from project.open()
         return project

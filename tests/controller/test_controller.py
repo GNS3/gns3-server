@@ -338,11 +338,6 @@ def test_load_project(controller, async_run, tmpdir):
     node1 = project.get_node("50d66d7b-0dd7-4e9f-b720-6eb621ae6543")
     assert node1.name == "PC1"
 
-    # Reload the same project should do nothing
-    with asyncio_patch("gns3server.controller.Controller.add_project") as mock_add_project:
-        project = async_run(controller.load_project(str(tmpdir / "test.gns3")))
-    assert not mock_add_project.called
-
 
 def test_get_free_project_name(controller, async_run):
 

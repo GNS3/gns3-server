@@ -26,6 +26,7 @@ import tempfile
 from uuid import UUID, uuid4
 
 from .node import Node
+from .snapshot import Snapshot
 from .drawing import Drawing
 from .topology import project_to_topology, load_topology
 from .udp_link import UDPLink
@@ -105,6 +106,15 @@ class Project:
         self._nodes = {}
         self._links = {}
         self._drawings = {}
+        self._snapshots = {}
+
+        # List the available snapshots
+        snapshot_dir = os.path.join(self.path, "snapshots")
+        if os.path.exists(snapshot_dir):
+            for snap in os.listdir(snapshot_dir):
+                if snap.endswith(".gns3project"):
+                    snapshot = Snapshot(self, filename=snap)
+                    self._snapshots[snapshot.id] = snapshot
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
@@ -378,12 +388,62 @@ class Project:
         """
         return self._links
 
+    @property
+    def snapshots(self):
+        """
+        :returns: Dictionary of snapshots
+        """
+        return self._snapshots
+
+    @open_required
+    def get_snapshot(self, snapshot_id):
+        """
+        Return the snapshot or raise a 404 if the snapshot is unknown
+        """
+        try:
+            return self._snapshots[snapshot_id]
+        except KeyError:
+            raise aiohttp.web.HTTPNotFound(text="Snapshot ID {} doesn't exist".format(snapshot_id))
+
+    @open_required
+    @asyncio.coroutine
+    def snapshot(self, name):
+        """
+        Snapshot the project
+
+        :param name: Name of the snapshot
+        """
+
+        snapshot = Snapshot(self, name=name)
+        try:
+            if os.path.exists(snapshot.path):
+                raise aiohttp.web_exceptions.HTTPConflict(text="The snapshot {} already exist".format(name))
+
+            os.makedirs(os.path.join(self.path, "snapshots"), exist_ok=True)
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                with open(snapshot.path, "wb+") as f:
+                    for data in zipstream:
+                        f.write(data)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+
+        self._snapshots[snapshot.id] = snapshot
+        return snapshot
+
+    @open_required
+    @asyncio.coroutine
+    def delete_snapshot(self, snapshot_id):
+        snapshot = self.get_snapshot(snapshot_id)
+        del self._snapshots[snapshot.id]
+        os.remove(snapshot.path)
+
     @asyncio.coroutine
     def close(self):
         for compute in self._project_created_on_compute:
             yield from compute.post("/projects/{}/close".format(self._id))
         self._cleanPictures()
-        self.reset()
         self._status = "closed"
 
     def _cleanPictures(self):
@@ -405,9 +465,18 @@ class Project:
     @asyncio.coroutine
     def delete(self):
         yield from self.close()
-        for compute in self._project_created_on_compute:
-            yield from compute.delete("/projects/{}".format(self._id))
+        yield from self.delete_on_computes()
         shutil.rmtree(self.path, ignore_errors=True)
+
+    @asyncio.coroutine
+    def delete_on_computes(self):
+        """
+        Delete the project on computes but not on controller
+        """
+        for compute in self._project_created_on_compute:
+            if compute.id != "local":
+                yield from compute.delete("/projects/{}".format(self._id))
+        self._project_created_on_compute = set()
 
     @classmethod
     def _get_default_project_directory(cls):
