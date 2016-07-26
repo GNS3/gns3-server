@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/99fcf923-1d1f-451f-808d-0562446ab983' -d '{"console": 5713, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/9cd0b496-0f36-4b2b-a950-b5fc75ea12ae' -d '{"console": 5713, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/99fcf923-1d1f-451f-808d-0562446ab983 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/9cd0b496-0f36-4b2b-a950-b5fc75ea12ae HTTP/1.1
 {
     "console": 5713,
     "ethernet_adapters": 4,
@@ -27,12 +27,12 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "console": 5713,
     "console_type": "telnet",
     "ethernet_adapters": 4,
-    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmprys_zk85/iourc",
+    "iourc_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpkd3orias/iourc",
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1615/test_json4/project-files/iou/99fcf923-1d1f-451f-808d-0562446ab983",
-    "node_id": "99fcf923-1d1f-451f-808d-0562446ab983",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-2130/test_json4/project-files/iou/9cd0b496-0f36-4b2b-a950-b5fc75ea12ae",
+    "node_id": "9cd0b496-0f36-4b2b-a950-b5fc75ea12ae",
     "nvram": 2048,
     "path": "iou.bin",
     "private_config": null,

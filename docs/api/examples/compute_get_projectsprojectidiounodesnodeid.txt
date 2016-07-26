@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/e4f6564d-1d40-4840-80c2-ecea2f29a14a'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/abe9e14b-0312-4738-ada2-e43e6df5d62b'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/e4f6564d-1d40-4840-80c2-ecea2f29a14a HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/abe9e14b-0312-4738-ada2-e43e6df5d62b HTTP/1.1
 
 
 
@@ -20,8 +20,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1615/test_json4/project-files/iou/e4f6564d-1d40-4840-80c2-ecea2f29a14a",
-    "node_id": "e4f6564d-1d40-4840-80c2-ecea2f29a14a",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-2130/test_json4/project-files/iou/abe9e14b-0312-4738-ada2-e43e6df5d62b",
+    "node_id": "abe9e14b-0312-4738-ada2-e43e6df5d62b",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,

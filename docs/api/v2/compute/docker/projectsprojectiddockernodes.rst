@@ -30,6 +30,7 @@ Input
     <tr><td>console_http_port</td>                    <td> </td>                     <td>integer</td>                     <td>Internal port in the container for the HTTP server</td>                     </tr>
     <tr><td>console_resolution</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Console resolution for VNC</td>                     </tr>
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, http, https</td>                     </tr>
+    <tr><td>container_id</td>                    <td> </td>                     <td>string</td>                     <td>Docker container ID Read only</td>                     </tr>
     <tr><td>environment</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker environment variables</td>                     </tr>
     <tr><td>image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Docker image name</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Docker container name</td>                     </tr>

@@ -9,8 +9,8 @@ Start a Docker container
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

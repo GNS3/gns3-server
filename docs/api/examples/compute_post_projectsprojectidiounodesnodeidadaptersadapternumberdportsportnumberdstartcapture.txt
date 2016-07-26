@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c6114408-b83b-4eb1-a32f-b00786b63271/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/cbe987db-52ef-4c41-b2c1-1de19b45f57a/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c6114408-b83b-4eb1-a32f-b00786b63271/adapters/0/ports/0/start_capture HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/cbe987db-52ef-4c41-b2c1-1de19b45f57a/adapters/0/ports/0/start_capture HTTP/1.1
 {
     "capture_file_name": "test.pcap",
     "data_link_type": "DLT_EN10MB"
@@ -15,5 +15,5 @@ SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture
 
 {
-    "pcap_file_path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1615/test_json4/tmp/captures/test.pcap"
+    "pcap_file_path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-2130/test_json4/tmp/captures/test.pcap"
 }

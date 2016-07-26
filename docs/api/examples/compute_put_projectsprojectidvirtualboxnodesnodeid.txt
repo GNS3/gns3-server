@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/373e36f5-6128-4a99-969d-baa2ced74b71' -d '{"console": 5722, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/f0763054-c2af-4ca4-a400-ae701b534653' -d '{"console": 5722, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/373e36f5-6128-4a99-969d-baa2ced74b71 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/f0763054-c2af-4ca4-a400-ae701b534653 HTTP/1.1
 {
     "console": 5722,
     "name": "test"
@@ -24,7 +24,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
     "linked_clone": false,
     "name": "test",
     "node_directory": null,
-    "node_id": "373e36f5-6128-4a99-969d-baa2ced74b71",
+    "node_id": "f0763054-c2af-4ca4-a400-ae701b534653",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",

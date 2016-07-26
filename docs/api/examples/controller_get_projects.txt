@@ -15,7 +15,7 @@ X-ROUTE: /v2/projects
     {
         "filename": "test.gns3",
         "name": "test",
-        "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-1615/test_list_projects1",
+        "path": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-2130/test_list_projects1",
         "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
         "status": "opened"
     }

@@ -9,10 +9,10 @@ Add a NIO to a cloud instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
 - **port_number**: Port on the cloud
 - **adapter_number**: Adapter on the cloud (always 0)
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -27,10 +27,10 @@ Remove a NIO from a cloud instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
 - **port_number**: Port on the cloud
 - **adapter_number**: Adapter on the cloud (always 0)
+- **project_id**: Project UUID
 
 Response status codes
 **********************

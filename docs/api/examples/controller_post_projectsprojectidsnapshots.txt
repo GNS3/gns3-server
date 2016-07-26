@@ -1,0 +1,21 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/bf4b231b-77a0-415d-b6fe-729b651e2d5b/snapshots' -d '{"name": "snap1"}'
+
+POST /v2/projects/bf4b231b-77a0-415d-b6fe-729b651e2d5b/snapshots HTTP/1.1
+{
+    "name": "snap1"
+}
+
+
+HTTP/1.1 201
+CONTENT-LENGTH: 170
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/snapshots
+
+{
+    "created_at": 1469555808,
+    "name": "snap1",
+    "project_id": "bf4b231b-77a0-415d-b6fe-729b651e2d5b",
+    "snapshot_id": "34fa5834-b012-4098-a972-08fbb34a3b5e"
+}

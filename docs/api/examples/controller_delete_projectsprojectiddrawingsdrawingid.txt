@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/projects/3bfa063a-bbfb-4c46-aefd-39b73c8ee707/drawings/a816efd7-0c3e-4267-8891-011de8389855'
+curl -i -X DELETE 'http://localhost:3080/v2/projects/27bc5b59-8dbe-4db0-848f-fdfd9ce2e7a2/drawings/e6f49ba0-191d-4dec-b565-24633aaac514'
 
-DELETE /v2/projects/3bfa063a-bbfb-4c46-aefd-39b73c8ee707/drawings/a816efd7-0c3e-4267-8891-011de8389855 HTTP/1.1
+DELETE /v2/projects/27bc5b59-8dbe-4db0-848f-fdfd9ce2e7a2/drawings/e6f49ba0-191d-4dec-b565-24633aaac514 HTTP/1.1
 
 
 

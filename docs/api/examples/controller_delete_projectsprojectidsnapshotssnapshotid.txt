@@ -1,0 +1,12 @@
+curl -i -X DELETE 'http://localhost:3080/v2/projects/1b449a04-1816-444e-8551-5bdd8a89f4c9/snapshots/0d5b8a17-780c-4c91-9676-47dddca09dc4'
+
+DELETE /v2/projects/1b449a04-1816-444e-8551-5bdd8a89f4c9/snapshots/0d5b8a17-780c-4c91-9676-47dddca09dc4 HTTP/1.1
+
+
+
+HTTP/1.1 204
+CONTENT-LENGTH: 0
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/snapshots/{snapshot_id}
+

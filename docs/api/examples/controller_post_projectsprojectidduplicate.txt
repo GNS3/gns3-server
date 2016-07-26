@@ -1,0 +1,22 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/f28d2d3a-858d-4f62-8a68-e7676aa0932e/duplicate' -d '{"name": "hello"}'
+
+POST /v2/projects/f28d2d3a-858d-4f62-8a68-e7676aa0932e/duplicate HTTP/1.1
+{
+    "name": "hello"
+}
+
+
+HTTP/1.1 201
+CONTENT-LENGTH: 226
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/projects/{project_id}/duplicate
+
+{
+    "filename": "hello.gns3",
+    "name": "hello",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp52tlx0r1/projects/hello",
+    "project_id": "8a9fb1ed-dcc1-4090-b12e-9ce7364063d7",
+    "status": "closed"
+}

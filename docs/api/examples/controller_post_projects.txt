@@ -17,7 +17,7 @@ X-ROUTE: /v2/projects
 {
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1c1w2tok/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpktyus5u7/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
     "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
     "status": "opened"
 }

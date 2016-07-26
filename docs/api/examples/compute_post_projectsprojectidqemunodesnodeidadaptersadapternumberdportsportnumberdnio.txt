@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/59d404ea-718d-44b9-976d-7a8cffe857d1/adapters/1/ports/0/nio' -d '{"ethernet_device": "eth0", "type": "nio_ethernet"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/090ac2f0-6fd9-4fcd-aa14-bbae9922b0f6/adapters/1/ports/0/nio' -d '{"ethernet_device": "eth0", "type": "nio_ethernet"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/59d404ea-718d-44b9-976d-7a8cffe857d1/adapters/1/ports/0/nio HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/090ac2f0-6fd9-4fcd-aa14-bbae9922b0f6/adapters/1/ports/0/nio HTTP/1.1
 {
     "ethernet_device": "eth0",
     "type": "nio_ethernet"
