@@ -344,25 +344,6 @@ class IOUHandler:
         response.set_status(200)
         response.json(result)
 
-    @Route.post(
-        r"/projects/{project_id}/iou/nodes/{node_id}/configs/save",
-        parameters={
-            "project_id": "Project UUID",
-            "node_id": "Node UUID"
-        },
-        status_codes={
-            200: "Configs saved",
-            400: "Invalid request",
-            404: "Instance doesn't exist"
-        },
-        description="Save the startup and private configs content")
-    def save_configs(request, response):
-
-        iou_manager = IOU.instance()
-        vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        vm.save_configs()
-        response.set_status(200)
-
     @Route.get(
         r"/iou/images",
         status_codes={

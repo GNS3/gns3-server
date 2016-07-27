@@ -408,25 +408,6 @@ class DynamipsVMHandler:
         response.set_status(200)
         response.json(result)
 
-    @Route.post(
-        r"/projects/{project_id}/dynamips/nodes/{node_id}/configs/save",
-        parameters={
-            "project_id": "Project UUID",
-            "node_id": "Node UUID",
-        },
-        status_codes={
-            200: "Configs saved",
-            400: "Invalid request",
-            404: "Instance doesn't exist"
-        },
-        description="Save the startup and private configs content")
-    def save_configs(request, response):
-
-        dynamips_manager = Dynamips.instance()
-        vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.save_configs()
-        response.set_status(200)
-
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/idlepc_proposals",
         parameters={
