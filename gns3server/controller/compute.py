@@ -358,7 +358,7 @@ class Compute:
         return "{}://{}:{}/v2/compute{}".format(self._protocol, self._host, self._port, path)
 
     @asyncio.coroutine
-    def _run_http_query(self, method, path, data=None, timeout=10):
+    def _run_http_query(self, method, path, data=None, timeout=10, raw=False):
         with Timeout(timeout):
             url = self._getUrl(path)
             headers = {}
@@ -370,20 +370,20 @@ class Compute:
                 if hasattr(data, '__json__'):
                     data = json.dumps(data.__json__())
                 # Stream the request
-                elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, io.BufferedIOBase):
+                elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, io.BufferedIOBase) or isinstance(data, bytes):
                     chunked = True
                     headers['content-type'] = 'application/octet-stream'
                 else:
                     data = json.dumps(data)
 
-            response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
+        response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
         body = yield from response.read()
-        if body:
+        if body and not raw:
             body = body.decode()
 
         if response.status >= 300:
             # Try to decode the GNS3 error
-            if body:
+            if body and not raw:
                 try:
                     msg = json.loads(body)["message"]
                 except (KeyError, ValueError):
@@ -412,12 +412,16 @@ class Compute:
             else:
                 raise NotImplementedError("{} status code is not supported".format(response.status))
         if body and len(body):
-            try:
-                response.json = json.loads(body)
-            except ValueError:
-                raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+            if raw:
+                response.body = body
+            else:
+                try:
+                    response.json = json.loads(body)
+                except ValueError:
+                    raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
         else:
             response.json = {}
+            response.body = b""
         return response
 
     @asyncio.coroutine

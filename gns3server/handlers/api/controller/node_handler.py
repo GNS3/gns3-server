@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import aiohttp
 
 from gns3server.web.route import Route
@@ -314,3 +315,77 @@ class NodeHandler:
         idle = yield from node.dynamips_idlepc_proposals()
         response.json(idle)
         response.set_status(200)
+
+    @Route.get(
+        r"/projects/{project_id}/nodes/{node_id}/files/{path:.+}",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance reloaded",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Get a file in the node directory")
+    def get_file(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        path = request.match_info["path"]
+        path = os.path.normpath(path)
+
+        # Raise error if user try to escape
+        if path[0] == ".":
+            raise aiohttp.web.HTTPForbidden
+
+        node_type = node.node_type
+        if node_type == "dynamips":
+            path = "/project-files/{}/{}".format(node_type, path)
+        else:
+            path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
+
+        res = yield from node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), timeout=None, raw=True)
+        response.set_status(200)
+        response.content_type = "application/octet-stream"
+        response.enable_chunked_encoding()
+        response.content_length = None
+        response.start(request)
+
+        response.write(res.body)
+        yield from response.write_eof()
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/{node_id}/files/{path:.+}",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance reloaded",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        raw=True,
+        description="Write a file in the node directory")
+    def post_file(request, response):
+
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        path = request.match_info["path"]
+        path = os.path.normpath(path)
+
+        # Raise error if user try to escape
+        if path[0] == ".":
+            raise aiohttp.web.HTTPForbidden
+
+        node_type = node.node_type
+        if node_type == "dynamips":
+            path = "/project-files/{}/{}".format(node_type, path)
+        else:
+            path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
+
+        data = yield from request.content.read()
+
+        res = yield from node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
+        response.set_status(201)
