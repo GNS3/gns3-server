@@ -81,6 +81,15 @@ def test_convert(directory, tmpdir):
             if not file_path.endswith(".gns3"):
                 assert os.stat(file_path).st_size == os.stat(os.path.join(os.path.join(root, file))).st_size, "File {} is different".format(os.path.join(directory, file))
 
+    # Check if we don't have unexpected file in work directory
+    for root, dirs, files in os.walk(work_directory):
+        for file in files:
+            directory = os.path.relpath(root, work_directory)
+            file_path = os.path.join(after_directory, directory, file)
+            # .backup are created by the conversion process
+            if not file.endswith(".backup"):
+                assert os.path.exists(file_path), "{} should not be here".format(os.path.join(directory, file))
+
     compare_dict("/", work_topology, after_topology)
 
 

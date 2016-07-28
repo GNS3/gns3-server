@@ -17,10 +17,12 @@
 
 import os
 import json
-import jsonschema
 import uuid
 import shutil
+import zipfile
 import aiohttp
+import jsonschema
+
 
 from ..version import __version__
 from ..schemas.topology import TOPOLOGY_SCHEMA
@@ -107,6 +109,8 @@ def _convert_1_3_later(topo, topo_path):
     Look in tests/topologies/README.rst for instructions to test changes here
     """
     topo_dir = os.path.dirname(topo_path)
+
+    _convert_snapshots(topo_dir)
 
     new_topo = {
         "type": "topology",
@@ -448,3 +452,34 @@ def _create_cloud(node, old_node, icon):
 
     node["properties"]["ports"] = ports
     node["properties"]["interfaces"] = []
+
+
+def _convert_snapshots(topo_dir):
+    """
+    Convert 1.x snapshot to the new format
+    """
+    old_snapshots_dir = os.path.join(topo_dir, "project-files", "snapshots")
+    if os.path.exists(old_snapshots_dir):
+        new_snapshots_dir = os.path.join(topo_dir, "snapshots")
+        os.makedirs(new_snapshots_dir)
+
+        for snapshot in os.listdir(old_snapshots_dir):
+            snapshot_dir = os.path.join(old_snapshots_dir, snapshot)
+            if os.path.isdir(snapshot_dir):
+                is_gns3_topo = False
+
+                # In .gns3project fileformat the .gns3 should be name project.gns3
+                for file in os.listdir(snapshot_dir):
+                    if file.endswith(".gns3"):
+                        shutil.move(os.path.join(snapshot_dir, file), os.path.join(snapshot_dir, "project.gns3"))
+                        is_gns3_topo = True
+
+                if is_gns3_topo:
+                    snapshot_arc = os.path.join(new_snapshots_dir, snapshot + ".gns3project")
+                    with zipfile.ZipFile(snapshot_arc, 'w') as myzip:
+                        for root, dirs, files in os.walk(snapshot_dir):
+                            for file in files:
+                                myzip.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), snapshot_dir), compress_type=zipfile.ZIP_DEFLATED)
+                    shutil.copy(snapshot_arc, "/tmp/test.zip")
+
+        shutil.rmtree(old_snapshots_dir)
