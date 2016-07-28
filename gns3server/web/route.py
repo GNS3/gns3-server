@@ -17,12 +17,14 @@
 
 import sys
 import json
-import jsonschema
+import urllib
 import asyncio
 import aiohttp
 import logging
 import urllib
 import traceback
+import jsonschema
+
 
 log = logging.getLogger(__name__)
 

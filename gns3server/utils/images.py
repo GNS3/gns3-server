@@ -91,7 +91,8 @@ def md5sum(path):
     try:
         with open(path + '.md5sum') as f:
             return f.read()
-    except OSError:
+    # Unicode error is when user rename an image to .md5sum ....
+    except (OSError, UnicodeDecodeError):
         pass
 
     try:
