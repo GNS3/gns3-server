@@ -25,7 +25,7 @@ import asyncio
 import aiohttp
 import zipfile
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch
 
 from gns3server.handlers.api.project_handler import ProjectHandler
@@ -304,6 +304,19 @@ def test_export(server, tmpdir, loop, project):
         with myzip.open("a") as myfile:
             content = myfile.read()
             assert content == b"hello"
+
+
+def test_export_include_image(server, tmpdir, loop, project):
+
+    project.export = MagicMock()
+    response = server.get("/projects/{project_id}/export".format(project_id=project.id), raw=True)
+    project.export.assert_called_with(include_images=False)
+
+    response = server.get("/projects/{project_id}/export?include_images=0".format(project_id=project.id), raw=True)
+    project.export.assert_called_with(include_images=False)
+
+    response = server.get("/projects/{project_id}/export?include_images=1".format(project_id=project.id), raw=True)
+    project.export.assert_called_with(include_images=True)
 
 
 def test_import(server, tmpdir, loop, project):
