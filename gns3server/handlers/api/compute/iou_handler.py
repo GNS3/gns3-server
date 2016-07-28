@@ -304,47 +304,6 @@ class IOUHandler:
         response.set_status(204)
 
     @Route.get(
-        r"/projects/{project_id}/iou/nodes/{node_id}/configs",
-        parameters={
-            "project_id": "Project UUID",
-            "node_id": "Node UUID"
-        },
-        status_codes={
-            200: "Configs retrieved",
-            400: "Invalid request",
-            404: "Instance doesn't exist"
-        },
-        output=IOU_CONFIGS_SCHEMA,
-        description="Retrieve the startup and private configs content")
-    def get_configs(request, response):
-
-        iou_manager = IOU.instance()
-        vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
-        startup_config_content, private_config_content = vm.extract_configs()
-        result = {}
-        if startup_config_content:
-            result["startup_config_content"] = startup_config_content.decode("utf-8", errors='replace')
-        else:
-            # nvram doesn't exists if the VM has not been started at least once
-            # in this case just use the startup-config file
-            startup_config_content = vm.startup_config_content
-            if startup_config_content:
-                result["startup_config_content"] = startup_config_content
-
-        if private_config_content:
-            result["private_config_content"] = private_config_content.decode("utf-8", errors='replace')
-        else:
-            # nvram doesn't exists if the VM has not been started at least once
-            # in this case just use the private-config file
-            private_config_content = vm.private_config_content
-            if private_config_content:
-                result["private_config_content"] = private_config_content
-
-        response.set_status(200)
-        response.json(result)
-
-    @Route.get(
         r"/iou/images",
         status_codes={
             200: "List of IOU images",

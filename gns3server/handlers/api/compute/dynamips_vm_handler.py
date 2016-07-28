@@ -33,8 +33,7 @@ from gns3server.schemas.node import (
 from gns3server.schemas.dynamips_vm import (
     VM_CREATE_SCHEMA,
     VM_UPDATE_SCHEMA,
-    VM_OBJECT_SCHEMA,
-    VM_CONFIGS_SCHEMA
+    VM_OBJECT_SCHEMA
 )
 
 DEFAULT_CHASSIS = {
@@ -349,64 +348,6 @@ class DynamipsVMHandler:
         port_number = int(request.match_info["port_number"])
         yield from vm.stop_capture(slot_number, port_number)
         response.set_status(204)
-
-    @Route.get(
-        r"/projects/{project_id}/dynamips/nodes/{node_id}/configs",
-        parameters={
-            "project_id": "Project UUID",
-            "node_id": "Node UUID",
-        },
-        status_codes={
-            200: "Configs retrieved",
-            400: "Invalid request",
-            404: "Instance doesn't exist"
-        },
-        output=VM_CONFIGS_SCHEMA,
-        description="Retrieve the startup and private configs content")
-    def get_configs(request, response):
-
-        dynamips_manager = Dynamips.instance()
-        vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
-        startup_config_base64, private_config_base64 = yield from vm.extract_config()
-        module_workdir = vm.project.module_working_directory(dynamips_manager.module_name.lower())
-        result = {}
-        if startup_config_base64:
-            startup_config_content = base64.b64decode(startup_config_base64).decode("utf-8", errors='replace')
-            result["startup_config_content"] = startup_config_content
-        else:
-            # The NVRAM doesn't contain anything if the router has not been started at least once
-            # in this case just use the startup-config file
-            if vm.startup_config:
-                startup_config_path = os.path.join(module_workdir, vm.startup_config)
-                if os.path.isfile(startup_config_path):
-                    try:
-                        with open(startup_config_path, "rb") as f:
-                            content = f.read().decode("utf-8", errors='replace')
-                            if content:
-                                result["startup_config_content"] = content
-                    except OSError as e:
-                        raise DynamipsError("Could not read the startup-config {}: {}".format(startup_config_path, e))
-
-        if private_config_base64:
-            private_config_content = base64.b64decode(private_config_base64).decode("utf-8", errors='replace')
-            result["private_config_content"] = private_config_content
-        else:
-            # The NVRAM doesn't contain anything if the router has not been started at least once
-            # in this case just use the private-config file
-            if vm.private_config:
-                private_config_path = os.path.join(module_workdir, vm.private_config)
-                if os.path.isfile(private_config_path):
-                    try:
-                        with open(private_config_path, "rb") as f:
-                            content = f.read().decode("utf-8", errors='replace')
-                            if content:
-                                result["private_config_content"] = content
-                    except OSError as e:
-                        raise DynamipsError("Could not read the private-config {}: {}".format(private_config_path, e))
-
-        response.set_status(200)
-        response.json(result)
 
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/idlepc_proposals",

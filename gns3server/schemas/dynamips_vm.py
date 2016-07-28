@@ -767,21 +767,3 @@ VM_OBJECT_SCHEMA = {
     "required": ["name", "node_id", "project_id", "dynamips_id", "console", "console_type"]
 }
 
-VM_CONFIGS_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to get the startup and private configuration file",
-    "type": "object",
-    "properties": {
-        "startup_config_content": {
-            "description": "Content of the startup configuration file",
-            "type": ["string", "null"],
-            "minLength": 1,
-        },
-        "private_config_content": {
-            "description": "Content of the private configuration file",
-            "type": ["string", "null"],
-            "minLength": 1,
-        },
-    },
-    "additionalProperties": False,
-}

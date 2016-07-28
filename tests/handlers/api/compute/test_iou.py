@@ -309,25 +309,6 @@ def test_iou_stop_capture_not_started(http_compute, vm, tmpdir):
             assert response.status == 409
 
 
-def test_get_configs_without_configs_file(http_compute, vm):
-
-    response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}/configs".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
-    assert response.status == 200
-    assert "startup_config" not in response.json
-    assert "private_config" not in response.json
-
-
-def test_get_configs_with_startup_config_file(http_compute, project, vm):
-
-    path = startup_config_file(project, vm)
-    with open(path, "w+") as f:
-        f.write("TEST")
-
-    response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}/configs".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
-    assert response.status == 200
-    assert response.json["startup_config_content"] == "TEST"
-
-
 def test_images(http_compute, fake_iou_bin):
 
     response = http_compute.get("/iou/images", example=True)
