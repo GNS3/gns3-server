@@ -31,6 +31,7 @@ log = logging.getLogger(__name__)
 from ..compute.error import NodeError, ImageMissingError
 from ..controller.controller_error import ControllerError
 from ..ubridge.ubridge_error import UbridgeError
+from ..controller.gns3_vm_error import GNS3VMError
 from .response import Response
 from ..crash_report import CrashReport
 from ..config import Config
@@ -205,7 +206,7 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(e.status)
                     response.json({"message": e.text, "status": e.status})
-                except (ControllerError) as e:
+                except (ControllerError, GNS3VMError) as e:
                     log.error("Controller error detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)
                     response.set_status(409)

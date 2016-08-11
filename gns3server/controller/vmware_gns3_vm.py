@@ -18,6 +18,7 @@
 import os
 import logging
 import asyncio
+import psutil
 
 from gns3server.compute.vmware import (
     VMware,
@@ -56,6 +57,18 @@ class VMwareGNS3VM(BaseGNS3VM):
         :param ram: amount of RAM
         """
 
+        available_ram = int(psutil.virtual_memory().available / (1024 * 1024))
+        if ram > available_ram:
+            raise GNS3VMError("You have allocated too much memory for the GNS3 VM! (available memory is {} MB)".format(available_ram))
+
+        # memory must be a multiple of 4 (VMware requirement)
+        if ram % 4 != 0:
+            raise GNS3VMError("Allocated memory for the GNS3 VM must be a multiple of 4".format(available_ram))
+
+        available_vcpus = psutil.cpu_count(logical=False)
+        if vcpus > available_vcpus:
+            raise GNS3VMError("You have allocated too many vCPUs for the GNS3 VM! (max available is {} vCPUs)".format(available_vcpus))
+
         try:
             pairs = VMware.parse_vmware_file(self._vmx_path)
             pairs["numvcpus"] = str(vcpus)
@@ -91,8 +104,8 @@ class VMwareGNS3VM(BaseGNS3VM):
         if not os.path.exists(self._vmx_path):
             raise GNS3VMError("VMware VMX file {} doesn't exist".format(self._vmx_path))
 
-        # set the number of vCPUs and amount of RAM  # FIXME
-        # yield from self._set_vcpus_ram(self.vcpus, self.ram)
+        # set the number of vCPUs and amount of RAM
+        yield from self._set_vcpus_ram(self.vcpus, self.ram)
 
         # start the VM
         args = [self._vmx_path]

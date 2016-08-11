@@ -15,10 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .gns3_vm_error import GNS3VMError
+
 import os
 import sys
 import json
 import asyncio
+import psutil
 
 import logging
 log = logging.getLogger(__name__)
@@ -43,6 +46,16 @@ class BaseGNS3VM:
         else:
             config_path = os.path.join(os.path.expanduser("~"), ".config", "GNS3")
         self._config_file = os.path.join(config_path, "gns3_vm.conf")
+
+        # limit the number of vCPUs to the number of physical cores (hyper thread CPUs are excluded)
+        # because this is likely to degrade performances.
+        self._vcpus = psutil.cpu_count(logical=False)
+        # we want to allocate half of the available physical memory
+        ram = int(psutil.virtual_memory().total / (1024 * 1024) / 2)
+        # value must be a multiple of 4 (VMware requirement)
+        ram -= ram % 4
+        self._ram = ram
+
         self.load()
 
     def __json__(self):
