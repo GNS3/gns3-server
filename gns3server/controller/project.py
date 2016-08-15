@@ -440,12 +440,13 @@ class Project:
         os.remove(snapshot.path)
 
     @asyncio.coroutine
-    def close(self):
+    def close(self, ignore_notification=False):
         for compute in self._project_created_on_compute:
             yield from compute.post("/projects/{}/close".format(self._id))
         self._cleanPictures()
         self._status = "closed"
-        self.controller.notification.emit("project.closed", self.__json__())
+        if not ignore_notification:
+           self.controller.notification.emit("project.closed", self.__json__())
 
     def _cleanPictures(self):
         """

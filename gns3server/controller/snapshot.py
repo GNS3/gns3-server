@@ -77,7 +77,8 @@ class Snapshot:
         """
 
         yield from self._project.delete_on_computes()
-        yield from self._project.close()
+        # We don't send close notif to clients because the close / open dance is purely internal
+        yield from self._project.close(ignore_notification=True)
         shutil.rmtree(os.path.join(self._project.path, "project-files"))
         with open(self._path, "rb") as f:
             project = yield from import_project(self._project.controller, self._project.id, f, location=self._project.path)
