@@ -67,6 +67,8 @@ class Project:
         assert name is not None
         self._name = name
         self._auto_start = False
+        self._auto_close = False
+        self._auto_open = False
         self._status = status
 
         # Disallow overwrite of existing project
@@ -139,7 +141,34 @@ class Project:
 
     @property
     def auto_start(self):
+        """
+        Should project auto start when opened
+        """
         return self._auto_start
+
+    @auto_start.setter
+    def auto_start(self, val):
+        self._auto_start = val
+
+    @property
+    def auto_close(self):
+        """
+        Should project automaticaly closed when client
+        stop listening for notification
+        """
+        return self._auto_close
+
+    @auto_close.setter
+    def auto_close(self, val):
+        self._auto_close = val
+
+    @property
+    def auto_open(self):
+        return self._auto_open
+
+    @auto_open.setter
+    def auto_open(self, val):
+        self._auto_open = val
 
     @property
     def controller(self):
@@ -604,7 +633,10 @@ class Project:
             "project_id": self._id,
             "path": self._path,
             "filename": self._filename,
-            "status": self._status
+            "status": self._status,
+            "auto_start": self._auto_start,
+            "auto_close": self._auto_close,
+            "auto_open": self._auto_open
         }
 
     def __repr__(self):

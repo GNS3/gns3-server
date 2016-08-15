@@ -59,7 +59,16 @@ def test_affect_uuid():
 
 def test_json(tmpdir):
     p = Project(name="Test")
-    assert p.__json__() == {"name": "Test", "project_id": p.id, "path": p.path, "status": "opened", "filename": "Test.gns3"}
+    assert p.__json__() == {
+        "name": "Test",
+        "project_id": p.id,
+        "path": p.path,
+        "status": "opened",
+        "filename": "Test.gns3",
+        "auto_start": False,
+        "auto_close": False,
+        "auto_open": False
+    }
 
 
 def test_update(controller, async_run):

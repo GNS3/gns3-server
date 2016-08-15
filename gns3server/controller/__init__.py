@@ -299,7 +299,7 @@ class Controller:
             self.remove_project(self._projects[topo_data["project_id"]])
 
         project = yield from self.add_project(path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data)
-        if load:
+        if load or project.auto_open:
             yield from project.open()
         return project
 

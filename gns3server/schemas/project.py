@@ -31,6 +31,10 @@ PROJECT_CREATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1
         },
+        "auto_close": {
+            "description": "Project auto close",
+            "type": "boolean"
+        },
         "project_id": {
             "description": "Project UUID",
             "type": ["string", "null"],
@@ -56,6 +60,18 @@ PROJECT_UPDATE_SCHEMA = {
             "description": "Path of the project on the server (work only with --local)",
             "type": ["string", "null"]
         },
+        "auto_close": {
+            "description": "Project auto close when client cut off the notifications feed",
+            "type": "boolean"
+        },
+        "auto_open": {
+            "description": "Project open when GNS3 start",
+            "type": "boolean"
+        },
+        "auto_start": {
+            "description": "Project start when opened",
+            "type": "boolean"
+        }
     },
     "additionalProperties": False,
 }
@@ -90,6 +106,18 @@ PROJECT_OBJECT_SCHEMA = {
         "status": {
             "description": "Project status Read only",
             "enum": ["opened", "closed"]
+        },
+        "auto_close": {
+            "description": "Project auto close when client cut off the notifications feed",
+            "type": "boolean"
+        },
+        "auto_open": {
+            "description": "Project open when GNS3 start",
+            "type": "boolean"
+        },
+        "auto_start": {
+            "description": "Project start when opened",
+            "type": "boolean"
         }
     },
     "additionalProperties": False,
