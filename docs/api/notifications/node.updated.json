@@ -14,9 +14,9 @@
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "32174e7e-c566-4f0b-aa4b-c9b983c02305",
+    "node_id": "92be25c6-878a-487a-86e3-80591c20780e",
     "node_type": "vpcs",
-    "project_id": "168cae40-9e3b-46fa-8954-e622068c734b",
+    "project_id": "aa6eca4a-1d69-4fb0-aa10-3bb3f5d24ca0",
     "properties": {
         "startup_config": "test.cfg"
     },

@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/efad62d4-0bd1-46a8-b07d-5e8dda367b0c/nodes/reload' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/1ed78eb2-bc11-4a1f-b91a-8778c18dcf28/nodes/reload' -d '{}'
 
-POST /v2/projects/efad62d4-0bd1-46a8-b07d-5e8dda367b0c/nodes/reload HTTP/1.1
+POST /v2/projects/1ed78eb2-bc11-4a1f-b91a-8778c18dcf28/nodes/reload HTTP/1.1
 {}
 
 

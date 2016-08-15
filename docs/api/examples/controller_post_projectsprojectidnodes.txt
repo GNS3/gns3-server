@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/4e42ea2c-8fa2-4382-8115-5ff0caba1ee3/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X POST 'http://localhost:3080/v2/projects/cc0908dc-6ae4-4186-b537-4f6b23c13f0c/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-POST /v2/projects/4e42ea2c-8fa2-4382-8115-5ff0caba1ee3/nodes HTTP/1.1
+POST /v2/projects/cc0908dc-6ae4-4186-b537-4f6b23c13f0c/nodes HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -34,9 +34,9 @@ X-ROUTE: /v2/projects/{project_id}/nodes
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "85d7395f-9138-45f1-9176-ad5540b26446",
+    "node_id": "a414b9fb-f612-4042-8f2a-59206dce9bf5",
     "node_type": "vpcs",
-    "project_id": "4e42ea2c-8fa2-4382-8115-5ff0caba1ee3",
+    "project_id": "cc0908dc-6ae4-4186-b537-4f6b23c13f0c",
     "properties": {
         "startup_script": "echo test"
     },

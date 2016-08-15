@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/3fb5988c-2390-44c4-a150-f595a2e215e6/snapshots'
+curl -i -X GET 'http://localhost:3080/v2/projects/95248748-6c54-4935-a3e1-db0638fa923e/snapshots'
 
-GET /v2/projects/3fb5988c-2390-44c4-a150-f595a2e215e6/snapshots HTTP/1.1
+GET /v2/projects/95248748-6c54-4935-a3e1-db0638fa923e/snapshots HTTP/1.1
 
 
 
@@ -13,9 +13,9 @@ X-ROUTE: /v2/projects/{project_id}/snapshots
 
 [
     {
-        "created_at": 1471255682,
+        "created_at": 1471275494,
         "name": "test",
-        "project_id": "3fb5988c-2390-44c4-a150-f595a2e215e6",
-        "snapshot_id": "26c7190c-1a66-43f1-9799-9c11e6a65cf3"
+        "project_id": "95248748-6c54-4935-a3e1-db0638fa923e",
+        "snapshot_id": "2da92e42-c175-4d37-b0d4-85433c4a9be5"
     }
 ]

@@ -16,7 +16,7 @@ X-ROUTE: /v2/projects/load
 {
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmp466im_/projects/b57f5cb1-7161-4551-b042-7c5bcc239efe",
-    "project_id": "b57f5cb1-7161-4551-b042-7c5bcc239efe",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpixvpn8v2/projects/1207c9ba-3f18-4d4c-8adc-271cfaefed03",
+    "project_id": "1207c9ba-3f18-4d4c-8adc-271cfaefed03",
     "status": "opened"
 }

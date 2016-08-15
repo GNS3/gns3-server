@@ -86,34 +86,6 @@ def test_list_projects(http_compute):
     assert "51010203-0405-0607-0809-0a0b0c0d0e0f" in [p["project_id"] for p in response.json]
 
 
-def test_update_path_project(http_compute, tmpdir):
-
-    os.makedirs(str(tmpdir / "a"))
-    os.makedirs(str(tmpdir / "b"))
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        response = http_compute.post("/projects", {"name": "first_name", "path": str(tmpdir / "a"), "project_id": "80010203-0405-0607-0809-0a0b0c0d0e0b"})
-        assert response.status == 201
-        assert response.json["name"] == "first_name"
-        query = {"name": "second_name", "path": str(tmpdir / "b")}
-        response = http_compute.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
-        assert response.status == 200
-        assert response.json["name"] == "second_name"
-
-        assert os.path.exists(str(tmpdir / "a"))
-        assert os.path.exists(str(tmpdir / "b"))
-
-
-def test_update_path_project_non_local(http_compute, tmpdir):
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=False):
-        response = http_compute.post("/projects", {"name": "first_name", "project_id": "90010203-0405-0607-0809-0a0b0c0d0e0b"})
-        assert response.status == 201
-        query = {"name": "second_name", "path": str(tmpdir)}
-        response = http_compute.put("/projects/{project_id}".format(project_id=response.json["project_id"]), query, example=True)
-        assert response.status == 403
-
-
 def test_delete_project(http_compute, project):
     with asyncio_patch("gns3server.compute.project.Project.delete", return_value=True) as mock:
         response = http_compute.delete("/projects/{project_id}".format(project_id=project.id), example=True)

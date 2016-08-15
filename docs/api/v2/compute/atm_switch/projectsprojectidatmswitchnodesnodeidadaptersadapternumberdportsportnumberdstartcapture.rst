@@ -9,8 +9,8 @@ Start a packet capture on an ATM switch instance
 
 Parameters
 **********
-- **port_number**: Port on the switch
 - **adapter_number**: Adapter on the switch (always 0)
+- **port_number**: Port on the switch
 - **project_id**: Project UUID
 - **node_id**: Node UUID
 
