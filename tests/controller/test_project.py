@@ -62,6 +62,16 @@ def test_json(tmpdir):
     assert p.__json__() == {"name": "Test", "project_id": p.id, "path": p.path, "status": "opened", "filename": "Test.gns3"}
 
 
+def test_update(controller, async_run):
+    project = Project(controller=controller, name="Hello")
+    controller._notification = MagicMock()
+
+    assert project.name == "Hello"
+    async_run(project.update(name="World"))
+    assert project.name == "World"
+    controller.notification.emit.assert_any_call("project.updated", project.__json__())
+
+
 def test_path(tmpdir):
 
     directory = Config.instance().get_section_config("Server").get("projects_path")

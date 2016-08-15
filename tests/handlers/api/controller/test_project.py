@@ -67,6 +67,18 @@ def test_create_project_with_uuid(http_controller):
     assert response.json["name"] == "test"
 
 
+def test_update_project(http_controller):
+    query = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
+    response = http_controller.post("/projects", query)
+    assert response.status == 201
+    assert response.json["project_id"] == "10010203-0405-0607-0809-0a0b0c0d0e0f"
+    assert response.json["name"] == "test"
+    query = {"name": "test2"}
+    response = http_controller.put("/projects/10010203-0405-0607-0809-0a0b0c0d0e0f", query, example=True)
+    assert response.status == 200
+    assert response.json["name"] == "test2"
+
+
 def test_list_projects(http_controller, tmpdir):
     http_controller.post("/projects", {"name": "test", "path": str(tmpdir), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"})
     response = http_controller.get("/projects", example=True)

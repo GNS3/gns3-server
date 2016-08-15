@@ -97,7 +97,6 @@ def test_restore(project, controller, async_run):
     # project.closed notification should not be send when restoring snapshots
     assert "project.closed" not in [c[0][0] for c in controller.notification.emit.call_args_list]
 
-
     project = controller.get_project(project.id)
     assert not os.path.exists(test_file)
     assert len(project.nodes) == 1

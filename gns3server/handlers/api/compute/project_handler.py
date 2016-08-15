@@ -95,32 +95,6 @@ class ProjectHandler:
         project = pm.get_project(request.match_info["project_id"])
         response.json(project)
 
-    @Route.put(
-        r"/projects/{project_id}",
-        description="Update a project",
-        parameters={
-            "project_id": "Project UUID",
-        },
-        status_codes={
-            200: "Project updated",
-            403: "Forbidden to update this project",
-            404: "The project doesn't exist"
-        },
-        output=PROJECT_OBJECT_SCHEMA,
-        input=PROJECT_UPDATE_SCHEMA)
-    def update(request, response):
-
-        pm = ProjectManager.instance()
-        project = pm.get_project(request.match_info["project_id"])
-        project.name = request.json.get("name", project.name)
-        project_path = request.json.get("path", project.path)
-        if project_path != project.path:
-            old_path = project.path
-            project.path = project_path
-            for module in MODULES:
-                yield from module.instance().project_moved(project)
-        response.json(project)
-
     @Route.post(
         r"/projects/{project_id}/close",
         description="Close a project",

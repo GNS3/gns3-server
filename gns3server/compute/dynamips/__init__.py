@@ -223,22 +223,6 @@ class Dynamips(BaseManager):
         if project.id in self._dynamips_ids:
             del self._dynamips_ids[project.id]
 
-    @asyncio.coroutine
-    def project_moved(self, project):
-        """
-        Called when a project is moved.
-
-        :param project: Project instance
-        """
-
-        for node in self._nodes.values():
-            if node.project.id == project.id:
-                yield from node.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
-
-        for device in self._devices.values():
-            if device.project.id == project.id:
-                yield from device.hypervisor.set_working_dir(project.module_working_directory(self.module_name.lower()))
-
     @property
     def dynamips_path(self):
         """

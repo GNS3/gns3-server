@@ -126,6 +126,14 @@ Drawing has been deleted.
 .. literalinclude:: api/notifications/drawing.deleted.json
 
 
+project.updated
+---------------
+
+Project has been updated.
+
+.. literalinclude:: api/notifications/project.updated.json
+
+
 project.closed
 ---------------
 

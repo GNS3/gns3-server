@@ -279,16 +279,6 @@ class BaseManager:
                 del self._nodes[node.id]
 
     @asyncio.coroutine
-    def project_moved(self, project):
-        """
-        Called when a project is moved
-
-        :param project: project instance
-        """
-
-        pass
-
-    @asyncio.coroutine
     def delete_node(self, node_id):
         """
         Delete a node. The node working directory will be destroyed when a commit is received.

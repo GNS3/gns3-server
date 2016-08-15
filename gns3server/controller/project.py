@@ -98,6 +98,24 @@ class Project:
         if not os.path.exists(self._topology_file()):
             self.dump()
 
+    @asyncio.coroutine
+    def update(self, **kwargs):
+        """
+        Update the node on the compute server
+
+        :param kwargs: Node properties
+        """
+
+        old_json = self.__json__()
+
+        for prop in kwargs:
+            setattr(self, prop, kwargs[prop])
+
+        # We send notif only if object has changed
+        if old_json != self.__json__():
+            self.controller.notification.emit("project.updated", self.__json__())
+            self.dump()
+
     def reset(self):
         """
         Called when open/close a project. Cleanup internal stuff
@@ -130,6 +148,10 @@ class Project:
     @property
     def name(self):
         return self._name
+
+    @name.setter
+    def name(self, val):
+        self._name = val
 
     @property
     def id(self):
@@ -446,7 +468,7 @@ class Project:
         self._cleanPictures()
         self._status = "closed"
         if not ignore_notification:
-           self.controller.notification.emit("project.closed", self.__json__())
+            self.controller.notification.emit("project.closed", self.__json__())
 
     def _cleanPictures(self):
         """

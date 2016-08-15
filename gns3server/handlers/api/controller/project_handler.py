@@ -30,6 +30,7 @@ from gns3server.config import Config
 
 from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
+    PROJECT_UPDATE_SCHEMA,
     PROJECT_LOAD_SCHEMA,
     PROJECT_CREATE_SCHEMA
 )
@@ -81,6 +82,26 @@ class ProjectHandler:
     def get(request, response):
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
+        response.json(project)
+
+    @Route.put(
+        r"/projects/{project_id}",
+        status_codes={
+            200: "Node updated",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Update a project instance",
+        input=PROJECT_UPDATE_SCHEMA,
+        output=PROJECT_OBJECT_SCHEMA)
+    def update(request, response):
+        project = Controller.instance().get_project(request.match_info["project_id"])
+
+        # Ignore these because we only use them when creating a project
+        request.json.pop("project_id", None)
+
+        yield from project.update(**request.json)
+        response.set_status(200)
         response.json(project)
 
     @Route.post(
