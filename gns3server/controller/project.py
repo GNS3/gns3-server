@@ -445,6 +445,7 @@ class Project:
             yield from compute.post("/projects/{}/close".format(self._id))
         self._cleanPictures()
         self._status = "closed"
+        self.controller.notification.emit("project.closed", self.__json__())
 
     def _cleanPictures(self):
         """

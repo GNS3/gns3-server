@@ -332,8 +332,10 @@ def test_open_close(async_run, controller):
     assert project.status == "closed"
     async_run(project.open())
     assert project.status == "opened"
+    controller._notification = MagicMock()
     async_run(project.close())
     assert project.status == "closed"
+    controller.notification.emit.assert_any_call("project.closed", project.__json__())
 
 
 def test_is_running(project, async_run, node):
