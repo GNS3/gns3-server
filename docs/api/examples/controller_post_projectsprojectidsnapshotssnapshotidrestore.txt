@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/a8fe0312-be74-4ff1-9107-596ed58393e6/snapshots/7ac42c0d-1838-4fa9-977c-20dc9894abbd/restore' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/9ec22e91-7e4d-4537-83a5-c9e783c5cfe4/snapshots/37665774-a772-4b41-bd7c-c56b29c0da60/restore' -d '{}'
 
-POST /v2/projects/a8fe0312-be74-4ff1-9107-596ed58393e6/snapshots/7ac42c0d-1838-4fa9-977c-20dc9894abbd/restore HTTP/1.1
+POST /v2/projects/9ec22e91-7e4d-4537-83a5-c9e783c5cfe4/snapshots/37665774-a772-4b41-bd7c-c56b29c0da60/restore HTTP/1.1
 {}
 
 
@@ -14,7 +14,7 @@ X-ROUTE: /v2/projects/{project_id}/snapshots/{snapshot_id}/restore
 {
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpisnyewwx/projects/a8fe0312-be74-4ff1-9107-596ed58393e6",
-    "project_id": "a8fe0312-be74-4ff1-9107-596ed58393e6",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmph58tcopa/projects/9ec22e91-7e4d-4537-83a5-c9e783c5cfe4",
+    "project_id": "9ec22e91-7e4d-4537-83a5-c9e783c5cfe4",
     "status": "opened"
 }

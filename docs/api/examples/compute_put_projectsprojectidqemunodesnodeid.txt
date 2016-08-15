@@ -1,8 +1,8 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/dbda0b5d-a8a9-411b-a0d8-50ef6c61fd0a' -d '{"console": 5713, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d6ed47f2-4e1e-4ceb-a344-fbc6842f44a9' -d '{"console": 5712, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/dbda0b5d-a8a9-411b-a0d8-50ef6c61fd0a HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d6ed47f2-4e1e-4ceb-a344-fbc6842f44a9 HTTP/1.1
 {
-    "console": 5713,
+    "console": 5712,
     "hdb_disk_image": "linux\u8f7d.img",
     "name": "test",
     "ram": 1024
@@ -24,7 +24,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
     "cdrom_image": "",
     "cdrom_image_md5sum": null,
     "command_line": "",
-    "console": 5713,
+    "console": 5712,
     "console_type": "telnet",
     "cpu_throttling": 0,
     "cpus": 1,
@@ -46,15 +46,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:dd:80:fd:0a:00",
+    "mac_address": "00:dd:80:44:a9:00",
     "name": "test",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpkgi3md5m/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/dbda0b5d-a8a9-411b-a0d8-50ef6c61fd0a",
-    "node_id": "dbda0b5d-a8a9-411b-a0d8-50ef6c61fd0a",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp3sguypp7/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/d6ed47f2-4e1e-4ceb-a344-fbc6842f44a9",
+    "node_id": "d6ed47f2-4e1e-4ceb-a344-fbc6842f44a9",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpz_99bmcz/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpysiulotp/qemu-system-x86_64",
     "ram": 1024,
     "status": "stopped",
     "usage": ""

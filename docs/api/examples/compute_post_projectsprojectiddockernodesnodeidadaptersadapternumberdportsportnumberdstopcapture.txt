@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/2a616825-84ef-4b37-9a00-44ab5c835626/adapters/0/ports/0/stop_capture' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/d92f7488-adc7-4d9f-acca-32d383be3760/adapters/0/ports/0/stop_capture' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/2a616825-84ef-4b37-9a00-44ab5c835626/adapters/0/ports/0/stop_capture HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/d92f7488-adc7-4d9f-acca-32d383be3760/adapters/0/ports/0/stop_capture HTTP/1.1
 {}
 
 

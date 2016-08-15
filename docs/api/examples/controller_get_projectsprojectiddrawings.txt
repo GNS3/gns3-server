@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/3235be0a-211d-4c5a-8389-d3a23a8a5c23/drawings'
+curl -i -X GET 'http://localhost:3080/v2/projects/ac9ddc94-514a-4517-821e-39e7c958591b/drawings'
 
-GET /v2/projects/3235be0a-211d-4c5a-8389-d3a23a8a5c23/drawings HTTP/1.1
+GET /v2/projects/ac9ddc94-514a-4517-821e-39e7c958591b/drawings HTTP/1.1
 
 
 
@@ -13,8 +13,8 @@ X-ROUTE: /v2/projects/{project_id}/drawings
 
 [
     {
-        "drawing_id": "3385d4fb-894a-4b3c-8a2c-c0f9a85b54d4",
-        "project_id": "3235be0a-211d-4c5a-8389-d3a23a8a5c23",
+        "drawing_id": "b717be1b-f3a8-4d7f-8b0f-c64c790f764c",
+        "project_id": "ac9ddc94-514a-4517-821e-39e7c958591b",
         "rotation": 0,
         "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
         "x": 10,

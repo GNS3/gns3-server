@@ -1,34 +1,14 @@
-/v2/compute/projects/{project_id}/atm_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
+/v2/projects/{project_id}/nodes/{node_id}/files/{path:.+}
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/compute/projects/**{project_id}**/atm_switch/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
+GET /v2/projects/**{project_id}**/nodes/**{node_id}**/files/**{path:.+}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Add a NIO to an ATM switch instance
+Get a file in the node directory
 
 Parameters
 **********
-- **port_number**: Port on the switch
-- **adapter_number**: Adapter on the switch (always 0)
-- **project_id**: Project UUID
-- **node_id**: Node UUID
-
-Response status codes
-**********************
-- **400**: Invalid request
-- **201**: NIO created
-- **404**: Instance doesn't exist
-
-
-DELETE /v2/compute/projects/**{project_id}**/atm_switch/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Remove a NIO from an ATM switch instance
-
-Parameters
-**********
-- **port_number**: Port on the switch
-- **adapter_number**: Adapter on the switch (always 0)
 - **project_id**: Project UUID
 - **node_id**: Node UUID
 
@@ -36,5 +16,21 @@ Response status codes
 **********************
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: NIO deleted
+- **204**: Instance reloaded
+
+
+POST /v2/projects/**{project_id}**/nodes/**{node_id}**/files/**{path:.+}**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Write a file in the node directory
+
+Parameters
+**********
+- **project_id**: Project UUID
+- **node_id**: Node UUID
+
+Response status codes
+**********************
+- **400**: Invalid request
+- **404**: Instance doesn't exist
+- **204**: Instance reloaded
 

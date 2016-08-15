@@ -9,10 +9,10 @@ Stop a packet capture on a Frame Relay switch instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **port_number**: Port on the switch
 - **adapter_number**: Adapter on the switch (always 0)
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************

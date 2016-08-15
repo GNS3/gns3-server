@@ -1,16 +1,16 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes' -d '{"name": "PC TEST 1", "node_id": "210bf489-e712-471f-a1ea-00dab02a21da", "path": "iou.bin", "startup_config_content": "hostname test"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes' -d '{"name": "PC TEST 1", "node_id": "efaecf66-4a0b-4420-be86-674148fa0e60", "path": "iou.bin", "startup_config_content": "hostname test"}'
 
 POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes HTTP/1.1
 {
     "name": "PC TEST 1",
-    "node_id": "210bf489-e712-471f-a1ea-00dab02a21da",
+    "node_id": "efaecf66-4a0b-4420-be86-674148fa0e60",
     "path": "iou.bin",
     "startup_config_content": "hostname test"
 }
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 738
+CONTENT-LENGTH: 736
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -18,15 +18,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes
 
 {
     "command_line": "",
-    "console": 5712,
+    "console": 5711,
     "console_type": "telnet",
     "ethernet_adapters": 2,
     "iourc_path": null,
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-2130/test_json4/project-files/iou/210bf489-e712-471f-a1ea-00dab02a21da",
-    "node_id": "210bf489-e712-471f-a1ea-00dab02a21da",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-91/test_json4/project-files/iou/efaecf66-4a0b-4420-be86-674148fa0e60",
+    "node_id": "efaecf66-4a0b-4420-be86-674148fa0e60",
     "nvram": 128,
     "path": "iou.bin",
     "private_config": null,

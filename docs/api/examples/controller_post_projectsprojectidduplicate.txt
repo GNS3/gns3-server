@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/f28d2d3a-858d-4f62-8a68-e7676aa0932e/duplicate' -d '{"name": "hello"}'
+curl -i -X POST 'http://localhost:3080/v2/projects/7b0df311-f239-4e48-a1f5-21f7638f9588/duplicate' -d '{"name": "hello"}'
 
-POST /v2/projects/f28d2d3a-858d-4f62-8a68-e7676aa0932e/duplicate HTTP/1.1
+POST /v2/projects/7b0df311-f239-4e48-a1f5-21f7638f9588/duplicate HTTP/1.1
 {
     "name": "hello"
 }
@@ -16,7 +16,7 @@ X-ROUTE: /v2/projects/{project_id}/duplicate
 {
     "filename": "hello.gns3",
     "name": "hello",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp52tlx0r1/projects/hello",
-    "project_id": "8a9fb1ed-dcc1-4090-b12e-9ce7364063d7",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmzo55377/projects/hello",
+    "project_id": "e34dd634-015e-4e8b-8d9d-8cbf93ffdd9f",
     "status": "closed"
 }

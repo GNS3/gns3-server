@@ -40,7 +40,6 @@ class Documentation:
         with open(os.path.join(self._directory, "gns3_file.json"), "w+") as f:
             from gns3server.schemas.topology import TOPOLOGY_SCHEMA
             print("Dump .gns3 schema")
-            print(TOPOLOGY_SCHEMA)
             json.dump(TOPOLOGY_SCHEMA, f, indent=4)
         self.write_documentation("compute")
         # Controller documentation

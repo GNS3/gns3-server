@@ -1,8 +1,8 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/db2eb53d-cc7c-42a0-ba95-f819ba66c589' -d '{"console": 5714, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/88891d34-4227-4d66-a4ab-b7af183df673' -d '{"console": 5713, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/db2eb53d-cc7c-42a0-ba95-f819ba66c589 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/88891d34-4227-4d66-a4ab-b7af183df673 HTTP/1.1
 {
-    "console": 5714,
+    "console": 5713,
     "environment": "GNS3=1\nGNS4=0",
     "name": "test",
     "start_command": "yes"
@@ -10,7 +10,7 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/db2eb
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 655
+CONTENT-LENGTH: 653
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -18,8 +18,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
 
 {
     "adapters": 2,
-    "aux": 5713,
-    "console": 5714,
+    "aux": 5712,
+    "console": 5713,
     "console_http_path": "/",
     "console_http_port": 80,
     "console_resolution": "1280x1024",
@@ -28,8 +28,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
     "environment": "GNS3=1\nGNS4=0",
     "image": "nginx:latest",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-2130/test_json4/project-files/docker/db2eb53d-cc7c-42a0-ba95-f819ba66c589",
-    "node_id": "db2eb53d-cc7c-42a0-ba95-f819ba66c589",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-91/test_json4/project-files/docker/88891d34-4227-4d66-a4ab-b7af183df673",
+    "node_id": "88891d34-4227-4d66-a4ab-b7af183df673",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
     "status": "stopped"
