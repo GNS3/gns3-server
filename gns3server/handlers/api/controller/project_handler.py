@@ -213,6 +213,9 @@ class ProjectHandler:
                 except asyncio.futures.CancelledError as e:
                     break
 
+        if project.auto_close and not controller.notification.project_has_listeners(project):
+            yield from project.close()
+
     @Route.get(
         r"/projects/{project_id}/notifications/ws",
         description="Receive notifications about projects from a Websocket",
@@ -231,13 +234,22 @@ class ProjectHandler:
         ws = aiohttp.web.WebSocketResponse()
         yield from ws.prepare(request)
 
+        # Process ping / pong and close message
+        asyncio.async(ws.receive())
+
         with controller.notification.queue(project) as queue:
             while True:
                 try:
                     notification = yield from queue.get_json(5)
                 except asyncio.futures.CancelledError as e:
                     break
+                if ws.closed:
+                    break
                 ws.send_str(notification)
+
+        if project.auto_close and not controller.notification.project_has_listeners(project):
+            yield from project.close()
+
         return ws
 
     @Route.get(

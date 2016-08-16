@@ -32,11 +32,16 @@ class NotificationHandler:
         ws = WebSocketResponse()
         yield from ws.prepare(request)
 
+        # Process ping / pong and close message
+        asyncio.async(ws.receive())
+
         with notifications.queue() as queue:
             while True:
                 try:
                     notification = yield from queue.get_json(5)
                 except asyncio.futures.CancelledError:
+                    break
+                if ws.closed:
                     break
                 ws.send_str(notification)
         return ws

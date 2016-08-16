@@ -44,6 +44,13 @@ class Notification:
         yield queue
         self._listeners[project.id].remove(queue)
 
+    def project_has_listeners(self, project):
+        """
+        :param project_id: Project object
+        :returns: True if client listen this project
+        """
+        return project.id in self._listeners and len(self._listeners[project.id]) > 0
+
     def dispatch(self, action, event, compute_id):
         """
         Notification received from compute node. Send it directly

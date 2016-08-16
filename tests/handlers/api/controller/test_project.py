@@ -146,6 +146,7 @@ def test_notification(http_controller, project, controller, loop):
     assert b'"action": "ping"' in response.body
     assert b'"cpu_usage_percent"' in response.body
     assert b'{"action": "node.created", "event": {"a": "b"}}\n' in response.body
+    assert project.status == "opened"
 
 
 def test_notification_invalid_id(http_controller):
@@ -167,6 +168,7 @@ def test_notification_ws(http_controller, controller, project, async_run):
 
     async_run(http_controller.close())
     ws.close()
+    assert project.status == "opened"
 
 
 def test_export(http_controller, tmpdir, loop, project):
