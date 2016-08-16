@@ -232,7 +232,7 @@ class WebServer:
                     data = json.dumps(server_info)
                     sock.sendto(data.encode(), address)
                     log.debug("Sent server info to {}:{} {}".format(address[0], address[1], data))
-                time.sleep(1) # this is to prevent too many request to slow down the server
+                time.sleep(1)  # this is to prevent too many request to slow down the server
         log.debug("UDP server discovery stopped")
 
     def run(self):
@@ -305,9 +305,9 @@ class WebServer:
             asyncio.async(self.start_shell())
 
         if sys.platform.startswith("linux") and server_config.getboolean("server_discovery"):
-           # UDP discovery is only supported on Linux
-           udp_server_discovery = threading.Thread(target=self._udp_server_discovery, daemon=True)
-           udp_server_discovery.start()
+            # UDP discovery is only supported on Linux
+            udp_server_discovery = threading.Thread(target=self._udp_server_discovery, daemon=True)
+            udp_server_discovery.start()
 
         try:
             self._loop.run_forever()

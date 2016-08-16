@@ -76,6 +76,10 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
 
         topology = load_topology(os.path.join(path, "project.gns3"))
         topology["name"] = project_name
+        # To avoid unexpected behavior (project start without manual operations just after import)
+        topology["auto_start"] = False
+        topology["auto_open"] = False
+        topology["auto_close"] = False
 
         # Modify the compute id of the node depending of compute capacity
         if not keep_compute_id:
