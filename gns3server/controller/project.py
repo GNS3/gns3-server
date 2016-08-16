@@ -62,7 +62,7 @@ class Project:
     :param status: Status of the project (opened / closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None, auto_start=False, auto_open=False, auto_close=False):
+    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None, auto_start=False, auto_open=False, auto_close=True):
 
         self._controller = controller
         assert name is not None
