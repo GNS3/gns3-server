@@ -23,7 +23,7 @@ import pytest
 import aiohttp
 import zipfile
 from unittest.mock import MagicMock
-from tests.utils import AsyncioMagicMock
+from tests.utils import AsyncioMagicMock, asyncio_patch
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -349,12 +349,22 @@ def test_dump():
 def test_open_close(async_run, controller):
     project = Project(controller=controller, status="closed", name="Test")
     assert project.status == "closed"
+    project.start_all = AsyncioMagicMock()
     async_run(project.open())
+    assert not project.start_all.called
     assert project.status == "opened"
     controller._notification = MagicMock()
     async_run(project.close())
     assert project.status == "closed"
     controller.notification.emit.assert_any_call("project.closed", project.__json__())
+
+
+def test_open_auto_start(async_run, controller):
+    project = Project(controller=controller, status="closed", name="Test")
+    project.auto_start = True
+    project.start_all = AsyncioMagicMock()
+    async_run(project.open())
+    assert project.start_all.called
 
 
 def test_is_running(project, async_run, node):
@@ -451,3 +461,49 @@ def test_snapshot(project, async_run):
     # Raise a conflict if name is already use
     with pytest.raises(aiohttp.web_exceptions.HTTPConflict):
         snapshot = async_run(project.snapshot("test1"))
+
+
+def test_start_all(project, async_run):
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    for node_i in range(0, 10):
+        async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+
+    compute.post = AsyncioMagicMock()
+    async_run(project.start_all())
+    assert len(compute.post.call_args_list) == 10
+
+
+def test_stop_all(project, async_run):
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    for node_i in range(0, 10):
+        async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+
+    compute.post = AsyncioMagicMock()
+    async_run(project.stop_all())
+    assert len(compute.post.call_args_list) == 10
+
+
+def test_suspend_all(project, async_run):
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    for node_i in range(0, 10):
+        async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+
+    compute.post = AsyncioMagicMock()
+    async_run(project.suspend_all())
+    assert len(compute.post.call_args_list) == 10
+

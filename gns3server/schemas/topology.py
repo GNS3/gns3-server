@@ -45,6 +45,14 @@ TOPOLOGY_SCHEMA = {
             "description": "Start the topology when opened",
             "type": "boolean"
         },
+        "auto_close": {
+            "description": "Close the topology when no client is connected",
+            "type": "boolean"
+        },
+        "auto_open": {
+            "description": "Open the topology with GNS3",
+            "type": "boolean"
+        },
         "revision": {
             "description": "Version of the .gns3 specification.",
             "type": "integer"

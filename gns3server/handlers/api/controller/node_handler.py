@@ -20,7 +20,6 @@ import aiohttp
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
-from gns3server.utils.asyncio.pool import Pool
 
 from gns3server.schemas.node import (
     NODE_OBJECT_SCHEMA,
@@ -107,10 +106,7 @@ class NodeHandler:
     def start_all(request, response):
 
         project = Controller.instance().get_project(request.match_info["project_id"])
-        pool = Pool(concurrency=3)
-        for node in project.nodes.values():
-            pool.append(node.start)
-        yield from pool.join()
+        yield from project.start_all()
         response.set_status(204)
 
     @Route.post(
@@ -128,10 +124,7 @@ class NodeHandler:
     def stop_all(request, response):
 
         project = Controller.instance().get_project(request.match_info["project_id"])
-        pool = Pool(concurrency=3)
-        for node in project.nodes.values():
-            pool.append(node.stop)
-        yield from pool.join()
+        yield from project.stop_all()
         response.set_status(204)
 
     @Route.post(
@@ -149,10 +142,7 @@ class NodeHandler:
     def suspend_all(request, response):
 
         project = Controller.instance().get_project(request.match_info["project_id"])
-        pool = Pool(concurrency=3)
-        for node in project.nodes.values():
-            pool.append(node.suspend)
-        yield from pool.join()
+        yield from project.suspend_all()
         response.set_status(204)
 
     @Route.post(
@@ -170,13 +160,8 @@ class NodeHandler:
     def reload_all(request, response):
 
         project = Controller.instance().get_project(request.match_info["project_id"])
-        pool = Pool(concurrency=3)
-        for node in project.nodes.values():
-            pool.append(node.stop)
-        yield from pool.join()
-        for node in project.nodes.values():
-            pool.append(node.start)
-        yield from pool.join()
+        yield from project.stop_all()
+        yield from project.start_all()
         response.set_status(204)
 
     @Route.post(

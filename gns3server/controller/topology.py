@@ -53,6 +53,8 @@ def project_to_topology(project):
         "project_id": project.id,
         "name": project.name,
         "auto_start": project.auto_start,
+        "auto_open": project.auto_open,
+        "auto_close": project.auto_close,
         "topology": {
             "nodes": [],
             "links": [],

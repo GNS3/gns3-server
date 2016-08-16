@@ -35,6 +35,8 @@ def test_project_to_topology_empty(tmpdir):
         "project_id": project.id,
         "name": "Test",
         "auto_start": False,
+        "auto_close": False,
+        "auto_open": False,
         "revision": 5,
         "topology": {
             "nodes": [],

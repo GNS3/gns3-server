@@ -32,6 +32,7 @@ from .topology import project_to_topology, load_topology
 from .udp_link import UDPLink
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
+from ..utils.asyncio.pool import Pool
 from .export_project import export_project
 from .import_project import import_project
 
@@ -61,14 +62,14 @@ class Project:
     :param status: Status of the project (opened / closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None, auto_start=False):
+    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None, auto_start=False, auto_open=False, auto_close=False):
 
         self._controller = controller
         assert name is not None
         self._name = name
-        self._auto_start = False
-        self._auto_close = False
-        self._auto_open = False
+        self._auto_start = auto_start
+        self._auto_close = auto_close
+        self._auto_open = auto_open
         self._status = status
 
         # Disallow overwrite of existing project
@@ -103,9 +104,8 @@ class Project:
     @asyncio.coroutine
     def update(self, **kwargs):
         """
-        Update the node on the compute server
-
-        :param kwargs: Node properties
+        Update the project
+        :param kwargs: Project properties
         """
 
         old_json = self.__json__()
@@ -492,6 +492,7 @@ class Project:
 
     @asyncio.coroutine
     def close(self, ignore_notification=False):
+        yield from self.stop_all()
         for compute in self._project_created_on_compute:
             yield from compute.post("/projects/{}/close".format(self._id))
         self._cleanPictures()
@@ -580,6 +581,10 @@ class Project:
             for drawing_data in topology.get("drawings", []):
                 drawing = yield from self.add_drawing(**drawing_data)
 
+            # Should we start the nodes when project is open
+            if self._auto_start:
+                yield from self.start_all()
+
     @open_required
     @asyncio.coroutine
     def duplicate(self, name=None, location=None):
@@ -625,6 +630,36 @@ class Project:
             shutil.move(path + ".tmp", path)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
+
+    @asyncio.coroutine
+    def start_all(self):
+        """
+        Start all nodes
+        """
+        pool = Pool(concurrency=3)
+        for node in self.nodes.values():
+            pool.append(node.start)
+        yield from pool.join()
+
+    @asyncio.coroutine
+    def stop_all(self):
+        """
+        Stop all nodes
+        """
+        pool = Pool(concurrency=3)
+        for node in self.nodes.values():
+            pool.append(node.stop)
+        yield from pool.join()
+
+    @asyncio.coroutine
+    def suspend_all(self):
+        """
+        Suspend all nodes
+        """
+        pool = Pool(concurrency=3)
+        for node in self.nodes.values():
+            pool.append(node.suspend)
+        yield from pool.join()
 
     def __json__(self):
 
