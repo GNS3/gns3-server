@@ -514,10 +514,10 @@ class Project:
         except OSError as e:
             log.warning(str(e))
 
-    @open_required
     @asyncio.coroutine
     def delete(self):
-        yield from self.close()
+        if self._status == "opened":
+            yield from self.close()
         yield from self.delete_on_computes()
         shutil.rmtree(self.path, ignore_errors=True)
 
