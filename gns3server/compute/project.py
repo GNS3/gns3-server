@@ -278,11 +278,21 @@ class Project:
         Closes the project, but keep information on disk
         """
 
+        project_nodes_id = set([n.id for n in self.nodes])
+
         for module in self.compute():
-            yield from module.instance().project_closing(self)
+            module_nodes_id = set([n.id for n in module.instance().nodes])
+            # We close the project only for the modules using it
+            if len(module_nodes_id & project_nodes_id):
+                yield from module.instance().project_closing(self)
+
         yield from self._close_and_clean(False)
+
         for module in self.compute():
-            yield from module.instance().project_closed(self)
+            module_nodes_id = set([n.id for n in module.instance().nodes])
+            # We close the project only for the modules using it
+            if len(module_nodes_id & project_nodes_id):
+                yield from module.instance().project_closed(self)
 
         try:
             if os.path.exists(self.tmp_working_directory()):

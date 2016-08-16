@@ -58,6 +58,13 @@ class BaseManager:
         self._port_manager = None
         self._config = Config.instance()
 
+    @property
+    def nodes(self):
+        """
+        List of nodes manage by the module
+        """
+        return self._nodes.values()
+
     @classmethod
     def instance(cls):
         """
