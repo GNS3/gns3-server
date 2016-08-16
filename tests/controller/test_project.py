@@ -506,4 +506,3 @@ def test_suspend_all(project, async_run):
     compute.post = AsyncioMagicMock()
     async_run(project.suspend_all())
     assert len(compute.post.call_args_list) == 10
-

@@ -292,9 +292,14 @@ class WebServer:
         log.info("Starting server on {}:{}".format(self._host, self._port))
         self._handler = app.make_handler(handler=RequestHandler)
         server = self._run_application(self._handler, ssl_context)
+
         self._loop.run_until_complete(server)
         self._signal_handling()
         self._exit_handling()
+
+        # Now the compute is initialized we can load the projects
+        if server_config.getboolean("controller"):
+            asyncio.async(Controller.instance().load_projects())
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())

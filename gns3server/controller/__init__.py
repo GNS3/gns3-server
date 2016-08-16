@@ -99,7 +99,11 @@ class Controller:
         for c in data["computes"]:
             yield from self.add_compute(**c)
 
-        # Preload the list of projects from disk
+    @asyncio.coroutine
+    def load_projects(self):
+        """
+        Preload the list of projects from disk
+        """
         server_config = Config.instance().get_section_config("Server")
         projects_path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
         os.makedirs(projects_path, exist_ok=True)

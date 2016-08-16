@@ -121,7 +121,7 @@ def test_load_projects(controller, projects_dir, async_run):
     with open(os.path.join(projects_dir, "project1", "project1.gns3"), "w+") as f:
         f.write("")
     with asyncio_patch("gns3server.controller.Controller.load_project") as mock_load_project:
-        async_run(controller.load())
+        async_run(controller.load_projects())
     mock_load_project.assert_called_with(os.path.join(projects_dir, "project1", "project1.gns3"), load=False)
 
 
