@@ -15,15 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import io
 import struct
+from xml.etree.ElementTree import ElementTree
 
-
-def get_size(data):
+def get_size(data, default_width=0, default_height=0):
     """
     Get image size
     :param data: A buffer with image content
-    :return: Tuple (width, height)
+    :return: Tuple (width, height, filetype)
     """
+
+
+    height = default_height
+    width = default_width
+    filetype = None
 
     # Original version:
     # https://github.com/shibukawa/imagesize_py
@@ -38,21 +44,20 @@ def get_size(data):
     #
     # THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-    height = 0
-    width = 0
-
     size = len(data)
     # handle GIFs
     if size >= 10 and data[:6] in (b'GIF87a', b'GIF89a'):
         # Check to see if content_type is correct
         try:
             width, height = struct.unpack("<hh", data[6:10])
+            filetype = "gif"
         except struct.error:
             raise ValueError("Invalid GIF file")
     # see png edition spec bytes are below chunk length then and finally the
     elif size >= 24 and data.startswith(b'\211PNG\r\n\032\n') and data[12:16] == b'IHDR':
         try:
             width, height = struct.unpack(">LL", data[16:24])
+            filetype = "png"
         except struct.error:
             raise ValueError("Invalid PNG file")
     # Maybe this is for an older PNG version.
@@ -60,12 +65,14 @@ def get_size(data):
         # Check to see if we have the right content type
         try:
             width, height = struct.unpack(">LL", data[8:16])
+            filetype = "png"
         except struct.error:
             raise ValueError("Invalid PNG file")
     # handle JPEGs
     elif size >= 2 and data.startswith(b'\377\330'):
         try:
-            fhandle.seek(0)  # Read 0xff next
+            # Not very efficient to copy data to a buffer
+            fhandle = io.BytesIO(data)
             size = 2
             ftype = 0
             while not 0xc0 <= ftype <= 0xcf:
@@ -78,13 +85,44 @@ def get_size(data):
             # We are at a SOFn block
             fhandle.seek(1, 1)  # Skip `precision' byte.
             height, width = struct.unpack('>HH', fhandle.read(4))
+            filetype = "jpg"
         except struct.error:
             raise ValueError("Invalid JPEG file")
-    # handle JPEG2000s
-    elif size >= 12 and data.startswith(b'\x00\x00\x00\x0cjP  \r\n\x87\n'):
-        fhandle.seek(48)
+    # End of https://github.com/shibukawa/imagesize_py
+
+    # handle SVG
+    elif size >= 10 and data.startswith(b'<?xml'):
+        filetype = "svg"
+        fhandle = io.BytesIO(data)
+        tree = ElementTree()
+        tree.parse(fhandle)
+        root = tree.getroot()
+
         try:
-            height, width = struct.unpack('>LL', fhandle.read(8))
-        except struct.error:
-            raise ValueError("Invalid JPEG2000 file")
-    return width, height
+            width = _svg_convert_size(root.attrib["width"])
+            height = _svg_convert_size(root.attrib["height"])
+        except IndexError:
+            raise ValueError("Invalid SVG file")
+
+    return width, height, filetype
+
+def _svg_convert_size(size):
+    """
+    Convert svg size to the px version
+
+    :param size: String with the size
+    """
+
+    # https://www.w3.org/TR/SVG/coords.html#Units
+    conversion_table = {
+        "pt": 1.25,
+        "pc": 15,
+        "mm": 3.543307,
+        "cm": 35.43307,
+        "in": 90
+    }
+    if len(size) > 3:
+        if size[-2:] in conversion_table:
+            return round(float(size[:-2]) * conversion_table[size[-2:]])
+
+    return round(float(size))

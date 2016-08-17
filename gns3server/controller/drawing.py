@@ -72,8 +72,8 @@ class Drawing:
                     try:
                         return data.decode()
                     except UnicodeError:
-                        width, height = get_size(data)
-                        return "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" height=\"{height}\" width=\"{width}\">\n<image height=\"{height}\" width=\"{width}\" xlink:href=\"data:image/{extension};base64,{b64}\" />\n</svg>".format(b64=base64.b64encode(data).decode(), extension=filename.split(".")[1], width=width, height=width)
+                        width, height, filetype = get_size(data)
+                        return "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" height=\"{height}\" width=\"{width}\">\n<image height=\"{height}\" width=\"{width}\" xlink:href=\"data:image/{filetype};base64,{b64}\" />\n</svg>".format(b64=base64.b64encode(data).decode(), filetype=filetype, width=width, height=width)
             except OSError:
                 log.warning("Image file %s missing", filename)
                 return "<svg></svg>"
