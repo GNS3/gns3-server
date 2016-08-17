@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 class Node:
     # This properties are used only on controller and are not forwarded to the compute
-    CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "symbol", "label", "console_host"]
+    CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "width", "height", "symbol", "label", "console_host"]
 
     def __init__(self, project, compute, name, node_id=None, node_type=None, **kwargs):
         """
@@ -69,20 +69,26 @@ class Node:
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
-        self._width = 70
-        self._height = 70
         self._x = 0
         self._y = 0
         self._z = 0
-        self._symbol = ":/symbols/computer.svg"
+        self._symbol = None
 
         # Update node properties with additional elements
+
+        # This properties will be recompute
+        ignore_properties = ("width", "height")
+
         for prop in kwargs:
-            try:
-                setattr(self, prop, kwargs[prop])
-            except AttributeError as e:
-                log.critical("Can't set attribute %s", prop)
-                raise e
+            if prop not in ignore_properties:
+                try:
+                    setattr(self, prop, kwargs[prop])
+                except AttributeError as e:
+                    log.critical("Can't set attribute %s", prop)
+                    raise e
+
+        if self._symbol is None:
+            self.symbol = ":/symbols/computer.svg"
 
     @property
     def id(self):
@@ -173,17 +179,9 @@ class Node:
     def width(self):
         return self._width
 
-    @width.setter
-    def width(self, val):
-        self._width = val
-
     @property
     def height(self):
         return self._height
-
-    @height.setter
-    def height(self, val):
-        self._height = val
 
     @property
     def symbol(self):
@@ -192,6 +190,11 @@ class Node:
     @symbol.setter
     def symbol(self, val):
         self._symbol = val
+        try:
+            self._width, self._height, filetype = self._project.controller.symbols.get_size(val)
+        # If symbol is invalid we replace it by default
+        except (ValueError, OSError):
+            self.symbol = ":/symbols/computer.svg"
 
     @property
     def label(self):

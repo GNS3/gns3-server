@@ -171,6 +171,20 @@ def test_create_image_missing(node, compute, project, async_run):
     node._upload_missing_image.called is True
 
 
+def test_symbol(node):
+    """
+    Change symbol should change the node size
+    """
+    node.symbol = ":/symbols/dslam.svg"
+    assert node.symbol == ":/symbols/dslam.svg"
+    assert node.width == 50
+    assert node.height == 53
+    node.symbol = ":/symbols/cloud.svg"
+    assert node.symbol == ":/symbols/cloud.svg"
+    assert node.width == 159
+    assert node.height == 71
+
+
 def test_update(node, compute, project, async_run, controller):
     response = MagicMock()
     response.json = {"console": 2048}

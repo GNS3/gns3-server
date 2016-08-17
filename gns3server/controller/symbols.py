@@ -19,6 +19,7 @@ import os
 
 
 from ..utils.get_resource import get_resource
+from ..utils.picture import get_size
 from ..config import Config
 
 
@@ -29,6 +30,8 @@ class Symbols:
 
     def __init__(self):
         self.list()
+        # Keep a cache of symbols size
+        self._symbol_size_cache = {}
 
     def list(self):
         self._symbols_path = {}
@@ -68,3 +71,12 @@ class Symbols:
 
     def get_path(self, symbol_id):
         return self._symbols_path[symbol_id]
+
+    def get_size(self, symbol_id):
+        try:
+            return self._symbol_size_cache[symbol_id]
+        except KeyError:
+            with open(self.get_path(symbol_id), "rb") as f:
+                res = get_size(f.read())
+            self._symbol_size_cache[symbol_id] = res
+            return res

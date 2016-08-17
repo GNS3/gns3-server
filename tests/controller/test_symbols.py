@@ -44,3 +44,8 @@ def test_list(symbols_dir):
 def test_get_path():
     symbols = Symbols()
     assert symbols.get_path(':/symbols/firewall.svg') == get_resource("symbols/firewall.svg")
+
+
+def test_get_size():
+    symbols = Symbols()
+    assert symbols.get_size(':/symbols/firewall.svg') == (66, 45, 'svg')

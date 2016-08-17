@@ -145,11 +145,11 @@ NODE_OBJECT_SCHEMA = {
             "minLength": 1
         },
         "width": {
-            "description": "Width of the node",
+            "description": "Width of the node (Read only)",
             "type": "integer"
         },
         "height": {
-            "description": "Height of the node",
+            "description": "Height of the node (Read only)",
             "type": "integer"
         },
         "x": {
