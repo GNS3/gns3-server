@@ -23,6 +23,7 @@ import os
 
 from .compute import ComputeConflict
 from ..utils.images import images_directories
+from ..utils.qt import qt_font_to_style
 
 
 import logging
@@ -54,13 +55,7 @@ class Node:
         self._compute = compute
         self._node_type = node_type
 
-        self._label = {
-            "y": -25,
-            "text": "",
-            "style": "font-size: 10;font-familly: Verdana",
-            "x": -17,
-            "rotation": 0
-        }
+        self._label = None
         self._name = None
         self.name = name
         self._console = None
@@ -106,7 +101,9 @@ class Node:
     def name(self, new_name):
         self._name = self._project.update_node_name(self, new_name)
         # The text in label need to be always the node name
-        self._label["text"] = self._name
+        if self.label and self._label["text"] != self._name:
+            self._label["text"] = self._name
+            self._label["x"] = None  # Center text
 
     @property
     def node_type(self):
@@ -195,6 +192,22 @@ class Node:
         # If symbol is invalid we replace it by default
         except (ValueError, OSError):
             self.symbol = ":/symbols/computer.svg"
+        if self._label is None:
+            # Apply to label user style or default
+            try:
+                style = qt_font_to_style(
+                    self._project.controller.settings["GraphicsView"]["default_label_font"],
+                    self._project.controller.settings["GraphicsView"]["default_label_color"])
+            except KeyError:
+                style = "font-size: 10;font-familly: Verdana"
+
+            self._label = {
+                "y": round(self._height / 2 + 10) * -1,
+                "text": self._name,
+                "style": style,
+                "x": None,  # None: mean the client should center it
+                "rotation": 0
+            }
 
     @property
     def label(self):

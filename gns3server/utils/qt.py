@@ -15,31 +15,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-LABEL_OBJECT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "text": {"type": "string"},
-        "style": {
-            "description": "SVG style attribute",
-            "type": "string"
-        },
-        "x": {
-            "description": "Relative X position of the label. If null center it",
-            "type": ["integer", "null"]
-        },
-        "y": {
-            "description": "Relative Y position of the label",
-            "type": "integer"
-        },
-        "rotation": {
-            "description": "Rotation of the label",
-            "type": "integer"
-        },
-    },
-    "required": [
-        "text",
-        "x",
-        "y"
-    ],
-    "additionalProperties": False
-}
+"""
+Helper for conversion of Qt stuff
+"""
+
+
+def qt_font_to_style(font, color):
+    """
+    Convert a Qt font to CSS style
+    """
+    font_info = font.split(",")
+    style = "font-family: {};font-size: {};".format(font_info[0], font_info[1])
+    if font_info[4] == "75":
+        style += "font-weight: bold;"
+    if font_info[5] == "1":
+        style += "font-style: italic;"
+
+    if len(color) == 9:
+        style += "fill: #" + color[-6:] + ";"
+        style += "fill-opacity: {};".format(round(1.0 / 255 * int(color[:3][-2:], base=16), 2))
+    else:
+        style += "fill: #" + color[-6:] + ";"
+        style += "fill-opacity: {};".format(1.0)
+    return style

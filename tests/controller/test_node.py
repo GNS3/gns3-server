@@ -179,10 +179,34 @@ def test_symbol(node):
     assert node.symbol == ":/symbols/dslam.svg"
     assert node.width == 50
     assert node.height == 53
+    assert node.label["x"] is None
+    assert node.label["y"] == -40
+
     node.symbol = ":/symbols/cloud.svg"
     assert node.symbol == ":/symbols/cloud.svg"
     assert node.width == 159
     assert node.height == 71
+
+    assert node.label["x"] is None
+    assert node.label["y"] == -40
+    assert node.label["style"] == "font-size: 10;font-familly: Verdana"
+
+
+def test_label_with_default_label_font(node):
+    """
+    If user has changed the font we need to have the node label using
+    the correct color
+    """
+    node.project.controller.settings = {
+        "GraphicsView": {
+            "default_label_color": "#ff0000",
+            "default_label_font": "TypeWriter,10,-1,5,75,0,0,0,0,0"
+        }
+    }
+
+    node._label = None
+    node.symbol = ":/symbols/dslam.svg"
+    assert node.label["style"] == "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #ff0000;fill-opacity: 1.0;"
 
 
 def test_update(node, compute, project, async_run, controller):
