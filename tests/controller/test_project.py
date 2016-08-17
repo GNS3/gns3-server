@@ -66,7 +66,7 @@ def test_json(tmpdir):
         "status": "opened",
         "filename": "Test.gns3",
         "auto_start": False,
-        "auto_close": False,
+        "auto_close": True,
         "auto_open": False
     }
 

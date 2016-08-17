@@ -19,13 +19,13 @@ import io
 import struct
 from xml.etree.ElementTree import ElementTree
 
+
 def get_size(data, default_width=0, default_height=0):
     """
     Get image size
     :param data: A buffer with image content
     :return: Tuple (width, height, filetype)
     """
-
 
     height = default_height
     width = default_width
@@ -105,6 +105,7 @@ def get_size(data, default_width=0, default_height=0):
             raise ValueError("Invalid SVG file")
 
     return width, height, filetype
+
 
 def _svg_convert_size(size):
     """
