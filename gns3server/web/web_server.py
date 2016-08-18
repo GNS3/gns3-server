@@ -112,6 +112,10 @@ class WebServer:
 
         for task in asyncio.Task.all_tasks():
             task.cancel()
+            try:
+                yield from asyncio.wait_for(task, 1)
+            except:
+                pass
 
         self._loop.stop()
 
