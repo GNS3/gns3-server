@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.5.2 18/08/2016
+
+* Move utils.vmnet to gns3 namespace
+* Fix Exporting portable projects with QEMU includes base images even when selecting no.
+* Catch error when md5sum file is corrupted
+* requirements.txt : added support for newer aiohttp version
+* Improve compaction of .gns3project
+* Fix crash when winpcap is not installed
+
 ## 1.5.1 07/07/2016
 
 * Increase the number of interface for docker
