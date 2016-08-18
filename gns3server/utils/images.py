@@ -40,7 +40,9 @@ def scan_for_images(type):
             for file in filenames:
                 path = os.path.join(root, file)
                 if file not in files:
-                    if (file.endswith(".image") and type == "dynamips") \
+                    if file.endswith(".md5sum"):
+                        continue
+                    elif (file.endswith(".image") and type == "dynamips") \
                        or (file.endswith(".bin") and type == "iou") \
                        or (not file.endswith(".bin") and not file.endswith(".image") and type == "qemu"):
                         files.add(file)

@@ -109,6 +109,10 @@ def test_scan_for_images(tmpdir):
     path4.write("1", ensure=True)
     path4 = force_unix_path(str(path4))
 
+    path5 = tmpdir / "images1" / "QEMU" / "test4.qcow2.md5sum"
+    path5.write("1", ensure=True)
+    path5 = force_unix_path(str(path5))
+
     with patch("gns3server.config.Config.get_section_config", return_value={
             "images_path": str(tmpdir / "images1"),
             "additional_images_path": "/tmp/null24564:{}".format(tmpdir / "images2"),
