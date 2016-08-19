@@ -431,7 +431,7 @@ def _create_cloud(node, old_node, icon):
         elif old_port["name"].startswith("nio_tap"):
             port_type = "tap"
         else:
-            raise NotImplementedError("The conversion of cloud with {} is not supporterd".format(old_port["name"]))
+            raise NotImplementedError("The conversion of cloud with {} is not supported".format(old_port["name"]))
 
         port = {
             "interface": old_port["name"].split(":")[1],
