@@ -120,7 +120,7 @@ class UDPLink(Link):
         :returns: Node where the capture should run
         """
 
-        # use the local node first to save bandwidth
+        # use the local node first to save bandwidth
         for node in self._nodes:
             if node["node"].compute.id == "local" and node["node"].node_type not in [""]:  # FIXME
                 return node

@@ -116,17 +116,18 @@ class Link:
         Dump a pcap file on disk
         """
 
-        stream = yield from self.read_pcap_from_source()
-        with open(self.capture_file_path, "wb+") as f:
-            while self._capturing:
-                # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
-                data = yield from stream.read(1)
-                if data:
-                    f.write(data)
-                    # Flush to disk otherwise the live is not really live
-                    f.flush()
-                else:
-                    break
+        stream_content = yield from self.read_pcap_from_source()
+        with stream_content as stream:
+            with open(self.capture_file_path, "wb+") as f:
+                while self._capturing:
+                    # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
+                    data = yield from stream.read(1)
+                    if data:
+                        f.write(data)
+                        # Flush to disk otherwise the live is not really live
+                        f.flush()
+                    else:
+                        break
 
     @asyncio.coroutine
     def stop_capture(self):

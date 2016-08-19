@@ -67,3 +67,5 @@ def test_wait_for_process_termination(loop):
     exec = wait_for_process_termination(process, timeout=0.5)
     with pytest.raises(asyncio.TimeoutError):
         loop.run_until_complete(asyncio.async(exec))
+
+
