@@ -213,8 +213,12 @@ class ProjectHandler:
                 except asyncio.futures.CancelledError as e:
                     break
 
-        if project.auto_close and not controller.notification.project_has_listeners(project):
-            yield from project.close()
+        if project.auto_close:
+            # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+            # if someone else is not connected
+            yield from asyncio.sleep(5)
+            if not controller.notification.project_has_listeners(project):
+                yield from project.close()
 
     @Route.get(
         r"/projects/{project_id}/notifications/ws",
@@ -247,8 +251,12 @@ class ProjectHandler:
                     break
                 ws.send_str(notification)
 
-        if project.auto_close and not controller.notification.project_has_listeners(project):
-            yield from project.close()
+        if project.auto_close:
+            # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+            # if someone else is not connected
+            yield from asyncio.sleep(5)
+            if not controller.notification.project_has_listeners(project):
+                yield from project.close()
 
         return ws
 
