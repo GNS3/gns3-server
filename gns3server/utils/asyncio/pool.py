@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import copy
 import asyncio
 
 
@@ -29,7 +28,7 @@ class Pool():
         self._concurrency = concurrency
 
     def append(self, task, *args, **kwargs):
-        self._tasks.append((copy.copy(task), args, kwargs))
+        self._tasks.append((task, args, kwargs))
 
     @asyncio.coroutine
     def join(self):
