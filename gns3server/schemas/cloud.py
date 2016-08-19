@@ -15,6 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .port import PORT_OBJECT_SCHEMA
+
+HOST_INTERFACE_SCHEMA = {
+    "description": "Interfaces on this host",
+    "properties": {
+        "name": {
+            "description": "Interface name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "type": {
+            "enum": ["ethernet", "tap"]
+        },
+    },
+    "required": ["name", "type"],
+    "additionalProperties": False
+}
 
 
 CLOUD_CREATE_SCHEMA = {
@@ -22,111 +39,7 @@ CLOUD_CREATE_SCHEMA = {
     "description": "Request validation to create a new cloud instance",
     "type": "object",
     "definitions": {
-        "EthernetInterfacePort": {
-            "description": "Ethernet interface port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["ethernet"]
-                },
-                "interface": {
-                    "description": "Ethernet interface name e.g. eth0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["name", "port_number", "type", "interface"],
-            "additionalProperties": False
-        },
-        "TAPInterfacePort": {
-            "description": "TAP interface port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["tap"]
-                },
-                "interface": {
-                    "description": "TAP interface name e.g. tap0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["name", "port_number", "type", "interface"],
-            "additionalProperties": False
-        },
-        "UDPTunnelPort": {
-            "description": "UDP tunnel port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["udp"]
-                },
-                "lport": {
-                    "description": "Local UDP tunnel port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "rhost": {
-                    "description": "Remote UDP tunnel host",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "rport": {
-                    "description": "Remote UDP tunnel port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                }
-            },
-            "required": ["name", "port_number", "type", "lport", "rhost", "rport"],
-            "additionalProperties": False
-        },
-        "HostInterfaces": {
-            "description": "Interfaces on this host",
-            "properties": {
-                "name": {
-                    "description": "Interface name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "type": {
-                    "enum": ["Ethernet", "TAP"]
-                },
-            },
-            "required": ["name", "type"],
-            "additionalProperties": False
-        },
+        "HostInterfaces": HOST_INTERFACE_SCHEMA
     },
     "properties": {
         "name": {
@@ -146,12 +59,7 @@ CLOUD_CREATE_SCHEMA = {
         "ports": {
             "type": "array",
             "items": [
-                {"type": "object",
-                 "oneOf": [
-                     {"$ref": "#/definitions/EthernetInterfacePort"},
-                     {"$ref": "#/definitions/TAPInterfacePort"},
-                     {"$ref": "#/definitions/UDPTunnelPort"}
-                 ]},
+                PORT_OBJECT_SCHEMA
             ]
         },
         "interfaces": {
@@ -173,111 +81,7 @@ CLOUD_OBJECT_SCHEMA = {
     "description": "Cloud instance",
     "type": "object",
     "definitions": {
-        "EthernetInterfacePort": {
-            "description": "Ethernet interface port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["ethernet"]
-                },
-                "interface": {
-                    "description": "Ethernet interface name e.g. eth0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["name", "port_number", "type", "interface"],
-            "additionalProperties": False
-        },
-        "TAPInterfacePort": {
-            "description": "TAP interface port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["tap"]
-                },
-                "interface": {
-                    "description": "TAP interface name e.g. tap0",
-                    "type": "string",
-                    "minLength": 1
-                },
-            },
-            "required": ["name", "port_number", "type", "interface"],
-            "additionalProperties": False
-        },
-        "UDPTunnelPort": {
-            "description": "UDP tunnel port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["udp"]
-                },
-                "lport": {
-                    "description": "Local UDP tunnel port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "rhost": {
-                    "description": "Remote UDP tunnel host",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "rport": {
-                    "description": "Remote UDP tunnel port",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                }
-            },
-            "required": ["name", "port_number", "type", "lport", "rhost", "rport"],
-            "additionalProperties": False
-        },
-        "HostInterfaces": {
-            "description": "Interfaces on this host",
-            "properties": {
-                "name": {
-                    "description": "Interface name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "type": {
-                    "enum": ["ethernet", "tap"]
-                },
-            },
-            "required": ["name", "type"],
-            "additionalProperties": False
-        },
+        "HostInterfaces": HOST_INTERFACE_SCHEMA
     },
     "properties": {
         "name": {
@@ -302,12 +106,7 @@ CLOUD_OBJECT_SCHEMA = {
         "ports": {
             "type": "array",
             "items": [
-                {"type": "object",
-                 "oneOf": [
-                     {"$ref": "#/definitions/EthernetInterfacePort"},
-                     {"$ref": "#/definitions/TAPInterfacePort"},
-                     {"$ref": "#/definitions/UDPTunnelPort"}
-                 ]},
+                PORT_OBJECT_SCHEMA
             ]
         },
         "interfaces": {
