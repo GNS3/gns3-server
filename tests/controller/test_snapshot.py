@@ -94,6 +94,7 @@ def test_restore(project, controller, async_run):
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         async_run(snapshot.restore())
 
+    assert "snapshot.restored" in [c[0][0] for c in controller.notification.emit.call_args_list]
     # project.closed notification should not be send when restoring snapshots
     assert "project.closed" not in [c[0][0] for c in controller.notification.emit.call_args_list]
 

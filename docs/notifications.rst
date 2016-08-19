@@ -142,6 +142,12 @@ Project has been closed.
 .. literalinclude:: api/notifications/project.closed.json
 
 
+snapshot.restored
+--------------------------
+
+Snapshot has been restored
+
+.. literalinclude:: api/notifications/project.snapshot_restored.json
 
 log.error
 ---------
