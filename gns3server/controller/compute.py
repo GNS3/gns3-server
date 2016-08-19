@@ -299,6 +299,7 @@ class Compute:
         # https://www.python.org/dev/peps/pep-0492/
         # that why we wrap the answer
         class StreamResponse:
+
             def __init__(self, response):
                 self._response = response
 
@@ -350,7 +351,11 @@ class Compute:
         """
         self._ws = yield from self._session().ws_connect(self._getUrl("/notifications/ws"))
         while True:
-            response = yield from self._ws.receive()
+            try:
+                response = yield from self._ws.receive()
+            except aiohttp.errors.WSServerHandshakeError:
+                self._ws = None
+                return
             if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error:
                 self._connected = False
                 break

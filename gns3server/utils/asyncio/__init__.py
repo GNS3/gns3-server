@@ -127,4 +127,3 @@ def wait_for_named_pipe_creation(pipe_path, timeout=60):
         else:
             return
     raise asyncio.TimeoutError()
-

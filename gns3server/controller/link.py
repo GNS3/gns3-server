@@ -165,7 +165,7 @@ class Link:
 
     @property
     def nodes(self):
-        return [ node['node'] for node in self._nodes ]
+        return [node['node'] for node in self._nodes]
 
     @property
     def capturing(self):
