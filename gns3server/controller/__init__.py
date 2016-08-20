@@ -184,7 +184,7 @@ class Controller:
 
             for compute in self._computes.values():
                 if name and compute.name == name:
-                    raise aiohttp.web.HTTPConflict(text="Compute name {} is duplicate".format(name))
+                    raise aiohttp.web.HTTPConflict(text='Compute name "{}" already exists'.format(name))
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
@@ -267,7 +267,7 @@ class Controller:
 
             for project in self._projects.values():
                 if name and project.name == name:
-                    raise aiohttp.web.HTTPConflict(text="Project name {} is duplicate".format(name))
+                    raise aiohttp.web.HTTPConflict(text='Project name "{}" already exists'.format(name))
             project = Project(project_id=project_id, controller=self, name=name, **kwargs)
             self._projects[project.id] = project
             return self._projects[project.id]
