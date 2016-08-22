@@ -19,10 +19,10 @@
 # This file contains the validation for checking a .gns3 file
 #
 
-from .compute import COMPUTE_OBJECT_SCHEMA
-from .drawing import DRAWING_OBJECT_SCHEMA
-from .link import LINK_OBJECT_SCHEMA
-from .node import NODE_OBJECT_SCHEMA
+from gns3server.schemas.compute import COMPUTE_OBJECT_SCHEMA
+from gns3server.schemas.drawing import DRAWING_OBJECT_SCHEMA
+from gns3server.schemas.link import LINK_OBJECT_SCHEMA
+from gns3server.schemas.node import NODE_OBJECT_SCHEMA
 
 
 TOPOLOGY_SCHEMA = {
@@ -99,3 +99,14 @@ TOPOLOGY_SCHEMA = {
     ],
     "additionalProperties": False
 }
+
+def main():
+    import jsonschema
+    import sys
+
+    with open(sys.argv[1]) as f:
+        jsonschema.validate(f.read(), TOPOLOGY_SCHEMA)
+
+
+if __name__ == '__main__':
+    main()
