@@ -28,6 +28,7 @@ from .vmware_handler import VMwareHandler
 from .version_handler import VersionHandler
 from .notification_handler import NotificationHandler
 from .cloud_handler import CloudHandler
+from .nat_handler import NatHandler
 from .ethernet_hub_handler import EthernetHubHandler
 from .ethernet_switch_handler import EthernetSwitchHandler
 from .frame_relay_switch_handler import FrameRelaySwitchHandler

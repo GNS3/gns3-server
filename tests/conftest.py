@@ -315,3 +315,12 @@ def async_run(loop):
     Shortcut for running in asyncio loop
     """
     return lambda x: loop.run_until_complete(asyncio.async(x))
+
+
+@pytest.yield_fixture
+def on_gns3vm():
+    """
+    Mock the hostname to  emulate the GNS3 VM
+    """
+    with patch("socket.gethostname", return_value="gns3vm"):
+        yield

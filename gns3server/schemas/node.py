@@ -90,6 +90,7 @@ NODE_OBJECT_SCHEMA = {
         "node_type": {
             "description": "Type of node",
             "enum": ["cloud",
+                     "nat",
                      "ethernet_hub",
                      "ethernet_switch",
                      "frame_relay_switch",
