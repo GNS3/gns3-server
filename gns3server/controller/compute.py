@@ -17,6 +17,7 @@
 
 import aiohttp
 import asyncio
+import socket
 import json
 import uuid
 import os
@@ -163,7 +164,7 @@ class Compute:
         if name is not None:
             self._name = name
         elif self._id == "local":
-            self._name = "Local"
+            self._name = socket.gethostname()
         else:
             if self._user:
                 user = self._user
