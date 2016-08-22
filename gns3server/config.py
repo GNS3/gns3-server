@@ -30,18 +30,19 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Config(object):
+class Config:
 
     """
     Configuration file management using configparser.
 
-    :params files: Array of configuration files (optional)
-    :params config_directory: Path of the configuration directory. If None default OS directory
+    :param files: Array of configuration files (optional)
+    :param profil: Profil settings (default use standard settings file)
     """
 
-    def __init__(self, files=None, config_directory=None):
+    def __init__(self, files=None, profil=None):
 
         self._files = files
+        self._profil = profil
 
         # Monitor configuration files for changes
         self._watched_files = {}
@@ -61,10 +62,16 @@ class Config(object):
 
             appdata = os.path.expandvars("%APPDATA%")
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
+
+            if self._profil:
+                user_dir = os.path.join(appdata, appname, "profiles", self._profil)
+            else:
+                user_dir = os.path.join(appdata, appname)
+
             filename = "gns3_server.ini"
             if self._files is None:
                 self._files = [os.path.join(os.getcwd(), filename),
-                               os.path.join(appdata, appname, filename),
+                               os.path.join(user_dir, filename),
                                os.path.join(appdata, appname + ".ini"),
                                os.path.join(common_appdata, appname, filename),
                                os.path.join(common_appdata, appname + ".ini")]
@@ -80,9 +87,15 @@ class Config(object):
             appname = "GNS3"
             home = os.path.expanduser("~")
             filename = "gns3_server.conf"
+
+            if self._profil:
+                user_dir = os.path.join(home, ".config", appname, "profiles", self._profil)
+            else:
+                user_dir = os.path.join(home, ".config", appname)
+
             if self._files is None:
                 self._files = [os.path.join(os.getcwd(), filename),
-                               os.path.join(home, ".config", appname, filename),
+                               os.path.join(user_dir, filename),
                                os.path.join(home, ".config", appname + ".conf"),
                                os.path.join("/etc/gns3", filename),
                                os.path.join("/etc/xdg", appname, filename),
@@ -92,6 +105,13 @@ class Config(object):
             self._files = []
         self.clear()
         self._watch_config_file()
+
+    @property
+    def profil(self):
+        """
+        Settings profil
+        """
+        return self._profil
 
     def clear(self):
         """Restart with a clean config"""
@@ -193,16 +213,15 @@ class Config(object):
         self.set_section_config(section, conf)
 
     @staticmethod
-    def instance(files=None):
+    def instance(*args, **kwargs):
         """
         Singleton to return only one instance of Config.
 
-        :params files: Array of configuration files (optional)
         :returns: instance of Config
         """
 
         if not hasattr(Config, "_instance") or Config._instance is None:
-            Config._instance = Config(files)
+            Config._instance = Config(*args, **kwargs)
         return Config._instance
 
     @staticmethod
