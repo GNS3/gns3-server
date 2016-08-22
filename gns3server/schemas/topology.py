@@ -100,6 +100,7 @@ TOPOLOGY_SCHEMA = {
     "additionalProperties": False
 }
 
+
 def main():
     import jsonschema
     import sys

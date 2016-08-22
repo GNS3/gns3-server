@@ -182,7 +182,8 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.start()
-        response.set_status(204)
+        response.json(node)
+        response.set_status(201)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/stop",
@@ -202,7 +203,8 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.stop()
-        response.set_status(204)
+        response.json(node)
+        response.set_status(201)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/suspend",
@@ -222,7 +224,8 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.suspend()
-        response.set_status(204)
+        response.json(node)
+        response.set_status(201)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/reload",
@@ -242,7 +245,8 @@ class NodeHandler:
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.reload()
-        response.set_status(204)
+        response.json(node)
+        response.set_status(201)
 
     @Route.delete(
         r"/projects/{project_id}/nodes/{node_id}",
