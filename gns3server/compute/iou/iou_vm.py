@@ -218,7 +218,6 @@ class IOUVM(BaseNode):
                        "l1_keepalives": self._l1_keepalives,
                        "startup_config": self.relative_startup_config_file,
                        "private_config": self.relative_private_config_file,
-                       "iourc_path": self.iourc_path,
                        "use_default_iou_values": self._use_default_iou_values,
                        "command_line": self.command_line}
 

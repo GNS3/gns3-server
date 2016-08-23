@@ -98,8 +98,6 @@ def test_iou_create_with_params(http_compute, project, base_params):
     with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
 
-    assert "iourc" in response.json["iourc_path"]
-
 
 def test_iou_create_startup_config_already_exist(http_compute, project, base_params):
     """We don't erase a startup-config if already exist at project creation"""
@@ -153,8 +151,6 @@ def test_iou_start_with_iourc(http_compute, vm, tmpdir):
 
     response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status == 200
-    with open(response.json["iourc_path"]) as f:
-        assert f.read() == "test"
 
 
 def test_iou_stop(http_compute, vm):
@@ -204,8 +200,6 @@ def test_iou_update(http_compute, vm, tmpdir, free_console_port, project):
     assert "startup-config.cfg" in response.json["startup_config"]
     with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
-
-    assert "iourc" in response.json["iourc_path"]
 
 
 def test_iou_nio_create_udp(http_compute, vm):

@@ -199,10 +199,6 @@ IOU_OBJECT_SCHEMA = {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
         },
-        "iourc_path": {
-            "description": "Path of the iourc file used by remote servers",
-            "type": ["string", "null"]
-        },
         "startup_config_content": {
             "description": "Startup-config of IOU",
             "type": ["string", "null"]
