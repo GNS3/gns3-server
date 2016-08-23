@@ -16,14 +16,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import aiohttp.errors
 
 from aiohttp.web import WebSocketResponse
 from gns3server.web.route import Route
 from gns3server.compute.notification_manager import NotificationManager
 
 
-class NotificationHandler:
+@asyncio.coroutine
+def process_websocket(ws):
+    """
+    Process ping / pong and close message
+    """
+    try:
+        yield from ws.receive()
+    except aiohttp.errors.WSServerHandshakeError:
+        pass
 
+
+class NotificationHandler:
     @Route.get(
         r"/notifications/ws",
         description="Send notifications using Websockets")
@@ -32,8 +43,7 @@ class NotificationHandler:
         ws = WebSocketResponse()
         yield from ws.prepare(request)
 
-        # Process ping / pong and close message
-        asyncio.async(ws.receive())
+        asyncio.async(process_websocket(ws))
 
         with notifications.queue() as queue:
             while True:

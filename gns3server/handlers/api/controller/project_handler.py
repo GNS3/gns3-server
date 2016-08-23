@@ -17,6 +17,7 @@
 
 import os
 import aiohttp
+import aiohttp.errors
 import asyncio
 import tempfile
 
@@ -37,6 +38,17 @@ from gns3server.schemas.project import (
 
 import logging
 log = logging.getLogger()
+
+
+@asyncio.coroutine
+def process_websocket(ws):
+    """
+    Process ping / pong and close message
+    """
+    try:
+        yield from ws.receive()
+    except aiohttp.errors.WSServerHandshakeError:
+        pass
 
 
 class ProjectHandler:
@@ -238,8 +250,7 @@ class ProjectHandler:
         ws = aiohttp.web.WebSocketResponse()
         yield from ws.prepare(request)
 
-        # Process ping / pong and close message
-        asyncio.async(ws.receive())
+        asyncio.async(process_websocket(ws))
 
         with controller.notification.queue(project) as queue:
             while True:
