@@ -35,7 +35,7 @@ def test_compute_create_without_id(http_controller, controller):
     assert response.json["compute_id"] is not None
     assert "password" not in response.json
 
-    assert len(controller.computes) == 1
+    assert len(controller.computes) == 2
     assert controller.computes[response.json["compute_id"]].host == "example.com"
 
 
@@ -55,7 +55,7 @@ def test_compute_create_with_id(http_controller, controller):
     assert response.json["user"] == "julien"
     assert "password" not in response.json
 
-    assert len(controller.computes) == 1
+    assert len(controller.computes) == 2
     assert controller.computes["my_compute_id"].host == "example.com"
 
 
@@ -119,19 +119,19 @@ def test_compute_list(http_controller, controller):
     assert "password" not in response.json
 
     response = http_controller.get("/computes", example=True)
-    assert response.json == [
-        {
-            'compute_id': 'my_compute_id',
-            'connected': False,
-            'host': 'example.com',
-            'port': 84,
-            'protocol': 'http',
-            'user': 'julien',
-            'name': 'My super server',
-            'cpu_usage_percent': None,
-            'memory_usage_percent': None
-        }
-    ]
+    for compute in response.json:
+        if compute['compute_id'] != 'local':
+            assert compute == {
+                'compute_id': 'my_compute_id',
+                'connected': False,
+                'host': 'example.com',
+                'port': 84,
+                'protocol': 'http',
+                'user': 'julien',
+                'name': 'My super server',
+                'cpu_usage_percent': None,
+                'memory_usage_percent': None
+            }
 
 
 def test_compute_delete(http_controller, controller):
@@ -148,13 +148,13 @@ def test_compute_delete(http_controller, controller):
     assert response.status == 201
 
     response = http_controller.get("/computes")
-    assert len(response.json) == 1
+    assert len(response.json) == 2
 
     response = http_controller.delete("/computes/my_compute_id")
     assert response.status == 204
 
     response = http_controller.get("/computes")
-    assert len(response.json) == 0
+    assert len(response.json) == 1
 
 
 def test_compute_list_images(http_controller, controller):

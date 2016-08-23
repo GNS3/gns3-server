@@ -96,10 +96,6 @@ class Compute:
         # Websocket for notifications
         self._ws = None
 
-        # It's a configuration issue if the compute is not configured to be local but the compute id is local
-        if compute_id == "local" and Config.instance().get_section_config("Server")["local"] is False:
-            raise ComputeError("The local compute is started without --local")
-
     def _session(self):
         if self._http_session is None or self._http_session.closed is True:
             self._http_session = aiohttp.ClientSession()

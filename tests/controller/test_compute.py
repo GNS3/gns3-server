@@ -16,8 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import pytest
 import json
+import pytest
+import socket
 import aiohttp
 import asyncio
 from unittest.mock import patch, MagicMock
@@ -44,25 +45,11 @@ def test_name():
     assert c.name == "https://example.com:84"
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
         c = Compute("local", protocol="https", host="example.com", port=84, controller=MagicMock(), name=None)
-        assert c.name == "Local"
+        assert c.name == socket.gethostname()
     c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), name="hello")
     assert c.name == "hello"
     c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), user="azertyuiopqsdfghjklkm")
     assert c.name == "https://azertyuiopq...@example.com:84"
-
-
-def test_compute_local(compute):
-    """
-    If the compute is local but the compute id is local
-    it's a configuration issue
-    """
-
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": False}):
-        with pytest.raises(ComputeError):
-            s = Compute("local", controller=MagicMock())
-
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        s = Compute("test", controller=MagicMock())
 
 
 def test_compute_httpQuery(compute, async_run):

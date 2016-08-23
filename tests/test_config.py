@@ -59,7 +59,7 @@ def test_get_section_config(tmpdir):
 
     config = load_config(tmpdir, {
         "Server": {
-            "host": "127.0.0.1"
+            "host": "127.0.0.1",
         }
     })
     assert dict(config.get_section_config("Server")) == {"host": "127.0.0.1"}

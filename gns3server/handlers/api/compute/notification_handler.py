@@ -35,6 +35,7 @@ def process_websocket(ws):
 
 
 class NotificationHandler:
+
     @Route.get(
         r"/notifications/ws",
         description="Send notifications using Websockets")

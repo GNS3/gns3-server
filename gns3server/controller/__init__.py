@@ -77,16 +77,23 @@ class Controller:
         """
         Save the controller configuration on disk
         """
-        data = {"computes": [{"host": c.host,
-                              "name": c.name,
-                              "port": c.port,
-                              "protocol": c.protocol,
-                              "user": c.user,
-                              "password": c.password,
-                              "compute_id": c.id
-                              } for c in self._computes.values()],
-                "settings": self._settings,
-                "version": __version__}
+        data = {
+            "computes": [],
+            "settings": self._settings,
+            "version": __version__
+        }
+
+        for c in self._computes.values():
+            if c.id != "local":
+                data["computes"].append({
+                    "host": c.host,
+                    "name": c.name,
+                    "port": c.port,
+                    "protocol": c.protocol,
+                    "user": c.user,
+                    "password": c.password,
+                    "compute_id": c.id
+                })
         os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
         with open(self._config_file, 'w+') as f:
             json.dump(data, f, indent=4)
