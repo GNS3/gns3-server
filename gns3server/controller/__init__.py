@@ -48,9 +48,23 @@ class Controller:
             config_path = os.path.join(os.path.expandvars("%APPDATA%"), "GNS3")
         else:
             config_path = os.path.join(os.path.expanduser("~"), ".config", "GNS3")
-        self._config_file = os.path.join(config_path, "gns3_controller.conf")
 
         server_config = Config.instance().get_section_config("Server")
+
+        if Config.instance().profil:
+            config_path = os.path.join(config_path, "profiles", Config.instance().profil)
+        self._config_file = os.path.join(config_path, "gns3_controller.conf")
+        log.info("Load controller configuration file {}".format(self._config_file))
+
+        if server_config.getboolean("local", False) is True:
+            self._computes["local"] = Compute(compute_id="local",
+                                              controller=self,
+                                              protocol=server_config.get("protocol", "http"),
+                                              host=server_config.get("host", "localhost"),
+                                              port=server_config.getint("port", 3080),
+                                              user=server_config.get("user", ""),
+                                              password=server_config.get("password", ""))
+
         self._computes["local"] = Compute(compute_id="local",
                                           controller=self,
                                           protocol=server_config.get("protocol", "http"),

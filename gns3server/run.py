@@ -106,10 +106,13 @@ def parse_arguments(argv):
     parser.add_argument("--log", help="send output to logfile instead of console")
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
     parser.add_argument("--pid", help="store process pid")
+    parser.add_argument("--profil", help="Settings profil (blank will use default settings files)")
 
     args = parser.parse_args(argv)
     if args.config:
-        Config.instance(files=[args.config])
+        Config.instance(files=[args.config], profil=args.profil)
+    else:
+        Config.instance(profil=args.profil)
 
     config = Config.instance().get_section_config("Server")
     defaults = {
@@ -126,7 +129,7 @@ def parse_arguments(argv):
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
         "logfile": config.getboolean("logfile", ""),
-        "server_discovery": config.getboolean("server_discovery", False),
+        "server_discovery": config.getboolean("server_discovery", False)
     }
 
     parser.set_defaults(**defaults)
