@@ -17,6 +17,7 @@
 
 import os
 import pytest
+import aiohttp
 import asyncio
 from unittest.mock import MagicMock
 
@@ -87,25 +88,61 @@ def test_add_node(async_run, project, compute):
     link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
 
 
-def test_update_nodes(async_run, project, compute):
+def test_add_node(async_run, project, compute):
     node1 = Node(project, compute, "node1", node_type="qemu")
-    project._nodes[node1.id] = node1
 
     link = Link(project)
-    async_run(link.add_node(node1, 0, 4))
-    label = {
-        'y': -42,
-        'text': '0/4',
-        'x': -10,
-        'rotation': 0,
-        'style': 'font-size: 10; font-style: Verdana'
-    }
-    project.dump = AsyncioMagicMock()
     link._project.controller.notification.emit = MagicMock()
-    async_run(link.update_nodes([{"node_id": node1.id, "label": label}]))
-    assert link._nodes[0]["label"]["y"] == -42
+    project.dump = AsyncioMagicMock()
+    async_run(link.add_node(node1, 0, 4))
+    assert link._nodes == [
+        {
+            "node": node1,
+            "adapter_number": 0,
+            "port_number": 4,
+            'label': {
+                'y': -10,
+                'text': '0/4',
+                'x': -10,
+                'rotation': 0,
+                'style': 'font-size: 10; font-style: Verdana'
+            }
+        }
+    ]
     assert project.dump.called
-    link._project.controller.notification.emit.assert_called_with("link.updated", link.__json__())
+    assert not link._project.controller.notification.emit.called
+
+    # We call link.created only when both side are created
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    async_run(link.add_node(node2, 0, 4))
+
+    link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
+
+
+def test_add_node_cloud(async_run, project, compute):
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node2 = Node(project, compute, "node2", node_type="cloud")
+
+    link = Link(project)
+    link._project.controller.notification.emit = MagicMock()
+
+    async_run(link.add_node(node1, 0, 4))
+    async_run(link.add_node(node2, 0, 4))
+
+
+def test_add_node_cloud_to_cloud(async_run, project, compute):
+    """
+    Cloud to cloud connection is not allowed
+    """
+    node1 = Node(project, compute, "node1", node_type="cloud")
+    node2 = Node(project, compute, "node2", node_type="cloud")
+
+    link = Link(project)
+    link._project.controller.notification.emit = MagicMock()
+
+    async_run(link.add_node(node1, 0, 4))
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        async_run(link.add_node(node2, 0, 4))
 
 
 def test_json(async_run, project, compute):

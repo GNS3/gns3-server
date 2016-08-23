@@ -19,7 +19,7 @@ import os
 import re
 import uuid
 import asyncio
-
+import aiohttp
 
 import logging
 log = logging.getLogger(__name__)
@@ -47,6 +47,11 @@ class Link:
         """
         Add a node to the link
         """
+
+        for other_node in self._nodes:
+            if node.node_type in ["nat", "cloud"]:
+                if other_node["node"].node_type in ["nat", "cloud"]:
+                    raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_node["node"].node_type, node.node_type))
 
         if label is None:
             label = {
