@@ -28,6 +28,8 @@ from .notification import Notification
 from .symbols import Symbols
 from ..version import __version__
 from .topology import load_topology
+from .gns3vm import GNS3VM
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -40,6 +42,7 @@ class Controller:
         self._computes = {}
         self._projects = {}
         self._notification = Notification(self)
+        self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
         # Store settings shared by the different GUI will be replace by dedicated API later
         self._settings = {}
@@ -56,15 +59,10 @@ class Controller:
         self._config_file = os.path.join(config_path, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
-        if server_config.getboolean("local", False) is True:
-            self._computes["local"] = Compute(compute_id="local",
-                                              controller=self,
-                                              protocol=server_config.get("protocol", "http"),
-                                              host=server_config.get("host", "localhost"),
-                                              port=server_config.getint("port", 3080),
-                                              user=server_config.get("user", ""),
-                                              password=server_config.get("password", ""))
-
+    @asyncio.coroutine
+    def start(self):
+        log.info("Start controller")
+        server_config = Config.instance().get_section_config("Server")
         self._computes["local"] = Compute(compute_id="local",
                                           controller=self,
                                           protocol=server_config.get("protocol", "http"),
@@ -72,6 +70,15 @@ class Controller:
                                           port=server_config.getint("port", 3080),
                                           user=server_config.get("user", ""),
                                           password=server_config.get("password", ""))
+        yield from self.load()
+
+    @asyncio.coroutine
+    def stop(self):
+        log.info("Stop controller")
+        for compute in self._computes.values():
+            yield from compute.close()
+        self._computes = {}
+        self._projects = {}
 
     def save(self):
         """
@@ -80,6 +87,7 @@ class Controller:
         data = {
             "computes": [],
             "settings": self._settings,
+            "gns3vm": self.gns3vm.__json__(),
             "version": __version__
         }
 
@@ -115,6 +123,8 @@ class Controller:
             return
         if "settings" in data:
             self._settings = data["settings"]
+        if "gns3vm" in data:
+            self.gns3vm.settings = data["gns3vm"]
 
         for c in data["computes"]:
             yield from self.add_compute(**c)
@@ -233,12 +243,6 @@ class Controller:
         del self._computes[compute_id]
         self.save()
         self.notification.emit("compute.deleted", compute.__json__())
-
-    @asyncio.coroutine
-    def close(self):
-        log.info("Close controller")
-        for compute in self._computes.values():
-            yield from compute.close()
 
     @property
     def notification(self):

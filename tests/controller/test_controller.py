@@ -38,6 +38,7 @@ def test_save(controller, controller_config_path):
         assert data["computes"] == []
         assert data["version"] == __version__
         assert data["settings"] == {}
+        assert data["gns3vm"] == controller.gns3vm.__json__()
 
 
 def test_load(controller, controller_config_path, async_run):
@@ -55,6 +56,7 @@ def test_load(controller, controller_config_path, async_run):
         }
     ]
     data["settings"] = {"IOU": True}
+    data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
     async_run(controller.load())
@@ -70,6 +72,7 @@ def test_load(controller, controller_config_path, async_run):
         "cpu_usage_percent": None,
         "memory_usage_percent": None
     }
+    assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
 def test_import_computes(controller, controller_config_path, async_run):
@@ -135,29 +138,29 @@ def test_addCompute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
     c = async_run(controller.add_compute(compute_id="test1"))
     controller._notification.emit.assert_called_with("compute.created", c.__json__())
-    assert len(controller.computes) == 2
+    assert len(controller.computes) == 1
     async_run(controller.add_compute(compute_id="test1"))
     controller._notification.emit.assert_called_with("compute.updated", c.__json__())
-    assert len(controller.computes) == 2
+    assert len(controller.computes) == 1
     async_run(controller.add_compute(compute_id="test2"))
-    assert len(controller.computes) == 3
+    assert len(controller.computes) == 2
 
 
 def test_addDuplicateCompute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
     c = async_run(controller.add_compute(compute_id="test1", name="Test"))
-    assert len(controller.computes) == 2
+    assert len(controller.computes) == 1
     with pytest.raises(aiohttp.web.HTTPConflict):
         async_run(controller.add_compute(compute_id="test2", name="Test"))
 
 
 def test_deleteCompute(controller, controller_config_path, async_run):
     c = async_run(controller.add_compute(compute_id="test1"))
-    assert len(controller.computes) == 2
+    assert len(controller.computes) == 1
     controller._notification = MagicMock()
     c._connected = True
     async_run(controller.delete_compute("test1"))
-    assert len(controller.computes) == 1
+    assert len(controller.computes) == 0
     controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -167,7 +170,7 @@ def test_deleteCompute(controller, controller_config_path, async_run):
 
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
     async_run(controller.add_compute(compute_id="test1", name="Test"))
-    assert len(controller.computes) == 2
+    assert len(controller.computes) == 1
     with open(controller_config_path) as f:
         data = json.load(f)
         assert data["computes"] == [
@@ -249,10 +252,10 @@ def test_getProject(controller, async_run):
         assert controller.get_project("dsdssd")
 
 
-def test_close(controller, async_run):
+def test_stop(controller, async_run):
     c = async_run(controller.add_compute(compute_id="test1"))
     c._connected = True
-    async_run(controller.close())
+    async_run(controller.stop())
     assert c.connected is False
 
 

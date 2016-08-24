@@ -35,7 +35,7 @@ def test_compute_create_without_id(http_controller, controller):
     assert response.json["compute_id"] is not None
     assert "password" not in response.json
 
-    assert len(controller.computes) == 2
+    assert len(controller.computes) == 1
     assert controller.computes[response.json["compute_id"]].host == "example.com"
 
 
@@ -55,7 +55,7 @@ def test_compute_create_with_id(http_controller, controller):
     assert response.json["user"] == "julien"
     assert "password" not in response.json
 
-    assert len(controller.computes) == 2
+    assert len(controller.computes) == 1
     assert controller.computes["my_compute_id"].host == "example.com"
 
 
@@ -148,13 +148,13 @@ def test_compute_delete(http_controller, controller):
     assert response.status == 201
 
     response = http_controller.get("/computes")
-    assert len(response.json) == 2
+    assert len(response.json) == 1
 
     response = http_controller.delete("/computes/my_compute_id")
     assert response.status == 204
 
     response = http_controller.get("/computes")
-    assert len(response.json) == 1
+    assert len(response.json) == 0
 
 
 def test_compute_list_images(http_controller, controller):

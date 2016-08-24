@@ -117,7 +117,6 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         # check if the VMware guest tools are installed
         vmware_tools_state = yield from self._execute("checkToolsState", [self._vmx_path])
-        print(vmware_tools_state)
         if vmware_tools_state not in ("installed", "running"):
             raise GNS3VMError("VMware tools are not installed in {}".format(self.vmname))
 

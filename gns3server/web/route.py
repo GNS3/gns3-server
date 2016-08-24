@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 from ..compute.error import NodeError, ImageMissingError
 from ..controller.controller_error import ControllerError
 from ..ubridge.ubridge_error import UbridgeError
-from ..controller.gns3_vm_error import GNS3VMError
+from ..controller.gns3vm.gns3_vm_error import GNS3VMError
 from .response import Response
 from ..crash_report import CrashReport
 from ..config import Config

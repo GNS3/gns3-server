@@ -15,11 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .gns3_vm_error import GNS3VMError
-
-import os
-import sys
-import json
 import asyncio
 import psutil
 
@@ -32,7 +27,6 @@ class BaseGNS3VM:
     def __init__(self):
 
         self._vmname = None
-        self._auto_start = False
         self._auto_stop = False
         self._ip_address = None
         self._port = 3080
@@ -40,12 +34,6 @@ class BaseGNS3VM:
         self._vcpus = 1
         self._ram = 1024
         self._running = False
-
-        if sys.platform.startswith("win"):
-            config_path = os.path.join(os.path.expandvars("%APPDATA%"), "GNS3")
-        else:
-            config_path = os.path.join(os.path.expanduser("~"), ".config", "GNS3")
-        self._config_file = os.path.join(config_path, "gns3_vm.conf")
 
         # limit the number of vCPUs to the number of physical cores (hyper thread CPUs are excluded)
         # because this is likely to degrade performances.
@@ -55,51 +43,6 @@ class BaseGNS3VM:
         # value must be a multiple of 4 (VMware requirement)
         ram -= ram % 4
         self._ram = ram
-
-        self.load()
-
-    def __json__(self):
-
-        settings = {"vmname": self._vmname,
-                    "ip_address": self._ip_address,
-                    "port": self._port,
-                    "headless": self._headless,
-                    "vcpus": self._vcpus,
-                    "ram": self._ram,
-                    "auto_start": self._auto_start,
-                    "auto_stop": self._auto_stop,
-                    "engine": self._engine}
-
-        return settings
-
-    def load(self):
-        """
-        Reload the GNS3 VM configuration from disk
-        """
-
-        if not os.path.exists(self._config_file):
-            self.save()
-        try:
-            with open(self._config_file) as f:
-                data = json.load(f)
-        except OSError as e:
-            log.critical("Cannot load %s: %s", self._config_file, str(e))
-            return
-        if "gns3vm" in data:
-            for name, value in data["gns3vm"].items():
-                if hasattr(self, name) and getattr(self, name) != value:
-                    log.debug("GNS3 VM: set {} to {}".format(name, value))
-                    setattr(self, name, value)
-
-    def save(self):
-        """
-        Save the GNS3 VM configuration on disk
-        """
-
-        data = {"gns3vm": self.__json__()}
-        os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
-        with open(self._config_file, 'w+') as f:
-            json.dump(data, f, indent=4)
 
     @property
     def vmname(self):
@@ -242,29 +185,9 @@ class BaseGNS3VM:
         self._ram = new_ram
 
     @property
-    def auto_start(self):
-        """
-        Returns whether the VM should automatically be started when GNS3 is launched
-
-        :returns: boolean
-        """
-
-        return self._auto_start
-
-    @auto_start.setter
-    def auto_start(self, new_auto_start):
-        """
-        Set whether the VM should automatically be started when GNS3 is launched
-
-        :param new_auto_start: boolean
-        """
-
-        self._auto_start = new_auto_start
-
-    @property
     def auto_stop(self):
         """
-        Returns whether the VM should automatically be started when GNS3 is launched
+        Returns whether the VM should automatically be stopped when GNS3 quit
 
         :returns: boolean
         """
@@ -274,7 +197,7 @@ class BaseGNS3VM:
     @auto_stop.setter
     def auto_stop(self, new_auto_stop):
         """
-        Set whether the VM should automatically be stopped when GNS3 is launched
+        Set whether the VM should automatically be stopped when GNS3 quit
 
         :param new_auto_stop: boolean
         """
@@ -314,15 +237,3 @@ class BaseGNS3VM:
         """
 
         raise NotImplementedError
-
-    @classmethod
-    def instance(cls):
-        """
-        Singleton to return only one instance of BaseGNS3VM.
-
-        :returns: instance of BaseGNS3VM
-        """
-
-        if not hasattr(cls, "_instance") or cls._instance is None:
-            cls._instance = cls()
-        return cls._instance

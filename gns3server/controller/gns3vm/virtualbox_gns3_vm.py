@@ -22,7 +22,7 @@ import socket
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
 
-from ..compute.virtualbox import (
+from ...compute.virtualbox import (
     VirtualBox,
     VirtualBoxError
 )

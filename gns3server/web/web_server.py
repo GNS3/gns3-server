@@ -97,7 +97,7 @@ class WebServer:
             self._handler = None
 
         if Config.instance().get_section_config("Server").getboolean("controller"):
-            yield from Controller.instance().close()
+            yield from Controller.instance().stop()
 
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
@@ -272,7 +272,7 @@ class WebServer:
         self._loop.set_debug(True)
 
         if server_config.getboolean("controller"):
-            asyncio.async(Controller.instance().load())
+            asyncio.async(Controller.instance().start())
 
         for key, val in os.environ.items():
             log.debug("ENV %s=%s", key, val)
