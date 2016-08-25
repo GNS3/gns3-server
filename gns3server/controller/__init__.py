@@ -74,19 +74,21 @@ class Controller:
         if self.gns3vm.enable:
             yield from self.gns3vm.start()
             self._computes["vm"] = Compute(compute_id="vm",
-                                              name="GNS3 VM",
-                                              controller=self,
-                                              protocol=self.gns3vm.protocol,
-                                              host=self.gns3vm.ip_address,
-                                              port=self.gns3vm.port,
-                                              user=self.gns3vm.user,
-                                              password=self.gns3vm.password)
+                                           name="GNS3 VM",
+                                           controller=self,
+                                           protocol=self.gns3vm.protocol,
+                                           host=self.gns3vm.ip_address,
+                                           port=self.gns3vm.port,
+                                           user=self.gns3vm.user,
+                                           password=self.gns3vm.password)
 
     @asyncio.coroutine
     def stop(self):
         log.info("Stop controller")
         for compute in self._computes.values():
             yield from compute.close()
+        if self.gns3vm.enable and self.gns3vm.auto_stop:
+            yield from self.gns3vm.stop()
         self._computes = {}
         self._projects = {}
 

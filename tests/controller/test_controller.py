@@ -255,7 +255,7 @@ def test_getProject(controller, async_run):
 
 def test_start(controller, async_run):
     async_run(controller.start())
-    assert len(controller.computes) == 1 # Local compute is created
+    assert len(controller.computes) == 1  # Local compute is created
     assert controller.computes["local"].name == socket.gethostname()
 
 
@@ -270,7 +270,7 @@ def test_start_vm(controller, async_run):
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
         async_run(controller.start())
         assert mock.called
-    assert len(controller.computes) == 2 # Local compute and vm are created
+    assert len(controller.computes) == 2  # Local compute and vm are created
     assert "local" in controller.computes
     assert "vm" in controller.computes
 
@@ -280,6 +280,21 @@ def test_stop(controller, async_run):
     c._connected = True
     async_run(controller.stop())
     assert c.connected is False
+
+
+def test_stop_vm(controller, async_run):
+    """
+    Start the controller with a GNS3 VM running
+    """
+    controller.gns3vm.settings = {
+        "enable": True,
+        "engine": "vmware",
+        "auto_stop": True
+    }
+    controller.gns3vm.running = True
+    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
+        async_run(controller.stop())
+        assert mock.called
 
 
 def test_load_project(controller, async_run, tmpdir):

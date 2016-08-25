@@ -36,7 +36,7 @@ class GNS3VM:
         self._engines = {}
         self._settings = {
             "vmname": None,
-            "auto_stop": False,
+            "auto_stop": True,
             "headless": False,
             "enable": False,
             "engine": "vmware"
@@ -121,6 +121,13 @@ class GNS3VM:
         return self._settings["enable"]
 
     @property
+    def auto_stop(self):
+        """
+        The GNSVM should auto stop
+        """
+        return self._settings["auto_stop"]
+
+    @property
     def settings(self):
         return self._settings
 
@@ -169,3 +176,12 @@ class GNS3VM:
             engine.vmname = self._settings["vmname"]
             yield from engine.start()
 
+    @asyncio.coroutine
+    def stop(self):
+        """
+        Stop the GNS3 VM
+        """
+        engine = self._current_engine()
+        if not engine.running:
+            log.info("Stop the GNS3 VM")
+            yield from engine.stop()
