@@ -9,16 +9,22 @@ Add a NIO to a cloud instance
 
 Parameters
 **********
-- **adapter_number**: Adapter on the cloud (always 0)
-- **port_number**: Port on the cloud
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter on the cloud (always 0)
+- **port_number**: Port on the cloud
 
 Response status codes
 **********************
 - **400**: Invalid request
 - **201**: NIO created
 - **404**: Instance doesn't exist
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidcloudnodesnodeidadaptersadapternumberdportsportnumberdnio.txt
 
 
 DELETE /v2/compute/projects/**{project_id}**/cloud/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
@@ -27,14 +33,20 @@ Remove a NIO from a cloud instance
 
 Parameters
 **********
-- **adapter_number**: Adapter on the cloud (always 0)
-- **port_number**: Port on the cloud
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter on the cloud (always 0)
+- **port_number**: Port on the cloud
 
 Response status codes
 **********************
 - **400**: Invalid request
 - **404**: Instance doesn't exist
 - **204**: NIO deleted
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_delete_projectsprojectidcloudnodesnodeidadaptersadapternumberdportsportnumberdnio.txt
 

@@ -1,20 +1,23 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/c3ec9d20-749b-4e11-b2a5-922e807209c6/close' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/be87a340-df85-48a2-8b3c-b4c52d34b803/close' -d '{}'
 
-POST /v2/projects/c3ec9d20-749b-4e11-b2a5-922e807209c6/close HTTP/1.1
+POST /v2/projects/be87a340-df85-48a2-8b3c-b4c52d34b803/close HTTP/1.1
 {}
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 255
+CONTENT-LENGTH: 328
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/close
 
 {
+    "auto_close": true,
+    "auto_open": false,
+    "auto_start": false,
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2uaousem/projects/c3ec9d20-749b-4e11-b2a5-922e807209c6",
-    "project_id": "c3ec9d20-749b-4e11-b2a5-922e807209c6",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmptjk4s03z/projects/be87a340-df85-48a2-8b3c-b4c52d34b803",
+    "project_id": "be87a340-df85-48a2-8b3c-b4c52d34b803",
     "status": "opened"
 }

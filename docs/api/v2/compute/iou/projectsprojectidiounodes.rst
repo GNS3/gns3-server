@@ -53,7 +53,6 @@ Output
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td> </td>                     <td>integer</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>
     <tr><td>iourc_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the iourc file. Ignored if Null</td>                     </tr>
-    <tr><td>iourc_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path of the iourc file used by remote servers</td>                     </tr>
     <tr><td>l1_keepalives</td>                    <td> </td>                     <td>boolean</td>                     <td>Always up ethernet interface</td>                     </tr>
     <tr><td>md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Checksum of iou binary</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>IOU VM name</td>                     </tr>

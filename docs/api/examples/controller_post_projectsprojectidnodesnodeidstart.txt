@@ -1,12 +1,40 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/ce2e3571-8926-41a2-9f51-62eaf007f9be/nodes/78ed81ef-3683-4410-be15-b5bc13dd9429/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/1b98b3cf-543e-4d65-b616-1d868bc618ff/nodes/12d632a0-815f-46c2-b49a-7a759e6d2e63/start' -d '{}'
 
-POST /v2/projects/ce2e3571-8926-41a2-9f51-62eaf007f9be/nodes/78ed81ef-3683-4410-be15-b5bc13dd9429/start HTTP/1.1
+POST /v2/projects/1b98b3cf-543e-4d65-b616-1d868bc618ff/nodes/12d632a0-815f-46c2-b49a-7a759e6d2e63/start HTTP/1.1
 {}
 
 
-HTTP/1.1 204
-CONTENT-LENGTH: 0
+HTTP/1.1 201
+CONTENT-LENGTH: 648
+CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}/start
 
+{
+    "command_line": null,
+    "compute_id": "example.com",
+    "console": null,
+    "console_host": "example.org",
+    "console_type": null,
+    "height": 59,
+    "label": {
+        "rotation": 0,
+        "style": "font-size: 10;font-familly: Verdana",
+        "text": "test",
+        "x": null,
+        "y": -40
+    },
+    "name": "test",
+    "node_directory": null,
+    "node_id": "12d632a0-815f-46c2-b49a-7a759e6d2e63",
+    "node_type": "vpcs",
+    "project_id": "1b98b3cf-543e-4d65-b616-1d868bc618ff",
+    "properties": {},
+    "status": "stopped",
+    "symbol": ":/symbols/computer.svg",
+    "width": 65,
+    "x": 0,
+    "y": 0,
+    "z": 0
+}

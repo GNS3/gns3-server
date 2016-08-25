@@ -1,18 +1,19 @@
-/v2/gns3vm/{engine}/vms
+/v2/gns3vm/engines
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v2/gns3vm/**{engine}**/vms
+GET /v2/gns3vm/engines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get all the available VMs for a specific virtualization engine
-
-Parameters
-**********
-- **engine**: Virtualization engine name
+Return the list of engines supported for the GNS3VM
 
 Response status codes
 **********************
-- **200**: Success
-- **400**: Invalid request
+- **200**: OK
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_gns3vmengines.txt
 

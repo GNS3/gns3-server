@@ -1,7 +1,10 @@
 {
-    "filename": "Test.gns3",
-    "name": "Test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpolyetet3/projects/dfe0d81a-4b32-47ef-92df-aa1c61f9d882",
-    "project_id": "dfe0d81a-4b32-47ef-92df-aa1c61f9d882",
+    "auto_close": true,
+    "auto_open": false,
+    "auto_start": false,
+    "filename": "test.gns3",
+    "name": "test",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpb1t1sx5a/projects/29c09f61-d5fd-4f7e-9825-0fe847c1c35c",
+    "project_id": "29c09f61-d5fd-4f7e-9825-0fe847c1c35c",
     "status": "closed"
 }

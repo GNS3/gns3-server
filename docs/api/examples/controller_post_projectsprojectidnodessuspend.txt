@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/465579b6-39ec-4200-8f30-18e3b626a251/nodes/suspend' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/dfc836bf-fb62-4689-be01-31d10435651c/nodes/suspend' -d '{}'
 
-POST /v2/projects/465579b6-39ec-4200-8f30-18e3b626a251/nodes/suspend HTTP/1.1
+POST /v2/projects/dfc836bf-fb62-4689-be01-31d10435651c/nodes/suspend HTTP/1.1
 {}
 
 

@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/cc0908dc-6ae4-4186-b537-4f6b23c13f0c/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X POST 'http://localhost:3080/v2/projects/af6a3906-9f06-486a-a833-b6d267557daf/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-POST /v2/projects/cc0908dc-6ae4-4186-b537-4f6b23c13f0c/nodes HTTP/1.1
+POST /v2/projects/af6a3906-9f06-486a-a833-b6d267557daf/nodes HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -12,7 +12,7 @@ POST /v2/projects/cc0908dc-6ae4-4186-b537-4f6b23c13f0c/nodes HTTP/1.1
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 690
+CONTENT-LENGTH: 691
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -24,25 +24,25 @@ X-ROUTE: /v2/projects/{project_id}/nodes
     "console": 2048,
     "console_host": "example.org",
     "console_type": null,
-    "height": 70,
+    "height": 59,
     "label": {
         "rotation": 0,
         "style": "font-size: 10;font-familly: Verdana",
         "text": "test",
-        "x": -17,
-        "y": -25
+        "x": null,
+        "y": -40
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "a414b9fb-f612-4042-8f2a-59206dce9bf5",
+    "node_id": "23cd9a53-e3c7-4830-9bda-56d547504316",
     "node_type": "vpcs",
-    "project_id": "cc0908dc-6ae4-4186-b537-4f6b23c13f0c",
+    "project_id": "af6a3906-9f06-486a-a833-b6d267557daf",
     "properties": {
         "startup_script": "echo test"
     },
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
-    "width": 70,
+    "width": 65,
     "x": 0,
     "y": 0,
     "z": 0

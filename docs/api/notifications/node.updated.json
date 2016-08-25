@@ -4,25 +4,25 @@
     "console": 2048,
     "console_host": "example.org",
     "console_type": null,
-    "height": 70,
+    "height": 59,
     "label": {
         "rotation": 0,
         "style": "font-size: 10;font-familly: Verdana",
         "text": "test",
-        "x": -17,
-        "y": -25
+        "x": null,
+        "y": -40
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "92be25c6-878a-487a-86e3-80591c20780e",
+    "node_id": "f3349f17-0b33-44d4-8b0e-4cce743368eb",
     "node_type": "vpcs",
-    "project_id": "aa6eca4a-1d69-4fb0-aa10-3bb3f5d24ca0",
+    "project_id": "66748b95-38cf-4a58-9b8a-58a2373fd013",
     "properties": {
         "startup_config": "test.cfg"
     },
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
-    "width": 70,
+    "width": 65,
     "x": 0,
     "y": 0,
     "z": 0

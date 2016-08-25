@@ -1,0 +1,962 @@
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/09247bb6-2ed3-4e6c-9f59-5092098eed69'
+
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/09247bb6-2ed3-4e6c-9f59-5092098eed69 HTTP/1.1
+
+
+
+HTTP/1.1 200
+CONTENT-LENGTH: 19808
+CONTENT-TYPE: application/json
+DATE: Thu, 08 Jan 2015 16:09:15 GMT
+SERVER: Python/3.5 GNS3/2.0.0dev1
+X-ROUTE: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
+
+{
+    "interfaces": [
+        {
+            "name": "bridge0",
+            "type": "ethernet"
+        },
+        {
+            "name": "en0",
+            "type": "ethernet"
+        },
+        {
+            "name": "en1",
+            "type": "ethernet"
+        },
+        {
+            "name": "en2",
+            "type": "ethernet"
+        },
+        {
+            "name": "fw0",
+            "type": "ethernet"
+        },
+        {
+            "name": "lo0",
+            "type": "ethernet"
+        },
+        {
+            "name": "p2p0",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet0",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet1",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet2",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet3",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet4",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet5",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet6",
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet7",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet1",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet10",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet100",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet101",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet102",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet103",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet104",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet105",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet106",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet107",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet108",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet109",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet11",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet110",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet111",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet112",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet113",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet114",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet115",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet116",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet117",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet118",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet119",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet12",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet120",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet121",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet122",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet123",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet124",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet125",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet126",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet127",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet128",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet129",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet13",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet130",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet131",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet132",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet133",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet134",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet135",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet136",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet137",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet138",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet139",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet14",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet140",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet141",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet142",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet143",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet144",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet145",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet146",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet147",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet148",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet149",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet15",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet150",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet151",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet152",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet153",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet154",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet155",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet156",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet157",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet158",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet159",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet16",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet160",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet161",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet162",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet163",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet164",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet165",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet166",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet167",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet168",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet169",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet17",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet170",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet171",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet172",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet173",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet174",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet175",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet176",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet177",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet178",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet179",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet18",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet180",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet181",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet182",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet183",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet184",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet185",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet186",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet187",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet188",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet189",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet19",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet190",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet191",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet192",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet193",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet194",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet195",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet196",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet197",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet198",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet199",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet2",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet20",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet200",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet201",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet202",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet203",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet204",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet205",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet206",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet207",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet208",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet209",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet21",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet210",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet211",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet212",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet213",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet214",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet215",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet216",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet217",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet218",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet219",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet22",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet220",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet23",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet24",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet25",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet26",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet27",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet28",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet29",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet3",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet30",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet31",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet32",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet33",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet34",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet35",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet36",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet37",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet38",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet39",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet4",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet40",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet41",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet42",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet43",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet44",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet45",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet46",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet47",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet48",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet49",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet5",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet50",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet51",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet52",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet53",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet54",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet55",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet56",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet57",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet58",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet59",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet6",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet60",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet61",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet62",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet63",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet64",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet65",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet66",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet67",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet68",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet69",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet7",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet70",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet71",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet72",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet73",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet74",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet75",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet76",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet77",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet78",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet79",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet8",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet80",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet81",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet82",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet83",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet84",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet85",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet86",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet87",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet88",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet89",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet9",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet90",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet91",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet92",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet93",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet94",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet95",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet96",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet97",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet98",
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet99",
+            "type": "ethernet"
+        }
+    ],
+    "name": "Cloud 1",
+    "node_id": "09247bb6-2ed3-4e6c-9f59-5092098eed69",
+    "ports": [],
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "started"
+}

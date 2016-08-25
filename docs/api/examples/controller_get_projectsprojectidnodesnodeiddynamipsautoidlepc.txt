@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/2e182242-533c-45fa-a997-c4dbfd13f66c/nodes/444057ba-eb3d-4120-8f9d-8e764bab489f/dynamips/auto_idlepc'
+curl -i -X GET 'http://localhost:3080/v2/projects/1a1e45df-eb32-4009-a135-b250af5c0168/nodes/986e62dd-3025-4ee8-8ce0-fcd29a08ea5f/dynamips/auto_idlepc'
 
-GET /v2/projects/2e182242-533c-45fa-a997-c4dbfd13f66c/nodes/444057ba-eb3d-4120-8f9d-8e764bab489f/dynamips/auto_idlepc HTTP/1.1
+GET /v2/projects/1a1e45df-eb32-4009-a135-b250af5c0168/nodes/986e62dd-3025-4ee8-8ce0-fcd29a08ea5f/dynamips/auto_idlepc HTTP/1.1
 
 
 

@@ -1,14 +1,20 @@
-/v2/gns3vm/start
+/v2/compute/projects/{project_id}/nat/nodes/{node_id}/start
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/gns3vm/start
+POST /v2/compute/projects/**{project_id}**/nat/nodes/**{node_id}**/start
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Start the GNS3 VM
+Start a nat
+
+Parameters
+**********
+- **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
-- **200**: Instance started
 - **400**: Invalid request
+- **404**: Instance doesn't exist
+- **204**: Instance started
 
