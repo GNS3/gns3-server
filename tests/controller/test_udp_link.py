@@ -38,6 +38,15 @@ def test_create(async_run, project):
     node1 = Node(project, compute1, "node1", node_type="vpcs")
     node2 = Node(project, compute2, "node2", node_type="vpcs")
 
+    @asyncio.coroutine
+    def subnet_callback(compute2):
+        """
+        Fake subnet callback
+        """
+        return ("192.168.1.1", "192.168.1.2")
+
+    compute1.get_ip_on_same_subnet.side_effect = subnet_callback
+
     link = UDPLink(project)
     async_run(link.add_node(node1, 0, 4))
     async_run(link.add_node(node2, 3, 1))
@@ -70,13 +79,13 @@ def test_create(async_run, project):
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
-        "rhost": compute2.host,
+        "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp"
     })
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
-        "rhost": compute1.host,
+        "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp"
     })

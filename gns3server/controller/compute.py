@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import ipaddress
 import aiohttp
 import asyncio
 import socket
@@ -96,6 +97,9 @@ class Compute:
         # Websocket for notifications
         self._ws = None
 
+        # Cache of interfaces on remote host
+        self._interfaces_cache = None
+
     def _session(self):
         if self._http_session is None or self._http_session.closed is True:
             self._http_session = aiohttp.ClientSession()
@@ -121,6 +125,16 @@ class Compute:
             else:
                 self._password = None
                 self._auth = aiohttp.BasicAuth(self._user, "")
+
+    @asyncio.coroutine
+    def interfaces(self):
+        """
+        Get the list of network on compute
+        """
+        if not self._interfaces_cache:
+            response = yield from self.get("/network/interfaces")
+            self._interfaces_cache = response.json
+        return self._interfaces_cache
 
     @asyncio.coroutine
     def update(self, **kwargs):
@@ -191,6 +205,13 @@ class Compute:
         :returns: Compute host (string)
         """
         return self._host
+
+    @property
+    def host_ip(self):
+        """
+        Return the IP associated to the host
+        """
+        return socket.gethostbyname(self._host)
 
     @host.setter
     def host(self, host):
@@ -491,3 +512,41 @@ class Compute:
         path = "/projects/{}/files".format(project.id)
         res = yield from self.http_query("GET", path, timeout=120)
         return res.json
+
+    @asyncio.coroutine
+    def get_ip_on_same_subnet(self, other_compute):
+        """
+        Try to found the best ip for communication from one compute
+        to another
+
+        :returns: Tuple (ip_for_this_compute, ip_for_other_compute)
+        """
+        if other_compute == self:
+            return (self.host_ip, self.host_ip)
+
+        this_compute_interfaces = yield from self.interfaces()
+        other_compute_interfaces = yield from other_compute.interfaces()
+
+        # Sort interface to put the compute host in first position
+        # we guess that if user specified this host it could have a reason (VMware Nat / Host only interface)
+        this_compute_interfaces = sorted(this_compute_interfaces, key=lambda i: i["ip_address"] != self.host_ip)
+        other_compute_interfaces = sorted(other_compute_interfaces, key=lambda i: i["ip_address"] != other_compute.host_ip)
+
+        for this_interface in this_compute_interfaces:
+            if len(this_interface["ip_address"]) == 0:
+                continue
+
+            this_network = ipaddress.ip_network("{}/{}".format(this_interface["ip_address"], this_interface["netmask"]), strict=False)
+
+            for other_interface in other_compute_interfaces:
+                if len(other_interface["ip_address"]) == 0:
+                    continue
+
+                # Avoid stuff like 127.0.0.1
+                if other_interface["ip_address"] == this_interface["ip_address"]:
+                    continue
+
+                other_network = ipaddress.ip_network("{}/{}".format(other_interface["ip_address"], other_interface["netmask"]), strict=False)
+                if this_network.overlaps(other_network):
+                    return (this_interface["ip_address"], other_interface["ip_address"])
+        raise ValueError("No common subnet for compute {} and {}".format(self.name, other_compute.name))

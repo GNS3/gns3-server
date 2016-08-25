@@ -41,7 +41,13 @@ class UDPLink(Link):
         adapter_number2 = self._nodes[1]["adapter_number"]
         port_number2 = self._nodes[1]["port_number"]
 
-        # Reserve a UDP port on both side
+        # Get an IP allowing communication between both host
+        try:
+            (node1_host, node2_host) = yield from node1.compute.get_ip_on_same_subnet(node2.compute)
+        except ValueError as e:
+            raise aiohttp.web.HTTPConflict(text=str(e))
+
+        # Reserve a UDP port on both side
         response = yield from node1.compute.post("/projects/{}/ports/udp".format(self._project.id))
         self._node1_port = response.json["udp_port"]
         response = yield from node2.compute.post("/projects/{}/ports/udp".format(self._project.id))
@@ -50,7 +56,7 @@ class UDPLink(Link):
         # Create the tunnel on both side
         data = {
             "lport": self._node1_port,
-            "rhost": node2.compute.host,
+            "rhost": node2_host,
             "rport": self._node2_port,
             "type": "nio_udp"
         }
@@ -58,7 +64,7 @@ class UDPLink(Link):
 
         data = {
             "lport": self._node2_port,
-            "rhost": node1.compute.host,
+            "rhost": node1_host,
             "rport": self._node1_port,
             "type": "nio_udp"
         }

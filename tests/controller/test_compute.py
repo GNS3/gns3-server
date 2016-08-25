@@ -40,6 +40,11 @@ def test_init(compute):
     assert compute.id == "my_compute_id"
 
 
+def test_host_ip(controller):
+    compute = Compute("my_compute_id", protocol="https", host="localhost", port=84, controller=controller)
+    assert compute.host_ip == "127.0.0.1"
+
+
 def test_name():
     c = Compute("my_compute_id", protocol="https", host="example.com", port=84, controller=MagicMock(), name=None)
     assert c.name == "https://example.com:84"
@@ -323,3 +328,88 @@ def test_list_files(project, async_run, compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         assert async_run(compute.list_files(project)) == res
         mock.assert_any_call("GET", "https://example.com:84/v2/compute/projects/{}/files".format(project.id), auth=None, chunked=False, data=None, headers={'content-type': 'application/json'})
+
+
+def test_interfaces(project, async_run, compute):
+    res = [
+        {
+            "id": "vmnet99",
+            "ip_address": "172.16.97.1",
+            "mac_address": "00:50:56:c0:00:63",
+            "name": "vmnet99",
+            "netmask": "255.255.255.0",
+            "type": "ethernet"
+        }
+    ]
+    response = AsyncioMagicMock()
+    response.read = AsyncioMagicMock(return_value=json.dumps(res).encode())
+    response.status = 200
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        assert async_run(compute.interfaces()) == res
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/network/interfaces", auth=None, chunked=False, data=None, headers={'content-type': 'application/json'})
+
+
+def test_get_ip_on_same_subnet(controller, async_run):
+    compute1 = Compute("compute1", host="192.168.1.1", controller=controller)
+    compute1._interfaces_cache = [
+        {
+            "ip_address": "127.0.0.1",
+            "netmask": "255.255.255.255"
+        },
+        {
+            "ip_address": "192.168.2.1",
+            "netmask": "255.255.255.0"
+        },
+        {
+            "ip_address": "192.168.1.1",
+            "netmask": "255.255.255.0"
+        },
+    ]
+
+    # Case 1 both host are on the same network
+    compute2 = Compute("compute2", host="192.168.1.2", controller=controller)
+    compute2._interfaces_cache = [
+        {
+            "ip_address": "127.0.0.1",
+            "netmask": "255.255.255.255"
+        },
+        {
+            "ip_address": "192.168.2.2",
+            "netmask": "255.255.255.0"
+        },
+        {
+            "ip_address": "192.168.1.2",
+            "netmask": "255.255.255.0"
+        }
+    ]
+    assert async_run(compute1.get_ip_on_same_subnet(compute2)) == ("192.168.1.1", "192.168.1.2")
+
+    # Case 2 compute2 host is on a different network but a common interface is available
+    compute2 = Compute("compute2", host="192.168.4.2", controller=controller)
+    compute2._interfaces_cache = [
+        {
+            "ip_address": "127.0.0.1",
+            "netmask": "255.255.255.255"
+        },
+        {
+            "ip_address": "192.168.4.2",
+            "netmask": "255.255.255.0"
+        },
+        {
+            "ip_address": "192.168.1.2",
+            "netmask": "255.255.255.0"
+        }
+    ]
+    assert async_run(compute1.get_ip_on_same_subnet(compute2)) == ("192.168.1.1", "192.168.1.2")
+
+    #No common interface
+    # Case 2 compute2 host is on a different network but a common interface is available
+    compute2 = Compute("compute2", host="127.0.0.1", controller=controller)
+    compute2._interfaces_cache = [
+        {
+            "ip_address": "127.0.0.1",
+            "netmask": "255.255.255.255"
+        }
+    ]
+    with pytest.raises(ValueError):
+        async_run(compute1.get_ip_on_same_subnet(compute2))
