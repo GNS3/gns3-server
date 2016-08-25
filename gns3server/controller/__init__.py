@@ -62,6 +62,7 @@ class Controller:
     @asyncio.coroutine
     def start(self):
         log.info("Start controller")
+        yield from self.load()
         server_config = Config.instance().get_section_config("Server")
         self._computes["local"] = Compute(compute_id="local",
                                           controller=self,
@@ -70,7 +71,16 @@ class Controller:
                                           port=server_config.getint("port", 3080),
                                           user=server_config.get("user", ""),
                                           password=server_config.get("password", ""))
-        yield from self.load()
+        if self.gns3vm.enable:
+            yield from self.gns3vm.start()
+            self._computes["vm"] = Compute(compute_id="vm",
+                                              name="GNS3 VM",
+                                              controller=self,
+                                              protocol=self.gns3vm.protocol,
+                                              host=self.gns3vm.ip_address,
+                                              port=self.gns3vm.port,
+                                              user=self.gns3vm.user,
+                                              password=self.gns3vm.password)
 
     @asyncio.coroutine
     def stop(self):

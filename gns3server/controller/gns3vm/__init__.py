@@ -21,6 +21,9 @@ import asyncio
 from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class GNS3VM:
     """
@@ -62,6 +65,61 @@ class GNS3VM:
             virtualbox_informations
         ]
 
+    def _current_engine(self):
+        return self._get_engine(self._settings["engine"])
+
+    @property
+    def ip_address(self):
+        """
+        Returns the GNS3 VM IP address.
+
+        :returns: VM IP address
+        """
+        return self._current_engine().ip_address
+
+    @property
+    def user(self):
+        """
+        Returns the GNS3 VM user.
+
+        :returns: VM user
+        """
+        return self._current_engine().user
+
+    @property
+    def password(self):
+        """
+        Returns the GNS3 VM password.
+
+        :returns: VM password
+        """
+        return self._current_engine().password
+
+    @property
+    def port(self):
+        """
+        Returns the GNS3 VM port.
+
+        :returns: VM port
+        """
+        return self._current_engine().port
+
+    @property
+    def protocol(self):
+        """
+        Returns the GNS3 VM protocol.
+
+        :returns: VM protocol
+        """
+        return self._current_engine().protocol
+
+    @property
+    def enable(self):
+        """
+        The GNSVM is activated
+        """
+        return self._settings["enable"]
+
     @property
     def settings(self):
         return self._settings
@@ -99,3 +157,15 @@ class GNS3VM:
         for vm in (yield from engine.list()):
             vms.append({"vmname": vm["vmname"]})
         return vms
+
+    @asyncio.coroutine
+    def start(self):
+        """
+        Start the GNS3 VM
+        """
+        engine = self._current_engine()
+        if not engine.running:
+            log.info("Start the GNS3 VM")
+            engine.vmname = self._settings["vmname"]
+            yield from engine.start()
+

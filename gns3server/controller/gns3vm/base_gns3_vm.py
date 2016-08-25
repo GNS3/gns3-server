@@ -33,15 +33,21 @@ class BaseGNS3VM:
         self._headless = False
         self._vcpus = 1
         self._ram = 1024
+        self._user = ""
+        self.password = ""
+        self._protocol = "http"
         self._running = False
 
         # limit the number of vCPUs to the number of physical cores (hyper thread CPUs are excluded)
         # because this is likely to degrade performances.
         self._vcpus = psutil.cpu_count(logical=False)
         # we want to allocate half of the available physical memory
-        ram = int(psutil.virtual_memory().total / (1024 * 1024) / 2)
+        #ram = int(psutil.virtual_memory().total / (1024 * 1024) / 2)
         # value must be a multiple of 4 (VMware requirement)
-        ram -= ram % 4
+        #ram -= ram % 4
+
+        ram = 2048
+
         self._ram = ram
 
     @property
@@ -63,6 +69,60 @@ class BaseGNS3VM:
         """
 
         self._vmname = new_name
+
+    @property
+    def protocol(self):
+        """
+        Get the GNS3 VM protocol
+
+        :returns: Protocol as string
+        """
+        return self._protocol
+
+    @protocol.setter
+    def protocol(self, val):
+        """
+        Sets the GNS3 VM protocol
+
+        :param val: new VM protocol
+        """
+        self._protocol = val
+
+    @property
+    def user(self):
+        """
+        Get the GNS3 VM user
+
+        :returns: User as string
+        """
+        return self._user
+
+    @user.setter
+    def user(self, val):
+        """
+        Sets the GNS3 VM user
+
+        :param val: new VM user
+        """
+        self._user = val
+
+    @property
+    def password(self):
+        """
+        Get the GNS3 VM password
+
+        :returns: Password as string
+        """
+        return self._password
+
+    @password.setter
+    def password(self, val):
+        """
+        Sets the GNS3 VM password
+
+        :param val: new VM password
+        """
+        self._password = val
 
     @property
     def port(self):

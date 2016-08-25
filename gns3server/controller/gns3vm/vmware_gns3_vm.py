@@ -59,9 +59,10 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         available_ram = int(psutil.virtual_memory().available / (1024 * 1024))
         if ram > available_ram:
-            raise GNS3VMError("You have allocated too much memory for the GNS3 VM! (available memory is {} MB)".format(available_ram))
+            raise GNS3VMError("You have allocated too much memory ({} MB) for the GNS3 VM! (available memory is {} MB)".format(ram, available_ram))
 
         # memory must be a multiple of 4 (VMware requirement)
+
         if ram % 4 != 0:
             raise GNS3VMError("Allocated memory for the GNS3 VM must be a multiple of 4".format(available_ram))
 
@@ -100,12 +101,12 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         # check we have a valid VMX file path
         if not self._vmx_path:
-            raise GNS3VMError("GNS3 VM is not configured")
+            raise GNS3VMError("VMWare VM {} not found".format(self.vmname))
         if not os.path.exists(self._vmx_path):
             raise GNS3VMError("VMware VMX file {} doesn't exist".format(self._vmx_path))
 
         # set the number of vCPUs and amount of RAM
-        yield from self._set_vcpus_ram(self.vcpus, self.ram)
+        #yield from self._set_vcpus_ram(self.vcpus, self.ram)
 
         # start the VM
         args = [self._vmx_path]

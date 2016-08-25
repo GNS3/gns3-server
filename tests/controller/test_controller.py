@@ -19,6 +19,7 @@ import os
 import uuid
 import json
 import pytest
+import socket
 import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
@@ -250,6 +251,28 @@ def test_getProject(controller, async_run):
     assert controller.get_project(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.get_project("dsdssd")
+
+
+def test_start(controller, async_run):
+    async_run(controller.start())
+    assert len(controller.computes) == 1 # Local compute is created
+    assert controller.computes["local"].name == socket.gethostname()
+
+
+def test_start_vm(controller, async_run):
+    """
+    Start the controller with a GNS3 VM
+    """
+    controller.gns3vm.settings = {
+        "enable": True,
+        "engine": "vmware"
+    }
+    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
+        async_run(controller.start())
+        assert mock.called
+    assert len(controller.computes) == 2 # Local compute and vm are created
+    assert "local" in controller.computes
+    assert "vm" in controller.computes
 
 
 def test_stop(controller, async_run):
