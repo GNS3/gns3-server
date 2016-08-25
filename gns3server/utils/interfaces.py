@@ -170,11 +170,13 @@ def interfaces():
         for interface in sorted(psutil.net_if_addrs().keys()):
             ip_address = ""
             mac_address = ""
+            netmask = ""
             interface_type = "ethernet"
             for addr in psutil.net_if_addrs()[interface]:
                 # get the first available IPv4 address only
                 if addr.family == socket.AF_INET:
                     ip_address = addr.address
+                    netmask = addr.netmask
                 if addr.family == psutil.AF_LINK:
                     mac_address = addr.address
             if interface.startswith("tap"):
@@ -183,6 +185,7 @@ def interfaces():
             results.append({"id": interface,
                             "name": interface,
                             "ip_address": ip_address,
+                            "netmask": netmask,
                             "mac_address": mac_address,
                             "type": interface_type})
     else:
