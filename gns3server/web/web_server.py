@@ -60,6 +60,7 @@ class WebServer:
         self._start_time = time.time()
         self._port_manager = PortManager(host)
         self._running = False
+        self._closing = False
 
     @staticmethod
     def instance(host=None, port=None):
@@ -91,6 +92,12 @@ class WebServer:
         """
         Cleanly shutdown the server.
         """
+
+        if not self._closing:
+            self._closing = True
+        else:
+            log.warning("Close is already in progress")
+            return
 
         if self._handler:
             yield from self._handler.finish_connections()
