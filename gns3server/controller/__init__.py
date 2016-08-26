@@ -71,16 +71,7 @@ class Controller:
                                           port=server_config.getint("port", 3080),
                                           user=server_config.get("user", ""),
                                           password=server_config.get("password", ""))
-        if self.gns3vm.enable:
-            yield from self.gns3vm.start()
-            self._computes["vm"] = Compute(compute_id="vm",
-                                           name="GNS3 VM",
-                                           controller=self,
-                                           protocol=self.gns3vm.protocol,
-                                           host=self.gns3vm.ip_address,
-                                           port=self.gns3vm.port,
-                                           user=self.gns3vm.user,
-                                           password=self.gns3vm.password)
+        yield from self.gns3vm.auto_start_vm()
 
     @asyncio.coroutine
     def stop(self):
@@ -88,9 +79,12 @@ class Controller:
         for project in self._projects.values():
             yield from project.close()
         for compute in self._computes.values():
-            yield from compute.close()
-        if self.gns3vm.enable and self.gns3vm.auto_stop:
-            yield from self.gns3vm.stop()
+            try:
+                yield from compute.close()
+            # We don't care if a compute is down at this step
+            except aiohttp.errors.ClientOSError:
+                pass
+        yield from self.gns3vm.auto_stop_vm()
         self._computes = {}
         self._projects = {}
 
@@ -212,18 +206,19 @@ class Controller:
         return Config.instance().get_section_config("Server").getboolean("controller")
 
     @asyncio.coroutine
-    def add_compute(self, compute_id=None, name=None, **kwargs):
+    def add_compute(self, compute_id=None, name=None, force=False, **kwargs):
         """
         Add a server to the dictionary of compute servers controlled by this controller
 
         :param compute_id: Compute server identifier
         :param name: Compute name
+        :param force: True skip security check
         :param kwargs: See the documentation of Compute
         """
         if compute_id not in self._computes:
 
             # We disallow to create from the outside the local and VM server
-            if compute_id == 'local' or compute_id == 'vm':
+            if (compute_id == 'local' or compute_id == 'vm') and not force:
                 return None
 
             for compute in self._computes.values():

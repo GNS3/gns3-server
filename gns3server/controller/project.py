@@ -494,7 +494,11 @@ class Project:
     def close(self, ignore_notification=False):
         yield from self.stop_all()
         for compute in self._project_created_on_compute:
-            yield from compute.post("/projects/{}/close".format(self._id))
+            try:
+                yield from compute.post("/projects/{}/close".format(self._id))
+            # We don't care if a compute is down at this step
+            except aiohttp.errors.ClientOSError:
+                pass
         self._cleanPictures()
         self._status = "closed"
         if not ignore_notification:

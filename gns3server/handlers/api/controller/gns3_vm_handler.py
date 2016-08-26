@@ -75,6 +75,6 @@ class GNS3VMHandler:
     def update(request, response):
 
         gns3_vm = Controller().instance().gns3vm
-        gns3_vm.settings = request.json
+        yield from gns3_vm.update_settings(request.json)
         response.json(gns3_vm)
         response.set_status(201)

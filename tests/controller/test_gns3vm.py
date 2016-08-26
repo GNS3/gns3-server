@@ -37,3 +37,16 @@ def test_list(async_run, controller):
 def test_json(controller):
     vm = GNS3VM(controller)
     assert vm.__json__() == vm._settings
+
+
+def test_update_settings(controller, async_run):
+    vm = GNS3VM(controller)
+    vm.settings = {
+        "enable": True,
+        "engine": "vmware"
+    }
+    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start"):
+        async_run(vm.auto_start_vm())
+    assert "vm" in controller.computes
+    async_run(vm.update_settings({"enable": False}))
+    assert "vm" not in controller.computes

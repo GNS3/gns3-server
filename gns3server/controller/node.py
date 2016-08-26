@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
 import asyncio
 import copy
 import uuid
@@ -338,7 +339,11 @@ class Node:
         """
         Stop a node
         """
-        yield from self.post("/stop")
+        try:
+            yield from self.post("/stop")
+        # We don't care if a compute is down at this step
+        except aiohttp.errors.ClientOSError:
+            pass
 
     @asyncio.coroutine
     def suspend(self):

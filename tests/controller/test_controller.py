@@ -301,9 +301,9 @@ def test_start_vm(controller, async_run):
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
         async_run(controller.start())
         assert mock.called
-    assert len(controller.computes) == 2  # Local compute and vm are created
     assert "local" in controller.computes
     assert "vm" in controller.computes
+    assert len(controller.computes) == 2  # Local compute and vm are created
 
 
 def test_stop(controller, async_run):
@@ -322,7 +322,7 @@ def test_stop_vm(controller, async_run):
         "engine": "vmware",
         "auto_stop": True
     }
-    controller.gns3vm.running = True
+    controller.gns3vm._current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
         async_run(controller.stop())
         assert mock.called

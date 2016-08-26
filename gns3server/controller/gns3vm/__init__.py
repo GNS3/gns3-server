@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import copy
 import asyncio
 
 from .vmware_gns3_vm import VMwareGNS3VM
@@ -41,7 +42,7 @@ class GNS3VM:
             "enable": False,
             "engine": "vmware"
         }
-        self._settings.update(settings)
+        self.settings = settings
 
     def engine_list(self):
         """
@@ -76,6 +77,15 @@ class GNS3VM:
         :returns: VM IP address
         """
         return self._current_engine().ip_address
+
+    @property
+    def running(self):
+        """
+        Returns if the GNS3 VM is running.
+
+        :returns: Boolean
+        """
+        return self._current_engine().running
 
     @property
     def user(self):
@@ -134,7 +144,19 @@ class GNS3VM:
     @settings.setter
     def settings(self, val):
         self._settings.update(val)
-        self._controller.save()
+
+    @asyncio.coroutine
+    def update_settings(self, settings):
+        """
+        Update settings and will restart the VM if require
+        """
+        new_settings = copy.copy(self._settings)
+        new_settings.update(settings)
+        if self.settings != new_settings:
+            yield from self._stop()
+            self._settings = settings
+            self._controller.save()
+            yield from self.auto_start_vm()
 
     def _get_engine(self, engine):
         """
@@ -166,7 +188,20 @@ class GNS3VM:
         return vms
 
     @asyncio.coroutine
-    def start(self):
+    def auto_start_vm(self):
+        """
+        Auto start the GNS3 VM if require
+        """
+        if self.enable:
+            yield from self._start()
+
+    @asyncio.coroutine
+    def auto_stop_vm(self):
+        if self.enable and self.auto_stop:
+            yield from self._stop()
+
+    @asyncio.coroutine
+    def _start(self):
         """
         Start the GNS3 VM
         """
@@ -175,13 +210,23 @@ class GNS3VM:
             log.info("Start the GNS3 VM")
             engine.vmname = self._settings["vmname"]
             yield from engine.start()
+        yield from self._controller.add_compute(compute_id="vm",
+                                                name="GNS3 VM",
+                                                protocol=self.protocol,
+                                                host=self.ip_address,
+                                                port=self.port,
+                                                user=self.user,
+                                                password=self.password,
+                                                force=True)
 
     @asyncio.coroutine
-    def stop(self):
+    def _stop(self):
         """
         Stop the GNS3 VM
         """
         engine = self._current_engine()
-        if not engine.running:
+        if "vm" in self._controller.computes:
+            yield from self._controller.delete_compute("vm")
+        if engine.running:
             log.info("Stop the GNS3 VM")
             yield from engine.stop()
