@@ -85,6 +85,8 @@ class Controller:
     @asyncio.coroutine
     def stop(self):
         log.info("Stop controller")
+        for project in self._projects.values():
+            yield from project.close()
         for compute in self._computes.values():
             yield from compute.close()
         if self.gns3vm.enable and self.gns3vm.auto_stop:
@@ -233,12 +235,6 @@ class Controller:
             self.save()
             self.notification.emit("compute.created", compute.__json__())
 
-            #FIXME: temporary before the remote GNS3 VM support is back
-            if "vm" not in self._computes and not hasattr(sys, "_called_from_test"):
-                compute_vm = Compute(compute_id="vm", controller=self, name="GNS3 VM", **kwargs)
-                self._computes[compute_vm.id] = compute_vm
-                self.notification.emit("compute.created", compute_vm.__json__())
-
             return compute
         else:
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())
@@ -247,10 +243,16 @@ class Controller:
     @asyncio.coroutine
     def delete_compute(self, compute_id):
         """
-        Delete a compute node
+        Delete a compute node. Project using this compute will be close
+
         :param compute_id: Compute server identifier
         """
         compute = self.get_compute(compute_id)
+
+        for project in self._projects.values():
+            if compute in project.computes:
+                yield from project.close()
+
         yield from compute.close()
         del self._computes[compute_id]
         self.save()

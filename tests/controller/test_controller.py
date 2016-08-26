@@ -169,6 +169,37 @@ def test_deleteCompute(controller, controller_config_path, async_run):
     assert c.connected is False
 
 
+def test_deleteComputeProjectOpened(controller, controller_config_path, async_run):
+    """
+    When you delete a compute the project using it are close
+    """
+    c = async_run(controller.add_compute(compute_id="test1"))
+    c.post = AsyncioMagicMock()
+    assert len(controller.computes) == 1
+
+    project1 = async_run(controller.add_project(name="Test1"))
+    async_run(project1.open())
+    # We simulate that the project use this compute
+    project1._project_created_on_compute.add(c)
+
+    project2 = async_run(controller.add_project(name="Test2"))
+    async_run(project2.open())
+
+    controller._notification = MagicMock()
+    c._connected = True
+    async_run(controller.delete_compute("test1"))
+    assert len(controller.computes) == 0
+    controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
+    with open(controller_config_path) as f:
+        data = json.load(f)
+        assert len(data["computes"]) == 0
+    assert c.connected is False
+
+    # Project 1 use this compute it should be close before deleting the compute
+    assert project1.status == "closed"
+    assert project2.status == "opened"
+
+
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
     async_run(controller.add_compute(compute_id="test1", name="Test"))
     assert len(controller.computes) == 1
