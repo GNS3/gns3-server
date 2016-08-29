@@ -32,6 +32,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>capabilities</td>                    <td> </td>                     <td>object</td>                     <td>Get what a server support</td>                     </tr>
     <tr><td>compute_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Server identifier</td>                     </tr>
     <tr><td>connected</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the controller is connected to the compute server or not</td>                     </tr>
     <tr><td>cpu_usage_percent</td>                    <td> </td>                     <td>['number', 'null']</td>                     <td>CPU usage of the compute. Read only</td>                     </tr>
@@ -41,7 +42,6 @@ Output
     <tr><td>port</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Server port</td>                     </tr>
     <tr><td>protocol</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: http, https</td>                     </tr>
     <tr><td>user</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>User for authentication</td>                     </tr>
-    <tr><td>version</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Version of the GNS3 remote compute server</td>                     </tr>
     </table>
 
 

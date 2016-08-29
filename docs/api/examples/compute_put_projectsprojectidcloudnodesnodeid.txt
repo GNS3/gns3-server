@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/11800c81-28cb-419d-869e-4c1cec9738fe' -d '{"name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/2cf9d65f-8859-43f1-969e-a717b3e53352' -d '{"name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/11800c81-28cb-419d-869e-4c1cec9738fe HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/2cf9d65f-8859-43f1-969e-a717b3e53352 HTTP/1.1
 {
     "name": "test"
 }
@@ -957,7 +957,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         }
     ],
     "name": "test",
-    "node_id": "11800c81-28cb-419d-869e-4c1cec9738fe",
+    "node_id": "2cf9d65f-8859-43f1-969e-a717b3e53352",
     "ports": [],
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "started"

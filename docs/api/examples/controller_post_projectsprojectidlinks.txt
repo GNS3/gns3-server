@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/3eca4ad9-19e6-48a5-8cf4-cc2076b3cf33/links' -d '{"nodes": [{"adapter_number": 0, "label": {"text": "Text", "x": 42, "y": 0}, "node_id": "49b39d66-11d1-4155-89c4-99265417991b", "port_number": 3}, {"adapter_number": 2, "node_id": "71b97329-fbf9-41c6-a138-c8829a63050a", "port_number": 4}]}'
+curl -i -X POST 'http://localhost:3080/v2/projects/e9c95008-ff25-4da1-9aac-6e31d88e258a/links' -d '{"nodes": [{"adapter_number": 0, "label": {"text": "Text", "x": 42, "y": 0}, "node_id": "b7ae8bfc-d980-4be2-bc43-023561293d94", "port_number": 3}, {"adapter_number": 2, "node_id": "814eae63-4d8a-4c1a-84f4-09c6b50bedce", "port_number": 4}]}'
 
-POST /v2/projects/3eca4ad9-19e6-48a5-8cf4-cc2076b3cf33/links HTTP/1.1
+POST /v2/projects/e9c95008-ff25-4da1-9aac-6e31d88e258a/links HTTP/1.1
 {
     "nodes": [
         {
@@ -10,12 +10,12 @@ POST /v2/projects/3eca4ad9-19e6-48a5-8cf4-cc2076b3cf33/links HTTP/1.1
                 "x": 42,
                 "y": 0
             },
-            "node_id": "49b39d66-11d1-4155-89c4-99265417991b",
+            "node_id": "b7ae8bfc-d980-4be2-bc43-023561293d94",
             "port_number": 3
         },
         {
             "adapter_number": 2,
-            "node_id": "71b97329-fbf9-41c6-a138-c8829a63050a",
+            "node_id": "814eae63-4d8a-4c1a-84f4-09c6b50bedce",
             "port_number": 4
         }
     ]
@@ -33,7 +33,7 @@ X-ROUTE: /v2/projects/{project_id}/links
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
-    "link_id": "1812c97d-3993-46f9-8bb6-65a36389f005",
+    "link_id": "e3f9f2b2-bb47-4f57-948d-d7c4e92c0ff1",
     "nodes": [
         {
             "adapter_number": 0,
@@ -42,7 +42,7 @@ X-ROUTE: /v2/projects/{project_id}/links
                 "x": 42,
                 "y": 0
             },
-            "node_id": "49b39d66-11d1-4155-89c4-99265417991b",
+            "node_id": "b7ae8bfc-d980-4be2-bc43-023561293d94",
             "port_number": 3
         },
         {
@@ -54,9 +54,9 @@ X-ROUTE: /v2/projects/{project_id}/links
                 "x": -10,
                 "y": -10
             },
-            "node_id": "71b97329-fbf9-41c6-a138-c8829a63050a",
+            "node_id": "814eae63-4d8a-4c1a-84f4-09c6b50bedce",
             "port_number": 4
         }
     ],
-    "project_id": "3eca4ad9-19e6-48a5-8cf4-cc2076b3cf33"
+    "project_id": "e9c95008-ff25-4da1-9aac-6e31d88e258a"
 }

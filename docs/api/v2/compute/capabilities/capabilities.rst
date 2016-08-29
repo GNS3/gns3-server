@@ -1,11 +1,11 @@
-/v2/compute/version
+/v2/compute/capabilities
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v2/compute/version
+GET /v2/compute/capabilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Retrieve the server version number
+Retrieve the capabilities of the server
 
 Response status codes
 **********************
@@ -17,13 +17,13 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether this is a local server or not</td>                     </tr>
-    <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number</td>                     </tr>
+    <tr><td>node_types</td>                    <td>&#10004;</td>                     <td>array</td>                     <td></td>                     </tr>
+    <tr><td>version</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Version number</td>                     </tr>
     </table>
 
 Sample session
 ***************
 
 
-.. literalinclude:: ../../../examples/compute_get_version.txt
+.. literalinclude:: ../../../examples/compute_get_capabilities.txt
 

@@ -957,7 +957,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/cloud/nodes
         }
     ],
     "name": "Cloud 1",
-    "node_id": "bbddb1ea-9ec9-4fa6-b503-3ff74eed4ab0",
+    "node_id": "1bd434db-4dec-4e4c-924f-d8ea21a1a5f9",
     "ports": [],
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "started"

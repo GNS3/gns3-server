@@ -1,9 +1,9 @@
-curl -i -X POST 'http://localhost:3080/v2/computes' -d '{"compute_id": "my_compute_id", "host": "example.com", "password": "secure", "port": 84, "protocol": "http", "user": "julien"}'
+curl -i -X POST 'http://localhost:3080/v2/computes' -d '{"compute_id": "my_compute_id", "host": "localhost", "password": "secure", "port": 84, "protocol": "http", "user": "julien"}'
 
 POST /v2/computes HTTP/1.1
 {
     "compute_id": "my_compute_id",
-    "host": "example.com",
+    "host": "localhost",
     "password": "secure",
     "port": 84,
     "protocol": "http",
@@ -12,19 +12,23 @@ POST /v2/computes HTTP/1.1
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 259
+CONTENT-LENGTH: 334
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/computes
 
 {
+    "capabilities": {
+        "node_types": [],
+        "version": null
+    },
     "compute_id": "my_compute_id",
     "connected": false,
     "cpu_usage_percent": null,
-    "host": "example.com",
+    "host": "localhost",
     "memory_usage_percent": null,
-    "name": "http://julien@example.com:84",
+    "name": "http://julien@localhost:84",
     "port": 84,
     "protocol": "http",
     "user": "julien"

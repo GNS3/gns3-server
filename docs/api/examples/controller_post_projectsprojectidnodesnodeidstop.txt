@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/da888da8-94d8-42e1-b43e-d04ea2215a94/nodes/bfdd209e-e2bf-4b55-a400-6c8f04c0217f/stop' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/0701a222-9143-4c4a-b2e2-50737979501d/nodes/8f73b099-b4dd-442f-aca0-b6e18f3cf4b2/stop' -d '{}'
 
-POST /v2/projects/da888da8-94d8-42e1-b43e-d04ea2215a94/nodes/bfdd209e-e2bf-4b55-a400-6c8f04c0217f/stop HTTP/1.1
+POST /v2/projects/0701a222-9143-4c4a-b2e2-50737979501d/nodes/8f73b099-b4dd-442f-aca0-b6e18f3cf4b2/stop HTTP/1.1
 {}
 
 
@@ -27,9 +27,9 @@ X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}/stop
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "bfdd209e-e2bf-4b55-a400-6c8f04c0217f",
+    "node_id": "8f73b099-b4dd-442f-aca0-b6e18f3cf4b2",
     "node_type": "vpcs",
-    "project_id": "da888da8-94d8-42e1-b43e-d04ea2215a94",
+    "project_id": "0701a222-9143-4c4a-b2e2-50737979501d",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

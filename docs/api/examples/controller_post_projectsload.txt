@@ -19,7 +19,7 @@ X-ROUTE: /v2/projects/load
     "auto_start": false,
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp2tn0j7vo/projects/11afd4a8-bec3-477b-9462-018af5ec1c52",
-    "project_id": "11afd4a8-bec3-477b-9462-018af5ec1c52",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpwbctaekr/projects/67ae22fb-f6ec-4c61-a707-7d4d28cba4b2",
+    "project_id": "67ae22fb-f6ec-4c61-a707-7d4d28cba4b2",
     "status": "opened"
 }

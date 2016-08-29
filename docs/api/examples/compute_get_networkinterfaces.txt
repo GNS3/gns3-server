@@ -5,7 +5,7 @@ GET /v2/compute/network/interfaces HTTP/1.1
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 40809
+CONTENT-LENGTH: 49096
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -17,6 +17,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "3e:07:54:87:bc:00",
         "name": "bridge0",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -24,13 +25,15 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "3c:07:54:78:07:cc",
         "name": "en0",
+        "netmask": "",
         "type": "ethernet"
     },
     {
         "id": "en1",
-        "ip_address": "192.168.84.106",
+        "ip_address": "192.168.84.156",
         "mac_address": "68:a8:6d:4a:c3:16",
         "name": "en1",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -38,6 +41,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "d2:00:1b:c0:17:80",
         "name": "en2",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -45,6 +49,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "3c:07:54:ff:fe:bc:01:78",
         "name": "fw0",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -52,6 +57,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "127.0.0.1",
         "mac_address": "",
         "name": "lo0",
+        "netmask": "255.0.0.0",
         "type": "ethernet"
     },
     {
@@ -59,6 +65,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:a8:6d:4a:c3:16",
         "name": "p2p0",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -66,6 +73,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:00",
         "name": "vboxnet0",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -73,6 +81,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:01",
         "name": "vboxnet1",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -80,6 +89,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:02",
         "name": "vboxnet2",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -87,6 +97,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:03",
         "name": "vboxnet3",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -94,6 +105,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:04",
         "name": "vboxnet4",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -101,6 +113,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:05",
         "name": "vboxnet5",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -108,6 +121,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:06",
         "name": "vboxnet6",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -115,6 +129,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "",
         "mac_address": "0a:00:27:00:00:07",
         "name": "vboxnet7",
+        "netmask": "",
         "type": "ethernet"
     },
     {
@@ -122,6 +137,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.16.1",
         "mac_address": "00:50:56:c0:00:01",
         "name": "vmnet1",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -129,6 +145,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.7.1",
         "mac_address": "00:50:56:c0:00:0a",
         "name": "vmnet10",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -136,6 +153,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.98.1",
         "mac_address": "00:50:56:c0:00:64",
         "name": "vmnet100",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -143,6 +161,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.99.1",
         "mac_address": "00:50:56:c0:00:65",
         "name": "vmnet101",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -150,6 +169,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.100.1",
         "mac_address": "00:50:56:c0:00:66",
         "name": "vmnet102",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -157,6 +177,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.101.1",
         "mac_address": "00:50:56:c0:00:67",
         "name": "vmnet103",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -164,6 +185,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.102.1",
         "mac_address": "00:50:56:c0:00:68",
         "name": "vmnet104",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -171,6 +193,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.103.1",
         "mac_address": "00:50:56:c0:00:69",
         "name": "vmnet105",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -178,6 +201,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.104.1",
         "mac_address": "00:50:56:c0:00:6a",
         "name": "vmnet106",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -185,6 +209,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.105.1",
         "mac_address": "00:50:56:c0:00:6b",
         "name": "vmnet107",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -192,6 +217,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.106.1",
         "mac_address": "00:50:56:c0:00:6c",
         "name": "vmnet108",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -199,6 +225,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.107.1",
         "mac_address": "00:50:56:c0:00:6d",
         "name": "vmnet109",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -206,6 +233,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.8.1",
         "mac_address": "00:50:56:c0:00:0b",
         "name": "vmnet11",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -213,6 +241,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.108.1",
         "mac_address": "00:50:56:c0:00:6e",
         "name": "vmnet110",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -220,6 +249,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.109.1",
         "mac_address": "00:50:56:c0:00:6f",
         "name": "vmnet111",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -227,6 +257,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.110.1",
         "mac_address": "00:50:56:c0:00:70",
         "name": "vmnet112",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -234,6 +265,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.111.1",
         "mac_address": "00:50:56:c0:00:71",
         "name": "vmnet113",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -241,6 +273,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.112.1",
         "mac_address": "00:50:56:c0:00:72",
         "name": "vmnet114",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -248,6 +281,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.113.1",
         "mac_address": "00:50:56:c0:00:73",
         "name": "vmnet115",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -255,6 +289,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.114.1",
         "mac_address": "00:50:56:c0:00:74",
         "name": "vmnet116",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -262,6 +297,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.115.1",
         "mac_address": "00:50:56:c0:00:75",
         "name": "vmnet117",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -269,6 +305,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.116.1",
         "mac_address": "00:50:56:c0:00:76",
         "name": "vmnet118",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -276,6 +313,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.117.1",
         "mac_address": "00:50:56:c0:00:77",
         "name": "vmnet119",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -283,6 +321,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.9.1",
         "mac_address": "00:50:56:c0:00:0c",
         "name": "vmnet12",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -290,6 +329,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.118.1",
         "mac_address": "00:50:56:c0:00:78",
         "name": "vmnet120",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -297,6 +337,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.119.1",
         "mac_address": "00:50:56:c0:00:79",
         "name": "vmnet121",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -304,6 +345,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.120.1",
         "mac_address": "00:50:56:c0:00:7a",
         "name": "vmnet122",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -311,6 +353,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.121.1",
         "mac_address": "00:50:56:c0:00:7b",
         "name": "vmnet123",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -318,6 +361,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.122.1",
         "mac_address": "00:50:56:c0:00:7c",
         "name": "vmnet124",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -325,6 +369,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.123.1",
         "mac_address": "00:50:56:c0:00:7d",
         "name": "vmnet125",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -332,6 +377,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.124.1",
         "mac_address": "00:50:56:c0:00:7e",
         "name": "vmnet126",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -339,6 +385,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.125.1",
         "mac_address": "00:50:56:c0:00:7f",
         "name": "vmnet127",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -346,6 +393,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.126.1",
         "mac_address": "00:50:56:c0:00:80",
         "name": "vmnet128",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -353,6 +401,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.127.1",
         "mac_address": "00:50:56:c0:00:81",
         "name": "vmnet129",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -360,6 +409,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.10.1",
         "mac_address": "00:50:56:c0:00:0d",
         "name": "vmnet13",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -367,6 +417,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.128.1",
         "mac_address": "00:50:56:c0:00:82",
         "name": "vmnet130",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -374,6 +425,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.129.1",
         "mac_address": "00:50:56:c0:00:83",
         "name": "vmnet131",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -381,6 +433,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.130.1",
         "mac_address": "00:50:56:c0:00:84",
         "name": "vmnet132",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -388,6 +441,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.131.1",
         "mac_address": "00:50:56:c0:00:85",
         "name": "vmnet133",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -395,6 +449,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.132.1",
         "mac_address": "00:50:56:c0:00:86",
         "name": "vmnet134",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -402,6 +457,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.133.1",
         "mac_address": "00:50:56:c0:00:87",
         "name": "vmnet135",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -409,6 +465,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.134.1",
         "mac_address": "00:50:56:c0:00:88",
         "name": "vmnet136",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -416,6 +473,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.135.1",
         "mac_address": "00:50:56:c0:00:89",
         "name": "vmnet137",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -423,6 +481,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.136.1",
         "mac_address": "00:50:56:c0:00:8a",
         "name": "vmnet138",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -430,6 +489,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.137.1",
         "mac_address": "00:50:56:c0:00:8b",
         "name": "vmnet139",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -437,6 +497,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.11.1",
         "mac_address": "00:50:56:c0:00:0e",
         "name": "vmnet14",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -444,6 +505,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.138.1",
         "mac_address": "00:50:56:c0:00:8c",
         "name": "vmnet140",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -451,6 +513,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.139.1",
         "mac_address": "00:50:56:c0:00:8d",
         "name": "vmnet141",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -458,6 +521,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.140.1",
         "mac_address": "00:50:56:c0:00:8e",
         "name": "vmnet142",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -465,6 +529,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.141.1",
         "mac_address": "00:50:56:c0:00:8f",
         "name": "vmnet143",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -472,6 +537,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.142.1",
         "mac_address": "00:50:56:c0:00:90",
         "name": "vmnet144",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -479,6 +545,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.143.1",
         "mac_address": "00:50:56:c0:00:91",
         "name": "vmnet145",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -486,6 +553,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.144.1",
         "mac_address": "00:50:56:c0:00:92",
         "name": "vmnet146",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -493,6 +561,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.145.1",
         "mac_address": "00:50:56:c0:00:93",
         "name": "vmnet147",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -500,6 +569,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.146.1",
         "mac_address": "00:50:56:c0:00:94",
         "name": "vmnet148",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -507,6 +577,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.147.1",
         "mac_address": "00:50:56:c0:00:95",
         "name": "vmnet149",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -514,6 +585,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.12.1",
         "mac_address": "00:50:56:c0:00:0f",
         "name": "vmnet15",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -521,6 +593,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.148.1",
         "mac_address": "00:50:56:c0:00:96",
         "name": "vmnet150",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -528,6 +601,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.149.1",
         "mac_address": "00:50:56:c0:00:97",
         "name": "vmnet151",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -535,6 +609,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.150.1",
         "mac_address": "00:50:56:c0:00:98",
         "name": "vmnet152",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -542,6 +617,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.151.1",
         "mac_address": "00:50:56:c0:00:99",
         "name": "vmnet153",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -549,6 +625,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.152.1",
         "mac_address": "00:50:56:c0:00:9a",
         "name": "vmnet154",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -556,6 +633,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.153.1",
         "mac_address": "00:50:56:c0:00:9b",
         "name": "vmnet155",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -563,6 +641,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.154.1",
         "mac_address": "00:50:56:c0:00:9c",
         "name": "vmnet156",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -570,6 +649,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.155.1",
         "mac_address": "00:50:56:c0:00:9d",
         "name": "vmnet157",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -577,6 +657,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.156.1",
         "mac_address": "00:50:56:c0:00:9e",
         "name": "vmnet158",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -584,6 +665,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.157.1",
         "mac_address": "00:50:56:c0:00:9f",
         "name": "vmnet159",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -591,6 +673,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.13.1",
         "mac_address": "00:50:56:c0:00:10",
         "name": "vmnet16",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -598,6 +681,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.158.1",
         "mac_address": "00:50:56:c0:00:a0",
         "name": "vmnet160",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -605,6 +689,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.159.1",
         "mac_address": "00:50:56:c0:00:a1",
         "name": "vmnet161",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -612,6 +697,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.160.1",
         "mac_address": "00:50:56:c0:00:a2",
         "name": "vmnet162",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -619,6 +705,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.161.1",
         "mac_address": "00:50:56:c0:00:a3",
         "name": "vmnet163",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -626,6 +713,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.162.1",
         "mac_address": "00:50:56:c0:00:a4",
         "name": "vmnet164",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -633,6 +721,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.163.1",
         "mac_address": "00:50:56:c0:00:a5",
         "name": "vmnet165",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -640,6 +729,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.164.1",
         "mac_address": "00:50:56:c0:00:a6",
         "name": "vmnet166",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -647,6 +737,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.165.1",
         "mac_address": "00:50:56:c0:00:a7",
         "name": "vmnet167",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -654,6 +745,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.166.1",
         "mac_address": "00:50:56:c0:00:a8",
         "name": "vmnet168",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -661,6 +753,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.167.1",
         "mac_address": "00:50:56:c0:00:a9",
         "name": "vmnet169",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -668,6 +761,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.14.1",
         "mac_address": "00:50:56:c0:00:11",
         "name": "vmnet17",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -675,6 +769,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.168.1",
         "mac_address": "00:50:56:c0:00:aa",
         "name": "vmnet170",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -682,6 +777,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.169.1",
         "mac_address": "00:50:56:c0:00:ab",
         "name": "vmnet171",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -689,6 +785,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.170.1",
         "mac_address": "00:50:56:c0:00:ac",
         "name": "vmnet172",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -696,6 +793,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.171.1",
         "mac_address": "00:50:56:c0:00:ad",
         "name": "vmnet173",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -703,6 +801,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.172.1",
         "mac_address": "00:50:56:c0:00:ae",
         "name": "vmnet174",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -710,6 +809,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.173.1",
         "mac_address": "00:50:56:c0:00:af",
         "name": "vmnet175",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -717,6 +817,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.174.1",
         "mac_address": "00:50:56:c0:00:b0",
         "name": "vmnet176",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -724,6 +825,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.175.1",
         "mac_address": "00:50:56:c0:00:b1",
         "name": "vmnet177",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -731,6 +833,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.176.1",
         "mac_address": "00:50:56:c0:00:b2",
         "name": "vmnet178",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -738,6 +841,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.177.1",
         "mac_address": "00:50:56:c0:00:b3",
         "name": "vmnet179",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -745,6 +849,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.15.1",
         "mac_address": "00:50:56:c0:00:12",
         "name": "vmnet18",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -752,6 +857,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.178.1",
         "mac_address": "00:50:56:c0:00:b4",
         "name": "vmnet180",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -759,6 +865,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.179.1",
         "mac_address": "00:50:56:c0:00:b5",
         "name": "vmnet181",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -766,6 +873,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.180.1",
         "mac_address": "00:50:56:c0:00:b6",
         "name": "vmnet182",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -773,6 +881,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.181.1",
         "mac_address": "00:50:56:c0:00:b7",
         "name": "vmnet183",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -780,6 +889,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.182.1",
         "mac_address": "00:50:56:c0:00:b8",
         "name": "vmnet184",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -787,6 +897,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.183.1",
         "mac_address": "00:50:56:c0:00:b9",
         "name": "vmnet185",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -794,6 +905,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.184.1",
         "mac_address": "00:50:56:c0:00:ba",
         "name": "vmnet186",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -801,6 +913,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.185.1",
         "mac_address": "00:50:56:c0:00:bb",
         "name": "vmnet187",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -808,6 +921,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.186.1",
         "mac_address": "00:50:56:c0:00:bc",
         "name": "vmnet188",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -815,6 +929,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.187.1",
         "mac_address": "00:50:56:c0:00:bd",
         "name": "vmnet189",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -822,6 +937,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.17.1",
         "mac_address": "00:50:56:c0:00:13",
         "name": "vmnet19",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -829,6 +945,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.188.1",
         "mac_address": "00:50:56:c0:00:be",
         "name": "vmnet190",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -836,6 +953,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.189.1",
         "mac_address": "00:50:56:c0:00:bf",
         "name": "vmnet191",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -843,6 +961,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.190.1",
         "mac_address": "00:50:56:c0:00:c0",
         "name": "vmnet192",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -850,6 +969,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.191.1",
         "mac_address": "00:50:56:c0:00:c1",
         "name": "vmnet193",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -857,6 +977,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.192.1",
         "mac_address": "00:50:56:c0:00:c2",
         "name": "vmnet194",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -864,6 +985,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.193.1",
         "mac_address": "00:50:56:c0:00:c3",
         "name": "vmnet195",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -871,6 +993,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.194.1",
         "mac_address": "00:50:56:c0:00:c4",
         "name": "vmnet196",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -878,6 +1001,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.195.1",
         "mac_address": "00:50:56:c0:00:c5",
         "name": "vmnet197",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -885,6 +1009,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.196.1",
         "mac_address": "00:50:56:c0:00:c6",
         "name": "vmnet198",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -892,6 +1017,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.197.1",
         "mac_address": "00:50:56:c0:00:c7",
         "name": "vmnet199",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -899,6 +1025,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.0.1",
         "mac_address": "00:50:56:c0:00:02",
         "name": "vmnet2",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -906,6 +1033,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.18.1",
         "mac_address": "00:50:56:c0:00:14",
         "name": "vmnet20",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -913,6 +1041,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.198.1",
         "mac_address": "00:50:56:c0:00:c8",
         "name": "vmnet200",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -920,6 +1049,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.199.1",
         "mac_address": "00:50:56:c0:00:c9",
         "name": "vmnet201",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -927,6 +1057,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.200.1",
         "mac_address": "00:50:56:c0:00:ca",
         "name": "vmnet202",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -934,6 +1065,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.201.1",
         "mac_address": "00:50:56:c0:00:cb",
         "name": "vmnet203",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -941,6 +1073,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.202.1",
         "mac_address": "00:50:56:c0:00:cc",
         "name": "vmnet204",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -948,6 +1081,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.203.1",
         "mac_address": "00:50:56:c0:00:cd",
         "name": "vmnet205",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -955,6 +1089,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.204.1",
         "mac_address": "00:50:56:c0:00:ce",
         "name": "vmnet206",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -962,6 +1097,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.205.1",
         "mac_address": "00:50:56:c0:00:cf",
         "name": "vmnet207",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -969,6 +1105,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.206.1",
         "mac_address": "00:50:56:c0:00:d0",
         "name": "vmnet208",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -976,6 +1113,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.207.1",
         "mac_address": "00:50:56:c0:00:d1",
         "name": "vmnet209",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -983,6 +1121,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.19.1",
         "mac_address": "00:50:56:c0:00:15",
         "name": "vmnet21",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -990,6 +1129,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.208.1",
         "mac_address": "00:50:56:c0:00:d2",
         "name": "vmnet210",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -997,6 +1137,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.209.1",
         "mac_address": "00:50:56:c0:00:d3",
         "name": "vmnet211",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1004,6 +1145,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.210.1",
         "mac_address": "00:50:56:c0:00:d4",
         "name": "vmnet212",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1011,6 +1153,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.211.1",
         "mac_address": "00:50:56:c0:00:d5",
         "name": "vmnet213",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1018,6 +1161,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.212.1",
         "mac_address": "00:50:56:c0:00:d6",
         "name": "vmnet214",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1025,6 +1169,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.213.1",
         "mac_address": "00:50:56:c0:00:d7",
         "name": "vmnet215",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1032,6 +1177,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.214.1",
         "mac_address": "00:50:56:c0:00:d8",
         "name": "vmnet216",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1039,6 +1185,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.215.1",
         "mac_address": "00:50:56:c0:00:d9",
         "name": "vmnet217",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1046,6 +1193,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.216.1",
         "mac_address": "00:50:56:c0:00:da",
         "name": "vmnet218",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1053,6 +1201,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.217.1",
         "mac_address": "00:50:56:c0:00:db",
         "name": "vmnet219",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1060,6 +1209,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.20.1",
         "mac_address": "00:50:56:c0:00:16",
         "name": "vmnet22",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1067,6 +1217,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.218.1",
         "mac_address": "00:50:56:c0:00:dc",
         "name": "vmnet220",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1074,6 +1225,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.21.1",
         "mac_address": "00:50:56:c0:00:17",
         "name": "vmnet23",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1081,6 +1233,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.22.1",
         "mac_address": "00:50:56:c0:00:18",
         "name": "vmnet24",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1088,6 +1241,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.23.1",
         "mac_address": "00:50:56:c0:00:19",
         "name": "vmnet25",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1095,6 +1249,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.24.1",
         "mac_address": "00:50:56:c0:00:1a",
         "name": "vmnet26",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1102,6 +1257,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.25.1",
         "mac_address": "00:50:56:c0:00:1b",
         "name": "vmnet27",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1109,6 +1265,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.26.1",
         "mac_address": "00:50:56:c0:00:1c",
         "name": "vmnet28",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1116,6 +1273,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.27.1",
         "mac_address": "00:50:56:c0:00:1d",
         "name": "vmnet29",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1123,6 +1281,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.1.1",
         "mac_address": "00:50:56:c0:00:03",
         "name": "vmnet3",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1130,6 +1289,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.28.1",
         "mac_address": "00:50:56:c0:00:1e",
         "name": "vmnet30",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1137,6 +1297,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.29.1",
         "mac_address": "00:50:56:c0:00:1f",
         "name": "vmnet31",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1144,6 +1305,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.30.1",
         "mac_address": "00:50:56:c0:00:20",
         "name": "vmnet32",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1151,6 +1313,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.31.1",
         "mac_address": "00:50:56:c0:00:21",
         "name": "vmnet33",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1158,6 +1321,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.32.1",
         "mac_address": "00:50:56:c0:00:22",
         "name": "vmnet34",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1165,6 +1329,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.33.1",
         "mac_address": "00:50:56:c0:00:23",
         "name": "vmnet35",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1172,6 +1337,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.34.1",
         "mac_address": "00:50:56:c0:00:24",
         "name": "vmnet36",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1179,6 +1345,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.35.1",
         "mac_address": "00:50:56:c0:00:25",
         "name": "vmnet37",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1186,6 +1353,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.36.1",
         "mac_address": "00:50:56:c0:00:26",
         "name": "vmnet38",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1193,6 +1361,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.37.1",
         "mac_address": "00:50:56:c0:00:27",
         "name": "vmnet39",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1200,6 +1369,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.2.1",
         "mac_address": "00:50:56:c0:00:04",
         "name": "vmnet4",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1207,6 +1377,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.38.1",
         "mac_address": "00:50:56:c0:00:28",
         "name": "vmnet40",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1214,6 +1385,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.39.1",
         "mac_address": "00:50:56:c0:00:29",
         "name": "vmnet41",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1221,6 +1393,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.40.1",
         "mac_address": "00:50:56:c0:00:2a",
         "name": "vmnet42",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1228,6 +1401,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.41.1",
         "mac_address": "00:50:56:c0:00:2b",
         "name": "vmnet43",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1235,6 +1409,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.42.1",
         "mac_address": "00:50:56:c0:00:2c",
         "name": "vmnet44",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1242,6 +1417,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.43.1",
         "mac_address": "00:50:56:c0:00:2d",
         "name": "vmnet45",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1249,6 +1425,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.44.1",
         "mac_address": "00:50:56:c0:00:2e",
         "name": "vmnet46",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1256,6 +1433,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.45.1",
         "mac_address": "00:50:56:c0:00:2f",
         "name": "vmnet47",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1263,6 +1441,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.46.1",
         "mac_address": "00:50:56:c0:00:30",
         "name": "vmnet48",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1270,6 +1449,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.47.1",
         "mac_address": "00:50:56:c0:00:31",
         "name": "vmnet49",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1277,6 +1457,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.3.1",
         "mac_address": "00:50:56:c0:00:05",
         "name": "vmnet5",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1284,6 +1465,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.48.1",
         "mac_address": "00:50:56:c0:00:32",
         "name": "vmnet50",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1291,6 +1473,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.49.1",
         "mac_address": "00:50:56:c0:00:33",
         "name": "vmnet51",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1298,6 +1481,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.50.1",
         "mac_address": "00:50:56:c0:00:34",
         "name": "vmnet52",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1305,6 +1489,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.51.1",
         "mac_address": "00:50:56:c0:00:35",
         "name": "vmnet53",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1312,6 +1497,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.52.1",
         "mac_address": "00:50:56:c0:00:36",
         "name": "vmnet54",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1319,6 +1505,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.53.1",
         "mac_address": "00:50:56:c0:00:37",
         "name": "vmnet55",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1326,6 +1513,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.54.1",
         "mac_address": "00:50:56:c0:00:38",
         "name": "vmnet56",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1333,6 +1521,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.55.1",
         "mac_address": "00:50:56:c0:00:39",
         "name": "vmnet57",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1340,6 +1529,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.56.1",
         "mac_address": "00:50:56:c0:00:3a",
         "name": "vmnet58",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1347,6 +1537,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.57.1",
         "mac_address": "00:50:56:c0:00:3b",
         "name": "vmnet59",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1354,6 +1545,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.4.1",
         "mac_address": "00:50:56:c0:00:06",
         "name": "vmnet6",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1361,6 +1553,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.58.1",
         "mac_address": "00:50:56:c0:00:3c",
         "name": "vmnet60",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1368,6 +1561,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.59.1",
         "mac_address": "00:50:56:c0:00:3d",
         "name": "vmnet61",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1375,6 +1569,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.60.1",
         "mac_address": "00:50:56:c0:00:3e",
         "name": "vmnet62",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1382,6 +1577,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.61.1",
         "mac_address": "00:50:56:c0:00:3f",
         "name": "vmnet63",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1389,6 +1585,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.62.1",
         "mac_address": "00:50:56:c0:00:40",
         "name": "vmnet64",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1396,6 +1593,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.63.1",
         "mac_address": "00:50:56:c0:00:41",
         "name": "vmnet65",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1403,6 +1601,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.64.1",
         "mac_address": "00:50:56:c0:00:42",
         "name": "vmnet66",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1410,6 +1609,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.65.1",
         "mac_address": "00:50:56:c0:00:43",
         "name": "vmnet67",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1417,6 +1617,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.66.1",
         "mac_address": "00:50:56:c0:00:44",
         "name": "vmnet68",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1424,6 +1625,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.67.1",
         "mac_address": "00:50:56:c0:00:45",
         "name": "vmnet69",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1431,6 +1633,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.5.1",
         "mac_address": "00:50:56:c0:00:07",
         "name": "vmnet7",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1438,6 +1641,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.68.1",
         "mac_address": "00:50:56:c0:00:46",
         "name": "vmnet70",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1445,6 +1649,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.69.1",
         "mac_address": "00:50:56:c0:00:47",
         "name": "vmnet71",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1452,6 +1657,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.70.1",
         "mac_address": "00:50:56:c0:00:48",
         "name": "vmnet72",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1459,6 +1665,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.71.1",
         "mac_address": "00:50:56:c0:00:49",
         "name": "vmnet73",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1466,6 +1673,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.72.1",
         "mac_address": "00:50:56:c0:00:4a",
         "name": "vmnet74",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1473,6 +1681,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.73.1",
         "mac_address": "00:50:56:c0:00:4b",
         "name": "vmnet75",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1480,6 +1689,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.74.1",
         "mac_address": "00:50:56:c0:00:4c",
         "name": "vmnet76",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1487,6 +1697,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.75.1",
         "mac_address": "00:50:56:c0:00:4d",
         "name": "vmnet77",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1494,6 +1705,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.76.1",
         "mac_address": "00:50:56:c0:00:4e",
         "name": "vmnet78",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1501,6 +1713,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.77.1",
         "mac_address": "00:50:56:c0:00:4f",
         "name": "vmnet79",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1508,6 +1721,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "192.168.229.1",
         "mac_address": "00:50:56:c0:00:08",
         "name": "vmnet8",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1515,6 +1729,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.78.1",
         "mac_address": "00:50:56:c0:00:50",
         "name": "vmnet80",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1522,6 +1737,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.79.1",
         "mac_address": "00:50:56:c0:00:51",
         "name": "vmnet81",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1529,6 +1745,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.80.1",
         "mac_address": "00:50:56:c0:00:52",
         "name": "vmnet82",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1536,6 +1753,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.81.1",
         "mac_address": "00:50:56:c0:00:53",
         "name": "vmnet83",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1543,6 +1761,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.82.1",
         "mac_address": "00:50:56:c0:00:54",
         "name": "vmnet84",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1550,6 +1769,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.83.1",
         "mac_address": "00:50:56:c0:00:55",
         "name": "vmnet85",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1557,6 +1777,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.84.1",
         "mac_address": "00:50:56:c0:00:56",
         "name": "vmnet86",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1564,6 +1785,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.85.1",
         "mac_address": "00:50:56:c0:00:57",
         "name": "vmnet87",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1571,6 +1793,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.86.1",
         "mac_address": "00:50:56:c0:00:58",
         "name": "vmnet88",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1578,6 +1801,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.87.1",
         "mac_address": "00:50:56:c0:00:59",
         "name": "vmnet89",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1585,6 +1809,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.6.1",
         "mac_address": "00:50:56:c0:00:09",
         "name": "vmnet9",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1592,6 +1817,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.88.1",
         "mac_address": "00:50:56:c0:00:5a",
         "name": "vmnet90",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1599,6 +1825,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.89.1",
         "mac_address": "00:50:56:c0:00:5b",
         "name": "vmnet91",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1606,6 +1833,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.90.1",
         "mac_address": "00:50:56:c0:00:5c",
         "name": "vmnet92",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1613,6 +1841,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.91.1",
         "mac_address": "00:50:56:c0:00:5d",
         "name": "vmnet93",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1620,6 +1849,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.92.1",
         "mac_address": "00:50:56:c0:00:5e",
         "name": "vmnet94",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1627,6 +1857,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.93.1",
         "mac_address": "00:50:56:c0:00:5f",
         "name": "vmnet95",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1634,6 +1865,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.94.1",
         "mac_address": "00:50:56:c0:00:60",
         "name": "vmnet96",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1641,6 +1873,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.95.1",
         "mac_address": "00:50:56:c0:00:61",
         "name": "vmnet97",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1648,6 +1881,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.96.1",
         "mac_address": "00:50:56:c0:00:62",
         "name": "vmnet98",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     },
     {
@@ -1655,6 +1889,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "ip_address": "172.16.97.1",
         "mac_address": "00:50:56:c0:00:63",
         "name": "vmnet99",
+        "netmask": "255.255.255.0",
         "type": "ethernet"
     }
 ]

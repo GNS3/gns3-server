@@ -15,7 +15,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/nat/nodes
 
 {
     "name": "Nat 1",
-    "node_id": "2c745227-9d57-404d-9f49-330b1871ddbc",
+    "node_id": "71001d69-522e-4c19-ab07-e4a9a002ea94",
     "ports": [
         {
             "interface": "eth1",

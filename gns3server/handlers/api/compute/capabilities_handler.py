@@ -24,6 +24,7 @@ from aiohttp.web import HTTPConflict
 
 
 class CapabilitiesHandler:
+
     @Route.get(
         r"/capabilities",
         description="Retrieve the capabilities of the server",

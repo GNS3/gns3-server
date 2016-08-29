@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/4a4b37e2-0862-4fdf-8083-6009b27d1794/adapters/0/ports/0/nio'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/a94ef927-8990-4f15-bcb8-9d8e269b9664/adapters/0/ports/0/nio'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/4a4b37e2-0862-4fdf-8083-6009b27d1794/adapters/0/ports/0/nio HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/a94ef927-8990-4f15-bcb8-9d8e269b9664/adapters/0/ports/0/nio HTTP/1.1
 
 
 
