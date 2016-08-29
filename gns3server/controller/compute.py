@@ -347,7 +347,7 @@ class Compute:
         if not self._connected and not self._closed:
             try:
                 response = yield from self._run_http_query("GET", "/capabilities")
-            except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError):
+            except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.ClientResponseError):
                 # Try to reconnect after 2 seconds if server unavailable
                 asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
                 return
