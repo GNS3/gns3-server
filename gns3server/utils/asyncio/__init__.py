@@ -127,3 +127,24 @@ def wait_for_named_pipe_creation(pipe_path, timeout=60):
         else:
             return
     raise asyncio.TimeoutError()
+
+
+def locked_coroutine(f):
+    """
+    Method decorator that replace asyncio.coroutine that warranty
+    that this specific method of this class instance will not we
+    executed twice at the same time
+    """
+    @asyncio.coroutine
+    def new_function(*args, **kwargs):
+
+        # In the instance of the class we will store
+        # a lock has an attribute.
+        lock_var_name = "__" + f.__name__ + "_lock"
+        if not hasattr(args[0], lock_var_name):
+            setattr(args[0], lock_var_name, asyncio.Lock())
+
+        with (yield from getattr(args[0], lock_var_name)):
+            return (yield from f(*args, **kwargs))
+
+    return new_function

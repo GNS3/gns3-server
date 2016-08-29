@@ -21,7 +21,7 @@ import pytest
 import sys
 from unittest.mock import MagicMock
 
-from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination
+from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination, locked_coroutine
 
 
 def test_wait_run_in_executor(loop):
@@ -67,3 +67,26 @@ def test_wait_for_process_termination(loop):
     exec = wait_for_process_termination(process, timeout=0.5)
     with pytest.raises(asyncio.TimeoutError):
         loop.run_until_complete(asyncio.async(exec))
+
+
+def test_lock_decorator(loop):
+    """
+    The test check if the the second call to method_to_lock wait for the
+    first call to finish
+    """
+
+    class TestLock:
+        def __init__(self):
+            self._test_val = 0
+
+        @locked_coroutine
+        def method_to_lock(self):
+            res = self._test_val
+            yield from asyncio.sleep(0.1)
+            self._test_val += 1
+            return res
+
+    i = TestLock()
+    res = set(loop.run_until_complete(asyncio.gather(i.method_to_lock(), i.method_to_lock())))
+    assert res == set((0, 1,)) # We use a set to test this to avoid order issue
+

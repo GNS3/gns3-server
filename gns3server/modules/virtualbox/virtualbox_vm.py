@@ -30,7 +30,7 @@ import asyncio
 
 from gns3server.utils import parse_version
 from gns3server.utils.telnet_server import TelnetServer
-from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
+from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation, locked_coroutine
 from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_nat import NIONAT
@@ -230,7 +230,7 @@ class VirtualBoxVM(BaseVM):
         if (yield from self.check_hw_virtualization()):
             self._hw_virtualization = True
 
-    @asyncio.coroutine
+    @locked_coroutine
     def stop(self):
         """
         Stops this VirtualBox VM.
