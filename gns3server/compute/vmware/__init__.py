@@ -39,6 +39,7 @@ from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware.vmware_error import VMwareError
 
+
 class VMware(BaseManager):
 
     _NODE_CLASS = VMwareVM
@@ -103,7 +104,10 @@ class VMware(BaseManager):
             elif sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
-                vmrun_path = shutil.which("vmrun")
+                vmrun_path = "vmrun"
+
+        if not os.path.abspath(vmrun_path):
+            vmrun_path = shutil.which(vmrun_path)
 
         if not vmrun_path:
             raise VMwareError("Could not find VMware vmrun, please make sure it is installed")

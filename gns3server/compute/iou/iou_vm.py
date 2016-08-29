@@ -233,9 +233,11 @@ class IOUVM(BaseNode):
         :returns: path to IOUYAP
         """
 
-        path = self._config().get("iouyap_path", "iouyap")
-        if path == "iouyap":
-            path = shutil.which("iouyap")
+        search_path = self._config().get("iouyap_path", "iouyap")
+        path = shutil.which(search_path)
+        # shutil.which return None if the path doesn't exists
+        if not path:
+            return search_path
         return path
 
     @property

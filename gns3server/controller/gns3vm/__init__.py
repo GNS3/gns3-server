@@ -128,7 +128,7 @@ class GNS3VM:
         """
         The GNSVM is activated
         """
-        return self._settings["enable"]
+        return self._settings.get("enable", False)
 
     @property
     def auto_stop(self):

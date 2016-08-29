@@ -153,9 +153,11 @@ class VPCSVM(BaseNode):
         :returns: path to VPCS
         """
 
-        path = self._manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
-        if path == "vpcs":
-            path = shutil.which("vpcs")
+        search_path = self._manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
+        path = shutil.which(search_path)
+        # shutil.which return None if the path doesn't exists
+        if not path:
+            return search_path
         return path
 
     @BaseNode.name.setter

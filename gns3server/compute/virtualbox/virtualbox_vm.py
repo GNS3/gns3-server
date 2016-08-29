@@ -30,7 +30,7 @@ import asyncio
 
 from gns3server.utils import parse_version
 from gns3server.utils.telnet_server import TelnetServer
-from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
+from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation, locked_coroutine
 from .virtualbox_error import VirtualBoxError
 from ..nios.nio_udp import NIOUDP
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -242,7 +242,7 @@ class VirtualBoxVM(BaseNode):
         if (yield from self.check_hw_virtualization()):
             self._hw_virtualization = True
 
-    @asyncio.coroutine
+    @locked_coroutine
     def stop(self):
         """
         Stops this VirtualBox VM.
@@ -943,8 +943,8 @@ class VirtualBoxVM(BaseNode):
 
         if self.ubridge and self.ubridge.is_running():
             yield from self._add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
-                                                         self._local_udp_tunnels[adapter_number][1],
-                                                         nio)
+                                                        self._local_udp_tunnels[adapter_number][1],
+                                                        nio)
         else:
             vm_state = yield from self._get_vm_state()
             if vm_state == "running":
