@@ -234,6 +234,7 @@ class Controller:
             self.notification.emit("compute.created", compute.__json__())
             return compute
         else:
+            yield from self._computes[compute_id].connect()
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())
             return self._computes[compute_id]
 
