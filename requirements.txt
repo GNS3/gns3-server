@@ -1,5 +1,5 @@
 jsonschema>=2.4.0
-aiohttp>=0.21.6
+aiohttp>=0.22.5
 aiohttp_cors>=0.4.0
 Jinja2>=2.7.3
 raven>=5.23.0
