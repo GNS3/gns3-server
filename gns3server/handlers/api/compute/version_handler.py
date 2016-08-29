@@ -33,17 +33,3 @@ class VersionHandler:
         config = Config.instance()
         local_server = config.get_section_config("Server").getboolean("local", False)
         response.json({"version": __version__, "local": local_server})
-
-    @Route.post(
-        r"/version",
-        description="Check if version is the same as the server",
-        output=VERSION_SCHEMA,
-        input=VERSION_SCHEMA,
-        status_codes={
-            200: "Same version",
-            409: "Invalid version"
-        })
-    def check_version(request, response):
-        if request.json["version"] != __version__:
-            raise HTTPConflict(text="Client version {} differs with server version {}".format(request.json["version"], __version__))
-        response.json({"version": __version__})

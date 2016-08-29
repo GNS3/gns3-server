@@ -32,30 +32,3 @@ def test_version_output(http_compute):
     response = http_compute.get('/version', example=True)
     assert response.status == 200
     assert response.json == {'local': True, 'version': __version__}
-
-
-def test_version_input(http_compute):
-    query = {'version': __version__}
-    response = http_compute.post('/version', query, example=True)
-    assert response.status == 200
-    assert response.json == {'version': __version__}
-
-
-def test_version_invalid_input(http_compute):
-    query = {'version': "0.4.2"}
-    response = http_compute.post('/version', query)
-    assert response.status == 409
-    assert response.json == {'message': 'Client version 0.4.2 differs with server version {}'.format(__version__),
-                             'status': 409}
-
-
-def test_version_invalid_input_schema(http_compute):
-    query = {'version': "0.4.2", "bla": "blu"}
-    response = http_compute.post('/version', query)
-    assert response.status == 400
-
-
-def test_version_invalid_json(http_compute):
-    query = "BOUM"
-    response = http_compute.post('/version', query, raw=True)
-    assert response.status == 400
