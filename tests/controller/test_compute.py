@@ -213,11 +213,10 @@ def test_connectNotificationPing(compute, async_run):
     async_run(compute._connect_notification())
 
     assert not compute._controller.notification.dispatch.called
-    assert compute.cpu_usage_percent == 35.7
-    assert compute.memory_usage_percent == 80.7
-    args, _ = compute._controller.notification.emit.call_args
+    args, _ = compute._controller.notification.emit.call_args_list[0]
     assert args[0] == "compute.updated"
     assert args[1]["memory_usage_percent"] == 80.7
+    assert args[1]["cpu_usage_percent"] == 35.7
 
 
 def test_json(compute):

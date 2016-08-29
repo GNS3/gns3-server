@@ -88,6 +88,7 @@ class Compute:
         self._user = None
         self._password = None
         self._connected = False
+        self._closed = False  # Close mean we are destroying the compute node
         self._controller = controller
         self._set_auth(user, password)
         self._cpu_usage_percent = None
@@ -157,6 +158,7 @@ class Compute:
         if self._ws:
             yield from self._ws.close()
             self._ws = None
+        self._closed = True
 
     @property
     def name(self):
@@ -333,7 +335,7 @@ class Compute:
         if not self._connected:
             yield from self.connect()
         if not self._connected:
-            raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+            raise aiohttp.web.HTTPConflict(text="Can't connect to {}".format(self._name))
         response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
@@ -342,10 +344,12 @@ class Compute:
         """
         Check if remote server is accessible
         """
-        if not self._connected:
+        if not self._connected and not self._closed:
             try:
                 response = yield from self._run_http_query("GET", "/capabilities")
-            except aiohttp.errors.ClientOSError:
+            except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError):
+                # Try to reconnect after 2 seconds if server unavailable
+                asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
                 return
 
             if "version" not in response.json:
@@ -371,7 +375,7 @@ class Compute:
                 response = yield from self._ws.receive()
             except aiohttp.errors.WSServerHandshakeError:
                 self._ws = None
-                return
+                break
             if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error:
                 self._connected = False
                 break
@@ -385,8 +389,15 @@ class Compute:
                 self._controller.notification.emit("compute.updated", self.__json__())
             else:
                 self._controller.notification.dispatch(action, event, compute_id=self.id)
-        yield from self._ws.close()
+        if self._ws:
+            yield from self._ws.close()
+
+        # Try to reconnect after 1 seconds if server unavailable
+        asyncio.get_event_loop().call_later(1, lambda: asyncio.async(self.connect()))
         self._ws = None
+        self._cpu_usage_percent = None
+        self._memory_usage_percent = None
+        self._controller.notification.emit("compute.updated", self.__json__())
 
     def _getUrl(self, path):
         return "{}://{}:{}/v2/compute{}".format(self._protocol, self._host, self._port, path)
