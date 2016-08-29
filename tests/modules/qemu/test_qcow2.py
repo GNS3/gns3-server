@@ -56,6 +56,12 @@ def test_invalid_file():
         Qcow2("tests/resources/nvram_iou")
 
 
+def test_invalid_empty_file(tmpdir):
+    open(str(tmpdir / 'a'), 'w+').close()
+    with pytest.raises(Qcow2Error):
+        Qcow2(str(tmpdir / 'a'))
+
+
 @pytest.mark.skipif(qemu_img() is None, reason="qemu-img is not available")
 def test_rebase(tmpdir, loop):
     shutil.copy("tests/resources/empty8G.qcow2", str(tmpdir / "empty16G.qcow2"))
