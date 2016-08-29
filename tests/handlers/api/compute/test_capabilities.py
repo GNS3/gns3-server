@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,28 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Builtin nodes server module.
+This test suite check /version endpoint
+It's also used for unittest the HTTP implementation.
 """
 
+from gns3server.config import Config
 
-from ..base_manager import BaseManager
-from .builtin_node_factory import BuiltinNodeFactory
-
-import logging
-log = logging.getLogger(__name__)
+from gns3server.version import __version__
 
 
-class Builtin(BaseManager):
-
-    _NODE_CLASS = BuiltinNodeFactory
-
-    def __init__(self):
-
-        super().__init__()
-
-    @classmethod
-    def node_types(cls):
-        """
-        :returns: List of node type supported by this class and computer
-        """
-        return ['cloud', 'nat', 'ethernet_hub', 'ethernet_switch']
+def test_get(http_compute):
+    response = http_compute.get('/capabilities', example=True)
+    assert response.status == 200
+    assert response.json == {'node_types': ['cloud', 'nat', 'ethernet_hub', 'ethernet_switch', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__}

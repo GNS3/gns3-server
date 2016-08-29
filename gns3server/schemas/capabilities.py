@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,29 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Builtin nodes server module.
-"""
+from .node import NODE_TYPE_SCHEMA
 
 
-from ..base_manager import BaseManager
-from .builtin_node_factory import BuiltinNodeFactory
-
-import logging
-log = logging.getLogger(__name__)
-
-
-class Builtin(BaseManager):
-
-    _NODE_CLASS = BuiltinNodeFactory
-
-    def __init__(self):
-
-        super().__init__()
-
-    @classmethod
-    def node_types(cls):
-        """
-        :returns: List of node type supported by this class and computer
-        """
-        return ['cloud', 'nat', 'ethernet_hub', 'ethernet_switch']
+CAPABILITIES_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Get what a server support",
+    "type": "object",
+    "required": ["version", "node_types"],
+    "properties": {
+        "version": {
+            "description": "Version number",
+            "type": ["string", "null"],
+        },
+        "node_types": {
+            "type": "array",
+            "items": NODE_TYPE_SCHEMA
+        }
+    },
+    "additionalProperties": False
+}

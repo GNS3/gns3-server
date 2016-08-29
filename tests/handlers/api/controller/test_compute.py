@@ -23,7 +23,7 @@ def test_compute_create_without_id(http_controller, controller):
 
     params = {
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
@@ -36,7 +36,7 @@ def test_compute_create_without_id(http_controller, controller):
     assert "password" not in response.json
 
     assert len(controller.computes) == 1
-    assert controller.computes[response.json["compute_id"]].host == "example.com"
+    assert controller.computes[response.json["compute_id"]].host == "localhost"
 
 
 def test_compute_create_with_id(http_controller, controller):
@@ -44,7 +44,7 @@ def test_compute_create_with_id(http_controller, controller):
     params = {
         "compute_id": "my_compute_id",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
@@ -56,7 +56,7 @@ def test_compute_create_with_id(http_controller, controller):
     assert "password" not in response.json
 
     assert len(controller.computes) == 1
-    assert controller.computes["my_compute_id"].host == "example.com"
+    assert controller.computes["my_compute_id"].host == "localhost"
 
 
 def test_compute_get(http_controller, controller):
@@ -64,7 +64,7 @@ def test_compute_get(http_controller, controller):
     params = {
         "compute_id": "my_compute_id",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
@@ -82,7 +82,7 @@ def test_compute_update(http_controller, controller):
     params = {
         "compute_id": "my_compute_id",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
@@ -106,7 +106,7 @@ def test_compute_list(http_controller, controller):
     params = {
         "compute_id": "my_compute_id",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure",
@@ -124,13 +124,17 @@ def test_compute_list(http_controller, controller):
             assert compute == {
                 'compute_id': 'my_compute_id',
                 'connected': False,
-                'host': 'example.com',
+                'host': 'localhost',
                 'port': 84,
                 'protocol': 'http',
                 'user': 'julien',
                 'name': 'My super server',
                 'cpu_usage_percent': None,
-                'memory_usage_percent': None
+                'memory_usage_percent': None,
+                'capabilities': {
+                    'version': None,
+                    'node_types': []
+                }
             }
 
 
@@ -139,7 +143,7 @@ def test_compute_delete(http_controller, controller):
     params = {
         "compute_id": "my_compute_id",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
@@ -162,7 +166,7 @@ def test_compute_list_images(http_controller, controller):
     params = {
         "compute_id": "my_compute",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
@@ -181,7 +185,7 @@ def test_compute_list_vms(http_controller, controller):
     params = {
         "compute_id": "my_compute",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
@@ -200,7 +204,7 @@ def test_compute_create_img(http_controller, controller):
     params = {
         "compute_id": "my_compute",
         "protocol": "http",
-        "host": "example.com",
+        "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"

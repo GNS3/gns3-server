@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .capabilities import CAPABILITIES_SCHEMA
 
 COMPUTE_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -102,10 +103,7 @@ COMPUTE_OBJECT_SCHEMA = {
             "maximum": 100,
             "minimum": 0
         },
-        "version": {
-            "description": "Version of the GNS3 remote compute server",
-            "type": ["string", "null"]
-        }
+        "capabilities": CAPABILITIES_SCHEMA
     },
     "additionalProperties": False,
     "required": ["compute_id", "protocol", "host", "port", "name"]

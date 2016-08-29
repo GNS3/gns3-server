@@ -48,9 +48,6 @@ def test_host_ip(controller):
 def test_name():
     c = Compute("my_compute_id", protocol="https", host="example.com", port=84, controller=MagicMock(), name=None)
     assert c.name == "https://example.com:84"
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        c = Compute("local", protocol="https", host="example.com", port=84, controller=MagicMock(), name=None)
-        assert c.name == socket.gethostname()
     c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), name="hello")
     assert c.name == "hello"
     c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), user="azertyuiopqsdfghjklkm")
@@ -88,10 +85,10 @@ def test_compute_httpQueryNotConnected(compute, controller, async_run):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         async_run(compute.post("/projects", {"a": "b"}))
-        mock.assert_any_call("GET", "https://example.com:84/v2/compute/version", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
         mock.assert_any_call("POST", "https://example.com:84/v2/compute/projects", data='{"a": "b"}', headers={'content-type': 'application/json'}, auth=None, chunked=False)
     assert compute._connected
-    assert compute.version == __version__
+    assert compute._capabilities["version"] == __version__
     controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
 
 
@@ -103,7 +100,7 @@ def test_compute_httpQueryNotConnectedInvalidVersion(compute, async_run):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(aiohttp.web.HTTPConflict):
             async_run(compute.post("/projects", {"a": "b"}))
-        mock.assert_any_call("GET", "https://example.com:84/v2/compute/version", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
 
 
 def test_compute_httpQueryNotConnectedNonGNS3Server(compute, async_run):
@@ -114,7 +111,7 @@ def test_compute_httpQueryNotConnectedNonGNS3Server(compute, async_run):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(aiohttp.web.HTTPConflict):
             async_run(compute.post("/projects", {"a": "b"}))
-        mock.assert_any_call("GET", "https://example.com:84/v2/compute/version", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
 
 
 def test_compute_httpQueryNotConnectedNonGNS3Server2(compute, async_run):
@@ -125,7 +122,7 @@ def test_compute_httpQueryNotConnectedNonGNS3Server2(compute, async_run):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(aiohttp.web.HTTPConflict):
             async_run(compute.post("/projects", {"a": "b"}))
-        mock.assert_any_call("GET", "https://example.com:84/v2/compute/version", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
 
 
 def test_compute_httpQueryError(compute, async_run):
@@ -234,7 +231,11 @@ def test_json(compute):
         "user": "test",
         "cpu_usage_percent": None,
         "memory_usage_percent": None,
-        "connected": True
+        "connected": True,
+        "capabilities": {
+            "version": None,
+            "node_types": []
+        }
     }
     assert compute.__json__(topology_dump=True) == {
         "compute_id": "my_compute_id",

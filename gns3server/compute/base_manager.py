@@ -58,6 +58,14 @@ class BaseManager:
         self._port_manager = None
         self._config = Config.instance()
 
+    @classmethod
+    def node_types(cls):
+        """
+        :returns: Array of supported node type on this computer
+        """
+        # By default we transform DockerVM => docker but you can override this (see builtins)
+        return [cls._NODE_CLASS.__name__.rstrip('VM').lower()]
+
     @property
     def nodes(self):
         """

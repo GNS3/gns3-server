@@ -116,6 +116,13 @@ class Dynamips(BaseManager):
         self._dynamips_path = None
         self._dynamips_ids = {}
 
+    @classmethod
+    def node_types(cls):
+        """
+        :returns: List of node type supported by this class and computer
+        """
+        return ['dynamips', 'frame_relay_switch', 'atm_switch']
+
     def get_dynamips_id(self, project_id):
         """
         :param project_id: UUID of the project

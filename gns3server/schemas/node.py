@@ -17,6 +17,25 @@
 
 from .label import LABEL_OBJECT_SCHEMA
 
+NODE_TYPE_SCHEMA = {
+    "description": "Type of node",
+    "enum": [
+        "cloud",
+        "nat",
+        "ethernet_hub",
+        "ethernet_switch",
+        "frame_relay_switch",
+        "atm_switch",
+        "docker",
+        "dynamips",
+        "vpcs",
+        "virtualbox",
+        "vmware",
+        "iou",
+        "qemu"
+    ]
+}
+
 NODE_LIST_IMAGES_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "List of binary images",
@@ -87,22 +106,7 @@ NODE_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "node_type": {
-            "description": "Type of node",
-            "enum": ["cloud",
-                     "nat",
-                     "ethernet_hub",
-                     "ethernet_switch",
-                     "frame_relay_switch",
-                     "atm_switch",
-                     "docker",
-                     "dynamips",
-                     "vpcs",
-                     "virtualbox",
-                     "vmware",
-                     "iou",
-                     "qemu"]
-        },
+        "node_type": NODE_TYPE_SCHEMA,
         "node_directory": {
             "description": "Working directory of the node. Read only",
             "type": ["null", "string"]

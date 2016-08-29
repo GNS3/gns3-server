@@ -18,6 +18,7 @@
 import sys
 import os
 
+from .capabilities_handler import CapabilitiesHandler
 from .network_handler import NetworkHandler
 from .project_handler import ProjectHandler
 from .dynamips_vm_handler import DynamipsVMHandler

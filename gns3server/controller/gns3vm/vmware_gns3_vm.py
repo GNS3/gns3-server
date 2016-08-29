@@ -136,7 +136,7 @@ class VMwareGNS3VM(BaseGNS3VM):
             raise GNS3VMError("No VMX path configured, can't stop the VM")
         try:
             yield from self._execute("stop", [self._vmx_path, "soft"])
-        except VMwareError as e:
+        except GNS3VMError as e:
             log.warning("Error when stopping the VM: {}".format(str(e)))
         log.info("GNS3 VM has been stopped")
         self.running = False

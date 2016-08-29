@@ -18,6 +18,7 @@
 import os
 import sys
 import json
+import socket
 import asyncio
 import aiohttp
 
@@ -64,13 +65,14 @@ class Controller:
         log.info("Start controller")
         yield from self.load()
         server_config = Config.instance().get_section_config("Server")
-        self._computes["local"] = Compute(compute_id="local",
-                                          controller=self,
-                                          protocol=server_config.get("protocol", "http"),
-                                          host=server_config.get("host", "localhost"),
-                                          port=server_config.getint("port", 3080),
-                                          user=server_config.get("user", ""),
-                                          password=server_config.get("password", ""))
+        yield from self.add_compute(compute_id="local",
+                                    name=socket.gethostname(),
+                                    protocol=server_config.get("protocol", "http"),
+                                    host=server_config.get("host", "localhost"),
+                                    port=server_config.getint("port", 3080),
+                                    user=server_config.get("user", ""),
+                                    password=server_config.get("password", ""),
+                                    force=True)
         yield from self.gns3vm.auto_start_vm()
 
     @asyncio.coroutine
@@ -228,8 +230,8 @@ class Controller:
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
             self.save()
+            yield from compute.connect()
             self.notification.emit("compute.created", compute.__json__())
-
             return compute
         else:
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())

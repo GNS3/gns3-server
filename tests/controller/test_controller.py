@@ -71,7 +71,11 @@ def test_load(controller, controller_config_path, async_run):
         "user": "admin",
         "name": "http://admin@localhost:8000",
         "cpu_usage_percent": None,
-        "memory_usage_percent": None
+        "memory_usage_percent": None,
+        "capabilities": {
+            "version": None,
+            "node_types": []
+        }
     }
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
@@ -135,7 +139,7 @@ def test_isEnabled(controller):
     assert controller.is_enabled()
 
 
-def test_addCompute(controller, controller_config_path, async_run):
+def test_add_compute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
     c = async_run(controller.add_compute(compute_id="test1"))
     controller._notification.emit.assert_called_with("compute.created", c.__json__())

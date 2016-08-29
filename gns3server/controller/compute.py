@@ -90,9 +90,12 @@ class Compute:
         self._connected = False
         self._controller = controller
         self._set_auth(user, password)
-        self._version = None
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
+        self._capabilities = {
+            "version": None,
+            "node_types": []
+        }
         self.name = name
         # Websocket for notifications
         self._ws = None
@@ -156,13 +159,6 @@ class Compute:
             self._ws = None
 
     @property
-    def version(self):
-        """
-        :returns: Version of compute node (string or None if not connected)
-        """
-        return self._version
-
-    @property
     def name(self):
         """
         :returns: Compute name
@@ -173,8 +169,6 @@ class Compute:
     def name(self, name):
         if name is not None:
             self._name = name
-        elif self._id == "local":
-            self._name = socket.gethostname()
         else:
             if self._user:
                 user = self._user
@@ -284,7 +278,8 @@ class Compute:
             "user": self._user,
             "connected": self._connected,
             "cpu_usage_percent": self._cpu_usage_percent,
-            "memory_usage_percent": self._memory_usage_percent
+            "memory_usage_percent": self._memory_usage_percent,
+            "capabilities": self._capabilities
         }
 
     @asyncio.coroutine
@@ -336,24 +331,27 @@ class Compute:
     @asyncio.coroutine
     def http_query(self, method, path, data=None, **kwargs):
         if not self._connected:
-            yield from self._connect()
+            yield from self.connect()
         if not self._connected:
             raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
         response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
     @asyncio.coroutine
-    def _connect(self):
+    def connect(self):
         """
         Check if remote server is accessible
         """
         if not self._connected:
-            response = yield from self._run_http_query("GET", "/version")
+            try:
+                response = yield from self._run_http_query("GET", "/capabilities")
+            except aiohttp.errors.ClientOSError:
+                return
 
             if "version" not in response.json:
                 self._http_session.close()
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
-            self._version = response.json["version"]
+            self._capabilities = response.json
             if parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
                 self._http_session.close()
                 raise aiohttp.web.HTTPConflict(text="The server {} versions are not compatible {} != {}".format(self._id, __version__, response.json["version"]))
