@@ -21,7 +21,7 @@ Builtin nodes server module.
 
 
 from ..base_manager import BaseManager
-from .builtin_node_factory import BuiltinNodeFactory
+from .builtin_node_factory import BuiltinNodeFactory, BUILTIN_NODES
 
 import logging
 log = logging.getLogger(__name__)
@@ -40,4 +40,7 @@ class Builtin(BaseManager):
         """
         :returns: List of node type supported by this class and computer
         """
-        return ['cloud', 'nat', 'ethernet_hub', 'ethernet_switch']
+        types = ['cloud', 'ethernet_hub', 'ethernet_switch']
+        if BUILTIN_NODES['nat'].is_supported():
+            types.append('nat')
+        return types

@@ -41,6 +41,10 @@ class Nat(Cloud):
             }
         ]
 
+    @classmethod
+    def is_supported(self):
+        return socket.gethostname() == "gns3vm"
+
     def __json__(self):
         return {
             "name": self.name,

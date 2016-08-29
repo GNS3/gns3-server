@@ -26,6 +26,15 @@ from gns3server.version import __version__
 
 
 def test_get(http_compute):
+    """
+    Nat is not supported outside the GNS3VM
+    """
     response = http_compute.get('/capabilities', example=True)
     assert response.status == 200
-    assert response.json == {'node_types': ['cloud', 'nat', 'ethernet_hub', 'ethernet_switch', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__}
+    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__}
+
+
+def test_get_on_gns3vm(http_compute, on_gns3vm):
+    response = http_compute.get('/capabilities', example=True)
+    assert response.status == 200
+    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__}
