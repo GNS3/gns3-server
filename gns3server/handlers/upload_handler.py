@@ -54,7 +54,8 @@ class UploadHandler:
     @Route.post(
         r"/upload",
         description="Manage upload of GNS3 images",
-        api_version=None
+        api_version=None,
+        raw=True
     )
     def upload(request, response):
         data = yield from request.post()
