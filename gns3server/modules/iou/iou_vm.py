@@ -230,9 +230,11 @@ class IOUVM(BaseVM):
         :returns: path to IOUYAP
         """
 
-        path = self._manager.config.get_section_config("IOU").get("iouyap_path", "iouyap")
-        if path == "iouyap":
-            path = shutil.which("iouyap")
+        search_path = self._manager.config.get_section_config("IOU").get("iouyap_path", "iouyap")
+        path = shutil.which(search_path)
+        # shutil.which return None if the path doesn't exists
+        if not path:
+            return search_path
         return path
 
     @property

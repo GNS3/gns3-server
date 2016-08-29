@@ -336,16 +336,16 @@ class Dynamips(BaseManager):
     def find_dynamips(self):
 
         # look for Dynamips
-        dynamips_path = self.config.get_section_config("Dynamips").get("dynamips_path")
-        if not dynamips_path:
-            dynamips_path = shutil.which("dynamips")
+        dynamips_path = self.config.get_section_config("Dynamips").get("dynamips_path", "dynamips")
+        if not os.path.isabs(dynamips_path):
+            dynamips_path = shutil.which(dynamips_path)
 
         if not dynamips_path:
             raise DynamipsError("Could not find Dynamips")
         if not os.path.isfile(dynamips_path):
             raise DynamipsError("Dynamips {} is not accessible".format(dynamips_path))
         if not os.access(dynamips_path, os.X_OK):
-            raise DynamipsError("Dynamips is not executable")
+            raise DynamipsError("Dynamips {} is not executable".format(dynamips_path))
 
         self._dynamips_path = dynamips_path
         return dynamips_path

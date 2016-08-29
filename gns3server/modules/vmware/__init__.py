@@ -105,7 +105,10 @@ class VMware(BaseManager):
             elif sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
-                vmrun_path = shutil.which("vmrun")
+                vmrun_path = "vmrun"
+
+        if not os.path.abspath(vmrun_path):
+            vmrun_path = shutil.which(vmrun_path)
 
         if not vmrun_path:
             raise VMwareError("Could not find VMware vmrun, please make sure it is installed")

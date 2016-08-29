@@ -66,7 +66,10 @@ class VirtualBox(BaseManager):
             elif sys.platform.startswith("darwin"):
                 vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
             else:
-                vboxmanage_path = shutil.which("vboxmanage")
+                vboxmanage_path = "vboxmanage"
+
+        if not os.path.abspath(vboxmanage_path):
+            vboxmanage_path = shutil.which(vboxmanage_path)
 
         if not vboxmanage_path:
             raise VirtualBoxError("Could not find VBoxManage")
