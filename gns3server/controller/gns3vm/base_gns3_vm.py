@@ -24,8 +24,9 @@ log = logging.getLogger(__name__)
 
 class BaseGNS3VM:
 
-    def __init__(self):
+    def __init__(self, controller):
 
+        self._controller = controller
         self._vmname = None
         self._auto_stop = False
         self._ip_address = None

@@ -32,9 +32,9 @@ log = logging.getLogger(__name__)
 
 class VirtualBoxGNS3VM(BaseGNS3VM):
 
-    def __init__(self):
+    def __init__(self, controller):
 
-        super().__init__()
+        super().__init__(controller)
         self._engine = "virtualbox"
         self._virtualbox_manager = VirtualBox()
 

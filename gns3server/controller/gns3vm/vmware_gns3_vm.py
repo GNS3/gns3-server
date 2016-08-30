@@ -32,10 +32,10 @@ log = logging.getLogger(__name__)
 
 class VMwareGNS3VM(BaseGNS3VM):
 
-    def __init__(self):
+    def __init__(self, controller):
 
         self._engine = "vmware"
-        super().__init__()
+        super().__init__(controller)
         self._vmware_manager = VMware()
         self._vmx_path = None
 

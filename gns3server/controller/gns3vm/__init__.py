@@ -21,6 +21,7 @@ import asyncio
 
 from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
+from .remote_gns3_vm import RemoteGNS3VM
 
 import logging
 log = logging.getLogger(__name__)
@@ -48,22 +49,37 @@ class GNS3VM:
         """
         :returns: Return list of engines supported by GNS3 for the GNS3VM
         """
-        virtualbox_informations = {
-            "engine_id": "virtualbox",
-            "name": "VirtualBox",
-            "description": "VirtualBox doesn't support nested virtualization, this means running Qemu based VM could be very slow."
-        }
         vmware_informations = {
             "engine_id": "vmware",
-            "description": "VMware is the recommended choice for best performances."
+            "description": "VMware is the recommended choice for best performances.",
+            "support_auto_stop": True,
+            "support_headless": True
         }
         if sys.platform.startswith("darwin"):
             vmware_informations["name"] = "VMware Fusion"
         else:
             vmware_informations["name"] = "VMware Workstation / Player"
+
+        virtualbox_informations = {
+            "engine_id": "virtualbox",
+            "name": "VirtualBox",
+            "description": "VirtualBox doesn't support nested virtualization, this means running Qemu based VM could be very slow.",
+            "support_auto_stop": True,
+            "support_headless": True
+        }
+
+        remote_informations = {
+            "engine_id": "remote",
+            "name": "Remote",
+            "description": "Use a remote GNS3 server as the GNS3 VM.",
+            "support_auto_stop": False,
+            "support_headless": False
+        }
+
         return [
             vmware_informations,
-            virtualbox_informations
+            virtualbox_informations,
+            remote_informations
         ]
 
     def _current_engine(self):
@@ -166,11 +182,14 @@ class GNS3VM:
             return self._engines[engine]
 
         if engine == "vmware":
-            self._engines["vmware"] = VMwareGNS3VM()
+            self._engines["vmware"] = VMwareGNS3VM(self._controller)
             return self._engines["vmware"]
         elif engine == "virtualbox":
-            self._engines["virtualbox"] = VirtualBoxGNS3VM()
+            self._engines["virtualbox"] = VirtualBoxGNS3VM(self._controller)
             return self._engines["virtualbox"]
+        elif engine == "remote":
+            self._engines["remote"] = RemoteGNS3VM(self._controller)
+            return self._engines["remote"]
         raise NotImplementedError("The engine {} for the GNS3 VM is not supported".format(engine))
 
     def __json__(self):
@@ -211,7 +230,7 @@ class GNS3VM:
             engine.vmname = self._settings["vmname"]
             yield from engine.start()
         yield from self._controller.add_compute(compute_id="vm",
-                                                name="GNS3 VM",
+                                                name="GNS3 VM ({})".format(engine.vmname),
                                                 protocol=self.protocol,
                                                 host=self.ip_address,
                                                 port=self.port,
