@@ -322,5 +322,6 @@ def on_gns3vm():
     """
     Mock the hostname to  emulate the GNS3 VM
     """
-    with patch("socket.gethostname", return_value="gns3vm"):
-        yield
+    with patch("gns3server.utils.interfaces.interfaces", return_value=[{"name": "eth0"}, {"name": "eth1"}]):
+        with patch("socket.gethostname", return_value="gns3vm"):
+            yield

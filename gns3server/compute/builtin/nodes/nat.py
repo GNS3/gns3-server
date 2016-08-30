@@ -19,6 +19,8 @@ import socket
 from .cloud import Cloud
 from ...error import NodeError
 
+import gns3server.utils.interfaces
+
 
 class Nat(Cloud):
     """
@@ -31,6 +33,9 @@ class Nat(Cloud):
 
         if socket.gethostname() != "gns3vm":
             raise NodeError("NAT node is supported only on GNS3 VM")
+
+        if "eth1" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
+            raise NodeError("eth1 is missing on the GNS3 VM. You need to provide a nat interface as eth1")
 
         self.ports = [
             {
