@@ -107,6 +107,7 @@ def parse_arguments(argv):
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
     parser.add_argument("--pid", help="store process pid")
     parser.add_argument("--profil", help="Settings profil (blank will use default settings files)")
+    parser.add_argument("--discovery", action="store_true", help="Make server discoverable on the network")
 
     args = parser.parse_args(argv)
     if args.config:

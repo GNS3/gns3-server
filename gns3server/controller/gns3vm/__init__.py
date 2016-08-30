@@ -217,7 +217,10 @@ class GNS3VM:
     @asyncio.coroutine
     def auto_stop_vm(self):
         if self.enable and self.auto_stop:
-            yield from self._stop()
+            try:
+                yield from self._stop()
+            except GNS3VMError as e:
+                log.warn(str(e))
 
     @asyncio.coroutine
     def _start(self):
