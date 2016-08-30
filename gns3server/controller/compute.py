@@ -21,6 +21,7 @@ import asyncio
 import socket
 import json
 import uuid
+import sys
 import os
 import io
 
@@ -348,8 +349,9 @@ class Compute:
             try:
                 response = yield from self._run_http_query("GET", "/capabilities")
             except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.ClientResponseError):
-                # Try to reconnect after 2 seconds if server unavailable
-                asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
+                # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
+                if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
                 return
 
             if "version" not in response.json:
@@ -392,8 +394,9 @@ class Compute:
         if self._ws:
             yield from self._ws.close()
 
-        # Try to reconnect after 1 seconds if server unavailable
-        asyncio.get_event_loop().call_later(1, lambda: asyncio.async(self.connect()))
+        # Try to reconnect after 1 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
+        if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+            asyncio.get_event_loop().call_later(1, lambda: asyncio.async(self.connect()))
         self._ws = None
         self._cpu_usage_percent = None
         self._memory_usage_percent = None

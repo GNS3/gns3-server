@@ -208,13 +208,14 @@ class Controller:
         return Config.instance().get_section_config("Server").getboolean("controller")
 
     @asyncio.coroutine
-    def add_compute(self, compute_id=None, name=None, force=False, **kwargs):
+    def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """
         Add a server to the dictionary of compute servers controlled by this controller
 
         :param compute_id: Compute server identifier
         :param name: Compute name
         :param force: True skip security check
+        :param connect: True connect to the compute immediately
         :param kwargs: See the documentation of Compute
         """
         if compute_id not in self._computes:
@@ -230,11 +231,13 @@ class Controller:
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
             self.save()
-            yield from compute.connect()
+            if connect:
+                yield from compute.connect()
             self.notification.emit("compute.created", compute.__json__())
             return compute
         else:
-            yield from self._computes[compute_id].connect()
+            if connect:
+                yield from self._computes[compute_id].connect()
             self.notification.emit("compute.updated", self._computes[compute_id].__json__())
             return self._computes[compute_id]
 

@@ -141,26 +141,26 @@ def test_isEnabled(controller):
 
 def test_add_compute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
-    c = async_run(controller.add_compute(compute_id="test1"))
+    c = async_run(controller.add_compute(compute_id="test1", connect=False))
     controller._notification.emit.assert_called_with("compute.created", c.__json__())
     assert len(controller.computes) == 1
-    async_run(controller.add_compute(compute_id="test1"))
+    async_run(controller.add_compute(compute_id="test1", connect=False))
     controller._notification.emit.assert_called_with("compute.updated", c.__json__())
     assert len(controller.computes) == 1
-    async_run(controller.add_compute(compute_id="test2"))
+    async_run(controller.add_compute(compute_id="test2", connect=False))
     assert len(controller.computes) == 2
 
 
 def test_addDuplicateCompute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
-    c = async_run(controller.add_compute(compute_id="test1", name="Test"))
+    c = async_run(controller.add_compute(compute_id="test1", name="Test", connect=False))
     assert len(controller.computes) == 1
     with pytest.raises(aiohttp.web.HTTPConflict):
-        async_run(controller.add_compute(compute_id="test2", name="Test"))
+        async_run(controller.add_compute(compute_id="test2", name="Test", connect=False))
 
 
 def test_deleteCompute(controller, controller_config_path, async_run):
-    c = async_run(controller.add_compute(compute_id="test1"))
+    c = async_run(controller.add_compute(compute_id="test1", connect=False))
     assert len(controller.computes) == 1
     controller._notification = MagicMock()
     c._connected = True
@@ -177,7 +177,7 @@ def test_deleteComputeProjectOpened(controller, controller_config_path, async_ru
     """
     When you delete a compute the project using it are close
     """
-    c = async_run(controller.add_compute(compute_id="test1"))
+    c = async_run(controller.add_compute(compute_id="test1", connect=False))
     c.post = AsyncioMagicMock()
     assert len(controller.computes) == 1
 
@@ -205,7 +205,7 @@ def test_deleteComputeProjectOpened(controller, controller_config_path, async_ru
 
 
 def test_addComputeConfigFile(controller, controller_config_path, async_run):
-    async_run(controller.add_compute(compute_id="test1", name="Test"))
+    async_run(controller.add_compute(compute_id="test1", name="Test", connect=False))
     assert len(controller.computes) == 1
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -223,7 +223,7 @@ def test_addComputeConfigFile(controller, controller_config_path, async_run):
 
 
 def test_getCompute(controller, async_run):
-    compute = async_run(controller.add_compute(compute_id="test1"))
+    compute = async_run(controller.add_compute(compute_id="test1", connect=False))
 
     assert controller.get_compute("test1") == compute
     with pytest.raises(aiohttp.web.HTTPNotFound):
@@ -231,7 +231,7 @@ def test_getCompute(controller, async_run):
 
 
 def test_has_compute(controller, async_run):
-    compute = async_run(controller.add_compute(compute_id="test1"))
+    compute = async_run(controller.add_compute(compute_id="test1", connect=False))
 
     assert controller.has_compute("test1")
     assert not controller.has_compute("test2")
@@ -311,7 +311,7 @@ def test_start_vm(controller, async_run):
 
 
 def test_stop(controller, async_run):
-    c = async_run(controller.add_compute(compute_id="test1"))
+    c = async_run(controller.add_compute(compute_id="test1", connect=False))
     c._connected = True
     async_run(controller.stop())
     assert c.connected is False
