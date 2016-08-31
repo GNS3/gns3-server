@@ -122,7 +122,7 @@ def _convert_1_3_later(topo, topo_path):
         "version": __version__,
         "auto_start": topo.get("auto_start", False),
         "name": topo["name"],
-        "project_id": topo["project_id"],
+        "project_id": topo.get("project_id"),
         "topology": {
             "links": [],
             "drawings": [],

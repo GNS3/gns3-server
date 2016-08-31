@@ -1,0 +1,22 @@
+{
+   "version" : "ANYSTR",
+   "name" : "Downloads",
+   "topology" : {
+      "links" : [],
+      "drawings" : [],
+      "nodes" : [],
+      "computes" : [
+         {
+            "protocol" : "http",
+            "name" : "Local",
+            "compute_id" : "local",
+            "port" : 8000,
+            "host" : "127.0.0.1"
+         }
+      ]
+   },
+   "revision" : 5,
+   "project_id" : "ANYUUID",
+   "type" : "topology",
+   "auto_start" : false
+}
