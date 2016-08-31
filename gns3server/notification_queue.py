@@ -52,7 +52,7 @@ class NotificationQueue(asyncio.Queue):
         Return the content of the ping notification
         """
         msg = {}
-        # Non blocking call in order to get cpu usage. First call will return 0
+        # Non blocking call in order to get cpu usage. First call will return 0
         msg["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
         msg["memory_usage_percent"] = psutil.virtual_memory().percent
         return msg

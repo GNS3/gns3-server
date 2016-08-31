@@ -224,6 +224,7 @@ class ProjectHandler:
                     response.write(("{}\n".format(msg)).encode("utf-8"))
                 except asyncio.futures.CancelledError as e:
                     break
+                yield from response.drain()
 
         if project.auto_close:
             # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
