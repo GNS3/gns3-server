@@ -74,6 +74,7 @@ class Controller:
                                     password=server_config.get("password", ""),
                                     force=True)
         yield from self.gns3vm.auto_start_vm()
+        yield from self.load_projects()
 
     @asyncio.coroutine
     def stop(self):
