@@ -83,8 +83,7 @@ class WebServer:
             server = yield from self._loop.create_server(handler, self._host, self._port, ssl=ssl_context)
         except OSError as e:
             log.critical("Could not start the server: {}".format(e))
-            self._loop.stop()
-            return
+            return False
         return server
 
     @asyncio.coroutine
@@ -278,9 +277,6 @@ class WebServer:
         # Asyncio will raise error if coroutine is not called
         self._loop.set_debug(True)
 
-        if server_config.getboolean("controller"):
-            asyncio.async(Controller.instance().start())
-
         for key, val in os.environ.items():
             log.debug("ENV %s=%s", key, val)
 
@@ -303,14 +299,15 @@ class WebServer:
         log.info("Starting server on {}:{}".format(self._host, self._port))
         self._handler = app.make_handler(handler=RequestHandler)
         server = self._run_application(self._handler, ssl_context)
+        if self._loop.run_until_complete(server) is False:
+            self._loop.stop()
+            return
 
-        self._loop.run_until_complete(server)
         self._signal_handling()
         self._exit_handling()
 
-        # Now the compute is initialized we can load the projects
         if server_config.getboolean("controller"):
-            asyncio.async(Controller.instance().load_projects())
+            controller_start = asyncio.async(Controller.instance().start())
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
