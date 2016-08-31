@@ -372,7 +372,7 @@ class Compute:
         Connect to the notification stream
         """
         try:
-            self._ws = yield from self._session().ws_connect(self._getUrl("/notifications/ws"))
+            self._ws = yield from self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth)
         except aiohttp.errors.WSServerHandshakeError:
             self._ws
         while self._ws is not None:
