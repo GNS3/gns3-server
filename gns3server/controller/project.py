@@ -524,7 +524,7 @@ class Project:
         if self._status == "opened":
             yield from self.close()
         yield from self.delete_on_computes()
-        shutil.rmtree(self.path, ignore_errors=True)
+        shutil.rmtree(self.path)
 
     @asyncio.coroutine
     def delete_on_computes(self):
