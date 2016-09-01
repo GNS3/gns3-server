@@ -577,6 +577,9 @@ class DockerVM(BaseVM):
     @asyncio.coroutine
     def reset(self):
         try:
+            state = yield from self._get_container_state()
+            if state == "paused" or state == "running":
+                yield from self.stop()
             if self.console_type == "vnc":
                 if self._x11vnc_process:
                     try:
@@ -589,9 +592,6 @@ class DockerVM(BaseVM):
                         yield from self._xvfb_process.wait()
                     except ProcessLookupError:
                         pass
-            state = yield from self._get_container_state()
-            if state == "paused" or state == "running":
-                yield from self.stop()
             # v – 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false.
             # force - 1/True/true or 0/False/false, Kill then remove the container. Default false.
             yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1, "v": 1})
@@ -658,7 +658,7 @@ class DockerVM(BaseVM):
 
             if nio.capturing:
                 yield from self._ubridge_hypervisor.send('bridge start_capture bridge{adapter} "{pcap_file}"'.format(adapter=adapter_number,
-                                                                                                                         pcap_file=nio.pcap_output_file))
+                                                                                                                     pcap_file=nio.pcap_output_file))
 
             yield from self._ubridge_hypervisor.send('bridge start bridge{adapter}'.format(adapter=adapter_number))
 
