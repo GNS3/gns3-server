@@ -52,3 +52,4 @@ docs/_build
 #VPCS
 vpcs.hist
 startup.vpcs
+.gns3_shell_history

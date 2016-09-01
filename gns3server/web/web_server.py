@@ -169,7 +169,7 @@ class WebServer:
         except ImportError:
             log.error("Unable to start a shell: the ptpython module must be installed!")
             return
-        yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True)
+        yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True, history_filename=".gns3_shell_history")
 
     def _exit_handling(self):
         """
