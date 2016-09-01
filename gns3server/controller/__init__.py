@@ -103,7 +103,7 @@ class Controller:
         }
 
         for c in self._computes.values():
-            if c.id != "local":
+            if c.id != "local" and c.id != "vm":
                 data["computes"].append({
                     "host": c.host,
                     "name": c.name,
