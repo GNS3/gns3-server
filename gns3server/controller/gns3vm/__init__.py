@@ -19,9 +19,11 @@ import sys
 import copy
 import asyncio
 
+from ...utils.asyncio import locked_coroutine
 from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
 from .remote_gns3_vm import RemoteGNS3VM
+from .gns3_vm_error import GNS3VMError
 
 import logging
 log = logging.getLogger(__name__)
@@ -212,8 +214,14 @@ class GNS3VM:
         Auto start the GNS3 VM if require
         """
         if self.enable:
-            yield from self._start()
-
+            try:
+                yield from self.start()
+            except GNS3VMError as e:
+                # User will receive the error later when they will try to use the node
+                yield from self._controller.add_compute(compute_id="vm",
+                                                        name="GNS3 VM ({})".format(self._current_engine().vmname),
+                                                        host=None,
+                                                        force=True)
     @asyncio.coroutine
     def auto_stop_vm(self):
         if self.enable and self.auto_stop:
@@ -222,8 +230,8 @@ class GNS3VM:
             except GNS3VMError as e:
                 log.warn(str(e))
 
-    @asyncio.coroutine
-    def _start(self):
+    @locked_coroutine
+    def start(self):
         """
         Start the GNS3 VM
         """
@@ -232,7 +240,7 @@ class GNS3VM:
             log.info("Start the GNS3 VM")
             engine.vmname = self._settings["vmname"]
             yield from engine.start()
-        yield from self._controller.add_compute(compute_id="vm",
+            yield from self._controller.add_compute(compute_id="vm",
                                                 name="GNS3 VM ({})".format(engine.vmname),
                                                 protocol=self.protocol,
                                                 host=self.ip_address,
@@ -241,7 +249,7 @@ class GNS3VM:
                                                 password=self.password,
                                                 force=True)
 
-    @asyncio.coroutine
+    @locked_coroutine
     def _stop(self):
         """
         Stop the GNS3 VM

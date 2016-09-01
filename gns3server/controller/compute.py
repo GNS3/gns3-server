@@ -334,6 +334,9 @@ class Compute:
     @asyncio.coroutine
     def http_query(self, method, path, data=None, **kwargs):
         if not self._connected:
+            if self._id == "vm" and not self._controller.gns3vm.running:
+                yield from self._controller.gns3vm.start()
+
             yield from self.connect()
         if not self._connected:
             raise aiohttp.web.HTTPConflict(text="Can't connect to {}".format(self._name))

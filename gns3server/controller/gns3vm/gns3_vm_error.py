@@ -26,4 +26,4 @@ class GNS3VMError(Exception):
         return self._message
 
     def __str__(self):
-        return self._message
+        return "GNS3VM: {}".format(self._message)

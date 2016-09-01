@@ -114,7 +114,6 @@ class VMwareGNS3VM(BaseGNS3VM):
             args.extend(["nogui"])
         yield from self._execute("start", args)
         log.info("GNS3 VM has been started")
-        self.running = True
 
         # check if the VMware guest tools are installed
         vmware_tools_state = yield from self._execute("checkToolsState", [self._vmx_path])
@@ -125,6 +124,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         guest_ip_address = yield from self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
         self.ip_address = guest_ip_address
         log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
+        self.running = True
 
     @asyncio.coroutine
     def stop(self):

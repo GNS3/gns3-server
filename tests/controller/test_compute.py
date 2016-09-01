@@ -92,6 +92,33 @@ def test_compute_httpQueryNotConnected(compute, controller, async_run):
     controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
 
 
+
+def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller, async_run):
+    """
+    We are not connected to the remote and it's a GNS3 VM. So we need to start it
+    """
+    controller._notification = MagicMock()
+    controller.gns3vm = AsyncioMagicMock()
+    controller.gns3vm.running = False
+
+    compute._id = "vm"
+    compute._connected = False
+    response = AsyncioMagicMock()
+    response.read = AsyncioMagicMock(return_value=json.dumps({"version": __version__}).encode())
+    response.status = 200
+    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
+        async_run(compute.post("/projects", {"a": "b"}))
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=False)
+        mock.assert_any_call("POST", "https://example.com:84/v2/compute/projects", data='{"a": "b"}', headers={'content-type': 'application/json'}, auth=None, chunked=False)
+
+    assert controller.gns3vm.start.called
+    assert compute._connected
+    assert compute._capabilities["version"] == __version__
+    controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
+
+
+
+
 def test_compute_httpQueryNotConnectedInvalidVersion(compute, async_run):
     compute._connected = False
     response = AsyncioMagicMock()
