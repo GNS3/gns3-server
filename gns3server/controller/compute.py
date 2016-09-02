@@ -377,7 +377,7 @@ class Compute:
         try:
             self._ws = yield from self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth)
         except aiohttp.errors.WSServerHandshakeError:
-            self._ws
+            self._ws = None
         while self._ws is not None:
             try:
                 response = yield from self._ws.receive()

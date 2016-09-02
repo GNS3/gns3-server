@@ -55,17 +55,14 @@ def restore_original_path():
     os.environ["PATH"] = tempfile.mkdtemp()
 
 
-@pytest.fixture(scope="session")
+@pytest.yield_fixture(scope="session")
 def loop(request):
     """Return an event loop and destroy it at the end of test"""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)  # Replace main loop to avoid conflict between tests
-
-    def tear_down():
-        loop.close()
-        asyncio.set_event_loop(None)
-    request.addfinalizer(tear_down)
-    return loop
+    yield loop
+    #loop.close()
+    asyncio.set_event_loop(None)
 
 
 def _get_unused_port():
@@ -78,8 +75,8 @@ def _get_unused_port():
     return port
 
 
-@pytest.fixture
-def http_server(request, loop, port_manager, monkeypatch):
+@pytest.yield_fixture
+def http_server(request, loop, port_manager, monkeypatch, controller):
     """A GNS3 server"""
 
     app = web.Application()
@@ -102,15 +99,15 @@ def http_server(request, loop, port_manager, monkeypatch):
         else:
             break
 
-    def tear_down():
-        for module in MODULES:
-            instance = module.instance()
-            monkeypatch.setattr('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
-            loop.run_until_complete(instance.unload())
-        srv.close()
-        srv.wait_closed()
-    request.addfinalizer(tear_down)
-    return (host, port)
+    yield (host, port)
+
+    loop.run_until_complete(controller.stop())
+    for module in MODULES:
+        instance = module.instance()
+        monkeypatch.setattr('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
+        loop.run_until_complete(instance.unload())
+    srv.close()
+    srv.wait_closed()
 
 
 @pytest.fixture
