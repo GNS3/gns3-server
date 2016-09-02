@@ -342,7 +342,7 @@ class Node:
         try:
             yield from self.post("/stop")
         # We don't care if a compute is down at this step
-        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
+        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientHttpProcessingError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
             pass
 
     @asyncio.coroutine
