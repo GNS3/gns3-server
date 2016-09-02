@@ -73,7 +73,7 @@ class Drawing:
                         return data.decode()
                     except UnicodeError:
                         width, height, filetype = get_size(data)
-                        return "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" height=\"{height}\" width=\"{width}\">\n<image height=\"{height}\" width=\"{width}\" xlink:href=\"data:image/{filetype};base64,{b64}\" />\n</svg>".format(b64=base64.b64encode(data).decode(), filetype=filetype, width=width, height=width)
+                        return "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" height=\"{height}\" width=\"{width}\">\n<image height=\"{height}\" width=\"{width}\" xlink:href=\"data:image/{filetype};base64,{b64}\" />\n</svg>".format(b64=base64.b64encode(data).decode(), filetype=filetype, width=width, height=height)
             except OSError:
                 log.warning("Image file %s missing", filename)
                 return "<svg></svg>"
@@ -172,7 +172,7 @@ class Drawing:
         svg_changed = False
         for prop in kwargs:
             if prop == "drawing_id":
-                pass # No good reason to change a drawing_id
+                pass  # No good reason to change a drawing_id
             elif getattr(self, prop) != kwargs[prop]:
                 if prop == "svg":
                     # To avoid spamming client with large data we don't send the svg if the SVG didn't change
