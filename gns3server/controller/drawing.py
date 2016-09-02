@@ -171,7 +171,9 @@ class Drawing:
         # Update node properties with additional elements
         svg_changed = False
         for prop in kwargs:
-            if getattr(self, prop) != kwargs[prop]:
+            if prop == "drawing_id":
+                pass # No good reason to change a drawing_id
+            elif getattr(self, prop) != kwargs[prop]:
                 if prop == "svg":
                     # To avoid spamming client with large data we don't send the svg if the SVG didn't change
                     svg_changed = True

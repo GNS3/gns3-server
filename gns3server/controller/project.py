@@ -512,7 +512,10 @@ class Project:
         try:
             pictures = set(os.listdir(self.pictures_directory))
             for drawing in self._drawings.values():
-                pictures.remove(drawing.ressource_filename)
+                try:
+                    pictures.remove(drawing.ressource_filename)
+                except KeyError:
+                    pass
 
             for pict in pictures:
                 os.remove(os.path.join(self.pictures_directory, pict))
