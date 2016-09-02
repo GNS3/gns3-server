@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import aiohttp
 
 from gns3server.web.route import Route
@@ -160,7 +161,7 @@ class LinkHandler:
             "project_id": "Project UUID",
             "link_id": "Link UUID"
         },
-        description="Steam the pcap capture file",
+        description="Stream the pcap capture file",
         status_codes={
             200: "File returned",
             403: "Permission denied",
@@ -188,7 +189,7 @@ class LinkHandler:
                 while True:
                     chunk = f.read(4096)
                     if not chunk:
-                        break
+                        yield from asyncio.sleep(0.1)
                     yield from response.write(chunk)
         except OSError:
-            raise aiohttp.web.HTTPNotFound(text="pcap file {} not found or not accessible".format(link.capture_file_path))
+            raise aiohttp.web.HTTPNotFound(text="pcap file {} not found or not accessible".format(link.capture_file_path))
