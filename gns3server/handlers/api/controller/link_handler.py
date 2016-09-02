@@ -69,7 +69,6 @@ class LinkHandler:
                                      node.get("adapter_number", 0),
                                      node.get("port_number", 0),
                                      label=node.get("label"))
-        yield from link.create()
         response.set_status(201)
         response.json(link)
 

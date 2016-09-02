@@ -19,7 +19,7 @@ import pytest
 import asyncio
 import aiohttp
 from unittest.mock import MagicMock
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.project import Project
 from gns3server.controller.udp_link import UDPLink
@@ -49,7 +49,6 @@ def test_create(async_run, project):
 
     link = UDPLink(project)
     async_run(link.add_node(node1, 0, 4))
-    async_run(link.add_node(node2, 3, 1))
 
     @asyncio.coroutine
     def compute1_callback(path, data={}):
@@ -75,7 +74,7 @@ def test_create(async_run, project):
     compute1.host = "example.com"
     compute2.post.side_effect = compute2_callback
     compute2.host = "example.org"
-    async_run(link.create())
+    async_run(link.add_node(node2, 3, 1))
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
@@ -99,6 +98,7 @@ def test_delete(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
 
     link = UDPLink(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
     async_run(link.add_node(node2, 3, 1))
 
@@ -120,6 +120,7 @@ def test_choose_capture_side(async_run, project):
     node_iou = Node(project, compute2, "node2", node_type="iou")
 
     link = UDPLink(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node_vpcs, 0, 4))
     async_run(link.add_node(node_iou, 3, 1))
 
@@ -129,6 +130,7 @@ def test_choose_capture_side(async_run, project):
     node_vpcs2 = Node(project, compute1, "node4", node_type="vpcs")
 
     link = UDPLink(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node_vpcs, 0, 4))
     async_run(link.add_node(node_vpcs2, 3, 1))
 
@@ -137,6 +139,7 @@ def test_choose_capture_side(async_run, project):
     node_iou2 = Node(project, compute2, "node6", node_type="iou")
 
     link = UDPLink(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node_iou, 0, 4))
     async_run(link.add_node(node_iou2, 3, 1))
 
@@ -150,6 +153,7 @@ def test_capture(async_run, project):
     node_iou = Node(project, compute1, "I1", node_type="iou")
 
     link = UDPLink(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node_vpcs, 0, 4))
     async_run(link.add_node(node_iou, 3, 1))
 
@@ -171,6 +175,7 @@ def test_read_pcap_from_source(project, async_run):
     compute1 = MagicMock()
 
     link = UDPLink(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(compute1, 0, 4))
     async_run(link.add_node(compute1, 3, 1))
 

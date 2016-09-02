@@ -254,7 +254,9 @@ def test_addLink(async_run, project, controller):
     controller._notification = MagicMock()
     link = async_run(project.add_link())
     async_run(link.add_node(vm1, 3, 1))
-    async_run(link.add_node(vm2, 4, 2))
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock_udp_create:
+        async_run(link.add_node(vm2, 4, 2))
+    assert mock_udp_create.called
     assert len(link._nodes) == 2
     controller.notification.emit.assert_any_call("link.created", link.__json__())
 

@@ -60,7 +60,8 @@ def test_basic_topology(tmpdir, async_run, controller):
 
     link = async_run(project.add_link())
     async_run(link.add_node(node1, 0, 0))
-    async_run(link.add_node(node2, 0, 0))
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock_udp_create:
+        async_run(link.add_node(node2, 0, 0))
 
     drawing = async_run(project.add_drawing(svg="<svg></svg>"))
 

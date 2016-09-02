@@ -46,6 +46,7 @@ def link(async_run, project, compute):
     node2 = Node(project, compute, "node2", node_type="qemu")
 
     link = Link(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
     async_run(link.add_node(node2, 1, 3))
     return link
@@ -61,6 +62,7 @@ def test_add_node(async_run, project, compute):
     node1 = Node(project, compute, "node1", node_type="qemu")
 
     link = Link(project)
+    link.create = AsyncioMagicMock()
     link._project.controller.notification.emit = MagicMock()
     project.dump = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
@@ -81,41 +83,13 @@ def test_add_node(async_run, project, compute):
     assert project.dump.called
     assert not link._project.controller.notification.emit.called
 
-    # We call link.created only when both side are created
-    node2 = Node(project, compute, "node2", node_type="qemu")
-    async_run(link.add_node(node2, 0, 4))
-
-    link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
-
-
-def test_add_node(async_run, project, compute):
-    node1 = Node(project, compute, "node1", node_type="qemu")
-
-    link = Link(project)
-    link._project.controller.notification.emit = MagicMock()
-    project.dump = AsyncioMagicMock()
-    async_run(link.add_node(node1, 0, 4))
-    assert link._nodes == [
-        {
-            "node": node1,
-            "adapter_number": 0,
-            "port_number": 4,
-            'label': {
-                'y': -10,
-                'text': '0/4',
-                'x': -10,
-                'rotation': 0,
-                'style': 'font-size: 10; font-style: Verdana'
-            }
-        }
-    ]
-    assert project.dump.called
-    assert not link._project.controller.notification.emit.called
+    assert not link.create.called
 
     # We call link.created only when both side are created
     node2 = Node(project, compute, "node2", node_type="qemu")
     async_run(link.add_node(node2, 0, 4))
 
+    assert link.create.called
     link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
 
 
@@ -124,6 +98,7 @@ def test_add_node_cloud(async_run, project, compute):
     node2 = Node(project, compute, "node2", node_type="cloud")
 
     link = Link(project)
+    link.create = AsyncioMagicMock()
     link._project.controller.notification.emit = MagicMock()
 
     async_run(link.add_node(node1, 0, 4))
@@ -138,6 +113,7 @@ def test_add_node_cloud_to_cloud(async_run, project, compute):
     node2 = Node(project, compute, "node2", node_type="cloud")
 
     link = Link(project)
+    link.create = AsyncioMagicMock()
     link._project.controller.notification.emit = MagicMock()
 
     async_run(link.add_node(node1, 0, 4))
@@ -150,6 +126,7 @@ def test_json(async_run, project, compute):
     node2 = Node(project, compute, "node2", node_type="qemu")
 
     link = Link(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
     async_run(link.add_node(node2, 1, 3))
     assert link.__json__() == {
@@ -238,6 +215,7 @@ def test_default_capture_file_name(project, compute, async_run):
     node2 = Node(project, compute, "w0.rld", node_type="qemu")
 
     link = Link(project)
+    link.create = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
     async_run(link.add_node(node2, 1, 3))
     assert link.default_capture_file_name() == "Hello_0-4_to_w0rld_1-3.pcap"

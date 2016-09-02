@@ -41,6 +41,14 @@ class Link:
         self._capturing = False
         self._capture_file_name = None
         self._streaming_pcap = None
+        self._created = False
+
+    @property
+    def created(self):
+        """
+        :returns: True the link has been created on the computes
+        """
+        return self._created
 
     @asyncio.coroutine
     def add_node(self, node, adapter_number, port_number, label=None):
@@ -70,6 +78,8 @@ class Link:
         })
 
         if len(self._nodes) == 2:
+            yield from self.create()
+            self._created = True
             self._project.controller.notification.emit("link.created", self.__json__())
 
         self._project.dump()
