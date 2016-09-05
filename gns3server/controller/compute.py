@@ -551,7 +551,8 @@ class Compute:
         other_compute_interfaces = sorted(other_compute_interfaces, key=lambda i: i["ip_address"] != other_compute.host_ip)
 
         for this_interface in this_compute_interfaces:
-            if len(this_interface["ip_address"]) == 0:
+            # Skip if no ip or no netmask (vbox when stopped set a null netmask)
+            if len(this_interface["ip_address"]) == 0 or this_interface["netmask"] is None:
                 continue
 
             this_network = ipaddress.ip_network("{}/{}".format(this_interface["ip_address"], this_interface["netmask"]), strict=False)
