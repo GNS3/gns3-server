@@ -1,0 +1,121 @@
+{
+    "auto_start": false,
+    "name": "1_5_internet",
+    "project_id": "a64f6cf9-ea6e-42e6-9e4e-a2a292e2b827",
+    "revision": 4,
+    "topology": {
+        "links": [
+            {
+                "description": "Link from PC1 port Ethernet0 to Internet 0.1-1 port Ethernet0",
+                "destination_node_id": 1,
+                "destination_port_id": 1,
+                "id": 1,
+                "source_node_id": 2,
+                "source_port_id": 2
+            }
+        ],
+        "nodes": [
+            {
+                "description": "QEMU VM",
+                "id": 1,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "Internet 0.1-1",
+                    "x": 39.15625,
+                    "y": -25.0
+                },
+                "linked_clone": true,
+                "port_name_format": "Ethernet{0}",
+                "ports": [
+                    {
+                        "adapter_number": 0,
+                        "description": "connected to PC1 on port Ethernet0",
+                        "id": 1,
+                        "link_id": 1,
+                        "name": "Ethernet0",
+                        "nio": "NIO_UDP",
+                        "port_number": 0
+                    }
+                ],
+                "properties": {
+                    "acpi_shutdown": false,
+                    "adapter_type": "e1000",
+                    "adapters": 1,
+                    "boot_priority": "c",
+                    "console": 5000,
+                    "console_type": "telnet",
+                    "cpu_throttling": 0,
+                    "cpus": 1,
+                    "hda_disk_image": "core-linux-6.4-internet-0.1.img",
+                    "hda_disk_image_md5sum": "8ebc5a6ec53a1c05b7aa101b5ceefe31",
+                    "hda_disk_interface": "ide",
+                    "hdb_disk_interface": "ide",
+                    "hdc_disk_interface": "ide",
+                    "hdd_disk_interface": "ide",
+                    "legacy_networking": false,
+                    "mac_address": "00:b8:27:96:5e:00",
+                    "name": "Internet 0.1-1",
+                    "options": "-device e1000,netdev=internet0 -netdev vde,sock=/var/run/vde2/qemu0.ctl,id=internet0 -nographic",
+                    "platform": "i386",
+                    "process_priority": "normal",
+                    "qemu_path": "/usr/bin/qemu-system-i386",
+                    "ram": 64,
+                    "usage": "Just connect stuff to the appliance. Everything is automated."
+                },
+                "server_id": 3,
+                "symbol": ":/symbols/cloud.svg",
+                "type": "QemuVM",
+                "vm_id": "b8bef484-89d2-42a7-b151-6ead2eda965e",
+                "x": -111.5,
+                "y": -147.0
+            },
+            {
+                "description": "VPCS device",
+                "id": 2,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "PC1",
+                    "x": 18.5859375,
+                    "y": -25.0
+                },
+                "ports": [
+                    {
+                        "adapter_number": 0,
+                        "description": "connected to Internet 0.1-1 on port Ethernet0",
+                        "id": 2,
+                        "link_id": 1,
+                        "name": "Ethernet0",
+                        "nio": "NIO_UDP",
+                        "port_number": 0
+                    }
+                ],
+                "properties": {
+                    "console": 5001,
+                    "name": "PC1",
+                    "startup_script_path": "startup.vpc"
+                },
+                "server_id": 3,
+                "symbol": ":/symbols/vpcs_guest.svg",
+                "type": "VPCSDevice",
+                "vm_id": "761c5e9e-eded-45b5-b6db-ca367b1855e2",
+                "x": -29.5,
+                "y": 8.5
+            }
+        ],
+        "servers": [
+            {
+                "host": "172.16.16.150",
+                "id": 3,
+                "local": false,
+                "port": 3080,
+                "protocol": "http",
+                "user": "",
+                "vm": true
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.2"
+}

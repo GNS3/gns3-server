@@ -185,9 +185,7 @@ def _convert_1_3_later(topo, topo_path):
         if old_node["type"] == "VPCSDevice":
             node["node_type"] = "vpcs"
         elif old_node["type"] == "QemuVM":
-            node["node_type"] = "qemu"
-            if node["symbol"] is None:
-                node["symbol"] = ":/symbols/qemu_guest.svg"
+            node = _convert_qemu_node(node, old_node)
         elif old_node["type"] == "DockerVM":
             node["node_type"] = "docker"
             if node["symbol"] is None:
@@ -244,7 +242,7 @@ def _convert_1_3_later(topo, topo_path):
         else:
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 
-        for prop in old_node["properties"]:
+        for prop in old_node.get("properties", {}):
             if prop not in ["console", "name", "console_type", "use_ubridge"]:
                 node["properties"][prop] = old_node["properties"][prop]
 
@@ -474,3 +472,34 @@ def _convert_snapshots(topo_dir):
                     shutil.copy(snapshot_arc, "/tmp/test.zip")
 
         shutil.rmtree(old_snapshots_dir)
+
+
+def _convert_qemu_node(node, old_node):
+    """
+    Convert qemu node from 1.X to 2.0
+    """
+
+    # In 2.0 the internet VM is replaced by the NAT node
+    if old_node.get("properties", {}).get("hda_disk_image_md5sum") == "8ebc5a6ec53a1c05b7aa101b5ceefe31":
+        node["console"] = None
+        node["console_type"] = None
+        node["node_type"] = "nat"
+        del old_node["properties"]
+        node["properties"] = {
+            "ports": [
+                {
+                    "interface": "eth1",
+                    "name": "nat0",
+                    "port_number": 0,
+                    "type": "ethernet"
+                }
+            ]
+        }
+        if node["symbol"] is None:
+            node["symbol"] = ":/symbols/cloud.svg"
+        return node
+
+    node["node_type"] = "qemu"
+    if node["symbol"] is None:
+        node["symbol"] = ":/symbols/qemu_guest.svg"
+    return node

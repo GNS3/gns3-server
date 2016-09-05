@@ -1,0 +1,84 @@
+{
+    "auto_start": false,
+    "name": "1_5_internet",
+    "project_id": "a64f6cf9-ea6e-42e6-9e4e-a2a292e2b827",
+    "revision": 5,
+    "topology": {
+        "computes": [
+          {"name": "GNS3 VM", "protocol": "http", "port": 3080, "host": "172.16.16.150", "compute_id": "vm"}
+        ],
+        "drawings": [],
+        "links": [
+            {
+                "link_id": "ANYUUID",
+                "nodes": [
+                    {
+                        "adapter_number": 0,
+                        "node_id": "761c5e9e-eded-45b5-b6db-ca367b1855e2",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "node_id": "b8bef484-89d2-42a7-b151-6ead2eda965e",
+                        "port_number": 0
+                    }
+                ]
+            }
+        ],
+        "nodes": [
+            {
+                "compute_id": "vm",
+                "console": null,
+                "console_type": null,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "Internet 0.1-1",
+                    "x": 39,
+                    "y": -25
+                },
+                "name": "Internet 0.1-1",
+                "node_id": "b8bef484-89d2-42a7-b151-6ead2eda965e",
+                "node_type": "nat",
+                "properties": {
+                    "ports": [
+                        {
+                            "interface": "eth1",
+                            "name": "nat0",
+                            "port_number": 0,
+                            "type": "ethernet"
+                        }
+                    ]
+                },
+                "symbol": ":/symbols/cloud.svg",
+                "x": -111,
+                "y": -147,
+                "z": 1
+            },
+            {
+                "compute_id": "vm",
+                "console": 5001,
+                "console_type": "telnet",
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "PC1",
+                    "x": 18,
+                    "y": -25
+                },
+                "name": "PC1",
+                "node_id": "761c5e9e-eded-45b5-b6db-ca367b1855e2",
+                "node_type": "vpcs",
+                "properties": {
+                    "startup_script_path": "startup.vpc"
+                },
+                "symbol": ":/symbols/vpcs_guest.svg",
+                "x": -29,
+                "y": 8,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "ANYSTR"
+}
