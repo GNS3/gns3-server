@@ -81,8 +81,11 @@ class UDPLink(Link):
             port_number1 = self._nodes[0]["port_number"]
         except IndexError:
             return
-
-        yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1))
+        try:
+            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1))
+        # If the node is already delete (user selected multiple element and delete all in the same time)
+        except aiohttp.web.HTTPNotFound:
+            pass
 
         try:
             node2 = self._nodes[1]["node"]
@@ -90,7 +93,11 @@ class UDPLink(Link):
             port_number2 = self._nodes[1]["port_number"]
         except IndexError:
             return
-        yield from node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2))
+        try:
+            yield from node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2))
+        # If the node is already delete (user selected multiple element and delete all in the same time)
+        except aiohttp.web.HTTPNotFound:
+            pass
 
     @asyncio.coroutine
     def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
