@@ -42,7 +42,7 @@ class Nat(Cloud):
                 "name": "nat0",
                 "type": "ethernet",
                 "interface": "eth1",
-                "port_number": 1
+                "port_number": 0
             }
         ]
 

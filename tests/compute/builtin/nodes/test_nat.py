@@ -33,7 +33,7 @@ def test_json(on_gns3vm, project):
             {
                 "interface": "eth1",
                 "name": "nat0",
-                "port_number": 1,
+                "port_number": 0,
                 "type": "ethernet"
             }
         ]
