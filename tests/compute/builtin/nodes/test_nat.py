@@ -31,8 +31,8 @@ def test_json(on_gns3vm, project):
         "status": "started",
         "ports": [
             {
-                "interface": "eth1",
-                "name": "nat0",
+                "interface": "virbr0",
+                "name": "virbr0",
                 "port_number": 0,
                 "type": "ethernet"
             }

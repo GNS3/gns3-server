@@ -315,10 +315,10 @@ def async_run(loop):
 
 
 @pytest.yield_fixture
-def on_gns3vm():
+def on_gns3vm(linux_platform):
     """
     Mock the hostname to  emulate the GNS3 VM
     """
-    with patch("gns3server.utils.interfaces.interfaces", return_value=[{"name": "eth0"}, {"name": "eth1"}]):
+    with patch("gns3server.utils.interfaces.interfaces", return_value=[{"name": "eth0"}, {"name": "eth1", "name": "virbr0"}]):
         with patch("socket.gethostname", return_value="gns3vm"):
             yield

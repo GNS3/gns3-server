@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import socket
+import sys
 from .cloud import Cloud
 from ...error import NodeError
 
@@ -31,24 +31,21 @@ class Nat(Cloud):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if socket.gethostname() != "gns3vm":
-            raise NodeError("NAT node is supported only on GNS3 VM")
-
-        if "eth1" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
-            raise NodeError("eth1 is missing on the GNS3 VM. You need to provide a nat interface as eth1")
+        if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
+            raise NodeError("virbr0 is missing. You need to install libvirt")
 
         self.ports = [
             {
-                "name": "nat0",
+                "name": "virbr0",
                 "type": "ethernet",
-                "interface": "eth1",
+                "interface": "virbr0",
                 "port_number": 0
             }
         ]
 
     @classmethod
     def is_supported(self):
-        return socket.gethostname() == "gns3vm"
+        return sys.platform.startswith("linux")
 
     def __json__(self):
         return {
