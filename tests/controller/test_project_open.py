@@ -15,12 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 import json
 import pytest
+import aiohttp
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.compute import Compute
+
 
 @pytest.fixture
 def demo_topology():
@@ -112,7 +115,7 @@ def demo_topology():
                     "z": 1
                 },
                 {
-                    "compute_id": "local",
+                    "compute_id": "vm",
                     "console": 5001,
                     "console_type": "telnet",
                     "height": 59,
@@ -148,6 +151,7 @@ def test_open(controller, tmpdir, demo_topology, async_run, http_server):
         json.dump(demo_topology, f)
 
     controller._computes["local"] = Compute("local", controller=controller, host=http_server[0], port=http_server[1])
+    controller._computes["vm"] = controller._computes["local"]
 
     project = async_run(controller.load_project(str(tmpdir / "demo.gns3")))
     assert project.status == "opened"
@@ -159,3 +163,21 @@ def test_open(controller, tmpdir, demo_topology, async_run, http_server):
     assert len(project.drawings) == 1
 
     assert project.name == "demo"
+
+
+def test_open_missing_compute(controller, tmpdir, demo_topology, async_run, http_server):
+    """
+    If a compute is missing the project should not be open and the .gns3 should
+    be the one before opening the project
+    """
+    with open(str(tmpdir / "demo.gns3"), "w+") as f:
+        json.dump(demo_topology, f)
+
+    controller._computes["local"] = Compute("local", controller=controller, host=http_server[0], port=http_server[1])
+
+    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+        project = async_run(controller.load_project(str(tmpdir / "demo.gns3")))
+    assert controller.get_project("3c1be6f9-b4ba-4737-b209-63c47c23359f").status == "closed"
+    with open(str(tmpdir / "demo.gns3"), "r") as f:
+        topo = json.load(f)
+        assert len(topo["topology"]["nodes"]) == 2

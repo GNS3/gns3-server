@@ -570,7 +570,10 @@ class Project:
         self._status = "opened"
 
         path = self._topology_file()
-        if os.path.exists(path):
+        if not os.path.exists(path):
+            return
+        shutil.copy(path, path + ".backup")
+        try:
             topology = load_topology(path)["topology"]
             for compute in topology.get("computes", []):
                 yield from self.controller.add_compute(**compute)
@@ -584,13 +587,25 @@ class Project:
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"))
-
             for drawing_data in topology.get("drawings", []):
                 drawing = yield from self.add_drawing(**drawing_data)
 
-            # Should we start the nodes when project is open
-            if self._auto_start:
-                yield from self.start_all()
+        # We catch all error to be able to rollback the .gns3 to the previous state
+        except Exception as e:
+            for compute in self._project_created_on_compute:
+                try:
+                    yield from compute.post("/projects/{}/close".format(self._id))
+                # We don't care if a compute is down at this step
+                except (aiohttp.errors.ClientOSError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
+                    pass
+            shutil.copy(path + ".backup", path)
+            self._status = "closed"
+            raise e
+        os.remove(path + ".backup")
+
+        # Should we start the nodes when project is open
+        if self._auto_start:
+            yield from self.start_all()
 
     @open_required
     @asyncio.coroutine
