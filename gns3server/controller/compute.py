@@ -452,7 +452,7 @@ class Compute:
             elif response.status == 403:
                 raise aiohttp.web.HTTPForbidden(text=msg)
             elif response.status == 404:
-                raise aiohttp.web.HTTPNotFound(text=msg)
+                raise aiohttp.web.HTTPNotFound(text="{} {} not found".format(method, path))
             elif response.status == 409:
                 try:
                     raise ComputeConflict(json.loads(body))
