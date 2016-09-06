@@ -73,8 +73,9 @@ class Controller:
                                     user=server_config.get("user", ""),
                                     password=server_config.get("password", ""),
                                     force=True)
-        yield from self.gns3vm.auto_start_vm()
         yield from self.load_projects()
+        yield from self.gns3vm.auto_start_vm()
+        yield from self._project_auto_open()
 
     @asyncio.coroutine
     def stop(self):
@@ -344,6 +345,15 @@ class Controller:
         if load or project.auto_open:
             yield from project.open()
         return project
+
+    @asyncio.coroutine
+    def _project_auto_open(self):
+        """
+        Auto open the project with auto open enable
+        """
+        for project in self._projects.values():
+            if project.auto_open:
+                yield from project.open()
 
     def get_free_project_name(self, base_name):
         """

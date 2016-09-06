@@ -84,6 +84,19 @@ VBOX_CREATE_SCHEMA = {
             "description": "ACPI shutdown",
             "type": "boolean"
         },
+        "port_name_format": {
+            "description": "Formating for port name {0} will be replace by port number",
+            "type": "string"
+        },
+        "port_segment_size": {
+            "description": "Size of the port segment",
+            "type": "integer",
+            "minimum": 0
+        },
+        "first_port_name": {
+            "description": "Name of the first port",
+            "type": ["string", "null"]
+        }
     },
     "additionalProperties": False,
     "required": ["name", "vmname", "linked_clone"],
@@ -169,6 +182,19 @@ VBOX_OBJECT_SCHEMA = {
         "linked_clone": {
             "description": "Whether the VM is a linked clone or not",
             "type": "boolean"
+        },
+        "port_name_format": {
+            "description": "Formating for port name {0} will be replace by port number",
+            "type": "string"
+        },
+        "port_segment_size": {
+            "description": "Size of the port segment",
+            "type": "integer",
+            "minimum": 0
+        },
+        "first_port_name": {
+            "description": "Name of the first port",
+            "type": ["string", "null"]
         }
     },
     "additionalProperties": False,
