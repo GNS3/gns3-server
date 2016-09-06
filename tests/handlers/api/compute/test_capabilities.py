@@ -25,9 +25,9 @@ from gns3server.config import Config
 from gns3server.version import __version__
 
 
-def test_get(http_compute):
+def test_get(http_compute, windows_platform):
     """
-    Nat is not supported outside the GNS3VM
+    Nat, is supported outside linux
     """
     response = http_compute.get('/capabilities', example=True)
     assert response.status == 200
