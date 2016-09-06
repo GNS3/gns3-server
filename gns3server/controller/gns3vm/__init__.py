@@ -222,6 +222,7 @@ class GNS3VM:
                                                         name="GNS3 VM ({})".format(self._current_engine().vmname),
                                                         host=None,
                                                         force=True)
+
     @asyncio.coroutine
     def auto_stop_vm(self):
         if self.enable and self.auto_stop:
@@ -241,13 +242,13 @@ class GNS3VM:
             engine.vmname = self._settings["vmname"]
             yield from engine.start()
             yield from self._controller.add_compute(compute_id="vm",
-                                                name="GNS3 VM ({})".format(engine.vmname),
-                                                protocol=self.protocol,
-                                                host=self.ip_address,
-                                                port=self.port,
-                                                user=self.user,
-                                                password=self.password,
-                                                force=True)
+                                                    name="GNS3 VM ({})".format(engine.vmname),
+                                                    protocol=self.protocol,
+                                                    host=self.ip_address,
+                                                    port=self.port,
+                                                    user=self.user,
+                                                    password=self.password,
+                                                    force=True)
 
     @locked_coroutine
     def _stop(self):

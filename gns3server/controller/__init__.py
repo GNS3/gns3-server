@@ -180,7 +180,8 @@ class Controller:
         if os.path.exists(config_file):
             with open(config_file) as f:
                 data = json.load(f)
-                for remote in data.get("Servers", {}).get("remote_servers", []):
+                server_settings = data.get("Servers", {})
+                for remote in server_settings.get("remote_servers", []):
                     yield from self.add_compute(
                         host=remote.get("host", "localhost"),
                         port=remote.get("port", 3080),
@@ -189,6 +190,27 @@ class Controller:
                         user=remote.get("user"),
                         password=remote.get("password")
                     )
+                if "vm" in server_settings:
+                    vm_settings = server_settings["vm"]
+                    if vm_settings["virtualization"] == "VMware":
+                        engine = "vmware"
+                        vmname = vm_settings.get("vmname", "")
+                    elif vm_settings["virtualization"] == "VirtualBox":
+                        engine = "virtualbox"
+                        vmname = vm_settings.get("vmname", "")
+                    else:
+                        engine = "remote"
+                        # In case of remote server we match the compute with url parameter
+                        for compute in self._computes.values():
+                            if compute.host == vm_settings.get("remote_vm_host") and compute.port == vm_settings.get("remote_vm_port"):
+                                vmname = compute.name
+                    self.gns3vm.settings = {
+                        "engine": engine,
+                        "enable": vm_settings.get("auto_start", False),
+                        "auto_stop": vm_settings.get("auto_stop", True),
+                        "headless": vm_settings.get("headless", False),
+                        "vmname": vmname
+                    }
 
     @property
     def settings(self):
