@@ -33,7 +33,9 @@ LABEL_OBJECT_SCHEMA = {
         },
         "rotation": {
             "description": "Rotation of the label",
-            "type": "integer"
+            "type": "integer",
+            "minimum": -359,
+            "maximum": 360
         },
     },
     "required": [

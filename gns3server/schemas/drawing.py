@@ -50,7 +50,7 @@ DRAWING_OBJECT_SCHEMA = {
         "rotation": {
             "description": "Rotation of the element",
             "type": "integer",
-            "minimum": 0,
+            "minimum": -359,
             "maximum": 360
         },
         "svg": {
