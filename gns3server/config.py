@@ -36,7 +36,7 @@ class Config:
     Configuration file management using configparser.
 
     :param files: Array of configuration files (optional)
-    :param profile: Profil settings (default use standard settings file)
+    :param profile: Profile settings (default use standard settings file)
     """
 
     def __init__(self, files=None, profile=None):
