@@ -530,7 +530,11 @@ class DockerVM(BaseVM):
             if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
                 yield from self._ubridge_hypervisor.stop()
 
-            state = yield from self._get_container_state()
+            try:
+                state = yield from self._get_container_state()
+            except DockerHttp404Error:
+                state = "stopped"
+
             if state == "paused":
                 yield from self.unpause()
 
