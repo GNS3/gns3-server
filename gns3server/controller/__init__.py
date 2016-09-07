@@ -55,8 +55,8 @@ class Controller:
 
         server_config = Config.instance().get_section_config("Server")
 
-        if Config.instance().profil:
-            config_path = os.path.join(config_path, "profiles", Config.instance().profil)
+        if Config.instance().profile:
+            config_path = os.path.join(config_path, "profiles", Config.instance().profile)
         self._config_file = os.path.join(config_path, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 

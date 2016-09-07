@@ -36,13 +36,13 @@ class Config:
     Configuration file management using configparser.
 
     :param files: Array of configuration files (optional)
-    :param profil: Profil settings (default use standard settings file)
+    :param profile: Profil settings (default use standard settings file)
     """
 
-    def __init__(self, files=None, profil=None):
+    def __init__(self, files=None, profile=None):
 
         self._files = files
-        self._profil = profil
+        self._profile = profile
 
         # Monitor configuration files for changes
         self._watched_files = {}
@@ -63,8 +63,8 @@ class Config:
             appdata = os.path.expandvars("%APPDATA%")
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
 
-            if self._profil:
-                user_dir = os.path.join(appdata, appname, "profiles", self._profil)
+            if self._profile:
+                user_dir = os.path.join(appdata, appname, "profiles", self._profile)
             else:
                 user_dir = os.path.join(appdata, appname)
 
@@ -88,8 +88,8 @@ class Config:
             home = os.path.expanduser("~")
             filename = "gns3_server.conf"
 
-            if self._profil:
-                user_dir = os.path.join(home, ".config", appname, "profiles", self._profil)
+            if self._profile:
+                user_dir = os.path.join(home, ".config", appname, "profiles", self._profile)
             else:
                 user_dir = os.path.join(home, ".config", appname)
 
@@ -107,11 +107,11 @@ class Config:
         self._watch_config_file()
 
     @property
-    def profil(self):
+    def profile(self):
         """
-        Settings profil
+        Settings profile
         """
-        return self._profil
+        return self._profile
 
     def clear(self):
         """Restart with a clean config"""

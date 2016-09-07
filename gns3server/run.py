@@ -105,14 +105,14 @@ def parse_arguments(argv):
     parser.add_argument("--log", help="send output to logfile instead of console")
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
     parser.add_argument("--pid", help="store process pid")
-    parser.add_argument("--profil", help="Settings profil (blank will use default settings files)")
+    parser.add_argument("--profile", help="Settings profile (blank will use default settings files)")
     parser.add_argument("--discovery", action="store_true", help="Make server discoverable on the network")
 
     args = parser.parse_args(argv)
     if args.config:
-        Config.instance(files=[args.config], profil=args.profil)
+        Config.instance(files=[args.config], profile=args.profile)
     else:
-        Config.instance(profil=args.profil)
+        Config.instance(profile=args.profile)
 
     config = Config.instance().get_section_config("Server")
     defaults = {
