@@ -222,13 +222,6 @@ def test_load_projects(controller, projects_dir, async_run):
     mock_load_project.assert_called_with(os.path.join(projects_dir, "project1", "project1.gns3"), load=False)
 
 
-def test_isEnabled(controller):
-    Config.instance().set("Server", "controller", False)
-    assert not controller.is_enabled()
-    Config.instance().set("Server", "controller", True)
-    assert controller.is_enabled()
-
-
 def test_add_compute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
     c = async_run(controller.add_compute(compute_id="test1", connect=False))

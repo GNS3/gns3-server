@@ -184,9 +184,6 @@ class Route(object):
                         return response
 
                     # API call
-                    if "controller" in func.__module__ and server_config.getboolean("controller", False) is False:
-                        raise aiohttp.web.HTTPForbidden(text="The server is not a controller")
-
                     request = yield from parse_request(request, input_schema, raw)
                     record_file = server_config.get("record")
                     if record_file:

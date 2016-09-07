@@ -49,12 +49,6 @@ def test_version_invalid_input(http_controller):
                              'status': 409}
 
 
-def test_version_not_controller(http_controller, config):
-    config.set("Server", "controller", False)
-    response = http_controller.get('/version')
-    assert response.status == 403
-
-
 def test_version_invalid_input_schema(http_controller):
     query = {'version': "0.4.2", "bla": "blu"}
     response = http_controller.post('/version', query)

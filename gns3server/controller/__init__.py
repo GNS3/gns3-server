@@ -224,13 +224,6 @@ class Controller:
         self._settings = val
         self.notification.emit("settings.updated", val)
 
-    def is_enabled(self):
-        """
-        :returns: whether the current instance is the controller
-        of our GNS3 infrastructure.
-        """
-        return Config.instance().get_section_config("Server").getboolean("controller")
-
     @asyncio.coroutine
     def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """

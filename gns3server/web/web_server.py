@@ -102,8 +102,7 @@ class WebServer:
             yield from self._handler.finish_connections()
             self._handler = None
 
-        if Config.instance().get_section_config("Server").getboolean("controller"):
-            yield from Controller.instance().stop()
+        yield from Controller.instance().stop()
 
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
@@ -306,8 +305,7 @@ class WebServer:
         self._signal_handling()
         self._exit_handling()
 
-        if server_config.getboolean("controller"):
-            controller_start = asyncio.async(Controller.instance().start())
+        controller_start = asyncio.async(Controller.instance().start())
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())

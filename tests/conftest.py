@@ -205,7 +205,6 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     config.set("Server", "images_path", os.path.join(tmppath, 'images'))
     config.set("Server", "ubridge_path", os.path.join(tmppath, 'bin', 'ubridge'))
     config.set("Server", "auth", False)
-    config.set("Server", "controller", True)
 
     # Prevent executions of the VM if we forgot to mock something
     config.set("VirtualBox", "vboxmanage_path", tmppath)
