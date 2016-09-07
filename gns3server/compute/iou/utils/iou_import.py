@@ -64,9 +64,10 @@ def put_uint32(data, off, value):
 
 
 # calculate padding
-def padding(off, ios):
+def padding(off, ios, nvram_len):
     pad = (4 - off % 4) % 4             # padding to alignment of 4
-    if ios <= 0x0F00 and pad != 0:      # add 4 if IOS <= 15.0
+    # add 4 if IOS <= 15.0 or NVRAM area >= 64KB
+    if (ios <= 0x0F00 or nvram_len >= 64 * 1024) and pad != 0:
         pad += 4
     return pad
 
@@ -118,7 +119,7 @@ def nvram_import(nvram, startup, private, size):
         if get_uint16(nvram, 0) == 0xABCD:
             ios = get_uint16(nvram, 6)
             config_len = 36 + get_uint32(nvram, 16)
-            config_len += padding(config_len, ios)
+            config_len += padding(config_len, ios, nvram_len)
             if get_uint16(nvram, config_len) == 0xFEDC:
                 config_len += 16 + get_uint32(nvram, config_len + 12)
     except IndexError:
@@ -158,7 +159,7 @@ def nvram_import(nvram, startup, private, size):
     put_uint32(new_nvram, 12, BASE_ADDRESS + 36 + len(startup))   # end address
     put_uint32(new_nvram, 16, len(startup))                     # length
     new_nvram.extend(startup)
-    new_nvram.extend([0] * padding(len(new_nvram), ios))
+    new_nvram.extend([0] * padding(len(new_nvram), ios, nvram_len))
 
     # import private config
     if private is None:
