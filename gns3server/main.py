@@ -36,7 +36,7 @@ if sys.platform.startswith("win"):
     import asyncio
     # use the Proactor event loop on Windows
     loop = asyncio.ProactorEventLoop()
-
+    asyncio.set_event_loop(loop)
 
 
 def daemonize():

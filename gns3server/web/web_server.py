@@ -267,7 +267,6 @@ class WebServer:
             def wakeup():
                 loop.call_later(0.5, wakeup)
             loop.call_later(0.5, wakeup)
-            asyncio.set_event_loop(loop)
 
         server_config = Config.instance().get_section_config("Server")
 
