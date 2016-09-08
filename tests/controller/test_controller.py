@@ -149,7 +149,7 @@ def test_import_gns3vm_1_x(controller, controller_config_path, async_run):
     assert controller.gns3vm.settings["engine"] == "vmware"
     assert controller.gns3vm.settings["enable"]
     assert controller.gns3vm.settings["headless"]
-    assert controller.gns3vm.settings["auto_stop"] is False
+    assert controller.gns3vm.settings["when_exit"] == "keep"
     assert controller.gns3vm.settings["vmname"] == "GNS3 VM"
 
 
@@ -408,17 +408,47 @@ def test_stop(controller, async_run):
 
 def test_stop_vm(controller, async_run):
     """
-    Start the controller with a GNS3 VM running
+    Stop GNS3 VM if configured
     """
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
-        "auto_stop": True
+        "when_exit": "stop"
     }
     controller.gns3vm._current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
         async_run(controller.stop())
         assert mock.called
+
+
+def test_suspend_vm(controller, async_run):
+    """
+    Suspend GNS3 VM if configured
+    """
+    controller.gns3vm.settings = {
+        "enable": True,
+        "engine": "vmware",
+        "when_exit": "suspend"
+    }
+    controller.gns3vm._current_engine().running = True
+    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
+        async_run(controller.stop())
+        assert mock.called
+
+
+def test_keep_vm(controller, async_run):
+    """
+    Keep GNS3 VM if configured
+    """
+    controller.gns3vm.settings = {
+        "enable": True,
+        "engine": "vmware",
+        "when_exit": "keep"
+    }
+    controller.gns3vm._current_engine().running = True
+    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
+        async_run(controller.stop())
+        assert not mock.called
 
 
 def test_get_free_project_name(controller, async_run):

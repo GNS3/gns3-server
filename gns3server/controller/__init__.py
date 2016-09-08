@@ -88,7 +88,7 @@ class Controller:
             # We don't care if a compute is down at this step
             except aiohttp.errors.ClientOSError:
                 pass
-        yield from self.gns3vm.auto_stop_vm()
+        yield from self.gns3vm.exit_vm()
         self._computes = {}
         self._projects = {}
 
@@ -204,10 +204,16 @@ class Controller:
                         for compute in self._computes.values():
                             if compute.host == vm_settings.get("remote_vm_host") and compute.port == vm_settings.get("remote_vm_port"):
                                 vmname = compute.name
+
+                    if vm_settings.get("auto_stop", True):
+                        when_exit = "stop"
+                    else:
+                        when_exit = "keep"
+
                     self.gns3vm.settings = {
                         "engine": engine,
                         "enable": vm_settings.get("auto_start", False),
-                        "auto_stop": vm_settings.get("auto_stop", True),
+                        "when_exit": when_exit,
                         "headless": vm_settings.get("headless", False),
                         "vmname": vmname
                     }

@@ -64,6 +64,13 @@ class RemoteGNS3VM(BaseGNS3VM):
         raise GNS3VMError("Can't start the GNS3 VM remote VM {} not found".format(self.vmname))
 
     @asyncio.coroutine
+    def suspend(self):
+        """
+        Suspend do nothing for remote server
+        """
+        self.running = False
+
+    @asyncio.coroutine
     def stop(self):
         """
         Stops the GNS3 VM.

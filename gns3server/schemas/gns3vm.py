@@ -29,9 +29,9 @@ GNS3VM_SETTINGS_SCHEMA = {
             "type": "string",
             "description": "The name of the VM"
         },
-        "auto_stop": {
-            "type": "boolean",
-            "description": "The VM auto stop with GNS3"
+        "when_exit": {
+            "description": "What to do with the VM when GNS3 exit",
+            "enum": ["stop", "suspend", "keep"]
         },
         "headless": {
             "type": "boolean",

@@ -180,7 +180,9 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             if self._headless:
                 args.extend(["--type", "headless"])
             yield from self._execute("startvm", args)
-
+        elif vm_state == "paused":
+            args = [self._vmname, "resume"]
+            yield from self._execute("controlvm", args)
         ip_address = "127.0.0.1"
         try:
             # get a random port on localhost
@@ -221,7 +223,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             try:
                 resp = None
                 resp = yield from session.get('http://127.0.0.1:{}/v2/compute/network/interfaces'.format(api_port))
-            except OSError:
+            except (OSError, aiohttp.errors.ClientHttpProcessingError):
                 pass
 
             if resp:
@@ -243,13 +245,23 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         raise GNS3VMError("Could not get the GNS3 VM ip make sure the VM receive an IP from VirtualBox")
 
     @asyncio.coroutine
+    def suspend(self):
+        """
+        Suspend the GNS3 VM.
+        """
+
+        yield from self._execute("controlvm", [self._vmname, "savestate"], timeout=3)
+        log.info("GNS3 VM has been suspend")
+        self.running = False
+
+    @asyncio.coroutine
     def stop(self):
         """
         Stops the GNS3 VM.
         """
 
         yield from self._execute("controlvm", [self._vmname, "acpipowerbutton"], timeout=3)
-        log.info("GNS3 VM hsd been stopped")
+        log.info("GNS3 VM has been stopped")
         self.running = False
 
     @asyncio.coroutine

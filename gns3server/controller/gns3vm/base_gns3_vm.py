@@ -28,7 +28,6 @@ class BaseGNS3VM:
 
         self._controller = controller
         self._vmname = None
-        self._auto_stop = False
         self._ip_address = None
         self._port = 3080
         self._headless = False
@@ -246,26 +245,6 @@ class BaseGNS3VM:
         self._ram = new_ram
 
     @property
-    def auto_stop(self):
-        """
-        Returns whether the VM should automatically be stopped when GNS3 quit
-
-        :returns: boolean
-        """
-
-        return self._auto_start
-
-    @auto_stop.setter
-    def auto_stop(self, new_auto_stop):
-        """
-        Set whether the VM should automatically be stopped when GNS3 quit
-
-        :param new_auto_stop: boolean
-        """
-
-        self._auto_stop = new_auto_stop
-
-    @property
     def engine(self):
         """
         Returns the engine (virtualization technology used to run the GNS3 VM).
@@ -287,6 +266,14 @@ class BaseGNS3VM:
     def start(self):
         """
         Starts the GNS3 VM.
+        """
+
+        raise NotImplementedError
+
+    @asyncio.coroutine
+    def suspend(self):
+        """
+        Suspend the GNS3 VM.
         """
 
         raise NotImplementedError

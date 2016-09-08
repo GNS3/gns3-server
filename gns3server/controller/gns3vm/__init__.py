@@ -40,7 +40,7 @@ class GNS3VM:
         self._engines = {}
         self._settings = {
             "vmname": None,
-            "auto_stop": True,
+            "when_exit": "stop",
             "headless": False,
             "enable": False,
             "engine": "vmware"
@@ -54,7 +54,7 @@ class GNS3VM:
         vmware_informations = {
             "engine_id": "vmware",
             "description": "VMware is the recommended choice for best performances.",
-            "support_auto_stop": True,
+            "support_when_exit": True,
             "support_headless": True
         }
         if sys.platform.startswith("darwin"):
@@ -66,7 +66,7 @@ class GNS3VM:
             "engine_id": "virtualbox",
             "name": "VirtualBox",
             "description": "VirtualBox doesn't support nested virtualization, this means running Qemu based VM could be very slow.",
-            "support_auto_stop": True,
+            "support_when_exit": True,
             "support_headless": True
         }
 
@@ -74,7 +74,7 @@ class GNS3VM:
             "engine_id": "remote",
             "name": "Remote",
             "description": "Use a remote GNS3 server as the GNS3 VM.",
-            "support_auto_stop": False,
+            "support_when_exit": False,
             "support_headless": False
         }
 
@@ -149,11 +149,11 @@ class GNS3VM:
         return self._settings.get("enable", False)
 
     @property
-    def auto_stop(self):
+    def when_exit(self):
         """
-        The GNSVM should auto stop
+        What should be done when exit
         """
-        return self._settings["auto_stop"]
+        return self._settings["when_exit"]
 
     @property
     def settings(self):
@@ -224,10 +224,13 @@ class GNS3VM:
                                                         force=True)
 
     @asyncio.coroutine
-    def auto_stop_vm(self):
-        if self.enable and self.auto_stop:
+    def exit_vm(self):
+        if self.enable:
             try:
-                yield from self._stop()
+                if self._settings["when_exit"] == "stop":
+                    yield from self._stop()
+                elif self._settings["when_exit"] == "suspend":
+                    yield from self._suspend()
             except GNS3VMError as e:
                 log.warn(str(e))
 
@@ -249,6 +252,18 @@ class GNS3VM:
                                                     user=self.user,
                                                     password=self.password,
                                                     force=True)
+
+    @locked_coroutine
+    def _suspend(self):
+        """
+        Suspend the GNS3 VM
+        """
+        engine = self._current_engine()
+        if "vm" in self._controller.computes:
+            yield from self._controller.delete_compute("vm")
+        if engine.running:
+            log.info("Suspend the GNS3 VM")
+            yield from engine.suspend()
 
     @locked_coroutine
     def _stop(self):

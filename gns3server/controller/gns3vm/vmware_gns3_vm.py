@@ -127,6 +127,21 @@ class VMwareGNS3VM(BaseGNS3VM):
         self.running = True
 
     @asyncio.coroutine
+    def suspend(self):
+        """
+        Suspend the GNS3 VM.
+        """
+
+        if self._vmx_path is None:
+            raise GNS3VMError("No VMX path configured, can't suspend the VM")
+        try:
+            yield from self._execute("suspend", [self._vmx_path])
+        except GNS3VMError as e:
+            log.warning("Error when suspending the VM: {}".format(str(e)))
+        log.info("GNS3 VM has been suspended")
+        self.running = False
+
+    @asyncio.coroutine
     def stop(self):
         """
         Stops the GNS3 VM.
