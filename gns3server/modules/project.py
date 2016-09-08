@@ -528,7 +528,7 @@ class Project:
         :returns: ZipStream object
         """
 
-        z = zipstream.ZipFile()
+        z = zipstream.ZipFile(allowZip64=True)
         # topdown allo to modify the list of directory in order to ignore
         # directory
         for root, dirs, files in os.walk(self._path, topdown=True):
