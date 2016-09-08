@@ -24,6 +24,7 @@ from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
 from .remote_gns3_vm import RemoteGNS3VM
 from .gns3_vm_error import GNS3VMError
+from ...version import __version__
 
 import logging
 log = logging.getLogger(__name__)
@@ -51,9 +52,11 @@ class GNS3VM:
         """
         :returns: Return list of engines supported by GNS3 for the GNS3VM
         """
+
+        download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VMware.Workstation.{version}.zip".format(version=__version__)
         vmware_informations = {
             "engine_id": "vmware",
-            "description": "VMware is the recommended choice for best performances.",
+            "description": 'VMware is the recommended choice for best performances.<br>The GNS3 VM can be <a href="{}">downloaded here</a>.'.format(download_url),
             "support_when_exit": True,
             "support_headless": True
         }
@@ -62,10 +65,11 @@ class GNS3VM:
         else:
             vmware_informations["name"] = "VMware Workstation / Player"
 
+        download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VirtualBox.{version}.zip".format(version=__version__)
         virtualbox_informations = {
             "engine_id": "virtualbox",
             "name": "VirtualBox",
-            "description": "VirtualBox doesn't support nested virtualization, this means running Qemu based VM could be very slow.",
+            "description": 'VirtualBox doesn\'t support nested virtualization, this means running Qemu based VM could be very slow.<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
             "support_when_exit": True,
             "support_headless": True
         }
