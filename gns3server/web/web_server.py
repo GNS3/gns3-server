@@ -57,6 +57,8 @@ class WebServer:
         self._port = port
         self._loop = None
         self._handler = None
+        self._server = None
+        self._app = None
         self._start_time = time.time()
         self._port_manager = PortManager(host)
         self._running = False
@@ -76,15 +78,13 @@ class WebServer:
             WebServer._instance = WebServer(host, port)
         return WebServer._instance
 
-    @asyncio.coroutine
     def _run_application(self, handler, ssl_context=None):
-
         try:
-            server = yield from self._loop.create_server(handler, self._host, self._port, ssl=ssl_context)
+            self._server = self._loop.run_until_complete(self._loop.create_server(handler, self._host, self._port, ssl=ssl_context))
         except OSError as e:
             log.critical("Could not start the server: {}".format(e))
             return False
-        return server
+        return True
 
     @asyncio.coroutine
     def shutdown_server(self):
@@ -98,9 +98,15 @@ class WebServer:
             log.warning("Close is already in progress")
             return
 
+        if self._server:
+            self._server.close()
+            yield from self._server.wait_closed()
+        if self._app:
+            yield from self._app.shutdown()
         if self._handler:
-            yield from self._handler.finish_connections()
-            self._handler = None
+            yield from self._handler.finish_connections(2)  # Parameter is timeout
+        if self._app:
+            yield from self._app.cleanup()
 
         yield from Controller.instance().stop()
 
@@ -279,9 +285,9 @@ class WebServer:
         for key, val in os.environ.items():
             log.debug("ENV %s=%s", key, val)
 
-        app = aiohttp.web.Application()
+        self._app = aiohttp.web.Application()
         # Allow CORS for this domains
-        cors = aiohttp_cors.setup(app, defaults={
+        cors = aiohttp_cors.setup(self._app, defaults={
             # Default web server for web gui dev
             "http://127.0.0.1:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
             "http://localhost:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
@@ -289,16 +295,15 @@ class WebServer:
         })
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))
-            cors.add(app.router.add_route(method, route, handler))
+            cors.add(self._app.router.add_route(method, route, handler))
         for module in MODULES:
             log.debug("Loading module {}".format(module.__name__))
             m = module.instance()
             m.port_manager = self._port_manager
 
         log.info("Starting server on {}:{}".format(self._host, self._port))
-        self._handler = app.make_handler(handler=RequestHandler)
-        server = self._run_application(self._handler, ssl_context)
-        if self._loop.run_until_complete(server) is False:
+        self._handler = self._app.make_handler(handler=RequestHandler)
+        if self._run_application(self._handler, ssl_context) is False:
             self._loop.stop()
             return
 
@@ -323,9 +328,5 @@ class WebServer:
             # TypeError: async() takes 1 positional argument but 3 were given
             log.warning("TypeError exception in the loop {}".format(e))
         finally:
-
-            if self._handler and self._loop.is_running():
-                self._loop.run_until_complete(self._handler.finish_connections())
-            server.close()
             if self._loop.is_running():
-                self._loop.run_until_complete(app.finish())
+                self._loop.run_until_complete(self.shutdown_server())
