@@ -465,7 +465,7 @@ def _convert_snapshots(topo_dir):
 
                 if is_gns3_topo:
                     snapshot_arc = os.path.join(new_snapshots_dir, snapshot + ".gns3project")
-                    with zipfile.ZipFile(snapshot_arc, 'w') as myzip:
+                    with zipfile.ZipFile(snapshot_arc, 'w', allowZip64=True) as myzip:
                         for root, dirs, files in os.walk(snapshot_dir):
                             for file in files:
                                 myzip.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), snapshot_dir), compress_type=zipfile.ZIP_DEFLATED)

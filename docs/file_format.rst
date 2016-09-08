@@ -45,6 +45,8 @@ The .gns3p or .gns3project
 It's a zipped version of the .gns3 and all files require for
 a topology. The images could be included inside but are optionnals.
 
+The zip could be a ZIP64 if the project is too big for standard
+zip file.
 
 The .gns3a or .gns3appliance
 #############################

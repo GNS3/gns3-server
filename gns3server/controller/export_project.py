@@ -43,7 +43,7 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
     if project.is_running():
         raise aiohttp.web.HTTPConflict(text="Running topology could not be exported")
 
-    z = zipstream.ZipFile()
+    z = zipstream.ZipFile(allowZip64=True)
 
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
