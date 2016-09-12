@@ -1125,8 +1125,8 @@ class QemuVM(BaseNode):
 
         if self.ubridge and self.ubridge.is_running():
             yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
-                                                         self._local_udp_tunnels[adapter_number][1],
-                                                         nio)
+                                                        self._local_udp_tunnels[adapter_number][1],
+                                                        nio)
         elif self.is_running():
             raise QemuError("Sorry, adding a link to a started Qemu VM is not supported without using uBridge.")
 
@@ -1229,6 +1229,7 @@ class QemuVM(BaseNode):
         log.info("QEMU VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
                                                                                                        id=self.id,
                                                                                                        adapter_number=adapter_number))
+
     @property
     def started(self):
         """
@@ -1446,7 +1447,7 @@ class QemuVM(BaseNode):
                                                                                                                            adapter_number,
                                                                                                                            nio.rhost,
                                                                                                                            nio.rport,
-                                                                                                                           self._host,
+                                                                                                                           "0.0.0.0",
                                                                                                                            nio.lport)])
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
