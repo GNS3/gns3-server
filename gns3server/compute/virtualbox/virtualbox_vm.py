@@ -71,9 +71,6 @@ class VirtualBoxVM(BaseNode):
         self._use_any_adapter = False
         self._ram = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
-        self._port_name_format = "Ethernet{0}"
-        self._port_segment_size = 0
-        self._first_port_name = None
 
     def __json__(self):
 
@@ -90,10 +87,7 @@ class VirtualBoxVM(BaseNode):
                 "ram": self.ram,
                 "status": self.status,
                 "use_any_adapter": self.use_any_adapter,
-                "linked_clone": self._linked_clone,
-                "port_name_format": self._port_name_format,
-                "port_segment_size": self._port_segment_size,
-                "first_port_name": self._first_port_name}
+                "linked_clone": self._linked_clone}
         if self._linked_clone:
             json["node_directory"] = self.working_dir
         else:
@@ -683,30 +677,6 @@ class VirtualBoxVM(BaseNode):
         log.info("VirtualBox VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(name=self.name,
                                                                                                 id=self.id,
                                                                                                 adapter_type=adapter_type))
-
-    @property
-    def port_name_format(self):
-        return self._port_name_format
-
-    @port_name_format.setter
-    def port_name_format(self, val):
-        self._port_name_format = val
-
-    @property
-    def port_segment_size(self):
-        return self._port_segment_size
-
-    @port_segment_size.setter
-    def port_segment_size(self, val):
-        self._port_segment_size = val
-
-    @property
-    def first_port_name(self):
-        return self._first_port_name
-
-    @first_port_name.setter
-    def first_port_name(self, val):
-        self._first_port_name = val
 
     @asyncio.coroutine
     def _get_vm_info(self):

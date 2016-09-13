@@ -30,6 +30,9 @@
                 "name": "MicroCore-1",
                 "node_id": "426face4-7f73-436b-88fa-050e3ee101e9",
                 "node_type": "qemu",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "acpi_shutdown": false,
                     "adapter_type": "e1000",

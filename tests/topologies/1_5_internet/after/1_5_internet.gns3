@@ -40,6 +40,9 @@
                 "name": "Internet 0.1-1",
                 "node_id": "b8bef484-89d2-42a7-b151-6ead2eda965e",
                 "node_type": "nat",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "ports": [
                         {
@@ -69,6 +72,9 @@
                 "name": "PC1",
                 "node_id": "761c5e9e-eded-45b5-b6db-ca367b1855e2",
                 "node_type": "vpcs",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "startup_script_path": "startup.vpc"
                 },

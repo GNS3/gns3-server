@@ -46,6 +46,9 @@
                 "name": "PC1",
                 "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
                 "node_type": "vpcs",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "startup_script_path": "startup.vpc"
                 },
@@ -68,6 +71,9 @@
                 "name": "PC2",
                 "node_id": "b570a150-c09f-47d9-8d32-9ca5b03234d6",
                 "node_type": "vpcs",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "startup_script_path": "startup.vpc"
                 },

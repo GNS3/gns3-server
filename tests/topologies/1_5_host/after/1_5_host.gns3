@@ -30,10 +30,13 @@
                 "name": "Host 1",
                 "node_id": "ANYUUID",
                 "node_type": "cloud",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "interfaces": [
                     ],
-                    "ports": [
+                    "ports_mapping": [
                       {"interface": "bridge0", "port_number": 1, "type": "ethernet", "name": "bridge0"},
                       {"interface": "en0", "port_number": 2, "type": "ethernet", "name": "en0"},
                       {"interface": "en1", "port_number": 3, "type": "ethernet", "name": "en1"},

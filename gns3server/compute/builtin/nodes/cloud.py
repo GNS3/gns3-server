@@ -45,9 +45,9 @@ class Cloud(BaseNode):
 
         super().__init__(name, node_id, project, manager)
         self._nios = {}
-        self._ports = []
+        self._ports_mapping = []
         if ports:
-            self._ports = ports
+            self._ports_mapping = ports
 
     def __json__(self):
 
@@ -60,29 +60,29 @@ class Cloud(BaseNode):
         return {"name": self.name,
                 "node_id": self.id,
                 "project_id": self.project.id,
-                "ports": self._ports,
+                "ports_mapping": self._ports_mapping,
                 "interfaces": host_interfaces,
                 "status": "started"}
 
     @property
-    def ports(self):
+    def ports_mapping(self):
         """
         Ports on this cloud.
 
         :returns: ports info
         """
 
-        return self._ports
+        return self._ports_mapping
 
-    @ports.setter
-    def ports(self, ports):
+    @ports_mapping.setter
+    def ports_mapping(self, ports):
         """
         Set the ports on this cloud.
 
         :param ports: ports info
         """
 
-        self._ports = ports
+        self._ports_mapping = ports
 
     @asyncio.coroutine
     def create(self):

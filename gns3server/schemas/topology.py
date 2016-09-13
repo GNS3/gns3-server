@@ -103,10 +103,12 @@ TOPOLOGY_SCHEMA = {
 
 def main():
     import jsonschema
+    import json
     import sys
 
     with open(sys.argv[1]) as f:
-        jsonschema.validate(f.read(), TOPOLOGY_SCHEMA)
+        data = json.load(f)
+        jsonschema.validate(data, TOPOLOGY_SCHEMA)
 
 
 if __name__ == '__main__':

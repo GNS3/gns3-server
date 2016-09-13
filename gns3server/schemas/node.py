@@ -168,6 +168,55 @@ NODE_OBJECT_SCHEMA = {
         "z": {
             "description": "Z position of the node",
             "type": "integer"
+        },
+        "port_name_format": {
+            "description": "Formating for port name {0} will be replace by port number",
+            "type": "string"
+        },
+        "port_segment_size": {
+            "description": "Size of the port segment",
+            "type": "integer",
+            "minimum": 0
+        },
+        "first_port_name": {
+            "description": "Name of the first port",
+            "type": ["string", "null"],
+        },
+        "ports": {
+            "description": "List of node ports READ only",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "A node port",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Port name",
+                    },
+                    "short_name": {
+                        "type": "string",
+                        "description": "Short version of port name",
+                    },
+                    "adapter_number": {
+                        "type": "integer",
+                        "description": "Adapter slot"
+                    },
+                    "port_number": {
+                        "type": "integer",
+                        "description": "Port slot"
+                    },
+                    "link_type": {
+                        "description": "Type of link",
+                        "enum": ["ethernet", "serial"]
+                    },
+                    "data_link_types": {
+                        "type": "object",
+                        "description": "Available PCAP type for capture",
+                        "properties": {}
+                    },
+                },
+                "additionalProperties": False
+            }
         }
     },
     "additionalProperties": False,

@@ -30,6 +30,9 @@
                 "name": "R1",
                 "node_id": "11845dea-f175-495b-9fc5-bf20a2262016",
                 "node_type": "dynamips",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "auto_delete_disks": true,
                     "clock_divisor": 8,
@@ -72,6 +75,9 @@
                 "name": "ESW1",
                 "node_id": "4478a968-72a1-4722-9039-db7561c717c4",
                 "node_type": "dynamips",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "auto_delete_disks": false,
                     "chassis": "3660",

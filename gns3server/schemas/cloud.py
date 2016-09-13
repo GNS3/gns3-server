@@ -56,7 +56,7 @@ CLOUD_CREATE_SCHEMA = {
                  "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"}
             ]
         },
-        "ports": {
+        "ports_mapping": {
             "type": "array",
             "items": [
                 PORT_OBJECT_SCHEMA
@@ -103,7 +103,7 @@ CLOUD_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "ports": {
+        "ports_mapping": {
             "type": "array",
             "items": [
                 PORT_OBJECT_SCHEMA
@@ -124,7 +124,7 @@ CLOUD_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "project_id", "ports"]
+    "required": ["name", "node_id", "project_id", "ports_mapping"]
 }
 
 CLOUD_UPDATE_SCHEMA = CLOUD_OBJECT_SCHEMA

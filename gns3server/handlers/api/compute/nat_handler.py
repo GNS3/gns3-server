@@ -55,7 +55,7 @@ class NatHandler:
                                                       request.match_info["project_id"],
                                                       request.json.get("node_id"),
                                                       node_type="nat",
-                                                      ports=request.json.get("ports"))
+                                                      ports=request.json.get("ports_mapping"))
         response.set_status(201)
         response.json(node)
 

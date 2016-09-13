@@ -31,6 +31,9 @@
                 "name": "R1",
                 "node_id": "0bce6ad5-c688-4d4d-a425-f21aaf3927e2",
                 "node_type": "dynamips",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "dynamips_id": 1,
                     "auto_delete_disks": true,

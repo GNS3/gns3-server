@@ -114,9 +114,6 @@ class QemuVM(BaseNode):
         self._acpi_shutdown = False
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
-        self._first_port_name = ""
-        self._port_segment_size = 0
-        self._port_name_format = "Ethernet{0}"
 
         self.mac_address = ""  # this will generate a MAC address
         self.adapters = 1  # creates 1 adapter by default
@@ -755,30 +752,6 @@ class QemuVM(BaseNode):
                                                                                                                 id=self._id,
                                                                                                                 kernel_command_line=kernel_command_line))
         self._kernel_command_line = kernel_command_line
-
-    @property
-    def port_name_format(self):
-        return self._port_name_format
-
-    @port_name_format.setter
-    def port_name_format(self, val):
-        self._port_name_format = val
-
-    @property
-    def port_segment_size(self):
-        return self._port_segment_size
-
-    @port_segment_size.setter
-    def port_segment_size(self, val):
-        self._port_segment_size = val
-
-    @property
-    def first_port_name(self):
-        return self._first_port_name
-
-    @first_port_name.setter
-    def first_port_name(self, val):
-        self._first_port_name = val
 
     @asyncio.coroutine
     def _set_process_priority(self):

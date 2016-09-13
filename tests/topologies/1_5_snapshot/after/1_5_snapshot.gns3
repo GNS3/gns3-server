@@ -14,6 +14,9 @@
             "name" : "PC1",
             "symbol" : ":/symbols/vpcs_guest.svg",
             "console_type" : "telnet",
+            "port_name_format": "Ethernet{0}",
+            "port_segment_size": 0,
+            "first_port_name": null,
             "properties" : {
                "startup_script_path" : "startup.vpc"
             },

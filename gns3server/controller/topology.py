@@ -179,6 +179,9 @@ def _convert_1_3_later(topo, topo_path):
         node["x"] = int(old_node["x"])
         node["y"] = int(old_node["y"])
         node["z"] = int(old_node.get("z", 1))
+        node["port_name_format"] = old_node.get("port_name_format", "Ethernet{0}")
+        node["port_segment_size"] = int(old_node.get("port_segment_size", "0"))
+        node["first_port_name"] = old_node.get("first_port_name")
 
         node["properties"] = {}
 
@@ -196,21 +199,21 @@ def _convert_1_3_later(topo, topo_path):
             node["console_type"] = None
         elif old_node["type"] == "EthernetHub":
             node["node_type"] = "ethernet_hub"
-            node["symbol"] = ":/symbols/hub.svg"
             node["console_type"] = None
-            node["properties"]["ports"] = []
+            node["symbol"] = ":/symbols/hub.svg"
+            node["properties"]["ports_mapping"] = []
             for port in old_node["ports"]:
-                node["properties"]["ports"].append({
+                node["properties"]["ports_mapping"].append({
                     "name": "Ethernet{}".format(port["port_number"]),
                     "port_number": port["port_number"]
                 })
         elif old_node["type"] == "EthernetSwitch":
             node["node_type"] = "ethernet_switch"
             node["symbol"] = ":/symbols/ethernet_switch.svg"
-            node["properties"]["ports"] = []
             node["console_type"] = None
+            node["properties"]["ports_mapping"] = []
             for port in old_node["ports"]:
-                node["properties"]["ports"].append({
+                node["properties"]["ports_mapping"].append({
                     "name": "Ethernet{}".format(port["port_number"]),
                     "port_number": port["port_number"],
                     "type": port["type"],
@@ -439,7 +442,7 @@ def _create_cloud(node, old_node, icon):
         }
         ports.append(port)
 
-    node["properties"]["ports"] = ports
+    node["properties"]["ports_mapping"] = ports
     node["properties"]["interfaces"] = []
 
 

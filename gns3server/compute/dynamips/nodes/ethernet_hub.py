@@ -60,7 +60,7 @@ class EthernetHub(Bridge):
         return {"name": self.name,
                 "node_id": self.id,
                 "project_id": self.project.id,
-                "ports": self._ports,
+                "ports_mapping": self._ports,
                 "status": "started"}
 
     @property

@@ -46,7 +46,7 @@ NAT_OBJECT_SCHEMA = {
             "description": "Node status",
             "enum": ["started", "stopped", "suspended"]
         },
-        "ports": {
+        "ports_mapping": {
             "type": "array",
             "items": [
                 PORT_OBJECT_SCHEMA

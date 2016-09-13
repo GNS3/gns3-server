@@ -199,19 +199,6 @@ QEMU_CREATE_SCHEMA = {
         "options": {
             "description": "Additional QEMU options",
             "type": ["string", "null"],
-        },
-        "port_name_format": {
-            "description": "Formating for port name {0} will be replace by port number",
-            "type": "string"
-        },
-        "port_segment_size": {
-            "description": "Size of the port segment",
-            "type": "integer",
-            "minimum": 0
-        },
-        "first_port_name": {
-            "description": "Name of the first port",
-            "type": ["string", "null"],
         }
     },
     "additionalProperties": False,
@@ -388,19 +375,6 @@ QEMU_UPDATE_SCHEMA = {
         },
         "options": {
             "description": "Additional QEMU options",
-            "type": ["string", "null"],
-        },
-        "port_name_format": {
-            "description": "Formating for port name {0} will be replace by port number",
-            "type": "string"
-        },
-        "port_segment_size": {
-            "description": "Size of the port segment",
-            "type": "integer",
-            "minimum": 0
-        },
-        "first_port_name": {
-            "description": "Name of the first port",
             "type": ["string", "null"],
         }
     },
@@ -595,19 +569,6 @@ QEMU_OBJECT_SCHEMA = {
         "command_line": {
             "description": "Last command line used by GNS3 to start QEMU",
             "type": "string"
-        },
-        "port_name_format": {
-            "description": "Formating for port name {0} will be replace by port number",
-            "type": "string"
-        },
-        "port_segment_size": {
-            "description": "Size of the port segment",
-            "type": "integer",
-            "minimum": 0
-        },
-        "first_port_name": {
-            "description": "Name of the first port",
-            "type": "string",
         }
     },
     "additionalProperties": False,
@@ -651,10 +612,7 @@ QEMU_OBJECT_SCHEMA = {
                  "options",
                  "node_directory",
                  "command_line",
-                 "status",
-                 "port_name_format",
-                 "first_port_name",
-                 "port_segment_size"]
+                 "status"]
 }
 
 QEMU_BINARY_FILTER_SCHEMA = {

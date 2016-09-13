@@ -57,7 +57,7 @@ class EthernetHubHandler:
                                                          request.match_info["project_id"],
                                                          request.json.get("node_id"),
                                                          device_type="ethernet_hub",
-                                                         ports=request.json.get("ports"))
+                                                         ports=request.json.get("ports_mapping"))
 
         # On Linux, use the generic hub
         # builtin_manager = Builtin.instance()
@@ -112,8 +112,8 @@ class EthernetHubHandler:
         node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
         if "name" in request.json and node.name != request.json["name"]:
             yield from node.set_name(request.json["name"])
-        if "ports" in request.json:
-            node.ports = request.json["ports"]
+        if "ports_mapping" in request.json:
+            node.ports_mapping = request.json["ports_mapping"]
 
         # builtin_manager = Builtin.instance()
         # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

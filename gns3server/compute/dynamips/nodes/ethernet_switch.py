@@ -65,17 +65,8 @@ class EthernetSwitch(Device):
         ethernet_switch_info = {"name": self.name,
                                 "node_id": self.id,
                                 "project_id": self.project.id,
-                                "ports": self._ports,
+                                "ports_mapping": self._ports,
                                 "status": "started"}
-
-        # ports = []
-        # for port_number, settings in self._mappings.items():
-        #     ports.append({"port": port_number,
-        #                   "type": settings[0],
-        #                   "vlan": settings[1],
-        #                   "ethertype": settings[2] if len(settings) > 2 else ""})
-        #
-        # ethernet_switch_info["ports"] = ports
         return ethernet_switch_info
 
     @property

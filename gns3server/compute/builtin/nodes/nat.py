@@ -53,5 +53,5 @@ class Nat(Cloud):
             "node_id": self.id,
             "project_id": self.project.id,
             "status": "started",
-            "ports": self.ports
+            "ports_mapping": self.ports
         }

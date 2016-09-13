@@ -29,7 +29,7 @@ def test_json(on_gns3vm, project):
         "node_id": nat.id,
         "project_id": project.id,
         "status": "started",
-        "ports": [
+        "ports_mapping": [
             {
                 "interface": "virbr0",
                 "name": "virbr0",

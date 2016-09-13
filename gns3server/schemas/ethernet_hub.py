@@ -54,7 +54,7 @@ ETHERNET_HUB_CREATE_SCHEMA = {
                  "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"}
             ]
         },
-        "ports": {
+        "ports_mapping": {
             "type": "array",
             "items": [
                 {"type": "object",
@@ -111,7 +111,7 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "ports": {
+        "ports_mapping": {
             "type": "array",
             "items": [
                 {"type": "object",
@@ -126,7 +126,7 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "project_id", "ports"]
+    "required": ["name", "node_id", "project_id", "ports_mapping"]
 }
 
 ETHERNET_HUB_UPDATE_SCHEMA = ETHERNET_HUB_OBJECT_SCHEMA

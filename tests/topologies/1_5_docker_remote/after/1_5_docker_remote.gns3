@@ -30,6 +30,9 @@
                 "name": "remote_busybox-1",
                 "node_id": "d397ef5a-84f1-4b6b-9d44-671937ec7781",
                 "node_type": "docker",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "adapters": 1,
                     "aux": 6002,

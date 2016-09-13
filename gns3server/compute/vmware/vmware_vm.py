@@ -70,9 +70,6 @@ class VMwareVM(BaseNode):
         self._ethernet_adapters = {}
         self._adapter_type = "e1000"
         self._use_any_adapter = False
-        self._port_name_format = "Ethernet{0}"
-        self._port_segment_size = 0
-        self._first_port_name = None
 
         if not os.path.exists(vmx_path):
             raise VMwareError('VMware VM "{name}" [{id}]: could not find VMX file "{vmx_path}"'.format(name=name, id=node_id, vmx_path=vmx_path))
@@ -92,10 +89,7 @@ class VMwareVM(BaseNode):
                 "use_any_adapter": self.use_any_adapter,
                 "status": self.status,
                 "node_directory": self.working_dir,
-                "linked_clone": self._linked_clone,
-                "port_name_format": self._port_name_format,
-                "port_segment_size": self._port_segment_size,
-                "first_port_name": self._first_port_name}
+                "linked_clone": self._linked_clone}
         return json
 
     @property
@@ -737,30 +731,6 @@ class VMwareVM(BaseNode):
         else:
             log.info("VMware VM '{name}' [{id}] is not allowed to use any adapter".format(name=self.name, id=self.id))
         self._use_any_adapter = use_any_adapter
-
-    @property
-    def port_name_format(self):
-        return self._port_name_format
-
-    @port_name_format.setter
-    def port_name_format(self, val):
-        self._port_name_format = val
-
-    @property
-    def port_segment_size(self):
-        return self._port_segment_size
-
-    @port_segment_size.setter
-    def port_segment_size(self, val):
-        self._port_segment_size = val
-
-    @property
-    def first_port_name(self):
-        return self._first_port_name
-
-    @first_port_name.setter
-    def first_port_name(self, val):
-        self._first_port_name = val
 
     @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, nio):

@@ -30,6 +30,9 @@
                 "name": "ATM1",
                 "node_id": "ANYUUID",
                 "node_type": "atm_switch",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "mappings": {
                       "1:0:100": "10:0:200"
@@ -54,8 +57,11 @@
                 "name": "HUB1",
                 "node_id": "ANYUUID",
                 "node_type": "ethernet_hub",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
-                    "ports": [
+                    "ports_mapping": [
                         {
                             "name": "Ethernet1",
                             "port_number": 1
@@ -109,8 +115,11 @@
                 "name": "SW1",
                 "node_id": "ANYUUID",
                 "node_type": "ethernet_switch",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
-                    "ports": [
+                    "ports_mapping": [
                         {
                             "name": "Ethernet1",
                             "port_number": 1,
@@ -180,6 +189,9 @@
                 "name": "FR1",
                 "node_id": "ANYUUID",
                 "node_type": "frame_relay_switch",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "mappings": {
                       "1:101": "10:202"

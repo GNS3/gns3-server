@@ -30,6 +30,9 @@
                 "name": "IOU1",
                 "node_id": "aaeb2288-a7d8-42a9-b9d8-c42ab464a390",
                 "node_type": "iou",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
                 "properties": {
                     "ethernet_adapters": 2,
                     "l1_keepalives": false,

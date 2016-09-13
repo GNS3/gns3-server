@@ -101,7 +101,20 @@ def test_json(node, compute):
         "width": node.width,
         "height": node.height,
         "symbol": node.symbol,
-        "label": node.label
+        "label": node.label,
+        "port_name_format": "Ethernet{0}",
+        "port_segment_size": 0,
+        "first_port_name": None,
+        "ports": [
+            {
+                "adapter_number": 0,
+                "data_link_types": {"Ethernet": "DLT_EN10MB"},
+                "link_type": "ethernet",
+                "name": "Ethernet0",
+                "port_number": 0,
+                "short_name": "e0/0"
+            }
+        ]
     }
     assert node.__json__(topology_dump=True) == {
         "compute_id": str(compute.id),
@@ -117,7 +130,10 @@ def test_json(node, compute):
         "width": node.width,
         "height": node.height,
         "symbol": node.symbol,
-        "label": node.label
+        "label": node.label,
+        "port_name_format": "Ethernet{0}",
+        "port_segment_size": 0,
+        "first_port_name": None
     }
 
 
