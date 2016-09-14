@@ -5,7 +5,7 @@ GET /v2/gns3vm/engines HTTP/1.1
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 366
+CONTENT-LENGTH: 1018
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -13,13 +13,24 @@ X-ROUTE: /v2/gns3vm/engines
 
 [
     {
-        "description": "VMware is the recommended choice for best performances.",
+        "description": "VMware is the recommended choice for best performances.<br>The GNS3 VM can be <a href=\"https://github.com/GNS3/gns3-gui/releases/download/v2.0.0dev1/GNS3.VM.VMware.Workstation.2.0.0dev1.zip\">downloaded here</a>.",
         "engine_id": "vmware",
-        "name": "VMware Fusion"
+        "name": "VMware Fusion",
+        "support_headless": true,
+        "support_when_exit": true
     },
     {
-        "description": "VirtualBox doesn't support nested virtualization, this means running Qemu based VM could be very slow.",
+        "description": "VirtualBox doesn't support nested virtualization, this means running Qemu based VM could be very slow.<br>The GNS3 VM can be <a href=\"https://github.com/GNS3/gns3-gui/releases/download/v2.0.0dev1/GNS3.VM.VirtualBox.2.0.0dev1.zip\">downloaded here</a>",
         "engine_id": "virtualbox",
-        "name": "VirtualBox"
+        "name": "VirtualBox",
+        "support_headless": true,
+        "support_when_exit": true
+    },
+    {
+        "description": "Use a remote GNS3 server as the GNS3 VM.",
+        "engine_id": "remote",
+        "name": "Remote",
+        "support_headless": false,
+        "support_when_exit": false
     }
 ]

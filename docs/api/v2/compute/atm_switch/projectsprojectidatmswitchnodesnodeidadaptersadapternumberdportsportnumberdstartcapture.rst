@@ -11,8 +11,8 @@ Parameters
 **********
 - **node_id**: Node UUID
 - **adapter_number**: Adapter on the switch (always 0)
-- **port_number**: Port on the switch
 - **project_id**: Project UUID
+- **port_number**: Port on the switch
 
 Response status codes
 **********************

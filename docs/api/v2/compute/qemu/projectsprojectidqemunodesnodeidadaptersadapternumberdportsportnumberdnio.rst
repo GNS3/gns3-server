@@ -11,8 +11,8 @@ Parameters
 **********
 - **node_id**: Node UUID
 - **adapter_number**: Network adapter where the nio is located
-- **port_number**: Port on the adapter (always 0)
 - **project_id**: Project UUID
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
@@ -35,8 +35,8 @@ Parameters
 **********
 - **node_id**: Node UUID
 - **adapter_number**: Network adapter where the nio is located
-- **port_number**: Port on the adapter (always 0)
 - **project_id**: Project UUID
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************

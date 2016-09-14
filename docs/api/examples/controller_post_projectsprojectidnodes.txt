@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/baaa8614-7da6-4ad7-8d7e-6857babef38d/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X POST 'http://localhost:3080/v2/projects/64d2f5f1-04d0-49b4-962a-69240377ea49/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-POST /v2/projects/baaa8614-7da6-4ad7-8d7e-6857babef38d/nodes HTTP/1.1
+POST /v2/projects/64d2f5f1-04d0-49b4-962a-69240377ea49/nodes HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -12,7 +12,7 @@ POST /v2/projects/baaa8614-7da6-4ad7-8d7e-6857babef38d/nodes HTTP/1.1
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 691
+CONTENT-LENGTH: 1084
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -24,6 +24,7 @@ X-ROUTE: /v2/projects/{project_id}/nodes
     "console": 2048,
     "console_host": "example.org",
     "console_type": null,
+    "first_port_name": null,
     "height": 59,
     "label": {
         "rotation": 0,
@@ -34,9 +35,23 @@ X-ROUTE: /v2/projects/{project_id}/nodes
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "f3f8f6b0-1e7a-469d-b5d8-bcb2c64b697c",
+    "node_id": "9815a844-baaa-4887-b827-e4da9224585e",
     "node_type": "vpcs",
-    "project_id": "baaa8614-7da6-4ad7-8d7e-6857babef38d",
+    "port_name_format": "Ethernet{0}",
+    "port_segment_size": 0,
+    "ports": [
+        {
+            "adapter_number": 0,
+            "data_link_types": {
+                "Ethernet": "DLT_EN10MB"
+            },
+            "link_type": "ethernet",
+            "name": "Ethernet0",
+            "port_number": 0,
+            "short_name": "e0/0"
+        }
+    ],
+    "project_id": "64d2f5f1-04d0-49b4-962a-69240377ea49",
     "properties": {
         "startup_script": "echo test"
     },

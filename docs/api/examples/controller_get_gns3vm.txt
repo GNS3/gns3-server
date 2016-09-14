@@ -5,16 +5,16 @@ GET /v2/gns3vm HTTP/1.1
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 113
+CONTENT-LENGTH: 115
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
 X-ROUTE: /v2/gns3vm
 
 {
-    "auto_stop": true,
     "enable": false,
     "engine": "vmware",
     "headless": false,
-    "vmname": null
+    "vmname": null,
+    "when_exit": "stop"
 }

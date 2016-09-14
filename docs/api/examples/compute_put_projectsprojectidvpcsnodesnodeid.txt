@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/e0719a9b-7863-46f7-ace1-479ff261f909' -d '{"console": 5722, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/41035467-4785-45a3-997f-4125c0f0955c' -d '{"console": 5722, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/e0719a9b-7863-46f7-ace1-479ff261f909 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/41035467-4785-45a3-997f-4125c0f0955c HTTP/1.1
 {
     "console": 5722,
     "name": "test",
@@ -20,8 +20,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}
     "console": 5722,
     "console_type": "telnet",
     "name": "test",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmps5w9xq7p/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/e0719a9b-7863-46f7-ace1-479ff261f909",
-    "node_id": "e0719a9b-7863-46f7-ace1-479ff261f909",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpskaf5ewe/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/41035467-4785-45a3-997f-4125c0f0955c",
+    "node_id": "41035467-4785-45a3-997f-4125c0f0955c",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",

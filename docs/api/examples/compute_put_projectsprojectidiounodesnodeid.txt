@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/52e439c4-8dc0-4e6f-9507-b525c2066e04' -d '{"console": 5712, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/79e87d08-c942-472c-baac-dbb34526882e' -d '{"console": 5712, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/52e439c4-8dc0-4e6f-9507-b525c2066e04 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/79e87d08-c942-472c-baac-dbb34526882e HTTP/1.1
 {
     "console": 5712,
     "ethernet_adapters": 4,
@@ -30,8 +30,8 @@ X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-311/test_json5/project-files/iou/52e439c4-8dc0-4e6f-9507-b525c2066e04",
-    "node_id": "52e439c4-8dc0-4e6f-9507-b525c2066e04",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-330/test_json5/project-files/iou/79e87d08-c942-472c-baac-dbb34526882e",
+    "node_id": "79e87d08-c942-472c-baac-dbb34526882e",
     "nvram": 2048,
     "path": "iou.bin",
     "private_config": null,

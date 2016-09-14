@@ -11,8 +11,8 @@ Parameters
 **********
 - **node_id**: Node UUID
 - **adapter_number**: Adapter on the nat (always 0)
-- **port_number**: Port on the nat
 - **project_id**: Project UUID
+- **port_number**: Port on the nat
 
 Response status codes
 **********************
@@ -35,8 +35,8 @@ Parameters
 **********
 - **node_id**: Node UUID
 - **adapter_number**: Adapter on the nat (always 0)
-- **port_number**: Port on the nat
 - **project_id**: Project UUID
+- **port_number**: Port on the nat
 
 Response status codes
 **********************

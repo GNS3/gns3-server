@@ -14,9 +14,9 @@ X-ROUTE: /v2/compute/capabilities
 {
     "node_types": [
         "cloud",
-        "nat",
         "ethernet_hub",
         "ethernet_switch",
+        "nat",
         "vpcs",
         "virtualbox",
         "dynamips",

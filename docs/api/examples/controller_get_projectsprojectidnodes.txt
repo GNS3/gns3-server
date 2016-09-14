@@ -1,11 +1,11 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/fc32861d-501d-4298-82c4-f68376dc6068/nodes'
+curl -i -X GET 'http://localhost:3080/v2/projects/f7d44669-cb36-4ec0-bcee-57ef25dbb640/nodes'
 
-GET /v2/projects/fc32861d-501d-4298-82c4-f68376dc6068/nodes HTTP/1.1
+GET /v2/projects/f7d44669-cb36-4ec0-bcee-57ef25dbb640/nodes HTTP/1.1
 
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 811
+CONTENT-LENGTH: 1264
 CONTENT-TYPE: application/json
 DATE: Thu, 08 Jan 2015 16:09:15 GMT
 SERVER: Python/3.5 GNS3/2.0.0dev1
@@ -18,6 +18,7 @@ X-ROUTE: /v2/projects/{project_id}/nodes
         "console": 2048,
         "console_host": "example.org",
         "console_type": null,
+        "first_port_name": null,
         "height": 59,
         "label": {
             "rotation": 0,
@@ -28,9 +29,23 @@ X-ROUTE: /v2/projects/{project_id}/nodes
         },
         "name": "test",
         "node_directory": null,
-        "node_id": "e4ffbacc-ac60-4d99-8a13-1479837fd066",
+        "node_id": "cb86c0c4-5892-4178-a0ff-fda36032d578",
         "node_type": "vpcs",
-        "project_id": "fc32861d-501d-4298-82c4-f68376dc6068",
+        "port_name_format": "Ethernet{0}",
+        "port_segment_size": 0,
+        "ports": [
+            {
+                "adapter_number": 0,
+                "data_link_types": {
+                    "Ethernet": "DLT_EN10MB"
+                },
+                "link_type": "ethernet",
+                "name": "Ethernet0",
+                "port_number": 0,
+                "short_name": "e0/0"
+            }
+        ],
+        "project_id": "f7d44669-cb36-4ec0-bcee-57ef25dbb640",
         "properties": {
             "startup_script": "echo test"
         },

@@ -11,8 +11,8 @@ Parameters
 **********
 - **node_id**: Node UUID
 - **adapter_number**: Adapter where the nio should be added
-- **port_number**: Port on the adapter
 - **project_id**: Project UUID
+- **port_number**: Port on the adapter
 
 Response status codes
 **********************
@@ -35,8 +35,8 @@ Parameters
 **********
 - **node_id**: Node UUID
 - **adapter_number**: Adapter where the nio should be added
-- **port_number**: Port on the adapter
 - **project_id**: Project UUID
+- **port_number**: Port on the adapter
 
 Response status codes
 **********************

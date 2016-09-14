@@ -1,22 +1,20 @@
-/v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture
+/v2/compute/projects/{project_id}/vpcs/nodes/{node_id}/suspend
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/compute/projects/**{project_id}**/virtualbox/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/stop_capture
+POST /v2/compute/projects/**{project_id}**/vpcs/nodes/**{node_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Stop a packet capture on a VirtualBox VM instance
+Suspend a VPCS instance (stop it)
 
 Parameters
 **********
 - **node_id**: Node UUID
-- **adapter_number**: Adapter to stop a packet capture
 - **project_id**: Project UUID
-- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Capture stopped
+- **204**: Instance stopped
 

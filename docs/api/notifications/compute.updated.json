@@ -1,27 +1,15 @@
 {
     "capabilities": {
-        "node_types": [
-            "cloud",
-            "nat",
-            "ethernet_hub",
-            "ethernet_switch",
-            "vpcs",
-            "virtualbox",
-            "dynamips",
-            "frame_relay_switch",
-            "atm_switch",
-            "qemu",
-            "vmware"
-        ],
-        "version": "2.0.0dev1"
+        "node_types": [],
+        "version": null
     },
-    "compute_id": "local",
-    "connected": true,
-    "cpu_usage_percent": 14.3,
+    "compute_id": "my_compute_id",
+    "connected": false,
+    "cpu_usage_percent": null,
     "host": "localhost",
-    "memory_usage_percent": 81.2,
-    "name": "atlantis",
-    "port": 3080,
-    "protocol": "http",
-    "user": null
+    "memory_usage_percent": null,
+    "name": "http://julien@localhost:84",
+    "port": 84,
+    "protocol": "https",
+    "user": "julien"
 }

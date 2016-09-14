@@ -4,6 +4,7 @@
     "console": null,
     "console_host": "example.org",
     "console_type": null,
+    "first_port_name": null,
     "height": 59,
     "label": {
         "rotation": 0,
@@ -14,9 +15,23 @@
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "930d8103-563f-4550-a43f-34a718883c6e",
+    "node_id": "cf34dae9-ff88-4ef4-a37f-e3954d07e351",
     "node_type": "vpcs",
-    "project_id": "0555e4fa-ea3b-4cfc-9ee7-f893afdc0529",
+    "port_name_format": "Ethernet{0}",
+    "port_segment_size": 0,
+    "ports": [
+        {
+            "adapter_number": 0,
+            "data_link_types": {
+                "Ethernet": "DLT_EN10MB"
+            },
+            "link_type": "ethernet",
+            "name": "Ethernet0",
+            "port_number": 0,
+            "short_name": "e0/0"
+        }
+    ],
+    "project_id": "b33faa3d-e348-4de5-a266-30b3949d5872",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
