@@ -49,6 +49,9 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
     :returns: Project
     """
 
+    if location and ".gns3" in location:
+        raise aiohttp.web.HTTPConflict(text="The destination path should not contain .gns3")
+
     with zipfile.ZipFile(stream) as myzip:
 
         try:
