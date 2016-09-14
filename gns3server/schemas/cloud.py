@@ -26,10 +26,15 @@ HOST_INTERFACE_SCHEMA = {
             "minLength": 1,
         },
         "type": {
+            "description": "Interface type",
             "enum": ["ethernet", "tap"]
         },
+        "special": {
+            "description": "If true the interface is non standard (firewire for example)",
+            "type": "boolean"
+        }
     },
-    "required": ["name", "type"],
+    "required": ["name", "type", "special"],
     "additionalProperties": False
 }
 

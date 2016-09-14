@@ -22,7 +22,11 @@ from gns3server.utils.interfaces import interfaces, is_interface_up
 
 def test_interfaces():
     # This test should pass on all platforms without crash
-    assert isinstance(interfaces(), list)
+    interface_list = interfaces()
+    assert isinstance(interface_list, list)
+    for interface in interface_list:
+        if interface["name"].startswith("vmnet"):
+            assert interface["special"]
 
 
 def test_is_interface_up():

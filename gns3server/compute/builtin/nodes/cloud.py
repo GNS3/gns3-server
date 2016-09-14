@@ -55,7 +55,8 @@ class Cloud(BaseNode):
         network_interfaces = interfaces()
         for interface in network_interfaces:
             host_interfaces.append({"name": interface["name"],
-                                    "type": interface["type"]})
+                                    "type": interface["type"],
+                                    "special": interface["special"]})
 
         return {"name": self.name,
                 "node_id": self.id,
