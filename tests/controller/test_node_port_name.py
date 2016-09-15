@@ -268,7 +268,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e0/0",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
-            "adapter_number": 0,
+            "adapter_number": 2,
             "link_type": "ethernet"
         },
         {
@@ -276,7 +276,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e0/1",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
-            "adapter_number": 0,
+            "adapter_number": 2,
             "link_type": "ethernet"
         },
         {
@@ -284,7 +284,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e0/2",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 2,
-            "adapter_number": 0,
+            "adapter_number": 2,
             "link_type": "ethernet"
         },
         {
@@ -292,7 +292,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e0/3",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 3,
-            "adapter_number": 0,
+            "adapter_number": 2,
             "link_type": "ethernet"
         },
         {
@@ -300,7 +300,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e1/0",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
-            "adapter_number": 1,
+            "adapter_number": 3,
             "link_type": "ethernet"
         },
         {
@@ -308,7 +308,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e1/1",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
-            "adapter_number": 1,
+            "adapter_number": 3,
             "link_type": "ethernet"
         },
         {
@@ -316,7 +316,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e1/2",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 2,
-            "adapter_number": 1,
+            "adapter_number": 3,
             "link_type": "ethernet"
         },
         {
@@ -324,7 +324,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e1/3",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 3,
-            "adapter_number": 1,
+            "adapter_number": 3,
             "link_type": "ethernet"
         },
         {
@@ -332,7 +332,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e2/0",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
-            "adapter_number": 2,
+            "adapter_number": 4,
             "link_type": "ethernet"
         },
         {
@@ -340,7 +340,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e2/1",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
-            "adapter_number": 2,
+            "adapter_number": 4,
             "link_type": "ethernet"
         },
         {
@@ -348,7 +348,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e2/2",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 2,
-            "adapter_number": 2,
+            "adapter_number": 4,
             "link_type": "ethernet"
         },
         {
@@ -356,7 +356,7 @@ def test_list_ports_iou(compute, project):
             "short_name": "e2/3",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 3,
-            "adapter_number": 2,
+            "adapter_number": 4,
             "link_type": "ethernet"
         }
     ]
