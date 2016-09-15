@@ -20,19 +20,21 @@ Use segments
 Segment allow you to split your interface in multiple ports 
 
 For example "Ethernet{segment0}/{port0}" with a segment size of 3:
-* Ethernet0/0
-* Ethernet0/1
-* Ethernet0/2
-* Ethernet1/0
-* Ethernet1/1
+
+- Ethernet0/0
+- Ethernet0/1
+- Ethernet0/2
+- Ethernet1/0
+- Ethernet1/1
 
 You can also change the start number.
 
 For example "Ethernet{segment1}/{port1}" with a segment size of 3:
-* Ethernet1/1
-* Ethernet1/2
-* Ethernet1/3
-* Ethernet2/1
-* Ethernet2/2
+
+- Ethernet1/1
+- Ethernet1/2
+- Ethernet1/3
+- Ethernet2/1
+- Ethernet2/2
 
 This work from port0 to port9 if you need a bigger range ask us.
