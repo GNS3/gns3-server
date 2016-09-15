@@ -70,6 +70,7 @@ class Node:
         self._x = 0
         self._y = 0
         self._z = 0
+        self._ports = None
         self._symbol = None
         if node_type == "iou":
             self._port_name_format = "Ethernet{segment0}/{port0}"
@@ -158,6 +159,12 @@ class Node:
         :returns: Domain or ip for console connection
         """
         return self._compute.host
+
+    @property
+    def ports(self):
+        if self._ports is None:
+            self._list_ports()
+        return self._ports
 
     @property
     def x(self):
@@ -303,6 +310,7 @@ class Node:
                 else:
                     setattr(self, prop, kwargs[prop])
 
+        self._list_ports()
         # We send notif only if object has changed
         if old_json != self.__json__():
             self.project.controller.notification.emit("node.updated", self.__json__())
@@ -333,6 +341,7 @@ class Node:
                 pass
             else:
                 self._properties[key] = value
+        self._list_ports()
 
     def _node_data(self, properties=None):
         """
@@ -457,26 +466,38 @@ class Node:
         """
         return (yield from self._compute.get("/projects/{}/{}/nodes/{}/idlepc_proposals".format(self._project.id, self._node_type, self._id), timeout=240)).json
 
+    def get_port(self, adapter_number, port_number):
+        """
+        Return the port for this adapter_number and port_number
+        or raise an HTTPNotFound
+        """
+        for port in self.ports:
+            if port.adapter_number == adapter_number and port.port_number == port_number:
+                return port
+        raise aiohttp.web.HTTPNotFound(text="Port {}/{} for {} not found".format(adapter_number, port_number, self.name))
+
     def _list_ports(self):
         """
         Generate the list of port display in the client
         if the compute has sent a list we return it (use by
         node where you can not personnalize the port naming).
         """
-        ports = []
+        self._ports = []
         # Some special cases
         if self._node_type == "atm_switch":
             for adapter_number in range(0, len(self.properties["mappings"])):
-                ports.append(PortFactory("ATM{}".format(adapter_number), adapter_number, adapter_number, 0, "atm"))
-            return ports
+                self._ports.append(PortFactory("ATM{}".format(adapter_number), adapter_number, adapter_number, 0, "atm"))
+            return
         elif self._node_type == "frame_relay_switch":
             for adapter_number in range(0, len(self.properties["mappings"])):
-                ports.append(PortFactory("FrameRelay{}".format(adapter_number), adapter_number, adapter_number, 0, "frame_relay"))
-            return ports
+                self._ports.append(PortFactory("FrameRelay{}".format(adapter_number), adapter_number, adapter_number, 0, "frame_relay"))
+            return
         elif self._node_type == "dynamips":
-            return DynamipsPortFactory(self.properties)
+            self._ports = DynamipsPortFactory(self.properties)
+            return
         else:
-            return StandardPortFactory(self.properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)
+            self._ports = StandardPortFactory(self.properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)
+            return
 
     def __repr__(self):
         return "<gns3server.controller.Node {} {}>".format(self._node_type, self._name)
@@ -533,5 +554,5 @@ class Node:
             "port_name_format": self._port_name_format,
             "port_segment_size": self._port_segment_size,
             "first_port_name": self._first_port_name,
-            "ports": [port.__json__() for port in self._list_ports()]
+            "ports": [port.__json__() for port in self.ports]
         }

@@ -25,7 +25,7 @@ from .port import Port
 class GigabitEthernetPort(Port):
 
     @staticmethod
-    def longNameType():
+    def long_name_type():
         """
         Returns the long name type for this port.
 
@@ -34,8 +34,8 @@ class GigabitEthernetPort(Port):
 
         return "GigabitEthernet"
 
-    @staticmethod
-    def shortNameType():
+    @property
+    def short_name_type(self):
         """
         Returns the short name type for this port.
 

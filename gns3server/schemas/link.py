@@ -75,6 +75,10 @@ LINK_OBJECT_SCHEMA = {
         "capture_file_path": {
             "description": "Read only property. The full path of the capture file if capture is running",
             "type": ["string", "null"]
+        },
+        "link_type": {
+            "description": "Type of link",
+            "enum": ["ethernet", "serial"]
         }
     },
     "required": ["nodes"],

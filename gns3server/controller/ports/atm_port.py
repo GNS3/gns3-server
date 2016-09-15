@@ -19,43 +19,31 @@
 ATM port for ATM link end points.
 """
 
-from .port import Port
+from .serial_port import SerialPort
 
 
-class ATMPort(Port):
+class ATMPort(SerialPort):
 
     @staticmethod
-    def longNameType():
+    def long_name_type():
         """
         Returns the long name type for this port.
 
         :returns: string
         """
-
         return "ATM"
 
-    @staticmethod
-    def shortNameType():
+    @property
+    def short_name_type(self):
         """
         Returns the short name type for this port.
 
         :returns: string
         """
-
         return "a"
 
-    @staticmethod
-    def linkType():
-        """
-        Returns the link type to be used to connect this port.
-
-        :returns: string
-        """
-
-        return "Serial"
-
-    @staticmethod
-    def dataLinkTypes():
+    @property
+    def data_link_types(self):
         """
         Returns the supported PCAP DLTs.
 

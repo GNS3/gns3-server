@@ -24,6 +24,8 @@ from unittest.mock import MagicMock
 
 from gns3server.controller.link import Link
 from gns3server.controller.node import Node
+from gns3server.controller.ports.ethernet_port import EthernetPort
+from gns3server.controller.ports.serial_port import SerialPort
 from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
 
@@ -43,7 +45,9 @@ def compute():
 @pytest.fixture
 def link(async_run, project, compute):
     node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
     node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 1, 3)]
 
     link = Link(project)
     link.create = AsyncioMagicMock()
@@ -60,6 +64,7 @@ def test_eq(project, link, controller):
 
 def test_add_node(async_run, project, compute):
     node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
 
     link = Link(project)
     link.create = AsyncioMagicMock()
@@ -87,6 +92,7 @@ def test_add_node(async_run, project, compute):
 
     # We call link.created only when both side are created
     node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
     async_run(link.add_node(node2, 0, 4))
 
     assert link.create.called
@@ -95,7 +101,9 @@ def test_add_node(async_run, project, compute):
 
 def test_add_node_cloud(async_run, project, compute):
     node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
     node2 = Node(project, compute, "node2", node_type="cloud")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
 
     link = Link(project)
     link.create = AsyncioMagicMock()
@@ -110,7 +118,9 @@ def test_add_node_cloud_to_cloud(async_run, project, compute):
     Cloud to cloud connection is not allowed
     """
     node1 = Node(project, compute, "node1", node_type="cloud")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
     node2 = Node(project, compute, "node2", node_type="cloud")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
 
     link = Link(project)
     link.create = AsyncioMagicMock()
@@ -121,9 +131,29 @@ def test_add_node_cloud_to_cloud(async_run, project, compute):
         async_run(link.add_node(node2, 0, 4))
 
 
-def test_json(async_run, project, compute):
+def test_add_node_serial_to_ethernet(async_run, project, compute):
+    """
+    Serial to ethernet connection is not allowed
+    """
     node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
     node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [SerialPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.controller.notification.emit = MagicMock()
+
+    async_run(link.add_node(node1, 0, 4))
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        async_run(link.add_node(node2, 0, 4))
+
+
+def test_json(async_run, project, compute, link):
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 1, 3)]
 
     link = Link(project)
     link.create = AsyncioMagicMock()
@@ -158,6 +188,7 @@ def test_json(async_run, project, compute):
                 }
             }
         ],
+        "link_type": "ethernet",
         "capturing": False,
         "capture_file_name": None,
         "capture_file_path": None
@@ -193,6 +224,19 @@ def test_json(async_run, project, compute):
     }
 
 
+def test_json_serial_link(async_run, project, compute, link):
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [SerialPort("S0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [SerialPort("S0", 0, 1, 3)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    async_run(link.add_node(node1, 0, 4))
+    async_run(link.add_node(node2, 1, 3))
+    assert link.__json__()["link_type"] == "serial"
+
+
 def test_start_streaming_pcap(link, async_run, tmpdir, project):
     @asyncio.coroutine
     def fake_reader():
@@ -212,7 +256,9 @@ def test_start_streaming_pcap(link, async_run, tmpdir, project):
 
 def test_default_capture_file_name(project, compute, async_run):
     node1 = Node(project, compute, "Hello@", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
     node2 = Node(project, compute, "w0.rld", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 1, 3)]
 
     link = Link(project)
     link.create = AsyncioMagicMock()

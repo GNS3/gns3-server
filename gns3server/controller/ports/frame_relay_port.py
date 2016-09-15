@@ -25,7 +25,7 @@ from .serial_port import SerialPort
 class FrameRelayPort(SerialPort):
 
     @staticmethod
-    def longNameType():
+    def long_name_type():
         """
         Returns the long name type for this port.
 
@@ -34,8 +34,8 @@ class FrameRelayPort(SerialPort):
 
         return "FrameRelay"
 
-    @staticmethod
-    def dataLinkTypes():
+    @property
+    def data_link_types(self):
         """
         Returns the supported PCAP DLTs.
 

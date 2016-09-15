@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
 import pytest
 import uuid
 import asyncio
@@ -420,3 +421,15 @@ def test_update_label(node):
     node.label = {"text": "Wrong", "x": 12}
     assert node.label["text"] == "Test"
     assert node.label["x"] == 12
+
+
+def test_get_port(node):
+    node.properties["adapters"] = 2
+    node._list_ports()
+    port = node.get_port(0, 0)
+    assert port.adapter_number == 0
+    assert port.port_number == 0
+    port = node.get_port(1, 0)
+    assert port.adapter_number == 1
+    with pytest.raises(aiohttp.web.HTTPNotFound):
+        port = node.get_port(42, 0)

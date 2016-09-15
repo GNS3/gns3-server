@@ -25,7 +25,7 @@ from .port import Port
 class SerialPort(Port):
 
     @staticmethod
-    def longNameType():
+    def long_name_type():
         """
         Returns the long name type for this port.
 
@@ -34,8 +34,8 @@ class SerialPort(Port):
 
         return "Serial"
 
-    @staticmethod
-    def shortNameType():
+    @property
+    def short_name_type(self):
         """
         Returns the short name type for this port.
 
@@ -44,18 +44,18 @@ class SerialPort(Port):
 
         return "s"
 
-    @staticmethod
-    def linkType():
+    @property
+    def link_type(self):
         """
         Returns the link type to be used to connect this port.
 
         :returns: string
         """
 
-        return "Serial"
+        return "serial"
 
-    @staticmethod
-    def dataLinkTypes():
+    @property
+    def data_link_types(self):
         """
         Returns the supported PCAP DLTs.
 

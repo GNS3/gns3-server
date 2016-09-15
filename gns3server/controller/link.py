@@ -42,6 +42,7 @@ class Link:
         self._capture_file_name = None
         self._streaming_pcap = None
         self._created = False
+        self._link_type = "ethernet"
 
     @property
     def created(self):
@@ -56,10 +57,18 @@ class Link:
         Add a node to the link
         """
 
+        port = node.get_port(adapter_number, port_number)
+        self._link_type = port.link_type
+
         for other_node in self._nodes:
             if node.node_type in ["nat", "cloud"]:
                 if other_node["node"].node_type in ["nat", "cloud"]:
                     raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_node["node"].node_type, node.node_type))
+
+            # Check if user is not connecting serial => ethernet
+            other_port = other_node["node"].get_port(other_node["adapter_number"], other_node["port_number"])
+            if port.link_type != other_port.link_type:
+                raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_port.link_type, port.link_type))
 
         if label is None:
             label = {
@@ -225,5 +234,6 @@ class Link:
             "project_id": self._project.id,
             "capturing": self._capturing,
             "capture_file_name": self._capture_file_name,
-            "capture_file_path": self.capture_file_path
+            "capture_file_path": self.capture_file_path,
+            "link_type": self._link_type
         }

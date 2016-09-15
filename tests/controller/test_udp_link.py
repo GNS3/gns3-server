@@ -23,6 +23,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.project import Project
 from gns3server.controller.udp_link import UDPLink
+from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.node import Node
 
 
@@ -36,7 +37,9 @@ def test_create(async_run, project):
     compute2 = MagicMock()
 
     node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
     node2 = Node(project, compute2, "node2", node_type="vpcs")
+    node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
     @asyncio.coroutine
     def subnet_callback(compute2):
@@ -95,7 +98,9 @@ def test_delete(async_run, project):
     compute2 = MagicMock()
 
     node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
     node2 = Node(project, compute2, "node2", node_type="vpcs")
+    node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
@@ -117,7 +122,9 @@ def test_choose_capture_side(async_run, project):
     compute2.id = "local"
 
     node_vpcs = Node(project, compute1, "node1", node_type="vpcs")
+    node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
     node_iou = Node(project, compute2, "node2", node_type="iou")
+    node_iou._ports = [EthernetPort("E0", 0, 3, 1)]
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
@@ -127,7 +134,9 @@ def test_choose_capture_side(async_run, project):
     assert link._choose_capture_side()["node"] == node_iou
 
     node_vpcs = Node(project, compute1, "node3", node_type="vpcs")
+    node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
     node_vpcs2 = Node(project, compute1, "node4", node_type="vpcs")
+    node_vpcs2._ports = [EthernetPort("E0", 0, 3, 1)]
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
@@ -136,7 +145,9 @@ def test_choose_capture_side(async_run, project):
 
     # Capture should run on the local node
     node_iou = Node(project, compute1, "node5", node_type="iou")
+    node_iou._ports = [EthernetPort("E0", 0, 0, 4)]
     node_iou2 = Node(project, compute2, "node6", node_type="iou")
+    node_iou2._ports = [EthernetPort("E0", 0, 3, 1)]
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
@@ -150,7 +161,9 @@ def test_capture(async_run, project):
     compute1 = MagicMock()
 
     node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
+    node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
     node_iou = Node(project, compute1, "I1", node_type="iou")
+    node_iou._ports = [EthernetPort("E0", 0, 3, 1)]
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()

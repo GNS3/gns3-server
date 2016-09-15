@@ -68,20 +68,25 @@ def test_list_ports_port_name_format(node):
     """
     node._first_port_name = None
     node._port_name_format = "eth{}"
+    node._list_ports()
     assert node.__json__()["ports"][0]["name"] == "eth0"
     node._port_name_format = "eth{port0}"
+    node._list_ports()
     assert node.__json__()["ports"][0]["name"] == "eth0"
     node._port_name_format = "eth{port1}"
+    node._list_ports()
     assert node.__json__()["ports"][0]["name"] == "eth1"
 
     node._first_port_name = ""
     node._port_segment_size = 2
     node._port_name_format = "eth{segment0}/{port0}"
     node.properties["adapters"] = 8
+    node._list_ports()
     assert node.__json__()["ports"][6]["name"] == "eth3/0"
     assert node.__json__()["ports"][7]["name"] == "eth3/1"
 
     node._first_port_name = "mgnt0"
+    node._list_ports()
     assert node.__json__()["ports"][0]["name"] == "mgnt0"
     assert node.__json__()["ports"][1]["name"] == "eth0/0"
 

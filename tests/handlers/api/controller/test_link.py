@@ -31,6 +31,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
+from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.node import Node
 from gns3server.controller.link import Link
 
@@ -54,7 +55,9 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     compute.post = AsyncioMagicMock(return_value=response)
 
     node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node1._ports = [EthernetPort("E0", 0, 0, 3)]
     node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
+    node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
@@ -89,7 +92,9 @@ def test_update_link(http_controller, tmpdir, project, compute, async_run):
     compute.post = AsyncioMagicMock(return_value=response)
 
     node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node1._ports = [EthernetPort("E0", 0, 0, 3)]
     node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
+    node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
@@ -142,7 +147,9 @@ def test_list_link(http_controller, tmpdir, project, compute, async_run):
     compute.post = AsyncioMagicMock(return_value=response)
 
     node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node1._ports = [EthernetPort("E0", 0, 0, 3)]
     node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
+    node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {

@@ -27,8 +27,16 @@ class Port:
         self._port_number = port_number
         self._name = name
 
-    @staticmethod
-    def dataLinkTypes():
+    @property
+    def adapter_number(self):
+        return self._adapter_number
+
+    @property
+    def port_number(self):
+        return self._port_number
+
+    @property
+    def data_link_types(self):
         """
         Returns the supported PCAP DLTs.
 
@@ -36,16 +44,16 @@ class Port:
         """
         return {"Ethernet": "DLT_EN10MB"}
 
-    @staticmethod
-    def linkType():
-        return "Ethernet"
+    @property
+    def link_type(self):
+        return "ethernet"
 
     def __json__(self):
         return {
             "name": self._name,
-            "short_name": self.shortNameType() + "{}/{}".format(self._interface_number, self._port_number),
-            "data_link_types": self.dataLinkTypes(),
+            "short_name": self.short_name_type + "{}/{}".format(self._interface_number, self._port_number),
+            "data_link_types": self.data_link_types,
             "port_number": self._port_number,
             "adapter_number": self._adapter_number,
-            "link_type": self.linkType().lower()
+            "link_type": self.link_type
         }

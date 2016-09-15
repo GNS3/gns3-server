@@ -28,6 +28,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from gns3server.controller.project import Project
+from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.config import Config
 
 
@@ -250,7 +251,9 @@ def test_addLink(async_run, project, controller):
     compute.post = AsyncioMagicMock(return_value=response)
 
     vm1 = async_run(project.add_node(compute, "test1", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm1._ports = [EthernetPort("E0", 0, 3, 1)]
     vm2 = async_run(project.add_node(compute, "test2", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    vm2._ports = [EthernetPort("E0", 0, 4, 2)]
     controller._notification = MagicMock()
     link = async_run(project.add_link())
     async_run(link.add_node(vm1, 3, 1))
