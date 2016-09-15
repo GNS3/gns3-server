@@ -27,6 +27,7 @@ class UDPLink(Link):
     def __init__(self, project, link_id=None):
         super().__init__(project, link_id=link_id)
         self._capture_node = None
+        self._created = False
 
     @asyncio.coroutine
     def create(self):
@@ -69,12 +70,16 @@ class UDPLink(Link):
             "type": "nio_udp"
         }
         yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=data)
+        self._created = True
 
     @asyncio.coroutine
     def delete(self):
         """
         Delete the link and free the resources
         """
+        if not self._created:
+            return
+
         try:
             node1 = self._nodes[0]["node"]
             adapter_number1 = self._nodes[0]["adapter_number"]
