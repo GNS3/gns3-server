@@ -635,7 +635,8 @@ class Project:
         If a node is started or paused return True
         """
         for node in self._nodes.values():
-            if node.status != "stopped":
+            # Some node type are always running we ignore them
+            if node.status != "stopped" and node.node_type in ("qemu", "docker", "dynamips", "vpcs", "vmware", "virtualbox", "iou"):
                 return True
         return False
 
