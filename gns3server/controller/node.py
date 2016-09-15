@@ -204,6 +204,10 @@ class Node:
 
     @symbol.setter
     def symbol(self, val):
+        # No abs path, fix them (bug of 1.X)
+        if not val.startswith(":") and os.path.abspath(val):
+            val = os.path.basename(val)
+
         self._symbol = val
         try:
             self._width, self._height, filetype = self._project.controller.symbols.get_size(val)

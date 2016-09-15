@@ -70,7 +70,12 @@ class Symbols:
         return directory
 
     def get_path(self, symbol_id):
-        return self._symbols_path[symbol_id]
+        try:
+            return self._symbols_path[symbol_id]
+        # Symbol not found refresh cache
+        except KeyError:
+            self.list()
+            return self._symbols_path[symbol_id]
 
     def get_size(self, symbol_id):
         try:

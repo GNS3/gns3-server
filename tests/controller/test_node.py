@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import shutil
 import aiohttp
 import pytest
 import uuid
@@ -188,7 +189,7 @@ def test_create_image_missing(node, compute, project, async_run):
     node._upload_missing_image.called is True
 
 
-def test_symbol(node):
+def test_symbol(node, symbols_dir):
     """
     Change symbol should change the node size
     """
@@ -203,10 +204,21 @@ def test_symbol(node):
     assert node.symbol == ":/symbols/cloud.svg"
     assert node.width == 159
     assert node.height == 71
-
     assert node.label["x"] is None
     assert node.label["y"] == -40
     assert node.label["style"] == "font-size: 10;font-familly: Verdana"
+
+    shutil.copy(os.path.join("gns3server", "symbols", "cloud.svg"), os.path.join(symbols_dir, "cloud2.svg"))
+    node.symbol = "cloud2.svg"
+    assert node.symbol == "cloud2.svg"
+    assert node.width == 159
+    assert node.height == 71
+
+    # No abs path, fix them (bug of 1.5)
+    node.symbol = "/tmp/cloud2.svg"
+    assert node.symbol == "cloud2.svg"
+    assert node.width == 159
+    assert node.height == 71
 
 
 def test_label_with_default_label_font(node):
