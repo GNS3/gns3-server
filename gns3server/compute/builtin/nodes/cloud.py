@@ -140,7 +140,7 @@ class Cloud(BaseNode):
         """
 
         port_info = None
-        for port in self._ports:
+        for port in self._ports_mapping:
             if port["port_number"] == port_number:
                 port_info = port
                 break
@@ -278,7 +278,7 @@ class Cloud(BaseNode):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        if not [port["port_number"] for port in self._ports if port_number == port["port_number"]]:
+        if not [port["port_number"] for port in self._ports_mapping if port_number == port["port_number"]]:
             raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
                                                                                         port_number=port_number))
 
@@ -305,7 +305,7 @@ class Cloud(BaseNode):
         :param port_number: allocated port number
         """
 
-        if not [port["port_number"] for port in self._ports if port_number == port["port_number"]]:
+        if not [port["port_number"] for port in self._ports_mapping if port_number == port["port_number"]]:
             raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
                                                                                         port_number=port_number))
 
