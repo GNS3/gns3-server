@@ -89,7 +89,7 @@ def load_topology(path):
     """
     log.debug("Read topology %s", path)
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             topo = json.load(f)
     except (OSError, UnicodeEncodeError, json.JSONDecodeError) as e:
         raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
@@ -98,7 +98,7 @@ def load_topology(path):
         # first we backup the file
         shutil.copy(path, path + ".backup")
         topo = _convert_1_3_later(topo, path)
-        with open(path, "w+") as f:
+        with open(path, "w+", encoding="utf-8") as f:
             json.dump(topo, f)
     elif topo["revision"] > GNS3_FILE_FORMAT_REVISION:
         raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
