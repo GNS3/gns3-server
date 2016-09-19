@@ -127,10 +127,11 @@ def test_export_vm(tmpdir, project, async_run, controller):
     compute.list_files = AsyncioMagicMock(return_value=[{"path": "vm-1/dynamips/test"}])
 
     # Fake file that will be download from the vm
-    file_content = AsyncioBytesIO()
-    async_run(file_content.write(b"HELLO"))
-    file_content.seek(0)
-    compute.download_file = AsyncioMagicMock(return_value=file_content)
+    mock_response = AsyncioMagicMock()
+    mock_response.content = AsyncioBytesIO()
+    async_run(mock_response.content.write(b"HELLO"))
+    mock_response.content.seek(0)
+    compute.download_file = AsyncioMagicMock(return_value=mock_response)
 
     project._project_created_on_compute.add(compute)
 

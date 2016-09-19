@@ -75,12 +75,13 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
                 if not _filter_files(compute_file["path"]):
                     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
                     f = open(fd, "wb", closefd=True)
-                    stream = yield from compute.download_file(project, compute_file["path"])
+                    response = yield from compute.download_file(project, compute_file["path"])
                     while True:
-                        data = yield from stream.read(512)
+                        data = yield from response.content.read(512)
                         if not data:
                             break
                         f.write(data)
+                    response.close()
                     f.close()
                     z.write(temp_path, arcname=compute_file["path"], compress_type=zipfile.ZIP_DEFLATED)
     return z

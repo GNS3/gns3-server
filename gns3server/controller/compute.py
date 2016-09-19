@@ -299,7 +299,7 @@ class Compute:
         response = yield from self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
             raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
-        return response.content
+        return response
 
     @asyncio.coroutine
     def stream_file(self, project, path):
