@@ -407,8 +407,8 @@ def test_duplicate(project, async_run, controller):
 
     async_run(new_project.open())
 
-    assert new_project.get_node(remote_vpcs.id).compute.id == "remote"
-    assert new_project.get_node(remote_virtualbox.id).compute.id == "remote"
+    assert list(new_project.nodes.values())[0].compute.id == "remote"
+    assert list(new_project.nodes.values())[1].compute.id == "remote"
 
 
 def test_snapshots(project):
