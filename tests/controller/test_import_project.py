@@ -302,6 +302,95 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
         assert topo["topology"]["nodes"][1]["compute_id"] == "local"
 
 
+def test_import_node_id(linux_platform, async_run, tmpdir, controller):
+    """
+    When importing a node, node_id should change
+    """
+    project_id = str(uuid.uuid4())
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "type": "topology",
+        "topology": {
+            "nodes": [
+                {
+                    "compute_id": "local",
+                    "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
+                    "node_type": "iou",
+                    "properties": {}
+                },
+                {
+                    "compute_id": "local",
+                    "node_id": "c3ae286c-c81f-40d9-a2d0-5874b2f2478d",
+                    "node_type": "iou",
+                    "properties": {}
+                }
+            ],
+            "links": [
+                {
+                    "link_id": "b570a150-c09f-47d9-8d32-9ca5b03234d6",
+                    "nodes": [
+                        {
+                            "adapter_number": 0,
+                            "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
+                            "port_number": 0
+                        },
+                        {
+                            "adapter_number": 0,
+                            "node_id": "c3ae286c-c81f-40d9-a2d0-5874b2f2478d",
+                            "port_number": 0
+                        }
+                    ]
+                }
+            ],
+            "computes": [],
+            "drawings": [
+                {
+                    "drawing_id": "08d665ba-e982-4d54-82b4-aa0c4d5ba6a3",
+                    "rotation": 0,
+                    "x": -210,
+                    "y": -108,
+                    "z": 0
+                }
+            ]
+        },
+        "revision": 5,
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    # Fake .gns3project
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+        myzip.writestr("project-files/iou/0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b/startup.cfg", "test")
+        myzip.writestr("project-files/iou/c3ae286c-c81f-40d9-a2d0-5874b2f2478d/startup.cfg", "test")
+
+    with open(zip_path, "rb") as f:
+        project = async_run(import_project(controller, project_id, f))
+
+    with open(os.path.join(project.path, "test.gns3")) as f:
+        topo = json.load(f)
+        # Node id should have change
+        assert topo["topology"]["nodes"][0]["node_id"] not in ["0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b", "c3ae286c-c81f-40d9-a2d0-5874b2f2478d"]
+
+        # Link should have change
+        link = topo["topology"]["links"][0]
+        assert link["link_id"] != "b570a150-c09f-47d9-8d32-9ca5b03234d6"
+        assert link["nodes"][0]["node_id"] not in ["0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b", "c3ae286c-c81f-40d9-a2d0-5874b2f2478d"]
+
+        # Drawing id should change
+        assert topo["topology"]["drawings"][0]["drawing_id"] != "08d665ba-e982-4d54-82b4-aa0c4d5ba6a3"
+
+        # Node files should have moved to the new node id
+        assert not os.path.exists(os.path.join(project.path, "project-files", "iou", "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b", "startup.cfg"))
+        assert not os.path.exists(os.path.join(project.path, "project-files", "iou", "c3ae286c-c81f-40d9-a2d0-5874b2f2478d", "startup.cfg"))
+        assert os.path.exists(os.path.join(project.path, "project-files", "iou", topo["topology"]["nodes"][0]["node_id"], "startup.cfg"))
+
+
 def test_import_keep_compute_id(windows_platform, async_run, tmpdir, controller):
     """
     On linux host IOU should be moved to the GNS3 VM
