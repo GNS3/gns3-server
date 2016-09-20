@@ -91,6 +91,24 @@ def test_list_node(http_controller, tmpdir, project, compute):
     assert response.json[0]["name"] == "test"
 
 
+def test_get_node(http_controller, tmpdir, project, compute):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    response = http_controller.post("/projects/{}/nodes".format(project.id), {
+        "name": "test",
+        "node_type": "vpcs",
+        "compute_id": "example.com",
+        "properties": {
+                "startup_script": "echo test"
+        }
+    })
+    response = http_controller.get("/projects/{}/nodes/{}".format(project.id, response.json["node_id"]), example=True)
+    assert response.status == 200
+    assert response.json["name"] == "test"
+
+
 def test_update_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     response.json = {"console": 2048}

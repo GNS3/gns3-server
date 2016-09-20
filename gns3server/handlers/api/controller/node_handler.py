@@ -54,6 +54,21 @@ class NodeHandler:
         response.json(node)
 
     @Route.get(
+        r"/projects/{project_id}/nodes/{node_id}",
+        status_codes={
+            200: "Node found",
+            400: "Invalid request",
+            404: "Node doesn't exist"
+        },
+        description="Update a node instance",
+        output=NODE_OBJECT_SCHEMA)
+    def get_node(request, response):
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        response.set_status(200)
+        response.json(node)
+
+    @Route.get(
         r"/projects/{project_id}/nodes",
         parameters={
             "project_id": "Project UUID"
