@@ -62,7 +62,9 @@ class Project:
     :param status: Status of the project (opened / closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened", filename=None, auto_start=False, auto_open=False, auto_close=True):
+    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
+                 filename=None, auto_start=False, auto_open=False, auto_close=True,
+                 scene_height=1000, scene_width=2000):
 
         self._controller = controller
         assert name is not None
@@ -71,6 +73,8 @@ class Project:
         self._auto_close = auto_close
         self._auto_open = auto_open
         self._status = status
+        self._scene_height = scene_height
+        self._scene_width = scene_width
 
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
@@ -138,6 +142,28 @@ class Project:
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
+
+    @property
+    def scene_height(self):
+        return self._scene_height
+
+    @scene_height.setter
+    def scene_height(self, val):
+        """
+        Height of the drawing area
+        """
+        self._scene_height = val
+
+    @property
+    def scene_width(self):
+        return self._scene_width
+
+    @scene_width.setter
+    def scene_width(self, val):
+        """
+        Width of the drawing area
+        """
+        self._scene_width = val
 
     @property
     def auto_start(self):
@@ -694,7 +720,9 @@ class Project:
             "status": self._status,
             "auto_start": self._auto_start,
             "auto_close": self._auto_close,
-            "auto_open": self._auto_open
+            "auto_open": self._auto_open,
+            "scene_height": self._scene_height,
+            "scene_width": self._scene_width
         }
 
     def __repr__(self):

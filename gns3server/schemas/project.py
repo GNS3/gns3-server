@@ -41,6 +41,14 @@ PROJECT_CREATE_SCHEMA = {
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "scene_height": {
+            "type": "integer",
+            "description": "Height of the drawing area"
+        },
+        "scene_width": {
+            "type": "integer",
+            "description": "Width of the drawing area"
         }
     },
     "additionalProperties": False,
@@ -71,6 +79,14 @@ PROJECT_UPDATE_SCHEMA = {
         "auto_start": {
             "description": "Project start when opened",
             "type": "boolean"
+        },
+        "scene_height": {
+            "type": "integer",
+            "description": "Height of the drawing area"
+        },
+        "scene_width": {
+            "type": "integer",
+            "description": "Width of the drawing area"
         }
     },
     "additionalProperties": False,
@@ -118,6 +134,14 @@ PROJECT_OBJECT_SCHEMA = {
         "auto_start": {
             "description": "Project start when opened",
             "type": "boolean"
+        },
+        "scene_height": {
+            "type": "integer",
+            "description": "Height of the drawing area"
+        },
+        "scene_width": {
+            "type": "integer",
+            "description": "Width of the drawing area"
         }
     },
     "additionalProperties": False,

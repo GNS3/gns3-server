@@ -68,7 +68,9 @@ def test_json(tmpdir):
         "filename": "Test.gns3",
         "auto_start": False,
         "auto_close": True,
-        "auto_open": False
+        "auto_open": False,
+        "scene_width": 2000,
+        "scene_height": 1000
     }
 
 

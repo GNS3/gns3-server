@@ -65,6 +65,14 @@ TOPOLOGY_SCHEMA = {
             "type": "string",
             "description": "Name of the project"
         },
+        "scene_height": {
+            "type": "integer",
+            "description": "Height of the drawing area"
+        },
+        "scene_width": {
+            "type": "integer",
+            "description": "Width of the drawing area"
+        },
         "topology": {
             "description": "The topology content",
             "type": "object",
