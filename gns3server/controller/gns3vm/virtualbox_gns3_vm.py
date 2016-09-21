@@ -243,7 +243,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             if json_data:
                 for interface in json_data:
                     if "name" in interface and interface["name"] == "eth{}".format(hostonly_interface_number - 1):
-                        if "ip_address" in interface:
+                        if "ip_address" in interface and len(interface["ip_address"]) > 0:
                             return interface["ip_address"]
             remaining_try -= 1
             yield from asyncio.sleep(1)
@@ -265,7 +265,27 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         Stops the GNS3 VM.
         """
 
+        vm_state = yield from self._get_state()
+        if vm_state == "poweroff":
+            self.running = False
+            return
+
         yield from self._execute("controlvm", [self._vmname, "acpipowerbutton"], timeout=3)
+        trial = 120
+        while True:
+            try:
+                vm_state = yield from self._get_state()
+            # During a small amount of time the command will fail
+            except GNS3VMError:
+                vm_state = "running"
+            if vm_state == "poweroff":
+                break
+            trial -= 1
+            if trial == 0:
+                yield from self._execute("controlvm", [self._vmname, "poweroff"], timeout=3)
+                break
+            yield from asyncio.sleep(1)
+
         log.info("GNS3 VM has been stopped")
         self.running = False
 

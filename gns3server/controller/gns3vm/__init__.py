@@ -60,7 +60,8 @@ class GNS3VM:
             "engine_id": "vmware",
             "description": 'VMware is the recommended choice for best performances.<br>The GNS3 VM can be <a href="{}">downloaded here</a>.'.format(download_url),
             "support_when_exit": True,
-            "support_headless": True
+            "support_headless": True,
+            "support_ram": True
         }
         if sys.platform.startswith("darwin"):
             vmware_informations["name"] = "VMware Fusion"
@@ -73,7 +74,8 @@ class GNS3VM:
             "name": "VirtualBox",
             "description": 'VirtualBox doesn\'t support nested virtualization, this means running Qemu based VM could be very slow.<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
             "support_when_exit": True,
-            "support_headless": True
+            "support_headless": True,
+            "support_ram": True
         }
 
         remote_informations = {
@@ -81,7 +83,8 @@ class GNS3VM:
             "name": "Remote",
             "description": "Use a remote GNS3 server as the GNS3 VM.",
             "support_when_exit": False,
-            "support_headless": False
+            "support_headless": False,
+            "support_ram": False
         }
 
         return [
@@ -185,7 +188,7 @@ class GNS3VM:
         else:
             # When user fix something on his system and try again
             if not self._current_engine().running and self.enable:
-                yield from self.auto_start_vm()
+                yield from self.start()
 
     def _get_engine(self, engine):
         """
