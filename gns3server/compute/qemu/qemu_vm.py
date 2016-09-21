@@ -700,7 +700,7 @@ class QemuVM(BaseNode):
                                                                                            id=self._id,
                                                                                            initrd=initrd))
         if "asa" in initrd:
-            self.project.emit("log.warning", {"message": "Warning ASA 8 is not officialy supported by GNS3 and Cisco, we recommend to use ASAv. Depending of your hardware this could not work or you could be limited to one instance."})
+            self.project.emit("log.warning", {"message": "Warning ASA 8 is not supported by GNS3 and Cisco, you need to use ASAv. Depending of your hardware and OS this could not work or you could be limited to one instance. If ASA 8 is not booting their is no GNS3 solution, you need to upgrade to ASAv."})
         self._initrd = initrd
 
     @property
