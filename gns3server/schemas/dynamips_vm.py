@@ -225,14 +225,6 @@ VM_CREATE_SCHEMA = {
                 {"type": "null"}
             ]
         },
-        "startup_config_base64": {
-            "description": "Startup configuration base64 encoded",
-            "type": "string"
-        },
-        "private_config_base64": {
-            "description": "Private configuration base64 encoded",
-            "type": "string"
-        },
         # C7200 properties
         "npe": {
             "description": "NPE model",
@@ -466,14 +458,6 @@ VM_UPDATE_SCHEMA = {
                 {"type": "string"},
                 {"type": "null"}
             ]
-        },
-        "startup_config_base64": {
-            "description": "Startup configuration base64 encoded",
-            "type": "string"
-        },
-        "private_config_base64": {
-            "description": "Private configuration base64 encoded",
-            "type": "string"
         },
         # C7200 properties
         "npe": {
@@ -723,13 +707,13 @@ VM_OBJECT_SCHEMA = {
                 {"type": "null"}
             ]
         },
-        "startup_config_base64": {
-            "description": "Startup configuration base64 encoded",
-            "type": "string"
+        "startup_config_content": {
+            "description": "Content of IOS startup configuration file",
+            "type": "string",
         },
-        "private_config_base64": {
-            "description": "Private configuration base64 encoded",
-            "type": "string"
+        "private_config_content": {
+            "description": "Content of IOS private configuration file",
+            "type": "string",
         },
         # C7200 properties
         "npe": {
@@ -766,4 +750,3 @@ VM_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["name", "node_id", "project_id", "dynamips_id", "console", "console_type"]
 }
-

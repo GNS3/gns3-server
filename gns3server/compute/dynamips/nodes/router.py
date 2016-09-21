@@ -95,6 +95,8 @@ class Router(BaseNode):
         self._slots = []
         self._ghost_flag = ghost_flag
         self._memory_watcher = None
+        self._startup_config_content = ""
+        self._private_config_content = ""
 
         if not ghost_flag:
             if not dynamips_id:
@@ -140,7 +142,9 @@ class Router(BaseNode):
                        "console_type": "telnet",
                        "aux": self.aux,
                        "mac_addr": self._mac_addr,
-                       "system_id": self._system_id}
+                       "system_id": self._system_id,
+                       "startup_config_content": self._startup_config_content,
+                       "private_config_content": self._private_config_content}
 
         # return the relative path if the IOS image is in the images_path directory
         router_info["image"] = self.manager.get_relative_image_path(self._image)
@@ -1458,6 +1462,7 @@ class Router(BaseNode):
                         old_config = f.read()
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)
+                        self._startup_config_content = new_config
                         f.write(new_config)
                 except OSError as e:
                     raise DynamipsError("Could not amend the configuration {}: {}".format(startup_config_path, e))
@@ -1471,6 +1476,7 @@ class Router(BaseNode):
                         old_config = f.read()
                         new_config = old_config.replace(self.name, new_name)
                         f.seek(0)
+                        self._private_config_content = new_config
                         f.write(new_config)
                 except OSError as e:
                     raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
@@ -1498,14 +1504,21 @@ class Router(BaseNode):
             self._private_config = private_config
 
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
-            private_config_path = os.path.join(module_workdir, private_config)
-            try:
-                if not os.path.getsize(private_config_path):
-                    # an empty private-config can prevent a router to boot.
-                    private_config = ''
-            except OSError as e:
-                raise DynamipsError("Cannot access the private-config {}: {}".format(private_config_path, e))
+            if private_config:
+                private_config_path = os.path.join(module_workdir, private_config)
+                try:
+                    if not os.path.getsize(private_config_path):
+                        # an empty private-config can prevent a router to boot.
+                        private_config = ''
+                        self._private_config_content = ""
+                    else:
+                        with open(private_config_path) as f:
+                            self._private_config_content = f.read()
+                except OSError as e:
+                    raise DynamipsError("Cannot access the private-config {}: {}".format(private_config_path, e))
 
+            with open(os.path.join(module_workdir, startup_config)) as f:
+                self._startup_config_content = f.read()
             yield from self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(name=self._name,
                                                                                                      startup=startup_config,
                                                                                                      private=private_config))
@@ -1563,6 +1576,7 @@ class Router(BaseNode):
                     config_path = os.path.join(module_workdir, self.startup_config)
                     with open(config_path, "wb") as f:
                         log.info("saving startup-config to {}".format(self.startup_config))
+                        self._startup_config_content = config
                         f.write(config.encode("utf-8"))
                 except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
@@ -1575,6 +1589,7 @@ class Router(BaseNode):
                     config_path = os.path.join(module_workdir, self.private_config)
                     with open(config_path, "wb") as f:
                         log.info("saving private-config to {}".format(self.private_config))
+                        self._private_config_content = config
                         f.write(config.encode("utf-8"))
                 except (binascii.Error, OSError) as e:
                     raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
