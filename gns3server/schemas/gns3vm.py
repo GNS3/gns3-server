@@ -40,6 +40,14 @@ GNS3VM_SETTINGS_SCHEMA = {
         "engine": {
             "description": "The engine to use for the VM. Null to disable",
             "enum": ["vmware", "virtualbox", None]
+        },
+        "vcpus": {
+            "description": "Number of VPCUS affected to the VM",
+            "type": "integer"
+        },
+        "ram": {
+            "description": "Amount of ram affected to the VM",
+            "type": "integer"
         }
     },
     "additionalProperties": False

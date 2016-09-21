@@ -49,6 +49,13 @@ class VMwareGNS3VM(BaseGNS3VM):
             raise GNS3VMError("Error while executing VMware command: {}".format(e))
 
     @asyncio.coroutine
+    def _is_running(self):
+        result = yield from self._vmware_manager.execute("list", [])
+        if self._vmx_path in result:
+            return True
+        return False
+
+    @asyncio.coroutine
     def _set_vcpus_ram(self, vcpus, ram):
         """
         Set the number of vCPU cores and amount of RAM for the GNS3 VM.
@@ -62,7 +69,6 @@ class VMwareGNS3VM(BaseGNS3VM):
             raise GNS3VMError("You have allocated too much memory ({} MB) for the GNS3 VM! (available memory is {} MB)".format(ram, available_ram))
 
         # memory must be a multiple of 4 (VMware requirement)
-
         if ram % 4 != 0:
             raise GNS3VMError("Allocated memory for the GNS3 VM must be a multiple of 4".format(available_ram))
 
@@ -105,21 +111,23 @@ class VMwareGNS3VM(BaseGNS3VM):
         if not os.path.exists(self._vmx_path):
             raise GNS3VMError("VMware VMX file {} doesn't exist".format(self._vmx_path))
 
-        # set the number of vCPUs and amount of RAM
-        #yield from self._set_vcpus_ram(self.vcpus, self.ram)
-
-        # start the VM
-        args = [self._vmx_path]
-        if self._headless:
-            args.extend(["nogui"])
-        yield from self._execute("start", args)
-        log.info("GNS3 VM has been started")
-
         # check if the VMware guest tools are installed
         vmware_tools_state = yield from self._execute("checkToolsState", [self._vmx_path])
         if vmware_tools_state not in ("installed", "running"):
             raise GNS3VMError("VMware tools are not installed in {}".format(self.vmname))
 
+        running = yield from self._is_running()
+        if not running:
+            log.info("Update GNS3 VM settings")
+            # set the number of vCPUs and amount of RAM
+            yield from self._set_vcpus_ram(self.vcpus, self.ram)
+
+            # start the VM
+            args = [self._vmx_path]
+            if self._headless:
+                args.extend(["nogui"])
+            yield from self._execute("start", args)
+            log.info("GNS3 VM has been started")
         # get the guest IP address (first adapter only)
         guest_ip_address = yield from self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
         self.ip_address = guest_ip_address

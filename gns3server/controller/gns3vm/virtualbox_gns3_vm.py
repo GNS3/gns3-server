@@ -174,6 +174,11 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
 
         vm_state = yield from self._get_state()
         log.info('"{}" state is {}'.format(self._vmname, vm_state))
+
+        if vm_state == "poweroff":
+            yield from self.set_vcpus(self.vpcus)
+            yield from self.set_ram(self.ram)
+
         if vm_state in ("poweroff", "saved"):
             # start the VM if it is not running
             args = [self._vmname]
@@ -272,7 +277,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         :param vcpus: number of vCPU cores
         """
 
-        yield from self.execute("modifyvm", [self._vmname, "--cpus", str(vcpus)], timeout=3)
+        yield from self._execute("modifyvm", [self._vmname, "--cpus", str(vcpus)], timeout=3)
         log.info("GNS3 VM vCPU count set to {}".format(vcpus))
 
     @asyncio.coroutine

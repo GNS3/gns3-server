@@ -44,7 +44,9 @@ class GNS3VM:
             "when_exit": "stop",
             "headless": False,
             "enable": False,
-            "engine": "vmware"
+            "engine": "vmware",
+            "ram": 2048,
+            "vcpus": 1
         }
         self.settings = settings
 
@@ -178,7 +180,12 @@ class GNS3VM:
             yield from self._stop()
             self._settings = settings
             self._controller.save()
-            yield from self.auto_start_vm()
+            if self.enable:
+                yield from self.start()
+        else:
+            # When user fix something on his system and try again
+            if not self._current_engine().running and self.enable:
+                yield from self.auto_start_vm()
 
     def _get_engine(self, engine):
         """
@@ -247,6 +254,8 @@ class GNS3VM:
         if not engine.running:
             log.info("Start the GNS3 VM")
             engine.vmname = self._settings["vmname"]
+            engine.ram = self._settings["ram"]
+            engine.vpcus = self._settings["vcpus"]
             yield from engine.start()
             yield from self._controller.add_compute(compute_id="vm",
                                                     name="GNS3 VM ({})".format(engine.vmname),
