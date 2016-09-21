@@ -22,7 +22,7 @@ import os
 import sys
 import stat
 import re
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
 from unittest import mock
@@ -425,6 +425,65 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "256M",
             "-smp",
             "cpus=1",
+            "-boot",
+            "order=c",
+            "-serial",
+            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "-net",
+            "none",
+            "-device",
+            "e1000,mac={}".format(vm._mac_address)
+        ]
+
+
+def test_build_command_kvm(linux_platform, vm, loop, fake_qemu_binary, port_manager):
+    """
+    Qemu 2.4 introduce an issue with KVM
+    """
+    vm._run_with_kvm = MagicMock(return_value=True)
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.3.2")
+    os.environ["DISPLAY"] = "0:0"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert cmd == [
+            fake_qemu_binary,
+            "-name",
+            "test",
+            "-m",
+            "256M",
+            "-smp",
+            "cpus=1",
+            "-enable-kvm",
+            "-boot",
+            "order=c",
+            "-serial",
+            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "-net",
+            "none",
+            "-device",
+            "e1000,mac={}".format(vm._mac_address)
+        ]
+
+
+def test_build_command_kvm_2_4(linux_platform, vm, loop, fake_qemu_binary, port_manager):
+    """
+    Qemu 2.4 introduce an issue with KVM
+    """
+    vm._run_with_kvm = MagicMock(return_value=True)
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.4.2")
+    os.environ["DISPLAY"] = "0:0"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert cmd == [
+            fake_qemu_binary,
+            "-name",
+            "test",
+            "-m",
+            "256M",
+            "-smp",
+            "cpus=1",
+            "-enable-kvm",
+            "-machine smm=off",
             "-boot",
             "order=c",
             "-serial",
