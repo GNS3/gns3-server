@@ -116,6 +116,34 @@ def test_list_ports_adapters(node):
     ]
 
 
+def test_list_ports_adapters_cloud(project, compute):
+    """
+    List port using adapters properties
+    """
+    node = Node(project, compute, "demo",
+                node_id=str(uuid.uuid4()),
+                node_type="cloud")
+    node.properties["ports_mapping"] = [
+        {
+            "interface": "eth0",
+            "name": "eth0",
+            "port_number": 0,
+            "type": "ethernet"
+        }
+    ]
+
+    assert node.__json__()["ports"] == [
+        {
+            "name": "eth0",
+            "short_name": "e0/0",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 0,
+            "adapter_number": 0,
+            "link_type": "ethernet"
+        }
+    ]
+
+
 def test_list_ports_atm_switch(project, compute):
     """
     List port for atm switch
