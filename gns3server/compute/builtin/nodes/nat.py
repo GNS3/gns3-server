@@ -34,7 +34,7 @@ class Nat(Cloud):
         if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
             raise NodeError("virbr0 is missing. You need to install libvirt")
 
-        self.ports = [
+        self.ports_mapping = [
             {
                 "name": "virbr0",
                 "type": "ethernet",
@@ -53,5 +53,5 @@ class Nat(Cloud):
             "node_id": self.id,
             "project_id": self.project.id,
             "status": "started",
-            "ports_mapping": self.ports
+            "ports_mapping": self.ports_mapping
         }
