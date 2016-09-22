@@ -29,19 +29,27 @@ class Nat(Cloud):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
         if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
             raise NodeError("virbr0 is missing. You need to install libvirt")
 
-        self.ports_mapping = [
+        ports = [
             {
-                "name": "virbr0",
+                "name": "nat0",
                 "type": "ethernet",
                 "interface": "virbr0",
                 "port_number": 0
             }
         ]
+        super().__init__(*args, ports=ports)
+
+    @property
+    def ports_mapping(self):
+        return self._ports_mapping
+
+    @ports_mapping.setter
+    def ports_mapping(self, ports):
+        # It's not allowed to change it
+        pass
 
     @classmethod
     def is_supported(self):

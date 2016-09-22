@@ -23,7 +23,7 @@ from ...error import NodeError
 from ...base_node import BaseNode
 from ...nios.nio_udp import NIOUDP
 
-from gns3server.utils.interfaces import interfaces
+import gns3server.utils.interfaces
 import gns3server.utils.asyncio
 
 import logging
@@ -41,18 +41,29 @@ class Cloud(BaseNode):
     :param manager: Parent VM Manager
     """
 
-    def __init__(self, name, node_id, project, manager, ports=None):
+    def __init__(self, name, node_id, project, manager, ports=[]):
 
         super().__init__(name, node_id, project, manager)
         self._nios = {}
-        self._ports_mapping = []
-        if ports:
+        # If the cloud is not configured we fill it with host interfaces
+        if not ports or len(ports) == 0:
+            self._ports_mapping = []
+            network_interfaces = gns3server.utils.interfaces.interfaces()
+            for interface in network_interfaces:
+                if not interface["special"]:
+                    self._ports_mapping.append({
+                        "interface": interface["name"],
+                        "type": interface["type"],
+                        "port_number": len(self._ports_mapping),
+                        "name": interface["name"]
+                    })
+        else:
             self._ports_mapping = ports
 
     def __json__(self):
 
         host_interfaces = []
-        network_interfaces = interfaces()
+        network_interfaces = gns3server.utils.interfaces.interfaces()
         for interface in network_interfaces:
             host_interfaces.append({"name": interface["name"],
                                     "type": interface["type"],

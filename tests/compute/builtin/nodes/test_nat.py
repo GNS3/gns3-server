@@ -32,7 +32,7 @@ def test_json(on_gns3vm, project):
         "ports_mapping": [
             {
                 "interface": "virbr0",
-                "name": "virbr0",
+                "name": "nat0",
                 "port_number": 0,
                 "type": "ethernet"
             }
