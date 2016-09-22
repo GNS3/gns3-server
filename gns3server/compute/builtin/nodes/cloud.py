@@ -48,8 +48,7 @@ class Cloud(BaseNode):
         # If the cloud is not configured we fill it with host interfaces
         if not ports or len(ports) == 0:
             self._ports_mapping = []
-            network_interfaces = gns3server.utils.interfaces.interfaces()
-            for interface in network_interfaces:
+            for interface in self._interfaces():
                 if not interface["special"]:
                     self._ports_mapping.append({
                         "interface": interface["name"],
@@ -59,6 +58,9 @@ class Cloud(BaseNode):
                     })
         else:
             self._ports_mapping = ports
+
+    def _interfaces(self):
+        return gns3server.utils.interfaces.interfaces()
 
     def __json__(self):
 
@@ -172,7 +174,7 @@ class Cloud(BaseNode):
         if port_info["type"] in ("ethernet", "tap"):
 
             if sys.platform.startswith("win"):
-                windows_interfaces = interfaces()
+                windows_interfaces = self._interfaces()
                 npf = None
                 for interface in windows_interfaces:
                     if port_info["interface"] == interface["name"]:
@@ -186,7 +188,7 @@ class Cloud(BaseNode):
             else:
 
                 if port_info["type"] == "ethernet":
-                    network_interfaces = [interface["name"] for interface in interfaces()]
+                    network_interfaces = [interface["name"] for interface in self._interfaces()]
                     if not port_info["interface"] in network_interfaces:
                         raise NodeError("Interface '{}' could not be found on this system".format(port_info["interface"]))
 
