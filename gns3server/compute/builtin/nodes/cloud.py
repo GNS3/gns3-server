@@ -22,6 +22,7 @@ import subprocess
 from ...error import NodeError
 from ...base_node import BaseNode
 from ...nios.nio_udp import NIOUDP
+from ....ubridge.ubridge_error import UbridgeError
 
 import gns3server.utils.interfaces
 import gns3server.utils.asyncio
@@ -95,6 +96,9 @@ class Cloud(BaseNode):
 
         :param ports: ports info
         """
+
+        if len(self._nios) > 0:
+            raise NodeError("Can't modify a cloud already connected.")
 
         self._ports_mapping = ports
 
@@ -242,7 +246,16 @@ class Cloud(BaseNode):
                                                                                 nio=nio,
                                                                                 port=port_number))
         self._nios[port_number] = nio
-        yield from self._add_ubridge_connection(nio, port_number)
+        try:
+            yield from self._add_ubridge_connection(nio, port_number)
+        # Cleanup stuff
+        except UbridgeError as e:
+            try:
+                self._delete_ubridge_connection(port_number)
+            except UbridgeError:
+                pass
+            del self._nios[port_number]
+            raise e
 
     @asyncio.coroutine
     def _delete_ubridge_connection(self, port_number):
