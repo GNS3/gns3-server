@@ -535,6 +535,9 @@ class Project:
         Delete unused images
         """
 
+        # Project have been deleted
+        if not os.path.exists(self.path):
+            return
         try:
             pictures = set(os.listdir(self.pictures_directory))
             for drawing in self._drawings.values():
