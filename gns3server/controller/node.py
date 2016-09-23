@@ -500,10 +500,10 @@ class Node:
             self._ports = DynamipsPortFactory(self.properties)
             return
         elif self._node_type in ("cloud", "nat"):
-            adapter_number = 0
+            port_number = 0
             for port in self.properties["ports_mapping"]:
-                self._ports.append(PortFactory(port["name"], adapter_number, adapter_number, 0, "ethernet"))
-                adapter_number += 1
+                self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet"))
+                port_number += 1
         else:
             self._ports = StandardPortFactory(self.properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)
             return
