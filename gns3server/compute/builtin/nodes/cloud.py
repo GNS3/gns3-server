@@ -214,8 +214,7 @@ class Cloud(BaseNode):
                                                                                                                 interface=port_info["interface"]))
 
                 elif port_info["type"] == "tap":
-                    yield from self._ubridge_send('bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name,
-                                                                                                   interface=port_info["interface"]))
+                    yield from self._ubridge_send('bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
 
         elif port_info["type"] == "udp":
             yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
