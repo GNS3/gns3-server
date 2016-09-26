@@ -1493,7 +1493,7 @@ class QemuVM(BaseNode):
             # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
             # https://github.com/GNS3/gns3-server/issues/685
             if version and parse_version(version) >= parse_version("2.4.0"):
-                command.extend(["-machine smm=off"])
+                command.extend(["-machine", "smm=off"])
         command.extend(["-boot", "order={}".format(self._boot_priority)])
         cdrom_option = self._cdrom_option()
         command.extend(cdrom_option)
