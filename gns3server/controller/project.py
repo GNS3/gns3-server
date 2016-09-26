@@ -322,35 +322,43 @@ class Project:
 
     @open_required
     @asyncio.coroutine
-    def add_node(self, compute, name, node_id, **kwargs):
+    def add_node(self, compute, name, node_id, node_type=None, **kwargs):
         """
         Create a node or return an existing node
 
         :param kwargs: See the documentation of node
         """
-        if node_id not in self._nodes:
-            node = Node(self, compute, name, node_id=node_id, **kwargs)
-            if compute not in self._project_created_on_compute:
-                # For a local server we send the project path
-                if compute.id == "local":
-                    yield from compute.post("/projects", data={
-                        "name": self._name,
-                        "project_id": self._id,
-                        "path": self._path
-                    })
-                else:
-                    yield from compute.post("/projects", data={
-                        "name": self._name,
-                        "project_id": self._id,
-                    })
+        if node_id in self._nodes:
+            return self._nodes[node_id]
 
-                self._project_created_on_compute.add(compute)
-            yield from node.create()
-            self._nodes[node.id] = node
-            self.controller.notification.emit("node.created", node.__json__())
-            self.dump()
-            return node
-        return self._nodes[node_id]
+        # Due to a limitation all iou need to run on the same
+        # compute server otherwise you have mac address conflict
+        if node_type == "iou":
+            for node in self._nodes.values():
+                if node.node_type == node_type and node.compute != compute:
+                    raise aiohttp.web.HTTPConflict(text="All IOU nodes need to run on the same server.")
+
+        node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
+        if compute not in self._project_created_on_compute:
+            # For a local server we send the project path
+            if compute.id == "local":
+                yield from compute.post("/projects", data={
+                    "name": self._name,
+                    "project_id": self._id,
+                    "path": self._path
+                })
+            else:
+                yield from compute.post("/projects", data={
+                    "name": self._name,
+                    "project_id": self._id,
+                })
+
+            self._project_created_on_compute.add(compute)
+        yield from node.create()
+        self._nodes[node.id] = node
+        self.controller.notification.emit("node.created", node.__json__())
+        self.dump()
+        return node
 
     @open_required
     @asyncio.coroutine

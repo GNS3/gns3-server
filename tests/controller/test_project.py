@@ -178,6 +178,28 @@ def test_add_node_non_local(async_run, controller):
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
 
+def test_create_iou_on_multiple_node(async_run, controller):
+    """
+    Due to mac address collision you can't create an IOU node
+    on two different server
+    """
+    compute = MagicMock()
+    compute.id = "remote"
+
+    compute2 = MagicMock()
+    compute2.id = "remote2"
+
+    project = Project(controller=controller, name="Test")
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = async_run(project.add_node(compute, "test", None, node_type="iou"))
+    with pytest.raises(aiohttp.web_exceptions.HTTPConflict):
+        async_run(project.add_node(compute2, "test2", None, node_type="iou"))
+
+
 def test_delete_node(async_run, controller):
     """
     For a local server we send the project path
