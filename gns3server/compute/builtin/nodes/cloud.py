@@ -215,6 +215,8 @@ class Cloud(BaseNode):
                             yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=bridge_name,
                                                                                                                     interface=port_info["interface"]))
                         else:
+                            if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
+                                raise NodeError("Interface {} don't have a netmask".format(port_info["interface"]))
                             yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
                                                                                                                 interface=port_info["interface"]))
 

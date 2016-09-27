@@ -17,7 +17,7 @@
 
 import sys
 
-from gns3server.utils.interfaces import interfaces, is_interface_up
+from gns3server.utils.interfaces import interfaces, is_interface_up, has_netmask
 
 
 def test_interfaces():
@@ -27,6 +27,16 @@ def test_interfaces():
     for interface in interface_list:
         if interface["name"].startswith("vmnet"):
             assert interface["special"]
+
+
+def test_has_netmask():
+    if sys.platform.startswith("win"):
+        # No loopback
+        pass
+    elif sys.platform.startswith("darwin"):
+        assert has_netmask("lo0") is True
+    else:
+        assert has_netmask("lo") is True
 
 
 def test_is_interface_up():

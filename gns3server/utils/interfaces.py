@@ -111,6 +111,22 @@ def get_windows_interfaces():
     return interfaces
 
 
+def has_netmask(interface_name):
+    """
+    Checks if an interface has a netmask.
+
+    :param interface: interface name
+
+    :returns: boolean
+    """
+    for interface in interfaces():
+        if interface["name"] == interface_name:
+            if interface["netmask"] and len(interface["netmask"]) > 0:
+                return True
+            return False
+    return False
+
+
 def is_interface_up(interface):
     """
     Checks if an interface is up.
