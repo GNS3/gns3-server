@@ -159,7 +159,7 @@ then
     apt-get install -y gns3-iou
 
     # Force the host name to gns3vm
-    hostnamectl set-hostname gns3vm
+    echo gns3vm > /etc/hostname
 
     # Force hostid for IOU
     dd if=/dev/zero bs=4 count=1 of=/etc/hostid
