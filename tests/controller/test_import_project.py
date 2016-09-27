@@ -293,7 +293,7 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
     with open(zip_path, "rb") as f:
         with asyncio_patch("gns3server.controller.import_project._move_files_to_compute") as mock:
             project = async_run(import_project(controller, project_id, f))
-            mock.assert_called_with(controller._computes["vm"], project_id, project.path, 'project-files/iou/0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b')
+            mock.assert_called_with(controller._computes["vm"], project_id, project.path, os.path.join('project-files', 'iou', '0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b'))
             controller._computes["vm"].post.assert_called_with('/projects', data={'name': 'test', 'project_id': project_id})
 
     with open(os.path.join(project.path, "test.gns3")) as f:
@@ -442,10 +442,10 @@ def test_move_files_to_compute(tmpdir, async_run):
     (tmpdir / "project-files" / "docker" / "test2").open("w").close()
 
     with asyncio_patch("gns3server.controller.import_project._upload_file") as mock:
-        async_run(_move_files_to_compute(None, project_id, str(tmpdir), "project-files/docker"))
+        async_run(_move_files_to_compute(None, project_id, str(tmpdir), os.path.join("project-files", "docker")))
 
-    mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test"), "project-files/docker/test")
-    mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test2"), "project-files/docker/test2")
+    mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test"), os.path.join("project-files", "docker", "test"))
+    mock.assert_any_call(None, project_id, str(tmpdir / "project-files" / "docker" / "test2"),  os.path.join("project-files", "docker", "test2"))
     assert not os.path.exists(str(tmpdir / "project-files" / "docker"))
 
 
