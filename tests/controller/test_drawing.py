@@ -120,4 +120,4 @@ def test_image_svg(project):
     assert drawing._svg == "fdf4d3035774a72ba165f7199b9431b2.svg"
     assert os.path.exists(os.path.join(project.pictures_directory, "fdf4d3035774a72ba165f7199b9431b2.svg"))
 
-    assert drawing.svg == svg
+    assert drawing.svg.replace("\r", "") == svg.replace("\r", "")
