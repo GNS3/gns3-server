@@ -77,8 +77,13 @@ def test_convert(directory, tmpdir):
             file_path = os.path.join(work_directory, directory, file)
             assert os.path.exists(file_path), "{} is missing".format(os.path.join(directory, file))
 
+            # For gns3project we check if size are not too much differents
+            if file_path.endswith(".gns3project"):
+                size = os.stat(file_path).st_size
+                other_size = os.stat(os.path.join(os.path.join(root, file))).st_size
+                assert size in range(other_size - 100, other_size + 100), "File {} is different".format(os.path.join(directory, file))
             # For non .gns3 file we check if the file are the same
-            if not file_path.endswith(".gns3"):
+            elif not file_path.endswith(".gns3"):
                 assert os.stat(file_path).st_size == os.stat(os.path.join(os.path.join(root, file))).st_size, "File {} is different".format(os.path.join(directory, file))
 
     # Check if we don't have unexpected file in work directory

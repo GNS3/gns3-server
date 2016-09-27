@@ -472,7 +472,6 @@ def _convert_snapshots(topo_dir):
                         for root, dirs, files in os.walk(snapshot_dir):
                             for file in files:
                                 myzip.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), snapshot_dir), compress_type=zipfile.ZIP_DEFLATED)
-                    shutil.copy(snapshot_arc, "/tmp/test.zip")
 
         shutil.rmtree(old_snapshots_dir)
 
