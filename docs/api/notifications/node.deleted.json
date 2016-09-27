@@ -15,7 +15,7 @@
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "cf34dae9-ff88-4ef4-a37f-e3954d07e351",
+    "node_id": "bc298eb5-15d6-480d-8a81-326841bec062",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -31,7 +31,7 @@
             "short_name": "e0/0"
         }
     ],
-    "project_id": "b33faa3d-e348-4de5-a266-30b3949d5872",
+    "project_id": "a27cbb34-9e4e-458e-9404-a8956edab9e0",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

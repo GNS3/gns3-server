@@ -9,8 +9,8 @@ Get a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -45,8 +45,8 @@ Update a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -68,6 +68,7 @@ Interfaces on this host
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Interface name</td>                     </tr>
+    <tr><td>special</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>If true the interface is non standard (firewire for example)</td>                     </tr>
     <tr><td>type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: ethernet, tap</td>                     </tr>
     </table>
 
@@ -112,8 +113,8 @@ Delete a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************

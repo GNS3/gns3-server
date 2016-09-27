@@ -7,11 +7,11 @@ PUT /v2/projects/10010203-0405-0607-0809-0a0b0c0d0e0f HTTP/1.1
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 329
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/projects/{project_id}
+Content-Length: 380
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:22 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/projects/{project_id}
 
 {
     "auto_close": true,
@@ -19,7 +19,9 @@ X-ROUTE: /v2/projects/{project_id}
     "auto_start": false,
     "filename": "test.gns3",
     "name": "test2",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpvagfqk1t/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp7gqkwxlc/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
     "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "scene_height": 1000,
+    "scene_width": 2000,
     "status": "opened"
 }

@@ -5,11 +5,11 @@ GET /v2/compute/capabilities HTTP/1.1
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 316
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/compute/capabilities
+Content-Length: 316
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:03 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/compute/capabilities
 
 {
     "node_types": [

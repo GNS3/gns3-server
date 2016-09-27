@@ -1,15 +1,15 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/67874f29-b0c6-43bd-b884-089848010c10/nodes/7933f17b-6a9e-47c4-97ac-4e952e658dfa/dynamips/idlepc_proposals'
+curl -i -X GET 'http://localhost:3080/v2/projects/04da7de1-40c9-4a5f-af3a-043f3891db97/nodes/84dd267d-b4ed-4db8-ab80-3b256cc2ca98/dynamips/idlepc_proposals'
 
-GET /v2/projects/67874f29-b0c6-43bd-b884-089848010c10/nodes/7933f17b-6a9e-47c4-97ac-4e952e658dfa/dynamips/idlepc_proposals HTTP/1.1
+GET /v2/projects/04da7de1-40c9-4a5f-af3a-043f3891db97/nodes/84dd267d-b4ed-4db8-ab80-3b256cc2ca98/dynamips/idlepc_proposals HTTP/1.1
 
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 38
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}/dynamips/idlepc_proposals
+Content-Length: 38
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:21 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/projects/{project_id}/nodes/{node_id}/dynamips/idlepc_proposals
 
 [
     "0x60606f54",

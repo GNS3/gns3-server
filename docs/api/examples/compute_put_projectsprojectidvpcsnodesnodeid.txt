@@ -1,27 +1,27 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/41035467-4785-45a3-997f-4125c0f0955c' -d '{"console": 5722, "name": "test", "startup_script": "ip 192.168.1.1"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/89b33b7f-9d21-4dce-b584-5afed089910d' -d '{"console": 5724, "name": "test", "startup_script": "ip 192.168.1.1"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/41035467-4785-45a3-997f-4125c0f0955c HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/89b33b7f-9d21-4dce-b584-5afed089910d HTTP/1.1
 {
-    "console": 5722,
+    "console": 5724,
     "name": "test",
     "startup_script": "ip 192.168.1.1"
 }
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 505
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}
+Content-Length: 505
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:15 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}
 
 {
     "command_line": "",
-    "console": 5722,
+    "console": 5724,
     "console_type": "telnet",
     "name": "test",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpskaf5ewe/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/41035467-4785-45a3-997f-4125c0f0955c",
-    "node_id": "41035467-4785-45a3-997f-4125c0f0955c",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpo2joh79j/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/89b33b7f-9d21-4dce-b584-5afed089910d",
+    "node_id": "89b33b7f-9d21-4dce-b584-5afed089910d",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": "ip 192.168.1.1",
     "startup_script_path": "startup.vpc",

@@ -1,22 +1,23 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/7577e59a-7758-4c5a-841f-be976afd8a57/links'
+curl -i -X GET 'http://localhost:3080/v2/projects/2295ee85-fc8b-4fa2-878c-914ff651c4a8/links'
 
-GET /v2/projects/7577e59a-7758-4c5a-841f-be976afd8a57/links HTTP/1.1
+GET /v2/projects/2295ee85-fc8b-4fa2-878c-914ff651c4a8/links HTTP/1.1
 
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 1078
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/projects/{project_id}/links
+Content-Length: 1111
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:18 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/projects/{project_id}/links
 
 [
     {
         "capture_file_name": null,
         "capture_file_path": null,
         "capturing": false,
-        "link_id": "a5017183-450b-43ef-9f5b-7d9ef2f77670",
+        "link_id": "ca268d39-d533-4182-87da-16ef58fbf230",
+        "link_type": "ethernet",
         "nodes": [
             {
                 "adapter_number": 0,
@@ -27,7 +28,7 @@ X-ROUTE: /v2/projects/{project_id}/links
                     "x": -10,
                     "y": -10
                 },
-                "node_id": "7ec55228-4f17-47ec-9afa-041114f5a95e",
+                "node_id": "c824d9de-a001-47e4-bbce-9fee0533c10c",
                 "port_number": 3
             },
             {
@@ -39,10 +40,10 @@ X-ROUTE: /v2/projects/{project_id}/links
                     "x": -10,
                     "y": -10
                 },
-                "node_id": "ea49b826-f3ac-4683-898d-7c9384cd44f1",
+                "node_id": "1a1944d6-405f-44cc-9c97-40c753b213f2",
                 "port_number": 4
             }
         ],
-        "project_id": "7577e59a-7758-4c5a-841f-be976afd8a57"
+        "project_id": "2295ee85-fc8b-4fa2-878c-914ff651c4a8"
     }
 ]

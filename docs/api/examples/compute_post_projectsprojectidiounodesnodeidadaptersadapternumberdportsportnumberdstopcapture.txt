@@ -1,12 +1,13 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/4aa61165-026e-487c-a0ec-6aa054b656f3/adapters/0/ports/0/stop_capture' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/93ca09d8-2e45-4a85-a4e3-0665dec3f16d/adapters/0/ports/0/stop_capture' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/4aa61165-026e-487c-a0ec-6aa054b656f3/adapters/0/ports/0/stop_capture HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/93ca09d8-2e45-4a85-a4e3-0665dec3f16d/adapters/0/ports/0/stop_capture HTTP/1.1
 {}
 
 
 HTTP/1.1 204
-CONTENT-LENGTH: 0
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Tue, 27 Sep 2016 10:01:07 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture
 

@@ -5,11 +5,11 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/ports/udp HTTP/1.
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 25
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/compute/projects/{project_id}/ports/udp
+Content-Length: 25
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:08 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/compute/projects/{project_id}/ports/udp
 
 {
     "udp_port": 10000

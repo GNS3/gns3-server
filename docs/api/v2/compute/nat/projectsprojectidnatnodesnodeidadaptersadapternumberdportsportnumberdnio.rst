@@ -9,10 +9,10 @@ Add a NIO to a nat instance
 
 Parameters
 **********
-- **node_id**: Node UUID
-- **adapter_number**: Adapter on the nat (always 0)
 - **project_id**: Project UUID
+- **adapter_number**: Adapter on the nat (always 0)
 - **port_number**: Port on the nat
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -33,10 +33,10 @@ Remove a NIO from a nat instance
 
 Parameters
 **********
-- **node_id**: Node UUID
-- **adapter_number**: Adapter on the nat (always 0)
 - **project_id**: Project UUID
+- **adapter_number**: Adapter on the nat (always 0)
 - **port_number**: Port on the nat
+- **node_id**: Node UUID
 
 Response status codes
 **********************

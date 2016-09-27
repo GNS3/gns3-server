@@ -49,7 +49,6 @@ Input
     <tr><td>platform</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Cisco router platform</td>                     </tr>
     <tr><td>power_supplies</td>                    <td> </td>                     <td>array</td>                     <td>Power supplies status</td>                     </tr>
     <tr><td>private_config</td>                    <td> </td>                     <td>string</td>                     <td>Path to the IOS private configuration file</td>                     </tr>
-    <tr><td>private_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>Private configuration base64 encoded</td>                     </tr>
     <tr><td>private_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS private configuration file</td>                     </tr>
     <tr><td>ram</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Amount of RAM in MB</td>                     </tr>
     <tr><td>sensors</td>                    <td> </td>                     <td>array</td>                     <td>Temperature sensors</td>                     </tr>
@@ -62,7 +61,6 @@ Input
     <tr><td>slot6</td>                    <td> </td>                     <td></td>                     <td>Network module slot 6</td>                     </tr>
     <tr><td>sparsemem</td>                    <td> </td>                     <td>boolean</td>                     <td>Sparse memory feature</td>                     </tr>
     <tr><td>startup_config</td>                    <td> </td>                     <td>string</td>                     <td>Path to the IOS startup configuration file</td>                     </tr>
-    <tr><td>startup_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>Startup configuration base64 encoded</td>                     </tr>
     <tr><td>startup_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS startup configuration file</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>System ID</td>                     </tr>
     <tr><td>wic0</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
@@ -103,7 +101,7 @@ Output
     <tr><td>platform</td>                    <td> </td>                     <td>string</td>                     <td>Cisco router platform</td>                     </tr>
     <tr><td>power_supplies</td>                    <td> </td>                     <td>array</td>                     <td>Power supplies status</td>                     </tr>
     <tr><td>private_config</td>                    <td> </td>                     <td>string</td>                     <td>Path to the IOS private configuration file</td>                     </tr>
-    <tr><td>private_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>Private configuration base64 encoded</td>                     </tr>
+    <tr><td>private_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS private configuration file</td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>integer</td>                     <td>Amount of RAM in MB</td>                     </tr>
     <tr><td>sensors</td>                    <td> </td>                     <td>array</td>                     <td>Temperature sensors</td>                     </tr>
@@ -116,7 +114,7 @@ Output
     <tr><td>slot6</td>                    <td> </td>                     <td></td>                     <td>Network module slot 6</td>                     </tr>
     <tr><td>sparsemem</td>                    <td> </td>                     <td>boolean</td>                     <td>Sparse memory feature</td>                     </tr>
     <tr><td>startup_config</td>                    <td> </td>                     <td>string</td>                     <td>Path to the IOS startup configuration file</td>                     </tr>
-    <tr><td>startup_config_base64</td>                    <td> </td>                     <td>string</td>                     <td>Startup configuration base64 encoded</td>                     </tr>
+    <tr><td>startup_config_content</td>                    <td> </td>                     <td>string</td>                     <td>Content of IOS startup configuration file</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>System ID</td>                     </tr>
     <tr><td>wic0</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>

@@ -1,15 +1,15 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/ae11fd75-0b87-4db0-b781-0122c5caf92e/open' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/15453dce-f36e-4c87-92d0-6d5adc66ba81/open' -d '{}'
 
-POST /v2/projects/ae11fd75-0b87-4db0-b781-0122c5caf92e/open HTTP/1.1
+POST /v2/projects/15453dce-f36e-4c87-92d0-6d5adc66ba81/open HTTP/1.1
 {}
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 328
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/projects/{project_id}/open
+Content-Length: 379
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:23 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/projects/{project_id}/open
 
 {
     "auto_close": true,
@@ -17,7 +17,9 @@ X-ROUTE: /v2/projects/{project_id}/open
     "auto_start": false,
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0sj55_d_/projects/ae11fd75-0b87-4db0-b781-0122c5caf92e",
-    "project_id": "ae11fd75-0b87-4db0-b781-0122c5caf92e",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9z1323np/projects/15453dce-f36e-4c87-92d0-6d5adc66ba81",
+    "project_id": "15453dce-f36e-4c87-92d0-6d5adc66ba81",
+    "scene_height": 1000,
+    "scene_width": 2000,
     "status": "opened"
 }

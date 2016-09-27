@@ -5,11 +5,11 @@ GET /v2/compute/network/interfaces HTTP/1.1
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 3351
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/compute/network/interfaces
+Content-Length: 5502
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:08 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/compute/network/interfaces
 
 [
     {
@@ -18,6 +18,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "3e:07:54:87:bc:00",
         "name": "bridge0",
         "netmask": "",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -26,6 +27,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "3c:07:54:78:07:cc",
         "name": "en0",
         "netmask": "",
+        "special": false,
         "type": "ethernet"
     },
     {
@@ -34,6 +36,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "68:a8:6d:4a:c3:16",
         "name": "en1",
         "netmask": "255.255.255.0",
+        "special": false,
         "type": "ethernet"
     },
     {
@@ -42,6 +45,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "d2:00:1b:c0:17:80",
         "name": "en2",
         "netmask": "",
+        "special": false,
         "type": "ethernet"
     },
     {
@@ -50,6 +54,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "3c:07:54:ff:fe:bc:01:78",
         "name": "fw0",
         "netmask": "",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -58,6 +63,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "",
         "name": "lo0",
         "netmask": "255.0.0.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -66,6 +72,79 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "0a:a8:6d:4a:c3:16",
         "name": "p2p0",
         "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet0",
+        "ip_address": "172.16.43.1",
+        "mac_address": "0a:00:27:00:00:00",
+        "name": "vboxnet0",
+        "netmask": null,
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet1",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:01",
+        "name": "vboxnet1",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet2",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:02",
+        "name": "vboxnet2",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet3",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:03",
+        "name": "vboxnet3",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet4",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:04",
+        "name": "vboxnet4",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet5",
+        "ip_address": "192.168.33.1",
+        "mac_address": "0a:00:27:00:00:05",
+        "name": "vboxnet5",
+        "netmask": null,
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet6",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:06",
+        "name": "vboxnet6",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet7",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:07",
+        "name": "vboxnet7",
+        "netmask": "",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -74,6 +153,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:01",
         "name": "vmnet1",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -82,6 +162,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:0a",
         "name": "vmnet10",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -90,6 +171,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:02",
         "name": "vmnet2",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -98,6 +180,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:03",
         "name": "vmnet3",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -106,6 +189,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:04",
         "name": "vmnet4",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -114,6 +198,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:05",
         "name": "vmnet5",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -122,6 +207,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:06",
         "name": "vmnet6",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -130,6 +216,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:07",
         "name": "vmnet7",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -138,6 +225,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:08",
         "name": "vmnet8",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     },
     {
@@ -146,6 +234,7 @@ X-ROUTE: /v2/compute/network/interfaces
         "mac_address": "00:50:56:c0:00:09",
         "name": "vmnet9",
         "netmask": "255.255.255.0",
+        "special": true,
         "type": "ethernet"
     }
 ]

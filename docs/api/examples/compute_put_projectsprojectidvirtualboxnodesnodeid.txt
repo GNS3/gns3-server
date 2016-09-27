@@ -1,30 +1,30 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/bb7fb45b-8c96-4fdd-99fc-e1a91779d19a' -d '{"console": 5721, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/35e77f7c-5e4c-4e39-a025-aee0a65bc77d' -d '{"console": 5723, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/bb7fb45b-8c96-4fdd-99fc-e1a91779d19a HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/35e77f7c-5e4c-4e39-a025-aee0a65bc77d HTTP/1.1
 {
-    "console": 5721,
+    "console": 5723,
     "name": "test"
 }
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 469
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
+Content-Length: 469
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:14 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
 
 {
     "acpi_shutdown": false,
     "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
     "adapters": 0,
-    "console": 5721,
+    "console": 5723,
     "enable_remote_console": false,
     "headless": false,
     "linked_clone": false,
     "name": "test",
     "node_directory": null,
-    "node_id": "bb7fb45b-8c96-4fdd-99fc-e1a91779d19a",
+    "node_id": "35e77f7c-5e4c-4e39-a025-aee0a65bc77d",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",

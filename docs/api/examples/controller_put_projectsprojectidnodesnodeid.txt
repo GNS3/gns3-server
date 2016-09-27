@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/46c9518a-9de2-43f7-91ed-55cb179fe562/nodes/fcc1c350-1079-4490-9597-f53bfed74dd1' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/17b6a713-2586-459e-a84f-cf7a5368b367/nodes/38d965aa-7dc2-4287-9719-d6aa069660eb' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-PUT /v2/projects/46c9518a-9de2-43f7-91ed-55cb179fe562/nodes/fcc1c350-1079-4490-9597-f53bfed74dd1 HTTP/1.1
+PUT /v2/projects/17b6a713-2586-459e-a84f-cf7a5368b367/nodes/38d965aa-7dc2-4287-9719-d6aa069660eb HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -12,11 +12,11 @@ PUT /v2/projects/46c9518a-9de2-43f7-91ed-55cb179fe562/nodes/fcc1c350-1079-4490-9
 
 
 HTTP/1.1 200
-CONTENT-LENGTH: 1041
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}
+Content-Length: 1041
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:20 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/projects/{project_id}/nodes/{node_id}
 
 {
     "command_line": null,
@@ -35,7 +35,7 @@ X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "fcc1c350-1079-4490-9597-f53bfed74dd1",
+    "node_id": "38d965aa-7dc2-4287-9719-d6aa069660eb",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -51,7 +51,7 @@ X-ROUTE: /v2/projects/{project_id}/nodes/{node_id}
             "short_name": "e0/0"
         }
     ],
-    "project_id": "46c9518a-9de2-43f7-91ed-55cb179fe562",
+    "project_id": "17b6a713-2586-459e-a84f-cf7a5368b367",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

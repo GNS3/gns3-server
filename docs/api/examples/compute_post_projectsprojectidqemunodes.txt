@@ -1,20 +1,20 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes' -d '{"hda_disk_image": "linux\u8f7d.img", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1uokww80/qemu-system-x86_64", "ram": 1024}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes' -d '{"hda_disk_image": "linux\u8f7d.img", "name": "PC TEST 1", "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmccqyvwn/qemu-system-x86_64", "ram": 1024}'
 
 POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes HTTP/1.1
 {
     "hda_disk_image": "linux\u8f7d.img",
     "name": "PC TEST 1",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1uokww80/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmccqyvwn/qemu-system-x86_64",
     "ram": 1024
 }
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 1461
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes
+Content-Length: 1461
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:10 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/compute/projects/{project_id}/qemu/nodes
 
 {
     "acpi_shutdown": false,
@@ -24,7 +24,7 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes
     "cdrom_image": "",
     "cdrom_image_md5sum": null,
     "command_line": "",
-    "console": 5711,
+    "console": 5713,
     "console_type": "telnet",
     "cpu_throttling": 0,
     "cpus": 1,
@@ -46,15 +46,15 @@ X-ROUTE: /v2/compute/projects/{project_id}/qemu/nodes
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:dd:80:7b:ae:00",
+    "mac_address": "00:dd:80:09:c6:00",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpskaf5ewe/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/d6932073-021c-4487-b7ae-598fdd5b7bae",
-    "node_id": "d6932073-021c-4487-b7ae-598fdd5b7bae",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpo2joh79j/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/bcf073b1-a5a1-4ce9-bc64-726267e509c6",
+    "node_id": "bcf073b1-a5a1-4ce9-bc64-726267e509c6",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp1uokww80/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmccqyvwn/qemu-system-x86_64",
     "ram": 1024,
     "status": "stopped",
     "usage": ""

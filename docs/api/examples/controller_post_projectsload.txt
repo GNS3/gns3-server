@@ -7,11 +7,11 @@ POST /v2/projects/load HTTP/1.1
 
 
 HTTP/1.1 201
-CONTENT-LENGTH: 328
-CONTENT-TYPE: application/json
-DATE: Thu, 08 Jan 2015 16:09:15 GMT
-SERVER: Python/3.5 GNS3/2.0.0dev1
-X-ROUTE: /v2/projects/load
+Content-Length: 379
+Content-Type: application/json
+Date: Tue, 27 Sep 2016 10:01:23 GMT
+Server: Python/3.5 GNS3/2.0.0dev1
+X-Route: /v2/projects/load
 
 {
     "auto_close": true,
@@ -19,7 +19,9 @@ X-ROUTE: /v2/projects/load
     "auto_start": false,
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9hlt1889/projects/6f7c9f59-9706-452a-9ca9-ab6833b8128d",
-    "project_id": "6f7c9f59-9706-452a-9ca9-ab6833b8128d",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpfxgyjchh/projects/b0ac2ebd-60d7-4bf7-b624-01026c5f3a5b",
+    "project_id": "b0ac2ebd-60d7-4bf7-b624-01026c5f3a5b",
+    "scene_height": 1000,
+    "scene_width": 2000,
     "status": "opened"
 }
