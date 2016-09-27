@@ -26,6 +26,7 @@ function help {
   echo "--with-openvpn: Install Open VPN" >&2
   echo "--with-iou: Install IOU" >&2
   echo "--with-i386-repository: Add i386 repositories require by IOU if they are not available on the system. Warning this will replace your source.list in order to use official ubuntu mirror" >&2
+  echo "--unstable: Use the GNS3 unstable repository"
   echo "--help: This help" >&2
 }
 
@@ -46,8 +47,9 @@ fi
 USE_VPN=0
 USE_IOU=0
 I386_REPO=0
+UNSTABLE=0
 
-TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,help -n 'gns3-remote-install.sh' -- "$@"`
+TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
 then
   help
@@ -70,6 +72,10 @@ while true ; do
           I386_REPO=1
           shift
           ;;
+        --unstable)
+          UNSTABLE=1
+          shift
+          ;;
         -h|--help)
           help
           exit 1
@@ -85,12 +91,23 @@ set -e
 export DEBIAN_FRONTEND="noninteractive"
 
 log "Add GNS3 repository"
+
+if [ $UNSTABLE == 1 ]
+then
+cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
+deb http://ppa.launchpad.net/gns3/unstable/ubuntu trusty main
+deb-src http://ppa.launchpad.net/gns3/unstable/ubuntu trusty main
+deb http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main
+deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main
+EOFLIST
+else
 cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
 deb http://ppa.launchpad.net/gns3/ppa/ubuntu trusty main
 deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu trusty main
 deb http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
 deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
 EOFLIST
+fi
 
 if [ $I386_REPO == 1 ]
 then
