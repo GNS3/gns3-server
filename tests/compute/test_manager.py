@@ -136,7 +136,7 @@ def test_get_abs_image_additional_image_paths(qemu, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={
             "images_path": str(tmpdir / "images1"),
-            "additional_images_path": "/tmp/null24564:{}".format(str(tmpdir / "images2")),
+            "additional_images_path": "/tmp/null24564;{}".format(str(tmpdir / "images2")),
             "local": False}):
         assert qemu.get_abs_image_path("test1.bin") == path1
         assert qemu.get_abs_image_path("test2.bin") == path2

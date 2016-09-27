@@ -19,15 +19,16 @@
 import re
 import os
 import textwrap
-import pathlib
+import posixpath
+
 
 def force_unix_path(path):
     """
     :param path: Path to convert
     """
 
-    p = pathlib.Path(os.path.normpath(path))
-    return p.as_posix()
+    path = path.replace("\\", "/")
+    return posixpath.normpath(path)
 
 
 def macaddress_to_int(mac_address):

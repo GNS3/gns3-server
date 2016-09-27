@@ -23,8 +23,7 @@ def test_force_unix_path():
     assert force_unix_path("a/b") == "a/b"
     assert force_unix_path("a\\b") == "a/b"
     assert force_unix_path("a\\b\\..\\c") == "a/c"
-    if sys.platform.startswith("win"):
-        assert force_unix_path("C:\Temp") == "C:/Temp"
+    assert force_unix_path("C:\Temp") == "C:/Temp"
 
 
 def test_macaddress_to_int():

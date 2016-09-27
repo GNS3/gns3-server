@@ -71,7 +71,7 @@ def images_directories(type):
         raise NotImplementedError("%s is not supported", type)
     os.makedirs(type_img_directory, exist_ok=True)
     paths.append(type_img_directory)
-    for directory in server_config.get("additional_images_path", "").split(":"):
+    for directory in server_config.get("additional_images_path", "").split(";"):
         paths.append(directory)
     # Compatibility with old topologies we look in parent directory
     paths.append(img_dir)
