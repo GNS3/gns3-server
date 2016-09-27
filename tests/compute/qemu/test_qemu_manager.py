@@ -185,7 +185,7 @@ def test_get_kvm_archs_kvm_ok(loop):
         if platform.machine() == 'x86_64':
             assert archs == ['x86_64', 'i386']
         else:
-            assert archs == platform.machine()
+            assert archs == [ platform.machine() ]
 
     with patch("os.path.exists", return_value=False):
         archs = loop.run_until_complete(asyncio.async(Qemu.get_kvm_archs()))

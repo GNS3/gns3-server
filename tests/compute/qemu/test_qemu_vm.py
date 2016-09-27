@@ -56,7 +56,7 @@ def fake_qemu_img_binary():
 def fake_qemu_binary():
 
     if sys.platform.startswith("win"):
-        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64.EXE")
+        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.exe")
     else:
         bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
     with open(bin_path, "w+") as f:
@@ -233,7 +233,10 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
         vm.qemu_path = None
 
     # Should not crash with unicode characters
-    path = str(tmpdir / "\u62FF" / "qemu-system-mips")
+    if sys.platform.startswith("win"):
+        path = str(tmpdir / "\u62FF" / "qemu-system-mipsw.exe")
+    else:
+        path = str(tmpdir / "\u62FF" / "qemu-system-mips")
 
     os.makedirs(str(tmpdir / "\u62FF"))
 
@@ -248,8 +251,7 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
     if not sys.platform.startswith("win"):
         with pytest.raises(QemuError):
             vm.qemu_path = path
-
-    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     vm.qemu_path = path
     assert vm.qemu_path == path
@@ -269,7 +271,8 @@ def test_set_qemu_path_windows(vm, tmpdir):
 
     bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.EXE")
     open(bin_path, "w+").close()
-    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    if not sys.platform.startswith("win"):
+        os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     vm.qemu_path = bin_path
 
@@ -281,7 +284,8 @@ def test_set_qemu_path_old_windows(vm, tmpdir):
 
     bin_path = os.path.join(os.environ["PATH"], "qemu.exe")
     open(bin_path, "w+").close()
-    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    if not sys.platform.startswith("win"):
+        os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     vm.qemu_path = bin_path
 
@@ -614,27 +618,22 @@ def test_hdd_disk_image(vm, images_dir):
     assert vm.hdd_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
 
-def test_initrd(vm, tmpdir):
+def test_initrd(vm, images_dir):
 
-    vm.manager.config.set("Server", "images_path", str(tmpdir))
-
-    with patch("gns3server.compute.project.Project.emit") as mock:
-        vm.initrd = str(tmpdir / "test")
-        assert vm.initrd == force_unix_path(str(tmpdir / "test"))
-        vm.initrd = "test"
-        assert vm.initrd == force_unix_path(str(tmpdir / "QEMU" / "test"))
-        assert not mock.called
+    open(os.path.join(images_dir, "test1"), "w+").close()
+    vm.initrd = os.path.join(images_dir, "test1")
+    assert vm.initrd == force_unix_path(os.path.join(images_dir, "test1"))
+    open(os.path.join(images_dir, "QEMU", "test2"), "w+").close()
+    vm.initrd = "test2"
+    assert vm.initrd == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
 
-def test_initrd_asa(vm, tmpdir):
-
-    vm.manager.config.set("Server", "images_path", str(tmpdir))
+def test_initrd_asa(vm, images_dir):
 
     with patch("gns3server.compute.project.Project.emit") as mock:
-        vm.initrd = str(tmpdir / "asa842-initrd.gz")
-        assert vm.initrd == force_unix_path(str(tmpdir / "asa842-initrd.gz"))
-        vm.initrd = "asa842-initrd.gz"
-        assert vm.initrd == force_unix_path(str(tmpdir / "QEMU" / "asa842-initrd.gz"))
+        open(os.path.join(images_dir, "asa842-initrd.gz"), "w+").close()
+        vm.initrd = os.path.join(images_dir, "asa842-initrd.gz")
+        assert vm.initrd == force_unix_path(os.path.join(images_dir, "asa842-initrd.gz"))
         assert mock.called
 
 

@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import pytest
 import uuid
-import asyncio
+import sys
 import os
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
@@ -871,7 +872,7 @@ def test_get_image_informations(project, manager, loop):
         loop.run_until_complete(asyncio.async(vm._get_image_information()))
         mock.assert_called_with("GET", "images/ubuntu:latest/json")
 
-
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_mount_binds(vm, tmpdir):
     image_infos = {
         "ContainerConfig": {
@@ -929,7 +930,7 @@ def test_create_network_interfaces(vm):
     assert "eth4" in content
     assert "eth5" not in content
 
-
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_fix_permission(vm, loop):
     vm._volumes = ["/etc"]
     process = MagicMock()

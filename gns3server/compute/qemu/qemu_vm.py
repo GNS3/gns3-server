@@ -148,6 +148,8 @@ class QemuVM(BaseNode):
         """
 
         if qemu_path and os.pathsep not in qemu_path:
+            if sys.platform.startswith("win") and ".exe" not in qemu_path.lower():
+                qemu_path += "w.exe"
             new_qemu_path = shutil.which(qemu_path, path=os.pathsep.join(self._manager.paths_list()))
             if new_qemu_path is None:
                 raise QemuError("QEMU binary path {} is not found in the path".format(qemu_path))
@@ -692,9 +694,7 @@ class QemuVM(BaseNode):
         :param initrd: QEMU initrd path
         """
 
-        if not os.path.isabs(initrd):
-            server_config = self.manager.config.get_section_config("Server")
-            initrd = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", initrd)
+        initrd =  self.manager.get_abs_image_path(initrd)
 
         log.info('QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(name=self._name,
                                                                                            id=self._id,
@@ -721,10 +721,7 @@ class QemuVM(BaseNode):
         :param kernel_image: QEMU kernel image path
         """
 
-        if not os.path.isabs(kernel_image):
-            server_config = self.manager.config.get_section_config("Server")
-            kernel_image = os.path.join(os.path.expanduser(server_config.get("images_path", "~/GNS3/images")), "QEMU", kernel_image)
-
+        kernel_image = self.manager.get_abs_image_path(kernel_image)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU kernel image path to {kernel_image}'.format(name=self._name,
                                                                                                        id=self._id,
                                                                                                        kernel_image=kernel_image))
