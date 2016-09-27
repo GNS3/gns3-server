@@ -65,10 +65,13 @@ class Controller:
         log.info("Start controller")
         yield from self.load()
         server_config = Config.instance().get_section_config("Server")
+        host = server_config.get("host", "localhost")
+        if host == "0.0.0.0":
+            host = "127.0.0.1"
         yield from self.add_compute(compute_id="local",
                                     name=socket.gethostname(),
                                     protocol=server_config.get("protocol", "http"),
-                                    host=server_config.get("host", "localhost"),
+                                    host=host,
                                     port=server_config.getint("port", 3080),
                                     user=server_config.get("user", ""),
                                     password=server_config.get("password", ""),
