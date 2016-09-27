@@ -58,7 +58,7 @@ class Cloud(BaseNode):
                         "name": interface["name"]
                     })
         else:
-            self._ports_mapping = ports
+            self.ports_mapping = ports
 
     def _interfaces(self):
         return gns3server.utils.interfaces.interfaces()
@@ -99,6 +99,11 @@ class Cloud(BaseNode):
 
         if len(self._nios) > 0:
             raise NodeError("Can't modify a cloud already connected.")
+
+        port_number = 0
+        for port in ports:
+            port["port_number"] = port_number
+            port_number += 1
 
         self._ports_mapping = ports
 

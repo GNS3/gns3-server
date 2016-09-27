@@ -83,3 +83,42 @@ def test_json_without_ports(on_gns3vm, project):
             {'name': 'virbr0', 'special': True, 'type': 'ethernet'}
         ]
     }
+
+
+def test_update_port_mappings(on_gns3vm, project):
+    """
+    We don't allow an empty interface in the middle of port list
+    """
+    ports1 = [
+        {
+            "interface": "eth0",
+            "name": "eth0",
+            "port_number": 0,
+            "type": "ethernet"
+        },
+        {
+            "interface": "eth1",
+            "name": "eth1",
+            "port_number": 1,
+            "type": "ethernet"
+        }
+    ]
+    cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports1)
+    assert cloud.ports_mapping == ports1
+
+    ports2 = [
+        {
+            "interface": "eth0",
+            "name": "eth0",
+            "port_number": 0,
+            "type": "ethernet"
+        },
+        {
+            "interface": "eth1",
+            "name": "eth1",
+            "port_number": 2,
+            "type": "ethernet"
+        }
+    ]
+    cloud = Cloud("cloud2", str(uuid.uuid4()), project, MagicMock(), ports=ports2)
+    assert cloud.ports_mapping == ports1
