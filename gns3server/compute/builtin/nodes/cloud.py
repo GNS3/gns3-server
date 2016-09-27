@@ -58,7 +58,11 @@ class Cloud(BaseNode):
                         "name": interface["name"]
                     })
         else:
-            self.ports_mapping = ports
+            port_number = 0
+            for port in ports:
+                port["port_number"] = port_number
+                port_number += 1
+            self._ports_mapping = ports
 
     def _interfaces(self):
         return gns3server.utils.interfaces.interfaces()
