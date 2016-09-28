@@ -32,7 +32,8 @@ def test_interfaces():
         assert "name" in interface
         assert "ip_address" in interface
         assert "mac_address" in interface
-        assert "netcard" in interface
+        if sys.platform.startswith("win"):
+            assert "netcard" in interface
         assert "type" in interface
         assert "netmask" in interface
 
