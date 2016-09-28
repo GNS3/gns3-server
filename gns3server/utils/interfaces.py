@@ -50,8 +50,10 @@ def _get_windows_interfaces_from_registry():
             is_dhcp_enabled, _ = winreg.QueryValueEx(hkeyinterface, "EnableDHCP")
             if is_dhcp_enabled:
                 ip_address, _ = winreg.QueryValueEx(hkeyinterface, "DhcpIPAddress")
+                netmask, _ = winreg.QueryValueEx(hkeyinterface, "DhcpSubnetMask")
             else:
                 ip_address, _ = winreg.QueryValueEx(hkeyinterface, "IPAddress")
+                netmask, _ = winreg.QueryValueEx(hkeyinterface, "SubnetMask")
                 if ip_address:
                     # get the first IPv4 address only
                     ip_address = ip_address[0]
@@ -61,6 +63,7 @@ def _get_windows_interfaces_from_registry():
                                "ip_address": ip_address,
                                "mac_address": "",  # TODO: find MAC address in registry
                                "netcard": netcard,
+                               "netmask": netmask,
                                "type": "ethernet"})
             winreg.CloseKey(hkeyinterface)
             winreg.CloseKey(hkeycon)
@@ -91,11 +94,13 @@ def get_windows_interfaces():
             if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
                 # adapter is connected or media disconnected
                 ip_address = ""
+                netmask = ""
                 for network_config in service.InstancesOf("Win32_NetworkAdapterConfiguration"):
                     if network_config.InterfaceIndex == adapter.InterfaceIndex:
                         if network_config.IPAddress:
                             # get the first IPv4 address only
                             ip_address = network_config.IPAddress[0]
+                            netmask = network_config.IPSubnet[0]
                         break
                 npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
                 interfaces.append({"id": npf_interface,
@@ -103,6 +108,7 @@ def get_windows_interfaces():
                                    "ip_address": ip_address,
                                    "mac_address": adapter.MACAddress,
                                    "netcard": adapter.name,
+                                   "netmask": netmask,
                                    "type": "ethernet"})
     except (AttributeError, pywintypes.com_error):
         log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")

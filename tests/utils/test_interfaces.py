@@ -28,6 +28,14 @@ def test_interfaces():
         if interface["name"].startswith("vmnet"):
             assert interface["special"]
 
+        assert "id" in interface
+        assert "name" in interface
+        assert "ip_address" in interface
+        assert "mac_address" in interface
+        assert "netcard" in interface
+        assert "type" in interface
+        assert "netmask" in interface
+
 
 def test_has_netmask():
     if sys.platform.startswith("win"):
