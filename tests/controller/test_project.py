@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import uuid
 import json
 import pytest
@@ -109,7 +110,7 @@ def test_init_path(tmpdir):
     p = Project(path=str(tmpdir), project_id=str(uuid4()), name="Test")
     assert p.path == str(tmpdir)
 
-
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_changing_path_with_quote_not_allowed(tmpdir):
     with pytest.raises(aiohttp.web.HTTPForbidden):
         p = Project(project_id=str(uuid4()), name="Test")

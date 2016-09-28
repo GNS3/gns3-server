@@ -39,9 +39,9 @@ def test_images_directories(tmpdir):
 
         # /tmp/null24564 is ignored because doesn't exists
         res = images_directories("qemu")
-        assert res[0] == str(tmpdir / "images1" / "QEMU")
-        assert res[1] == str(tmpdir / "images2")
-        assert res[2] == str(tmpdir / "images1")
+        assert res[0] == force_unix_path(str(tmpdir / "images1" / "QEMU"))
+        assert res[1] == force_unix_path(str(tmpdir / "images2"))
+        assert res[2] == force_unix_path(str(tmpdir / "images1"))
         assert len(res) == 3
 
 
@@ -115,7 +115,7 @@ def test_scan_for_images(tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={
             "images_path": str(tmpdir / "images1"),
-            "additional_images_path": "/tmp/null24564;{}".format(tmpdir / "images2"),
+            "additional_images_path": "/tmp/null24564;{}".format(str(tmpdir / "images2")),
             "local": False}):
 
         assert scan_for_images("dynamips") == [str(path1), str(path2)]

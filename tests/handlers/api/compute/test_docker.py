@@ -26,6 +26,7 @@ from tests.utils import asyncio_patch
 from unittest.mock import patch, MagicMock, PropertyMock
 from gns3server.compute.docker import Docker
 
+pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 
 @pytest.fixture
 def base_params():

@@ -18,7 +18,6 @@
 import os
 import hashlib
 
-
 from ..config import Config
 from . import force_unix_path
 
@@ -36,6 +35,7 @@ def scan_for_images(type):
     files = set()
     paths = []
     for directory in images_directories(type):
+        directory = os.path.normpath(directory)
         for root, _, filenames in os.walk(directory):
             for file in filenames:
                 path = os.path.join(root, file)
@@ -46,7 +46,7 @@ def scan_for_images(type):
                             or (file.endswith(".bin") and type == "iou") \
                             or (not file.endswith(".bin") and not file.endswith(".image") and type == "qemu"):
                         files.add(file)
-                        paths.append(path)
+                        paths.append(force_unix_path(path))
     return paths
 
 
