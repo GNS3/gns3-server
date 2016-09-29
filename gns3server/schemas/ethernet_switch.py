@@ -32,7 +32,7 @@ ETHERNET_SWITCH_CREATE_SCHEMA = {
                 "port_number": {
                     "description": "Port number",
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 0
                 },
                 "type": {
                     "description": "Port type",
@@ -96,7 +96,7 @@ ETHERNET_SWITCH_OBJECT_SCHEMA = {
                 "port_number": {
                     "description": "Port number",
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 0
                 },
                 "type": {
                     "description": "Port type",

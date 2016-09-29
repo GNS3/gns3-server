@@ -32,7 +32,7 @@ ETHERNET_HUB_CREATE_SCHEMA = {
                 "port_number": {
                     "description": "Port number",
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 0
                 },
             },
             "required": ["name", "port_number"],
@@ -84,7 +84,7 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
                 "port_number": {
                     "description": "Port number",
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 0
                 },
             },
             "required": ["name", "port_number"],
