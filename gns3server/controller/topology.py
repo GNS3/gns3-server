@@ -204,8 +204,8 @@ def _convert_1_3_later(topo, topo_path):
             node["properties"]["ports_mapping"] = []
             for port in old_node["ports"]:
                 node["properties"]["ports_mapping"].append({
-                    "name": "Ethernet{}".format(port["port_number"]),
-                    "port_number": port["port_number"]
+                    "name": "Ethernet{}".format(port["port_number"] - 1),
+                    "port_number": port["port_number"] - 1
                 })
         elif old_node["type"] == "EthernetSwitch":
             node["node_type"] = "ethernet_switch"
@@ -214,8 +214,8 @@ def _convert_1_3_later(topo, topo_path):
             node["properties"]["ports_mapping"] = []
             for port in old_node["ports"]:
                 node["properties"]["ports_mapping"].append({
-                    "name": "Ethernet{}".format(port["port_number"]),
-                    "port_number": port["port_number"],
+                    "name": "Ethernet{}".format(port["port_number"] - 1),
+                    "port_number": port["port_number"] - 1,
                     "type": port["type"],
                     "vlan": port["vlan"]
                 })

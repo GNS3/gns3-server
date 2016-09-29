@@ -52,7 +52,7 @@ class EthernetSwitch(Device):
         if ports is None:
             # create 8 ports by default
             self._ports = []
-            for port_number in range(1, 9):
+            for port_number in range(0, 8):
                 self._ports.append({"port_number": port_number,
                                     "name": "Ethernet{}".format(port_number),
                                     "type": "access",
