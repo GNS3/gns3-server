@@ -531,7 +531,7 @@ class Project:
             try:
                 yield from compute.post("/projects/{}/close".format(self._id))
             # We don't care if a compute is down at this step
-            except (aiohttp.errors.ClientOSError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
+            except (aiohttp.errors.ClientOSError, aiohttp.web.HTTPError):
                 pass
         self._cleanPictures()
         self._status = "closed"

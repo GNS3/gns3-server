@@ -89,7 +89,7 @@ class Controller:
             try:
                 yield from compute.close()
             # We don't care if a compute is down at this step
-            except aiohttp.errors.ClientOSError:
+            except (aiohttp.errors.ClientOSError, aiohttp.web_exceptions.HTTPError):
                 pass
         yield from self.gns3vm.exit_vm()
         self._computes = {}
