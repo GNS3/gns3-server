@@ -24,6 +24,7 @@ import asyncio
 from .bridge import Bridge
 from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
+from ...error import NodeError
 
 import logging
 log = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ class EthernetHub(Bridge):
                 "status": "started"}
 
     @property
-    def ports(self):
+    def ports_mapping(self):
         """
         Ports on this hub
 
@@ -73,15 +74,24 @@ class EthernetHub(Bridge):
 
         return self._ports
 
-    @ports.setter
-    def ports(self, ports):
+    @ports_mapping.setter
+    def ports_mapping(self, ports):
         """
         Set the ports on this hub
 
         :param ports: ports info
         """
+        if ports != self._ports:
+            if len(self._mappings) > 0:
+                raise NodeError("Can't modify a hub already connected.")
 
-        self._ports = ports
+            port_number = 0
+            for port in ports:
+                port["name"] = "Ethernet{}".format(port_number)
+                port["port_number"] = port_number
+                port_number += 1
+
+            self._ports = ports
 
     @asyncio.coroutine
     def create(self):

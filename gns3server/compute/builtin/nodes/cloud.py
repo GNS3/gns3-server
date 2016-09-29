@@ -101,15 +101,16 @@ class Cloud(BaseNode):
         :param ports: ports info
         """
 
-        if len(self._nios) > 0:
-            raise NodeError("Can't modify a cloud already connected.")
+        if ports != self._ports_mapping:
+            if len(self._nios) > 0:
+                raise NodeError("Can't modify a cloud already connected.")
 
-        port_number = 0
-        for port in ports:
-            port["port_number"] = port_number
-            port_number += 1
+            port_number = 0
+            for port in ports:
+                port["port_number"] = port_number
+                port_number += 1
 
-        self._ports_mapping = ports
+            self._ports_mapping = ports
 
     @asyncio.coroutine
     def create(self):
