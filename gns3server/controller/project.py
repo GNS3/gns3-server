@@ -564,7 +564,10 @@ class Project:
         if self._status == "opened":
             yield from self.close()
         yield from self.delete_on_computes()
-        shutil.rmtree(self.path)
+        try:
+            shutil.rmtree(self.path)
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Can not delete project directory {}: {}".format(self.path, str(e)))
 
     @asyncio.coroutine
     def delete_on_computes(self):
