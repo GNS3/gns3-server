@@ -107,6 +107,7 @@ def test_import_computes_1_x(controller, controller_config_path, async_run):
     async_run(controller.load())
     for compute in controller.computes.values():
         if compute.id != "local":
+            assert len(compute.id) == 36
             assert compute.host == "127.0.0.1"
             assert compute.port == 3081
             assert compute.protocol == "http"
