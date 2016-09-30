@@ -259,7 +259,7 @@ def _convert_1_3_later(topo, topo_path):
         nodes = []
         source_node = {
             "adapter_number": ports[old_link["source_port_id"]].get("adapter_number", 0),
-            "port_number": ports[old_link["source_port_id"]]["port_number"],
+            "port_number": ports[old_link["source_port_id"]].get("port_number", 0),
             "node_id": node_id_to_node_uuid[old_link["source_node_id"]]
         }
         nodes.append(source_node)
