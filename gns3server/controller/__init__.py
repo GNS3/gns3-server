@@ -48,16 +48,7 @@ class Controller:
         # Store settings shared by the different GUI will be replace by dedicated API later
         self._settings = {}
 
-        if sys.platform.startswith("win"):
-            config_path = os.path.join(os.path.expandvars("%APPDATA%"), "GNS3")
-        else:
-            config_path = os.path.join(os.path.expanduser("~"), ".config", "GNS3")
-
-        server_config = Config.instance().get_section_config("Server")
-
-        if Config.instance().profile:
-            config_path = os.path.join(config_path, "profiles", Config.instance().profile)
-        self._config_file = os.path.join(config_path, "gns3_controller.conf")
+        self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
     @asyncio.coroutine

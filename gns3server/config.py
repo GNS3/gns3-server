@@ -43,13 +43,15 @@ class Config:
 
         self._files = files
         self._profile = profile
+        if files and len(files):
+            self._main_config_file = files[0]
+        else:
+            self._main_config_file = None
 
         # Monitor configuration files for changes
         self._watched_files = {}
 
-        if hasattr(sys, "_called_from_test"):
-            self._files = files
-        elif sys.platform.startswith("win"):
+        if sys.platform.startswith("win"):
 
             appname = "GNS3"
 
@@ -69,7 +71,7 @@ class Config:
                 user_dir = os.path.join(appdata, appname)
 
             filename = "gns3_server.ini"
-            if self._files is None:
+            if self._files is None and not hasattr(sys, "_called_from_test"):
                 self._files = [os.path.join(os.getcwd(), filename),
                                os.path.join(user_dir, filename),
                                os.path.join(appdata, appname + ".ini"),
@@ -93,7 +95,7 @@ class Config:
             else:
                 user_dir = os.path.join(home, ".config", appname)
 
-            if self._files is None:
+            if self._files is None and not hasattr(sys, "_called_from_test"):
                 self._files = [os.path.join(os.getcwd(), filename),
                                os.path.join(user_dir, filename),
                                os.path.join(home, ".config", appname + ".conf"),
@@ -103,6 +105,14 @@ class Config:
 
         if self._files is None:
             self._files = []
+
+        if self._main_config_file is None:
+            self._main_config_file = os.path.join(user_dir, filename)
+            for file in self._files:
+                if os.path.exists(file):
+                    self._main_config_file = file
+                    break
+
         self.clear()
         self._watch_config_file()
 
@@ -112,6 +122,10 @@ class Config:
         Settings profile
         """
         return self._profile
+
+    @property
+    def config_dir(self):
+        return os.path.dirname(self._main_config_file)
 
     def clear(self):
         """Restart with a clean config"""
