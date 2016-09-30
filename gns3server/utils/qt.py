@@ -24,6 +24,8 @@ def qt_font_to_style(font, color):
     """
     Convert a Qt font to CSS style
     """
+    if font is None:
+        font = "TypeWriter,10,-1,5,75,0,0,0,0,0"
     font_info = font.split(",")
     style = "font-family: {};font-size: {};".format(font_info[0], font_info[1])
     if font_info[4] == "75":
