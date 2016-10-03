@@ -77,9 +77,6 @@ class UDPLink(Link):
         """
         Delete the link and free the resources
         """
-        if not self._created:
-            return
-
         try:
             node1 = self._nodes[0]["node"]
             adapter_number1 = self._nodes[0]["adapter_number"]
