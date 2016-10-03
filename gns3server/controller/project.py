@@ -33,6 +33,7 @@ from .udp_link import UDPLink
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
+from ..utils.asyncio import locked_coroutine
 from .export_project import export_project
 from .import_project import import_project
 
@@ -360,16 +361,23 @@ class Project:
         self.dump()
         return node
 
-    @open_required
-    @asyncio.coroutine
-    def delete_node(self, node_id):
+    @locked_coroutine
+    def __delete_node_links(self, node):
+        """
+        Delete all link connected to this node.
 
-        node = self.get_node(node_id)
-
+        The operation use a lock to avoid cleaning links from
+        multiple nodes at the same time.
+        """
         for link in list(self._links.values()):
             if node in link.nodes:
                 yield from self.delete_link(link.id)
 
+    @open_required
+    @asyncio.coroutine
+    def delete_node(self, node_id):
+        node = self.get_node(node_id)
+        yield from self.__delete_node_links(node)
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
         yield from node.destroy()
