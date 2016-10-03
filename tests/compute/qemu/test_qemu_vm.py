@@ -431,6 +431,8 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "cpus=1",
             "-boot",
             "order=c",
+            "-uuid",
+            vm.id,
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
             "-net",
@@ -438,6 +440,19 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-device",
             "e1000,mac={}".format(vm._mac_address)
         ]
+
+
+def test_build_command_manual_uuid(vm, loop, fake_qemu_binary, port_manager):
+    """
+    If user has set a uuid we keep it
+    """
+
+    vm.options = "-uuid e1c307a4-896f-11e6-81a5-3c07547807cc"
+    os.environ["DISPLAY"] = "0:0"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        assert "e1c307a4-896f-11e6-81a5-3c07547807cc" in cmd
+        assert vm.id not in cmd
 
 
 def test_build_command_kvm(linux_platform, vm, loop, fake_qemu_binary, port_manager):
@@ -460,6 +475,8 @@ def test_build_command_kvm(linux_platform, vm, loop, fake_qemu_binary, port_mana
             "-enable-kvm",
             "-boot",
             "order=c",
+            "-uuid",
+            vm.id,
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
             "-net",
@@ -491,6 +508,8 @@ def test_build_command_kvm_2_4(linux_platform, vm, loop, fake_qemu_binary, port_
             "smm=off",
             "-boot",
             "order=c",
+            "-uuid",
+            vm.id,
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
             "-net",
@@ -525,6 +544,8 @@ def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
             "cpus=1",
             "-boot",
             "order=c",
+            "-uuid",
+            vm.id,
             "-serial",
             "telnet:127.0.0.1:{},server,nowait".format(vm.console),
             "-net",

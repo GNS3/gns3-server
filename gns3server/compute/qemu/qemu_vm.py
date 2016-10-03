@@ -694,7 +694,7 @@ class QemuVM(BaseNode):
         :param initrd: QEMU initrd path
         """
 
-        initrd =  self.manager.get_abs_image_path(initrd)
+        initrd = self.manager.get_abs_image_path(initrd)
 
         log.info('QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(name=self._name,
                                                                                            id=self._id,
@@ -1480,6 +1480,7 @@ class QemuVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
+        additional_options = self._options.strip()
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
@@ -1496,6 +1497,8 @@ class QemuVM(BaseNode):
         command.extend(cdrom_option)
         command.extend((yield from self._disk_options()))
         command.extend(self._linux_boot_options())
+        if "-uuid" not in additional_options:
+            command.extend(["-uuid", self._id])
         if self._console_type == "telnet":
             command.extend(self._serial_options())
         elif self._console_type == "vnc":
@@ -1505,7 +1508,6 @@ class QemuVM(BaseNode):
         command.extend(self._monitor_options())
         command.extend((yield from self._network_options()))
         command.extend(self._graphic())
-        additional_options = self._options.strip()
         if additional_options:
             try:
                 command.extend(shlex.split(additional_options))
