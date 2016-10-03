@@ -173,7 +173,7 @@ class VirtualBox(BaseManager):
             if vmname == "<inaccessible>":
                 continue  # ignore inaccessible VMs
             extra_data = yield from self.execute("getextradata", [vmname, "GNS3/Clone"])
-            if not extra_data[0].strip() == "Value: yes":
+            if len(extra_data) == 0 or not extra_data[0].strip() == "Value: yes":
                 # get the amount of RAM
                 info_results = yield from self.execute("showvminfo", [vmname, "--machinereadable"])
                 ram = 0
