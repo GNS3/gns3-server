@@ -61,6 +61,9 @@ class Link:
         self._link_type = port.link_type
 
         for other_node in self._nodes:
+            if other_node["node"] == node:
+                raise aiohttp.web.HTTPConflict(text="Cannot connect to itself")
+
             if node.node_type in ["nat", "cloud"]:
                 if other_node["node"].node_type in ["nat", "cloud"]:
                     raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_node["node"].node_type, node.node_type))

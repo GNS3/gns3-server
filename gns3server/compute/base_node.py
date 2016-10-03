@@ -463,6 +463,7 @@ class BaseNode:
         :param command: command to send
         """
 
+        print(self._ubridge_hypervisor)
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise NodeError("Cannot send command '{}': uBridge is not running".format(command))
         try:
@@ -498,6 +499,7 @@ class BaseNode:
         """
 
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+            log.info("Stopping uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
             yield from self._ubridge_hypervisor.stop()
 
     @asyncio.coroutine

@@ -84,6 +84,45 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     assert response.json["link_id"] is not None
     assert len(response.json["nodes"]) == 2
     assert response.json["nodes"][0]["label"]["x"] == 42
+    assert len(project.links) == 1
+
+
+def test_create_link_failure(http_controller, tmpdir, project, compute, async_run):
+    """
+    Make sure the link is deleted if we failed to create the link.
+
+    The failure is trigger by connecting the link to himself
+    """
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node1._ports = [EthernetPort("E0", 0, 0, 3), EthernetPort("E0", 0, 0, 4)]
+
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
+        response = http_controller.post("/projects/{}/links".format(project.id), {
+            "nodes": [
+                {
+                    "node_id": node1.id,
+                    "adapter_number": 0,
+                    "port_number": 3,
+                    "label": {
+                        "text": "Text",
+                        "x": 42,
+                        "y": 0
+                    }
+                },
+                {
+                    "node_id": node1.id,
+                    "adapter_number": 0,
+                    "port_number": 4
+                }
+            ]
+        }, example=True)
+    #assert mock.called
+    assert response.status == 409
+    assert len(project.links) == 0
 
 
 def test_update_link(http_controller, tmpdir, project, compute, async_run):

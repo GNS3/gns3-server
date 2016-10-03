@@ -259,6 +259,9 @@ class Cloud(BaseNode):
         self._nios[port_number] = nio
         try:
             yield from self._add_ubridge_connection(nio, port_number)
+        except NodeError as e:
+            del self._nios[port_number]
+            raise e
         # Cleanup stuff
         except UbridgeError as e:
             try:

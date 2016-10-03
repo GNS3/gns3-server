@@ -64,11 +64,15 @@ class LinkHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         link = yield from project.add_link()
-        for node in request.json["nodes"]:
-            yield from link.add_node(project.get_node(node["node_id"]),
-                                     node.get("adapter_number", 0),
-                                     node.get("port_number", 0),
-                                     label=node.get("label"))
+        try:
+            for node in request.json["nodes"]:
+                yield from link.add_node(project.get_node(node["node_id"]),
+                                         node.get("adapter_number", 0),
+                                         node.get("port_number", 0),
+                                         label=node.get("label"))
+        except aiohttp.web_exceptions.HTTPException as e:
+            yield from project.delete_link(link.id)
+            raise e
         response.set_status(201)
         response.json(link)
 

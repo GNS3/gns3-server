@@ -131,6 +131,22 @@ def test_add_node_cloud_to_cloud(async_run, project, compute):
         async_run(link.add_node(node2, 0, 4))
 
 
+def test_add_node_same_node(async_run, project, compute):
+    """
+    Connection to the same node is not allowed
+    """
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4), EthernetPort("E1", 0, 0, 5)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.controller.notification.emit = MagicMock()
+
+    async_run(link.add_node(node1, 0, 4))
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        async_run(link.add_node(node1, 0, 5))
+
+
 def test_add_node_serial_to_ethernet(async_run, project, compute):
     """
     Serial to ethernet connection is not allowed
