@@ -52,98 +52,101 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
     if location and ".gns3" in location:
         raise aiohttp.web.HTTPConflict(text="The destination path should not contain .gns3")
 
-    with zipfile.ZipFile(stream) as myzip:
+    try:
+        with zipfile.ZipFile(stream) as myzip:
 
-        try:
-            topology = json.loads(myzip.read("project.gns3").decode())
+            try:
+                topology = json.loads(myzip.read("project.gns3").decode())
 
-            # We import the project on top of an existing project (snapshots)
-            if topology["project_id"] == project_id:
-                project_name = topology["name"]
-            else:
-                # If the project name is already used we generate a new one
-                if name:
-                    project_name = controller.get_free_project_name(name)
+                # We import the project on top of an existing project (snapshots)
+                if topology["project_id"] == project_id:
+                    project_name = topology["name"]
                 else:
-                    project_name = controller.get_free_project_name(topology["name"])
-        except KeyError:
-            raise aiohttp.web.HTTPConflict(text="Can't import topology the .gns3 is corrupted or missing")
+                    # If the project name is already used we generate a new one
+                    if name:
+                        project_name = controller.get_free_project_name(name)
+                    else:
+                        project_name = controller.get_free_project_name(topology["name"])
+            except KeyError:
+                raise aiohttp.web.HTTPConflict(text="Can't import topology the .gns3 is corrupted or missing")
 
-        if location:
-            path = location
-        else:
-            projects_path = controller.projects_directory()
-            path = os.path.join(projects_path, project_name)
-        os.makedirs(path, exist_ok=True)
-        myzip.extractall(path)
-
-        topology = load_topology(os.path.join(path, "project.gns3"))
-        topology["name"] = project_name
-        # To avoid unexpected behavior (project start without manual operations just after import)
-        topology["auto_start"] = False
-        topology["auto_open"] = False
-        topology["auto_close"] = True
-
-        # Modify the compute id of the node depending of compute capacity
-        if not keep_compute_id:
-            # For some VM type we move them to the GNS3 VM if possible
-            # unless it's a linux host without GNS3 VM
-            if not sys.platform.startswith("linux") or controller.has_compute("vm"):
-                for node in topology["topology"]["nodes"]:
-                    if node["node_type"] in ("docker", "qemu", "iou"):
-                        node["compute_id"] = "vm"
+            if location:
+                path = location
             else:
-                for node in topology["topology"]["nodes"]:
-                    node["compute_id"] = "local"
+                projects_path = controller.projects_directory()
+                path = os.path.join(projects_path, project_name)
+            os.makedirs(path, exist_ok=True)
+            myzip.extractall(path)
 
-        compute_created = set()
-        for node in topology["topology"]["nodes"]:
+            topology = load_topology(os.path.join(path, "project.gns3"))
+            topology["name"] = project_name
+            # To avoid unexpected behavior (project start without manual operations just after import)
+            topology["auto_start"] = False
+            topology["auto_open"] = False
+            topology["auto_close"] = True
 
-            if node["compute_id"] != "local":
-                # Project created on the remote GNS3 VM?
-                if node["compute_id"] not in compute_created:
-                    compute = controller.get_compute(node["compute_id"])
-                    yield from compute.post("/projects", data={
-                        "name": project_name,
-                        "project_id": project_id,
-                    })
-                    compute_created.add(node["compute_id"])
+            # Modify the compute id of the node depending of compute capacity
+            if not keep_compute_id:
+                # For some VM type we move them to the GNS3 VM if possible
+                # unless it's a linux host without GNS3 VM
+                if not sys.platform.startswith("linux") or controller.has_compute("vm"):
+                    for node in topology["topology"]["nodes"]:
+                        if node["node_type"] in ("docker", "qemu", "iou"):
+                            node["compute_id"] = "vm"
+                else:
+                    for node in topology["topology"]["nodes"]:
+                        node["compute_id"] = "local"
 
-                yield from _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
+            compute_created = set()
+            for node in topology["topology"]["nodes"]:
 
-        # Generate a new node id
-        node_old_to_new = {}
-        for node in topology["topology"]["nodes"]:
-            if "node_id" in node:
-                node_old_to_new[node["node_id"]] = str(uuid.uuid4())
-                _move_node_file(path, node["node_id"], node_old_to_new[node["node_id"]])
-                node["node_id"] = node_old_to_new[node["node_id"]]
-            else:
-                node["node_id"] = str(uuid.uuid4())
+                if node["compute_id"] != "local":
+                    # Project created on the remote GNS3 VM?
+                    if node["compute_id"] not in compute_created:
+                        compute = controller.get_compute(node["compute_id"])
+                        yield from compute.post("/projects", data={
+                            "name": project_name,
+                            "project_id": project_id,
+                        })
+                        compute_created.add(node["compute_id"])
 
-        # Update link to use new id
-        for link in topology["topology"]["links"]:
-            link["link_id"] = str(uuid.uuid4())
-            for node in link["nodes"]:
-                node["node_id"] = node_old_to_new[node["node_id"]]
+                    yield from _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
 
-        # Generate new drawings id
-        for drawing in topology["topology"]["drawings"]:
-            drawing["drawing_id"] = str(uuid.uuid4())
+            # Generate a new node id
+            node_old_to_new = {}
+            for node in topology["topology"]["nodes"]:
+                if "node_id" in node:
+                    node_old_to_new[node["node_id"]] = str(uuid.uuid4())
+                    _move_node_file(path, node["node_id"], node_old_to_new[node["node_id"]])
+                    node["node_id"] = node_old_to_new[node["node_id"]]
+                else:
+                    node["node_id"] = str(uuid.uuid4())
 
-        # And we dump the updated.gns3
-        dot_gns3_path = os.path.join(path, project_name + ".gns3")
-        # We change the project_id to avoid erasing the project
-        topology["project_id"] = project_id
-        with open(dot_gns3_path, "w+") as f:
-            json.dump(topology, f, indent=4)
-        os.remove(os.path.join(path, "project.gns3"))
+            # Update link to use new id
+            for link in topology["topology"]["links"]:
+                link["link_id"] = str(uuid.uuid4())
+                for node in link["nodes"]:
+                    node["node_id"] = node_old_to_new[node["node_id"]]
 
-        if os.path.exists(os.path.join(path, "images")):
-            _import_images(controller, path)
+            # Generate new drawings id
+            for drawing in topology["topology"]["drawings"]:
+                drawing["drawing_id"] = str(uuid.uuid4())
 
-    project = yield from controller.load_project(dot_gns3_path, load=False)
-    return project
+            # And we dump the updated.gns3
+            dot_gns3_path = os.path.join(path, project_name + ".gns3")
+            # We change the project_id to avoid erasing the project
+            topology["project_id"] = project_id
+            with open(dot_gns3_path, "w+") as f:
+                json.dump(topology, f, indent=4)
+            os.remove(os.path.join(path, "project.gns3"))
+
+            if os.path.exists(os.path.join(path, "images")):
+                _import_images(controller, path)
+
+        project = yield from controller.load_project(dot_gns3_path, load=False)
+        return project
+    except zipfile.BadZipFile:
+        raise aiohttp.web.HTTPConflict(text="Can't import topology the file is corrupted or not a GNS3 project (invalid zip)")
 
 
 def _move_node_file(path, old_id, new_id):
