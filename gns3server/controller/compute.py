@@ -424,12 +424,24 @@ class Compute:
                 if hasattr(data, '__json__'):
                     data = json.dumps(data.__json__())
                 # Stream the request
-                elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, io.BufferedIOBase) or isinstance(data, bytes):
+                elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, bytes):
                     chunked = True
                     headers['content-type'] = 'application/octet-stream'
+                # If the data is an open file we will iterate on it
+                elif isinstance(data, io.BufferedIOBase):
+                    chunked = True
+                    headers['content-type'] = 'application/octet-stream'
+
+                    def send_data(f):
+                        while True:
+                            chunk = f.read(1024)
+                            if not chunk:
+                                break
+                            yield chunk
+
+                    data = send_data(data)
                 else:
                     data = json.dumps(data)
-
         response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
         body = yield from response.read()
         if body and not raw:

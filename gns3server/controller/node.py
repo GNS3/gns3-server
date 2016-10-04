@@ -273,9 +273,9 @@ class Node:
         data = self._node_data()
         data["node_id"] = self._id
         if self._node_type == "docker":
-            timeout = 60
-        else:
             timeout = None
+        else:
+            timeout = 120
         trial = 0
         while trial != 6:
             try:

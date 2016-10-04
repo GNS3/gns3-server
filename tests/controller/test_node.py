@@ -161,7 +161,7 @@ def test_create(node, compute, project, async_run):
         "startup_script": "echo test",
         "name": "demo"
     }
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data)
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=120)
     assert node._console == 2048
     assert node._properties == {"startup_script": "echo test"}
 
@@ -372,7 +372,7 @@ def test_create_without_console(node, compute, project, async_run):
         "startup_script": "echo test",
         "name": "demo"
     }
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data)
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=120)
     assert node._console == 2048
     assert node._properties == {"test_value": "success", "startup_script": "echo test"}
 

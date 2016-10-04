@@ -110,6 +110,7 @@ def test_init_path(tmpdir):
     p = Project(path=str(tmpdir), project_id=str(uuid4()), name="Test")
     assert p.path == str(tmpdir)
 
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_changing_path_with_quote_not_allowed(tmpdir):
     with pytest.raises(aiohttp.web.HTTPForbidden):
@@ -147,7 +148,8 @@ def test_add_node_local(async_run, controller):
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
                                        'startup_config': 'test.cfg',
-                                       'name': 'test'})
+                                       'name': 'test'},
+                                 timeout=120)
     assert compute in project._project_created_on_compute
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
@@ -174,7 +176,8 @@ def test_add_node_non_local(async_run, controller):
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
                                        'startup_config': 'test.cfg',
-                                       'name': 'test'})
+                                       'name': 'test'},
+                                 timeout=120)
     assert compute in project._project_created_on_compute
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
