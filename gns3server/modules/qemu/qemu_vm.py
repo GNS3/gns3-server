@@ -1427,7 +1427,7 @@ class QemuVM(BaseVM):
             version = yield from self.manager.get_qemu_version(self.qemu_path)
             # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
             # https://github.com/GNS3/gns3-server/issues/685
-            if version and parse_version(version) >= parse_version("2.4.0"):
+            if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
                 command.extend(["-machine", "smm=off"])
         command.extend(["-boot", "order={}".format(self._boot_priority)])
         cdrom_option = self._cdrom_option()
