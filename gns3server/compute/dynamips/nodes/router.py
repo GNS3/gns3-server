@@ -1517,8 +1517,13 @@ class Router(BaseNode):
                 except OSError as e:
                     raise DynamipsError("Cannot access the private-config {}: {}".format(private_config_path, e))
 
-            with open(os.path.join(module_workdir, startup_config)) as f:
-                self._startup_config_content = f.read()
+            try:
+                startup_config_path = os.path.join(module_workdir, startup_config)
+                with open(startup_config_path) as f:
+                    self._startup_config_content = f.read()
+            except OSError as e:
+                raise DynamipsError("Cannot access the startup-config {}: {}".format(startup_config_path, e))
+
             yield from self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(name=self._name,
                                                                                                      startup=startup_config,
                                                                                                      private=private_config))
