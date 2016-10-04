@@ -64,10 +64,6 @@ class VMwareGNS3VM(BaseGNS3VM):
         :param ram: amount of RAM
         """
 
-        available_ram = int(psutil.virtual_memory().available / (1024 * 1024))
-        if ram > available_ram:
-            raise GNS3VMError("You have allocated too much memory ({} MB) for the GNS3 VM! (available memory is {} MB)".format(ram, available_ram))
-
         # memory must be a multiple of 4 (VMware requirement)
         if ram % 4 != 0:
             raise GNS3VMError("Allocated memory for the GNS3 VM must be a multiple of 4".format(available_ram))
