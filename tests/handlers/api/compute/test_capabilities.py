@@ -26,6 +26,7 @@ from gns3server.config import Config
 
 from gns3server.version import __version__
 
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_get(http_compute, windows_platform):
     """
@@ -33,11 +34,11 @@ def test_get(http_compute, windows_platform):
     """
     response = http_compute.get('/capabilities', example=True)
     assert response.status == 200
-    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__}
+    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__, 'platform': sys.platform}
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_get_on_gns3vm(http_compute, on_gns3vm):
     response = http_compute.get('/capabilities', example=True)
     assert response.status == 200
-    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__}
+    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'], 'version': __version__, 'platform': sys.platform}

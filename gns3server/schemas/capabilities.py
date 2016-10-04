@@ -30,7 +30,12 @@ CAPABILITIES_SCHEMA = {
         },
         "node_types": {
             "type": "array",
-            "items": NODE_TYPE_SCHEMA
+            "items": NODE_TYPE_SCHEMA,
+            "description": "Node type supported by the compute"
+        },
+        "platform": {
+            "type": "string",
+            "description": "Platform where the compute is running"
         }
     },
     "additionalProperties": False
