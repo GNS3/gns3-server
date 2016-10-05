@@ -58,6 +58,7 @@ setup(
     },
     packages=find_packages(".", exclude=["docs", "tests"]),
     include_package_data=True,
+    zip_safe=False,
     platforms="any",
     classifiers=[
         "Development Status :: 4 - Beta",
