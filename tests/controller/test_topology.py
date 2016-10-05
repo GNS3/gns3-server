@@ -37,6 +37,8 @@ def test_project_to_topology_empty(tmpdir):
         "auto_start": False,
         "auto_close": True,
         "auto_open": False,
+        "scene_width": 2000,
+        "scene_height": 1000,
         "revision": 5,
         "topology": {
             "nodes": [],

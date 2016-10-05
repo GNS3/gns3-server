@@ -57,6 +57,8 @@ def project_to_topology(project):
         "auto_start": project.auto_start,
         "auto_open": project.auto_open,
         "auto_close": project.auto_close,
+        "scene_width": project.scene_width,
+        "scene_height": project.scene_height,
         "topology": {
             "nodes": [],
             "links": [],
