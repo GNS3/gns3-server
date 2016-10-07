@@ -68,7 +68,7 @@ def test_convert(directory, tmpdir):
     assert work_topology
 
     if "revision" not in before_topology or before_topology["revision"] < GNS3_FILE_FORMAT_REVISION:
-        assert os.path.exists(os.path.join(work_directory, gns3_file + ".backup"))
+        assert os.path.exists(os.path.join(work_directory, gns3_file + ".backup{}".format(before_topology.get("revision", 0))))
 
     # We should have the same file in after directory and the work directory
     for root, dirs, files in os.walk(after_directory):
@@ -92,7 +92,7 @@ def test_convert(directory, tmpdir):
             directory = os.path.relpath(root, work_directory)
             file_path = os.path.join(after_directory, directory, file)
             # .backup are created by the conversion process
-            if not file.endswith(".backup"):
+            if ".backup" not in file_path:
                 assert os.path.exists(file_path), "{} should not be here".format(os.path.join(directory, file))
 
     compare_dict("/", work_topology, after_topology)
