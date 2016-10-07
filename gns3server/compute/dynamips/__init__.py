@@ -100,6 +100,15 @@ WIC_MATRIX = {"WIC-1ENET": WIC_1ENET,
               "WIC-2T": WIC_2T}
 
 
+PLATFORMS_DEFAULT_RAM = {"c1700": 160,
+                         "c2600": 160,
+                         "c2691": 192,
+                         "c3600": 192,
+                         "c3725": 128,
+                         "c3745": 256,
+                         "c7200": 512}
+
+
 class Dynamips(BaseManager):
 
     _NODE_CLASS = DynamipsVMFactory

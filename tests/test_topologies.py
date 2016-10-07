@@ -57,8 +57,6 @@ def test_convert(directory, tmpdir):
 
     with open(os.path.join(before_directory, gns3_file)) as f:
         before_topology = json.load(f)
-    with open(os.path.join(after_directory, gns3_file)) as f:
-        after_topology = json.load(f)
 
     # We use a temporary directory for conversion operation to not corrupt our files
     work_directory = str(tmpdir / "work")
@@ -95,6 +93,8 @@ def test_convert(directory, tmpdir):
             if ".backup" not in file_path:
                 assert os.path.exists(file_path), "{} should not be here".format(os.path.join(directory, file))
 
+    with open(os.path.join(after_directory, gns3_file)) as f:
+        after_topology = json.load(f)
     compare_dict("/", work_topology, after_topology)
 
 

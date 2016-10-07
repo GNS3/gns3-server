@@ -1,0 +1,58 @@
+{
+  "revision": 5,
+  "auto_start": false,
+  "topology": {
+    "drawings": [],
+    "links": [],
+    "nodes": [
+      {
+        "port_segment_size": 0,
+        "name": "ASW1",
+        "node_type": "dynamips",
+        "label": {
+          "x": -16,
+          "y": -26,
+          "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+          "text": "ASW1",
+          "rotation": 0
+        },
+        "port_name_format": "Ethernet{0}",
+        "node_id": "02e4a9e8-a897-4b5b-94ba-968d8a0dc5b3",
+        "y": 25,
+        "x": -722,
+        "console": 2012,
+        "compute_id": "local",
+        "symbol": ":/symbols/router.svg",
+        "properties": {
+          "slot0": "Leopard-2FE",
+          "idlepc": "0x6057efc8",
+          "chassis": "3660",
+          "startup_config": "configs/i1_startup-config.cfg",
+          "image": "c3660-a3jk9s-mz.124-25c.bin",
+          "mac_addr": "cc01.20b8.0000",
+          "aux": 2103,
+          "ram": 192,
+          "platform": "c3600",
+          "dynamips_id": 1,
+          "slot1": "NM-16ESW"
+        },
+        "first_port_name": null,
+        "console_type": "telnet",
+        "z": 1
+      }
+    ],
+    "computes": [
+      {
+        "name": "Local",
+        "port": 8000,
+        "compute_id": "local",
+        "protocol": "http",
+        "host": "127.0.0.1"
+      }
+    ]
+  },
+  "project_id": "6e8b7940-a855-4e0c-8854-82577ba08eb1",
+  "type": "topology",
+  "name": "1_3_dynamips_missing_platform",
+  "version": "ANYSTR"
+}

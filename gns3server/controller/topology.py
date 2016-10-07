@@ -17,6 +17,7 @@
 
 import os
 import json
+import copy
 import uuid
 import shutil
 import zipfile
@@ -26,8 +27,9 @@ import jsonschema
 
 from ..version import __version__
 from ..schemas.topology import TOPOLOGY_SCHEMA
+from ..schemas import dynamips_vm
 from ..utils.qt import qt_font_to_style
-
+from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
 
 import logging
 log = logging.getLogger(__name__)
@@ -39,6 +41,22 @@ GNS3_FILE_FORMAT_REVISION = 5
 def _check_topology_schema(topo):
     try:
         jsonschema.validate(topo, TOPOLOGY_SCHEMA)
+
+        # Check the nodes property against compute schemas
+        for node in topo["topology"].get("nodes", []):
+            schema = None
+            if node["node_type"] == "dynamips":
+                schema = copy.deepcopy(dynamips_vm.VM_CREATE_SCHEMA)
+
+            if schema:
+                # Properties send to compute but in an other place in topology
+                delete_properties = ["name", "node_id"]
+                for prop in delete_properties:
+                    del schema["properties"][prop]
+                schema["required"] = [p for p in schema["required"] if p not in delete_properties]
+
+                jsonschema.validate(node.get("properties", {}), schema)
+
     except jsonschema.ValidationError as e:
         error = "Invalid data in topology file: {} in schema: {}".format(
             e.message,
@@ -102,7 +120,7 @@ def load_topology(path):
         topo = _convert_1_3_later(topo, path)
         _check_topology_schema(topo)
         with open(path, "w+", encoding="utf-8") as f:
-            json.dump(topo, f)
+            json.dump(topo, f, indent=4, sort_keys=True)
     elif topo["revision"] > GNS3_FILE_FORMAT_REVISION:
         raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
     _check_topology_schema(topo)
@@ -231,6 +249,10 @@ def _convert_1_3_later(topo, topo_path):
                 node["symbol"] = ":/symbols/router.svg"
             node["node_type"] = "dynamips"
             node["properties"]["dynamips_id"] = old_node["dynamips_id"]
+            if "platform" not in node["properties"] and old_node["type"].startswith("C"):
+                node["properties"]["platform"] = old_node["type"].lower()
+            if "ram" not in node["properties"] and old_node["type"].startswith("C"):
+                node["properties"]["ram"] = PLATFORMS_DEFAULT_RAM[old_node["type"].lower()]
         elif old_node["type"] == "VMwareVM":
             node["node_type"] = "vmware"
             if node["symbol"] is None:
