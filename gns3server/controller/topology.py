@@ -100,6 +100,7 @@ def load_topology(path):
         # first we backup the file
         shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
         topo = _convert_1_3_later(topo, path)
+        _check_topology_schema(topo)
         with open(path, "w+", encoding="utf-8") as f:
             json.dump(topo, f)
     elif topo["revision"] > GNS3_FILE_FORMAT_REVISION:
