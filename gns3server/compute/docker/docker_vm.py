@@ -603,7 +603,10 @@ class DockerVM(BaseNode):
                         pass
             # v – 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false.
             # force - 1/True/true or 0/False/false, Kill then remove the container. Default false.
-            yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1, "v": 1})
+            try:
+                yield from self.manager.query("DELETE", "containers/{}".format(self._cid), params={"force": 1, "v": 1})
+            except DockerError:
+                pass
             log.info("Docker container '{name}' [{image}] removed".format(
                 name=self._name, image=self._image))
 
