@@ -180,7 +180,10 @@ class DockerVM(BaseNode):
         :returns: state
         :rtype: str
         """
-        result = yield from self.manager.query("GET", "containers/{}/json".format(self._cid))
+        try:
+            result = yield from self.manager.query("GET", "containers/{}/json".format(self._cid))
+        except DockerError:
+            return "exited"
 
         if result["State"]["Paused"]:
             return "paused"
