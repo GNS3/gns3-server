@@ -52,18 +52,11 @@ class StandardPortFactory:
     def __new__(cls, properties, port_by_adapter, first_port_name, port_name_format, port_segment_size):
         ports = []
         adapter_number = interface_number = segment_number = 0
-        if "serial_adapters" in properties:
-            for adapter_number in range(0, properties["serial_adapters"]):
-                for port_number in range(0, port_by_adapter):
-                    ports.append(PortFactory("Serial{}/{}".format(adapter_number, port_number), adapter_number, adapter_number, port_number, "serial"))
 
         if "ethernet_adapters" in properties:
             ethernet_adapters = properties["ethernet_adapters"]
         else:
             ethernet_adapters = properties.get("adapters", 1)
-
-        if len(ports):
-            adapter_number += 1
 
         for adapter_number in range(adapter_number, ethernet_adapters + adapter_number):
             for port_number in range(0, port_by_adapter):
@@ -86,6 +79,17 @@ class StandardPortFactory:
                         segment_number += 1
 
                 ports.append(port)
+
+        if len(ports):
+            adapter_number += 1
+
+        if "serial_adapters" in properties:
+            segment_number = 0
+            for adapter_number in range(adapter_number, properties["serial_adapters"] + adapter_number):
+                for port_number in range(0, port_by_adapter):
+                    ports.append(PortFactory("Serial{}/{}".format(segment_number, port_number), segment_number, adapter_number, port_number, "serial"))
+                segment_number += 1
+
         return ports
 
     @staticmethod

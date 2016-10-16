@@ -239,6 +239,102 @@ def test_list_ports_iou(compute, project):
     node.properties["ethernet_adapters"] = 3
     assert node.__json__()["ports"] == [
         {
+            "name": "Ethernet0/0",
+            "short_name": "e0/0",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 0,
+            "adapter_number": 0,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet0/1",
+            "short_name": "e0/1",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 1,
+            "adapter_number": 0,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet0/2",
+            "short_name": "e0/2",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 2,
+            "adapter_number": 0,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet0/3",
+            "short_name": "e0/3",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 3,
+            "adapter_number": 0,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet1/0",
+            "short_name": "e1/0",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 0,
+            "adapter_number": 1,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet1/1",
+            "short_name": "e1/1",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 1,
+            "adapter_number": 1,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet1/2",
+            "short_name": "e1/2",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 2,
+            "adapter_number": 1,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet1/3",
+            "short_name": "e1/3",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 3,
+            "adapter_number": 1,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet2/0",
+            "short_name": "e2/0",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 0,
+            "adapter_number": 2,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet2/1",
+            "short_name": "e2/1",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 1,
+            "adapter_number": 2,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet2/2",
+            "short_name": "e2/2",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 2,
+            "adapter_number": 2,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "Ethernet2/3",
+            "short_name": "e2/3",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 3,
+            "adapter_number": 2,
+            "link_type": "ethernet"
+        },
+        {
             "name": "Serial0/0",
             "short_name": "s0/0",
             "data_link_types": {
@@ -247,7 +343,7 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 0,
-            "adapter_number": 0,
+            "adapter_number": 3,
             "link_type": "serial"
         },
         {
@@ -259,7 +355,7 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 1,
-            "adapter_number": 0,
+            "adapter_number": 3,
             "link_type": "serial"
         },
         {
@@ -271,7 +367,7 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 2,
-            "adapter_number": 0,
+            "adapter_number": 3,
             "link_type": "serial"
         },
         {
@@ -283,7 +379,7 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 3,
-            "adapter_number": 0,
+            "adapter_number": 3,
             "link_type": "serial"
         },
         {
@@ -295,7 +391,7 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 0,
-            "adapter_number": 1,
+            "adapter_number": 4,
             "link_type": "serial"
         },
         {
@@ -307,7 +403,7 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 1,
-            "adapter_number": 1,
+            "adapter_number": 4,
             "link_type": "serial"
         },
         {
@@ -319,7 +415,7 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 2,
-            "adapter_number": 1,
+            "adapter_number": 4,
             "link_type": "serial"
         },
         {
@@ -331,104 +427,8 @@ def test_list_ports_iou(compute, project):
                 "Cisco PPP": "DLT_PPP_SERIAL"
             },
             "port_number": 3,
-            "adapter_number": 1,
+            "adapter_number": 4,
             "link_type": "serial"
-        },
-        {
-            "name": "Ethernet0/0",
-            "short_name": "e0/0",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 0,
-            "adapter_number": 2,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet0/1",
-            "short_name": "e0/1",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 1,
-            "adapter_number": 2,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet0/2",
-            "short_name": "e0/2",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 2,
-            "adapter_number": 2,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet0/3",
-            "short_name": "e0/3",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 3,
-            "adapter_number": 2,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet1/0",
-            "short_name": "e1/0",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 0,
-            "adapter_number": 3,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet1/1",
-            "short_name": "e1/1",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 1,
-            "adapter_number": 3,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet1/2",
-            "short_name": "e1/2",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 2,
-            "adapter_number": 3,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet1/3",
-            "short_name": "e1/3",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 3,
-            "adapter_number": 3,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet2/0",
-            "short_name": "e2/0",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 0,
-            "adapter_number": 4,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet2/1",
-            "short_name": "e2/1",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 1,
-            "adapter_number": 4,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet2/2",
-            "short_name": "e2/2",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 2,
-            "adapter_number": 4,
-            "link_type": "ethernet"
-        },
-        {
-            "name": "Ethernet2/3",
-            "short_name": "e2/3",
-            "data_link_types": {"Ethernet": "DLT_EN10MB"},
-            "port_number": 3,
-            "adapter_number": 4,
-            "link_type": "ethernet"
         }
     ]
 
