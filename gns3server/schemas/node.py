@@ -133,7 +133,7 @@ NODE_OBJECT_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["serial", "vnc", "telnet", None]
+            "enum": ["serial", "vnc", "telnet", "http", None]
         },
         "properties": {
             "description": "Properties specific to an emulator",
