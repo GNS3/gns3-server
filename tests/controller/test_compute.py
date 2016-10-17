@@ -40,6 +40,13 @@ def test_init(compute):
     assert compute.id == "my_compute_id"
 
 
+def test_getUrl(controller):
+    compute = Compute("my_compute_id", protocol="https", host="localhost", port=84, controller=controller)
+    assert compute._getUrl("/test") == "https://localhost:84/v2/compute/test"
+    compute = Compute("my_compute_id", protocol="https", host="::1", port=84, controller=controller)
+    assert compute._getUrl("/test") == "https://[::1]:84/v2/compute/test"
+
+
 def test_host_ip(controller):
     compute = Compute("my_compute_id", protocol="https", host="localhost", port=84, controller=controller)
     assert compute.host_ip == "127.0.0.1"
@@ -92,7 +99,6 @@ def test_compute_httpQueryNotConnected(compute, controller, async_run):
     controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
 
 
-
 def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller, async_run):
     """
     We are not connected to the remote and it's a GNS3 VM. So we need to start it
@@ -115,8 +121,6 @@ def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller, asyn
     assert compute._connected
     assert compute._capabilities["version"] == __version__
     controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
-
-
 
 
 def test_compute_httpQueryNotConnectedInvalidVersion(compute, async_run):

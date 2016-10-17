@@ -409,7 +409,11 @@ class Compute:
         self._controller.notification.emit("compute.updated", self.__json__())
 
     def _getUrl(self, path):
-        return "{}://{}:{}/v2/compute{}".format(self._protocol, self._host, self._port, path)
+        host = self._host
+        # IPV6
+        if host and ":" in host:
+            host = "[{}]".format(host)
+        return "{}://{}:{}/v2/compute{}".format(self._protocol, host, self._port, path)
 
     @asyncio.coroutine
     def _run_http_query(self, method, path, data=None, timeout=10, raw=False):
