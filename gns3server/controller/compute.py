@@ -411,8 +411,16 @@ class Compute:
     def _getUrl(self, path):
         host = self._host
         # IPV6
-        if host and ":" in host:
-            host = "[{}]".format(host)
+        if host:
+            # IPV6
+            if ":" in host:
+                # Reduce IPV6 to his simple form
+                host = str(ipaddress.IPv6Address(host))
+                if host == "::":
+                    host = "::1"
+                host = "[{}]".format(host)
+            elif host == "0.0.0.0":
+                host = "127.0.0.1"
         return "{}://{}:{}/v2/compute{}".format(self._protocol, host, self._port, path)
 
     @asyncio.coroutine

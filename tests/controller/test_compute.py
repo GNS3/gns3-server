@@ -43,7 +43,15 @@ def test_init(compute):
 def test_getUrl(controller):
     compute = Compute("my_compute_id", protocol="https", host="localhost", port=84, controller=controller)
     assert compute._getUrl("/test") == "https://localhost:84/v2/compute/test"
+    # IPV6 localhost
     compute = Compute("my_compute_id", protocol="https", host="::1", port=84, controller=controller)
+    assert compute._getUrl("/test") == "https://[::1]:84/v2/compute/test"
+
+    # Listen on all interfaces aka 0.0.0.0 require us to connect via 127.0.0.1
+    compute = Compute("my_compute_id", protocol="https", host="0.0.0.0", port=84, controller=controller)
+    assert compute._getUrl("/test") == "https://127.0.0.1:84/v2/compute/test"
+    # IPV6
+    compute = Compute("my_compute_id", protocol="https", host="::", port=84, controller=controller)
     assert compute._getUrl("/test") == "https://[::1]:84/v2/compute/test"
 
 

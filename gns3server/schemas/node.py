@@ -127,7 +127,7 @@ NODE_OBJECT_SCHEMA = {
             "type": ["integer", "null"]
         },
         "console_host": {
-            "description": "Console host",
+            "description": "Console host. Warning if the host is 0.0.0.0 or :: (listen on all interfaces) you need to use the same address you use to connect to the controller.",
             "type": "string",
             "minLength": 1,
         },
