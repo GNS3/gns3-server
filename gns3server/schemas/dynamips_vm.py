@@ -140,7 +140,7 @@ VM_CREATE_SCHEMA = {
         },
         "aux": {
             "description": "Auxiliary console TCP port",
-            "type": "integer",
+            "type": ["null", "integer"],
             "minimum": 1,
             "maximum": 65535
         },
