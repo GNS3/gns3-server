@@ -657,7 +657,6 @@ class Project:
         if self._auto_start:
             yield from self.start_all()
 
-    @open_required
     @asyncio.coroutine
     def duplicate(self, name=None, location=None):
         """
@@ -670,6 +669,10 @@ class Project:
         :param name: Name of the new project. A new one will be generated in case of conflicts
         :param location: Parent directory of the new project
         """
+        # If the project was not open we open it temporary
+        previous_status = self._status
+        if self._status == "closed":
+            yield from self.open()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
@@ -678,6 +681,10 @@ class Project:
                     f.write(data)
             with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
                 project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+
+        if previous_status == "closed":
+            yield from self.close()
+
         return project
 
     def is_running(self):
