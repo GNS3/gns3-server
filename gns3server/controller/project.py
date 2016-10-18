@@ -584,10 +584,10 @@ class Project:
         """
         Delete the project on computes but not on controller
         """
-        for compute in self._project_created_on_compute:
+        for compute in list(self._project_created_on_compute):
             if compute.id != "local":
                 yield from compute.delete("/projects/{}".format(self._id))
-        self._project_created_on_compute = set()
+                self._project_created_on_compute.remove(compute)
 
     @classmethod
     def _get_default_project_directory(cls):

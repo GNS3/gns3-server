@@ -380,6 +380,7 @@ class Router(BaseNode):
                 except OSError as e:
                     log.warn("Could not delete file {}: {}".format(file, e))
                     continue
+        self.manager.release_dynamips_id(self.project.id, self.dynamips_id)
 
     @property
     def platform(self):
