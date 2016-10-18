@@ -32,6 +32,13 @@ class IndexHandler:
         response.template("index.html")
 
     @Route.get(
+        r"/upload",
+        description="Placeholder page for the old /upload"
+    )
+    def upload(request, response):
+        response.template("upload.html")
+
+    @Route.get(
         r"/compute",
         description="Resources used by the GNS3 compute servers"
     )
