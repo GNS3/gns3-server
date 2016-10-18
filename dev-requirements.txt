@@ -2,7 +2,7 @@
 
 sphinx==1.4.8
 pytest==3.0.3
-pep8==1.5.7
+pep8==1.7.0
 pytest-capturelog==0.7
 pytest-cov==2.4.0
 pytest-timeout==1.0.0
