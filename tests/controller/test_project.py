@@ -539,3 +539,20 @@ def test_suspend_all(project, async_run):
     compute.post = AsyncioMagicMock()
     async_run(project.suspend_all())
     assert len(compute.post.call_args_list) == 10
+
+
+def test_node_name(project, async_run):
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node(compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.name == "test-1"
+    node = async_run(project.add_node(compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.name == "test-2"
+    node = async_run(project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.name == "helloworld-1"
+    node = async_run(project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.name == "helloworld-2"

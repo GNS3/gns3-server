@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 import os
 import json
 import uuid
@@ -282,6 +283,7 @@ class Project:
 
         if base_name is None:
             return None
+        base_name = re.sub(r"[ ]", "", base_name)
         self.remove_allocated_node_name(base_name)
         if '{0}' in base_name or '{id}' in base_name:
             # base name is a template, replace {0} or {id} by an unique identifier
