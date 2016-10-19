@@ -156,6 +156,8 @@ class PortManager:
 
             try:
                 PortManager._check_port(host, port, socket_type)
+                if host != "0.0.0.0":
+                    PortManager._check_port("0.0.0.0", port, socket_type)
                 return port
             except OSError as e:
                 last_exception = e
