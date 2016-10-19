@@ -681,7 +681,7 @@ class VMware(BaseManager):
                 if "prefvmx.defaultvmpath" in pairs:
                     default_vm_path = pairs["prefvmx.defaultvmpath"]
             if not os.path.isdir(default_vm_path):
-                raise VMwareError('Could not find the default VM directory: "{}"'.format(default_vm_path))
+                raise VMwareError('Could not find the default VM directory: "{}". Due to limitation of the free version of VMware Workstation you need to import the GNS3 VM in the default location.'.format(default_vm_path))
             vmware_vms = self._get_vms_from_directory(default_vm_path)
 
             # looks for VMX paths in the preferences file in case not all VMs are in the default directory
