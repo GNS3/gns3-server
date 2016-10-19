@@ -357,16 +357,28 @@ class VMware(BaseManager):
         return self._host_type
 
     @asyncio.coroutine
-    def execute(self, subcommand, args, timeout=120, host_type=None):
+    def execute(self, subcommand, args, timeout=120):
+        try:
+            return (yield from self._execute(subcommand, args, timeout=timeout))
+        except VMwareError as e:
+            # We can fail to detect that it's VMware player instead of Workstation (due to marketing change Player is now Player Workstation)
+            if self.host_type == "ws" and "VIX_SERVICEPROVIDER_VMWARE_WORKSTATION" in str(e):
+                self._host_type = "player"
+                return (yield from self._execute(subcommand, args, timeout=timeout))
+            else:
+                raise e
 
+    @asyncio.coroutine
+    def _execute(self, subcommand, args, timeout=120):
         with (yield from self._execute_lock):
+            if self.host_type is None:
+                yield from self.check_vmware_version()
+
             vmrun_path = self.vmrun_path
             if not vmrun_path:
                 vmrun_path = self.find_vmrun()
-            if host_type is None:
-                host_type = self.host_type
 
-            command = [vmrun_path, "-T", host_type, subcommand]
+            command = [vmrun_path, "-T", self.host_type, subcommand]
             command.extend(args)
             command_string = " ".join(command)
             log.info("Executing vmrun with command: {}".format(command_string))
