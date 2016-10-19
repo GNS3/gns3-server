@@ -50,6 +50,7 @@ class VMware(BaseManager):
         self._execute_lock = asyncio.Lock()
         self._vmware_inventory_lock = asyncio.Lock()
         self._vmrun_path = None
+        self._host_type = None
         self._vmnets = []
         self._vmnet_start_range = 2
         if sys.platform.startswith("win"):
@@ -160,6 +161,7 @@ class VMware(BaseManager):
             yield from self.check_vmrun_version(minimum_required_version="1.14.0")
         elif player_version >= 12:
             yield from self.check_vmrun_version(minimum_required_version="1.15.0")
+        self._host_type = "player"
 
     @asyncio.coroutine
     def _check_vmware_workstation_requirements(self, ws_version):
@@ -182,6 +184,7 @@ class VMware(BaseManager):
             yield from self.check_vmrun_version(minimum_required_version="1.14.0")
         elif ws_version >= 12:
             yield from self.check_vmrun_version(minimum_required_version="1.15.0")
+        self._host_type = "ws"
 
     @asyncio.coroutine
     def check_vmware_version(self):
@@ -206,6 +209,7 @@ class VMware(BaseManager):
             if sys.platform.startswith("darwin"):
                 if not os.path.isdir("/Applications/VMware Fusion.app"):
                     raise VMwareError("VMware Fusion is not installed in the standard location /Applications/VMware Fusion.app")
+                self._host_type = "fusion"
                 return  # FIXME: no version checking on Mac OS X but we support all versions of fusion
 
             vmware_path = VMware._get_linux_vmware_binary()
@@ -350,11 +354,7 @@ class VMware(BaseManager):
         :returns: host type (string)
         """
 
-        if sys.platform.startswith("darwin"):
-            host_type = "fusion"
-        else:
-            host_type = self.config.get_section_config("VMware").get("host_type", "ws")
-        return host_type
+        return self._host_type
 
     @asyncio.coroutine
     def execute(self, subcommand, args, timeout=120, host_type=None):
