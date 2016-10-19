@@ -22,6 +22,7 @@ order to run a VPCS VM.
 
 import os
 import sys
+import socket
 import subprocess
 import signal
 import re
@@ -534,7 +535,10 @@ class VPCSVM(BaseNode):
                 # UDP tunnel
                 command.extend(["-s", str(nio.lport)])  # source UDP port
                 command.extend(["-c", str(nio.rport)])  # destination UDP port
-                command.extend(["-t", nio.rhost])  # destination host
+                try:
+                    command.extend(["-t", socket.gethostbyname(nio.rhost)])  # destination host, we need to resolve the hostname because VPCS doesn't support it
+                except socket.gaierror as e:
+                    raise VPCSError("Can't resolve hostname {}".format(nio.rhost))
 
             elif isinstance(nio, NIOTAP):
                 # FIXME: remove old code
