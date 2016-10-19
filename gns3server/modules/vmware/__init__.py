@@ -107,7 +107,7 @@ class VMware(BaseManager):
             else:
                 vmrun_path = "vmrun"
 
-        if not os.path.abspath(vmrun_path):
+        if not os.path.isabs(vmrun_path):
             vmrun_path = shutil.which(vmrun_path)
 
         if not vmrun_path:
