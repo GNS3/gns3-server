@@ -252,6 +252,11 @@ def run():
 
     CrashReport.instance()
     host = server_config["host"]
+
+    # https://github.com/GNS3/gns3-server/issues/725
+    if ":" in host:
+        log.critical("Binding server to an IPV6 is not supported")
+        return
     port = int(server_config["port"])
 
     server = WebServer.instance(host, port)
