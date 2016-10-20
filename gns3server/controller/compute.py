@@ -26,7 +26,7 @@ import os
 import io
 
 from ..utils import parse_version
-from ..utils.images import scan_for_images
+from ..utils.images import scan_for_images, md5sum
 from ..controller.controller_error import ControllerError
 from ..config import Config
 from ..version import __version__
@@ -446,7 +446,7 @@ class Compute:
 
                     def send_data(f):
                         while True:
-                            chunk = f.read(1024)
+                            chunk = f.read(4096)
                             if not chunk:
                                 break
                             yield chunk
@@ -543,7 +543,11 @@ class Compute:
             for path in scan_for_images(type):
                 image = os.path.basename(path)
                 if image not in [i['filename'] for i in images]:
-                    images.append({"filename": image, "path": image})
+                    images.append({"filename": image,
+                                   "path": image,
+                                   "md5sum": md5sum(path),
+                                   "filesize": os.stat(path).st_size
+                                   })
         return images
 
     @asyncio.coroutine

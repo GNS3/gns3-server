@@ -226,8 +226,8 @@ def test_list_images(loop, qemu, tmpdir):
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
         assert loop.run_until_complete(qemu.list_images()) == [
-            {"filename": "a.bin", "path": "a.bin"},
-            {"filename": "b.bin", "path": "b.bin"}
+            {"filename": "a.bin", "path": "a.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
+            {"filename": "b.bin", "path": "b.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
         ]
 
 
@@ -245,9 +245,9 @@ def test_list_images_recursives(loop, qemu, tmpdir):
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
         assert loop.run_until_complete(qemu.list_images()) == [
-            {"filename": "a.bin", "path": "a.bin"},
-            {"filename": "b.bin", "path": "b.bin"},
-            {"filename": "c.bin", "path": os.path.sep.join(["c", "c.bin"])}
+            {"filename": "a.bin", "path": "a.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
+            {"filename": "b.bin", "path": "b.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
+            {"filename": "c.bin", "path": os.path.sep.join(["c", "c.bin"]), "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
         ]
 
 

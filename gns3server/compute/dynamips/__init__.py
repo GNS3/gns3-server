@@ -33,6 +33,7 @@ import glob
 log = logging.getLogger(__name__)
 
 from gns3server.utils.interfaces import interfaces, is_interface_up
+from gns3server.utils.images import md5sum
 from gns3server.utils.asyncio import wait_run_in_executor
 from gns3server.utils import parse_version
 from uuid import UUID, uuid4
@@ -712,6 +713,9 @@ class Dynamips(BaseManager):
                     continue
                 # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
                 if elf_header_start == b'\x7fELF\x01\x02\x01':
-                    path = os.path.relpath(path, image_dir)
-                    images.append({"filename": filename, "path": path})
+                    images.append({"filename": filename,
+                                   "path": os.path.relpath(path, image_dir),
+                                   "md5sum": md5sum(path),
+                                   "filesize": os.stat(path).st_size
+                                   })
         return images

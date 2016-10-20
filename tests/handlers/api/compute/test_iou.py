@@ -307,7 +307,7 @@ def test_images(http_compute, fake_iou_bin):
 
     response = http_compute.get("/iou/images", example=True)
     assert response.status == 200
-    assert response.json == [{"filename": "iou.bin", "path": "iou.bin"}]
+    assert response.json == [{"filename": "iou.bin", "path": "iou.bin", "filesize": 7, "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c"}]
 
 
 def test_image_vm(http_compute, tmpdir):

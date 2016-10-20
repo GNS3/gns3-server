@@ -226,7 +226,7 @@ def test_images(http_compute, tmpdir, fake_qemu_vm):
 
     response = http_compute.get("/qemu/images")
     assert response.status == 200
-    assert response.json == [{"filename": "linux载.img", "path": "linux载.img"}]
+    assert response.json == [{"filename": "linux载.img", "path": "linux载.img", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}]
 
 
 def test_upload_image(http_compute, tmpdir):

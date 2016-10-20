@@ -350,13 +350,18 @@ def test_images(compute, async_run, images_dir):
     """
     response = MagicMock()
     response.status = 200
-    response.read = AsyncioMagicMock(return_value=json.dumps([{"filename": "linux.qcow2", "path": "linux.qcow2"}]).encode())
+    response.read = AsyncioMagicMock(return_value=json.dumps([{
+        "filename": "linux.qcow2",
+        "path": "linux.qcow2",
+        "md5sum": "d41d8cd98f00b204e9800998ecf8427e",
+        "filesize": 0}]).encode())
     open(os.path.join(images_dir, "asa.qcow2"), "w+").close()
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         images = async_run(compute.images("qemu"))
         mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=False)
 
-    assert images == [{"filename": "linux.qcow2", "path": "linux.qcow2"}, {"filename": "asa.qcow2", "path": "asa.qcow2"}]
+    assert images == [{"filename": "linux.qcow2", "path": "linux.qcow2", "md5sum": "d41d8cd98f00b204e9800998ecf8427e", "filesize": 0},
+                      {"filename": "asa.qcow2", "path": "asa.qcow2", "md5sum": "d41d8cd98f00b204e9800998ecf8427e", "filesize": 0}]
 
 
 def test_list_files(project, async_run, compute):

@@ -483,7 +483,9 @@ class BaseManager:
                     path = os.path.relpath(os.path.join(root, filename), img_dir)
                     images.append({
                         "filename": filename,
-                        "path": path})
+                        "path": path,
+                        "md5sum": md5sum(os.path.join(root, filename)),
+                        "filesize": os.stat(os.path.join(root, filename)).st_size})
         return images
 
     def get_images_directory(self):
@@ -507,7 +509,7 @@ class BaseManager:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(tmp_path, 'wb+') as f:
                 while True:
-                    packet = yield from stream.read(512)
+                    packet = yield from stream.read(4096)
                     if not packet:
                         break
                     f.write(packet)

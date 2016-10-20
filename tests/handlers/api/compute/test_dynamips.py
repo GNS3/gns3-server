@@ -156,7 +156,11 @@ def test_images(http_compute, tmpdir, fake_dynamips, fake_file):
     with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
         response = http_compute.get("/dynamips/images")
     assert response.status == 200
-    assert response.json == [{"filename": "7200.bin", "path": "7200.bin"}]
+    assert response.json == [{"filename": "7200.bin",
+                              "path": "7200.bin",
+                              "filesize": 7,
+                              "md5sum": "b0d5aa897d937aced5a6b1046e8f7e2e"
+                              }]
 
 
 def test_upload_image(http_compute, tmpdir):

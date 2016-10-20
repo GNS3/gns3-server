@@ -53,6 +53,16 @@ NODE_LIST_IMAGES_SCHEMA = {
                     "description": "Image path",
                     "type": "string",
                     "minLength": 1
+                },
+                "md5sum": {
+                    "description": "md5sum of the image if available",
+                    "type": ["string", "null"],
+                    "minLength": 1
+                },
+                "filesize": {
+                    "description": "size of the image if available",
+                    "type": ["integer", "null"],
+                    "minimum": 0
                 }
             },
             "required": ["filename", "path"],
