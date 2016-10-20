@@ -146,7 +146,7 @@ NODE_OBJECT_SCHEMA = {
         "label": LABEL_OBJECT_SCHEMA,
         "symbol": {
             "description": "Symbol of the node",
-            "type": "string",
+            "type": ["string", "null"],
             "minLength": 1
         },
         "width": {
