@@ -1,5 +1,53 @@
 # Change Log
 
+## 2.0.0 alpha 2 20/10/2016
+* Return md5sum and filesize in the list of images
+* Disable binding to an IPV6
+* Support symbol None (from old versions)
+* Support named remote servers for VPCS
+* Improve vmrun error messages
+* If vmware raise an error about invalid host type we retry with player
+* Do not trust client for the type of VMware host
+* Improve error when default vm directory is not found
+* Add a clear warning about /upload deprecated
+* /duplicate support non opened projects
+* Fix Snapshot restore does not work with IOS routers
+* Use last zipstream version
+* Strip space from all nodes names
+* When checking for a free port check if the host and 0.0.0.0 are available
+* If listen on all interface do not return localhost as console
+* Fix HTTP console not working for docker containers
+* Fix IPV6 server support
+* Fix connection issue with IOU when a device as serial link
+* Catch an error when docker is not running
+* If docker container state failed to return we consider the container stopped
+* Fix Error when converting some dynamips topologies from 1.3 => 2.0
+* After conversion from 1.X check the topology before save to disk
+* Keep forever .gns3 backup before version upgrade
+* Update crash report key
+* Fix save of topology size
+* Missing busybox for docker
+* GNS3 server can't be keep as zipped egg
+* Check if GNS3 has access to all docker resssources
+* Return the platform of a compute
+* Handle errors when startup config path is wrong
+* smm=off is only for 64bits
+* Fix uploads of large images
+* Stop raising error if VMware has not enough ram. Not working on some system
+* Increase creation timeout for docker container
+* Fix a rare crash in vbox
+* Fix errors where free port as marked as used after an error
+* Fix a bug when selecting a topology and deleting multiple linked device
+* Set Qemu uuid for csr1000v
+* Prevent connect a node to himself
+* Fix BadZipFile: File is not a zip file
+* The gns3_controller.conf is located in the same directory of gns3_server.conf
+* Make sure the compute has an id
+* Fix crash if you manually delete the project directory and use the delete button in interface
+* Catch timeout error when closing project
+* Fix a crash when importing some old topologies.
+* Fix a crash if font information is missing
+
 ## 2.0.0 alpha 1 29/09/2016
 * Save as you go
 * Smart packet capture
