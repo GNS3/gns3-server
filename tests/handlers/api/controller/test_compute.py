@@ -154,7 +154,7 @@ def test_compute_delete(http_controller, controller):
     response = http_controller.get("/computes")
     assert len(response.json) == 1
 
-    response = http_controller.delete("/computes/my_compute_id")
+    response = http_controller.delete("/computes/my_compute_id", example=True)
     assert response.status == 204
 
     response = http_controller.get("/computes")
@@ -194,7 +194,7 @@ def test_compute_list_vms(http_controller, controller):
     assert response.status == 201
 
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
-        response = http_controller.get("/computes/my_compute/virtualbox/vms")
+        response = http_controller.get("/computes/my_compute/virtualbox/vms", example=True)
         assert response.json == []
         mock.assert_called_with("GET", "virtualbox", "vms")
 
@@ -214,5 +214,5 @@ def test_compute_create_img(http_controller, controller):
 
     params = {"path": "/test"}
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
-        response = http_controller.post("/computes/my_compute/qemu/img", params)
+        response = http_controller.post("/computes/my_compute/qemu/img", params, example=True)
         mock.assert_called_with("POST", "qemu", "img", data=unittest.mock.ANY)

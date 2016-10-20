@@ -1,14 +1,14 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/95f51a24-4db3-4fd4-89d0-25861018af48/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/700bd996-0978-47af-95dd-eae42b760ad4/start' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/95f51a24-4db3-4fd4-89d0-25861018af48/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/700bd996-0978-47af-95dd-eae42b760ad4/start HTTP/1.1
 {}
 
 
 HTTP/1.1 200
 Content-Length: 1415
 Content-Type: application/json
-Date: Tue, 27 Sep 2016 10:01:11 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:40 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
 
 {
@@ -19,7 +19,7 @@ X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
     "cdrom_image": "",
     "cdrom_image_md5sum": null,
     "command_line": "",
-    "console": 5713,
+    "console": 5714,
     "console_type": "telnet",
     "cpu_throttling": 0,
     "cpus": 1,
@@ -41,15 +41,15 @@ X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "00:dd:80:af:48:00",
+    "mac_address": "00:dd:80:0a:d4:00",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpo2joh79j/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/95f51a24-4db3-4fd4-89d0-25861018af48",
-    "node_id": "95f51a24-4db3-4fd4-89d0-25861018af48",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmps1t9o33m/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/700bd996-0978-47af-95dd-eae42b760ad4",
+    "node_id": "700bd996-0978-47af-95dd-eae42b760ad4",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpmccqyvwn/qemu-system-x86_64",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpf14u_0k4/qemu-system-x86_64",
     "ram": 256,
     "status": "stopped",
     "usage": ""

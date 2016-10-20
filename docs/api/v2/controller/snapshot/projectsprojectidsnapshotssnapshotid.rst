@@ -9,8 +9,8 @@ Delete a snapshot from disk
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **snapshot_id**: Snasphot UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

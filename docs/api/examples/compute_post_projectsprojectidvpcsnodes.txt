@@ -9,17 +9,17 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes HTTP/1
 HTTP/1.1 201
 Content-Length: 489
 Content-Type: application/json
-Date: Tue, 27 Sep 2016 10:01:14 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:44 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/compute/projects/{project_id}/vpcs/nodes
 
 {
     "command_line": "",
-    "console": 5722,
+    "console": 5723,
     "console_type": "telnet",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpo2joh79j/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/e38e7a07-93f4-48fd-96f6-05663168870d",
-    "node_id": "e38e7a07-93f4-48fd-96f6-05663168870d",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmps1t9o33m/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/7646366b-a2c7-414d-a4b5-7d3f3ea961d0",
+    "node_id": "7646366b-a2c7-414d-a4b5-7d3f3ea961d0",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "startup_script": null,
     "startup_script_path": null,

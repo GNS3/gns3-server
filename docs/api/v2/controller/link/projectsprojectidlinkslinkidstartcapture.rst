@@ -9,8 +9,8 @@ Start capture on a link instance. By default we consider it as an Ethernet link
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **link_id**: Link UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

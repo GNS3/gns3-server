@@ -17,7 +17,8 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>node_types</td>                    <td>&#10004;</td>                     <td>array</td>                     <td></td>                     </tr>
+    <tr><td>node_types</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>Node type supported by the compute</td>                     </tr>
+    <tr><td>platform</td>                    <td> </td>                     <td>string</td>                     <td>Platform where the compute is running</td>                     </tr>
     <tr><td>version</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Version number</td>                     </tr>
     </table>
 

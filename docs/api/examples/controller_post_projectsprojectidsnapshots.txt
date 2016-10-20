@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/5485e521-146b-4be6-83e8-670f2573e63a/snapshots' -d '{"name": "snap1"}'
+curl -i -X POST 'http://localhost:3080/v2/projects/d7a48971-8970-4028-89f7-057e1bc58042/snapshots' -d '{"name": "snap1"}'
 
-POST /v2/projects/5485e521-146b-4be6-83e8-670f2573e63a/snapshots HTTP/1.1
+POST /v2/projects/d7a48971-8970-4028-89f7-057e1bc58042/snapshots HTTP/1.1
 {
     "name": "snap1"
 }
@@ -9,13 +9,13 @@ POST /v2/projects/5485e521-146b-4be6-83e8-670f2573e63a/snapshots HTTP/1.1
 HTTP/1.1 201
 Content-Length: 170
 Content-Type: application/json
-Date: Tue, 27 Sep 2016 10:01:24 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:58 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/projects/{project_id}/snapshots
 
 {
-    "created_at": 1474970484,
+    "created_at": 1476953578,
     "name": "snap1",
-    "project_id": "5485e521-146b-4be6-83e8-670f2573e63a",
-    "snapshot_id": "1f94aef3-dc18-4b44-abc6-49f04da13aaa"
+    "project_id": "d7a48971-8970-4028-89f7-057e1bc58042",
+    "snapshot_id": "14e376d2-6cf9-4070-9e0e-d7a1170c5d63"
 }

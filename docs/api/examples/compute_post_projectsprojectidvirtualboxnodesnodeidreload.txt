@@ -1,13 +1,13 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/dfa20c67-40f7-43cc-9f84-0dad2ba1a27c/reload' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/b0e2a8ad-934c-4806-9154-24538b073a79/reload' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/dfa20c67-40f7-43cc-9f84-0dad2ba1a27c/reload HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/b0e2a8ad-934c-4806-9154-24538b073a79/reload HTTP/1.1
 {}
 
 
 HTTP/1.1 204
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 27 Sep 2016 10:01:13 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:44 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}/reload
 

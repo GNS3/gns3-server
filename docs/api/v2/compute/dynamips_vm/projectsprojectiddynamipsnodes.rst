@@ -24,7 +24,7 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>auto_delete_disks</td>                    <td> </td>                     <td>boolean</td>                     <td>Automatically delete nvram and disk files</td>                     </tr>
-    <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>Auxiliary console TCP port</td>                     </tr>
+    <tr><td>aux</td>                    <td> </td>                     <td>['null', 'integer']</td>                     <td>Auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>Cisco router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>Clock divisor</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>

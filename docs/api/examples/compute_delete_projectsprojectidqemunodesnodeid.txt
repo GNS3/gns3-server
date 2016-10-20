@@ -1,13 +1,13 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d215e65d-106a-4bb2-97a1-ad203f82f33f'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/8eb35200-b6ce-40d4-aaa1-b13ca51fb336'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d215e65d-106a-4bb2-97a1-ad203f82f33f HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/8eb35200-b6ce-40d4-aaa1-b13ca51fb336 HTTP/1.1
 
 
 
 HTTP/1.1 204
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 27 Sep 2016 10:01:11 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:41 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
 

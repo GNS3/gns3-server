@@ -27,8 +27,8 @@ Output
     <tr><td>command_line</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Command line use to start the node</td>                     </tr>
     <tr><td>compute_id</td>                    <td> </td>                     <td>string</td>                     <td>Compute identifier</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_host</td>                    <td> </td>                     <td>string</td>                     <td>Console host</td>                     </tr>
-    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: serial, vnc, telnet, null</td>                     </tr>
+    <tr><td>console_host</td>                    <td> </td>                     <td>string</td>                     <td>Console host. Warning if the host is 0.0.0.0 or :: (listen on all interfaces) you need to use the same address you use to connect to the controller.</td>                     </tr>
+    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: serial, vnc, telnet, http, null</td>                     </tr>
     <tr><td>first_port_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Name of the first port</td>                     </tr>
     <tr><td>height</td>                    <td> </td>                     <td>integer</td>                     <td>Height of the node (Read only)</td>                     </tr>
     <tr><td>label</td>                    <td> </td>                     <td>object</td>                     <td></td>                     </tr>
@@ -42,7 +42,7 @@ Output
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>properties</td>                    <td> </td>                     <td>object</td>                     <td>Properties specific to an emulator</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: stopped, started, suspended</td>                     </tr>
-    <tr><td>symbol</td>                    <td> </td>                     <td>string</td>                     <td>Symbol of the node</td>                     </tr>
+    <tr><td>symbol</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Symbol of the node</td>                     </tr>
     <tr><td>width</td>                    <td> </td>                     <td>integer</td>                     <td>Width of the node (Read only)</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X position of the node</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y position of the node</td>                     </tr>

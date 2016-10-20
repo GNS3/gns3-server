@@ -9,8 +9,8 @@ Stop capture on a link instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **link_id**: Link UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

@@ -1,7 +1,7 @@
 {
     "command_line": "",
     "compute_id": "local",
-    "console": 5989,
+    "console": 5990,
     "console_host": "localhost",
     "console_type": "telnet",
     "first_port_name": null,
@@ -14,7 +14,7 @@
         "y": -25
     },
     "name": "PC1",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-198/test_open0/project-files/vpcs/64ba8408-afbf-4b66-9cdd-1fd854427478",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-53/test_open0/project-files/vpcs/64ba8408-afbf-4b66-9cdd-1fd854427478",
     "node_id": "64ba8408-afbf-4b66-9cdd-1fd854427478",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",

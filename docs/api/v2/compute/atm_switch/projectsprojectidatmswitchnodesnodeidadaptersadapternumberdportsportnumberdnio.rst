@@ -9,9 +9,9 @@ Add a NIO to an ATM switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
-- **adapter_number**: Adapter on the switch (always 0)
 - **port_number**: Port on the switch
+- **adapter_number**: Adapter on the switch (always 0)
+- **project_id**: Project UUID
 - **node_id**: Node UUID
 
 Response status codes
@@ -27,9 +27,9 @@ Remove a NIO from an ATM switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
-- **adapter_number**: Adapter on the switch (always 0)
 - **port_number**: Port on the switch
+- **adapter_number**: Adapter on the switch (always 0)
+- **project_id**: Project UUID
 - **node_id**: Node UUID
 
 Response status codes

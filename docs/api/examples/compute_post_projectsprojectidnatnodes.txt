@@ -9,13 +9,13 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes HTTP/1.
 HTTP/1.1 201
 Content-Length: 332
 Content-Type: application/json
-Date: Tue, 27 Sep 2016 10:01:07 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:38 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/compute/projects/{project_id}/nat/nodes
 
 {
     "name": "Nat 1",
-    "node_id": "3cdf49d9-e2a5-4359-aa72-b995b261ba97",
+    "node_id": "f00cbccf-3f8e-4f4d-b6df-6ebcc2fa11e6",
     "ports_mapping": [
         {
             "interface": "gns3nat4",

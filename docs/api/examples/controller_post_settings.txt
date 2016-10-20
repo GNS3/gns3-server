@@ -9,8 +9,8 @@ POST /v2/settings HTTP/1.1
 HTTP/1.1 201
 Content-Length: 20
 Content-Type: application/json
-Date: Tue, 27 Sep 2016 10:01:24 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:57 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/settings
 
 {

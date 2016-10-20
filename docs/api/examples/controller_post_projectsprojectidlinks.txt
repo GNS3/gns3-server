@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/c9112400-8166-4eac-99dd-069ce94ed0f9/links' -d '{"nodes": [{"adapter_number": 0, "label": {"text": "Text", "x": 42, "y": 0}, "node_id": "dacc5bd7-7738-483a-a644-cc7dc69705b3", "port_number": 3}, {"adapter_number": 2, "node_id": "b910eb40-b1b1-4b38-ab8f-61f096d54bb3", "port_number": 4}]}'
+curl -i -X POST 'http://localhost:3080/v2/projects/e58f1543-fd25-42d6-a26e-77c92eb918ae/links' -d '{"nodes": [{"adapter_number": 0, "label": {"text": "Text", "x": 42, "y": 0}, "node_id": "ae725deb-718d-4f2c-b2c8-d0c89a6cf72a", "port_number": 3}, {"adapter_number": 0, "node_id": "ae725deb-718d-4f2c-b2c8-d0c89a6cf72a", "port_number": 4}]}'
 
-POST /v2/projects/c9112400-8166-4eac-99dd-069ce94ed0f9/links HTTP/1.1
+POST /v2/projects/e58f1543-fd25-42d6-a26e-77c92eb918ae/links HTTP/1.1
 {
     "nodes": [
         {
@@ -10,54 +10,26 @@ POST /v2/projects/c9112400-8166-4eac-99dd-069ce94ed0f9/links HTTP/1.1
                 "x": 42,
                 "y": 0
             },
-            "node_id": "dacc5bd7-7738-483a-a644-cc7dc69705b3",
+            "node_id": "ae725deb-718d-4f2c-b2c8-d0c89a6cf72a",
             "port_number": 3
         },
         {
-            "adapter_number": 2,
-            "node_id": "b910eb40-b1b1-4b38-ab8f-61f096d54bb3",
+            "adapter_number": 0,
+            "node_id": "ae725deb-718d-4f2c-b2c8-d0c89a6cf72a",
             "port_number": 4
         }
     ]
 }
 
 
-HTTP/1.1 201
-Content-Length: 875
+HTTP/1.1 409
+Content-Length: 64
 Content-Type: application/json
-Date: Tue, 27 Sep 2016 10:01:17 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:48 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/projects/{project_id}/links
 
 {
-    "capture_file_name": null,
-    "capture_file_path": null,
-    "capturing": false,
-    "link_id": "76b7527f-96e7-4c0d-bcc7-98003f44634b",
-    "link_type": "ethernet",
-    "nodes": [
-        {
-            "adapter_number": 0,
-            "label": {
-                "text": "Text",
-                "x": 42,
-                "y": 0
-            },
-            "node_id": "dacc5bd7-7738-483a-a644-cc7dc69705b3",
-            "port_number": 3
-        },
-        {
-            "adapter_number": 2,
-            "label": {
-                "rotation": 0,
-                "style": "font-size: 10; font-style: Verdana",
-                "text": "2/4",
-                "x": -10,
-                "y": -10
-            },
-            "node_id": "b910eb40-b1b1-4b38-ab8f-61f096d54bb3",
-            "port_number": 4
-        }
-    ],
-    "project_id": "c9112400-8166-4eac-99dd-069ce94ed0f9"
+    "message": "Cannot connect to itself",
+    "status": 409
 }

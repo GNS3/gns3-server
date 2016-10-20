@@ -1,14 +1,14 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/8e606075-cb17-4066-b600-5e50520a08ce/nodes/c082e372-1502-43a4-9fc6-ff3509c2a922/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/bb3c259c-25d0-458c-a754-b2b5756c64d8/nodes/984f5d99-3b40-4a16-9024-75b2d64346aa/start' -d '{}'
 
-POST /v2/projects/8e606075-cb17-4066-b600-5e50520a08ce/nodes/c082e372-1502-43a4-9fc6-ff3509c2a922/start HTTP/1.1
+POST /v2/projects/bb3c259c-25d0-458c-a754-b2b5756c64d8/nodes/984f5d99-3b40-4a16-9024-75b2d64346aa/start HTTP/1.1
 {}
 
 
 HTTP/1.1 201
 Content-Length: 1041
 Content-Type: application/json
-Date: Tue, 27 Sep 2016 10:01:20 GMT
-Server: Python/3.5 GNS3/2.0.0dev1
+Date: Thu, 20 Oct 2016 08:52:51 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/start
 
 {
@@ -28,7 +28,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/start
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "c082e372-1502-43a4-9fc6-ff3509c2a922",
+    "node_id": "984f5d99-3b40-4a16-9024-75b2d64346aa",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -44,7 +44,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/start
             "short_name": "e0/0"
         }
     ],
-    "project_id": "8e606075-cb17-4066-b600-5e50520a08ce",
+    "project_id": "bb3c259c-25d0-458c-a754-b2b5756c64d8",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

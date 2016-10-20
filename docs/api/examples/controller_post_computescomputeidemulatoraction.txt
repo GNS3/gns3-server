@@ -1,0 +1,16 @@
+curl -i -X POST 'http://localhost:3080/v2/computes/my_compute/qemu/img' -d '{"path": "/test"}'
+
+POST /v2/computes/my_compute/qemu/img HTTP/1.1
+{
+    "path": "/test"
+}
+
+
+HTTP/1.1 200
+Content-Length: 2
+Content-Type: application/json
+Date: Thu, 20 Oct 2016 08:52:46 GMT
+Server: Python/3.5 GNS3/2.0.0dev2
+X-Route: /v2/computes/{compute_id}/{emulator}/{action:.+}
+
+[]
