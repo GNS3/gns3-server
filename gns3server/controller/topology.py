@@ -431,7 +431,7 @@ def _convert_label(label):
     """
     Convert a label from 1.X to the new format
     """
-    style = qt_font_to_style(label.get("font"), label["color"])
+    style = qt_font_to_style(label.get("font"), label.get("color"))
     return {
         "text": label["text"],
         "rotation": 0,

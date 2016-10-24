@@ -33,6 +33,8 @@ def qt_font_to_style(font, color):
     if font_info[5] == "1":
         style += "font-style: italic;"
 
+    if color is None:
+        color = "000000"
     if len(color) == 9:
         style += "fill: #" + color[-6:] + ";"
         style += "fill-opacity: {};".format(round(1.0 / 255 * int(color[:3][-2:], base=16), 2))
