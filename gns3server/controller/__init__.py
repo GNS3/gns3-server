@@ -241,6 +241,11 @@ class Controller:
             if (compute_id == 'local' or compute_id == 'vm') and not force:
                 return None
 
+            # It seem we have error with a gns3vm imported as a remote server and conflict
+            # with GNS3 VM settings. That's why we ignore server name gns3vm
+            if name == 'gns3vm':
+                return None
+
             for compute in self._computes.values():
                 if name and compute.name == name:
                     raise aiohttp.web.HTTPConflict(text='Compute name "{}" already exists'.format(name))
