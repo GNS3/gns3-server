@@ -299,7 +299,7 @@ class Controller:
         except KeyError:
             server_config = Config.instance().get_section_config("Server")
             if compute_id == "vm":
-                raise aiohttp.web.HTTPNotFound(text="You try to use a node on the GNS3 VM server but the GNS3 is not configured")
+                raise aiohttp.web.HTTPNotFound(text="You try to use a node on the GNS3 VM server but the GNS3 VM is not configured")
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     def has_compute(self, compute_id):
