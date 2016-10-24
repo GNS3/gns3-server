@@ -68,7 +68,7 @@ def test_change_console_port(node, port_manager):
 
 def test_console_vnc_invalid(project, manager):
     node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
-    node.console_type = "vnc"
+    node._console_type = "vnc"
     with pytest.raises(NodeError):
         node.console = 2012
 

@@ -109,7 +109,7 @@ def test_create(loop, project, manager):
                     "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                        ],
+                    ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -148,7 +148,7 @@ def test_create_with_tag(loop, project, manager):
                     "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                        ],
+                    ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -193,7 +193,7 @@ def test_create_vnc(loop, project, manager):
                     "GNS3_VOLUMES=/etc/network",
                     "QT_GRAPHICSSYSTEM=native",
                     "DISPLAY=:42"
-                        ],
+                    ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -237,7 +237,7 @@ def test_create_start_cmd(loop, project, manager):
                     "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                        ]
+                    ]
             })
         assert vm._cid == "e90e34656806"
 
@@ -272,7 +272,7 @@ def test_create_environment(loop, project, manager):
                     "GNS3_VOLUMES=/etc/network",
                     "YES=1",
                     "NO=0"
-                    ],
+                ],
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Name": "test",
@@ -330,7 +330,7 @@ def test_create_image_not_available(loop, project, manager):
                     "container=docker",
                     "GNS3_MAX_ETHERNET=eth0",
                     "GNS3_VOLUMES=/etc/network"
-                        ],
+                    ],
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/sh"]
             })
@@ -566,8 +566,8 @@ def test_update_vnc(loop, vm):
         "Warnings": []
     }
 
-    vm.console_type = "vnc"
-    vm.console = 5900
+    vm._console_type = "vnc"
+    vm._console = 5900
     vm._display = "display"
     original_console = vm.console
     original_aux = vm.aux
@@ -872,6 +872,7 @@ def test_get_image_informations(project, manager, loop):
         loop.run_until_complete(asyncio.async(vm._get_image_information()))
         mock.assert_called_with("GET", "images/ubuntu:latest/json")
 
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_mount_binds(vm, tmpdir):
     image_infos = {
@@ -929,6 +930,7 @@ def test_create_network_interfaces(vm):
     assert "eth0" in content
     assert "eth4" in content
     assert "eth5" not in content
+
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_fix_permission(vm, loop):
