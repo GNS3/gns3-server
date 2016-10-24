@@ -86,7 +86,7 @@ VBOX_CREATE_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["name", "vmname", "linked_clone"],
+    "required": ["name", "vmname"],
 }
 
 
