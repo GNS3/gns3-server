@@ -693,10 +693,9 @@ def test_add_ubridge_connection(loop, vm):
     loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
 
     calls = [
-        call.send("docker create_veth veth-gns3-e0 veth-gns3-i0"),
-        call.send('docker move_to_ns veth-gns3-i0 42 eth0'),
         call.send('bridge create bridge0'),
-        call.send('bridge add_nio_linux_raw bridge0 veth-gns3-e0'),
+        call.send("bridge add_nio_tap bridge0 tap-gns3-e0"),
+        call.send('docker move_to_ns tap-gns3-e0 42 eth0'),
         call.send('bridge add_nio_udp bridge0 4242 127.0.0.1 4343'),
         call.send('bridge start_capture bridge0 "/tmp/capture.pcap"'),
         call.send('bridge start bridge0')
@@ -713,8 +712,10 @@ def test_add_ubridge_connection_none_nio(loop, vm):
     loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
 
     calls = [
-        call.send("docker create_veth veth-gns3-e0 veth-gns3-i0"),
-        call.send('docker move_to_ns veth-gns3-i0 42 eth0'),
+        call.send('bridge create bridge0'),
+        call.send("bridge add_nio_tap bridge0 tap-gns3-e0"),
+        call.send('docker move_to_ns tap-gns3-e0 42 eth0'),
+
     ]
     # We need to check any_order ortherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
@@ -761,7 +762,6 @@ def test_delete_ubridge_connection(loop, vm):
 
     calls = [
         call.send("bridge delete bridge0"),
-        call.send('docker delete_veth veth-gns3-e0')
     ]
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 

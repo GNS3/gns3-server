@@ -639,35 +639,34 @@ class DockerVM(BaseNode):
         for index in range(4096):
             if "veth-gns3-e{}".format(index) not in psutil.net_if_addrs():
                 adapter.ifc = "eth{}".format(str(index))
-                adapter.host_ifc = "veth-gns3-e{}".format(str(index))
-                adapter.guest_ifc = "veth-gns3-i{}".format(str(index))
+                adapter.host_ifc = "tap-gns3-e{}".format(str(index))
                 break
         if not hasattr(adapter, "ifc"):
             raise DockerError("Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(name=self.name,
                                                                                                                                                                     adapter_number=adapter_number))
 
-        yield from self._ubridge_send('docker create_veth {hostif} {guestif}'.format(guestif=adapter.guest_ifc, hostif=adapter.host_ifc))
-
-        log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.guest_ifc, namespace)
+        yield from self._ubridge_send('bridge create bridge{}'.format(adapter_number))
+        yield from self._ubridge_send('bridge add_nio_tap bridge{adapter_number} {hostif}'.format(adapter_number=adapter_number,
+                                                                                                  hostif=adapter.host_ifc))
+        log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.host_ifc, namespace)
         try:
-            yield from self._ubridge_send('docker move_to_ns {ifc} {ns} eth{adapter}'.format(ifc=adapter.guest_ifc,
+            yield from self._ubridge_send('docker move_to_ns {ifc} {ns} eth{adapter}'.format(ifc=adapter.host_ifc,
                                                                                              ns=namespace,
                                                                                              adapter=adapter_number))
         except UbridgeError as e:
             raise UbridgeNamespaceError(e)
 
         if isinstance(nio, NIOUDP):
-            yield from self._ubridge_send('bridge create bridge{}'.format(adapter_number))
-            yield from self._ubridge_send('bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(ifc=adapter.host_ifc, adapter=adapter_number))
-
             yield from self._ubridge_send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
                                                                                                               lport=nio.lport,
                                                                                                               rhost=nio.rhost,
                                                                                                               rport=nio.rport))
 
-            if nio.capturing:
-                yield from self._ubridge_send('bridge start_capture bridge{adapter} "{pcap_file}"'.format(adapter=adapter_number,
-                                                                                                          pcap_file=nio.pcap_output_file))
+        if nio and nio.capturing:
+            yield from self._ubridge_send('bridge start_capture bridge{adapter} "{pcap_file}"'.format(adapter=adapter_number,
+                                                                                                      pcap_file=nio.pcap_output_file))
+
+        if nio:
             yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
 
     def _delete_ubridge_connection(self, adapter_number):
@@ -678,13 +677,8 @@ class DockerVM(BaseNode):
         if not self.ubridge:
             return
 
-        adapter = self._ethernet_adapters[adapter_number]
         try:
             yield from self._ubridge_send("bridge delete bridge{name}".format(name=adapter_number))
-        except UbridgeError as e:
-            log.debug(str(e))
-        try:
-            yield from self._ubridge_send('docker delete_veth {hostif}'.format(hostif=adapter.host_ifc))
         except UbridgeError as e:
             log.debug(str(e))
 
