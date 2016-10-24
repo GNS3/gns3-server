@@ -49,13 +49,15 @@ class BaseNode:
     :param console: TCP console port
     :param aux: TCP aux console port
     :param allocate_aux: Boolean if true will allocate an aux console port
+    :param linked_clone: The node base image is duplicate/overlay (Each node data are independent)
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False, linked_clone=True):
 
         self._name = name
         self._usage = ""
         self._id = node_id
+        self._linked_clone = linked_clone
         self._project = project
         self._manager = manager
         self._console = console
@@ -103,6 +105,14 @@ class BaseNode:
         if self._temporary_directory is not None:
             if os.path.exists(self._temporary_directory):
                 shutil.rmtree(self._temporary_directory, ignore_errors=True)
+
+    @property
+    def linked_clone(self):
+        return self._linked_clone
+
+    @linked_clone.setter
+    def linked_clone(self, val):
+        self._linked_clone = val
 
     @property
     def status(self):

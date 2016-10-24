@@ -35,7 +35,7 @@ from gns3server.utils import force_unix_path, macaddress_to_int, int_to_macaddre
 from gns3server.compute.notification_manager import NotificationManager
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = Qemu.instance()
     m.port_manager = port_manager
@@ -599,6 +599,22 @@ def test_hda_disk_image(vm, images_dir):
     open(os.path.join(images_dir, "QEMU", "test2"), "w+").close()
     vm.hda_disk_image = "test2"
     assert vm.hda_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
+
+
+def test_hda_disk_image_non_linked_clone(vm, images_dir, project, manager, fake_qemu_binary, fake_qemu_img_binary):
+    """
+    Two non linked can't use the same image at the same time
+    """
+
+    open(os.path.join(images_dir, "test1"), "w+").close()
+    vm.linked_clone = False
+    vm.hda_disk_image = os.path.join(images_dir, "test1")
+    vm.manager._nodes[vm.id] = vm
+
+    vm2 = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0eaa", project, manager, qemu_path=fake_qemu_binary)
+    vm2.linked_clone = False
+    with pytest.raises(QemuError):
+        vm2.hda_disk_image = os.path.join(images_dir, "test1")
 
 
 def test_hda_disk_image_ova(vm, images_dir):

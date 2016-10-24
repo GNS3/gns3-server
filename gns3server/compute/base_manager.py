@@ -34,6 +34,7 @@ from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils import force_unix_path
 from .project_manager import ProjectManager
+from .port_manager import PortManager
 
 from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
@@ -102,7 +103,8 @@ class BaseManager:
 
         :returns: Port manager
         """
-
+        if self._port_manager is None:
+            self._port_manager = PortManager.instance()
         return self._port_manager
 
     @port_manager.setter
@@ -518,3 +520,9 @@ class BaseManager:
             md5sum(path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))
+
+    def reset(self):
+        """
+        Reset module for tests
+        """
+        self._nodes = {}

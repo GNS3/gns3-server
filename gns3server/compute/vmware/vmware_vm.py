@@ -48,11 +48,10 @@ class VMwareVM(BaseNode):
     VMware VM implementation.
     """
 
-    def __init__(self, name, node_id, project, manager, vmx_path, linked_clone, console=None):
+    def __init__(self, name, node_id, project, manager, vmx_path, linked_clone=False, console=None):
 
-        super().__init__(name, node_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console, linked_clone=linked_clone)
 
-        self._linked_clone = linked_clone
         self._vmx_pairs = OrderedDict()
         self._telnet_server_thread = None
         self._serial_pipe = None
@@ -60,6 +59,11 @@ class VMwareVM(BaseNode):
         self._maximum_adapters = 10
         self._started = False
         self._closed = False
+
+        if not self.linked_clone:
+            for node in self.manager.nodes:
+                if node.vmx_path == vmx_path:
+                    raise VMwareError("Sorry a node without the linked clone setting enabled can only be used once on your server. {} is already used by {}".format(vmx_path, node.name))
 
         # VMware VM settings
         self._headless = False
@@ -89,7 +93,7 @@ class VMwareVM(BaseNode):
                 "use_any_adapter": self.use_any_adapter,
                 "status": self.status,
                 "node_directory": self.working_dir,
-                "linked_clone": self._linked_clone}
+                "linked_clone": self.linked_clone}
         return json
 
     @property
@@ -141,7 +145,7 @@ class VMwareVM(BaseNode):
         """
 
         yield from self.manager.check_vmrun_version()
-        if self._linked_clone and not os.path.exists(os.path.join(self.working_dir, os.path.basename(self._vmx_path))):
+        if self.linked_clone and not os.path.exists(os.path.join(self.working_dir, os.path.basename(self._vmx_path))):
             if self.manager.host_type == "player":
                 raise VMwareError("Linked clones are not supported by VMware Player")
             # create the base snapshot for linked clones
@@ -555,7 +559,7 @@ class VMwareVM(BaseNode):
         except VMwareError:
             pass
 
-        if self._linked_clone:
+        if self.linked_clone:
             yield from self.manager.remove_from_vmware_inventory(self._vmx_path)
 
     @property

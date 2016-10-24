@@ -29,7 +29,7 @@ from gns3server.compute.vmware import VMware
 from tests.utils import asyncio_patch
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = VMware.instance()
     m.port_manager = port_manager

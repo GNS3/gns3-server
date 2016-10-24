@@ -26,7 +26,7 @@ from gns3server.compute.dynamips import Dynamips
 from gns3server.config import Config
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = Dynamips.instance()
     m.port_manager = port_manager

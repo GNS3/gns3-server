@@ -24,7 +24,7 @@ from gns3server.compute.vmware.vmware_error import VMwareError
 from gns3server.compute.vmware import VMware
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = VMware.instance()
     m.port_manager = port_manager

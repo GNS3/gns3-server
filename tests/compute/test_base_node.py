@@ -30,7 +30,7 @@ from gns3server.compute.error import NodeError
 from gns3server.compute.vpcs import VPCS
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def manager(port_manager):
     m = VPCS.instance()
     m.port_manager = port_manager

@@ -56,7 +56,7 @@ class VMwareHandler:
                                                    request.match_info["project_id"],
                                                    request.json.get("node_id"),
                                                    request.json.pop("vmx_path"),
-                                                   request.json.pop("linked_clone"),
+                                                   linked_clone=request.json.pop("linked_clone"),
                                                    console=request.json.get("console", None))
 
         for name, value in request.json.items():

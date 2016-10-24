@@ -39,7 +39,7 @@ if not sys.platform.startswith("win"):
 from gns3server.config import Config
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = IOU.instance()
     m.port_manager = port_manager

@@ -69,7 +69,6 @@ class QemuVM(BaseNode):
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
-        self._linked_clone = linked_clone
         self._process = None
         self._cpulimit_process = None
         self._monitor = None
@@ -197,6 +196,24 @@ class QemuVM(BaseNode):
         else:
             self.qemu_path = "qemu-system-{}".format(platform)
 
+    def _disk_setter(self, variable, value):
+        """
+        Use by disk image setter for checking and apply modifications
+
+        :param variable: Variable name in the class
+        :param value: New disk value
+        """
+        value = self.manager.get_abs_image_path(value)
+        if not self.linked_clone:
+            for node in self.manager.nodes:
+                if node != self and getattr(node, variable) == value:
+                    raise QemuError("Sorry a node without the linked base setting enabled can only be used once on your server. {} is already used by {}".format(value, node.name))
+        setattr(self, "_" + variable, value)
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU {variable} path to {disk_image}'.format(name=self._name,
+                                                                                                   variable=variable,
+                                                                                                   id=self._id,
+                                                                                                   disk_image=value))
+
     @property
     def hda_disk_image(self):
         """
@@ -214,10 +231,7 @@ class QemuVM(BaseNode):
 
         :param hda_disk_image: QEMU hda disk image path
         """
-        self._hda_disk_image = self.manager.get_abs_image_path(hda_disk_image)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hda disk image path to {disk_image}'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       disk_image=self._hda_disk_image))
+        self._disk_setter("hda_disk_image", hda_disk_image)
 
     @property
     def hdb_disk_image(self):
@@ -237,10 +251,7 @@ class QemuVM(BaseNode):
         :param hdb_disk_image: QEMU hdb disk image path
         """
 
-        self._hdb_disk_image = self.manager.get_abs_image_path(hdb_disk_image)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdb disk image path to {disk_image}'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       disk_image=self._hdb_disk_image))
+        self._disk_setter("hdb_disk_image", hdb_disk_image)
 
     @property
     def hdc_disk_image(self):
@@ -260,10 +271,7 @@ class QemuVM(BaseNode):
         :param hdc_disk_image: QEMU hdc disk image path
         """
 
-        self._hdc_disk_image = self.manager.get_abs_image_path(hdc_disk_image)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdc disk image path to {disk_image}'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       disk_image=self._hdc_disk_image))
+        self._disk_setter("hdc_disk_image", hdc_disk_image)
 
     @property
     def hdd_disk_image(self):
@@ -283,11 +291,7 @@ class QemuVM(BaseNode):
         :param hdd_disk_image: QEMU hdd disk image path
         """
 
-        self._hdd_disk_image = hdd_disk_image
-        self._hdd_disk_image = self.manager.get_abs_image_path(hdd_disk_image)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdd disk image path to {disk_image}'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       disk_image=self._hdd_disk_image))
+        self._disk_setter("hdd_disk_image", hdd_disk_image)
 
     @property
     def hda_disk_interface(self):
@@ -1312,7 +1316,7 @@ class QemuVM(BaseNode):
                     raise QemuError("{} disk image '{}' linked to '{}' is not accessible".format(disk_name, disk_image, os.path.realpath(disk_image)))
                 else:
                     raise QemuError("{} disk image '{}' is not accessible".format(disk_name, disk_image))
-            if self._linked_clone:
+            if self.linked_clone:
                 disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
                 if not os.path.exists(disk):
                     # create the disk

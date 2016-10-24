@@ -33,7 +33,7 @@ from unittest.mock import patch, MagicMock, PropertyMock, call
 from gns3server.config import Config
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def manager(port_manager):
     m = Docker.instance()
     m.port_manager = port_manager

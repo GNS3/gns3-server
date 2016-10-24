@@ -31,7 +31,7 @@ from gns3server.compute.vpcs import VPCS
 from gns3server.compute.notification_manager import NotificationManager
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = VPCS.instance()
     m.port_manager = port_manager

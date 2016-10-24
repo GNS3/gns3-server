@@ -82,9 +82,6 @@ def http_server(request, loop, port_manager, monkeypatch, controller):
     app = web.Application()
     for method, route, handler in Route.get_routes():
         app.router.add_route(method, route, handler)
-    for module in MODULES:
-        instance = module.instance()
-        instance.port_manager = port_manager
 
     host = "localhost"
 
@@ -145,7 +142,7 @@ def project(tmpdir):
     return p
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def port_manager():
     """An instance of port manager"""
 
@@ -197,6 +194,9 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     """
 
     tmppath = tempfile.mkdtemp()
+
+    for module in MODULES:
+        module._instance = None
 
     port_manager._instance = port_manager
     os.makedirs(os.path.join(tmppath, 'projects'))

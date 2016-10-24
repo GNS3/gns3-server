@@ -24,7 +24,7 @@ from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.virtualbox import VirtualBox
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = VirtualBox.instance()
     m.port_manager = port_manager

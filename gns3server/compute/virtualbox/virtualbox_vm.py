@@ -50,12 +50,11 @@ class VirtualBoxVM(BaseNode):
     VirtualBox VM implementation.
     """
 
-    def __init__(self, name, node_id, project, manager, vmname, linked_clone, console=None, adapters=0):
+    def __init__(self, name, node_id, project, manager, vmname, linked_clone=False, console=None, adapters=0):
 
-        super().__init__(name, node_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console, linked_clone=linked_clone)
 
         self._maximum_adapters = 8
-        self._linked_clone = linked_clone
         self._system_properties = {}
         self._telnet_server_thread = None
         self._serial_pipe = None
@@ -67,6 +66,11 @@ class VirtualBoxVM(BaseNode):
         self._headless = False
         self._acpi_shutdown = False
         self._enable_remote_console = False
+        if not self.linked_clone:
+            for node in self.manager.nodes:
+                if node.vmname == vmname:
+                    raise VirtualBoxError("Sorry a node without the linked clone setting enabled can only be used once on your server. {} is already used by {}".format(vmname, node.name))
+
         self._vmname = vmname
         self._use_any_adapter = False
         self._ram = 0
@@ -87,8 +91,8 @@ class VirtualBoxVM(BaseNode):
                 "ram": self.ram,
                 "status": self.status,
                 "use_any_adapter": self.use_any_adapter,
-                "linked_clone": self._linked_clone}
-        if self._linked_clone:
+                "linked_clone": self.linked_clone}
+        if self.linked_clone:
             json["node_directory"] = self.working_dir
         else:
             json["node_directory"] = None
@@ -156,7 +160,7 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))
 
-        if self._linked_clone:
+        if self.linked_clone:
             if self.id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
                 yield from self.manager.execute("registervm", [vbox_file])
@@ -377,7 +381,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         hdd_table = []
-        if self._linked_clone:
+        if self.linked_clone:
             if os.path.exists(self.working_dir):
                 hdd_files = yield from self._get_all_hdd_files()
                 vm_info = yield from self._get_vm_info()
@@ -446,7 +450,7 @@ class VirtualBoxVM(BaseNode):
         self.acpi_shutdown = False
         yield from self.stop()
 
-        if self._linked_clone:
+        if self.linked_clone:
             hdd_table = yield from self.save_linked_hdds_info()
             for hdd in hdd_table.copy():
                 log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
@@ -593,7 +597,7 @@ class VirtualBoxVM(BaseNode):
         :param vmname: VirtualBox VM name
         """
 
-        if self._linked_clone:
+        if self.linked_clone:
             yield from self._modify_vm('--name "{}"'.format(vmname))
 
         log.info("VirtualBox VM '{name}' [{id}] has set the VM name to '{vmname}'".format(name=self.name, id=self.id, vmname=vmname))

@@ -28,7 +28,7 @@ from gns3server.compute.dynamips.dynamips_error import DynamipsError
 from unittest.mock import patch
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def manager(port_manager):
     m = Dynamips.instance()
     m.port_manager = port_manager
