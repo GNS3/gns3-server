@@ -248,7 +248,7 @@ def _convert_1_3_later(topo, topo_path):
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/router.svg"
             node["node_type"] = "dynamips"
-            node["properties"]["dynamips_id"] = old_node["dynamips_id"]
+            node["properties"]["dynamips_id"] = old_node.get("dynamips_id")
             if "platform" not in node["properties"] and old_node["type"].startswith("C"):
                 node["properties"]["platform"] = old_node["type"].lower()
             if "ram" not in node["properties"] and old_node["type"].startswith("C"):
