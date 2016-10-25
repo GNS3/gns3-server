@@ -93,8 +93,12 @@ class GNS3VM:
             remote_informations
         ]
 
-    def _current_engine(self):
+    def current_engine(self):
         return self._get_engine(self._settings["engine"])
+
+    @property
+    def engine(self):
+        return self._settings["engine"]
 
     @property
     def ip_address(self):
@@ -103,7 +107,7 @@ class GNS3VM:
 
         :returns: VM IP address
         """
-        return self._current_engine().ip_address
+        return self.current_engine().ip_address
 
     @property
     def running(self):
@@ -112,7 +116,7 @@ class GNS3VM:
 
         :returns: Boolean
         """
-        return self._current_engine().running
+        return self.current_engine().running
 
     @property
     def user(self):
@@ -121,7 +125,7 @@ class GNS3VM:
 
         :returns: VM user
         """
-        return self._current_engine().user
+        return self.current_engine().user
 
     @property
     def password(self):
@@ -130,7 +134,7 @@ class GNS3VM:
 
         :returns: VM password
         """
-        return self._current_engine().password
+        return self.current_engine().password
 
     @property
     def port(self):
@@ -139,7 +143,7 @@ class GNS3VM:
 
         :returns: VM port
         """
-        return self._current_engine().port
+        return self.current_engine().port
 
     @property
     def protocol(self):
@@ -148,7 +152,7 @@ class GNS3VM:
 
         :returns: VM protocol
         """
-        return self._current_engine().protocol
+        return self.current_engine().protocol
 
     @property
     def enable(self):
@@ -187,7 +191,7 @@ class GNS3VM:
                 yield from self.start()
         else:
             # When user fix something on his system and try again
-            if not self._current_engine().running and self.enable:
+            if not self.current_engine().running and self.enable:
                 yield from self.start()
 
     def _get_engine(self, engine):
@@ -233,7 +237,7 @@ class GNS3VM:
             except GNS3VMError as e:
                 # User will receive the error later when they will try to use the node
                 yield from self._controller.add_compute(compute_id="vm",
-                                                        name="GNS3 VM ({})".format(self._current_engine().vmname),
+                                                        name="GNS3 VM ({})".format(self.current_engine().vmname),
                                                         host=None,
                                                         force=True)
 
@@ -253,7 +257,7 @@ class GNS3VM:
         """
         Start the GNS3 VM
         """
-        engine = self._current_engine()
+        engine = self.current_engine()
         if not engine.running:
             log.info("Start the GNS3 VM")
             engine.vmname = self._settings["vmname"]
@@ -274,7 +278,7 @@ class GNS3VM:
         """
         Suspend the GNS3 VM
         """
-        engine = self._current_engine()
+        engine = self.current_engine()
         if "vm" in self._controller.computes:
             yield from self._controller.delete_compute("vm")
         if engine.running:
@@ -286,7 +290,7 @@ class GNS3VM:
         """
         Stop the GNS3 VM
         """
-        engine = self._current_engine()
+        engine = self.current_engine()
         if "vm" in self._controller.computes:
             yield from self._controller.delete_compute("vm")
         if engine.running:

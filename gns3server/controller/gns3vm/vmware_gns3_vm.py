@@ -39,6 +39,10 @@ class VMwareGNS3VM(BaseGNS3VM):
         self._vmware_manager = VMware()
         self._vmx_path = None
 
+    @property
+    def vmx_path(self):
+        return self._vmx_path
+
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=60):
 
