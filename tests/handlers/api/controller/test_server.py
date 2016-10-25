@@ -53,7 +53,9 @@ def test_shutdown_non_local(http_controller, web_server, config):
     assert not web_server.shutdown_server.called
 
 
-def test_debug(http_controller, config):
+def test_debug(http_controller, config, tmpdir):
+    config._main_config_file = str(tmpdir / "test.conf")
+
     response = http_controller.post('/debug')
     assert response.status == 201
     debug_dir = os.path.join(config.config_dir, "debug")
