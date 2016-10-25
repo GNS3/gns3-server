@@ -454,7 +454,7 @@ class Compute:
                     data = send_data(data)
                 else:
                     data = json.dumps(data)
-        response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked)
+        response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         body = yield from response.read()
         if body and not raw:
             body = body.decode()
