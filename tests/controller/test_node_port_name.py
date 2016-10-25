@@ -335,8 +335,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "ethernet"
         },
         {
-            "name": "Serial0/0",
-            "short_name": "s0/0",
+            "name": "Serial3/0",
+            "short_name": "s3/0",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",
@@ -347,8 +347,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "serial"
         },
         {
-            "name": "Serial0/1",
-            "short_name": "s0/1",
+            "name": "Serial3/1",
+            "short_name": "s3/1",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",
@@ -359,8 +359,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "serial"
         },
         {
-            "name": "Serial0/2",
-            "short_name": "s0/2",
+            "name": "Serial3/2",
+            "short_name": "s3/2",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",
@@ -371,8 +371,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "serial"
         },
         {
-            "name": "Serial0/3",
-            "short_name": "s0/3",
+            "name": "Serial3/3",
+            "short_name": "s3/3",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",
@@ -383,8 +383,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "serial"
         },
         {
-            "name": "Serial1/0",
-            "short_name": "s1/0",
+            "name": "Serial4/0",
+            "short_name": "s4/0",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",
@@ -395,8 +395,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "serial"
         },
         {
-            "name": "Serial1/1",
-            "short_name": "s1/1",
+            "name": "Serial4/1",
+            "short_name": "s4/1",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",
@@ -407,8 +407,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "serial"
         },
         {
-            "name": "Serial1/2",
-            "short_name": "s1/2",
+            "name": "Serial4/2",
+            "short_name": "s4/2",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",
@@ -419,8 +419,8 @@ def test_list_ports_iou(compute, project):
             "link_type": "serial"
         },
         {
-            "name": "Serial1/3",
-            "short_name": "s1/3",
+            "name": "Serial4/3",
+            "short_name": "s4/3",
             "data_link_types": {
                 "Frame Relay": "DLT_FRELAY",
                 "Cisco HDLC": "DLT_C_HDLC",

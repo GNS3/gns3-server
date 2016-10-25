@@ -84,7 +84,6 @@ class StandardPortFactory:
             adapter_number += 1
 
         if "serial_adapters" in properties:
-            segment_number = 0
             for adapter_number in range(adapter_number, properties["serial_adapters"] + adapter_number):
                 for port_number in range(0, port_by_adapter):
                     ports.append(PortFactory("Serial{}/{}".format(segment_number, port_number), segment_number, adapter_number, port_number, "serial"))
