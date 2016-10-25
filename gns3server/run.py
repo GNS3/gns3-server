@@ -26,8 +26,10 @@ import datetime
 import sys
 import locale
 import argparse
+import shutil
 import psutil
 import asyncio
+import subprocess
 
 
 from gns3server.web.web_server import WebServer
@@ -199,6 +201,29 @@ def kill_ghosts():
             pass
 
 
+def set_vmware_gns3vm_ip():
+    """
+    For the GNS3 VM on VMware we need to get the ip of eth0.
+    vmrun getGuestIPAddress is not reliable because it's return a
+    random ip from one of the available interfaces.
+
+    We need to set a VMware variable with the value and this
+    will allow the VM host machine to retrieve it
+    """
+    vmtoolsd = shutil.which("vmtoolsd")
+    if not vmtoolsd:
+        return
+    ip = None
+    try:
+        for a in psutil.net_if_addrs()["eth0"]:
+            if ":" not in a.address:
+                ip = a.address
+    except (KeyError, IndexError):
+        return
+    if ip:
+        subprocess.call(["vmtoolsd", "--cmd", "info-set guestinfo.gns3.eth0 {}".format(ip)])
+
+
 def run():
     args = parse_arguments(sys.argv[1:])
 
@@ -221,6 +246,8 @@ def run():
 
     for config_file in Config.instance().get_config_files():
         user_log.info("Config file {} loaded".format(config_file))
+
+    set_vmware_gns3vm_ip()
 
     set_config(args)
     server_config = Config.instance().get_section_config("Server")

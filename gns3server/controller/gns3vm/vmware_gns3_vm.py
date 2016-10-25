@@ -128,8 +128,21 @@ class VMwareGNS3VM(BaseGNS3VM):
                 args.extend(["nogui"])
             yield from self._execute("start", args)
             log.info("GNS3 VM has been started")
+
         # get the guest IP address (first adapter only)
-        guest_ip_address = yield from self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
+        trial = 120
+        guest_ip_address = ""
+        while True:
+            guest_ip_address = yield from self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120)
+            guest_ip_address = guest_ip_address.strip()
+            if len(guest_ip_address) != 0:
+                break
+            trial -= 1
+            # If ip not found fallback on old method
+            if trial == 0:
+                guest_ip_address = yield from self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
+                break
+            yield from asyncio.sleep(1)
         self.ip_address = guest_ip_address
         log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
         self.running = True
