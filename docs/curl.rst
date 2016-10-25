@@ -312,8 +312,132 @@ Create a Qemu node
         "x": 0,
         "y": 0,
         "z": 0
-    }%
+    }
 
+
+Create a dynamips node
+######################
+
+
+.. code-block:: shell-session
+
+    # curl http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes -d '{"symbol": ":/symbols/router.svg", "name": "R1", "properties": {"platform": "c7200", "nvram": 512, "image": "c7200-adventerprisek9-mz.124-24.T8.image", "ram": 512, "slot3": "PA-GE", "system_id": "FTX0945W0MY", "slot0": "C7200-IO-FE", "slot2": "PA-GE", "slot1": "PA-GE",  "idlepc": "0x606e0538", "startup_config_content": "hostname %h\n"}, "compute_id": "local", "node_type": "dynamips"}'
+
+    {
+        "command_line": null,
+        "compute_id": "local",
+        "console": 5002,
+        "console_host": "127.0.0.1",
+        "console_type": "telnet",
+        "first_port_name": null,
+        "height": 45,
+        "label": {
+            "rotation": 0,
+            "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+            "text": "R1",
+            "x": null,
+            "y": -32
+        },
+        "name": "R1",
+        "node_directory": "/Users/noplay/GNS3/projects/untitled/project-files/dynamips",
+        "node_id": "f7367e7e-804e-48be-9037-284d4d9b059e",
+        "node_type": "dynamips",
+        "port_name_format": "Ethernet{0}",
+        "port_segment_size": 0,
+        "ports": [
+            {
+                "adapter_number": 0,
+                "data_link_types": {
+                    "Ethernet": "DLT_EN10MB"
+                },
+                "link_type": "ethernet",
+                "name": "FastEthernet0/0",
+                "port_number": 0,
+                "short_name": "f0/0"
+            },
+            {
+                "adapter_number": 1,
+                "data_link_types": {
+                    "Ethernet": "DLT_EN10MB"
+                },
+                "link_type": "ethernet",
+                "name": "GigabitEthernet0/0",
+                "port_number": 0,
+                "short_name": "g0/0"
+            },
+            {
+                "adapter_number": 2,
+                "data_link_types": {
+                    "Ethernet": "DLT_EN10MB"
+                },
+                "link_type": "ethernet",
+                "name": "GigabitEthernet1/0",
+                "port_number": 0,
+                "short_name": "g1/0"
+            },
+            {
+                "adapter_number": 3,
+                "data_link_types": {
+                    "Ethernet": "DLT_EN10MB"
+                },
+                "link_type": "ethernet",
+                "name": "GigabitEthernet2/0",
+                "port_number": 0,
+                "short_name": "g2/0"
+            }
+        ],
+        "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
+        "properties": {
+            "auto_delete_disks": false,
+            "aux": null,
+            "clock_divisor": 4,
+            "disk0": 64,
+            "disk1": 0,
+            "dynamips_id": 2,
+            "exec_area": 64,
+            "idlemax": 500,
+            "idlepc": "0x606e0538",
+            "idlesleep": 30,
+            "image": "c7200-adventerprisek9-mz.124-24.T8.image",
+            "image_md5sum": "b89d30823cbbda460364991ed18449c7",
+            "mac_addr": "ca02.dcbb.0000",
+            "midplane": "vxr",
+            "mmap": true,
+            "npe": "npe-400",
+            "nvram": 512,
+            "platform": "c7200",
+            "power_supplies": [
+                1,
+                1
+            ],
+            "private_config": "",
+            "private_config_content": "",
+            "ram": 512,
+            "sensors": [
+                22,
+                22,
+                22,
+                22
+            ],
+            "slot0": "C7200-IO-FE",
+            "slot1": "PA-GE",
+            "slot2": "PA-GE",
+            "slot3": "PA-GE",
+            "slot4": null,
+            "slot5": null,
+            "slot6": null,
+            "sparsemem": true,
+            "startup_config": "configs/i2_startup-config.cfg",
+            "startup_config_content": "!\nhostname R1\n",
+            "system_id": "FTX0945W0MY"
+        },
+        "status": "stopped",
+        "symbol": ":/symbols/router.svg",
+        "width": 66,
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
 
 Notifications
 #############
