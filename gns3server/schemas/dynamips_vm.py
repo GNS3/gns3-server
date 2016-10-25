@@ -65,7 +65,6 @@ VM_CREATE_SCHEMA = {
         "startup_config": {
             "description": "Path to the IOS startup configuration file",
             "type": "string",
-            "minLength": 1,
         },
         "startup_config_content": {
             "description": "Content of IOS startup configuration file",
