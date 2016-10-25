@@ -23,9 +23,13 @@ from gns3server.version import __version__
 
 from aiohttp.web import HTTPConflict, HTTPForbidden
 
+import os
+import psutil
+import shutil
 import asyncio
-import logging
+import platform
 
+import logging
 log = logging.getLogger(__name__)
 
 
@@ -113,3 +117,66 @@ class ServerHandler:
         controller.save()
         response.json(controller.settings)
         response.set_status(201)
+
+    @Route.post(
+        r"/debug",
+        description="Dump debug informations to disk (debug directory in config directory)",
+        status_codes={
+            201: "Writed"
+        })
+    def debug(request, response):
+        config = Config.instance()
+        debug_dir = os.path.join(config.config_dir, "debug")
+        try:
+            if os.path.exists(debug_dir):
+                shutil.rmtree(debug_dir)
+            os.makedirs(debug_dir)
+            with open(os.path.join(debug_dir, "controller.txt"), "w+") as f:
+                f.write(ServerHandler._getDebugData())
+        except Exception as e:
+            # If something is wrong we log the info to the log and we hope the log will be include correctly to the debug export
+            log.error("Could not export debug informations {}".format(e), exc_info=1)
+        response.set_status(201)
+
+    @staticmethod
+    def _getDebugData():
+        try:
+            connections = psutil.net_connections()
+        # You need to be root for OSX
+        except psutil.AccessDenied:
+            connections = None
+
+        try:
+            addrs = ["* {}: {}".format(key, val) for key, val in psutil.net_if_addrs().items()]
+        except UnicodeDecodeError:
+            addrs = ["INVALID ADDR WITH UNICODE CHARACTERS"]
+
+        data = """Version: {version}
+OS: {os}
+Python: {python}
+CPU: {cpu}
+Memory: {memory}
+
+Networks:
+{addrs}
+
+Open connections:
+{connections}
+
+Processus:
+""".format(
+            version=__version__,
+            os=platform.platform(),
+            python=platform.python_version(),
+            memory=psutil.virtual_memory(),
+            cpu=psutil.cpu_times(),
+            connections=connections,
+            addrs="\n".join(addrs)
+        )
+        for proc in psutil.process_iter():
+            try:
+                psinfo = proc.as_dict(attrs=["name", "exe"])
+                data += "* {} {}\n".format(psinfo["name"], psinfo["exe"])
+            except psutil.NoSuchProcess:
+                pass
+        return data

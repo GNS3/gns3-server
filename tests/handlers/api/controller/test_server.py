@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import pytest
 import asyncio
 
@@ -50,3 +51,11 @@ def test_shutdown_non_local(http_controller, web_server, config):
     response = http_controller.post('/shutdown')
     assert response.status == 403
     assert not web_server.shutdown_server.called
+
+
+def test_debug(http_controller, config):
+    response = http_controller.post('/debug')
+    assert response.status == 201
+    debug_dir = os.path.join(config.config_dir, "debug")
+    assert os.path.exists(debug_dir)
+    assert os.path.exists(os.path.join(debug_dir, "controller.txt"))
