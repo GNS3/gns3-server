@@ -416,7 +416,7 @@ def test_stop_vm(controller, async_run):
         "engine": "vmware",
         "when_exit": "stop"
     }
-    controller.gns3vm._current_engine().running = True
+    controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
         async_run(controller.stop())
         assert mock.called
@@ -431,7 +431,7 @@ def test_suspend_vm(controller, async_run):
         "engine": "vmware",
         "when_exit": "suspend"
     }
-    controller.gns3vm._current_engine().running = True
+    controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
         async_run(controller.stop())
         assert mock.called
@@ -446,7 +446,7 @@ def test_keep_vm(controller, async_run):
         "engine": "vmware",
         "when_exit": "keep"
     }
-    controller.gns3vm._current_engine().running = True
+    controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
         async_run(controller.stop())
         assert not mock.called
