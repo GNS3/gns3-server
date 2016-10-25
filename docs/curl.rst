@@ -230,6 +230,91 @@ This will display a red square in the middle of your topologies:
 Tips: you can embed png/jpg... by using a base64 encoding in the SVG.
 
 
+Create a Qemu node
+###################
+
+.. code-block:: shell-session
+
+    # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes -d '{"node_type": "qemu", "compute_id": "local", "name": "Microcore1", "properties": {"hda_disk_image": "linux-microcore-6.4.img", "ram": 256, "qemu_path": "qemu-system-x86_64"}}' 
+
+    {
+        "command_line": "",
+        "compute_id": "local",
+        "console": 5001,
+        "console_host": "127.0.0.1",
+        "console_type": "telnet",
+        "first_port_name": null,
+        "height": 59,
+        "label": {
+            "rotation": 0,
+            "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+            "text": "Microcore1",
+            "x": null,
+            "y": -40
+        },
+        "name": "Microcore1",
+        "node_directory": "/Users/noplay/GNS3/projects/untitled/project-files/qemu/9e4eb45b-22f5-450d-8277-2934fbd0aa20",
+        "node_id": "9e4eb45b-22f5-450d-8277-2934fbd0aa20",
+        "node_type": "qemu",
+        "port_name_format": "Ethernet{0}",
+        "port_segment_size": 0,
+        "ports": [
+            {
+                "adapter_number": 0,
+                "data_link_types": {
+                    "Ethernet": "DLT_EN10MB"
+                },
+                "link_type": "ethernet",
+                "name": "Ethernet0",
+                "port_number": 0,
+                "short_name": "e0/0"
+            }
+        ],
+        "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
+        "properties": {
+            "acpi_shutdown": false,
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "boot_priority": "c",
+            "cdrom_image": "",
+            "cdrom_image_md5sum": null,
+            "cpu_throttling": 0,
+            "cpus": 1,
+            "hda_disk_image": "linux-microcore-6.4.img",
+            "hda_disk_image_md5sum": "877419f975c4891c019947ceead5c696",
+            "hda_disk_interface": "ide",
+            "hdb_disk_image": "",
+            "hdb_disk_image_md5sum": null,
+            "hdb_disk_interface": "ide",
+            "hdc_disk_image": "",
+            "hdc_disk_image_md5sum": null,
+            "hdc_disk_interface": "ide",
+            "hdd_disk_image": "",
+            "hdd_disk_image_md5sum": null,
+            "hdd_disk_interface": "ide",
+            "initrd": "",
+            "initrd_md5sum": null,
+            "kernel_command_line": "",
+            "kernel_image": "",
+            "kernel_image_md5sum": null,
+            "legacy_networking": false,
+            "mac_address": "00:af:69:aa:20:00",
+            "options": "",
+            "platform": "x86_64",
+            "process_priority": "low",
+            "qemu_path": "/usr/local/bin/qemu-system-x86_64",
+            "ram": 256,
+            "usage": ""
+        },
+        "status": "stopped",
+        "symbol": ":/symbols/computer.svg",
+        "width": 65,
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }%
+
+
 Notifications
 #############
 
