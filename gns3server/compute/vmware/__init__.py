@@ -202,6 +202,7 @@ class VMware(BaseManager):
                     yield from self._check_vmware_player_requirements(player_version)
                 else:
                     log.warning("Could not find VMware version")
+                    self._host_type = "ws"
             else:
                 log.debug("VMware Workstation version {} detected".format(ws_version))
                 yield from self._check_vmware_workstation_requirements(ws_version)
