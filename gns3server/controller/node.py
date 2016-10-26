@@ -568,7 +568,7 @@ class Node:
             "node_directory": self._node_directory,
             "name": self._name,
             "console": self._console,
-            "console_host": str(self._compute.host),
+            "console_host": str(self._compute.console_host),
             "console_type": self._console_type,
             "command_line": self._command_line,
             "properties": self._properties,

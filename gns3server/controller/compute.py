@@ -73,7 +73,7 @@ class Compute:
     A GNS3 compute.
     """
 
-    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=3080, user=None, password=None, name=None):
+    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=3080, user=None, password=None, name=None, console_host=None):
         self._http_session = None
         assert controller is not None
         log.info("Create compute %s", compute_id)
@@ -87,6 +87,10 @@ class Compute:
         self.host = host
         self.port = port
         self._user = None
+        if console_host is None:
+            self._console_host = host
+        else:
+            self._console_host = console_host
         self._password = None
         self._connected = False
         self._closed = False  # Close mean we are destroying the compute node
@@ -213,6 +217,10 @@ class Compute:
     @host.setter
     def host(self, host):
         self._host = host
+
+    @property
+    def console_host(self):
+        return self._console_host
 
     @property
     def port(self):

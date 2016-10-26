@@ -60,7 +60,6 @@ class WebServer:
         self._server = None
         self._app = None
         self._start_time = time.time()
-        self._port_manager = PortManager(host)
         self._running = False
         self._closing = False
 
@@ -115,11 +114,11 @@ class WebServer:
             m = module.instance()
             yield from m.unload()
 
-        if self._port_manager.tcp_ports:
-            log.warning("TCP ports are still used {}".format(self._port_manager.tcp_ports))
+        if PortManager.instance().tcp_ports:
+            log.warning("TCP ports are still used {}".format(PortManager.instance().tcp_ports))
 
-        if self._port_manager.udp_ports:
-            log.warning("UDP ports are still used {}".format(self._port_manager.udp_ports))
+        if PortManager.instance().udp_ports:
+            log.warning("UDP ports are still used {}".format(PortManager.instance().udp_ports))
 
         for task in asyncio.Task.all_tasks():
             task.cancel()
@@ -292,13 +291,16 @@ class WebServer:
             "http://localhost:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
             "http://gns3.github.io": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*")
         })
+
+        PortManager.instance().console_host = self._host
+
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))
             cors.add(self._app.router.add_route(method, route, handler))
         for module in MODULES:
             log.debug("Loading module {}".format(module.__name__))
             m = module.instance()
-            m.port_manager = self._port_manager
+            m.port_manager = PortManager.instance()
 
         log.info("Starting server on {}:{}".format(self._host, self._port))
         self._handler = self._app.make_handler(handler=RequestHandler)

@@ -57,12 +57,16 @@ class Controller:
         yield from self.load()
         server_config = Config.instance().get_section_config("Server")
         host = server_config.get("host", "localhost")
+        # If console_host is 0.0.0.0 client will use the ip they use
+        # to connect to the controller
+        console_host = host
         if host == "0.0.0.0":
             host = "127.0.0.1"
         yield from self.add_compute(compute_id="local",
                                     name=socket.gethostname(),
                                     protocol=server_config.get("protocol", "http"),
                                     host=host,
+                                    console_host=console_host,
                                     port=server_config.getint("port", 3080),
                                     user=server_config.get("user", ""),
                                     password=server_config.get("password", ""),

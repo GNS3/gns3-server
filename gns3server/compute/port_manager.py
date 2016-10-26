@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-import ipaddress
 from aiohttp.web import HTTPConflict
 from gns3server.config import Config
 
@@ -37,10 +36,8 @@ class PortManager:
     :param host: IP address to bind for console connections
     """
 
-    def __init__(self, host="127.0.0.1"):
-
-        self._console_host = host
-
+    def __init__(self):
+        self._console_host = None
         # UDP host must be 0.0.0.0, reason: https://github.com/GNS3/gns3-server/issues/265
         self._udp_host = "0.0.0.0"
         self._used_tcp_ports = set()
@@ -59,17 +56,6 @@ class PortManager:
         self._udp_port_range = (udp_start_port_range, udp_end_port_range)
         log.debug("UDP port range is {}-{}".format(udp_start_port_range, udp_end_port_range))
 
-        if remote_console_connections:
-            log.warning("Remote console connections are allowed")
-            if ipaddress.ip_address(host).version == 6:
-                self._console_host = "::"
-            else:
-                self._console_host = "0.0.0.0"
-        else:
-            self._console_host = host
-
-        PortManager._instance = self
-
     @classmethod
     def instance(cls):
         """
@@ -84,13 +70,21 @@ class PortManager:
 
     @property
     def console_host(self):
-
+        assert self._console_host is not None
         return self._console_host
 
     @console_host.setter
     def console_host(self, new_host):
-
-        self._console_host = new_host
+        """
+        If allow remote connection we need to bind console host to 0.0.0.0
+        """
+        server_config = Config.instance().get_section_config("Server")
+        remote_console_connections = server_config.getboolean("allow_remote_console")
+        if remote_console_connections:
+            log.warning("Remote console connections are allowed")
+            self._console_host = "0.0.0.0"
+        else:
+            self._console_host = new_host
 
     @property
     def console_port_range(self):

@@ -145,8 +145,10 @@ def project(tmpdir):
 @pytest.fixture(scope="function")
 def port_manager():
     """An instance of port manager"""
-
-    return PortManager("127.0.0.1")
+    PortManager._instance = None
+    p = PortManager.instance()
+    p.console_host = "127.0.0.1"
+    return p
 
 
 @pytest.fixture(scope="function")
@@ -198,7 +200,6 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     for module in MODULES:
         module._instance = None
 
-    port_manager._instance = port_manager
     os.makedirs(os.path.join(tmppath, 'projects'))
     config.set("Server", "projects_path", os.path.join(tmppath, 'projects'))
     config.set("Server", "symbols_path", os.path.join(tmppath, 'symbols'))

@@ -119,3 +119,18 @@ def test_find_unused_port():
 def test_find_unused_port_invalid_range():
     with pytest.raises(aiohttp.web.HTTPConflict):
         p = PortManager().find_unused_port(10000, 1000)
+
+
+def test_set_console_host(config):
+    """
+    If allow remote connection we need to bind console host
+    to 0.0.0.0
+    """
+    p = PortManager()
+    config.set_section_config("Server", {"allow_remote_console": False})
+    p.console_host = "10.42.1.42"
+    assert p.console_host == "10.42.1.42"
+    p = PortManager()
+    config.set_section_config("Server", {"allow_remote_console": True})
+    p.console_host = "10.42.1.42"
+    assert p.console_host == "0.0.0.0"
