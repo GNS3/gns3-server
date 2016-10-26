@@ -35,6 +35,10 @@ class FrameRelayPort(SerialPort):
         return "FrameRelay"
 
     @property
+    def short_name(self):
+        return "{}".format(self._port_number)
+
+    @property
     def data_link_types(self):
         """
         Returns the supported PCAP DLTs.

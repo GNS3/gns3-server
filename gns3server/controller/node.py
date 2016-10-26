@@ -500,8 +500,14 @@ class Node:
                 self._ports.append(PortFactory("ATM{}".format(adapter_number), adapter_number, adapter_number, 0, "atm"))
             return
         elif self._node_type == "frame_relay_switch":
-            for adapter_number in range(0, len(self.properties["mappings"])):
-                self._ports.append(PortFactory("FrameRelay{}".format(adapter_number), adapter_number, adapter_number, 0, "frame_relay"))
+            frame_relay_port = set()
+            # Mapping is like {"1:101": "10:202"}
+            for source, dest in self.properties["mappings"].items():
+                frame_relay_port.add(int(source.split(":")[0]))
+                frame_relay_port.add(int(dest.split(":")[0]))
+            frame_relay_port = sorted(frame_relay_port)
+            for port in frame_relay_port:
+                self._ports.append(PortFactory("{}".format(port), 0, 0, port, "frame_relay"))
             return
         elif self._node_type == "dynamips":
             self._ports = DynamipsPortFactory(self.properties)

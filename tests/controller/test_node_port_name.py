@@ -213,15 +213,40 @@ def test_list_ports_frame_relay_switch(project, compute):
                 node_id=str(uuid.uuid4()),
                 node_type="frame_relay_switch")
     node.properties["mappings"] = {
-        "1:0:100": "10:0:200"
+        "1:101": "10:202",
+        "2:102": "11:203"
     }
 
     assert node.__json__()["ports"] == [
         {
-            "name": "FrameRelay0",
-            "short_name": "s0/0",
+            "name": "1",
+            "short_name": "1",
             "data_link_types": {"Frame Relay": "DLT_FRELAY"},
-            "port_number": 0,
+            "port_number": 1,
+            "adapter_number": 0,
+            "link_type": "serial"
+        },
+        {
+            "name": "2",
+            "short_name": "2",
+            "data_link_types": {"Frame Relay": "DLT_FRELAY"},
+            "port_number": 2,
+            "adapter_number": 0,
+            "link_type": "serial"
+        },
+        {
+            "name": "10",
+            "short_name": "10",
+            "data_link_types": {"Frame Relay": "DLT_FRELAY"},
+            "port_number": 10,
+            "adapter_number": 0,
+            "link_type": "serial"
+        },
+        {
+            "name": "11",
+            "short_name": "11",
+            "data_link_types": {"Frame Relay": "DLT_FRELAY"},
+            "port_number": 11,
             "adapter_number": 0,
             "link_type": "serial"
         }

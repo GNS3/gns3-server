@@ -48,10 +48,14 @@ class Port:
     def link_type(self):
         return "ethernet"
 
+    @property
+    def short_name(self):
+        return self.short_name_type + "{}/{}".format(self._interface_number, self._port_number)
+
     def __json__(self):
         return {
             "name": self._name,
-            "short_name": self.short_name_type + "{}/{}".format(self._interface_number, self._port_number),
+            "short_name": self.short_name,
             "data_link_types": self.data_link_types,
             "port_number": self._port_number,
             "adapter_number": self._adapter_number,
