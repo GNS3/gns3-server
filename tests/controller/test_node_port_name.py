@@ -195,10 +195,18 @@ def test_list_ports_atm_switch(project, compute):
 
     assert node.__json__()["ports"] == [
         {
-            "name": "ATM0",
-            "short_name": "a0/0",
+            "name": "1",
+            "short_name": "1",
             "data_link_types": {"ATM": "DLT_ATM_RFC1483"},
-            "port_number": 0,
+            "port_number": 1,
+            "adapter_number": 0,
+            "link_type": "serial"
+        },
+        {
+            "name": "10",
+            "short_name": "10",
+            "data_link_types": {"ATM": "DLT_ATM_RFC1483"},
+            "port_number": 10,
             "adapter_number": 0,
             "link_type": "serial"
         }

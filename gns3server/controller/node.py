@@ -496,9 +496,16 @@ class Node:
         self._ports = []
         # Some special cases
         if self._node_type == "atm_switch":
-            for adapter_number in range(0, len(self.properties["mappings"])):
-                self._ports.append(PortFactory("ATM{}".format(adapter_number), adapter_number, adapter_number, 0, "atm"))
+            atm_port = set()
+            # Mapping is like {"1:0:100": "10:0:200"}
+            for source, dest in self.properties["mappings"].items():
+                atm_port.add(int(source.split(":")[0]))
+                atm_port.add(int(dest.split(":")[0]))
+            atm_port = sorted(atm_port)
+            for port in atm_port:
+                self._ports.append(PortFactory("{}".format(port), 0, 0, port, "atm"))
             return
+
         elif self._node_type == "frame_relay_switch":
             frame_relay_port = set()
             # Mapping is like {"1:101": "10:202"}
