@@ -24,6 +24,10 @@ import tempfile
 import zipstream
 
 
+import logging
+log = logging.getLogger(__name__)
+
+
 @asyncio.coroutine
 def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
     """
