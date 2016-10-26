@@ -84,13 +84,10 @@ class Compute:
             self._id = compute_id
 
         self.protocol = protocol
+        self._console_host = console_host
         self.host = host
         self.port = port
         self._user = None
-        if console_host is None:
-            self._console_host = host
-        else:
-            self._console_host = console_host
         self._password = None
         self._connected = False
         self._closed = False  # Close mean we are destroying the compute node
@@ -217,6 +214,8 @@ class Compute:
     @host.setter
     def host(self, host):
         self._host = host
+        if self._console_host is None:
+            self._console_host = host
 
     @property
     def console_host(self):

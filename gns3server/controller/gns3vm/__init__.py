@@ -263,15 +263,22 @@ class GNS3VM:
             engine.vmname = self._settings["vmname"]
             engine.ram = self._settings["ram"]
             engine.vpcus = self._settings["vcpus"]
-            yield from engine.start()
-            yield from self._controller.add_compute(compute_id="vm",
-                                                    name="GNS3 VM ({})".format(engine.vmname),
-                                                    protocol=self.protocol,
-                                                    host=self.ip_address,
-                                                    port=self.port,
-                                                    user=self.user,
-                                                    password=self.password,
-                                                    force=True)
+            compute = yield from self._controller.add_compute(compute_id="vm",
+                                                              name="GNS3 VM is starting ({})".format(engine.vmname),
+                                                              host=None,
+                                                              force=True)
+
+            try:
+                yield from engine.start()
+            except Exception as e:
+                yield from self._controller.delete_compute("vm")
+                raise e
+            yield from compute.update(name="GNS3 VM ({})".format(engine.vmname),
+                                      protocol=self.protocol,
+                                      host=self.ip_address,
+                                      port=self.port,
+                                      user=self.user,
+                                      password=self.password)
 
     @locked_coroutine
     def _suspend(self):
