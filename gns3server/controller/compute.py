@@ -539,15 +539,18 @@ class Compute:
         res = yield from self.http_query("GET", "/{}/images".format(type), timeout=120)
         images = res.json
 
-        if type in ["qemu", "dynamips", "iou"]:
-            for path in scan_for_images(type):
-                image = os.path.basename(path)
-                if image not in [i['filename'] for i in images]:
-                    images.append({"filename": image,
-                                   "path": image,
-                                   "md5sum": md5sum(path),
-                                   "filesize": os.stat(path).st_size
-                                   })
+        try:
+            if type in ["qemu", "dynamips", "iou"]:
+                for path in scan_for_images(type):
+                    image = os.path.basename(path)
+                    if image not in [i['filename'] for i in images]:
+                        images.append({"filename": image,
+                                       "path": image,
+                                       "md5sum": md5sum(path),
+                                       "filesize": os.stat(path).st_size
+                                       })
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Can't scan for images: {}".format(str(e)))
         return images
 
     @asyncio.coroutine
