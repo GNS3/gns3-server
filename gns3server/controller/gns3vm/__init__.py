@@ -279,6 +279,7 @@ class GNS3VM:
                                       port=self.port,
                                       user=self.user,
                                       password=self.password)
+            print(compute.password)
 
     @locked_coroutine
     def _suspend(self):
