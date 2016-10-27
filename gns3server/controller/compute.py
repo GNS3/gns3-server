@@ -484,6 +484,8 @@ class Compute:
                 raise aiohttp.web.HTTPForbidden(text=msg)
             elif response.status == 404:
                 raise aiohttp.web.HTTPNotFound(text="{} {} not found".format(method, path))
+            elif response.status == 408:
+                raise aiohttp.web.HTTPRequestTimeout(text="{} {} request timeout".format(method, path))
             elif response.status == 409:
                 try:
                     raise ComputeConflict(json.loads(body))
