@@ -545,7 +545,7 @@ class Compute:
         """
         images = []
 
-        res = yield from self.http_query("GET", "/{}/images".format(type), timeout=120)
+        res = yield from self.http_query("GET", "/{}/images".format(type), timeout=None)
         images = res.json
 
         try:
