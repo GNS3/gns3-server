@@ -69,7 +69,12 @@ class UDPLink(Link):
             "rport": self._node1_port,
             "type": "nio_udp"
         }
-        yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=data)
+        try:
+            yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=data)
+        except Exception as e:
+            # We clean the first NIO
+            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1))
+            raise e
         self._created = True
 
     @asyncio.coroutine
@@ -77,6 +82,8 @@ class UDPLink(Link):
         """
         Delete the link and free the resources
         """
+        if not self._created:
+            return
         try:
             node1 = self._nodes[0]["node"]
             adapter_number1 = self._nodes[0]["adapter_number"]
