@@ -145,7 +145,11 @@ class Compute:
     @asyncio.coroutine
     def update(self, **kwargs):
         for kw in kwargs:
-            setattr(self, kw, kwargs[kw])
+            if kw not in ("user", "password"):
+                setattr(self, kw, kwargs[kw])
+        # It's important to set user and password at the same time
+        if "user" in kwargs or "password" in kwargs:
+            self._set_auth(kwargs.get("user", self._user), kwargs.get("password", self._password))
         if self._http_session:
             self._http_session.close()
         self._connected = False

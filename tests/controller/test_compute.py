@@ -358,7 +358,7 @@ def test_images(compute, async_run, images_dir):
     open(os.path.join(images_dir, "asa.qcow2"), "w+").close()
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         images = async_run(compute.images("qemu"))
-        mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=False, timeout=120)
+        mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=False, timeout=None)
 
     assert images == [{"filename": "linux.qcow2", "path": "linux.qcow2", "md5sum": "d41d8cd98f00b204e9800998ecf8427e", "filesize": 0},
                       {"filename": "asa.qcow2", "path": "asa.qcow2", "md5sum": "d41d8cd98f00b204e9800998ecf8427e", "filesize": 0}]
