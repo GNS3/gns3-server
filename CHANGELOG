@@ -1,5 +1,38 @@
 # Change Log
 
+## 2.0.0 alpha 3 28/10/16
+
+* Fix uuid of VirtualBox VM after a save as
+* Explain that segfault on IOU is a issue with the image
+* Fix crash when you import a corrupted SVG
+* Fix Error while creating link: Port 0 is not allocated. when you have an invalid interface
+* No timeout for listing images
+* Handle 408 HTTP status code (request timeout)
+* Move code for exposing VM ip to the VM itself. And display VM starting status
+* Fix a crash when we have error during export project
+* Improve remote server console host support when binding to 0.0.0.0
+* Fix port naming for atm switch
+* Fix port naming for FrameRelay switch
+* Catch permission errors when listing images
+* If we can't found the VMware version we use workstation
+* CURL API sample for creating a dynamips router
+* Fix crash in idlePC compute
+* Add sample api call for creating a qemu node
+* Try a different method in order to retrieve IP from VMware
+* Fix naming of IOU serial interfaces
+* Improve timeout management
+* When exporting debug information export GNS3 VM vmx content
+* /debug for exporting debug informations
+* Raise error if using a non linked clone VM twice
+* Fix a possible deadlock at exit
+* Fix import of some old dynamips topologies
+* Fix a crash with some old virtualbox topologies
+* Fix conflict issue between the GNS3VM and a remote server
+* Fix typo in error message about the GNS3 VM
+* Fix an error when importing old topology without color for label
+* Use tap adapter instead of veth for docker (allow usage of vlan)
+* Avoid crash during tests if VNC server run on host PC
+
 ## 2.0.0 alpha 2 20/10/2016
 * Return md5sum and filesize in the list of images
 * Disable binding to an IPV6
