@@ -92,7 +92,11 @@ class Drawing:
             self._svg = value
             return
 
-        root = ET.fromstring(value)
+        try:
+            root = ET.fromstring(value)
+        except ET.ParseError as e:
+            log.error("Can't parse SVG: {}".format(e))
+            return
         # SVG is the default namespace no need to prefix it
         ET.register_namespace('xmlns', "http://www.w3.org/2000/svg")
         ET.register_namespace('xmlns:xlink', "http://www.w3.org/1999/xlink")
