@@ -547,14 +547,19 @@ class IOUVM(BaseNode):
         :param returncode: Process returncode
         """
 
-        log.info("{} process has stopped, return code: {}".format(process_name, returncode))
         self._terminate_process_iou()
         self._terminate_process_iouyap()
         self._ioucon_thread_stop_event.set()
+
         if returncode != 0:
-            self.project.emit("log.error", {"message": "{} process has stopped, return code: {}\n{}".format(process_name,
-                                                                                                            returncode,
-                                                                                                            self.read_iou_stdout())})
+            log.info("{} process has stopped, return code: {}".format(process_name, returncode))
+        else:
+            if returncode == 11:
+                message = "{} process has stopped, return code: {}. This could be an issue with the image using a different image can fix the issue.\n{}".format(process_name, returncode, self.read_iou_stdout())
+            else:
+                message = "{} process has stopped, return code: {}\n{}".format(process_name, returncode, self.read_iou_stdout())
+            log.warn(message)
+            self.project.emit("log.error", {"message": message})
 
     def _rename_nvram_file(self):
         """
