@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import pytest
 import asyncio
 from tests.utils import asyncio_patch
@@ -67,3 +68,20 @@ def test_json(vm, tmpdir, project):
     project._path = str(tmpdir)
     vm._linked_clone = True
     assert vm.__json__()["node_directory"] is not None
+
+
+def test_patch_vm_uuid(vm):
+    xml = """<?xml version="1.0"?>
+    <VirtualBox xmlns="http://www.virtualbox.org/" version="1.16-macosx">
+        <Machine uuid="{f8138a63-e361-49ee-a5a4-ba0559bc00e2}" name="Debian-1" OSType="Debian_64" currentSnapshot="{8bd00b14-4c14-4992-a165-cb09e80fe8e4    }" snapshotFolder="Snapshots" lastStateChange="2016-10-28T12:54:26Z">
+        </Machine>
+    </VirtualBox>
+    """
+    os.makedirs(os.path.join(vm.working_dir, vm._vmname), exist_ok=True)
+    with open(vm._linked_vbox_file(), "w+") as f:
+        f.write(xml)
+    vm._linked_clone = True
+    vm._patch_vm_uuid()
+    with open(vm._linked_vbox_file()) as f:
+        c = f.read()
+        assert "{" + vm.id + "}" in c

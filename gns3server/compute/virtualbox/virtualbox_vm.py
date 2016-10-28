@@ -27,6 +27,7 @@ import tempfile
 import json
 import socket
 import asyncio
+import xml.etree.ElementTree as ET
 
 from gns3server.utils import parse_version
 from gns3server.utils.telnet_server import TelnetServer
@@ -162,8 +163,8 @@ class VirtualBoxVM(BaseNode):
 
         if self.linked_clone:
             if self.id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
-                vbox_file = os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
-                yield from self.manager.execute("registervm", [vbox_file])
+                self._patch_vm_uuid()
+                yield from self.manager.execute("registervm", [self._linked_vbox_file()])
                 yield from self._reattach_linked_hdds()
             else:
                 yield from self._create_linked_clone()
@@ -174,6 +175,18 @@ class VirtualBoxVM(BaseNode):
         vm_info = yield from self._get_vm_info()
         if "memory" in vm_info:
             self._ram = int(vm_info["memory"])
+
+    def _linked_vbox_file(self):
+        return os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
+
+    def _patch_vm_uuid(self):
+        """
+        Fix the VM uuid in the case of linked clone
+        """
+        tree = ET.parse(self._linked_vbox_file())
+        machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
+        machine.set("uuid", "{" + self.id + "}")
+        tree.write(self._linked_vbox_file())
 
     @asyncio.coroutine
     def check_hw_virtualization(self):
