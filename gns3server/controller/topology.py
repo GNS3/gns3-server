@@ -326,7 +326,7 @@ def _convert_1_3_later(topo, topo_path):
 
     # Notes
     for note in topo.get("notes", []):
-        font_info = note["font"].split(",")
+        font_info = note["font"].get("TypeWriter,10,-1,5,75,0,0,0,0,0").split(",")
 
         if font_info[4] == "75":
             weight = "bold"
