@@ -231,13 +231,13 @@ def test_images(http_compute, tmpdir, fake_qemu_vm):
 
 def test_upload_image(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/qemu/images/test2", body="TEST", raw=True)
+        response = http_compute.post("/qemu/images/test2使", body="TEST", raw=True)
         assert response.status == 204
 
-    with open(str(tmpdir / "test2")) as f:
+    with open(str(tmpdir / "test2使")) as f:
         assert f.read() == "TEST"
 
-    with open(str(tmpdir / "test2.md5sum")) as f:
+    with open(str(tmpdir / "test2使.md5sum")) as f:
         checksum = f.read()
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
