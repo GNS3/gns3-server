@@ -68,7 +68,7 @@ class VirtualBox(BaseManager):
             else:
                 vboxmanage_path = "vboxmanage"
 
-        if not os.path.isabs(vboxmanage_path):
+        if vboxmanage_path and not os.path.isabs(vboxmanage_path):
             vboxmanage_path = shutil.which(vboxmanage_path)
 
         if not vboxmanage_path:
