@@ -357,7 +357,8 @@ class VirtualBoxVM(BaseNode):
             with open(hdd_info_file, "r", encoding="utf-8") as f:
                 hdd_table = json.load(f)
         except (ValueError, OSError) as e:
-            raise VirtualBoxError("Could not read HDD info file: {}".format(e))
+            # The VM has never be started
+            return
 
         for hdd_info in hdd_table:
             hdd_file = os.path.join(self.working_dir, self._vmname, "Snapshots", hdd_info["hdd"])
