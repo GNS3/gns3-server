@@ -538,7 +538,10 @@ class Compute:
         """
         Forward a call to the emulator on compute
         """
-        res = yield from self.http_query(method, "/{}/{}".format(type, path), data=data, timeout=None)
+        try:
+            res = yield from self.http_query(method, "/{}/{}".format(type, path), data=data, timeout=None)
+        except aiohttp.errors.DisconnectedError:
+            raise aiohttp.web.HTTPGatewayTimeout()
         return res.json
 
     @asyncio.coroutine
