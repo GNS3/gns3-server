@@ -442,15 +442,15 @@ class VMwareVM(BaseNode):
                     if nio:
                         yield from self._add_ubridge_connection(nio, adapter_number)
 
-            if self._enable_remote_console and self._console is not None:
-                try:
-                    if sys.platform.startswith("win"):
-                        yield from wait_for_named_pipe_creation(self._get_pipe_name())
-                    else:
-                        yield from wait_for_file_creation(self._get_pipe_name())  # wait for VMware to create the pipe file.
-                except asyncio.TimeoutError:
-                    raise VMwareError('Pipe file "{}" for remote console has not been created by VMware'.format(self._get_pipe_name()))
-                self._start_remote_console()
+            # if self._enable_remote_console and self._console is not None:
+            #     try:
+            #         if sys.platform.startswith("win"):
+            #             yield from wait_for_named_pipe_creation(self._get_pipe_name())
+            #         else:
+            #             yield from wait_for_file_creation(self._get_pipe_name())  # wait for VMware to create the pipe file.
+            #     except asyncio.TimeoutError:
+            #         raise VMwareError('Pipe file "{}" for remote console has not been created by VMware'.format(self._get_pipe_name()))
+            #     self._start_remote_console()
         except VMwareError:
             yield from self.stop()
             raise
