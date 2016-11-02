@@ -49,7 +49,7 @@ class SymbolHandler:
         controller = Controller.instance()
         try:
             yield from response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
-        except KeyError:
+        except (KeyError, FileNotFoundError):
             response.set_status(404)
 
     @Route.post(
