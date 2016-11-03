@@ -1,20 +1,13 @@
-/v2/compute/projects/{project_id}/docker/nodes/{node_id}/start
+/v2/debug
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**/start
+POST /v2/debug
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Start a Docker container
-
-Parameters
-**********
-- **node_id**: Node UUID
-- **project_id**: Project UUID
+Dump debug informations to disk (debug directory in config directory)
 
 Response status codes
 **********************
-- **400**: Invalid request
-- **404**: Instance doesn't exist
-- **204**: Instance started
+- **201**: Writed
 

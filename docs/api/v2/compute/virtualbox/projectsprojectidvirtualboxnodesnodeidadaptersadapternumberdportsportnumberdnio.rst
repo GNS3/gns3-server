@@ -9,10 +9,10 @@ Add a NIO to a VirtualBox VM instance
 
 Parameters
 **********
-- **port_number**: Port on the adapter (always 0)
 - **adapter_number**: Adapter where the nio should be added
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
@@ -33,10 +33,10 @@ Remove a NIO from a VirtualBox VM instance
 
 Parameters
 **********
-- **port_number**: Port on the adapter (always 0)
 - **adapter_number**: Adapter from where the nio should be removed
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************

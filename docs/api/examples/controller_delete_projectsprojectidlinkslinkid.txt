@@ -1,13 +1,13 @@
-curl -i -X DELETE 'http://localhost:3080/v2/projects/9e65c1ba-14af-48e3-874e-763be80af860/links/e89eed96-a7f7-494c-b96c-21dc769ecc16'
+curl -i -X DELETE 'http://localhost:3080/v2/projects/90d544c0-ecc1-43c4-9daf-f349a7fbc647/links/8975791d-acea-404c-9c4f-afc9cb74f08c'
 
-DELETE /v2/projects/9e65c1ba-14af-48e3-874e-763be80af860/links/e89eed96-a7f7-494c-b96c-21dc769ecc16 HTTP/1.1
+DELETE /v2/projects/90d544c0-ecc1-43c4-9daf-f349a7fbc647/links/8975791d-acea-404c-9c4f-afc9cb74f08c HTTP/1.1
 
 
 
 HTTP/1.1 204
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Thu, 20 Oct 2016 08:52:49 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:20:01 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/projects/{project_id}/links/{link_id}
 

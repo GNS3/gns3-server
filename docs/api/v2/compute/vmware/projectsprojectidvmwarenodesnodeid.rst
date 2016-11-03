@@ -9,8 +9,8 @@ Get a VMware VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -28,7 +28,6 @@ Output
     <tr><td>adapter_type</td>                    <td> </td>                     <td>string</td>                     <td>VMware adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>integer</td>                     <td>Number of adapters</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>enable_remote_console</td>                    <td> </td>                     <td>boolean</td>                     <td>Enable the remote console</td>                     </tr>
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>Headless mode</td>                     </tr>
     <tr><td>linked_clone</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the VM is a linked clone or not</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>VMware VM instance name</td>                     </tr>
@@ -47,8 +46,8 @@ Update a VMware VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -67,7 +66,6 @@ Input
     <tr><td>adapter_type</td>                    <td> </td>                     <td>string</td>                     <td>VMware adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>integer</td>                     <td>Number of adapters</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>enable_remote_console</td>                    <td> </td>                     <td>boolean</td>                     <td>Enable the remote console</td>                     </tr>
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>Headless mode</td>                     </tr>
     <tr><td>linked_clone</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the VM is a linked clone or not</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>VMware VM instance name</td>                     </tr>
@@ -89,7 +87,6 @@ Output
     <tr><td>adapter_type</td>                    <td> </td>                     <td>string</td>                     <td>VMware adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>integer</td>                     <td>Number of adapters</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>enable_remote_console</td>                    <td> </td>                     <td>boolean</td>                     <td>Enable the remote console</td>                     </tr>
     <tr><td>headless</td>                    <td> </td>                     <td>boolean</td>                     <td>Headless mode</td>                     </tr>
     <tr><td>linked_clone</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the VM is a linked clone or not</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>VMware VM instance name</td>                     </tr>
@@ -108,8 +105,8 @@ Delete a VMware VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

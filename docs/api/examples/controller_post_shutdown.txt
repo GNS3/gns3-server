@@ -7,7 +7,7 @@ POST /v2/shutdown HTTP/1.1
 HTTP/1.1 201
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Thu, 20 Oct 2016 08:52:57 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:20:04 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/shutdown
 

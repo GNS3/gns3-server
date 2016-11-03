@@ -1,14 +1,14 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/63688721-cb81-429f-b938-e327f9b3c4f7'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/27e91192-5c83-4c98-af0f-b25b156c22b0'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/63688721-cb81-429f-b938-e327f9b3c4f7 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/27e91192-5c83-4c98-af0f-b25b156c22b0 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Content-Length: 3420
 Content-Type: application/json
-Date: Thu, 20 Oct 2016 08:52:33 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:19:51 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
 {
@@ -140,7 +140,7 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         }
     ],
     "name": "Cloud 1",
-    "node_id": "63688721-cb81-429f-b938-e327f9b3c4f7",
+    "node_id": "27e91192-5c83-4c98-af0f-b25b156c22b0",
     "ports_mapping": [
         {
             "interface": "en0",

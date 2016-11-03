@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/3864d505-03dd-4c38-b59f-2af231f002d0/drawings/7ebde298-be58-4514-a57d-fcb869952300' -d '{"x": 42}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/7e9159b4-b024-4beb-adc2-b62bbe350870/drawings/7c43091b-742f-4f8f-b6d8-b9025ac4d627' -d '{"x": 42}'
 
-PUT /v2/projects/3864d505-03dd-4c38-b59f-2af231f002d0/drawings/7ebde298-be58-4514-a57d-fcb869952300 HTTP/1.1
+PUT /v2/projects/7e9159b4-b024-4beb-adc2-b62bbe350870/drawings/7c43091b-742f-4f8f-b6d8-b9025ac4d627 HTTP/1.1
 {
     "x": 42
 }
@@ -9,13 +9,13 @@ PUT /v2/projects/3864d505-03dd-4c38-b59f-2af231f002d0/drawings/7ebde298-be58-451
 HTTP/1.1 201
 Content-Length: 323
 Content-Type: application/json
-Date: Thu, 20 Oct 2016 08:52:47 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:20:00 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/projects/{project_id}/drawings/{drawing_id}
 
 {
-    "drawing_id": "7ebde298-be58-4514-a57d-fcb869952300",
-    "project_id": "3864d505-03dd-4c38-b59f-2af231f002d0",
+    "drawing_id": "7c43091b-742f-4f8f-b6d8-b9025ac4d627",
+    "project_id": "7e9159b4-b024-4beb-adc2-b62bbe350870",
     "rotation": 0,
     "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
     "x": 42,

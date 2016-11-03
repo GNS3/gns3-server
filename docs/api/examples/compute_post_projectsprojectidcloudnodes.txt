@@ -9,8 +9,8 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes HTTP/
 HTTP/1.1 201
 Content-Length: 3420
 Content-Type: application/json
-Date: Thu, 20 Oct 2016 08:52:33 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:19:51 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes
 
 {
@@ -142,7 +142,7 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes
         }
     ],
     "name": "Cloud 1",
-    "node_id": "a2f2601d-a4e5-44bc-b02c-c4a1d0d44dda",
+    "node_id": "c02a0a78-b84e-44b9-b151-0a650ecd7bb8",
     "ports_mapping": [
         {
             "interface": "en0",

@@ -1,14 +1,14 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/1072b2a5-82cc-45f9-bd3d-ff2387e2bfff'
+curl -i -X GET 'http://localhost:3080/v2/projects/0714c0ef-654f-402d-9b5f-9a42431478c9'
 
-GET /v2/projects/1072b2a5-82cc-45f9-bd3d-ff2387e2bfff HTTP/1.1
+GET /v2/projects/0714c0ef-654f-402d-9b5f-9a42431478c9 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Content-Length: 379
 Content-Type: application/json
-Date: Thu, 20 Oct 2016 08:52:54 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:20:03 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/projects/{project_id}
 
 {
@@ -17,8 +17,8 @@ X-Route: /v2/projects/{project_id}
     "auto_start": false,
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9a94t05k/projects/1072b2a5-82cc-45f9-bd3d-ff2387e2bfff",
-    "project_id": "1072b2a5-82cc-45f9-bd3d-ff2387e2bfff",
+    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpibw102pd/projects/0714c0ef-654f-402d-9b5f-9a42431478c9",
+    "project_id": "0714c0ef-654f-402d-9b5f-9a42431478c9",
     "scene_height": 1000,
     "scene_width": 2000,
     "status": "opened"

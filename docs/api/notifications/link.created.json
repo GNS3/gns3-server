@@ -2,7 +2,7 @@
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
-    "link_id": "d9db6a61-ae1a-4f7d-991a-73c46f62dfab",
+    "link_id": "398c9cb0-724e-4d56-a9b5-2b33831c8c39",
     "link_type": "ethernet",
     "nodes": [
         {
@@ -14,7 +14,7 @@
                 "x": -10,
                 "y": -10
             },
-            "node_id": "fc041a38-4796-420d-bbe1-60c675aff332",
+            "node_id": "f931da2a-abe7-4e8b-8b40-385fa091cb4d",
             "port_number": 3
         },
         {
@@ -26,9 +26,9 @@
                 "x": -10,
                 "y": -10
             },
-            "node_id": "cbeaeb2c-4bbf-42e5-a86f-e358040d7a5e",
+            "node_id": "3fcc232f-a6df-422c-800a-39ca356661d5",
             "port_number": 4
         }
     ],
-    "project_id": "69ab73a7-a498-49b2-968b-bc406897a545"
+    "project_id": "ca14de30-087a-4994-bb54-b2b00e18d1ef"
 }

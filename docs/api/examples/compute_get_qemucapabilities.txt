@@ -7,8 +7,8 @@ GET /v2/compute/qemu/capabilities HTTP/1.1
 HTTP/1.1 200
 Content-Length: 39
 Content-Type: application/json
-Date: Thu, 20 Oct 2016 08:52:43 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:19:57 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/compute/qemu/capabilities
 
 {

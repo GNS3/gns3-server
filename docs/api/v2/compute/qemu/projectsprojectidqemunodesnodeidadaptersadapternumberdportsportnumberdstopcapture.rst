@@ -9,10 +9,10 @@ Stop a packet capture on a Qemu VM instance
 
 Parameters
 **********
-- **port_number**: Port on the adapter (always 0)
 - **adapter_number**: Adapter to stop a packet capture
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************

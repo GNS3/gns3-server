@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/ad3edf65-c8e8-4e85-aa6b-052c261530cc' -d '{"name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/7061bfeb-39f5-4b27-9557-2420b81fac6c' -d '{"name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/ad3edf65-c8e8-4e85-aa6b-052c261530cc HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/7061bfeb-39f5-4b27-9557-2420b81fac6c HTTP/1.1
 {
     "name": "test"
 }
@@ -9,13 +9,13 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/ad3edf65
 HTTP/1.1 200
 Content-Length: 331
 Content-Type: application/json
-Date: Thu, 20 Oct 2016 08:52:38 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:19:55 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/compute/projects/{project_id}/nat/nodes/{node_id}
 
 {
     "name": "test",
-    "node_id": "ad3edf65-c8e8-4e85-aa6b-052c261530cc",
+    "node_id": "7061bfeb-39f5-4b27-9557-2420b81fac6c",
     "ports_mapping": [
         {
             "interface": "gns3nat9",

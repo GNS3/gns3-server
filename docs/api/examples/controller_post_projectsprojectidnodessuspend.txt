@@ -1,13 +1,13 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/3a5771b5-45a0-4a71-9f49-81d34bbc89a6/nodes/suspend' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/a9dd6fbb-b6e9-43c6-a1b6-13cdce153f39/nodes/suspend' -d '{}'
 
-POST /v2/projects/3a5771b5-45a0-4a71-9f49-81d34bbc89a6/nodes/suspend HTTP/1.1
+POST /v2/projects/a9dd6fbb-b6e9-43c6-a1b6-13cdce153f39/nodes/suspend HTTP/1.1
 {}
 
 
 HTTP/1.1 204
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Thu, 20 Oct 2016 08:52:50 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:20:01 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/projects/{project_id}/nodes/suspend
 

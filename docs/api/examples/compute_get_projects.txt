@@ -7,17 +7,17 @@ GET /v2/compute/projects HTTP/1.1
 HTTP/1.1 200
 Content-Length: 198
 Content-Type: application/json
-Date: Thu, 20 Oct 2016 08:52:39 GMT
-Server: Python/3.5 GNS3/2.0.0dev2
+Date: Thu, 03 Nov 2016 17:19:55 GMT
+Server: Python/3.5 GNS3/2.0.0dev4
 X-Route: /v2/compute/projects
 
 [
     {
         "name": "test",
-        "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b"
+        "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"
     },
     {
         "name": "test",
-        "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"
+        "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b"
     }
 ]

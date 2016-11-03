@@ -9,10 +9,10 @@ Add a NIO to a Frame Relay switch instance
 
 Parameters
 **********
-- **port_number**: Port on the switch
 - **adapter_number**: Adapter on the switch (always 0)
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
+- **port_number**: Port on the switch
 
 Response status codes
 **********************
@@ -27,10 +27,10 @@ Remove a NIO from a Frame Relay switch instance
 
 Parameters
 **********
-- **port_number**: Port on the switch
 - **adapter_number**: Adapter on the switch (always 0)
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
+- **port_number**: Port on the switch
 
 Response status codes
 **********************
