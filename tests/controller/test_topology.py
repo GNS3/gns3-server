@@ -39,7 +39,7 @@ def test_project_to_topology_empty(tmpdir):
         "auto_open": False,
         "scene_width": 2000,
         "scene_height": 1000,
-        "revision": 5,
+        "revision": GNS3_FILE_FORMAT_REVISION,
         "topology": {
             "nodes": [],
             "links": [],
@@ -79,7 +79,7 @@ def test_load_topology(tmpdir):
     data = {
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
-        "revision": 5,
+        "revision": GNS3_FILE_FORMAT_REVISION,
         "topology": {
             "nodes": [],
             "links": [],

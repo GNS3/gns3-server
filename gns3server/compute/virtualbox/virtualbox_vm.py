@@ -66,7 +66,6 @@ class VirtualBoxVM(BaseNode):
         self._ethernet_adapters = {}
         self._headless = False
         self._acpi_shutdown = False
-        self._enable_remote_console = False
         if not self.linked_clone:
             for node in self.manager.nodes:
                 if node.vmname == vmname:
@@ -86,7 +85,6 @@ class VirtualBoxVM(BaseNode):
                 "vmname": self.vmname,
                 "headless": self.headless,
                 "acpi_shutdown": self.acpi_shutdown,
-                "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "ram": self.ram,
@@ -245,7 +243,7 @@ class VirtualBoxVM(BaseNode):
                                                                 self._local_udp_tunnels[adapter_number][1],
                                                                 nio)
 
-        if self._enable_remote_console and self._console is not None:
+        if self._console is not None:
             try:
                 # wait for VirtualBox to create the pipe file.
                 if sys.platform.startswith("win"):
@@ -538,34 +536,6 @@ class VirtualBoxVM(BaseNode):
         else:
             log.info("VirtualBox VM '{name}' [{id}] has disabled the ACPI shutdown mode".format(name=self.name, id=self.id))
         self._acpi_shutdown = acpi_shutdown
-
-    @property
-    def enable_remote_console(self):
-        """
-        Returns either the remote console is enabled or not
-
-        :returns: boolean
-        """
-
-        return self._enable_remote_console
-
-    @asyncio.coroutine
-    def set_enable_remote_console(self, enable_remote_console):
-        """
-        Sets either the console is enabled or not
-
-        :param enable_remote_console: boolean
-        """
-
-        if enable_remote_console:
-            log.info("VirtualBox VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
-            vm_state = yield from self._get_vm_state()
-            if vm_state == "running":
-                self._start_remote_console()
-        else:
-            log.info("VirtualBox VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
-            self._stop_remote_console()
-        self._enable_remote_console = enable_remote_console
 
     @property
     def ram(self):

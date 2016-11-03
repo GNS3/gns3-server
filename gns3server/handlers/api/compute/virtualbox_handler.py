@@ -60,9 +60,6 @@ class VirtualBoxHandler:
                                                  console=request.json.get("console", None),
                                                  adapters=request.json.get("adapters", 0))
 
-        if "enable_remote_console" in request.json:
-            yield from vm.set_enable_remote_console(request.json.pop("enable_remote_console"))
-
         if "ram" in request.json:
             ram = request.json.pop("ram")
             if ram != vm.ram:
@@ -119,9 +116,6 @@ class VirtualBoxHandler:
             vmname = request.json.pop("vmname")
             if vmname != vm.vmname:
                 yield from vm.set_vmname(vmname)
-
-        if "enable_remote_console" in request.json:
-            yield from vm.set_enable_remote_console(request.json.pop("enable_remote_console"))
 
         if "adapters" in request.json:
             adapters = int(request.json.pop("adapters"))

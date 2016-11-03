@@ -2,7 +2,7 @@
     "auto_start": false,
     "name": "1_5_image",
     "project_id": "ANYUUID",
-    "revision": 5,
+    "revision": 6,
     "topology": {
         "computes": [],
         "drawings": [

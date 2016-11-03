@@ -2,7 +2,7 @@
     "auto_start": false,
     "name": "1_5_internet",
     "project_id": "a64f6cf9-ea6e-42e6-9e4e-a2a292e2b827",
-    "revision": 5,
+    "revision": 6,
     "topology": {
         "computes": [
           {"name": "GNS3 VM", "protocol": "http", "port": 3080, "host": "172.16.16.150", "compute_id": "vm"}

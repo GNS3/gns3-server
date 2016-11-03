@@ -35,7 +35,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-GNS3_FILE_FORMAT_REVISION = 5
+GNS3_FILE_FORMAT_REVISION = 6
 
 
 def _check_topology_schema(topo):
@@ -113,7 +113,7 @@ def load_topology(path):
             topo = json.load(f)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
         raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
-    if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
+    if "revision" not in topo or topo["revision"] < 5:
         # If it's an old GNS3 file we need to convert it
         # first we backup the file
         shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
@@ -121,9 +121,37 @@ def load_topology(path):
         _check_topology_schema(topo)
         with open(path, "w+", encoding="utf-8") as f:
             json.dump(topo, f, indent=4, sort_keys=True)
-    elif topo["revision"] > GNS3_FILE_FORMAT_REVISION:
+
+    # Version before GNS3 2.0 alpha 4
+    if topo["revision"] < 6:
+        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        topo = _convert_2_0_0_alpha(topo, path)
+        _check_topology_schema(topo)
+        with open(path, "w+", encoding="utf-8") as f:
+            json.dump(topo, f, indent=4, sort_keys=True)
+
+    if topo["revision"] > GNS3_FILE_FORMAT_REVISION:
         raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
     _check_topology_schema(topo)
+    return topo
+
+
+def _convert_2_0_0_alpha(topo, topo_path):
+    """
+    Convert topologies from GNS3 2.0.0 alpha to 2.0.0 final.
+
+    Changes:
+     * No more serial console
+     * No more option for VMware / VirtualBox remote console (always use telnet)
+    """
+    topo["revision"] = 6
+    for node in topo.get("topology", {}).get("nodes", []):
+        if node.get("console_type") == "serial":
+            node["console_type"] = "telnet"
+        if node["node_type"] in ("vmware", "virtualbox"):
+            prop = node.get("properties")
+            if "enable_remote_console" in prop:
+                del prop["enable_remote_console"]
     return topo
 
 
@@ -139,7 +167,7 @@ def _convert_1_3_later(topo, topo_path):
 
     new_topo = {
         "type": "topology",
-        "revision": GNS3_FILE_FORMAT_REVISION,
+        "revision": 5,
         "version": __version__,
         "auto_start": topo.get("auto_start", False),
         "name": topo["name"],

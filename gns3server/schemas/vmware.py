@@ -48,10 +48,6 @@ VMWARE_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
-        "enable_remote_console": {
-            "description": "Enable the remote console",
-            "type": "boolean"
-        },
         "headless": {
             "description": "Headless mode",
             "type": "boolean"
@@ -117,10 +113,6 @@ VMWARE_OBJECT_SCHEMA = {
             "description": "Path to the vmx file",
             "type": "string",
             "minLength": 1,
-        },
-        "enable_remote_console": {
-            "description": "Enable the remote console",
-            "type": "boolean"
         },
         "headless": {
             "description": "Headless mode",

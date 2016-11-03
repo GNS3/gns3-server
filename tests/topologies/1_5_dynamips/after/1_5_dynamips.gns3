@@ -2,7 +2,7 @@
     "auto_start": false,
     "name": "1_5_dynamips",
     "project_id": "62f389c0-f26d-43b7-ab29-e4d306b29c07",
-    "revision": 5,
+    "revision": 6,
     "topology": {
         "computes": [
             {

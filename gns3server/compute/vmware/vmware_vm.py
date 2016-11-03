@@ -68,7 +68,6 @@ class VMwareVM(BaseNode):
         # VMware VM settings
         self._headless = False
         self._vmx_path = vmx_path
-        self._enable_remote_console = False
         self._acpi_shutdown = False
         self._adapters = 0
         self._ethernet_adapters = {}
@@ -87,7 +86,6 @@ class VMwareVM(BaseNode):
                 "vmx_path": self.vmx_path,
                 "headless": self.headless,
                 "acpi_shutdown": self.acpi_shutdown,
-                "enable_remote_console": self.enable_remote_console,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "use_any_adapter": self.use_any_adapter,
@@ -442,7 +440,7 @@ class VMwareVM(BaseNode):
                     if nio:
                         yield from self._add_ubridge_connection(nio, adapter_number)
 
-            # if self._enable_remote_console and self._console is not None:
+            # if self._console is not None:
             #     try:
             #         if sys.platform.startswith("win"):
             #             yield from wait_for_named_pipe_creation(self._get_pipe_name())
@@ -630,33 +628,6 @@ class VMwareVM(BaseNode):
 
         log.info("VMware VM '{name}' [{id}] has set the vmx file path to '{vmx}'".format(name=self.name, id=self.id, vmx=vmx_path))
         self._vmx_path = vmx_path
-
-    @property
-    def enable_remote_console(self):
-        """
-        Returns either the remote console is enabled or not
-
-        :returns: boolean
-        """
-
-        return self._enable_remote_console
-
-    @enable_remote_console.setter
-    def enable_remote_console(self, enable_remote_console):
-        """
-        Sets either the console is enabled or not
-
-        :param enable_remote_console: boolean
-        """
-
-        # if enable_remote_console:
-        #     log.info("VMware VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
-        #     if self._started:
-        #         self._start_remote_console()
-        # else:
-        #     log.info("VMware VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
-        #     self._stop_remote_console()
-        self._enable_remote_console = enable_remote_console
 
     @property
     def adapters(self):

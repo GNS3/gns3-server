@@ -1,7 +1,7 @@
 {
     "name": "testqemu",
     "project_id": "a3ca8a82-6b11-4c8e-b20d-c9e94286054c",
-    "revision": 5,
+    "revision": 6,
     "auto_start": false,
     "topology": {
         "computes": [

@@ -66,10 +66,6 @@ VBOX_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
-        "enable_remote_console": {
-            "description": "Enable the remote console",
-            "type": "boolean"
-        },
         "ram": {
             "description": "Amount of RAM",
             "minimum": 0,
@@ -126,10 +122,6 @@ VBOX_OBJECT_SCHEMA = {
         "node_directory": {
             "decription": "Path to the VM working directory",
             "type": ["string", "null"]
-        },
-        "enable_remote_console": {
-            "description": "Enable the remote console",
-            "type": "boolean"
         },
         "headless": {
             "description": "Headless mode",
