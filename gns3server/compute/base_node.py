@@ -102,7 +102,7 @@ class BaseNode:
 
     def __del__(self):
 
-        if self._temporary_directory is not None:
+        if hasattr(self, "_temporary_directory") and self._temporary_directory is not None:
             if os.path.exists(self._temporary_directory):
                 shutil.rmtree(self._temporary_directory, ignore_errors=True)
 
