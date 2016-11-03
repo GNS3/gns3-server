@@ -649,13 +649,13 @@ class VMwareVM(BaseNode):
         :param enable_remote_console: boolean
         """
 
-        if enable_remote_console:
-            log.info("VMware VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
-            if self._started:
-                self._start_remote_console()
-        else:
-            log.info("VMware VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
-            self._stop_remote_console()
+        # if enable_remote_console:
+        #     log.info("VMware VM '{name}' [{id}] has enabled the console".format(name=self.name, id=self.id))
+        #     if self._started:
+        #         self._start_remote_console()
+        # else:
+        #     log.info("VMware VM '{name}' [{id}] has disabled the console".format(name=self.name, id=self.id))
+        #     self._stop_remote_console()
         self._enable_remote_console = enable_remote_console
 
     @property

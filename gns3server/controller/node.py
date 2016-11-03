@@ -386,7 +386,10 @@ class Node:
         """
         Start a node
         """
-        yield from self.post("/start")
+        try:
+            yield from self.post("/start")
+        except asyncio.TimeoutError:
+            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when starting {}".format(self._name))
 
     @asyncio.coroutine
     def stop(self):
