@@ -20,6 +20,7 @@ import aiohttp
 import pytest
 import uuid
 import asyncio
+import copy
 import os
 from unittest.mock import MagicMock, ANY
 
@@ -81,6 +82,19 @@ def test_eq(compute, project, node, controller):
     assert node != "a"
     assert node != Node(project, compute, "demo2", node_id=str(uuid.uuid4()), node_type="qemu")
     assert node != Node(Project(str(uuid.uuid4()), controller=controller), compute, "demo3", node_id=node.id, node_type="qemu")
+
+
+def test_properties_filter(project, compute):
+    """
+    Some properties are private and should not be exposed
+    """
+    node = Node(project, compute, "demo",
+                node_id=str(uuid.uuid4()),
+                node_type="vpcs",
+                console_type="vnc",
+                properties={"startup_script": "echo test", "iourc_content": "test"})
+    assert node._properties == {"startup_script": "echo test", "iourc_content": "test"}
+    assert node._filter_properties() == {"startup_script": "echo test"}
 
 
 def test_json(node, compute):
@@ -283,8 +297,8 @@ def test_update_properties(node, compute, project, async_run, controller):
 
     # The notif should contain the old properties because it's the compute that will emit
     # the correct info
-    node_notif = node.__json__()
-    node_notif["properties"]["startup_config"] = "echo test"
+    node_notif = copy.deepcopy(node.__json__())
+    node_notif["properties"]["startup_script"] = "echo test"
     controller._notification.emit.assert_called_with("node.updated", node_notif)
 
 
@@ -436,7 +450,7 @@ def test_update_label(node):
 
 
 def test_get_port(node):
-    node.properties["adapters"] = 2
+    node._properties["adapters"] = 2
     node._list_ports()
     port = node.get_port(0, 0)
     assert port.adapter_number == 0

@@ -501,7 +501,7 @@ class Node:
         if self._node_type == "atm_switch":
             atm_port = set()
             # Mapping is like {"1:0:100": "10:0:200"}
-            for source, dest in self.properties["mappings"].items():
+            for source, dest in self._properties["mappings"].items():
                 atm_port.add(int(source.split(":")[0]))
                 atm_port.add(int(dest.split(":")[0]))
             atm_port = sorted(atm_port)
@@ -512,7 +512,7 @@ class Node:
         elif self._node_type == "frame_relay_switch":
             frame_relay_port = set()
             # Mapping is like {"1:101": "10:202"}
-            for source, dest in self.properties["mappings"].items():
+            for source, dest in self._properties["mappings"].items():
                 frame_relay_port.add(int(source.split(":")[0]))
                 frame_relay_port.add(int(dest.split(":")[0]))
             frame_relay_port = sorted(frame_relay_port)
@@ -520,15 +520,15 @@ class Node:
                 self._ports.append(PortFactory("{}".format(port), 0, 0, port, "frame_relay"))
             return
         elif self._node_type == "dynamips":
-            self._ports = DynamipsPortFactory(self.properties)
+            self._ports = DynamipsPortFactory(self._properties)
             return
         elif self._node_type in ("cloud", "nat", "ethernet_switch", "ethernet_hub"):
             port_number = 0
-            for port in self.properties["ports_mapping"]:
+            for port in self._properties["ports_mapping"]:
                 self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet"))
                 port_number += 1
         else:
-            self._ports = StandardPortFactory(self.properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)
+            self._ports = StandardPortFactory(self._properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)
             return
 
     def __repr__(self):
@@ -538,6 +538,17 @@ class Node:
         if not isinstance(other, Node):
             return False
         return self.id == other.id and other.project.id == self.project.id
+
+    def _filter_properties(self):
+        """
+        Some properties are private and should not be exposed
+        """
+        PRIVATE_PROPERTIES = ("iourc_content", )
+        prop = copy.copy(self._properties)
+        for k in list(prop.keys()):
+            if k in PRIVATE_PROPERTIES:
+                del prop[k]
+        return prop
 
     def __json__(self, topology_dump=False):
         """
@@ -551,7 +562,7 @@ class Node:
                 "name": self._name,
                 "console": self._console,
                 "console_type": self._console_type,
-                "properties": self._properties,
+                "properties": self._filter_properties(),
                 "label": self._label,
                 "x": self._x,
                 "y": self._y,
@@ -574,7 +585,7 @@ class Node:
             "console_host": str(self._compute.console_host),
             "console_type": self._console_type,
             "command_line": self._command_line,
-            "properties": self._properties,
+            "properties": self._filter_properties(),
             "status": self._status,
             "label": self._label,
             "x": self._x,
