@@ -201,7 +201,8 @@ def test_import_remote_gns3vm_1_x(controller, controller_config_path, async_run)
     with open(os.path.join(config_dir, "gns3_gui.conf"), "w+") as f:
         json.dump(gns3_gui_conf, f)
 
-    async_run(controller.load())
+    with asyncio_patch("gns3server.controller.compute.Compute.connect"):
+        async_run(controller.load())
     assert controller.gns3vm.settings["engine"] == "remote"
     assert controller.gns3vm.settings["vmname"] == "http://127.0.0.1:3081"
 
