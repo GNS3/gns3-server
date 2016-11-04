@@ -398,9 +398,11 @@ class Node:
         """
         try:
             yield from self.post("/stop")
-        # We don't care if a compute is down at this step
+        # We don't care if a node is down at this step
         except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientHttpProcessingError, aiohttp.web.HTTPError):
             pass
+        except asyncio.TimeoutError:
+            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when stopping {}".format(self._name))
 
     @asyncio.coroutine
     def suspend(self):
