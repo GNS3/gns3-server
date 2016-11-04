@@ -173,7 +173,7 @@ def test_linux_ethernet_raw_add_nio_bridge(linux_platform, project, async_run, n
             with patch("gns3server.utils.interfaces.is_interface_bridge", return_value=True):
                 async_run(cloud.add_nio(nio, 0))
 
-    tap = "gns3tap{}-0".format(cloud._cloud_id)
+    tap = "gns3tap0-0"
     ubridge_mock.assert_has_calls([
         call("bridge create {}-0".format(cloud._id)),
         call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),

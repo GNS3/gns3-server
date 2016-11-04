@@ -41,13 +41,10 @@ class Cloud(BaseNode):
     :param project: Project instance
     :param manager: Parent VM Manager
     """
-    _cloud_id = 0
 
     def __init__(self, name, node_id, project, manager, ports=[]):
 
         super().__init__(name, node_id, project, manager)
-        Cloud._cloud_id += 1
-
         self._nios = {}
         # If the cloud is not configured we fill it with host interfaces
         if not ports or len(ports) == 0:
@@ -240,7 +237,15 @@ class Cloud(BaseNode):
         """
         interface = port_info["interface"]
         if gns3server.utils.interfaces.is_interface_bridge(interface):
-            tap = "gns3tap{}-{}".format(Cloud._cloud_id, port_info["port_number"])
+
+            network_interfaces = [interface["name"] for interface in self._interfaces()]
+            i = 0
+            while True:
+                tap = "gns3tap{}-{}".format(i, port_info["port_number"])
+                if tap not in network_interfaces:
+                    break
+                i += 1
+
             yield from self._ubridge_send('bridge add_nio_tap "{name}" "{interface}"'.format(name=bridge_name, interface=tap))
             yield from self._ubridge_send('brctl addif "{interface}" "{tap}"'.format(tap=tap, interface=interface))
         else:
