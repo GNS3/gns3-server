@@ -88,7 +88,7 @@ def test_create_node_old_topology(loop, project, tmpdir, vpcs):
             assert f.read() == "1"
 
 
-def test_get_abs_image_path(qemu, tmpdir):
+def test_get_abs_image_path(qemu, tmpdir, config):
     os.makedirs(str(tmpdir / "QEMU"))
     path1 = force_unix_path(str(tmpdir / "test1.bin"))
     open(path1, 'w+').close()
@@ -96,15 +96,15 @@ def test_get_abs_image_path(qemu, tmpdir):
     path2 = force_unix_path(str(tmpdir / "QEMU" / "test2.bin"))
     open(path2, 'w+').close()
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        assert qemu.get_abs_image_path(path1) == path1
-        assert qemu.get_abs_image_path("test1.bin") == path1
-        assert qemu.get_abs_image_path(path2) == path2
-        assert qemu.get_abs_image_path("test2.bin") == path2
-        assert qemu.get_abs_image_path("../test1.bin") == path1
+    config.set_section_config("Server", {"images_path": str(tmpdir)})
+    assert qemu.get_abs_image_path(path1) == path1
+    assert qemu.get_abs_image_path("test1.bin") == path1
+    assert qemu.get_abs_image_path(path2) == path2
+    assert qemu.get_abs_image_path("test2.bin") == path2
+    assert qemu.get_abs_image_path("../test1.bin") == path1
 
 
-def test_get_abs_image_path_non_local(qemu, tmpdir):
+def test_get_abs_image_path_non_local(qemu, tmpdir, config):
     path1 = tmpdir / "images" / "QEMU" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -114,18 +114,18 @@ def test_get_abs_image_path_non_local(qemu, tmpdir):
     path2 = force_unix_path(str(path2))
 
     # If non local we can't use path outside images directory
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": False}):
-        assert qemu.get_abs_image_path(path1) == path1
-        with pytest.raises(NodeError):
-            qemu.get_abs_image_path(path2)
-        with pytest.raises(NodeError):
-            qemu.get_abs_image_path("C:\\test2.bin")
+    config.set_section_config("Server", {"images_path": str(tmpdir / "images"), "local": False})
+    assert qemu.get_abs_image_path(path1) == path1
+    with pytest.raises(NodeError):
+        qemu.get_abs_image_path(path2)
+    with pytest.raises(NodeError):
+        qemu.get_abs_image_path("C:\\test2.bin")
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir / "images"), "local": True}):
-        assert qemu.get_abs_image_path(path2) == path2
+    config.set_section_config("Server", {"images_path": str(tmpdir / "images"), "local": True})
+    assert qemu.get_abs_image_path(path2) == path2
 
 
-def test_get_abs_image_additional_image_paths(qemu, tmpdir):
+def test_get_abs_image_additional_image_paths(qemu, tmpdir, config):
     path1 = tmpdir / "images1" / "QEMU" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -134,20 +134,21 @@ def test_get_abs_image_additional_image_paths(qemu, tmpdir):
     path2.write("1", ensure=True)
     path2 = force_unix_path(str(path2))
 
-    with patch("gns3server.config.Config.get_section_config", return_value={
-            "images_path": str(tmpdir / "images1"),
-            "additional_images_path": "/tmp/null24564;{}".format(str(tmpdir / "images2")),
-            "local": False}):
-        assert qemu.get_abs_image_path("test1.bin") == path1
-        assert qemu.get_abs_image_path("test2.bin") == path2
-        # Absolute path
-        assert qemu.get_abs_image_path(str(path2)) == path2
+    config.set_section_config("Server", {
+        "images_path": str(tmpdir / "images1"),
+        "additional_images_path": "/tmp/null24564;{}".format(str(tmpdir / "images2")),
+        "local": False})
 
-        with pytest.raises(ImageMissingError):
-            qemu.get_abs_image_path("test4.bin")
+    assert qemu.get_abs_image_path("test1.bin") == path1
+    assert qemu.get_abs_image_path("test2.bin") == path2
+    # Absolute path
+    assert qemu.get_abs_image_path(str(path2)) == path2
+
+    with pytest.raises(ImageMissingError):
+        qemu.get_abs_image_path("test4.bin")
 
 
-def test_get_abs_image_recursive(qemu, tmpdir):
+def test_get_abs_image_recursive(qemu, tmpdir, config):
     path1 = tmpdir / "images1" / "QEMU" / "demo" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -156,16 +157,16 @@ def test_get_abs_image_recursive(qemu, tmpdir):
     path2.write("1", ensure=True)
     path2 = force_unix_path(str(path2))
 
-    with patch("gns3server.config.Config.get_section_config", return_value={
-            "images_path": str(tmpdir / "images1"),
-            "local": False}):
-        assert qemu.get_abs_image_path("test1.bin") == path1
-        assert qemu.get_abs_image_path("test2.bin") == path2
-        # Absolute path
-        assert qemu.get_abs_image_path(str(path1)) == path1
+    config.set_section_config("Server", {
+        "images_path": str(tmpdir / "images1"),
+        "local": False})
+    assert qemu.get_abs_image_path("test1.bin") == path1
+    assert qemu.get_abs_image_path("test2.bin") == path2
+    # Absolute path
+    assert qemu.get_abs_image_path(str(path1)) == path1
 
 
-def test_get_abs_image_recursive_ova(qemu, tmpdir):
+def test_get_abs_image_recursive_ova(qemu, tmpdir, config):
     path1 = tmpdir / "images1" / "QEMU" / "demo" / "test.ova" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -174,16 +175,16 @@ def test_get_abs_image_recursive_ova(qemu, tmpdir):
     path2.write("1", ensure=True)
     path2 = force_unix_path(str(path2))
 
-    with patch("gns3server.config.Config.get_section_config", return_value={
-            "images_path": str(tmpdir / "images1"),
-            "local": False}):
-        assert qemu.get_abs_image_path("test.ova/test1.bin") == path1
-        assert qemu.get_abs_image_path("test.ova/test2.bin") == path2
-        # Absolute path
-        assert qemu.get_abs_image_path(str(path1)) == path1
+    config.set_section_config("Server", {
+        "images_path": str(tmpdir / "images1"),
+        "local": False})
+    assert qemu.get_abs_image_path("test.ova/test1.bin") == path1
+    assert qemu.get_abs_image_path("test.ova/test2.bin") == path2
+    # Absolute path
+    assert qemu.get_abs_image_path(str(path1)) == path1
 
 
-def test_get_relative_image_path(qemu, tmpdir):
+def test_get_relative_image_path(qemu, tmpdir, config):
     os.makedirs(str(tmpdir / "images1" / "QEMU"))
     path1 = force_unix_path(str(tmpdir / "images1" / "test1.bin"))
     open(path1, 'w+').close()
@@ -195,26 +196,28 @@ def test_get_relative_image_path(qemu, tmpdir):
     path3 = force_unix_path(str(tmpdir / "images2" / "test3.bin"))
     open(path3, 'w+').close()
 
-    with patch("gns3server.config.Config.get_section_config", return_value={
+    config.set_section_config("Server", {
         "images_path": str(tmpdir / "images1"),
         "additional_images_path": str(tmpdir / "images2")
-    }):
-        assert qemu.get_relative_image_path(path1) == "test1.bin"
-        assert qemu.get_relative_image_path("test1.bin") == "test1.bin"
-        assert qemu.get_relative_image_path(path2) == "test2.bin"
-        assert qemu.get_relative_image_path("test2.bin") == "test2.bin"
-        assert qemu.get_relative_image_path("../test1.bin") == "test1.bin"
-        assert qemu.get_relative_image_path("test3.bin") == "test3.bin"
+    })
+    assert qemu.get_relative_image_path(path1) == "test1.bin"
+    assert qemu.get_relative_image_path("test1.bin") == "test1.bin"
+    assert qemu.get_relative_image_path(path2) == "test2.bin"
+    assert qemu.get_relative_image_path("test2.bin") == "test2.bin"
+    assert qemu.get_relative_image_path("../test1.bin") == "test1.bin"
+    assert qemu.get_relative_image_path("test3.bin") == "test3.bin"
 
 
-def test_get_relative_image_path_ova(qemu, tmpdir):
+def test_get_relative_image_path_ova(qemu, tmpdir, config):
     os.makedirs(str(tmpdir / "QEMU" / "test.ova"))
     path = str(tmpdir / "QEMU" / "test.ova" / "test.bin")
     open(path, 'w+').close()
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"images_path": str(tmpdir)}):
-        assert qemu.get_relative_image_path(path) == os.path.join("test.ova", "test.bin")
-        assert qemu.get_relative_image_path(os.path.join("test.ova", "test.bin")) == os.path.join("test.ova", "test.bin")
+    config.set_section_config("Server", {
+        "images_path": str(tmpdir)
+    })
+    assert qemu.get_relative_image_path(path) == os.path.join("test.ova", "test.bin")
+    assert qemu.get_relative_image_path(os.path.join("test.ova", "test.bin")) == os.path.join("test.ova", "test.bin")
 
 
 def test_list_images(loop, qemu, tmpdir):

@@ -206,10 +206,10 @@ def test_close(vm, port_manager, loop):
             assert vm.is_running() is False
 
 
-def test_path(vm, fake_iou_bin):
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        vm.path = fake_iou_bin
-        assert vm.path == fake_iou_bin
+def test_path(vm, fake_iou_bin, config):
+    config.set_section_config("Server", {"local": True})
+    vm.path = fake_iou_bin
+    assert vm.path == fake_iou_bin
 
 
 def test_path_relative(vm, fake_iou_bin, tmpdir):
@@ -218,17 +218,17 @@ def test_path_relative(vm, fake_iou_bin, tmpdir):
     assert vm.path == fake_iou_bin
 
 
-def test_path_invalid_bin(vm, tmpdir):
+def test_path_invalid_bin(vm, tmpdir, config):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        path = str(tmpdir / "test.bin")
+    config.set_section_config("Server", {"local": True})
+    path = str(tmpdir / "test.bin")
 
-        with open(path, "w+") as f:
-            f.write("BUG")
+    with open(path, "w+") as f:
+        f.write("BUG")
 
-        with pytest.raises(IOUError):
-            vm.path = path
-            vm._check_requirements()
+    with pytest.raises(IOUError):
+        vm.path = path
+        vm._check_requirements()
 
 
 def test_create_netmap_config(vm):
