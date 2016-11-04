@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
 import sys
 import aiohttp
 import socket
@@ -161,6 +162,13 @@ def is_interface_up(interface):
     else:
         # TODO: Windows & OSX support
         return True
+
+
+def is_interface_bridge(interface):
+    """
+    :returns: True if interface is a bridge
+    """
+    return os.path.exists(os.path.join("/sys/class/net/", interface, "bridge"))
 
 
 def _check_windows_service(service_name):

@@ -152,3 +152,32 @@ def test_linux_ethernet_raw_add_nio(linux_platform, project, async_run, nio):
         call("bridge add_nio_linux_raw {}-0 \"eth0\"".format(cloud._id)),
         call("bridge start {}-0".format(cloud._id)),
     ])
+
+
+def test_linux_ethernet_raw_add_nio_bridge(linux_platform, project, async_run, nio):
+    """
+    Bridge can't be connected directly to a cloud we use a tap in the middle
+    """
+    ports = [
+        {
+            "interface": "bridge0",
+            "name": "bridge0",
+            "port_number": 0,
+            "type": "ethernet"
+        }
+    ]
+    cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports)
+
+    with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
+        with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "bridge0"}]):
+            with patch("gns3server.utils.interfaces.is_interface_bridge", return_value=True):
+                async_run(cloud.add_nio(nio, 0))
+
+    tap = "gns3tap{}-0".format(cloud._cloud_id)
+    ubridge_mock.assert_has_calls([
+        call("bridge create {}-0".format(cloud._id)),
+        call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
+        call("bridge add_nio_tap \"{}-0\" \"{}\"".format(cloud._id, tap)),
+        call("brctl addif \"bridge0\" \"{}\"".format(tap)),
+        call("bridge start {}-0".format(cloud._id)),
+    ])

@@ -210,23 +210,11 @@ class Cloud(BaseNode):
                         raise NodeError("Interface '{}' could not be found on this system".format(port_info["interface"]))
 
                     if sys.platform.startswith("linux"):
-                        # use raw sockets on Linux
-                        yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name,
-                                                                                                             interface=port_info["interface"]))
+                        yield from self._add_linux_ethernet(port_info, bridge_name)
+                    elif sys.platform.startswith("darwin"):
+                        yield from self._add_osx_ethernet(port_info, bridge_name)
                     else:
-                        if sys.platform.startswith("darwin"):
-                            # Wireless adapters are not well supported by the libpcap on OSX
-                            if (yield from self._is_wifi_adapter_osx(port_info["interface"])):
-                                raise NodeError("Connecting to a Wireless adapter is not supported on Mac OS")
-                        if sys.platform.startswith("darwin") and port_info["interface"].startswith("vmnet"):
-                            # Use a special NIO to connect to VMware vmnet interfaces on OSX (libpcap doesn't support them)
-                            yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=bridge_name,
-                                                                                                                    interface=port_info["interface"]))
-                        else:
-                            if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
-                                raise NodeError("Interface {} don't have a netmask".format(port_info["interface"]))
-                            yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
-                                                                                                                interface=port_info["interface"]))
+                        yield from self._add_windows_ethernet(port_info, bridge_name)
 
                 elif port_info["type"] == "tap":
                     yield from self._ubridge_send('bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
@@ -242,6 +230,41 @@ class Cloud(BaseNode):
                                                                                              pcap_file=nio.pcap_output_file))
 
         yield from self._ubridge_send('bridge start {name}'.format(name=bridge_name))
+
+    @asyncio.coroutine
+    def _add_linux_ethernet(self, port_info, bridge_name):
+        """
+        Use raw sockets on Linux.
+
+        If interface is a bridge we connect a tap to it
+        """
+        interface = port_info["interface"]
+        if gns3server.utils.interfaces.is_interface_bridge(interface):
+            tap = "gns3tap{}-{}".format(Cloud._cloud_id, port_info["port_number"])
+            yield from self._ubridge_send('bridge add_nio_tap "{name}" "{interface}"'.format(name=bridge_name, interface=tap))
+            yield from self._ubridge_send('brctl addif "{interface}" "{tap}"'.format(tap=tap, interface=interface))
+        else:
+            yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=interface))
+
+    @asyncio.coroutine
+    def _add_osx_ethernet(self, port_info, bridge_name):
+        # Wireless adapters are not well supported by the libpcap on OSX
+        if (yield from self._is_wifi_adapter_osx(port_info["interface"])):
+            raise NodeError("Connecting to a Wireless adapter is not supported on Mac OS")
+        if port_info["interface"].startswith("vmnet"):
+            # Use a special NIO to connect to VMware vmnet interfaces on OSX (libpcap doesn't support them)
+            yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=bridge_name,
+                                                                                                    interface=port_info["interface"]))
+            return
+        if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
+            raise NodeError("Interface {} don't have a netmask".format(port_info["interface"]))
+        yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
+
+    @asyncio.coroutine
+    def _add_windows_ethernet(self, port_info, bridge_name):
+        if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
+            raise NodeError("Interface {} don't have a netmask".format(port_info["interface"]))
+        yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
 
     @asyncio.coroutine
     def add_nio(self, nio, port_number):

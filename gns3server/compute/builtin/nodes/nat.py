@@ -29,19 +29,15 @@ class Nat(Cloud):
     nat access to the outside
     """
 
-    _nat_id = 0
-
     def __init__(self, *args, **kwargs):
         if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
             raise NodeError("virbr0 is missing. You need to install libvirt")
 
-        self._interface = "gns3nat{}".format(Nat._nat_id)
-        Nat._nat_id += 1
         ports = [
             {
                 "name": "nat0",
-                "type": "tap",
-                "interface": self._interface,
+                "type": "ethernet",
+                "interface": "virbr0",
                 "port_number": 0
             }
         ]
@@ -55,11 +51,6 @@ class Nat(Cloud):
     def ports_mapping(self, ports):
         # It's not allowed to change it
         pass
-
-    @asyncio.coroutine
-    def add_nio(self, nio, port_number):
-        yield from super().add_nio(nio, port_number)
-        yield from self._ubridge_send('brctl addif virbr0 "{interface}"'.format(interface=self._interface))
 
     @classmethod
     def is_supported(self):
