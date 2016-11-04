@@ -861,9 +861,16 @@ class VirtualBoxVM(BaseNode):
         self._vmname = self._name
         yield from self.manager.execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
 
-        args = [self._vmname, "take", "reset"]
-        result = yield from self.manager.execute("snapshot", args)
-        log.debug("Snapshot 'reset' created: {}".format(result))
+        # We create a reset snapshot in order to simplify life of user who want to rollback their VM
+        # Warning: Do not document this it's seem buggy we keep it because Raizo students use it.
+        try:
+            args = [self._vmname, "take", "reset"]
+            result = yield from self.manager.execute("snapshot", args)
+            log.debug("Snapshot 'reset' created: {}".format(result))
+        # It seem sometimes this failed due to internal race condition of Vbox
+        # we have no real explanation of this.
+        except VirtualBoxError:
+            log.warn("Snapshot 'reset' not created")
 
     def _start_remote_console(self):
         """
