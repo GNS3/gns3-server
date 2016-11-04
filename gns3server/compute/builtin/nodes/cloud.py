@@ -41,10 +41,13 @@ class Cloud(BaseNode):
     :param project: Project instance
     :param manager: Parent VM Manager
     """
+    _cloud_id = 0
 
     def __init__(self, name, node_id, project, manager, ports=[]):
 
         super().__init__(name, node_id, project, manager)
+        Cloud._cloud_id += 1
+
         self._nios = {}
         # If the cloud is not configured we fill it with host interfaces
         if not ports or len(ports) == 0:

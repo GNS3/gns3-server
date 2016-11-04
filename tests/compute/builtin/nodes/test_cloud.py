@@ -17,9 +17,16 @@
 
 import uuid
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch, call
 
 from gns3server.compute.builtin.nodes.cloud import Cloud
+from gns3server.compute.nios.nio_udp import NIOUDP
+from tests.utils import asyncio_patch
+
+
+@pytest.fixture
+def nio():
+    return NIOUDP(4242, "127.0.0.1", 4343)
 
 
 def test_json_with_ports(on_gns3vm, project):
@@ -122,3 +129,26 @@ def test_update_port_mappings(on_gns3vm, project):
     ]
     cloud = Cloud("cloud2", str(uuid.uuid4()), project, MagicMock(), ports=ports2)
     assert cloud.ports_mapping == ports1
+
+
+def test_linux_ethernet_raw_add_nio(linux_platform, project, async_run, nio):
+    ports = [
+        {
+            "interface": "eth0",
+            "name": "eth0",
+            "port_number": 0,
+            "type": "ethernet"
+        }
+    ]
+    cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports)
+
+    with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
+        with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "eth0"}]):
+            async_run(cloud.add_nio(nio, 0))
+
+    ubridge_mock.assert_has_calls([
+        call("bridge create {}-0".format(cloud._id)),
+        call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
+        call("bridge add_nio_linux_raw {}-0 \"eth0\"".format(cloud._id)),
+        call("bridge start {}-0".format(cloud._id)),
+    ])
