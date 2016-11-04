@@ -47,7 +47,6 @@ class VMware(BaseManager):
     def __init__(self):
 
         super().__init__()
-        self._execute_lock = asyncio.Lock()
         self._vmware_inventory_lock = asyncio.Lock()
         self._vmrun_path = None
         self._host_type = None
@@ -371,34 +370,33 @@ class VMware(BaseManager):
 
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=120):
-        with (yield from self._execute_lock):
-            if self.host_type is None:
-                yield from self.check_vmware_version()
+        if self.host_type is None:
+            yield from self.check_vmware_version()
 
-            vmrun_path = self.vmrun_path
-            if not vmrun_path:
-                vmrun_path = self.find_vmrun()
+        vmrun_path = self.vmrun_path
+        if not vmrun_path:
+            vmrun_path = self.find_vmrun()
 
-            command = [vmrun_path, "-T", self.host_type, subcommand]
-            command.extend(args)
-            command_string = " ".join(command)
-            log.info("Executing vmrun with command: {}".format(command_string))
-            try:
-                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            except (OSError, subprocess.SubprocessError) as e:
-                raise VMwareError("Could not execute vmrun: {}".format(e))
+        command = [vmrun_path, "-T", self.host_type, subcommand]
+        command.extend(args)
+        command_string = " ".join(command)
+        log.info("Executing vmrun with command: {}".format(command_string))
+        try:
+            process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        except (OSError, subprocess.SubprocessError) as e:
+            raise VMwareError("Could not execute vmrun: {}".format(e))
 
-            try:
-                stdout_data, _ = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
-            except asyncio.TimeoutError:
-                raise VMwareError("vmrun has timed out after {} seconds!\nTry to run {} in a terminal to see more informations.".format(timeout, command_string))
+        try:
+            stdout_data, _ = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise VMwareError("vmrun has timed out after {} seconds!\nTry to run {} in a terminal to see more informations.".format(timeout, command_string))
 
-            if process.returncode:
-                # vmrun print errors on stdout
-                vmrun_error = stdout_data.decode("utf-8", errors="ignore")
-                raise VMwareError("vmrun has returned an error: {}\nTry to run {} in a terminal to see more informations.".format(vmrun_error, command_string))
+        if process.returncode:
+            # vmrun print errors on stdout
+            vmrun_error = stdout_data.decode("utf-8", errors="ignore")
+            raise VMwareError("vmrun has returned an error: {}\nTry to run {} in a terminal to see more informations.".format(vmrun_error, command_string))
 
-            return stdout_data.decode("utf-8", errors="ignore").splitlines()
+        return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
     @asyncio.coroutine
     def check_vmrun_version(self, minimum_required_version="1.13.0"):
@@ -413,26 +411,25 @@ class VMware(BaseManager):
         :param required_version: required vmrun version number
         """
 
-        with (yield from self._execute_lock):
-            vmrun_path = self.vmrun_path
-            if not vmrun_path:
-                vmrun_path = self.find_vmrun()
+        vmrun_path = self.vmrun_path
+        if not vmrun_path:
+            vmrun_path = self.find_vmrun()
 
-            try:
-                output = yield from subprocess_check_output(vmrun_path)
-                match = re.search("vmrun version ([0-9\.]+)", output)
-                version = None
-                if match:
-                    version = match.group(1)
-                    log.debug("VMware vmrun version {} detected, minimum required: {}".format(version, minimum_required_version))
-                    if parse_version(version) < parse_version(minimum_required_version):
-                        raise VMwareError("VMware vmrun executable version must be >= version {}".format(minimum_required_version))
-                if version is None:
-                    log.warning("Could not find VMware vmrun version. Output: {}".format(output))
-                    raise VMwareError("Could not find VMware vmrun version. Output: {}".format(output))
-            except (OSError, subprocess.SubprocessError) as e:
-                log.error("Error while looking for the VMware vmrun version: {}".format(e))
-                raise VMwareError("Error while looking for the VMware vmrun version: {}".format(e))
+        try:
+            output = yield from subprocess_check_output(vmrun_path)
+            match = re.search("vmrun version ([0-9\.]+)", output)
+            version = None
+            if match:
+                version = match.group(1)
+                log.debug("VMware vmrun version {} detected, minimum required: {}".format(version, minimum_required_version))
+                if parse_version(version) < parse_version(minimum_required_version):
+                    raise VMwareError("VMware vmrun executable version must be >= version {}".format(minimum_required_version))
+            if version is None:
+                log.warning("Could not find VMware vmrun version. Output: {}".format(output))
+                raise VMwareError("Could not find VMware vmrun version. Output: {}".format(output))
+        except (OSError, subprocess.SubprocessError) as e:
+            log.error("Error while looking for the VMware vmrun version: {}".format(e))
+            raise VMwareError("Error while looking for the VMware vmrun version: {}".format(e))
 
     @asyncio.coroutine
     def remove_from_vmware_inventory(self, vmx_path):

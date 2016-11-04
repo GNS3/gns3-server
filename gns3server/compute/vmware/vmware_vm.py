@@ -27,7 +27,7 @@ import tempfile
 
 from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.interfaces import interfaces
-from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation
+from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation, locked_coroutine
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
@@ -99,7 +99,7 @@ class VMwareVM(BaseNode):
 
         return self._vmnets
 
-    @asyncio.coroutine
+    @locked_coroutine
     def _control_vm(self, subcommand, *additional_args):
 
         args = [self._vmx_path]
