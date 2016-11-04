@@ -420,7 +420,7 @@ class BaseManager:
             raise ImageMissingError(orig_path)
 
         # For non local server we disallow using absolute path outside image directory
-        if server_config.get("local", False) is True:
+        if server_config.getboolean("local", False) is True:
             path = force_unix_path(path)
             if os.path.exists(path):
                 return path
