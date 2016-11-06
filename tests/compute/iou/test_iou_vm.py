@@ -24,10 +24,10 @@ import socket
 import sys
 import uuid
 import shutil
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock, PropertyMock, call
 
 pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 
@@ -48,13 +48,8 @@ def manager(port_manager):
 
 @pytest.fixture(scope="function")
 def vm(project, manager, tmpdir, fake_iou_bin, iourc_file):
-    fake_file = str(tmpdir / "iouyap")
-    with open(fake_file, "w+") as f:
-        f.write("1")
-
     vm = IOUVM("test", str(uuid.uuid4()), project, manager)
     config = manager.config.get_section_config("IOU")
-    config["iouyap_path"] = fake_file
     config["iourc_path"] = iourc_file
     manager.config.set_section_config("IOU", config)
 
@@ -96,48 +91,54 @@ def test_vm_startup_config_content(project, manager):
     assert vm.id == "00010203-0405-0607-0808-0a0b0c0d0e0f"
 
 
-@patch("gns3server.compute.iou.iou_vm.IOUVM._config", return_value={"iouyap_path": "/bin/test_fake"})
-def test_vm_invalid_iouyap_path(project, manager, loop, fake_iou_bin):
-    with pytest.raises(IOUError):
-        vm = IOUVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", project, manager)
-        vm.path = fake_iou_bin
-        loop.run_until_complete(asyncio.async(vm.start()))
-
-
-def test_start(loop, vm, monkeypatch):
+def test_start(loop, vm):
 
     mock_process = MagicMock()
-    with patch("gns3server.compute.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
-            with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-                with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                    with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
-                        mock_process.returncode = None
-                        loop.run_until_complete(asyncio.async(vm.start()))
-                        assert vm.is_running()
-                        assert vm.command_line == ' '.join(mock_exec.call_args[0])
+
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._start_ioucon = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
+
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
+        mock_process.returncode = None
+        loop.run_until_complete(asyncio.async(vm.start()))
+        assert vm.is_running()
+        assert vm.command_line == ' '.join(mock_exec.call_args[0])
+
+    assert vm._check_requirements.called
+    assert vm._check_iou_licence.called
+    assert vm._start_ioucon.called
+    assert vm._start_ubridge.called
+    vm._ubridge_send.assert_any_call("iol_bridge delete IOL-BRIDGE-513")
+    vm._ubridge_send.assert_any_call("iol_bridge create IOL-BRIDGE-513 513")
+    vm._ubridge_send.assert_any_call("iol_bridge start IOL-BRIDGE-513")
 
 
-def test_start_with_iourc(loop, vm, monkeypatch, tmpdir):
+def test_start_with_iourc(loop, vm, tmpdir):
 
     fake_file = str(tmpdir / "iourc")
     with open(fake_file, "w+") as f:
         f.write("1")
     mock_process = MagicMock()
-    with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file, "iouyap_path": vm.iouyap_path}):
-        with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-            with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._check_iou_licence", return_value=True):
-                with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-                    with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                        with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
-                            mock_process.returncode = None
-                            loop.run_until_complete(asyncio.async(vm.start()))
-                            assert vm.is_running()
-                            arsgs, kwargs = exec_mock.call_args
-                            assert kwargs["env"]["IOURC"] == fake_file
+
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._start_ioucon = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file}):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
+            mock_process.returncode = None
+            loop.run_until_complete(asyncio.async(vm.start()))
+            assert vm.is_running()
+            arsgs, kwargs = exec_mock.call_args
+            assert kwargs["env"]["IOURC"] == fake_file
 
 
-def test_rename_nvram_file(loop, vm, monkeypatch):
+def test_rename_nvram_file(loop, vm):
     """
     It should rename the nvram file to the correct name before launching the VM
     """
@@ -156,26 +157,35 @@ def test_rename_nvram_file(loop, vm, monkeypatch):
 def test_stop(loop, vm):
     process = MagicMock()
 
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._start_ioucon = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
+
     # Wait process kill success
     future = asyncio.Future()
     future.set_result(True)
     process.wait.return_value = future
 
-    with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-            with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                    with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                        loop.run_until_complete(asyncio.async(vm.start()))
-                        process.returncode = None
-                        assert vm.is_running()
-                        loop.run_until_complete(asyncio.async(vm.stop()))
-                        assert vm.is_running() is False
-                        process.terminate.assert_called_with()
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+            loop.run_until_complete(asyncio.async(vm.start()))
+            process.returncode = None
+            assert vm.is_running()
+            loop.run_until_complete(asyncio.async(vm.stop()))
+            assert vm.is_running() is False
+            process.terminate.assert_called_with()
 
 
 def test_reload(loop, vm, fake_iou_bin):
     process = MagicMock()
+
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._start_ioucon = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
 
     # Wait process kill success
     future = asyncio.Future()
@@ -183,16 +193,13 @@ def test_reload(loop, vm, fake_iou_bin):
     process.wait.return_value = future
     process.returncode = None
 
-    with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_ioucon", return_value=True):
-            with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._start_iouyap", return_value=True):
-                with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                    with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                        loop.run_until_complete(asyncio.async(vm.start()))
-                        assert vm.is_running()
-                        loop.run_until_complete(asyncio.async(vm.reload()))
-                        assert vm.is_running() is True
-                        process.terminate.assert_called_with()
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+            loop.run_until_complete(asyncio.async(vm.start()))
+            assert vm.is_running()
+            loop.run_until_complete(asyncio.async(vm.reload()))
+            assert vm.is_running() is True
+            process.terminate.assert_called_with()
 
 
 def test_close(vm, port_manager, loop):
