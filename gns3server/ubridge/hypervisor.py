@@ -76,6 +76,7 @@ class Hypervisor(UBridgeHypervisor):
         self._process = None
         self._stdout_file = ""
         self._started = False
+        self._version = ""
 
     @property
     def process(self):
@@ -117,6 +118,16 @@ class Hypervisor(UBridgeHypervisor):
 
         self._path = path
 
+    @property
+    def version(self):
+        """
+        Returns the uBridge version.
+
+        :returns: string
+        """
+
+        return self._version
+
     @asyncio.coroutine
     def _check_ubridge_version(self):
         """
@@ -126,9 +137,9 @@ class Hypervisor(UBridgeHypervisor):
             output = yield from subprocess_check_output(self._path, "-v", cwd=self._working_dir)
             match = re.search("ubridge version ([0-9a-z\.]+)", output)
             if match:
-                version = match.group(1)
-                if parse_version(version) < parse_version("0.9.5"):
-                    raise UbridgeError("uBridge executable version must be >= 0.9.5")
+                self._version = match.group(1)
+                if parse_version(self._version) < parse_version("0.9.6"):
+                    raise UbridgeError("uBridge executable version must be >= 0.9.6")
             else:
                 raise UbridgeError("Could not determine uBridge version for {}".format(self._path))
         except (OSError, subprocess.SubprocessError) as e:

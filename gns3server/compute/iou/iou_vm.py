@@ -21,7 +21,6 @@ order to run an IOU VM.
 """
 
 import os
-import signal
 import socket
 import re
 import asyncio
@@ -40,12 +39,11 @@ from .iou_error import IOUError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..adapters.serial_adapter import SerialAdapter
 from ..nios.nio_udp import NIOUDP
-from ..nios.nio_tap import NIOTAP
-from ..nios.nio_ethernet import NIOEthernet
 from ..base_node import BaseNode
 from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
 from .ioucon import start_ioucon
+from gns3server.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
 import gns3server.utils.asyncio
 import gns3server.utils.images
@@ -72,12 +70,12 @@ class IOUVM(BaseNode):
 
         super().__init__(name, node_id, project, manager, console=console)
 
-        self._iouyap_process = None
         self._iou_process = None
         self._iou_stdout_file = ""
         self._started = False
         self._path = None
         self._ioucon_thread = None
+        self._nvram_watcher = None
 
         # IOU settings
         self._ethernet_adapters = []
@@ -90,8 +88,6 @@ class IOUVM(BaseNode):
         self._private_config = ""
         self._ram = 256  # Megabytes
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
-
-        self._nvram_watcher = None
 
     def _config(self):
         return self._manager.config.get_section_config("IOU")
@@ -166,7 +162,7 @@ class IOUVM(BaseNode):
 
     def _check_requirements(self):
         """
-        Checks if IOUYAP executable is available and if image is accessible.
+        Checks the IOU image.
         """
 
         if not self._path:
@@ -192,16 +188,6 @@ class IOUVM(BaseNode):
         if not os.access(self._path, os.X_OK):
             raise IOUError("IOU image '{}' is not executable".format(self._path))
 
-        path = self.iouyap_path
-        if not path:
-            raise IOUError("No path to iouyap program has been set")
-
-        if not os.path.isfile(path):
-            raise IOUError("iouyap program '{}' is not accessible".format(path))
-
-        if not os.access(path, os.X_OK):
-            raise IOUError("iouyap program '{}' is not executable".format(path))
-
     def __json__(self):
 
         iou_vm_info = {"name": self.name,
@@ -226,21 +212,6 @@ class IOUVM(BaseNode):
         # return the relative path if the IOU image is in the images_path directory
         iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)
         return iou_vm_info
-
-    @property
-    def iouyap_path(self):
-        """
-        Returns the IOUYAP executable path.
-
-        :returns: path to IOUYAP
-        """
-
-        search_path = self._config().get("iouyap_path", "iouyap")
-        path = shutil.which(search_path)
-        # shutil.which return None if the path doesn't exists
-        if not path:
-            return search_path
-        return path
 
     @property
     def iourc_path(self):
@@ -496,9 +467,7 @@ class IOUVM(BaseNode):
                 raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
 
             yield from self._check_iou_licence()
-            iouyap_path = self.iouyap_path
-            if not iouyap_path or not os.path.isfile(iouyap_path):
-                raise IOUError("iouyap is necessary to start IOU")
+            yield from self._start_ubridge()
 
             self._create_netmap_config()
             self._push_configs_to_nvram()
@@ -539,8 +508,46 @@ class IOUVM(BaseNode):
 
             # start console support
             self._start_ioucon()
-            # connections support
-            yield from self._start_iouyap()
+
+            # configure networking support
+            yield from self._networking()
+
+    @asyncio.coroutine
+    def _networking(self):
+        """
+        Configures the IOL bridge in uBridge.
+        """
+
+        bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+        try:
+            # delete any previous bridge if it exists
+            yield from self._ubridge_send("iol_bridge delete {name}".format(name=bridge_name))
+        except UbridgeError:
+            pass
+        yield from self._ubridge_send("iol_bridge create {name} {bridge_id}".format(name=bridge_name, bridge_id=self.application_id + 512))
+
+        bay_id = 0
+        for adapter in self._adapters:
+            unit_id = 0
+            for unit in adapter.ports.keys():
+                nio = adapter.get_nio(unit)
+                if nio and isinstance(nio, NIOUDP):
+                    yield from self._ubridge_send("iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(name=bridge_name,
+                                                                                                                                       iol_id=self.application_id,
+                                                                                                                                       bay=bay_id,
+                                                                                                                                       unit=unit_id,
+                                                                                                                                       lport=nio.lport,
+                                                                                                                                       rhost=nio.rhost,
+                                                                                                                                       rport=nio.rport))
+                    if nio.capturing:
+                        yield from self._ubridge_send('iol_bridge start_capture {name} "{output_file}" {data_link_type}'.format(name=bridge_name,
+                                                                                                                                output_file=nio.pcap_output_file,
+                                                                                                                                data_link_type=nio.pcap_data_link_type))
+
+                unit_id += 1
+            bay_id += 1
+
+        yield from self._ubridge_send("iol_bridge start {name}".format(name=bridge_name))
 
     def _termination_callback(self, process_name, returncode):
         """
@@ -550,12 +557,9 @@ class IOUVM(BaseNode):
         """
 
         self._terminate_process_iou()
-        self._terminate_process_iouyap()
         self._ioucon_thread_stop_event.set()
 
         if returncode != 0:
-            log.info("{} process has stopped, return code: {}".format(process_name, returncode))
-        else:
             if returncode == 11:
                 message = "{} process has stopped, return code: {}. This could be an issue with the image using a different image can fix the issue.\n{}".format(process_name, returncode, self.read_iou_stdout())
             else:
@@ -576,98 +580,12 @@ class IOUVM(BaseNode):
             shutil.move(file_path, destination)
 
     @asyncio.coroutine
-    def _start_iouyap(self):
-        """
-        Starts iouyap (handles connections to and from this IOU VM).
-        """
-
-        try:
-            self._update_iouyap_config()
-            command = [self.iouyap_path, "-q", str(self.application_id + 512)]  # iouyap has always IOU ID + 512
-            log.info("starting iouyap: {}".format(command))
-            self._iouyap_stdout_file = os.path.join(self.working_dir, "iouyap.log")
-            log.info("logging to {}".format(self._iouyap_stdout_file))
-            with open(self._iouyap_stdout_file, "w", encoding="utf-8") as fd:
-                self._iouyap_process = yield from asyncio.create_subprocess_exec(*command,
-                                                                                 stdout=fd,
-                                                                                 stderr=subprocess.STDOUT,
-                                                                                 cwd=self.working_dir)
-
-                callback = functools.partial(self._termination_callback, "iouyap")
-                gns3server.utils.asyncio.monitor_process(self._iouyap_process, callback)
-            log.info("iouyap started PID={}".format(self._iouyap_process.pid))
-        except (OSError, subprocess.SubprocessError) as e:
-            iouyap_stdout = self.read_iouyap_stdout()
-            log.error("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
-            raise IOUError("Could not start iouyap: {}\n{}".format(e, iouyap_stdout))
-
-    def _update_iouyap_config(self):
-        """
-        Updates the iouyap.ini file.
-        """
-
-        iouyap_ini = os.path.join(self.working_dir, "iouyap.ini")
-
-        config = configparser.ConfigParser()
-        config["default"] = {"netmap": "NETMAP",
-                             "base_port": "49000"}
-
-        bay_id = 0
-        for adapter in self._adapters:
-            unit_id = 0
-            for unit in adapter.ports.keys():
-                nio = adapter.get_nio(unit)
-                if nio:
-                    connection = None
-                    if isinstance(nio, NIOUDP):
-                        # UDP tunnel
-                        connection = {"tunnel_udp": "{lport}:{rhost}:{rport}".format(lport=nio.lport,
-                                                                                     rhost=nio.rhost,
-                                                                                     rport=nio.rport)}
-                    elif isinstance(nio, NIOTAP):
-                        # TAP interface
-                        connection = {"tap_dev": "{tap_device}".format(tap_device=nio.tap_device)}
-
-                    elif isinstance(nio, NIOEthernet):
-                        # Ethernet interface
-                        connection = {"eth_dev": "{ethernet_device}".format(ethernet_device=nio.ethernet_device)}
-
-                    if connection:
-                        interface = "{iouyap_id}:{bay}/{unit}".format(iouyap_id=str(self.application_id + 512), bay=bay_id, unit=unit_id)
-                        config[interface] = connection
-
-                        if nio.capturing:
-                            pcap_data_link_type = nio.pcap_data_link_type.upper()
-                            if pcap_data_link_type == "DLT_PPP_SERIAL":
-                                pcap_protocol = "ppp"
-                            elif pcap_data_link_type == "DLT_C_HDLC":
-                                pcap_protocol = "hdlc"
-                            elif pcap_data_link_type == "DLT_FRELAY":
-                                pcap_protocol = "fr"
-                            else:
-                                pcap_protocol = "ethernet"
-                            capture_info = {"pcap_file": "{pcap_file}".format(pcap_file=nio.pcap_output_file),
-                                            "pcap_protocol": pcap_protocol,
-                                            "pcap_overwrite": "y"}
-                            config[interface].update(capture_info)
-
-                unit_id += 1
-            bay_id += 1
-
-        try:
-            with open(iouyap_ini, "w", encoding="utf-8") as config_file:
-                config.write(config_file)
-            log.info("IOU {name} [id={id}]: iouyap.ini updated".format(name=self._name,
-                                                                       id=self._id))
-        except OSError as e:
-            raise IOUError("Could not create {}: {}".format(iouyap_ini, e))
-
-    @asyncio.coroutine
     def stop(self):
         """
         Stops the IOU process.
         """
 
+        yield from self._stop_ubridge()
         if self._nvram_watcher:
             self._nvram_watcher.close()
             self._nvram_watcher = None
@@ -693,34 +611,8 @@ class IOUVM(BaseNode):
                             pass
             self._iou_process = None
 
-        if self.is_iouyap_running():
-            self._terminate_process_iouyap()
-            try:
-                yield from gns3server.utils.asyncio.wait_for_process_termination(self._iouyap_process, timeout=3)
-            except asyncio.TimeoutError:
-                if self._iouyap_process.returncode is None:
-                    log.warn("IOUYAP process {} is still running... killing it".format(self._iouyap_process.pid))
-                    try:
-                        self._iouyap_process.kill()
-                    except ProcessLookupError:
-                        pass
-            self._iouyap_process = None
-
         self._started = False
         self.save_configs()
-
-    def _terminate_process_iouyap(self):
-        """
-        Terminate the IOUYAP process if running.
-        """
-
-        if self._iouyap_process:
-            log.info('Stopping IOUYAP process for IOU VM "{}" PID={}'.format(self.name, self._iouyap_process.pid))
-            try:
-                self._iouyap_process.terminate()
-            # Sometime the process can already be dead when we garbage collect
-            except ProcessLookupError:
-                pass
 
     def _terminate_process_iou(self):
         """
@@ -757,17 +649,6 @@ class IOUVM(BaseNode):
             return True
         return False
 
-    def is_iouyap_running(self):
-        """
-        Checks if the IOUYAP process is running
-
-        :returns: True or False
-        """
-
-        if self._iouyap_process and self._iouyap_process.returncode is None:
-            return True
-        return False
-
     def _create_netmap_config(self):
         """
         Creates the NETMAP file.
@@ -778,10 +659,10 @@ class IOUVM(BaseNode):
             with open(netmap_path, "w", encoding="utf-8") as f:
                 for bay in range(0, 16):
                     for unit in range(0, 4):
-                        f.write("{iouyap_id}:{bay}/{unit}{iou_id:>5d}:{bay}/{unit}\n".format(iouyap_id=str(self.application_id + 512),
-                                                                                             bay=bay,
-                                                                                             unit=unit,
-                                                                                             iou_id=self.application_id))
+                        f.write("{ubridge_id}:{bay}/{unit}{iou_id:>5d}:{bay}/{unit}\n".format(ubridge_id=str(self.application_id + 512),
+                                                                                              bay=bay,
+                                                                                              unit=unit,
+                                                                                              iou_id=self.application_id))
             log.info("IOU {name} [id={id}]: NETMAP file created".format(name=self._name,
                                                                         id=self._id))
         except OSError as e:
@@ -851,21 +732,6 @@ class IOUVM(BaseNode):
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._iou_stdout_file, e))
-        return output
-
-    def read_iouyap_stdout(self):
-        """
-        Reads the standard output of the iouyap process.
-        Only use when the process has been stopped or has crashed.
-        """
-
-        output = ""
-        if self._iouyap_stdout_file:
-            try:
-                with open(self._iouyap_stdout_file, "rb") as file:
-                    output = file.read().decode("utf-8", errors="replace")
-            except OSError as e:
-                log.warn("could not read {}: {}".format(self._iouyap_stdout_file, e))
         return output
 
     def _start_ioucon(self):
@@ -963,12 +829,16 @@ class IOUVM(BaseNode):
                                                                                              nio=nio,
                                                                                              adapter_number=adapter_number,
                                                                                              port_number=port_number))
-        if self.is_iouyap_running():
-            self._update_iouyap_config()
-            try:
-                os.kill(self._iouyap_process.pid, signal.SIGHUP)
-            except ProcessLookupError:
-                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
+
+        if self.ubridge and self.ubridge.is_running():
+            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            yield from self._ubridge_send("iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(name=bridge_name,
+                                                                                                                               iol_id=self.application_id,
+                                                                                                                               bay=adapter_number,
+                                                                                                                               unit=port_number,
+                                                                                                                               lport=nio.lport,
+                                                                                                                               rhost=nio.rhost,
+                                                                                                                               rport=nio.rport))
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number, port_number):
@@ -999,12 +869,13 @@ class IOUVM(BaseNode):
                                                                                                  nio=nio,
                                                                                                  adapter_number=adapter_number,
                                                                                                  port_number=port_number))
-        if self.is_iouyap_running():
-            self._update_iouyap_config()
-            try:
-                os.kill(self._iouyap_process.pid, signal.SIGHUP)
-            except ProcessLookupError:
-                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
+
+        if self.ubridge and self.ubridge.is_running():
+            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            yield from self._ubridge_send("iol_bridge delete_nio_udp {name} {bay} {unit}".format(name=bridge_name,
+                                                                                                 bay=adapter_number,
+                                                                                                 unit=port_number))
+
         return nio
 
     @property
@@ -1292,12 +1163,13 @@ class IOUVM(BaseNode):
                                                                                                                           port_number=port_number,
                                                                                                                           output_file=output_file))
 
-        if self.is_iouyap_running():
-            self._update_iouyap_config()
-            try:
-                os.kill(self._iouyap_process.pid, signal.SIGHUP)
-            except ProcessLookupError:
-                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
+        if self.ubridge and self.ubridge.is_running():
+            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            yield from self._ubridge_send('iol_bridge start_capture {name} {bay} {unit} "{output_file}" {data_link_type}'.format(name=bridge_name,
+                                                                                                                                 bay=adapter_number,
+                                                                                                                                 unit=port_number,
+                                                                                                                                 output_file=output_file,
+                                                                                                                                 data_link_type=data_link_type))
 
     @asyncio.coroutine
     def stop_capture(self, adapter_number, port_number):
@@ -1328,9 +1200,8 @@ class IOUVM(BaseNode):
                                                                                                          id=self._id,
                                                                                                          adapter_number=adapter_number,
                                                                                                          port_number=port_number))
-        if self.is_iouyap_running():
-            self._update_iouyap_config()
-            try:
-                os.kill(self._iouyap_process.pid, signal.SIGHUP)
-            except ProcessLookupError:
-                log.error("Could not update iouyap configuration: process (PID={}) not found".format(self._iouyap_process.pid))
+        if self.ubridge and self.ubridge.is_running():
+            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            yield from self._ubridge_send('iol_bridge stop_capture {name} {bay} {unit}'.format(name=bridge_name,
+                                                                                               bay=adapter_number,
+                                                                                               unit=port_number))
