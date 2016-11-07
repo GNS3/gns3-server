@@ -343,7 +343,7 @@ def test_start(node, compute, project, async_run):
     compute.post = AsyncioMagicMock()
 
     async_run(node.start())
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/start".format(node.project.id, node.id))
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/start".format(node.project.id, node.id), timeout=240)
 
 
 def test_stop(node, compute, project, async_run):
@@ -351,7 +351,7 @@ def test_stop(node, compute, project, async_run):
     compute.post = AsyncioMagicMock()
 
     async_run(node.stop())
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id))
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id), timeout=240)
 
 
 def test_suspend(node, compute, project, async_run):
@@ -359,7 +359,7 @@ def test_suspend(node, compute, project, async_run):
     compute.post = AsyncioMagicMock()
 
     async_run(node.suspend())
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/suspend".format(node.project.id, node.id))
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/suspend".format(node.project.id, node.id), timeout=240)
 
 
 def test_reload(node, compute, project, async_run):
@@ -367,7 +367,7 @@ def test_reload(node, compute, project, async_run):
     compute.post = AsyncioMagicMock()
 
     async_run(node.reload())
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/reload".format(node.project.id, node.id))
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/reload".format(node.project.id, node.id), timeout=240)
 
 
 def test_create_without_console(node, compute, project, async_run):

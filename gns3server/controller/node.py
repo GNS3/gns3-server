@@ -387,7 +387,7 @@ class Node:
         Start a node
         """
         try:
-            yield from self.post("/start")
+            yield from self.post("/start", timeout=240)
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when starting {}".format(self._name))
 
@@ -397,7 +397,7 @@ class Node:
         Stop a node
         """
         try:
-            yield from self.post("/stop")
+            yield from self.post("/stop", timeout=240)
         # We don't care if a node is down at this step
         except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientHttpProcessingError, aiohttp.web.HTTPError):
             pass
@@ -409,27 +409,33 @@ class Node:
         """
         Suspend a node
         """
-        yield from self.post("/suspend")
+        try:
+            yield from self.post("/suspend", timeout=240)
+        except asyncio.TimeoutError:
+            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reloading {}".format(self._name))
 
     @asyncio.coroutine
     def reload(self):
         """
         Suspend a node
         """
-        yield from self.post("/reload")
+        try:
+            yield from self.post("/reload", timeout=240)
+        except asyncio.TimeoutError:
+            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reloading {}".format(self._name))
 
     @asyncio.coroutine
-    def post(self, path, data=None):
+    def post(self, path, data=None, **kwargs):
         """
         HTTP post on the node
         """
         if data:
-            return (yield from self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), data=data))
+            return (yield from self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), data=data, **kwargs))
         else:
-            return (yield from self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path)))
+            return (yield from self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
 
     @asyncio.coroutine
-    def put(self, path, data=None):
+    def put(self, path, data=None, **kwargs):
         """
         HTTP post on the node
         """
@@ -438,19 +444,19 @@ class Node:
         else:
             path = "/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path)
         if data:
-            return (yield from self._compute.put(path, data=data))
+            return (yield from self._compute.put(path, data=data, **kwargs))
         else:
-            return (yield from self._compute.put(path))
+            return (yield from self._compute.put(path, **kwargs))
 
     @asyncio.coroutine
-    def delete(self, path=None):
+    def delete(self, path=None, **kwargs):
         """
         HTTP post on the node
         """
         if path is None:
-            return (yield from self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id)))
+            return (yield from self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id), **kwargs))
         else:
-            return (yield from self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path)))
+            return (yield from self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
 
     @asyncio.coroutine
     def _upload_missing_image(self, type, img):

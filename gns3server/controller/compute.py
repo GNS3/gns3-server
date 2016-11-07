@@ -435,7 +435,7 @@ class Compute:
         return "{}://{}:{}/v2/compute{}".format(self._protocol, host, self._port, path)
 
     @asyncio.coroutine
-    def _run_http_query(self, method, path, data=None, timeout=10, raw=False):
+    def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
         with Timeout(timeout):
             url = self._getUrl(path)
             headers = {}
