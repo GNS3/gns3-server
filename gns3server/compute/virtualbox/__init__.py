@@ -72,7 +72,7 @@ class VirtualBox(BaseManager):
             vboxmanage_path = shutil.which(vboxmanage_path)
 
         if not vboxmanage_path:
-            raise VirtualBoxError("Could not find VBoxManage")
+            raise VirtualBoxError("Could not find VBoxManage if you just install VirtualBox you need to reboot")
         if not os.path.isfile(vboxmanage_path):
             raise VirtualBoxError("VBoxManage {} is not accessible".format(vboxmanage_path))
         if not os.access(vboxmanage_path, os.X_OK):
