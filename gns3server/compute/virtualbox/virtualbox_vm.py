@@ -872,6 +872,8 @@ class VirtualBoxVM(BaseNode):
         except VirtualBoxError:
             log.warn("Snapshot 'reset' not created")
 
+        os.makedirs(os.path.join(self.working_dir, self._vmname), exist_ok=True)
+
     def _start_remote_console(self):
         """
         Starts remote console support for this VM.
