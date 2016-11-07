@@ -245,8 +245,9 @@ class AsyncioTelnetServer:
                     log.debug("Unhandled DONT telnet command: "
                               "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
                 elif iac_cmd[1] == WILL:
-                    log.debug("Unhandled WILL telnet command: "
-                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                    if iac_cmd[2] not in [BINARY]:
+                        log.debug("Unhandled WILL telnet command: "
+                                  "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
                 elif iac_cmd[1] == WONT:
                     log.debug("Unhandled WONT telnet command: "
                               "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))

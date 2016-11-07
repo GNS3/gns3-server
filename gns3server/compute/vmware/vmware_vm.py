@@ -25,18 +25,16 @@ import socket
 import asyncio
 import tempfile
 
-from gns3server.utils.telnet_server import TelnetServer
 from gns3server.utils.interfaces import interfaces
-from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation, locked_coroutine
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+from gns3server.utils.asyncio.serial import asyncio_open_serial
+from gns3server.utils.asyncio import locked_coroutine
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
 
-if sys.platform.startswith('win'):
-    import msvcrt
-    import win32file
 
 import logging
 log = logging.getLogger(__name__)
@@ -53,8 +51,7 @@ class VMwareVM(BaseNode):
         super().__init__(name, node_id, project, manager, console=console, linked_clone=linked_clone)
 
         self._vmx_pairs = OrderedDict()
-        self._telnet_server_thread = None
-        self._serial_pipe = None
+        self._telnet_server = None
         self._vmnets = []
         self._maximum_adapters = 10
         self._started = False
@@ -82,6 +79,7 @@ class VMwareVM(BaseNode):
         json = {"name": self.name,
                 "node_id": self.id,
                 "console": self.console,
+                "console_type": self.console_type,
                 "project_id": self.project.id,
                 "vmx_path": self.vmx_path,
                 "headless": self.headless,
@@ -440,15 +438,7 @@ class VMwareVM(BaseNode):
                     if nio:
                         yield from self._add_ubridge_connection(nio, adapter_number)
 
-            # if self._console is not None:
-            #     try:
-            #         if sys.platform.startswith("win"):
-            #             yield from wait_for_named_pipe_creation(self._get_pipe_name())
-            #         else:
-            #             yield from wait_for_file_creation(self._get_pipe_name())  # wait for VMware to create the pipe file.
-            #     except asyncio.TimeoutError:
-            #         raise VMwareError('Pipe file "{}" for remote console has not been created by VMware'.format(self._get_pipe_name()))
-            #     self._start_remote_console()
+            yield from self._start_console()
         except VMwareError:
             yield from self.stop()
             raise
@@ -797,57 +787,25 @@ class VMwareVM(BaseNode):
         serial_port = {"serial0.present": "TRUE",
                        "serial0.filetype": "pipe",
                        "serial0.filename": pipe_name,
-                       "serial0.pipe.endpoint": "server"}
+                       "serial0.pipe.endpoint": "server",
+                       "serial0.startconnected": "TRUE"}
         self._vmx_pairs.update(serial_port)
 
-    def _start_remote_console(self):
+    @asyncio.coroutine
+    def _start_console(self):
         """
         Starts remote console support for this VM.
         """
-
-        # starts the Telnet to pipe thread
-        pipe_name = self._get_pipe_name()
-        if sys.platform.startswith("win"):
-            try:
-                self._serial_pipe = open(pipe_name, "a+b")
-            except OSError as e:
-                raise VMwareError("Could not open the pipe {}: {}".format(pipe_name, e))
-            try:
-                self._telnet_server_thread = TelnetServer(self.name, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._manager.port_manager.console_host, self._console)
-            except OSError as e:
-                raise VMwareError("Unable to create Telnet server: {}".format(e))
-            self._telnet_server_thread.start()
-        else:
-            try:
-                self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                self._serial_pipe.connect(pipe_name)
-            except OSError as e:
-                raise VMwareError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-            try:
-                self._telnet_server_thread = TelnetServer(self.name, self._serial_pipe, self._manager.port_manager.console_host, self._console)
-            except OSError as e:
-                raise VMwareError("Unable to create Telnet server: {}".format(e))
-            self._telnet_server_thread.start()
+        pipe = yield from asyncio_open_serial(self._get_pipe_name())
+        server = AsyncioTelnetServer(reader=pipe, writer=pipe, binary=True, echo=True)
+        self._telnet_server = yield from asyncio.start_server(server.run, '127.0.0.1', self.console)
 
     def _stop_remote_console(self):
         """
         Stops remote console support for this VM.
         """
-
-        if self._telnet_server_thread:
-            if self._telnet_server_thread.is_alive():
-                self._telnet_server_thread.stop()
-                self._telnet_server_thread.join(timeout=3)
-            if self._telnet_server_thread.is_alive():
-                log.warn("Serial pipe thread is still alive!")
-            self._telnet_server_thread = None
-
-        if self._serial_pipe:
-            if sys.platform.startswith("win"):
-                win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
-            else:
-                self._serial_pipe.close()
-            self._serial_pipe = None
+        if self._telnet_server:
+            self._telnet_server.close()
 
     @asyncio.coroutine
     def start_capture(self, adapter_number, output_file):

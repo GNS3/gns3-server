@@ -66,6 +66,10 @@ VBOX_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet"]
+        },
         "ram": {
             "description": "Amount of RAM",
             "minimum": 0,
@@ -151,6 +155,10 @@ VBOX_OBJECT_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
+        },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet"]
         },
         "ram": {
             "description": "Amount of RAM",

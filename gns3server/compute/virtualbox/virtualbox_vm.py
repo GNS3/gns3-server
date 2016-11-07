@@ -30,12 +30,13 @@ import asyncio
 import xml.etree.ElementTree as ET
 
 from gns3server.utils import parse_version
-from gns3server.utils.telnet_server import TelnetServer
-from gns3server.utils.asyncio import wait_for_file_creation, wait_for_named_pipe_creation, locked_coroutine
-from .virtualbox_error import VirtualBoxError
-from ..nios.nio_udp import NIOUDP
-from ..adapters.ethernet_adapter import EthernetAdapter
-from ..base_node import BaseNode
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+from gns3server.utils.asyncio.serial import asyncio_open_serial
+from gns3server.utils.asyncio import locked_coroutine
+from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
+from gns3server.compute.nios.nio_udp import NIOUDP
+from gns3server.compute.adapters.ethernet_adapter import EthernetAdapter
+from gns3server.compute.base_node import BaseNode
 
 if sys.platform.startswith('win'):
     import msvcrt
@@ -53,12 +54,11 @@ class VirtualBoxVM(BaseNode):
 
     def __init__(self, name, node_id, project, manager, vmname, linked_clone=False, console=None, adapters=0):
 
-        super().__init__(name, node_id, project, manager, console=console, linked_clone=linked_clone)
+        super().__init__(name, node_id, project, manager, console=console, linked_clone=linked_clone, console_type="telnet")
 
         self._maximum_adapters = 8
         self._system_properties = {}
-        self._telnet_server_thread = None
-        self._serial_pipe = None
+        self._telnet_server = None
         self._local_udp_tunnels = {}
 
         # VirtualBox settings
@@ -81,6 +81,7 @@ class VirtualBoxVM(BaseNode):
         json = {"name": self.name,
                 "node_id": self.id,
                 "console": self.console,
+                "console_type": self.console_type,
                 "project_id": self.project.id,
                 "vmname": self.vmname,
                 "headless": self.headless,
@@ -243,16 +244,7 @@ class VirtualBoxVM(BaseNode):
                                                                 self._local_udp_tunnels[adapter_number][1],
                                                                 nio)
 
-        if self._console is not None:
-            try:
-                # wait for VirtualBox to create the pipe file.
-                if sys.platform.startswith("win"):
-                    yield from wait_for_named_pipe_creation(self._get_pipe_name())
-                else:
-                    yield from wait_for_file_creation(self._get_pipe_name())
-            except asyncio.TimeoutError:
-                raise VirtualBoxError('Pipe file "{}" for remote console has not been created by VirtualBox'.format(self._get_pipe_name()))
-            self._start_remote_console()
+        yield from self._start_console()
 
         if (yield from self.check_hw_virtualization()):
             self._hw_virtualization = True
@@ -874,54 +866,21 @@ class VirtualBoxVM(BaseNode):
 
         os.makedirs(os.path.join(self.working_dir, self._vmname), exist_ok=True)
 
-    def _start_remote_console(self):
+    @asyncio.coroutine
+    def _start_console(self):
         """
         Starts remote console support for this VM.
         """
-
-        # starts the Telnet to pipe thread
-        pipe_name = self._get_pipe_name()
-        if sys.platform.startswith("win"):
-            try:
-                self._serial_pipe = open(pipe_name, "a+b")
-            except OSError as e:
-                raise VirtualBoxError("Could not open the pipe {}: {}".format(pipe_name, e))
-            try:
-                self._telnet_server_thread = TelnetServer(self._vmname, msvcrt.get_osfhandle(self._serial_pipe.fileno()), self._manager.port_manager.console_host, self._console)
-            except OSError as e:
-                raise VirtualBoxError("Unable to create Telnet server: {}".format(e))
-            self._telnet_server_thread.start()
-        else:
-            try:
-                self._serial_pipe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                self._serial_pipe.connect(pipe_name)
-            except OSError as e:
-                raise VirtualBoxError("Could not connect to the pipe {}: {}".format(pipe_name, e))
-            try:
-                self._telnet_server_thread = TelnetServer(self._vmname, self._serial_pipe, self._manager.port_manager.console_host, self._console)
-            except OSError as e:
-                raise VirtualBoxError("Unable to create Telnet server: {}".format(e))
-            self._telnet_server_thread.start()
+        pipe = yield from asyncio_open_serial(self._get_pipe_name())
+        server = AsyncioTelnetServer(reader=pipe, writer=pipe, binary=True, echo=True)
+        self._telnet_server = yield from asyncio.start_server(server.run, '127.0.0.1', self.console)
 
     def _stop_remote_console(self):
         """
         Stops remote console support for this VM.
         """
-
-        if self._telnet_server_thread:
-            if self._telnet_server_thread.is_alive():
-                self._telnet_server_thread.stop()
-                self._telnet_server_thread.join(timeout=3)
-            if self._telnet_server_thread.is_alive():
-                log.warn("Serial pipe thread is still alive!")
-            self._telnet_server_thread = None
-
-        if self._serial_pipe:
-            if sys.platform.startswith("win"):
-                win32file.CloseHandle(msvcrt.get_osfhandle(self._serial_pipe.fileno()))
-            else:
-                self._serial_pipe.close()
-            self._serial_pipe = None
+        if self._telnet_server:
+            self._telnet_server.close()
 
     @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, nio):

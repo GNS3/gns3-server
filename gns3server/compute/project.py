@@ -24,7 +24,7 @@ import zipstream
 import zipfile
 import json
 
-from uuid import UUID
+from uuid import UUID, uuid4
 from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
@@ -49,10 +49,13 @@ class Project:
     def __init__(self, name=None, project_id=None, path=None):
 
         self._name = name
-        try:
-            UUID(project_id, version=4)
-        except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
+        if project_id:
+            try:
+                UUID(project_id, version=4)
+            except ValueError:
+                raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
+        else:
+            project_id = str(uuid4())
         self._id = project_id
 
         self._nodes = set()

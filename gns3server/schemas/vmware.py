@@ -48,6 +48,10 @@ VMWARE_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": "integer"
         },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet"]
+        },
         "headless": {
             "description": "Headless mode",
             "type": "boolean"
@@ -142,6 +146,10 @@ VMWARE_OBJECT_SCHEMA = {
             "minimum": 1,
             "maximum": 65535,
             "type": "integer"
+        },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet"]
         },
         "linked_clone": {
             "description": "Whether the VM is a linked clone or not",
