@@ -61,7 +61,7 @@ class UDPLink(Link):
             "rport": self._node2_port,
             "type": "nio_udp"
         }
-        yield from node1.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=data)
+        yield from node1.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=data, timeout=120)
 
         data = {
             "lport": self._node2_port,
@@ -70,10 +70,10 @@ class UDPLink(Link):
             "type": "nio_udp"
         }
         try:
-            yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=data)
+            yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=data, timeout=120)
         except Exception as e:
             # We clean the first NIO
-            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1))
+            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
             raise e
         self._created = True
 
@@ -91,7 +91,7 @@ class UDPLink(Link):
         except IndexError:
             return
         try:
-            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1))
+            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
         # If the node is already delete (user selected multiple element and delete all in the same time)
         except aiohttp.web.HTTPNotFound:
             pass
@@ -103,7 +103,7 @@ class UDPLink(Link):
         except IndexError:
             return
         try:
-            yield from node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2))
+            yield from node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), timeout=120)
         # If the node is already delete (user selected multiple element and delete all in the same time)
         except aiohttp.web.HTTPNotFound:
             pass

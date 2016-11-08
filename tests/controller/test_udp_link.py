@@ -54,7 +54,7 @@ def test_create(async_run, project):
     async_run(link.add_node(node1, 0, 4))
 
     @asyncio.coroutine
-    def compute1_callback(path, data={}):
+    def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -64,7 +64,7 @@ def test_create(async_run, project):
             return response
 
     @asyncio.coroutine
-    def compute2_callback(path, data={}):
+    def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -84,13 +84,13 @@ def test_create(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp"
-    })
+    }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp"
-    })
+    }, timeout=120)
 
 
 def test_create_one_side_failure(async_run, project):
@@ -115,7 +115,7 @@ def test_create_one_side_failure(async_run, project):
     async_run(link.add_node(node1, 0, 4))
 
     @asyncio.coroutine
-    def compute1_callback(path, data={}):
+    def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -125,7 +125,7 @@ def test_create_one_side_failure(async_run, project):
             return response
 
     @asyncio.coroutine
-    def compute2_callback(path, data={}):
+    def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -148,15 +148,15 @@ def test_create_one_side_failure(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp"
-    })
+    }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp"
-    })
+    }, timeout=120)
     # The link creation has failed we rollback the nio
-    compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id))
+    compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
 
 
 def test_delete(async_run, project):
@@ -175,8 +175,8 @@ def test_delete(async_run, project):
 
     async_run(link.delete())
 
-    compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id))
-    compute2.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id))
+    compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
+    compute2.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), timeout=120)
 
 
 def test_choose_capture_side(async_run, project):
