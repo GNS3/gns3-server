@@ -61,7 +61,7 @@ class VPCSVM(BaseNode):
 
     def __init__(self, name, node_id, project, manager, console=None, startup_script=None):
 
-        super().__init__(name, node_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console, wrap_console=True)
         self._process = None
         self._vpcs_stdout_file = ""
         self._vpcs_version = None
@@ -263,6 +263,8 @@ class VPCSVM(BaseNode):
                     if nio:
                         yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
+                yield from self.start_wrap_console()
+
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
                 self.status = "started"
@@ -308,7 +310,7 @@ class VPCSVM(BaseNode):
 
         self._process = None
         self._started = False
-        self.status = "stopped"
+        yield from super().stop()
 
     @asyncio.coroutine
     def reload(self):
@@ -513,7 +515,7 @@ class VPCSVM(BaseNode):
         """
 
         command = [self.vpcs_path]
-        command.extend(["-p", str(self._console)])  # listen to console port
+        command.extend(["-p", str(self._internal_console_port)])  # listen to console port
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS

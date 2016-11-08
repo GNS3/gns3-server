@@ -27,6 +27,7 @@ import platform
 
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio.telnet_server import AsyncioTelnetServer
 from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
 from .nios.nio_udp import NIOUDP
@@ -50,9 +51,10 @@ class BaseNode:
     :param aux: TCP aux console port
     :param allocate_aux: Boolean if true will allocate an aux console port
     :param linked_clone: The node base image is duplicate/overlay (Each node data are independent)
+    :param wrap_console: The console is wrapped using AsyncioTelnetServer
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False, linked_clone=True):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False, linked_clone=True, wrap_console=False):
 
         self._name = name
         self._usage = ""
@@ -70,6 +72,8 @@ class BaseNode:
         self._node_status = "stopped"
         self._command_line = ""
         self._allocate_aux = allocate_aux
+        self._wrap_console = wrap_console
+        self._wrapper_telnet_server = None
 
         # check if the node will use uBridge or not
         server_config = Config.instance().get_section_config("Server")
@@ -91,6 +95,12 @@ class BaseNode:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project, port_range_start=5900, port_range_end=6000)
             else:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+
+        if self._wrap_console:
+            if console_type == "vnc":
+                self._wrap_console = False  # We don't support multiple client connected to the same VNC
+            else:
+                self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
 
         if self._aux is None and allocate_aux:
             self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
@@ -269,12 +279,15 @@ class BaseNode:
 
         raise NotImplementedError
 
+    @asyncio.coroutine
     def stop(self):
         """
-        Starts the node process.
+        Stop the node process.
         """
-
-        raise NotImplementedError
+        if self._wrapper_telnet_server:
+            self._wrapper_telnet_server.close()
+            yield from self._wrapper_telnet_server.wait_closed()
+        self.status = "stopped"
 
     def suspend(self):
         """
@@ -299,6 +312,9 @@ class BaseNode:
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
             self._console = None
+        if self._wrap_console:
+            self._manager.port_manager.release_tcp_port(self._internal_console_port, self._project)
+            self._internal_console_port = None
 
         if self._aux:
             self._manager.port_manager.release_tcp_port(self._aux, self._project)
@@ -306,6 +322,18 @@ class BaseNode:
 
         self._closed = True
         return True
+
+    @asyncio.coroutine
+    def start_wrap_console(self):
+        """
+        Start a telnet proxy for the console allowing multiple client
+        connected at the same time
+        """
+        if not self._wrap_console:
+            return
+        (reader, writer) = yield from asyncio.open_connection(host="127.0.0.1", port=self._internal_console_port)
+        server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
+        self._wrapper_telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
     @property
     def allocate_aux(self):

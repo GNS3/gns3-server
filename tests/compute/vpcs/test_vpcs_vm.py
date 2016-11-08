@@ -93,23 +93,24 @@ def test_start(loop, vm, async_run):
 
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
             with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
-                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-                async_run(vm.port_add_nio_binding(0, nio))
-                loop.run_until_complete(asyncio.async(vm.start()))
-                assert mock_exec.call_args[0] == (vm.vpcs_path,
-                                                  '-p',
-                                                  str(vm.console),
-                                                  '-m', '1',
-                                                  '-i',
-                                                  '1',
-                                                  '-F',
-                                                  '-R',
-                                                  '-s',
-                                                  ANY,
-                                                  '-c',
-                                                  ANY,
-                                                  '-t',
-                                                  '127.0.0.1')
+                with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
+                    nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                    async_run(vm.port_add_nio_binding(0, nio))
+                    loop.run_until_complete(asyncio.async(vm.start()))
+                    assert mock_exec.call_args[0] == (vm.vpcs_path,
+                                                      '-p',
+                                                      str(vm._internal_console_port),
+                                                      '-m', '1',
+                                                      '-i',
+                                                      '1',
+                                                      '-F',
+                                                      '-R',
+                                                      '-s',
+                                                      ANY,
+                                                      '-c',
+                                                      ANY,
+                                                      '-t',
+                                                      '127.0.0.1')
                 assert vm.is_running()
                 assert vm.command_line == ' '.join(mock_exec.call_args[0])
         (action, event, kwargs) = async_run(queue.get(0))
@@ -127,24 +128,25 @@ def test_start_0_6_1(loop, vm, async_run):
     vm._vpcs_version = parse_version("0.6.1")
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
-            nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-            async_run(vm.port_add_nio_binding(0, nio))
-            async_run(vm.start())
-            assert mock_exec.call_args[0] == (vm.vpcs_path,
-                                              '-p',
-                                              str(vm.console),
-                                              '-m', '1',
-                                              '-i',
-                                              '1',
-                                              '-F',
-                                              '-s',
-                                              ANY,
-                                              '-c',
-                                              ANY,
-                                              '-t',
-                                              '127.0.0.1')
-            assert vm.is_running()
+        with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
+                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                async_run(vm.port_add_nio_binding(0, nio))
+                async_run(vm.start())
+                assert mock_exec.call_args[0] == (vm.vpcs_path,
+                                                  '-p',
+                                                  str(vm._internal_console_port),
+                                                  '-m', '1',
+                                                  '-i',
+                                                  '1',
+                                                  '-F',
+                                                  '-s',
+                                                  ANY,
+                                                  '-c',
+                                                  ANY,
+                                                  '-t',
+                                                  '127.0.0.1')
+                assert vm.is_running()
 
 
 def test_stop(loop, vm, async_run):
@@ -158,28 +160,29 @@ def test_stop(loop, vm, async_run):
 
     with NotificationManager.instance().queue() as queue:
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
-            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-                async_run(vm.port_add_nio_binding(0, nio))
+            with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
+                with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+                    nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                    async_run(vm.port_add_nio_binding(0, nio))
 
-                async_run(vm.start())
-                assert vm.is_running()
+                    async_run(vm.start())
+                    assert vm.is_running()
 
-                with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                    loop.run_until_complete(asyncio.async(vm.stop()))
-                assert vm.is_running() is False
+                    with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                        loop.run_until_complete(asyncio.async(vm.stop()))
+                    assert vm.is_running() is False
 
-                if sys.platform.startswith("win"):
-                    process.send_signal.assert_called_with(1)
-                else:
-                    process.terminate.assert_called_with()
+                    if sys.platform.startswith("win"):
+                        process.send_signal.assert_called_with(1)
+                    else:
+                        process.terminate.assert_called_with()
 
-                async_run(queue.get(0))  #  Ping
-                async_run(queue.get(0))  #  Started
+                    async_run(queue.get(0))  #  Ping
+                    async_run(queue.get(0))  #  Started
 
-                (action, event, kwargs) = async_run(queue.get(0))
-                assert action == "node.updated"
-                assert event == vm
+                    (action, event, kwargs) = async_run(queue.get(0))
+                    assert action == "node.updated"
+                    assert event == vm
 
 
 def test_reload(loop, vm, async_run):
@@ -192,20 +195,21 @@ def test_reload(loop, vm, async_run):
     process.returncode = None
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-            async_run(vm.port_add_nio_binding(0, nio))
-            async_run(vm.start())
-            assert vm.is_running()
+        with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                async_run(vm.port_add_nio_binding(0, nio))
+                async_run(vm.start())
+                assert vm.is_running()
 
-            with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                async_run(vm.reload())
-            assert vm.is_running() is True
+                with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                    async_run(vm.reload())
+                assert vm.is_running() is True
 
-            if sys.platform.startswith("win"):
-                process.send_signal.assert_called_with(1)
-            else:
-                process.terminate.assert_called_with()
+                if sys.platform.startswith("win"):
+                    process.send_signal.assert_called_with(1)
+                else:
+                    process.terminate.assert_called_with()
 
 
 def test_add_nio_binding_udp(vm, async_run):
@@ -221,14 +225,6 @@ def test_add_nio_binding_tap(vm, ethernet_device):
         vm.port_add_nio_binding(0, nio)
         assert nio.tap_device == ethernet_device
 
-
-# def test_add_nio_binding_tap_no_privileged_access(vm):
-#     with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=False):
-#         with pytest.raises(aiohttp.web.HTTPForbidden):
-#             nio = VPCS.instance().create_nio({"type": "nio_tap", "tap_device": "test"})
-#             vm.port_add_nio_binding(0, nio)
-#     assert vm._ethernet_adapter.ports[0] is None
-#
 
 def test_port_remove_nio_binding(vm):
     nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
