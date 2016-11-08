@@ -97,7 +97,6 @@ def test_start(loop, vm):
 
     vm._check_requirements = AsyncioMagicMock(return_value=True)
     vm._check_iou_licence = AsyncioMagicMock(return_value=True)
-    vm._start_ioucon = AsyncioMagicMock(return_value=True)
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
     vm._ubridge_send = AsyncioMagicMock()
 
@@ -109,7 +108,6 @@ def test_start(loop, vm):
 
     assert vm._check_requirements.called
     assert vm._check_iou_licence.called
-    assert vm._start_ioucon.called
     assert vm._start_ubridge.called
     vm._ubridge_send.assert_any_call("iol_bridge delete IOL-BRIDGE-513")
     vm._ubridge_send.assert_any_call("iol_bridge create IOL-BRIDGE-513 513")
@@ -252,7 +250,7 @@ def test_create_netmap_config(vm):
 
 def test_build_command(vm, loop):
 
-    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, "-L", str(vm.application_id)]
+    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, str(vm.application_id)]
 
 
 def test_get_startup_config(vm):

@@ -42,9 +42,9 @@ from ..nios.nio_udp import NIOUDP
 from ..base_node import BaseNode
 from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
-from .ioucon import start_ioucon
 from gns3server.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 import gns3server.utils.asyncio
 import gns3server.utils.images
 
@@ -71,10 +71,10 @@ class IOUVM(BaseNode):
         super().__init__(name, node_id, project, manager, console=console)
 
         self._iou_process = None
+        self._telnet_server = None
         self._iou_stdout_file = ""
         self._started = False
         self._path = None
-        self._ioucon_thread = None
         self._nvram_watcher = None
 
         # IOU settings
@@ -485,15 +485,14 @@ class IOUVM(BaseNode):
             command = yield from self._build_command()
             try:
                 log.info("Starting IOU: {}".format(command))
-                self._iou_stdout_file = os.path.join(self.working_dir, "iou.log")
-                log.info("Logging to {}".format(self._iou_stdout_file))
-                with open(self._iou_stdout_file, "w", encoding="utf-8") as fd:
-                    self.command_line = ' '.join(command)
-                    self._iou_process = yield from asyncio.create_subprocess_exec(*command,
-                                                                                  stdout=fd,
-                                                                                  stderr=subprocess.STDOUT,
-                                                                                  cwd=self.working_dir,
-                                                                                  env=env)
+                self.command_line = ' '.join(command)
+                self._iou_process = yield from asyncio.create_subprocess_exec(
+                    *command,
+                    stdout=asyncio.subprocess.PIPE,
+                    stdin=asyncio.subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=self.working_dir,
+                    env=env)
                 log.info("IOU instance {} started PID={}".format(self._id, self._iou_process.pid))
                 self._started = True
                 self.status = "started"
@@ -506,8 +505,8 @@ class IOUVM(BaseNode):
                 log.error("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
                 raise IOUError("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
 
-            # start console support
-            self._start_ioucon()
+            server = AsyncioTelnetServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True)
+            self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
             # configure networking support
             yield from self._networking()
@@ -557,7 +556,6 @@ class IOUVM(BaseNode):
         """
 
         self._terminate_process_iou()
-        self._ioucon_thread_stop_event.set()
 
         if returncode != 0:
             if returncode == 11:
@@ -566,6 +564,9 @@ class IOUVM(BaseNode):
                 message = "{} process has stopped, return code: {}\n{}".format(process_name, returncode, self.read_iou_stdout())
             log.warn(message)
             self.project.emit("log.error", {"message": message})
+        if self._telnet_server:
+            self._telnet_server.close()
+            self._telnet_server = None
 
     def _rename_nvram_file(self):
         """
@@ -590,14 +591,11 @@ class IOUVM(BaseNode):
             self._nvram_watcher.close()
             self._nvram_watcher = None
 
-        if self.is_running():
-            # stop console support
-            if self._ioucon_thread:
-                self._ioucon_thread_stop_event.set()
-                if self._ioucon_thread.is_alive():
-                    self._ioucon_thread.join(timeout=3.0)  # wait for the thread to free the console port
-                self._ioucon_thread = None
+        if self._telnet_server:
+            self._telnet_server.close()
+            self._telnet_server = None
 
+        if self.is_running():
             self._terminate_process_iou()
             if self._iou_process.returncode is None:
                 try:
@@ -707,7 +705,6 @@ class IOUVM(BaseNode):
         if not self.use_default_iou_values:
             command.extend(["-n", str(self._nvram)])
             command.extend(["-m", str(self._ram)])
-        command.extend(["-L"])  # disable local console, use remote console
 
         # do not let IOU create the NVRAM anymore
         #startup_config_file = self.startup_config_file
@@ -733,19 +730,6 @@ class IOUVM(BaseNode):
             except OSError as e:
                 log.warn("could not read {}: {}".format(self._iou_stdout_file, e))
         return output
-
-    def _start_ioucon(self):
-        """
-        Starts ioucon thread (for console connections).
-        """
-
-        if not self._ioucon_thread:
-            telnet_server = "{}:{}".format(self._manager.port_manager.console_host, self.console)
-            log.info("Starting ioucon for IOU instance {} to accept Telnet connections on {}".format(self._name, telnet_server))
-            args = argparse.Namespace(appl_id=str(self.application_id), debug=False, escape='^^', telnet_limit=0, telnet_server=telnet_server)
-            self._ioucon_thread_stop_event = threading.Event()
-            self._ioucon_thread = threading.Thread(target=start_ioucon, args=(args, self._ioucon_thread_stop_event))
-            self._ioucon_thread.start()
 
     @property
     def ethernet_adapters(self):
