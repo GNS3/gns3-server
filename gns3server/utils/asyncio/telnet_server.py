@@ -73,32 +73,48 @@ class AsyncioTelnetServer:
         # it's our job (or the wrapped app) to send back the data
         self._echo = echo
 
+    @staticmethod
+    @asyncio.coroutine
+    def write_client_intro(writer, echo=False):
+        # Send initial telnet session opening
+        if echo:
+            writer.write(bytes([IAC, WILL, ECHO]))
+        else:
+            writer.write(bytes([
+                IAC, WONT, ECHO,
+                IAC, DONT, ECHO]))
+        yield from writer.drain()
+
+    @asyncio.coroutine
+    def _write_intro(self, writer, binary=False, echo=False):
+        # Send initial telnet session opening
+        if echo:
+            writer.write(bytes([IAC, WILL, ECHO]))
+        else:
+            writer.write(bytes([
+                IAC, WONT, ECHO,
+                IAC, DONT, ECHO]))
+
+        if binary:
+            writer.write(bytes([
+                IAC, WILL, SGA,
+                IAC, WILL, BINARY,
+                IAC, DO, BINARY]))
+        else:
+            writer.write(bytes([
+                IAC, WONT, SGA,
+                IAC, DONT, SGA,
+                IAC, WONT, BINARY,
+                IAC, DONT, BINARY]))
+        yield from writer.drain()
+
     @asyncio.coroutine
     def run(self, network_reader, network_writer):
         # Keep track of connected clients
         self._clients.add(network_writer)
 
         try:
-            # Send initial telnet session opening
-            if self._echo:
-                network_writer.write(bytes([IAC, WILL, ECHO]))
-            else:
-                network_writer.write(bytes([
-                                     IAC, WONT, ECHO,
-                                     IAC, DONT, ECHO]))
-
-            if self._binary:
-                network_writer.write(bytes([
-                    IAC, WILL, SGA,
-                    IAC, WILL, BINARY,
-                    IAC, DO, BINARY]))
-            else:
-                network_writer.write(bytes([
-                    IAC, WONT, SGA,
-                    IAC, DONT, SGA,
-                    IAC, WONT, BINARY,
-                    IAC, DONT, BINARY]))
-            yield from network_writer.drain()
+            yield from self._write_intro(network_writer, echo=self._echo, binary=self._binary)
 
             yield from self._process(network_reader, network_writer)
         except ConnectionResetError:
@@ -149,7 +165,6 @@ class AsyncioTelnetServer:
                     return_when=asyncio.FIRST_COMPLETED)
             for coro in done:
                 data = coro.result()
-
                 if coro == network_read:
                     if network_reader.at_eof():
                         raise ConnectionResetError()

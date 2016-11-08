@@ -332,6 +332,7 @@ class BaseNode:
         if not self._wrap_console:
             return
         (reader, writer) = yield from asyncio.open_connection(host="127.0.0.1", port=self._internal_console_port)
+        yield from AsyncioTelnetServer.write_client_intro(writer, echo=True)
         server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
         self._wrapper_telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
