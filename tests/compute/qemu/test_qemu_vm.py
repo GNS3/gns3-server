@@ -113,10 +113,11 @@ def test_is_running(vm, running_subprocess_mock):
 
 
 def test_start(loop, vm, running_subprocess_mock):
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock) as mock:
-        loop.run_until_complete(asyncio.async(vm.start()))
-        assert vm.is_running()
-        assert vm.command_line == ' '.join(mock.call_args[0])
+    with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock) as mock:
+            loop.run_until_complete(asyncio.async(vm.start()))
+            assert vm.is_running()
+            assert vm.command_line == ' '.join(mock.call_args[0])
 
 
 def test_stop(loop, vm, running_subprocess_mock):
@@ -127,14 +128,15 @@ def test_stop(loop, vm, running_subprocess_mock):
     future.set_result(True)
     process.wait.return_value = future
 
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-        nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-        vm.adapter_add_nio_binding(0, nio)
-        loop.run_until_complete(asyncio.async(vm.start()))
-        assert vm.is_running()
-        loop.run_until_complete(asyncio.async(vm.stop()))
-        assert vm.is_running() is False
-        process.terminate.assert_called_with()
+    with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+            nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            vm.adapter_add_nio_binding(0, nio)
+            loop.run_until_complete(asyncio.async(vm.start()))
+            assert vm.is_running()
+            loop.run_until_complete(asyncio.async(vm.stop()))
+            assert vm.is_running() is False
+            process.terminate.assert_called_with()
 
 
 def test_termination_callback(vm, async_run):
@@ -213,17 +215,18 @@ def test_port_remove_nio_binding(vm, loop):
 
 
 def test_close(vm, port_manager, loop):
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-        loop.run_until_complete(asyncio.async(vm.start()))
+    with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+            loop.run_until_complete(asyncio.async(vm.start()))
 
-        console_port = vm.console
+            console_port = vm.console
 
-        loop.run_until_complete(asyncio.async(vm.close()))
+            loop.run_until_complete(asyncio.async(vm.close()))
 
-        # Raise an exception if the port is not free
-        port_manager.reserve_tcp_port(console_port, vm.project)
+            # Raise an exception if the port is not free
+            port_manager.reserve_tcp_port(console_port, vm.project)
 
-        assert vm.is_running() is False
+            assert vm.is_running() is False
 
 
 def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
@@ -434,7 +437,7 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
             "-net",
             "none",
             "-device",
@@ -478,7 +481,7 @@ def test_build_command_kvm(linux_platform, vm, loop, fake_qemu_binary, port_mana
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
             "-net",
             "none",
             "-device",
@@ -511,7 +514,7 @@ def test_build_command_kvm_2_4(linux_platform, vm, loop, fake_qemu_binary, port_
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
             "-net",
             "none",
             "-device",
@@ -547,7 +550,7 @@ def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm.console),
+            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
             "-net",
             "none",
             "-device",

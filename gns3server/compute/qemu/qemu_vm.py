@@ -65,7 +65,7 @@ class QemuVM(BaseNode):
 
     def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, wrap_console=True)
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
@@ -908,6 +908,7 @@ class QemuVM(BaseNode):
 
                 if "-enable-kvm" in command_string:
                     self._hw_virtualization = True
+                yield from self.start_wrap_console()
 
     def _termination_callback(self, returncode):
         """
@@ -936,7 +937,6 @@ class QemuVM(BaseNode):
             self._hw_virtualization = False
             if self.is_running():
                 log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
-                self.status = "stopped"
                 try:
                     if self.acpi_shutdown:
                         yield from self._control_vm("system_powerdown")
@@ -955,6 +955,7 @@ class QemuVM(BaseNode):
                         log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
             self._process = None
             self._stop_cpulimit()
+            yield from super().stop()
 
     @asyncio.coroutine
     def _control_vm(self, command, expected=None):
@@ -1255,7 +1256,7 @@ class QemuVM(BaseNode):
     def _serial_options(self):
 
         if self._console:
-            return ["-serial", "telnet:{}:{},server,nowait".format(self._manager.port_manager.console_host, self._console)]
+            return ["-serial", "telnet:127.0.0.1:{},server,nowait".format(self._internal_console_port)]
         else:
             return []
 
