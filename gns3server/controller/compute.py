@@ -601,6 +601,9 @@ class Compute:
             # Skip if no ip or no netmask (vbox when stopped set a null netmask)
             if len(this_interface["ip_address"]) == 0 or this_interface["netmask"] is None:
                 continue
+            # Ignore 169.254 network because it's for Windows special purpose
+            if this_interface["ip_address"].startswith("169.254."):
+                continue
 
             this_network = ipaddress.ip_network("{}/{}".format(this_interface["ip_address"], this_interface["netmask"]), strict=False)
 

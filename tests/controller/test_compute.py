@@ -457,3 +457,29 @@ def test_get_ip_on_same_subnet(controller, async_run):
     ]
     with pytest.raises(ValueError):
         async_run(compute1.get_ip_on_same_subnet(compute2))
+
+    # Ignore 169.254 network because it's for Windows special purpose
+    compute2 = Compute("compute2", host="192.168.1.2", controller=controller)
+    compute1 = Compute("compute1", host="192.168.2.1", controller=controller)
+    compute1._interfaces_cache = [
+        {
+            "ip_address": "127.0.0.1",
+            "netmask": "255.255.255.255"
+        },
+        {
+            "ip_address": "169.254.1.1",
+            "netmask": "255.255.0.0"
+        },
+    ]
+    compute2._interfaces_cache = [
+        {
+            "ip_address": "127.0.0.1",
+            "netmask": "255.255.255.255"
+        },
+        {
+            "ip_address": "169.254.2.1",
+            "netmask": "255.255.0.0"
+        },
+    ]
+    with pytest.raises(ValueError):
+        assert async_run(compute1.get_ip_on_same_subnet(compute2))
