@@ -618,4 +618,8 @@ class Compute:
                 other_network = ipaddress.ip_network("{}/{}".format(other_interface["ip_address"], other_interface["netmask"]), strict=False)
                 if this_network.overlaps(other_network):
                     return (this_interface["ip_address"], other_interface["ip_address"])
+
+        # Perhaps the user has correct network gateway
+        if (self.host_ip not in ('0.0.0.0', '127.0.0.1') and other_compute.host_ip not in ('0.0.0.0', '127.0.0.1')):
+            return (self.host_ip, other_compute.host_ip)
         raise ValueError("No common subnet for compute {} and {}".format(self.name, other_compute.name))

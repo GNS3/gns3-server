@@ -447,7 +447,6 @@ def test_get_ip_on_same_subnet(controller, async_run):
     assert async_run(compute1.get_ip_on_same_subnet(compute2)) == ("192.168.1.1", "192.168.1.2")
 
     #No common interface
-    # Case 2 compute2 host is on a different network but a common interface is available
     compute2 = Compute("compute2", host="127.0.0.1", controller=controller)
     compute2._interfaces_cache = [
         {
@@ -481,5 +480,4 @@ def test_get_ip_on_same_subnet(controller, async_run):
             "netmask": "255.255.0.0"
         },
     ]
-    with pytest.raises(ValueError):
-        assert async_run(compute1.get_ip_on_same_subnet(compute2))
+    assert async_run(compute1.get_ip_on_same_subnet(compute2)) == ('192.168.2.1', '192.168.1.2')
