@@ -28,6 +28,14 @@ class UDPLink(Link):
         super().__init__(project, link_id=link_id)
         self._capture_node = None
         self._created = False
+        self._link_data = []
+
+    @property
+    def debug_link_data(self):
+        """
+        Use for the HTML debug page
+        """
+        return self._link_data
 
     @asyncio.coroutine
     def create(self):
@@ -55,22 +63,22 @@ class UDPLink(Link):
         self._node2_port = response.json["udp_port"]
 
         # Create the tunnel on both side
-        data = {
+        self._link_data.append({
             "lport": self._node1_port,
             "rhost": node2_host,
             "rport": self._node2_port,
             "type": "nio_udp"
-        }
-        yield from node1.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=data, timeout=120)
+        })
+        yield from node1.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
 
-        data = {
+        self._link_data.append({
             "lport": self._node2_port,
             "rhost": node1_host,
             "rport": self._node1_port,
             "type": "nio_udp"
-        }
+        })
         try:
-            yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=data, timeout=120)
+            yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=120)
         except Exception as e:
             # We clean the first NIO
             yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)

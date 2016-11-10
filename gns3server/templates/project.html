@@ -46,12 +46,19 @@ in futur GNS3 versions.
 <table border="1">
     <tr>
         <th>ID</th>
+        <th>Data</th>
         <th>Capture</th>
         <th>PCAP</th>
     </tr>
 {% for link in project.links.values() %}
 <tr>
     <td>{{link.id}}</td>
+    <td>
+        {% if link.debug_link_data|length == 2 %}
+            {{link.debug_link_data[0]}}<br>
+            {{link.debug_link_data[1]}}
+        {% endif %}
+    </td>
     <td>{{link.capturing}}</td>
     <td><a href="/v2/projects/{{project.id}}/links/{{link.id}}/pcap">Download</a></td>
 </tr>
