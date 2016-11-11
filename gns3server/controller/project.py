@@ -27,6 +27,7 @@ import tempfile
 from uuid import UUID, uuid4
 
 from .node import Node
+from .compute import ComputeError
 from .snapshot import Snapshot
 from .drawing import Drawing
 from .topology import project_to_topology, load_topology
@@ -541,7 +542,7 @@ class Project:
             try:
                 yield from compute.post("/projects/{}/close".format(self._id))
             # We don't care if a compute is down at this step
-            except (aiohttp.errors.ClientOSError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
+            except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
                 pass
         self._cleanPictures()
         self._status = "closed"
@@ -646,7 +647,7 @@ class Project:
                 try:
                     yield from compute.post("/projects/{}/close".format(self._id))
                 # We don't care if a compute is down at this step
-                except (aiohttp.errors.ClientOSError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
+                except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
                     pass
             shutil.copy(path + ".backup", path)
             self._status = "closed"

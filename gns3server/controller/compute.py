@@ -362,7 +362,7 @@ class Compute:
         if not self._connected and not self._closed:
             try:
                 response = yield from self._run_http_query("GET", "/capabilities")
-            except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.ClientResponseError):
+            except ComputeError:
                 # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
                     asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
@@ -465,7 +465,10 @@ class Compute:
                     data = send_data(data)
                 else:
                     data = json.dumps(data)
-        response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
+        try:
+            response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
+        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.ClientResponseError) as e:
+            raise ComputeError(str(e))
         body = yield from response.read()
         if body and not raw:
             body = body.decode()

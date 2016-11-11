@@ -24,7 +24,7 @@ import aiohttp
 
 from ..config import Config
 from .project import Project
-from .compute import Compute
+from .compute import Compute, ComputeError
 from .notification import Notification
 from .symbols import Symbols
 from ..version import __version__
@@ -84,7 +84,7 @@ class Controller:
             try:
                 yield from compute.close()
             # We don't care if a compute is down at this step
-            except (aiohttp.errors.ClientOSError, aiohttp.web_exceptions.HTTPError, OSError):
+            except (ComputeError, aiohttp.web_exceptions.HTTPError, OSError):
                 pass
         yield from self.gns3vm.exit_vm()
         self._computes = {}

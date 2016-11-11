@@ -22,7 +22,7 @@ import uuid
 import os
 
 
-from .compute import ComputeConflict
+from .compute import ComputeConflict, ComputeError
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
 from ..utils.qt import qt_font_to_style
@@ -399,7 +399,7 @@ class Node:
         try:
             yield from self.post("/stop", timeout=240)
         # We don't care if a node is down at this step
-        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientHttpProcessingError, aiohttp.web.HTTPError):
+        except (ComputeError, aiohttp.errors.ClientHttpProcessingError, aiohttp.web.HTTPError):
             pass
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when stopping {}".format(self._name))
