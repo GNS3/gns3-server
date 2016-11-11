@@ -70,7 +70,7 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         # memory must be a multiple of 4 (VMware requirement)
         if ram % 4 != 0:
-            raise GNS3VMError("Allocated memory for the GNS3 VM must be a multiple of 4".format(available_ram))
+            raise GNS3VMError("Allocated memory {} for the GNS3 VM must be a multiple of 4".format(ram))
 
         available_vcpus = psutil.cpu_count(logical=False)
         if vcpus > available_vcpus:
