@@ -131,15 +131,15 @@ class Hypervisor(UBridgeHypervisor):
     @asyncio.coroutine
     def _check_ubridge_version(self):
         """
-        Checks if the ubridge executable version is >= 0.9.5
+        Checks if the ubridge executable version
         """
         try:
             output = yield from subprocess_check_output(self._path, "-v", cwd=self._working_dir)
             match = re.search("ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                if parse_version(self._version) < parse_version("0.9.6"):
-                    raise UbridgeError("uBridge executable version must be >= 0.9.6")
+                if parse_version(self._version) < parse_version("0.9.7"):
+                    raise UbridgeError("uBridge executable version must be >= 0.9.7")
             else:
                 raise UbridgeError("Could not determine uBridge version for {}".format(self._path))
         except (OSError, subprocess.SubprocessError) as e:
