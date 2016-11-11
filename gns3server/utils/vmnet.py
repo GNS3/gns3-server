@@ -150,7 +150,7 @@ def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
     if not shell.IsUserAnAdmin():
         raise SystemExit("You must run this script as an administrator")
 
-    print("Using ", vnetlib_path, " for controlling vmnet")
+    print("Using", vnetlib_path, "for controlling vmnet")
 
     if args.list:
         raise SystemExit("Not implemented")
