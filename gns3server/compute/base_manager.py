@@ -483,11 +483,14 @@ class BaseManager:
             for filename in files:
                 if filename[0] != "." and not filename.endswith(".md5sum"):
                     path = os.path.relpath(os.path.join(root, filename), img_dir)
-                    images.append({
-                        "filename": filename,
-                        "path": path,
-                        "md5sum": md5sum(os.path.join(root, filename)),
-                        "filesize": os.stat(os.path.join(root, filename)).st_size})
+                    try:
+                        images.append({
+                            "filename": filename,
+                            "path": path,
+                            "md5sum": md5sum(os.path.join(root, filename)),
+                            "filesize": os.stat(os.path.join(root, filename)).st_size})
+                    except OSError as e:
+                        log.warn("Can't add image {}: {}".format(path, str(e)))
         return images
 
     def get_images_directory(self):
