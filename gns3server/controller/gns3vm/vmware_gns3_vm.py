@@ -44,10 +44,10 @@ class VMwareGNS3VM(BaseGNS3VM):
         return self._vmx_path
 
     @asyncio.coroutine
-    def _execute(self, subcommand, args, timeout=60):
+    def _execute(self, subcommand, args, timeout=60, log_level=logging.INFO):
 
         try:
-            result = yield from self._vmware_manager.execute(subcommand, args, timeout)
+            result = yield from self._vmware_manager.execute(subcommand, args, timeout, log_level=log_level)
             return (''.join(result))
         except VMwareError as e:
             raise GNS3VMError("Error while executing VMware command: {}".format(e))
@@ -132,14 +132,16 @@ class VMwareGNS3VM(BaseGNS3VM):
         # get the guest IP address (first adapter only)
         trial = 120
         guest_ip_address = ""
+        log.info("Waiting for GNS3 VM IP")
         while True:
-            guest_ip_address = yield from self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120)
+            guest_ip_address = yield from self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120, log_level=logging.DEBUG)
             guest_ip_address = guest_ip_address.strip()
             if len(guest_ip_address) != 0:
                 break
             trial -= 1
             # If ip not found fallback on old method
             if trial == 0:
+                log.warn("No IP found for the VM via readVariable fallback to getGuestIPAddress")
                 guest_ip_address = yield from self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
                 break
             yield from asyncio.sleep(1)

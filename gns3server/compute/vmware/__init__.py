@@ -357,19 +357,19 @@ class VMware(BaseManager):
         return self._host_type
 
     @asyncio.coroutine
-    def execute(self, subcommand, args, timeout=120):
+    def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
         try:
-            return (yield from self._execute(subcommand, args, timeout=timeout))
+            return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
         except VMwareError as e:
             # We can fail to detect that it's VMware player instead of Workstation (due to marketing change Player is now Player Workstation)
             if self.host_type == "ws" and "VIX_SERVICEPROVIDER_VMWARE_WORKSTATION" in str(e):
                 self._host_type = "player"
-                return (yield from self._execute(subcommand, args, timeout=timeout))
+                return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
             else:
                 raise e
 
     @asyncio.coroutine
-    def _execute(self, subcommand, args, timeout=120):
+    def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
         if self.host_type is None:
             yield from self.check_vmware_version()
 
@@ -380,7 +380,7 @@ class VMware(BaseManager):
         command = [vmrun_path, "-T", self.host_type, subcommand]
         command.extend(args)
         command_string = " ".join(command)
-        log.info("Executing vmrun with command: {}".format(command_string))
+        log.log(log_level, "Executing vmrun with command: {}".format(command_string))
         try:
             process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         except (OSError, subprocess.SubprocessError) as e:
