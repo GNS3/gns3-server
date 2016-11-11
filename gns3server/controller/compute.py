@@ -611,7 +611,7 @@ class Compute:
             this_network = ipaddress.ip_network("{}/{}".format(this_interface["ip_address"], this_interface["netmask"]), strict=False)
 
             for other_interface in other_compute_interfaces:
-                if len(other_interface["ip_address"]) == 0:
+                if len(other_interface["ip_address"]) == 0 or other_interface["netmask"] is None:
                     continue
 
                 # Avoid stuff like 127.0.0.1
