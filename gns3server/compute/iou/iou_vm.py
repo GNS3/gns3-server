@@ -45,6 +45,7 @@ from .utils.iou_export import nvram_export
 from gns3server.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+from gns3server.utils.asyncio import locked_coroutine
 import gns3server.utils.asyncio
 import gns3server.utils.images
 
@@ -511,7 +512,7 @@ class IOUVM(BaseNode):
             # configure networking support
             yield from self._networking()
 
-    @asyncio.coroutine
+    @locked_coroutine
     def _networking(self):
         """
         Configures the IOL bridge in uBridge.
