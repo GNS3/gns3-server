@@ -326,6 +326,15 @@ class IOUVM(BaseNode):
     def iourc_content(self, value):
 
         if value is not None:
+            # If we don't save the value in the ~/ the licence is lost at project
+            # reload
+            path = os.path.join(os.path.expanduser("~/"), ".iourc")
+            try:
+                with open(path, "wb+") as f:
+                    f.write(value.encode("utf-8"))
+            except OSError as e:
+                raise IOUError("Could not write the iourc file {}: {}".format(path, e))
+
             path = os.path.join(self.temporary_directory, "iourc")
             try:
                 with open(path, "wb+") as f:
