@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import os
 import stat
 import logging
@@ -25,6 +26,7 @@ import tempfile
 import psutil
 import platform
 
+from gns3server.utils.interfaces import interfaces
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.asyncio.telnet_server import AsyncioTelnetServer
@@ -543,7 +545,7 @@ class BaseNode:
     @asyncio.coroutine
     def _add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         """
-        Creates a connection in uBridge.
+        Creates an UDP connection in uBridge.
 
         :param bridge_name: bridge name in uBridge
         :param source_nio: source NIO instance
@@ -570,6 +572,47 @@ class BaseNode:
                                                                                              pcap_file=destination_nio.pcap_output_file))
 
         yield from self._ubridge_send('bridge start {name}'.format(name=bridge_name))
+
+    @asyncio.coroutine
+    def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=True):
+        """
+        Creates a connection with an Ethernet interface in uBridge.
+
+        :param bridge_name: bridge name in uBridge
+        :param ethernet_interface: Ethernet interface name
+        :param block_host_traffic: block network traffic originating from the host OS (Windows only)
+        """
+
+        if sys.platform.startswith("linux"):
+            # on Linux we use RAW sockets
+            yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
+        elif sys.platform.startswith("win"):
+            # on Windows we use Winpcap/Npcap
+            windows_interfaces = interfaces()
+            npf_id = None
+            source_mac = None
+            for interface in windows_interfaces:
+                # Winpcap/Npcap uses a NPF ID to identify an interface on Windows
+                if "netcard" in interface and ethernet_interface in interface["netcard"]:
+                    npf_id = interface["id"]
+                    source_mac = interface["mac_address"]
+                elif ethernet_interface in interface["name"]:
+                    npf_id = interface["id"]
+                    source_mac = interface["mac_address"]
+            if npf_id:
+                yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
+                                                                                                    interface=npf_id))
+            else:
+                raise NodeError("Could not find NPF id for VMnet interface {}".format(ethernet_interface))
+
+            if block_host_traffic:
+                if source_mac:
+                    yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
+                else:
+                    log.warn("Could not block host network traffic on {} (no MAC address found)".format(ethernet_interface))
+        else:
+            # on other platforms we just rely on the pcap library
+            yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
 
     def _create_local_udp_tunnel(self):
         """

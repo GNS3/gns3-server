@@ -21,7 +21,6 @@ VMware VM instance.
 
 import sys
 import os
-import socket
 import asyncio
 import tempfile
 
@@ -298,35 +297,12 @@ class VMwareVM(BaseNode):
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         yield from self._ubridge_send("bridge create {name}".format(name=vnet))
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
-        if sys.platform.startswith("linux"):
-            yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
-        elif sys.platform.startswith("win"):
-            windows_interfaces = interfaces()
-            npf = None
-            source_mac = None
-            for interface in windows_interfaces:
-                if "netcard" in interface and vmnet_interface in interface["netcard"]:
-                    npf = interface["id"]
-                    source_mac = interface["mac_address"]
-                elif vmnet_interface in interface["name"]:
-                    npf = interface["id"]
-                    source_mac = interface["mac_address"]
-            if npf:
-                yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet, interface=npf))
-            else:
-                raise VMwareError("Could not find NPF id for VMnet interface {}".format(vmnet_interface))
 
-            if block_host_traffic:
-                if source_mac:
-                    yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet, mac=source_mac))
-                else:
-                    log.warn("Could not block host network traffic on {} (no MAC address found)".format(vmnet_interface))
-
-        elif sys.platform.startswith("darwin"):
+        if sys.platform.startswith("darwin"):
+            # special case on OSX, we cannot bind VMnet interfaces using the libpcap
             yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
-            yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=vnet,
-                                                                                                interface=vmnet_interface))
+            yield from self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
 
         if isinstance(nio, NIOUDP):
             yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
