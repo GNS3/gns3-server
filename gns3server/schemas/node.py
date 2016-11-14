@@ -233,5 +233,6 @@ NODE_OBJECT_SCHEMA = {
     "required": ["name", "node_type", "compute_id"]
 }
 
+NODE_CREATE_SCHEMA = NODE_OBJECT_SCHEMA
 NODE_UPDATE_SCHEMA = NODE_OBJECT_SCHEMA
 del NODE_UPDATE_SCHEMA["required"]

@@ -52,6 +52,7 @@ PROJECT_CREATE_SCHEMA = {
         }
     },
     "additionalProperties": False,
+    "required": ["name"]
 }
 
 PROJECT_UPDATE_SCHEMA = {

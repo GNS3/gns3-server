@@ -23,7 +23,8 @@ from gns3server.controller import Controller
 
 from gns3server.schemas.node import (
     NODE_OBJECT_SCHEMA,
-    NODE_UPDATE_SCHEMA
+    NODE_UPDATE_SCHEMA,
+    NODE_CREATE_SCHEMA
 )
 
 
@@ -42,7 +43,7 @@ class NodeHandler:
             400: "Invalid request"
         },
         description="Create a new node instance",
-        input=NODE_OBJECT_SCHEMA,
+        input=NODE_CREATE_SCHEMA,
         output=NODE_OBJECT_SCHEMA)
     def create(request, response):
 
