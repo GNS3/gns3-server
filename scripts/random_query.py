@@ -25,7 +25,7 @@ import math
 import aiohttp
 import aiohttp.web
 import asyncio
-import async_timeout
+import random
 
 import coloredlogs
 import logging
@@ -73,17 +73,16 @@ async def query(method, path, body=None, **kwargs):
     if body:
         kwargs["data"] = json.dumps(body)
 
-    with async_timeout.timeout(10):
-        async with session.request(method, "http://localhost:3081/v2" + path, **kwargs) as response:
-            if response.status == 409:
-                raise HTTPConflict(method, path, response)
-            elif response.status >= 300:
-                raise HTTPError(method, path, response)
-            log.info("%s %s %d", method, path, response.status)
-            if response.headers["content-type"] == "application/json":
-                return await response.json()
-            else:
-                return "{}"
+    async with session.request(method, "http://localhost:3081/v2" + path, **kwargs) as response:
+        if response.status == 409:
+            raise HTTPConflict(method, path, response)
+        elif response.status >= 300:
+            raise HTTPError(method, path, response)
+        log.info("%s %s %d", method, path, response.status)
+        if response.headers["content-type"] == "application/json":
+            return await response.json()
+        else:
+            return "{}"
 
 
 async def post(path, **kwargs):
@@ -107,8 +106,10 @@ async def create_project():
             await delete("/projects/" + project["project_id"])
         elif project["project_id"] == PROJECT_ID:
             project_exists = True
+            tasks = []
             for node in await get("/projects/" + PROJECT_ID + "/nodes"):
-                await delete("/projects/" + PROJECT_ID + "/nodes/" + node["node_id"])
+                tasks.append(delete_node(project, node))
+            await asyncio.gather(*tasks)
     if project_exists:
         response = await post("/projects/" + PROJECT_ID + "/open")
     else:
@@ -119,8 +120,9 @@ async def create_project():
 async def create_node(project):
     global node_i
     response = await post("/projects/{}/nodes".format(project["project_id"]), body={
-        "node_type": "vpcs",
+        "node_type": "ethernet_switch",
         "compute_id": "local",
+        "symbol": ":/symbols/ethernet_switch.svg",
         "name": "Node{}".format(node_i),
         "x": (math.floor((node_i - 1) % 12.0) * 100) - 500,
         "y": (math.ceil((node_i) / 12.0) * 100) - 300
@@ -129,15 +131,71 @@ async def create_node(project):
     return response
 
 
+async def delete_node(project, node):
+    await delete("/projects/{}/nodes/{}".format(project["project_id"], node["node_id"]))
+
+
+async def create_link(project, nodes):
+    """
+    Create all possible link of a node
+    """
+    node1 = random.choice(list(nodes.values()))
+
+    for port in range(0, 8):
+        node2 = random.choice(list(nodes.values()))
+
+        if node1 == node2:
+            continue
+
+        data = {"nodes":
+                [
+                    {
+                        "adapter_number": 0,
+                        "node_id": node1["node_id"],
+                        "port_number": port
+                    },
+                    {
+                        "adapter_number": 0,
+                        "node_id": node2["node_id"],
+                        "port_number": port
+                    }
+                ]
+                }
+        try:
+            await post("/projects/{}/links".format(project["project_id"]), body=data)
+        except HTTPConflict:
+            pass
+
+
 async def build_topology():
     global node_i
 
     nodes = {}
     project = await create_project()
     while True:
-        node = await create_node(project)
-        nodes[node["node_id"]] = node
-        await asyncio.sleep(0.5)
+        rand = random.randint(0, 1000)
+        if rand < 500:  # chance to create a new node
+            if len(nodes.keys()) < 255:  # Limit of VPCS:
+                node = await create_node(project)
+                nodes[node["node_id"]] = node
+        elif rand < 950:  # create a link
+            if len(nodes.keys()) >= 2:
+                await create_link(project, nodes)
+        elif rand < 999:  # chance to delete a node
+            continue
+            if len(nodes.keys()) > 0:
+                node = random.choice(list(nodes.values()))
+                await delete_node(project, node)
+                del nodes[node["node_id"]]
+        elif len(nodes.keys()) > 0:  # % chance to delete all nodes
+            continue
+            node_i = 1
+            tasks = []
+            for node in nodes.values():
+                tasks.append(delete_node(project, node))
+            await asyncio.gather(*tasks)
+            nodes = {}
+        await asyncio.sleep(0.2)
 
 async def main(loop):
     global session
