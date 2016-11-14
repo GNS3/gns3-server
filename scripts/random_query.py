@@ -34,6 +34,8 @@ coloredlogs.install(fmt=" %(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
 PROJECT_ID = "9e26e37d-4962-4921-8c0e-136d3b04ba9c"
+# Use for node names uniqueness
+node_i = 1
 
 
 def die(*args):
@@ -72,7 +74,7 @@ async def query(method, path, body=None, **kwargs):
         kwargs["data"] = json.dumps(body)
 
     with async_timeout.timeout(10):
-        async with session.request(method, "http://localhost:3080/v2" + path, **kwargs) as response:
+        async with session.request(method, "http://localhost:3081/v2" + path, **kwargs) as response:
             if response.status == 409:
                 raise HTTPConflict(method, path, response)
             elif response.status >= 300:
@@ -101,14 +103,16 @@ async def create_project():
     response = await get("/projects")
     project_exists = False
     for project in response:
-        if project["name"] == "random":
+        if project["name"] == "random" and project["project_id"] != PROJECT_ID:
             await delete("/projects/" + project["project_id"])
         elif project["project_id"] == PROJECT_ID:
             project_exists = True
             for node in await get("/projects/" + PROJECT_ID + "/nodes"):
-                delete("/projects/" + PROJECT_ID + "/nodes/" + node["node_id"])
+                await delete("/projects/" + PROJECT_ID + "/nodes/" + node["node_id"])
     if project_exists:
         response = await post("/projects/" + PROJECT_ID + "/open")
+    else:
+        response = await post("/projects", body={"name": "random", "project_id": PROJECT_ID, "auto_close": False})
     return response
 
 
@@ -118,8 +122,8 @@ async def create_node(project):
         "node_type": "vpcs",
         "compute_id": "local",
         "name": "Node{}".format(node_i),
-        "x": (math.floor(node_i / 10) * 100) - 300,
-        "y": (math.ceil(node_i / 10) * 100) - 200
+        "x": (math.floor((node_i - 1) % 12.0) * 100) - 500,
+        "y": (math.ceil((node_i) / 12.0) * 100) - 300
     })
     node_i += 1
     return response
@@ -128,14 +132,12 @@ async def create_node(project):
 async def build_topology():
     global node_i
 
-    # Use for node names uniqueness
-    node_i = 1
     nodes = {}
     project = await create_project()
     while True:
         node = await create_node(project)
         nodes[node["node_id"]] = node
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
 async def main(loop):
     global session

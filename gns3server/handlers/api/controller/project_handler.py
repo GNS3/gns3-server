@@ -65,9 +65,7 @@ class ProjectHandler:
     def create_project(request, response):
 
         controller = Controller.instance()
-        project = yield from controller.add_project(name=request.json.get("name"),
-                                                    path=request.json.get("path"),
-                                                    project_id=request.json.get("project_id"))
+        project = yield from controller.add_project(**request.json)
         response.set_status(201)
         response.json(project)
 
