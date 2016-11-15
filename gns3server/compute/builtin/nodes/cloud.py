@@ -188,16 +188,7 @@ class Cloud(BaseNode):
         if port_info["type"] in ("ethernet", "tap"):
 
             if sys.platform.startswith("win"):
-                windows_interfaces = self._interfaces()
-                npf = None
-                for interface in windows_interfaces:
-                    if port_info["interface"] == interface["name"]:
-                        npf = interface["id"]
-                if npf:
-                    yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
-                                                                                                        interface=npf))
-                else:
-                    raise NodeError("Could not find NPF id for interface {}".format(port_info["interface"]))
+                yield from self._add_ubridge_ethernet_connection(bridge_name, port_info["interface"])
 
             else:
 

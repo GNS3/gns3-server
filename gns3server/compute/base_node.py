@@ -603,7 +603,7 @@ class BaseNode:
                 yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
                                                                                                     interface=npf_id))
             else:
-                raise NodeError("Could not find NPF id for VMnet interface {}".format(ethernet_interface))
+                raise NodeError("Could not find NPF id for interface {}".format(ethernet_interface))
 
             if block_host_traffic:
                 if source_mac:
