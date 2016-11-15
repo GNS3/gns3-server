@@ -367,6 +367,8 @@ class Compute:
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
                     asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
                 return
+            except aiohttp.web.HTTPNotFound:
+                raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
 
             if "version" not in response.json:
                 self._http_session.close()
