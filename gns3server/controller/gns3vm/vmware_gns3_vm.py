@@ -90,8 +90,10 @@ class VMwareGNS3VM(BaseGNS3VM):
         """
         List all VMware VMs
         """
-
-        return (yield from self._vmware_manager.list_vms())
+        try:
+            return (yield from self._vmware_manager.list_vms())
+        except VMwareError as e:
+            raise GNS3VMError("Could not list VMware VMs: {}".format(str(e)))
 
     @asyncio.coroutine
     def start(self):
