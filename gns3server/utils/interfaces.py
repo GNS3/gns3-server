@@ -90,13 +90,14 @@ def get_windows_interfaces():
     try:
         locator = win32com.client.Dispatch("WbemScripting.SWbemLocator")
         service = locator.ConnectServer(".", "root\cimv2")
+        network_configs = service.InstancesOf("Win32_NetworkAdapterConfiguration")
         # more info on Win32_NetworkAdapter: http://msdn.microsoft.com/en-us/library/aa394216%28v=vs.85%29.aspx
         for adapter in service.InstancesOf("Win32_NetworkAdapter"):
             if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
                 # adapter is connected or media disconnected
                 ip_address = ""
                 netmask = ""
-                for network_config in service.InstancesOf("Win32_NetworkAdapterConfiguration"):
+                for network_config in network_configs:
                     if network_config.InterfaceIndex == adapter.InterfaceIndex:
                         if network_config.IPAddress:
                             # get the first IPv4 address only
