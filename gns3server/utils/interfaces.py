@@ -238,8 +238,7 @@ def interfaces():
     # This interface have special behavior
     for result in results:
         result["special"] = False
-        for special_interface in ("lo", "vmnet", "vboxnet", "docker", "lxcbr", "virbr", "ovs-system", "veth", "fw", "p2p", "bridge", "VMware", "VirtualBox"):
+        for special_interface in ("lo", "vmnet", "vboxnet", "docker", "lxcbr", "virbr", "ovs-system", "veth", "fw", "p2p", "bridge", "vmware", "virtualbox"):
             if result["name"].lower().startswith(special_interface):
                 result["special"] = True
-
     return results
