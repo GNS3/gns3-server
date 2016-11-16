@@ -108,7 +108,7 @@ class Compute:
 
     def _session(self):
         if self._http_session is None or self._http_session.closed is True:
-            self._http_session = aiohttp.ClientSession()
+            self._http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True))
         return self._http_session
 
     def __del__(self):
