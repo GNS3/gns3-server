@@ -34,6 +34,8 @@ coloredlogs.install(fmt=" %(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
 PROJECT_ID = "9e26e37d-4962-4921-8c0e-136d3b04ba9c"
+HOST = "192.168.84.151:3080"
+
 # Use for node names uniqueness
 node_i = 1
 
@@ -67,15 +69,21 @@ class HTTPConflict(HTTPError):
     pass
 
 
+class HTTPNotFound(HTTPError):
+    pass
+
+
 async def query(method, path, body=None, **kwargs):
     global session
 
     if body:
         kwargs["data"] = json.dumps(body)
 
-    async with session.request(method, "http://localhost:3081/v2" + path, **kwargs) as response:
+    async with session.request(method, "http://" + HOST + "/v2" + path, **kwargs) as response:
         if response.status == 409:
             raise HTTPConflict(method, path, response)
+        elif response.status == 404:
+            raise HTTPNotFound(method, path, response)
         elif response.status >= 300:
             raise HTTPError(method, path, response)
         log.info("%s %s %d", method, path, response.status)
@@ -119,10 +127,19 @@ async def create_project():
 
 async def create_node(project):
     global node_i
+
+    r = random.randint(0, 1)
+
+    if r == 0:
+        node_type = "ethernet_switch"
+        symbol = ":/symbols/ethernet_switch.svg"
+    elif r == 1:
+        node_type = "vpcs"
+        symbol = ":/symbols/vpcs_guest.svg"
     response = await post("/projects/{}/nodes".format(project["project_id"]), body={
-        "node_type": "ethernet_switch",
+        "node_type": node_type,
         "compute_id": "local",
-        "symbol": ":/symbols/ethernet_switch.svg",
+        "symbol": symbol,
         "name": "Node{}".format(node_i),
         "x": (math.floor((node_i - 1) % 12.0) * 100) - 500,
         "y": (math.ceil((node_i) / 12.0) * 100) - 300
@@ -163,7 +180,7 @@ async def create_link(project, nodes):
                 }
         try:
             await post("/projects/{}/links".format(project["project_id"]), body=data)
-        except HTTPConflict:
+        except (HTTPConflict, HTTPNotFound):
             pass
 
 
@@ -178,6 +195,10 @@ async def build_topology():
             if len(nodes.keys()) < 255:  # Limit of VPCS:
                 node = await create_node(project)
                 nodes[node["node_id"]] = node
+        elif rand < 600:  # start all nodes
+            await post("/projects/{}/nodes/start".format(project["project_id"]))
+        elif rand < 700:  # stop all nodes
+            await post("/projects/{}/nodes/stop".format(project["project_id"]))
         elif rand < 950:  # create a link
             if len(nodes.keys()) >= 2:
                 await create_link(project, nodes)
@@ -206,7 +227,7 @@ async def main(loop):
             try:
                 j = await error.response.json()
                 die("%s %s invalid status %d:\n%s", error.method, error.path, error.response.status, json.dumps(j, indent=4))
-            except json.decoder.JSONDecodeError:
+            except (json.decoder.JSONDecodeError, aiohttp.errors.ServerDisconnectedError):
                 die("%s %s invalid status %d", error.method, error.path, error.response.status)
 
 
