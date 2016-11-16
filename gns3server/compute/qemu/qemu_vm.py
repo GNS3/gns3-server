@@ -922,7 +922,8 @@ class QemuVM(BaseNode):
             self.status = "stopped"
             self._hw_virtualization = False
             self._process = None
-            if returncode != 0:
+            # A return code of 1 seem fine on Windows
+            if returncode != 0 and (returncode != 1 or not sys.platform.startswith("win")):
                 self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
 
     @asyncio.coroutine
