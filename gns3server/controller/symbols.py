@@ -75,8 +75,11 @@ class Symbols:
         # Symbol not found refresh cache
         except KeyError:
             self.list()
-            return self._symbols_path[symbol_id]
-
+            try:
+                return self._symbols_path[symbol_id]
+            except KeyError:
+                return self._symbols_path[":/symbols/computer.svg"]
+                
     def get_size(self, symbol_id):
         try:
             return self._symbol_size_cache[symbol_id]
