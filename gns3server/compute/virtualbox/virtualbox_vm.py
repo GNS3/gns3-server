@@ -66,11 +66,6 @@ class VirtualBoxVM(BaseNode):
         self._ethernet_adapters = {}
         self._headless = False
         self._acpi_shutdown = False
-        if not self.linked_clone:
-            for node in self.manager.nodes:
-                if node.vmname == vmname:
-                    raise VirtualBoxError("Sorry a node without the linked clone setting enabled can only be used once on your server. {} is already used by {}".format(vmname, node.name))
-
         self._vmname = vmname
         self._use_any_adapter = False
         self._ram = 0
@@ -151,7 +146,36 @@ class VirtualBoxVM(BaseNode):
         yield from self.manager.execute("modifyvm", [self._vmname] + args)
 
     @asyncio.coroutine
+    def _check_duplicate_linked_clone(self):
+        """
+        Without linked clone two VM using the same image can't run
+        at the same time.
+
+        To avoid issue like false detection when a project close
+        and another open we try multiple times.
+        """
+        trial = 0
+
+        while True:
+            found = False
+            for node in self.manager.nodes:
+                if node != self and node.vmname == self.vmname:
+                    found = True
+                    if node.project != self.project:
+                        if trial >= 30:
+                            raise VirtualBoxError("Sorry a node without the linked clone setting enabled can only be used once on your server.\n{} is already used by {} in project {}".format(self.vmname, node.name, self.project.name))
+                    else:
+                        if trial >= 5:
+                            raise VirtualBoxError("Sorry a node without the linked clone setting enabled can only be used once on your server.\n{} is already used by {} in this project".format(self.vmname, node.name))
+            if not found:
+                return
+            trial += 1
+            yield from asyncio.sleep(1)
+
+    @asyncio.coroutine
     def create(self):
+        if not self.linked_clone:
+            yield from self._check_duplicate_linked_clone()
 
         yield from self._get_system_properties()
         if "API version" not in self._system_properties:
