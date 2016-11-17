@@ -386,6 +386,9 @@ class VMwareVM(BaseNode):
         Starts this VMware VM.
         """
 
+        if self.status == "started":
+            return
+
         if (yield from self.is_running()):
             raise VMwareError("The VM is already running in VMware")
 

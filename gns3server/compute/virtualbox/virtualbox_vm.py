@@ -206,6 +206,9 @@ class VirtualBoxVM(BaseNode):
         Starts this VirtualBox VM.
         """
 
+        if self.status == "started":
+            return
+
         # resume the VM if it is paused
         vm_state = yield from self._get_vm_state()
         if vm_state == "paused":
