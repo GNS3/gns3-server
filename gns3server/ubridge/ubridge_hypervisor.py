@@ -20,6 +20,7 @@ import time
 import logging
 import asyncio
 
+from ..utils.asyncio import locked_coroutine
 from .ubridge_error import UbridgeError
 
 log = logging.getLogger(__name__)
@@ -48,7 +49,6 @@ class UBridgeHypervisor:
         self._timeout = timeout
         self._reader = None
         self._writer = None
-        self._io_lock = asyncio.Lock()
 
     @asyncio.coroutine
     def connect(self, timeout=10):
@@ -176,7 +176,7 @@ class UBridgeHypervisor:
 
         self._host = host
 
-    @asyncio.coroutine
+    @locked_coroutine
     def send(self, command):
         """
         Sends commands to this hypervisor.
@@ -199,66 +199,65 @@ class UBridgeHypervisor:
         # but still have more data. The only thing we know for sure is the last line
         # will begin with '100-' or a '2xx-' and end with '\r\n'
 
-        with (yield from self._io_lock):
-            if self._writer is None or self._reader is None:
-                raise UbridgeError("Not connected")
+        if self._writer is None or self._reader is None:
+            raise UbridgeError("Not connected")
 
+        try:
+            command = command.strip() + '\n'
+            log.debug("sending {}".format(command))
+            self._writer.write(command.encode())
+            yield from self._writer.drain()
+        except OSError as e:
+            raise UbridgeError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
+                               .format(host=self._host, port=self._port, error=e, run=self.is_running()))
+
+        # Now retrieve the result
+        data = []
+        buf = ''
+        while True:
             try:
-                command = command.strip() + '\n'
-                log.debug("sending {}".format(command))
-                self._writer.write(command.encode())
-                yield from self._writer.drain()
+                try:
+                    chunk = yield from self._reader.read(1024)
+                except asyncio.CancelledError:
+                    # task has been canceled but continue to read
+                    # any remaining data sent by the hypervisor
+                    continue
+                if not chunk:
+                    raise UbridgeError("No data returned from {host}:{port}, uBridge process running: {run}"
+                                       .format(host=self._host, port=self._port, run=self.is_running()))
+                buf += chunk.decode("utf-8")
             except OSError as e:
-                raise UbridgeError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
+                raise UbridgeError("Lost communication with {host}:{port} :{error}, uBridge process running: {run}"
                                    .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
-            # Now retrieve the result
-            data = []
+            # If the buffer doesn't end in '\n' then we can't be done
+            try:
+                if buf[-1] != '\n':
+                    continue
+            except IndexError:
+                raise UbridgeError("Could not communicate with {host}:{port}, uBridge process running: {run}"
+                                   .format(host=self._host, port=self._port, run=self.is_running()))
+
+            data += buf.split('\r\n')
+            if data[-1] == '':
+                data.pop()
             buf = ''
-            while True:
-                try:
-                    try:
-                        chunk = yield from self._reader.read(1024)
-                    except asyncio.CancelledError:
-                        # task has been canceled but continue to read
-                        # any remaining data sent by the hypervisor
-                        continue
-                    if not chunk:
-                        raise UbridgeError("No data returned from {host}:{port}, uBridge process running: {run}"
-                                           .format(host=self._host, port=self._port, run=self.is_running()))
-                    buf += chunk.decode("utf-8")
-                except OSError as e:
-                    raise UbridgeError("Lost communication with {host}:{port} :{error}, uBridge process running: {run}"
-                                       .format(host=self._host, port=self._port, error=e, run=self.is_running()))
 
-                # If the buffer doesn't end in '\n' then we can't be done
-                try:
-                    if buf[-1] != '\n':
-                        continue
-                except IndexError:
-                    raise UbridgeError("Could not communicate with {host}:{port}, uBridge process running: {run}"
-                                       .format(host=self._host, port=self._port, run=self.is_running()))
+            # Does it contain an error code?
+            if self.error_re.search(data[-1]):
+                raise UbridgeError(data[-1][4:])
 
-                data += buf.split('\r\n')
-                if data[-1] == '':
+            # Or does the last line begin with '100-'? Then we are done!
+            if data[-1][:4] == '100-':
+                data[-1] = data[-1][4:]
+                if data[-1] == 'OK':
                     data.pop()
-                buf = ''
+                break
 
-                # Does it contain an error code?
-                if self.error_re.search(data[-1]):
-                    raise UbridgeError(data[-1][4:])
+        # Remove success responses codes
+        for index in range(len(data)):
+            if self.success_re.search(data[index]):
+                data[index] = data[index][4:]
 
-                # Or does the last line begin with '100-'? Then we are done!
-                if data[-1][:4] == '100-':
-                    data[-1] = data[-1][4:]
-                    if data[-1] == 'OK':
-                        data.pop()
-                    break
-
-            # Remove success responses codes
-            for index in range(len(data)):
-                if self.success_re.search(data[index]):
-                    data[index] = data[index][4:]
-
-            log.debug("returned result {}".format(data))
-            return data
+        log.debug("returned result {}".format(data))
+        return data

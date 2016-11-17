@@ -208,6 +208,7 @@ class Hypervisor(UBridgeHypervisor):
                 os.remove(self._stdout_file)
             except OSError as e:
                 log.warning("could not delete temporary uBridge log file: {}".format(e))
+        self._process = None
         self._started = False
 
     def read_stdout(self):
