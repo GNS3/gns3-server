@@ -43,8 +43,9 @@ def test_get(http_controller):
     assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
     assert '</svg>' in response.html
 
+    # Reply by the default symbol
     response = http_controller.get('/symbols/404.png/raw')
-    assert response.status == 404
+    assert response.status == 200
 
 
 def test_upload(http_controller, symbols_dir):
