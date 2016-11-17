@@ -56,7 +56,7 @@ class VirtualBoxHandler:
                                                  request.match_info["project_id"],
                                                  request.json.get("node_id"),
                                                  request.json.pop("vmname"),
-                                                 linked_clone=request.json.pop("linked_clone"),
+                                                 linked_clone=request.json.pop("linked_clone", False),
                                                  console=request.json.get("console", None),
                                                  adapters=request.json.get("adapters", 0))
 
