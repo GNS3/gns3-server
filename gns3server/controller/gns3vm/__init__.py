@@ -272,6 +272,7 @@ class GNS3VM:
                 yield from engine.start()
             except Exception as e:
                 yield from self._controller.delete_compute("vm")
+                log.error("Can't start the GNS3 VM: {}", str(e))
                 raise e
             yield from compute.update(name="GNS3 VM ({})".format(engine.vmname),
                                       protocol=self.protocol,
