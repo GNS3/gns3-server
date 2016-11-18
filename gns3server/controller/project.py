@@ -609,7 +609,7 @@ class Project:
     def _topology_file(self):
         return os.path.join(self.path, self._filename)
 
-    @asyncio.coroutine
+    @locked_coroutine
     def open(self):
         """
         Load topology elements
@@ -623,7 +623,10 @@ class Project:
         path = self._topology_file()
         if not os.path.exists(path):
             return
-        shutil.copy(path, path + ".backup")
+        try:
+            shutil.copy(path, path + ".backup")
+        except OSError:
+            pass
         try:
             topology = load_topology(path)["topology"]
             for compute in topology.get("computes", []):
@@ -649,10 +652,14 @@ class Project:
                 # We don't care if a compute is down at this step
                 except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
                     pass
-            shutil.copy(path + ".backup", path)
+            if os.path.exists(path + ".backup"):
+                shutil.copy(path + ".backup", path)
             self._status = "closed"
             raise e
-        os.remove(path + ".backup")
+        try:
+            os.remove(path + ".backup")
+        except OSError:
+            pass
 
         # Should we start the nodes when project is open
         if self._auto_start:
