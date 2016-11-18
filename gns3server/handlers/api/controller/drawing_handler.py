@@ -41,8 +41,7 @@ class DrawingHandler:
         description="List drawings of a project")
     def list_drawings(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         response.json([v for v in project.drawings.values()])
 
     @Route.post(
@@ -59,8 +58,7 @@ class DrawingHandler:
         output=DRAWING_OBJECT_SCHEMA)
     def create(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         drawing = yield from project.add_drawing(**request.json)
         response.set_status(201)
         response.json(drawing)
@@ -80,8 +78,7 @@ class DrawingHandler:
         output=DRAWING_OBJECT_SCHEMA)
     def update(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         drawing = project.get_drawing(request.match_info["drawing_id"])
         yield from drawing.update(**request.json)
         response.set_status(201)
@@ -100,7 +97,6 @@ class DrawingHandler:
         description="Delete a drawing instance")
     def delete(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         yield from project.delete_drawing(request.match_info["drawing_id"])
         response.set_status(204)

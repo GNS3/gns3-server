@@ -78,6 +78,7 @@ class Project:
         self._status = status
         self._scene_height = scene_height
         self._scene_width = scene_width
+        self._loading = False
 
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
@@ -618,10 +619,12 @@ class Project:
             return
 
         self.reset()
+        self._loading = True
         self._status = "opened"
 
         path = self._topology_file()
         if not os.path.exists(path):
+            self._loading = False
             return
         try:
             shutil.copy(path, path + ".backup")
@@ -655,15 +658,25 @@ class Project:
             if os.path.exists(path + ".backup"):
                 shutil.copy(path + ".backup", path)
             self._status = "closed"
+            self._loading = False
             raise e
         try:
             os.remove(path + ".backup")
         except OSError:
             pass
 
+        self._loading = False
         # Should we start the nodes when project is open
         if self._auto_start:
             yield from self.start_all()
+
+    @asyncio.coroutine
+    def wait_loaded(self):
+        """
+        Wait until the project finish loading
+        """
+        while self._loading:
+            yield from asyncio.sleep(0.5)
 
     @asyncio.coroutine
     def duplicate(self, name=None, location=None):

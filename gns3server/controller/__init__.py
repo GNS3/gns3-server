@@ -338,12 +338,23 @@ class Controller:
 
     def get_project(self, project_id):
         """
-        Returns a compute server or raise a 404 error.
+        Returns a project or raise a 404 error.
         """
         try:
             return self._projects[project_id]
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
+
+    @asyncio.coroutine
+    def get_loaded_project(self, project_id):
+        """
+        Returns a project or raise a 404 error.
+
+        If project is not finished to load wait for it
+        """
+        project = self.get_project(project_id)
+        yield from project.wait_loaded()
+        return project
 
     def remove_project(self, project):
         del self._projects[project.id]

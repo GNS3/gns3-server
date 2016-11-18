@@ -43,8 +43,7 @@ class LinkHandler:
         description="List links of a project")
     def list_links(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         response.json([v for v in project.links.values()])
 
     @Route.post(
@@ -61,8 +60,7 @@ class LinkHandler:
         output=LINK_OBJECT_SCHEMA)
     def create(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = yield from project.add_link()
         try:
             for node in request.json["nodes"]:
@@ -91,8 +89,7 @@ class LinkHandler:
         output=LINK_OBJECT_SCHEMA)
     def update(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
         yield from link.update_nodes(request.json["nodes"])
         response.set_status(201)
@@ -113,8 +110,7 @@ class LinkHandler:
         description="Start capture on a link instance. By default we consider it as an Ethernet link")
     def start_capture(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
         yield from link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"), capture_file_name=request.json.get("capture_file_name"))
         response.set_status(201)
@@ -133,8 +129,7 @@ class LinkHandler:
         description="Stop capture on a link instance")
     def stop_capture(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
         yield from link.stop_capture()
         response.set_status(201)
@@ -153,8 +148,7 @@ class LinkHandler:
         description="Delete a link instance")
     def delete(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         yield from project.delete_link(request.match_info["link_id"])
         response.set_status(204)
 
@@ -172,8 +166,7 @@ class LinkHandler:
         })
     def pcap(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
 
         if link.capture_file_path is None:

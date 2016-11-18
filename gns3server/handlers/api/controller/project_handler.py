@@ -284,7 +284,7 @@ class ProjectHandler:
     def export_project(request, response):
 
         controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from controller.get_loaded_project(request.match_info["project_id"])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             datas = yield from export_project(project, tmp_dir, include_images=bool(request.get("include_images", "0")))
@@ -360,7 +360,7 @@ class ProjectHandler:
     def duplicate(request, response):
 
         controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from controller.get_loaded_project(request.match_info["project_id"])
 
         if request.json.get("path"):
             config = Config.instance()
@@ -390,7 +390,7 @@ class ProjectHandler:
     def get_file(request, response):
 
         controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from controller.get_loaded_project(request.match_info["project_id"])
         path = request.match_info["path"]
         path = os.path.normpath(path)
 
@@ -434,7 +434,7 @@ class ProjectHandler:
     def write_file(request, response):
 
         controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from controller.get_loaded_project(request.match_info["project_id"])
         path = request.match_info["path"]
         path = os.path.normpath(path)
 

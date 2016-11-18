@@ -49,7 +49,7 @@ class NodeHandler:
 
         controller = Controller.instance()
         compute = controller.get_compute(request.json.pop("compute_id"))
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from controller.get_loaded_project(request.match_info["project_id"])
         node = yield from project.add_node(compute, request.json.pop("name"), request.json.pop("node_id", None), **request.json)
         response.set_status(201)
         response.json(node)
@@ -80,8 +80,7 @@ class NodeHandler:
         description="List nodes of a project")
     def list_nodes(request, response):
 
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         response.json([v for v in project.nodes.values()])
 
     @Route.put(
@@ -95,7 +94,7 @@ class NodeHandler:
         input=NODE_UPDATE_SCHEMA,
         output=NODE_OBJECT_SCHEMA)
     def update(request, response):
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
 
         # Ignore these because we only use them when creating a node
@@ -121,7 +120,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def start_all(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         yield from project.start_all()
         response.set_status(204)
 
@@ -139,7 +138,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def stop_all(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         yield from project.stop_all()
         response.set_status(204)
 
@@ -157,7 +156,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def suspend_all(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         yield from project.suspend_all()
         response.set_status(204)
 
@@ -175,7 +174,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def reload_all(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         yield from project.stop_all()
         yield from project.start_all()
         response.set_status(204)
@@ -195,7 +194,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def start(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.start()
         response.json(node)
@@ -216,7 +215,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def stop(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.stop()
         response.json(node)
@@ -237,7 +236,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def suspend(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.suspend()
         response.json(node)
@@ -258,7 +257,7 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     def reload(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         yield from node.reload()
         response.json(node)
@@ -277,7 +276,7 @@ class NodeHandler:
         },
         description="Delete a node instance")
     def delete(request, response):
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         yield from project.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
@@ -295,7 +294,7 @@ class NodeHandler:
         description="Compute the IDLE PC for a Dynamips node")
     def auto_idlepc(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         idle = yield from node.dynamips_auto_idlepc()
         response.json(idle)
@@ -315,7 +314,7 @@ class NodeHandler:
         description="Compute a list of potential idle PC for a node")
     def idlepc_proposals(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         idle = yield from node.dynamips_idlepc_proposals()
         response.json(idle)
@@ -335,7 +334,7 @@ class NodeHandler:
         description="Get a file in the node directory")
     def get_file(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         path = request.match_info["path"]
         path = os.path.normpath(path)
@@ -375,7 +374,7 @@ class NodeHandler:
         description="Write a file in the node directory")
     def post_file(request, response):
 
-        project = Controller.instance().get_project(request.match_info["project_id"])
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         path = request.match_info["path"]
         path = os.path.normpath(path)
