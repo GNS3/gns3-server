@@ -339,7 +339,6 @@ class BaseNode:
                 (reader, writer) = yield from asyncio.open_connection(host="127.0.0.1", port=self._internal_console_port)
                 break
             except (OSError, ConnectionRefusedError) as e:
-                print(self._internal_console_port)
                 if remaining_trial <= 0:
                     raise e
             yield from asyncio.sleep(0.1)
