@@ -120,12 +120,16 @@ class ServerHandler:
 
     @Route.post(
         r"/debug",
-        description="Dump debug informations to disk (debug directory in config directory)",
+        description="Dump debug informations to disk (debug directory in config directory). Work only for local server",
         status_codes={
             201: "Writed"
         })
     def debug(request, response):
+
         config = Config.instance()
+        if config.get_section_config("Server").getboolean("local", False) is False:
+            raise HTTPForbidden(text="You can only debug a local server")
+
         debug_dir = os.path.join(config.config_dir, "debug")
         try:
             if os.path.exists(debug_dir):

@@ -56,8 +56,17 @@ def test_shutdown_non_local(http_controller, web_server, config):
 def test_debug(http_controller, config, tmpdir):
     config._main_config_file = str(tmpdir / "test.conf")
 
+    config.set("Server", "local", True)
     response = http_controller.post('/debug')
     assert response.status == 201
     debug_dir = os.path.join(config.config_dir, "debug")
     assert os.path.exists(debug_dir)
     assert os.path.exists(os.path.join(debug_dir, "controller.txt"))
+
+
+def test_debug_non_local(http_controller, config, tmpdir):
+    config._main_config_file = str(tmpdir / "test.conf")
+
+    config.set("Server", "local", False)
+    response = http_controller.post('/debug')
+    assert response.status == 403
