@@ -22,6 +22,7 @@ import sys
 from unittest.mock import MagicMock
 
 from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination, locked_coroutine
+from tests.utils import AsyncioMagicMock
 
 
 def test_wait_run_in_executor(loop):
@@ -57,6 +58,9 @@ def test_subprocess_check_output(loop, tmpdir, restore_original_path):
 
 def test_wait_for_process_termination(loop):
 
+    if sys.version_info >= (3, 5):
+        # No need for test we use native version
+        return
     process = MagicMock()
     process.returncode = 0
     exec = wait_for_process_termination(process)
