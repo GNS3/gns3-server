@@ -284,7 +284,7 @@ class VirtualBoxVM(BaseNode):
 
         self._hw_virtualization = False
         yield from self._stop_ubridge()
-        self._stop_remote_console()
+        yield from self._stop_remote_console()
         vm_state = yield from self._get_vm_state()
         if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
             if self.acpi_shutdown:
@@ -312,6 +312,7 @@ class VirtualBoxVM(BaseNode):
                     yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
                     yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
                     yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
+        yield from super().stop()
 
     @asyncio.coroutine
     def suspend(self):
@@ -898,16 +899,23 @@ class VirtualBoxVM(BaseNode):
         """
         Starts remote console support for this VM.
         """
-        pipe = yield from asyncio_open_serial(self._get_pipe_name())
-        server = AsyncioTelnetServer(reader=pipe, writer=pipe, binary=True, echo=True)
+        self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+        server = AsyncioTelnetServer(reader=self._remote_pipe,
+                                     writer=self._remote_pipe,
+                                     binary=True,
+                                     echo=True)
         self._telnet_server = yield from asyncio.start_server(server.run, '127.0.0.1', self.console)
 
+    @asyncio.coroutine
     def _stop_remote_console(self):
         """
         Stops remote console support for this VM.
         """
         if self._telnet_server:
             self._telnet_server.close()
+            yield from self._telnet_server.wait_closed()
+            self._remote_pipe.close()
+            self._telnet_server = None
 
     @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, nio):

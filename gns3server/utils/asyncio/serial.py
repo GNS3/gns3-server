@@ -56,6 +56,9 @@ class SerialReaderWriterProtocol(asyncio.Protocol):
     def data_received(self, data):
         self._output.feed_data(data)
 
+    def close(self):
+        self._output.feed_eof()
+
 
 class WindowsPipe:
     """

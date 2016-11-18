@@ -460,7 +460,7 @@ class VMwareVM(BaseNode):
         """
 
         self._hw_virtualization = False
-        self._stop_remote_console()
+        yield from self._stop_remote_console()
         yield from self._stop_ubridge()
 
         try:
@@ -495,6 +495,7 @@ class VMwareVM(BaseNode):
                     self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "TRUE"
             self._write_vmx_file()
 
+        yield from super().stop()
         log.info("VMware VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
 
     @asyncio.coroutine
@@ -799,16 +800,23 @@ class VMwareVM(BaseNode):
         """
         Starts remote console support for this VM.
         """
-        pipe = yield from asyncio_open_serial(self._get_pipe_name())
-        server = AsyncioTelnetServer(reader=pipe, writer=pipe, binary=True, echo=True)
+        self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+        server = AsyncioTelnetServer(reader=self._remote_pipe,
+                                     writer=self._remote_pipe,
+                                     binary=True,
+                                     echo=True)
         self._telnet_server = yield from asyncio.start_server(server.run, '127.0.0.1', self.console)
 
+    @asyncio.coroutine
     def _stop_remote_console(self):
         """
         Stops remote console support for this VM.
         """
         if self._telnet_server:
             self._telnet_server.close()
+            yield from self._telnet_server.wait_closed()
+            self._remote_pipe.close()
+            self._telnet_server = None
 
     @asyncio.coroutine
     def start_capture(self, adapter_number, output_file):
