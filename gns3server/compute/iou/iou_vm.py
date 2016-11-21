@@ -224,16 +224,16 @@ class IOUVM(BaseNode):
 
         iourc_path = self._config().get("iourc_path")
         if not iourc_path:
+            # look for the iourc file in the temporary  dir.
+            path = os.path.join(self.temporary_directory, "iourc")
+            if os.path.exists(path):
+                return path
             # look for the iourc file in the user home dir.
             path = os.path.join(os.path.expanduser("~/"), ".iourc")
             if os.path.exists(path):
                 return path
             # look for the iourc file in the current working dir.
             path = os.path.join(self.working_dir, "iourc")
-            if os.path.exists(path):
-                return path
-            # look for the iourc file in the temporary  dir.
-            path = os.path.join(self.temporary_directory, "iourc")
             if os.path.exists(path):
                 return path
         return iourc_path

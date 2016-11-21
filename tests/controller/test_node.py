@@ -346,6 +346,21 @@ def test_start(node, compute, project, async_run):
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/start".format(node.project.id, node.id), timeout=240)
 
 
+def test_start_iou(compute, project, async_run, controller):
+    node = Node(project, compute, "demo",
+                node_id=str(uuid.uuid4()),
+                node_type="iou")
+    compute.post = AsyncioMagicMock()
+
+    # Without licence configured it should raise an error
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        async_run(node.start())
+
+    controller.settings["IOU"] = {"iourc_content": "aa"}
+    async_run(node.start())
+    compute.post.assert_called_with("/projects/{}/iou/nodes/{}/start".format(node.project.id, node.id), timeout=240, data={"iourc_content": "aa"})
+
+
 def test_stop(node, compute, project, async_run):
 
     compute.post = AsyncioMagicMock()

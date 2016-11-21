@@ -387,7 +387,15 @@ class Node:
         Start a node
         """
         try:
-            yield from self.post("/start", timeout=240)
+            # For IOU we need to send the licence everytime
+            if self.node_type == "iou":
+                try:
+                    licence = self._project.controller.settings["IOU"]["iourc_content"]
+                except KeyError:
+                    raise aiohttp.web.HTTPConflict(text="IOU licence is not configured")
+                yield from self.post("/start", timeout=240, data={"iourc_content": licence})
+            else:
+                yield from self.post("/start", timeout=240)
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when starting {}".format(self._name))
 
