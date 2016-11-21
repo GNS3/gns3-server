@@ -27,6 +27,7 @@ import io
 
 from ..utils import parse_version
 from ..utils.images import scan_for_images, md5sum
+from ..utils.asyncio import locked_coroutine
 from ..controller.controller_error import ControllerError
 from ..config import Config
 from ..version import __version__
@@ -354,7 +355,7 @@ class Compute:
         response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
-    @asyncio.coroutine
+    @locked_coroutine
     def connect(self):
         """
         Check if remote server is accessible
@@ -469,6 +470,8 @@ class Compute:
                     data = json.dumps(data)
         try:
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
+        except asyncio.TimeoutError as e:
+            raise ComputeError("Timeout error when connecting to {}".format(url))
         except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.ClientResponseError) as e:
             raise ComputeError(str(e))
         body = yield from response.read()
