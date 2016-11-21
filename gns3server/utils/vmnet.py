@@ -110,8 +110,11 @@ def find_vnetlib_registry(regkey):
         # default path not used, let's look in the registry
         hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
         install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
-        vnetlib_path = os.path.join(install_path, "vnetlib.exe")
         winreg.CloseKey(hkey)
+        vnetlib_path = os.path.join(install_path, "vnetlib64.exe")
+        if os.path.exists(vnetlib_path):
+            return vnetlib_path
+        vnetlib_path = os.path.join(install_path, "vnetlib.exe")
         if os.path.exists(vnetlib_path):
             return vnetlib_path
     except OSError:
@@ -124,10 +127,13 @@ def find_vnetlib_on_windows():
     vnetlib_path = shutil.which("vnetlib")
     if vnetlib_path is None:
         # look for vnetlib.exe in default VMware Workstation directory
-        vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib.exe")
+        vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib64.exe")
+        if not os.path.exists(vnetlib_ws):
+            vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib.exe")
         if os.path.exists(vnetlib_ws):
             vnetlib_path = vnetlib_ws
-        else:
+
+        if vnetlib_path is None:
             # look for vnetlib.exe using the directory listed in the registry
             vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
         if vnetlib_path is None:
