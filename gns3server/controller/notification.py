@@ -17,6 +17,7 @@
 
 import os
 import aiohttp
+import asyncio
 from contextlib import contextmanager
 
 from ..notification_queue import NotificationQueue
@@ -51,6 +52,7 @@ class Notification:
         """
         return project.id in self._listeners and len(self._listeners[project.id]) > 0
 
+    @asyncio.coroutine
     def dispatch(self, action, event, compute_id):
         """
         Notification received from compute node. Send it directly
@@ -65,7 +67,7 @@ class Notification:
                 # Update controller node data and send the event node.updated
                 project = self._controller.get_project(event["project_id"])
                 node = project.get_node(event["node_id"])
-                node.parse_node_response(event)
+                yield from node.parse_node_response(event)
 
                 self.emit("node.updated", node.__json__())
             except aiohttp.web.HTTPNotFound:

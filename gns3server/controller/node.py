@@ -59,6 +59,7 @@ class Node:
         self._node_type = node_type
 
         self._label = None
+        self._links = set()
         self._name = None
         self.name = name
         self._console = None
@@ -268,6 +269,22 @@ class Node:
     def first_port_name(self, val):
         self._first_port_name = val
 
+    def add_link(self, link):
+        """
+        A link is connected to the node
+        """
+        self._links.add(link)
+
+    def remove_link(self, link):
+        """
+        A link is connected to the node
+        """
+        self._links.remove(link)
+
+    @property
+    def link(self):
+        return self._links
+
     @asyncio.coroutine
     def create(self):
         """
@@ -291,7 +308,7 @@ class Node:
                 else:
                     raise e
             else:
-                self.parse_node_response(response.json)
+                yield from self.parse_node_response(response.json)
                 return True
             trial += 1
 
@@ -328,9 +345,10 @@ class Node:
         if update_compute:
             data = self._node_data(properties=compute_properties)
             response = yield from self.put(None, data=data)
-            self.parse_node_response(response.json)
+            yield from self.parse_node_response(response.json)
         self.project.dump()
 
+    @asyncio.coroutine
     def parse_node_response(self, response):
         """
         Update the object with the remote node object
@@ -353,6 +371,8 @@ class Node:
             else:
                 self._properties[key] = value
         self._list_ports()
+        for link in self._links:
+            yield from link.node_updated(self)
 
     def _node_data(self, properties=None):
         """

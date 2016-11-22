@@ -474,3 +474,14 @@ def test_get_port(node):
     assert port.adapter_number == 1
     with pytest.raises(aiohttp.web.HTTPNotFound):
         port = node.get_port(42, 0)
+
+
+def test_parse_node_response(node, async_run):
+    """
+    When a node is updated we notify the links connected to it
+    """
+    link = MagicMock()
+    link.node_updated = AsyncioMagicMock()
+    node.add_link(link)
+    async_run(node.parse_node_response({"status": "started"}))
+    assert link.node_updated.called

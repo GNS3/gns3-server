@@ -187,6 +187,37 @@ def test_choose_capture_side(async_run, project):
     compute2 = MagicMock()
     compute2.id = "local"
 
+    # Capture should run on the local node
+    node_vpcs = Node(project, compute1, "node1", node_type="vpcs")
+    node_vpcs._status = "started"
+    node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
+    node_iou = Node(project, compute2, "node2", node_type="iou")
+    node_iou._status = "started"
+    node_iou._ports = [EthernetPort("E0", 0, 3, 1)]
+
+    link = UDPLink(project)
+    link.create = AsyncioMagicMock()
+    async_run(link.add_node(node_vpcs, 0, 4))
+    async_run(link.add_node(node_iou, 3, 1))
+
+    assert link._choose_capture_side()["node"] == node_iou
+
+    # Capture should choose always running node
+    node_iou = Node(project, compute1, "node5", node_type="iou")
+    node_iou._status = "started"
+    node_iou._ports = [EthernetPort("E0", 0, 0, 4)]
+    node_switch = Node(project, compute1, "node6", node_type="ethernet_switch")
+    node_switch._status = "started"
+    node_switch._ports = [EthernetPort("E0", 0, 3, 1)]
+
+    link = UDPLink(project)
+    link.create = AsyncioMagicMock()
+    async_run(link.add_node(node_iou, 0, 4))
+    async_run(link.add_node(node_switch, 3, 1))
+
+    assert link._choose_capture_side()["node"] == node_switch
+
+    # Capture should raise error if node are not started
     node_vpcs = Node(project, compute1, "node1", node_type="vpcs")
     node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
     node_iou = Node(project, compute2, "node2", node_type="iou")
@@ -197,36 +228,18 @@ def test_choose_capture_side(async_run, project):
     async_run(link.add_node(node_vpcs, 0, 4))
     async_run(link.add_node(node_iou, 3, 1))
 
-    assert link._choose_capture_side()["node"] == node_iou
-
-    node_vpcs = Node(project, compute1, "node3", node_type="vpcs")
-    node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
-    node_vpcs2 = Node(project, compute1, "node4", node_type="vpcs")
-    node_vpcs2._ports = [EthernetPort("E0", 0, 3, 1)]
-
-    link = UDPLink(project)
-    link.create = AsyncioMagicMock()
-    async_run(link.add_node(node_vpcs, 0, 4))
-    async_run(link.add_node(node_vpcs2, 3, 1))
-
-    # Capture should run on the local node
-    node_iou = Node(project, compute1, "node5", node_type="iou")
-    node_iou._ports = [EthernetPort("E0", 0, 0, 4)]
-    node_iou2 = Node(project, compute2, "node6", node_type="iou")
-    node_iou2._ports = [EthernetPort("E0", 0, 3, 1)]
-
-    link = UDPLink(project)
-    link.create = AsyncioMagicMock()
-    async_run(link.add_node(node_iou, 0, 4))
-    async_run(link.add_node(node_iou2, 3, 1))
-
-    assert link._choose_capture_side()["node"] == node_iou2
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        link._choose_capture_side()
+    # If you start a node you can capture on it
+    node_vpcs._status = "started"
+    assert link._choose_capture_side()["node"] == node_vpcs
 
 
 def test_capture(async_run, project):
     compute1 = MagicMock()
 
     node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
+    node_vpcs._status = "started"
     node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
     node_iou = Node(project, compute1, "I1", node_type="iou")
     node_iou._ports = [EthernetPort("E0", 0, 3, 1)]
@@ -254,6 +267,7 @@ def test_read_pcap_from_source(project, async_run):
     compute1 = MagicMock()
 
     node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
+    node_vpcs._status = "started"
     node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
     node_iou = Node(project, compute1, "I1", node_type="iou")
     node_iou._ports = [EthernetPort("E0", 0, 3, 1)]
@@ -268,3 +282,23 @@ def test_read_pcap_from_source(project, async_run):
 
     async_run(link.read_pcap_from_source())
     link._capture_node["node"].compute.stream_file.assert_called_with(project, "tmp/captures/" + link._capture_file_name)
+
+
+def test_node_updated(project, async_run):
+    """
+    If a node stop when capturing we stop the capture
+    """
+    compute1 = MagicMock()
+    node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
+    node_vpcs._status = "started"
+
+    link = UDPLink(project)
+    link._capture_node = {"node": node_vpcs}
+    link.stop_capture = AsyncioMagicMock()
+
+    async_run(link.node_updated(node_vpcs))
+    assert not link.stop_capture.called
+
+    node_vpcs._status = "stopped"
+    async_run(link.node_updated(node_vpcs))
+    assert link.stop_capture.called

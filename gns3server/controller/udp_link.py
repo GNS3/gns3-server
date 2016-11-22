@@ -115,6 +115,7 @@ class UDPLink(Link):
         # If the node is already delete (user selected multiple element and delete all in the same time)
         except aiohttp.web.HTTPNotFound:
             pass
+        yield from super().delete()
 
     @asyncio.coroutine
     def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
@@ -145,21 +146,31 @@ class UDPLink(Link):
         """
         Run capture on the best candidate.
 
-        The ideal candidate is a node who support capture on controller server
+        The ideal candidate is a node who on controller server and always
+        running (capture will not be cut off)
 
         :returns: Node where the capture should run
         """
 
-        # use the local node first to save bandwidth
+        ALWAYS_RUNNING_NODES_TYPE = ("cloud", "nat", "ethernet_switch", "ethernet_hub")
+
         for node in self._nodes:
-            if node["node"].compute.id == "local" and node["node"].node_type not in [""]:  # FIXME
+            if node["node"].compute.id == "local" and node["node"].node_type in ALWAYS_RUNNING_NODES_TYPE and node["node"].status == "started":
                 return node
 
         for node in self._nodes:
-            if node["node"].node_type not in [""]:  # FIXME
+            if node["node"].node_type in ALWAYS_RUNNING_NODES_TYPE and node["node"].status == "started":
                 return node
 
-        raise aiohttp.web.HTTPConflict(text="Capture is not supported for this link")
+        for node in self._nodes:
+            if node["node"].compute.id == "local" and node["node"].status == "started":
+                return node
+
+        for node in self._nodes:
+            if node["node"].node_type and node["node"].status == "started":
+                return node
+
+        raise aiohttp.web.HTTPConflict(text="Can not capture because no running device on this link")
 
     @asyncio.coroutine
     def read_pcap_from_source(self):
@@ -169,3 +180,11 @@ class UDPLink(Link):
         if self._capture_node:
             compute = self._capture_node["node"].compute
             return compute.stream_file(self._project, "tmp/captures/" + self._capture_file_name)
+
+    @asyncio.coroutine
+    def node_updated(self, node):
+        """
+        Called when a node member of the link is updated
+        """
+        if self._capture_node and node == self._capture_node["node"] and node.status != "started":
+            yield from self.stop_capture()

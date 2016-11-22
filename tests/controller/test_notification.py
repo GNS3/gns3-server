@@ -77,7 +77,7 @@ def test_dispatch(async_run, controller, project):
     with notif.queue(project) as queue:
         assert len(notif._listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
-        notif.dispatch("test", {}, compute_id=1)
+        async_run(notif.dispatch("test", {}, compute_id=1))
         msg = async_run(queue.get(5))
         assert msg == ('test', {}, {})
 
@@ -87,7 +87,7 @@ def test_dispatch_ping(async_run, controller, project):
     with notif.queue(project) as queue:
         assert len(notif._listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
-        notif.dispatch("ping", {}, compute_id=12)
+        async_run(notif.dispatch("ping", {}, compute_id=12))
         msg = async_run(queue.get(5))
         assert msg == ('ping', {'compute_id': 12}, {})
 
@@ -102,13 +102,13 @@ def test_dispatch_node_updated(async_run, controller, node, project):
     with notif.queue(project) as queue:
         assert len(notif._listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
-        notif.dispatch("node.updated", {
+        async_run(notif.dispatch("node.updated", {
             "node_id": node.id,
             "project_id": project.id,
             "name": "hello",
             "startup_config": "ip 192"
         },
-            compute_id=1)
+            compute_id=1))
         assert node.name == "hello"
         action, event, _ = async_run(queue.get(5))
         assert action == "node.updated"

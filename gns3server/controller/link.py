@@ -91,6 +91,8 @@ class Link:
 
         if len(self._nodes) == 2:
             yield from self.create()
+            for n in self._nodes:
+                n["node"].add_link(self)
             self._created = True
             self._project.controller.notification.emit("link.created", self.__json__())
 
@@ -121,8 +123,8 @@ class Link:
         """
         Delete the link
         """
-
-        raise NotImplementedError
+        for port in self._nodes:
+            port["node"].remove_link(self)
 
     @asyncio.coroutine
     def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
@@ -173,6 +175,13 @@ class Link:
 
         raise NotImplementedError
 
+    @asyncio.coroutine
+    def node_updated(self, node):
+        """
+        Called when a node member of the link is updated
+        """
+        raise NotImplementedError
+
     def default_capture_file_name(self):
         """
         :returns: File name for a capture on this link
@@ -213,6 +222,9 @@ class Link:
         if not isinstance(other, Link):
             return False
         return self.id == other.id
+
+    def __hash__(self):
+        return hash(self._id)
 
     def __json__(self, topology_dump=False):
         """

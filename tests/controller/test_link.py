@@ -97,6 +97,7 @@ def test_add_node(async_run, project, compute):
 
     assert link.create.called
     link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
+    assert link in node2.link
 
 
 def test_add_node_cloud(async_run, project, compute):
@@ -302,3 +303,23 @@ def test_stop_capture(link, async_run, tmpdir, project, controller):
     async_run(link.stop_capture())
     assert link._capturing is False
     controller._notification.emit.assert_called_with("link.updated", link.__json__())
+
+
+def test_delete(async_run, project, compute):
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.controller.notification.emit = MagicMock()
+    project.dump = AsyncioMagicMock()
+    async_run(link.add_node(node1, 0, 4))
+
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+    async_run(link.add_node(node2, 0, 4))
+
+    assert link in node2.link
+
+    async_run(link.delete())
+    assert link not in node2.link
