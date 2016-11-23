@@ -180,6 +180,10 @@ class Cloud(BaseNode):
         yield from self._ubridge_send("bridge create {name}".format(name=bridge_name))
         if not isinstance(nio, NIOUDP):
             raise NodeError("Source NIO is not UDP")
+        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
+                                                                                                 lport=nio.lport,
+                                                                                                 rhost=nio.rhost,
+                                                                                                 rport=nio.rport))
 
         if port_info["type"] in ("ethernet", "tap"):
 
@@ -208,11 +212,6 @@ class Cloud(BaseNode):
                                                                                                      lport=port_info["lport"],
                                                                                                      rhost=port_info["rhost"],
                                                                                                      rport=port_info["rport"]))
-
-        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
-                                                                                                 lport=nio.lport,
-                                                                                                 rhost=nio.rhost,
-                                                                                                 rport=nio.rport))
 
         if nio.capturing:
             yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
