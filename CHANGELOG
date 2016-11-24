@@ -1,5 +1,55 @@
 # Change Log
 
+## 2.0.0alpha4
+
+* Do not block traffic originating from an Ethernet interface in the cloud. Ref #771.
+* Prevent capture on non running node
+* Make the Ethernet side the source in uBridge connection and UDP tunnel the destination. Ref #771.
+* IOURC is a text box instead of a file path
+* Use vnetlib64.exe when possible
+* Multiple improvements around starting the GNS3 VM
+* Wait for the end of project loading before making new change
+* Avoid crash due to permission error on the .backup file
+* For security reason debug informations can only be exported from local server
+* Add more debug informations if VM failed to start
+* Fix opening a project whith the same non linked VM as current project
+* Return default symbol if user asked for a non existing symbol
+* Do not log warning at qemu exit on windows if it's normal
+* Speed up interfaces listening on Windows
+* Fix filtering special interfaces on Windows
+* If server answer not found explain this could be due to the usage of 1.X server
+* Do not reload a project via /load if the project is already opened
+* Fix you can not pass auto close at project creation
+* Fix traceback when sending invalid parameters to the server
+* Require ubridge 0.9.7 this fix error with IOL bridge creation
+* Display path of vnetlib during interface creations
+* Catch errors when listing images
+* Better handle compute unavailable errors
+* Fix NameError: name 'available_ram' is not define
+* If we can found a common subnet we return the host binding for link creation
+* Do not connect GNS3 to remote server via 169.254.X.X
+* Qemu telnet support multiple client connected
+* Support multiple client connected to the same VPCS console
+* Increase timeout for link creation
+* Support for serial console for Virtual BOX and VMware using asyncio
+* Fix timeout issues when starting VMware or VBox
+* Ask for reboot if VBoxManage is not found
+* Fix a crash with VirtualBox linked clone
+* Replace iouyap by ubridge to handle IOU connections. Fixes #614.
+* Lock VMware by VM instead of globally
+* Support bridge in cloud
+* Fix support of IOS images outside standard directories
+* Raise clean error when node timeout when stopped
+* Fix random VirtualBox creation error when using linked clone
+* Drop console_type serial, and enable_remote_console for Vbox and VMware
+* Do not dump iourc_content to .gns3 file
+* Forward server disconnected errors
+* Fix a crash when vboxmanage is not found
+* Raise error if IOU image is not configured
+* Fix crash when getting font
+* Fix a crash when default font is missing
+* Fix a crash when vmrun is not found
+
 ## 2.0.0 alpha 3 28/10/16
 
 * Fix uuid of VirtualBox VM after a save as
