@@ -1,6 +1,6 @@
 # Change Log
 
-## 2.0.0alpha4
+## 2.0.0 alpha 4 24/11/2016
 
 * Do not block traffic originating from an Ethernet interface in the cloud. Ref #771.
 * Prevent capture on non running node
