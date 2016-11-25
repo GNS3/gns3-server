@@ -33,7 +33,7 @@ class UDPLink(Link):
     @property
     def debug_link_data(self):
         """
-        Use for the HTML debug page
+        Use for the debug exports
         """
         return self._link_data
 

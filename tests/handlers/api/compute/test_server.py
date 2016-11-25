@@ -32,3 +32,8 @@ def test_version_output(http_compute):
     response = http_compute.get('/version', example=True)
     assert response.status == 200
     assert response.json == {'local': True, 'version': __version__}
+
+
+def test_debug_output(http_compute):
+    response = http_compute.get('/debug', example=True)
+    assert response.status == 200

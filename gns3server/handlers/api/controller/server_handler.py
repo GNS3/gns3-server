@@ -150,6 +150,16 @@ class ServerHandler:
             # If something is wrong we log the info to the log and we hope the log will be include correctly to the debug export
             log.error("Could not copy VMware VMX file {}".format(e), exc_info=1)
 
+        for compute in Controller.instance().computes.values():
+            try:
+                r = yield from compute.get("/debug", raw=True)
+                data = r.body.decode("utf-8")
+            except Exception as e:
+                data = str(e)
+            with open(os.path.join(debug_dir, "compute_{}.txt".format(compute.name)), "w+") as f:
+                f.write("Compute ID: {}\n".format(compute.id))
+                f.write(data)
+
         response.set_status(201)
 
     @staticmethod
@@ -193,4 +203,11 @@ Processus:
                 data += "* {} {}\n".format(psinfo["name"], psinfo["exe"])
             except psutil.NoSuchProcess:
                 pass
+
+        data += "\n\nProjects"
+        for project in Controller.instance().projects.values():
+            data += "\n\nProject name: {}\nProject ID: {}\n".format(project.name, project.id)
+            for link in project.links.values():
+                data += "Link {}: {}".format(link.id, link.debug_link_data)
+
         return data
