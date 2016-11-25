@@ -49,6 +49,9 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
 
     z = zipstream.ZipFile(allowZip64=True)
 
+    if not os.path.exists(project._path):
+        raise aiohttp.web.HTTPNotFound(text="The project doesn't exist at location {}".format(project._path))
+
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
         if file.endswith(".gns3"):
