@@ -852,63 +852,64 @@ class QemuVM(BaseNode):
                 yield from self.resume()
                 return
 
-            else:
-
-                if self._manager.config.get_section_config("Qemu").getboolean("monitor", True):
-                    try:
-                        info = socket.getaddrinfo(self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
-                        if not info:
-                            raise QemuError("getaddrinfo returns an empty list on {}".format(self._monitor_host))
-                        for res in info:
-                            af, socktype, proto, _, sa = res
-                            # let the OS find an unused port for the Qemu monitor
-                            with socket.socket(af, socktype, proto) as sock:
-                                sock.bind(sa)
-                                self._monitor = sock.getsockname()[1]
-                    except OSError as e:
-                        raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
-
-                # check if there is enough RAM to run
-                self.check_available_ram(self.ram)
-
-                command = yield from self._build_command()
-                command_string = " ".join(shlex.quote(s) for s in command)
+            if self._manager.config.get_section_config("Qemu").getboolean("monitor", True):
                 try:
-                    log.info("Starting QEMU with: {}".format(command_string))
-                    self._stdout_file = os.path.join(self.working_dir, "qemu.log")
-                    log.info("logging to {}".format(self._stdout_file))
-                    with open(self._stdout_file, "w", encoding="utf-8") as fd:
-                        fd.write("Start QEMU with {}\n\nExecution log:\n".format(command_string))
-                        self.command_line = ' '.join(command)
-                        self._process = yield from asyncio.create_subprocess_exec(*command,
-                                                                                  stdout=fd,
-                                                                                  stderr=subprocess.STDOUT,
-                                                                                  cwd=self.working_dir)
+                    info = socket.getaddrinfo(self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+                    if not info:
+                        raise QemuError("getaddrinfo returns an empty list on {}".format(self._monitor_host))
+                    for res in info:
+                        af, socktype, proto, _, sa = res
+                        # let the OS find an unused port for the Qemu monitor
+                        with socket.socket(af, socktype, proto) as sock:
+                            sock.bind(sa)
+                            self._monitor = sock.getsockname()[1]
+                except OSError as e:
+                    raise QemuError("Could not find free port for the Qemu monitor: {}".format(e))
 
-                    if self.use_ubridge:
-                        yield from self._start_ubridge()
-                        for adapter_number, adapter in enumerate(self._ethernet_adapters):
-                            nio = adapter.get_nio(0)
-                            if nio:
-                                yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
-                                                                            self._local_udp_tunnels[adapter_number][1],
-                                                                            nio)
+            # check if there is enough RAM to run
+            self.check_available_ram(self.ram)
 
-                    log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
-                    self.status = "started"
-                    monitor_process(self._process, self._termination_callback)
-                except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
-                    stdout = self.read_stdout()
-                    log.error("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
-                    raise QemuError("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
+            command = yield from self._build_command()
+            command_string = " ".join(shlex.quote(s) for s in command)
+            try:
+                log.info("Starting QEMU with: {}".format(command_string))
+                self._stdout_file = os.path.join(self.working_dir, "qemu.log")
+                log.info("logging to {}".format(self._stdout_file))
+                with open(self._stdout_file, "w", encoding="utf-8") as fd:
+                    fd.write("Start QEMU with {}\n\nExecution log:\n".format(command_string))
+                    self.command_line = ' '.join(command)
+                    self._process = yield from asyncio.create_subprocess_exec(*command,
+                                                                              stdout=fd,
+                                                                              stderr=subprocess.STDOUT,
+                                                                              cwd=self.working_dir)
 
-                yield from self._set_process_priority()
-                if self._cpu_throttling:
-                    self._set_cpu_throttling()
+                if self.use_ubridge:
+                    yield from self._start_ubridge()
+                    for adapter_number, adapter in enumerate(self._ethernet_adapters):
+                        nio = adapter.get_nio(0)
+                        if nio:
+                            yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
+                                                                        self._local_udp_tunnels[adapter_number][1],
+                                                                        nio)
 
-                if "-enable-kvm" in command_string:
-                    self._hw_virtualization = True
-                yield from self.start_wrap_console()
+                log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
+                self.status = "started"
+                monitor_process(self._process, self._termination_callback)
+            except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
+                stdout = self.read_stdout()
+                log.error("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
+                raise QemuError("Could not start QEMU {}: {}\n{}".format(self.qemu_path, e, stdout))
+
+            yield from self._set_process_priority()
+            if self._cpu_throttling:
+                self._set_cpu_throttling()
+
+            if "-enable-kvm" in command_string:
+                self._hw_virtualization = True
+        try:
+            yield from self.start_wrap_console()
+        except OSError as e:
+            raise QemuError("Could not start QEMU console {}\n".format(e))
 
     def _termination_callback(self, returncode):
         """
