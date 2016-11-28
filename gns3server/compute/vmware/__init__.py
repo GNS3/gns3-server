@@ -27,6 +27,7 @@ import asyncio
 import subprocess
 import logging
 import codecs
+import shlex
 
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
@@ -379,7 +380,7 @@ class VMware(BaseManager):
 
         command = [vmrun_path, "-T", self.host_type, subcommand]
         command.extend(args)
-        command_string = " ".join(command)
+        command_string = " ".join([shlex.quote(c) for c in command])
         log.log(log_level, "Executing vmrun with command: {}".format(command_string))
         try:
             process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
