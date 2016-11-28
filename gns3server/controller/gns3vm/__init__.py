@@ -191,7 +191,7 @@ class GNS3VM:
                 yield from self.start()
         else:
             # When user fix something on his system and try again
-            if not self.current_engine().running and self.enable:
+            if self.enable and not self.current_engine().running:
                 yield from self.start()
 
     def _get_engine(self, engine):
