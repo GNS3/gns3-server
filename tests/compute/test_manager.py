@@ -222,35 +222,36 @@ def test_get_relative_image_path_ova(qemu, tmpdir, config):
 
 def test_list_images(loop, qemu, tmpdir):
 
-    fake_images = ["a.bin", "b.bin", ".blu.bin", "a.bin.md5sum"]
+    fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
     for image in fake_images:
         with open(str(tmpdir / image), "w+") as f:
             f.write("1")
 
-    with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
         assert loop.run_until_complete(qemu.list_images()) == [
-            {"filename": "a.bin", "path": "a.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
-            {"filename": "b.bin", "path": "b.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
+            {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
+            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
         ]
 
 
 def test_list_images_recursives(loop, qemu, tmpdir):
 
-    fake_images = ["a.bin", "b.bin", ".blu.bin", "a.bin.md5sum"]
+    fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
     for image in fake_images:
         with open(str(tmpdir / image), "w+") as f:
             f.write("1")
     os.makedirs(str(tmpdir / "c"))
-    fake_images = ["c.bin", "c.bin.md5sum"]
+    fake_images = ["c.qcow2", "c.qcow2.md5sum"]
     for image in fake_images:
         with open(str(tmpdir / "c" / image), "w+") as f:
             f.write("1")
 
-    with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
+
         assert loop.run_until_complete(qemu.list_images()) == [
-            {"filename": "a.bin", "path": "a.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
-            {"filename": "b.bin", "path": "b.bin", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
-            {"filename": "c.bin", "path": os.path.sep.join(["c", "c.bin"]), "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
+            {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
+            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
+            {"filename": "c.qcow2", "path": os.path.sep.join(["c", "c.qcow2"]), "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
         ]
 
 

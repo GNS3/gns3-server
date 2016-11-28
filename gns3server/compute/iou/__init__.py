@@ -95,9 +95,3 @@ class IOU(BaseManager):
         """
 
         return os.path.join("iou", "device-{}".format(legacy_vm_id))
-
-    def get_images_directory(self):
-        """
-        Return the full path of the images directory on disk
-        """
-        return os.path.join(os.path.expanduser(self.config.get_section_config("Server").get("images_path", "~/GNS3/images")), "IOU")

@@ -39,7 +39,7 @@ from .port_manager import PortManager
 from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
 from .nios.nio_ethernet import NIOEthernet
-from ..utils.images import md5sum, remove_checksum, images_directories
+from ..utils.images import md5sum, remove_checksum, images_directories, default_images_directory, list_images
 from .error import NodeError, ImageMissingError
 
 
@@ -477,27 +477,14 @@ class BaseManager:
         :returns: Array of hash
         """
 
-        images = []
-        img_dir = self.get_images_directory()
-        for root, dirs, files in os.walk(img_dir):
-            for filename in files:
-                if filename[0] != "." and not filename.endswith(".md5sum"):
-                    path = os.path.relpath(os.path.join(root, filename), img_dir)
-                    try:
-                        images.append({
-                            "filename": filename,
-                            "path": path,
-                            "md5sum": md5sum(os.path.join(root, filename)),
-                            "filesize": os.stat(os.path.join(root, filename)).st_size})
-                    except OSError as e:
-                        log.warn("Can't add image {}: {}".format(path, str(e)))
-        return images
+        return list_images(self._NODE_TYPE)
 
     def get_images_directory(self):
         """
         Get the image directory on disk
         """
-
+        if hasattr(self, "_NODE_TYPE"):
+            return default_images_directory(self._NODE_TYPE)
         raise NotImplementedError
 
     @asyncio.coroutine

@@ -26,28 +26,96 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def scan_for_images(type):
+def list_images(type):
     """
     Scan directories for available image for a type
 
     :param type: emulator type (dynamips, qemu, iou)
     """
     files = set()
-    paths = []
+    images = []
+
+    server_config = Config.instance().get_section_config("Server")
+    general_images_directory = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+
+    # Subfolder of the general_images_directory specific to this VM type
+    default_directory = default_images_directory(type)
+
     for directory in images_directories(type):
+
+        # We limit recursion to path outside the default images directory
+        # the reason is in the default directory manage file organization and
+        # it should be flatten to keep things simple
+        recurse = True
+        if os.path.commonprefix([directory, general_images_directory]) == general_images_directory:
+            recurse = False
+
         directory = os.path.normpath(directory)
-        for root, _, filenames in os.walk(directory):
-            for file in filenames:
-                path = os.path.join(root, file)
-                if file not in files:
-                    if file.endswith(".md5sum") or file.startswith("."):
+        for root, _, filenames in _os_walk(directory, recurse=recurse):
+            for filename in filenames:
+                path = os.path.join(root, filename)
+                if filename not in files:
+                    if filename.endswith(".md5sum") or filename.startswith("."):
                         continue
-                    elif (file.endswith(".image") and type == "dynamips") \
-                            or (file.endswith(".bin") and type == "iou") \
-                            or (not file.endswith(".bin") and not file.endswith(".image") and type == "qemu"):
-                        files.add(file)
-                        paths.append(force_unix_path(path))
-    return paths
+                    elif ((filename.endswith(".image") or filename.endswith(".bin")) and type == "dynamips") \
+                            or (filename.endswith(".bin") and type == "iou") \
+                            or (not filename.endswith(".bin") and not filename.endswith(".image") and type == "qemu"):
+                        files.add(filename)
+
+                        # It the image is located in the standard directory the path is relative
+                        if os.path.commonprefix([root, default_directory]) != default_directory:
+                            path = os.path.join(root, filename)
+                        else:
+                            path = os.path.relpath(os.path.join(root, filename), default_directory)
+
+                        try:
+                            if type in ["dynamips", "iou"]:
+                                with open(os.path.join(root, filename), "rb") as f:
+                                    # read the first 7 bytes of the file.
+                                    elf_header_start = f.read(7)
+                                # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
+                                if not elf_header_start == b'\x7fELF\x01\x02\x01' and not elf_header_start == b'\x7fELF\x01\x01\x01':
+                                    continue
+
+                            images.append({
+                                "filename": filename,
+                                "path": path,
+                                "md5sum": md5sum(os.path.join(root, filename)),
+                                "filesize": os.stat(os.path.join(root, filename)).st_size})
+                        except OSError as e:
+                            log.warn("Can't add image {}: {}".format(path, str(e)))
+    return images
+
+
+def _os_walk(directory, recurse=True, **kwargs):
+    """
+    Work like os.walk but if recurse is False just list current directory
+    """
+    if recurse:
+        for root, dirs, files in os.walk(directory, **kwargs):
+            yield root, dirs, files
+    else:
+        files = []
+        for filename in os.listdir(directory):
+            if os.path.isfile(os.path.join(directory, filename)):
+                files.append(filename)
+        yield directory, [], files
+
+
+def default_images_directory(type):
+    """
+    :returns: Return the default directory for a node type
+    """
+    server_config = Config.instance().get_section_config("Server")
+    img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    if type == "qemu":
+        return os.path.join(img_dir, "QEMU")
+    elif type == "iou":
+        return os.path.join(img_dir, "IOU")
+    elif type == "dynamips":
+        return os.path.join(img_dir, "IOS")
+    else:
+        raise NotImplementedError("%s node type is not supported", type)
 
 
 def images_directories(type):
@@ -61,14 +129,7 @@ def images_directories(type):
 
     paths = []
     img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
-    if type == "qemu":
-        type_img_directory = os.path.join(img_dir, "QEMU")
-    elif type == "iou":
-        type_img_directory = os.path.join(img_dir, "IOU")
-    elif type == "dynamips":
-        type_img_directory = os.path.join(img_dir, "IOS")
-    else:
-        raise NotImplementedError("%s is not supported", type)
+    type_img_directory = default_images_directory(type)
     os.makedirs(type_img_directory, exist_ok=True)
     paths.append(type_img_directory)
     for directory in server_config.get("additional_images_path", "").split(";"):

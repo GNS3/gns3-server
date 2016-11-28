@@ -26,7 +26,7 @@ import os
 import io
 
 from ..utils import parse_version
-from ..utils.images import scan_for_images, md5sum
+from ..utils.images import list_images, md5sum
 from ..utils.asyncio import locked_coroutine
 from ..controller.controller_error import ControllerError
 from ..config import Config
@@ -563,18 +563,10 @@ class Compute:
         res = yield from self.http_query("GET", "/{}/images".format(type), timeout=None)
         images = res.json
 
-        try:
-            if type in ["qemu", "dynamips", "iou"]:
-                for path in scan_for_images(type):
-                    image = os.path.basename(path)
-                    if image not in [i['filename'] for i in images]:
-                        images.append({"filename": image,
-                                       "path": image,
-                                       "md5sum": md5sum(path),
-                                       "filesize": os.stat(path).st_size
-                                       })
-        except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Can't scan for images: {}".format(str(e)))
+        if type in ["qemu", "dynamips", "iou"]:
+            for local_image in list_images(type):
+                if local_image['filename'] not in [i['filename'] for i in images]:
+                    images.append(local_image)
         return images
 
     @asyncio.coroutine

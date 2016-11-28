@@ -20,7 +20,7 @@ from unittest.mock import patch
 
 
 from gns3server.utils import force_unix_path
-from gns3server.utils.images import md5sum, remove_checksum, images_directories, scan_for_images
+from gns3server.utils.images import md5sum, remove_checksum, images_directories, list_images
 
 
 def test_images_directories(tmpdir):
@@ -92,17 +92,21 @@ def test_remove_checksum(tmpdir):
     remove_checksum(str(tmpdir / 'not_exists'))
 
 
-def test_scan_for_images(tmpdir):
+def test_list_images(tmpdir):
     path1 = tmpdir / "images1" / "IOS" / "test1.image"
-    path1.write("1", ensure=True)
+    path1.write(b'\x7fELF\x01\x02\x01', ensure=True)
     path1 = force_unix_path(str(path1))
 
     path2 = tmpdir / "images2" / "test2.image"
-    path2.write("1", ensure=True)
+    path2.write(b'\x7fELF\x01\x02\x01', ensure=True)
     path2 = force_unix_path(str(path2))
 
+    # Invalid image because not a valid elf file
+    path = tmpdir / "images2" / "test_invalid.image"
+    path.write(b'NOTANELF', ensure=True)
+
     path3 = tmpdir / "images1" / "IOU" / "test3.bin"
-    path3.write("1", ensure=True)
+    path3.write(b'\x7fELF\x01\x02\x01', ensure=True)
     path3 = force_unix_path(str(path3))
 
     path4 = tmpdir / "images1" / "QEMU" / "test4.qcow2"
@@ -118,6 +122,35 @@ def test_scan_for_images(tmpdir):
             "additional_images_path": "/tmp/null24564;{}".format(str(tmpdir / "images2")),
             "local": False}):
 
-        assert scan_for_images("dynamips") == [str(path1), str(path2)]
-        assert scan_for_images("iou") == [str(path3)]
-        assert scan_for_images("qemu") == [str(path4)]
+        assert list_images("dynamips") == [
+            {
+                'filename': 'test1.image',
+                'filesize': 7,
+                'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+                'path': 'test1.image'
+            },
+            {
+                'filename': 'test2.image',
+                'filesize': 7,
+                'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+                'path': str(path2)
+            }
+        ]
+
+        assert list_images("iou") == [
+            {
+                'filename': 'test3.bin',
+                'filesize': 7,
+                'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+                'path': 'test3.bin'
+            }
+        ]
+
+        assert list_images("qemu") == [
+            {
+                'filename': 'test4.qcow2',
+                'filesize': 1,
+                'md5sum': 'c4ca4238a0b923820dcc509a6f75849b',
+                'path': 'test4.qcow2'
+            }
+        ]

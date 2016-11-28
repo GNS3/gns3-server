@@ -229,12 +229,6 @@ class Qemu(BaseManager):
 
         return os.path.join("qemu", "vm-{}".format(legacy_vm_id))
 
-    def get_images_directory(self):
-        """
-        Return the full path of the images directory on disk
-        """
-        return os.path.join(os.path.expanduser(self.config.get_section_config("Server").get("images_path", "~/GNS3/images")), "QEMU")
-
     @asyncio.coroutine
     def create_disk(self, qemu_img, path, options):
         """

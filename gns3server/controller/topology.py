@@ -22,6 +22,7 @@ import uuid
 import shutil
 import zipfile
 import aiohttp
+import platform
 import jsonschema
 
 

@@ -132,7 +132,6 @@ from tests.utils import asyncio_patch
 @pytest.fixture
 def fake_dynamips(tmpdir):
     """Create a fake Dynamips image on disk"""
-
     path = str(tmpdir / "7200.bin")
     with open(path, "wb+") as f:
         f.write(b'\x7fELF\x01\x02\x01')
@@ -153,7 +152,7 @@ def fake_file(tmpdir):
 
 def test_images(http_compute, tmpdir, fake_dynamips, fake_file):
 
-    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir), example=True):
+    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
         response = http_compute.get("/dynamips/images")
     assert response.status == 200
     assert response.json == [{"filename": "7200.bin",
@@ -163,24 +162,24 @@ def test_images(http_compute, tmpdir, fake_dynamips, fake_file):
                               }]
 
 
-def test_upload_image(http_compute, tmpdir):
-    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir),):
-        response = http_compute.post("/dynamips/images/test2", body="TEST", raw=True)
-        assert response.status == 204
+def test_upload_image(http_compute, tmpdir, images_dir):
+    response = http_compute.post("/dynamips/images/test2", body="TEST", raw=True)
+    assert response.status == 204
 
-    with open(str(tmpdir / "test2")) as f:
+    with open(os.path.join(images_dir, "IOS", "test2")) as f:
         assert f.read() == "TEST"
 
-    with open(str(tmpdir / "test2.md5sum")) as f:
+    with open(os.path.join(images_dir, "IOS", "test2.md5sum")) as f:
         checksum = f.read()
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-def test_upload_image_permission_denied(http_compute, tmpdir):
-    with open(str(tmpdir / "test2.tmp"), "w+") as f:
+def test_upload_image_permission_denied(http_compute, tmpdir, images_dir):
+    os.makedirs(os.path.join(images_dir, "IOS"), exist_ok=True)
+    with open(os.path.join(images_dir, "IOS", "test2.tmp"), "w+") as f:
         f.write("")
-    os.chmod(str(tmpdir / "test2.tmp"), 0)
+    os.chmod(os.path.join(images_dir, "IOS", "test2.tmp"), 0)
 
-    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir),):
+    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
         response = http_compute.post("/dynamips/images/test2", body="TEST", raw=True)
         assert response.status == 409
