@@ -359,15 +359,21 @@ class VMware(BaseManager):
 
     @asyncio.coroutine
     def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
-        try:
-            return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
-        except VMwareError as e:
-            # We can fail to detect that it's VMware player instead of Workstation (due to marketing change Player is now Player Workstation)
-            if self.host_type == "ws" and "VIX_SERVICEPROVIDER_VMWARE_WORKSTATION" in str(e):
-                self._host_type = "player"
+        trial = 2
+
+        while trial:
+            try:
                 return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
-            else:
-                raise e
+            except VMwareError as e:
+                # We can fail to detect that it's VMware player instead of Workstation (due to marketing change Player is now Player Workstation)
+                if self.host_type == "ws" and "VIX_SERVICEPROVIDER_VMWARE_WORKSTATION" in str(e):
+                    self._host_type = "player"
+                    return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
+                else:
+                    if trial <= 0:
+                        raise e
+                    trial -= 1
+                    yield from asyncio.sleep(0.5)
 
     @asyncio.coroutine
     def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
