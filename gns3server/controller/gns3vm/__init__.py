@@ -240,6 +240,7 @@ class GNS3VM:
                                                         name="GNS3 VM ({})".format(self.current_engine().vmname),
                                                         host=None,
                                                         force=True)
+                log.error("Can't start the GNS3 VM: {}", str(e))
 
     @asyncio.coroutine
     def exit_vm(self):

@@ -361,7 +361,7 @@ class VMware(BaseManager):
     def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
         trial = 2
 
-        while trial:
+        while True:
             try:
                 return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
             except VMwareError as e:
