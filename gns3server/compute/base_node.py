@@ -99,10 +99,7 @@ class BaseNode:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
         if self._wrap_console:
-            if console_type == "vnc":
-                self._wrap_console = False  # We don't support multiple client connected to the same VNC
-            else:
-                self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
+            self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
 
         if self._aux is None and allocate_aux:
             self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
@@ -331,7 +328,7 @@ class BaseNode:
         Start a telnet proxy for the console allowing multiple client
         connected at the same time
         """
-        if not self._wrap_console:
+        if not self._wrap_console or self._console_type != "telnet":
             return
         remaining_trial = 60
         while True:
