@@ -1,5 +1,5 @@
 jsonschema>=2.4.0
-aiohttp>=1.1.3
+aiohttp>=1.1.6
 aiohttp_cors>=0.4.0
 yarl>=0.7.0
 Jinja2>=2.7.3

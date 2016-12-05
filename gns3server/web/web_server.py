@@ -79,7 +79,8 @@ class WebServer:
 
     def _run_application(self, handler, ssl_context=None):
         try:
-            self._server = self._loop.run_until_complete(self._loop.create_server(handler, self._host, self._port, ssl=ssl_context))
+            srv = self._loop.create_server(handler, self._host, self._port, ssl=ssl_context)
+            self._server, startup_res = self._loop.run_until_complete(asyncio.gather(srv, self._app.startup(), loop=self._loop))
         except OSError as e:
             log.critical("Could not start the server: {}".format(e))
             return False
@@ -249,6 +250,13 @@ class WebServer:
                 time.sleep(1)  # this is to prevent too many request to slow down the server
         log.debug("UDP server discovery stopped")
 
+    @asyncio.coroutine
+    def _on_startup(self, *args):
+        """
+        Called when the HTTP server start
+        """
+        yield from Controller.instance().start()
+
     def run(self):
         """
         Starts the server.
@@ -284,6 +292,9 @@ class WebServer:
             log.debug("ENV %s=%s", key, val)
 
         self._app = aiohttp.web.Application()
+        # Background task started with the server
+        self._app.on_startup.append(self._on_startup)
+
         # Allow CORS for this domains
         cors = aiohttp_cors.setup(self._app, defaults={
             # Default web server for web gui dev
@@ -310,8 +321,6 @@ class WebServer:
 
         self._signal_handling()
         self._exit_handling()
-
-        controller_start = asyncio.async(Controller.instance().start())
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
