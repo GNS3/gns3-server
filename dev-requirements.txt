@@ -1,6 +1,6 @@
 -rrequirements.txt
 
-sphinx==1.4.9
+sphinx==1.5
 pytest==3.0.4
 pep8==1.7.0
 pytest-capturelog==0.7
