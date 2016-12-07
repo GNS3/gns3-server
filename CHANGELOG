@@ -1,5 +1,24 @@
 # Change Log
 
+## 2.0.0 beta 1 07/12/2016
+
+* Fix crash if at controller loading the remote server is not a GNS3 server
+* Update the way we start controller to avoid hiding crash reports
+* Fix when you switch console from VNC to telnet it's fail
+* AttributeError: 'Project' object has no attribute 'emit'
+* Improve autostart logging
+* Fix warning when vmware is not installed
+* If a VMware command fail retry
+* Do not recurse scan for images in standard image directory
+* When we restore snapshot on a fail project do not crash
+* Catch error when qemuy can't connect to his console
+* Catch error when no space left on disk during export
+* Improve vmware error message for easier copy paste
+* Catch error if you export a project deleted from disk
+* Qemu UDP listen on all ips
+* Force yarl version >= 0.7.0
+* Ask user to refresh is user session if he just installed ubridge
+
 ## 2.0.0 alpha 4 24/11/2016
 
 * Do not block traffic originating from an Ethernet interface in the cloud. Ref #771.
