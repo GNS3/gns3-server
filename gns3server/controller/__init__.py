@@ -137,7 +137,10 @@ class Controller:
             self.gns3vm.settings = data["gns3vm"]
 
         for c in data["computes"]:
-            yield from self.add_compute(**c)
+            try:
+                yield from self.add_compute(**c)
+            except aiohttp.web_exceptions.HTTPConflict:
+                pass  # Skip not available servers at loading
 
     @asyncio.coroutine
     def load_projects(self):
