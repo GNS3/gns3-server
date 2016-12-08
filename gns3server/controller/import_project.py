@@ -85,6 +85,26 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
             topology["auto_open"] = False
             topology["auto_close"] = True
 
+            # Generate a new node id
+            node_old_to_new = {}
+            for node in topology["topology"]["nodes"]:
+                if "node_id" in node:
+                    node_old_to_new[node["node_id"]] = str(uuid.uuid4())
+                    _move_node_file(path, node["node_id"], node_old_to_new[node["node_id"]])
+                    node["node_id"] = node_old_to_new[node["node_id"]]
+                else:
+                    node["node_id"] = str(uuid.uuid4())
+
+            # Update link to use new id
+            for link in topology["topology"]["links"]:
+                link["link_id"] = str(uuid.uuid4())
+                for node in link["nodes"]:
+                    node["node_id"] = node_old_to_new[node["node_id"]]
+
+            # Generate new drawings id
+            for drawing in topology["topology"]["drawings"]:
+                drawing["drawing_id"] = str(uuid.uuid4())
+
             # Modify the compute id of the node depending of compute capacity
             if not keep_compute_id:
                 # For some VM type we move them to the GNS3 VM if possible
@@ -111,26 +131,6 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
                         compute_created.add(node["compute_id"])
 
                     yield from _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
-
-            # Generate a new node id
-            node_old_to_new = {}
-            for node in topology["topology"]["nodes"]:
-                if "node_id" in node:
-                    node_old_to_new[node["node_id"]] = str(uuid.uuid4())
-                    _move_node_file(path, node["node_id"], node_old_to_new[node["node_id"]])
-                    node["node_id"] = node_old_to_new[node["node_id"]]
-                else:
-                    node["node_id"] = str(uuid.uuid4())
-
-            # Update link to use new id
-            for link in topology["topology"]["links"]:
-                link["link_id"] = str(uuid.uuid4())
-                for node in link["nodes"]:
-                    node["node_id"] = node_old_to_new[node["node_id"]]
-
-            # Generate new drawings id
-            for drawing in topology["topology"]["drawings"]:
-                drawing["drawing_id"] = str(uuid.uuid4())
 
             # And we dump the updated.gns3
             dot_gns3_path = os.path.join(path, project_name + ".gns3")
