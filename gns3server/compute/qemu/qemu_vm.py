@@ -99,6 +99,7 @@ class QemuVM(BaseNode):
         self._hdc_disk_interface = "ide"
         self._hdd_disk_interface = "ide"
         self._cdrom_image = ""
+        self._bios_image = ""
         self._boot_priority = "c"
         self._mac_address = ""
         self._options = ""
@@ -406,6 +407,28 @@ class QemuVM(BaseNode):
         log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
                                                                                                      id=self._id,
                                                                                                      cdrom_image=self._cdrom_image))
+
+    @property
+    def bios_image(self):
+        """
+        Returns the bios image path for this QEMU VM.
+
+        :returns: QEMU bios image path
+        """
+
+        return self._bios_image
+
+    @bios_image.setter
+    def bios_image(self, bios_image):
+        """
+        Sets the bios image for this QEMU VM.
+
+        :param bios_image: QEMU bios image path
+        """
+        self._bios_image = self.manager.get_abs_image_path(bios_image)
+        log.info('QEMU VM "{name}" [{id}] has set the QEMU bios image path to {bios_image}'.format(name=self._name,
+                                                                                                   id=self._id,
+                                                                                                   bios_image=self._bios_image))
 
     @property
     def boot_priority(self):
@@ -1361,6 +1384,18 @@ class QemuVM(BaseNode):
             options.extend(["-cdrom", self._cdrom_image])
         return options
 
+    def _bios_option(self):
+
+        options = []
+        if self._bios_image:
+            if not os.path.isfile(self._bios_image) or not os.path.exists(self._bios_image):
+                if os.path.islink(self._bios_image):
+                    raise QemuError("bios image '{}' linked to '{}' is not accessible".format(self._bios_image, os.path.realpath(self._bios_image)))
+                else:
+                    raise QemuError("bios image '{}' is not accessible".format(self._bios_image))
+            options.extend(["-bios", self._bios_image])
+        return options
+
     def _linux_boot_options(self):
 
         options = []
@@ -1500,8 +1535,8 @@ class QemuVM(BaseNode):
             if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
                 command.extend(["-machine", "smm=off"])
         command.extend(["-boot", "order={}".format(self._boot_priority)])
-        cdrom_option = self._cdrom_option()
-        command.extend(cdrom_option)
+        command.extend(self._bios_option())
+        command.extend(self._cdrom_option())
         command.extend((yield from self._disk_options()))
         command.extend(self._linux_boot_options())
         if "-uuid" not in additional_options:
@@ -1545,6 +1580,8 @@ class QemuVM(BaseNode):
         answer["hdd_disk_image_md5sum"] = md5sum(self._hdd_disk_image)
         answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image)
         answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image)
+        answer["bios_image"] = self.manager.get_relative_image_path(self._bios_image)
+        answer["bios_image_md5sum"] = md5sum(self._bios_image)
         answer["initrd"] = self.manager.get_relative_image_path(self._initrd)
         answer["initrd_md5sum"] = md5sum(self._initrd)
 

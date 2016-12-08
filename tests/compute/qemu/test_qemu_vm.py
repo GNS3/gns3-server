@@ -338,6 +338,26 @@ def test_disk_options(vm, tmpdir, loop, fake_qemu_img_binary):
     assert options == ['-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk']
 
 
+def test_cdrom_option(vm, tmpdir, loop, fake_qemu_img_binary):
+
+    vm._cdrom_image = str(tmpdir / "test.iso")
+    open(vm._cdrom_image, "w+").close()
+
+    options = loop.run_until_complete(asyncio.async(vm._build_command()))
+
+    assert ' '.join(['-cdrom', str(tmpdir / "test.iso")]) in ' '.join(options)
+
+
+def test_bios_option(vm, tmpdir, loop, fake_qemu_img_binary):
+
+    vm._bios_image = str(tmpdir / "test.img")
+    open(vm._bios_image, "w+").close()
+
+    options = loop.run_until_complete(asyncio.async(vm._build_command()))
+
+    assert ' '.join(['-bios', str(tmpdir / "test.img")]) in ' '.join(options)
+
+
 def test_disk_options_multiple_disk(vm, tmpdir, loop, fake_qemu_img_binary):
 
     vm._hda_disk_image = str(tmpdir / "test0.qcow2")

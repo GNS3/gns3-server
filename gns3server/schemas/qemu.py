@@ -121,6 +121,14 @@ QEMU_CREATE_SCHEMA = {
             "description": "QEMU cdrom image checksum",
             "type": ["string", "null"],
         },
+        "bios_image": {
+            "description": "QEMU bios image path",
+            "type": "string",
+        },
+        "bios_image_md5sum": {
+            "description": "QEMU bios image checksum",
+            "type": ["string", "null"],
+        },
         "boot_priority": {
             "description": "QEMU boot priority",
             "enum": ["c", "d", "n", "cn", "cd"]
@@ -288,6 +296,14 @@ QEMU_UPDATE_SCHEMA = {
         },
         "hdd_disk_image_md5sum": {
             "description": "QEMU hdd disk image checksum",
+            "type": ["string", "null"],
+        },
+        "bios_image": {
+            "description": "QEMU bios image path",
+            "type": "string",
+        },
+        "bios_image_md5sum": {
+            "description": "QEMU bios image checksum",
             "type": ["string", "null"],
         },
         "cdrom_image": {
@@ -466,6 +482,14 @@ QEMU_OBJECT_SCHEMA = {
             "description": "QEMU hdd disk image checksum",
             "type": ["string", "null"],
         },
+        "bios_image": {
+            "description": "QEMU bios image path",
+            "type": "string",
+        },
+        "bios_image_md5sum": {
+            "description": "QEMU bios image checksum",
+            "type": ["string", "null"],
+        },
         "cdrom_image": {
             "description": "QEMU cdrom image path",
             "type": "string",
@@ -593,6 +617,8 @@ QEMU_OBJECT_SCHEMA = {
                  "hdd_disk_interface",
                  "cdrom_image",
                  "cdrom_image_md5sum",
+                 "bios_image",
+                 "bios_image_md5sum",
                  "boot_priority",
                  "ram",
                  "cpus",
