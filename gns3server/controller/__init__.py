@@ -121,16 +121,16 @@ class Controller:
         """
         Reload the controller configuration from disk
         """
-
-        if not os.path.exists(self._config_file):
-            yield from self._import_gns3_gui_conf()
-            self.save()
         try:
+            if not os.path.exists(self._config_file):
+                yield from self._import_gns3_gui_conf()
+                self.save()
             with open(self._config_file) as f:
                 data = json.load(f)
-        except OSError as e:
+        except (OSError, json.JSONDecodeError) as e:
             log.critical("Cannot load %s: %s", self._config_file, str(e))
             return
+
         if "settings" in data:
             self._settings = data["settings"]
         if "gns3vm" in data:
