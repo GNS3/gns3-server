@@ -434,15 +434,20 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _start_http(self):
         """
-        Start an HTTP tunnel to container localhost
+        Start an HTTP tunnel to container localhost. It's not perfect
+        but the only way we have to inject network packet is using nc.
         """
         log.debug("Forward HTTP for %s to %d", self.name, self._console_http_port)
         command = ["docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "nc", "127.0.0.1", str(self._console_http_port)]
-        # We replace the port in the server answer otherwise some link could be broken
+        # We replace host and port in the server answer otherwise some link could be broken
         server = AsyncioRawCommandServer(command, replaces=[
             (
-                '{}'.format(self._console_http_port).encode(),
-                '{}'.format(self.console).encode(),
+                '://127.0.0.1'.encode(),  # {{HOST}} mean client host
+                '://{{HOST}}'.encode(),
+            ),
+            (
+                ':{}'.format(self._console_http_port).encode(),
+                ':{}'.format(self.console).encode(),
             )
         ])
         self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)))

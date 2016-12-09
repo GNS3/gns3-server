@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+import copy
 import asyncio
 import asyncio.subprocess
 
@@ -59,6 +60,15 @@ class AsyncioRawCommandServer:
 
     @asyncio.coroutine
     def _process(self, network_reader, network_writer, process_reader, process_writer):
+        replaces = []
+        # Server host from the client point of view
+        host = network_writer.transport.get_extra_info("sockname")[0]
+        for replace in self._replaces:
+            if b'{{HOST}}' in replace[1]:
+                replaces.append((replace[0], replace[1].replace(b'{{HOST}}', host.encode()), ))
+            else:
+                replaces.append((replace[0], replace[1], ))
+
         network_read = asyncio.async(network_reader.read(READ_SIZE))
         reader_read = asyncio.async(process_reader.read(READ_SIZE))
         timeout = 30
@@ -89,7 +99,7 @@ class AsyncioRawCommandServer:
 
                     reader_read = asyncio.async(process_reader.read(READ_SIZE))
 
-                    for replace in self._replaces:
+                    for replace in replaces:
                         data = data.replace(replace[0], replace[1])
                     timeout = 2  # We reduce the timeout when the process start to return stuff to avoid problem with server not closing the connection
 
@@ -102,8 +112,8 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     command = ["nc", "localhost", "80"]
-    server = AsyncioRawCommandServer(command)
-    coro = asyncio.start_server(server.run, '127.0.0.1', 4444, loop=loop)
+    server = AsyncioRawCommandServer(command, replaces=[(b"work", b"{{HOST}}", )])
+    coro = asyncio.start_server(server.run, '0.0.0.0', 4444, loop=loop)
     s = loop.run_until_complete(coro)
 
     try:
