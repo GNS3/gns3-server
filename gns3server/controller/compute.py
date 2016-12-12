@@ -563,10 +563,13 @@ class Compute:
         res = yield from self.http_query("GET", "/{}/images".format(type), timeout=None)
         images = res.json
 
-        if type in ["qemu", "dynamips", "iou"]:
-            for local_image in list_images(type):
-                if local_image['filename'] not in [i['filename'] for i in images]:
-                    images.append(local_image)
+        try:
+            if type in ["qemu", "dynamips", "iou"]:
+                for local_image in list_images(type):
+                    if local_image['filename'] not in [i['filename'] for i in images]:
+                        images.append(local_image)
+        except OSError as e:
+            raise ComputeError("Can't list images: {}".format(str(e)))
         return images
 
     @asyncio.coroutine
