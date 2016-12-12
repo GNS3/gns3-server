@@ -158,7 +158,7 @@ class Controller:
                         if file.endswith(".gns3"):
                             try:
                                 yield from self.load_project(os.path.join(project_dir, file), load=False)
-                            except aiohttp.web_exceptions.HTTPConflict:
+                            except (aiohttp.web_exceptions.HTTPConflict, NotImplementedError):
                                 pass  # Skip not compatible projects
         except OSError as e:
             log.error(str(e))
