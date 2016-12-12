@@ -127,7 +127,7 @@ class Controller:
                 self.save()
             with open(self._config_file) as f:
                 data = json.load(f)
-        except (OSError, json.JSONDecodeError) as e:
+        except (OSError, json.decoder.JSONDecodeError) as e:
             log.critical("Cannot load %s: %s", self._config_file, str(e))
             return
 
