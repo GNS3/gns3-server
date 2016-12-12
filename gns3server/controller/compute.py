@@ -370,6 +370,8 @@ class Compute:
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
+            except aiohttp.web.HTTPUnauthorized:
+                raise aiohttp.web.HTTPConflict(text="Invalid auth for server {} ".format(self._id))
 
             if "version" not in response.json:
                 self._http_session.close()
