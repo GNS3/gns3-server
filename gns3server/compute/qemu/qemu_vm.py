@@ -972,12 +972,13 @@ class QemuVM(BaseNode):
                 except ProcessLookupError:
                     pass
                 except asyncio.TimeoutError:
-                    try:
-                        self._process.kill()
-                    except ProcessLookupError:
-                        pass
-                    if self._process.returncode is None:
-                        log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
+                    if self._process:
+                        try:
+                            self._process.kill()
+                        except ProcessLookupError:
+                            pass
+                        if self._process.returncode is None:
+                            log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
             self._process = None
             self._stop_cpulimit()
             yield from super().stop()
