@@ -146,6 +146,10 @@ class EthernetSwitch(Device):
 
     @asyncio.coroutine
     def delete(self):
+        return (yield from self.close())
+
+    @asyncio.coroutine
+    def close(self):
         """
         Deletes this Ethernet switch.
         """
@@ -154,15 +158,18 @@ class EthernetSwitch(Device):
             if nio and isinstance(nio, NIOUDP):
                 self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        try:
-            yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
-            log.info('Ethernet switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
-        except DynamipsError:
-            log.debug("Could not properly delete Ethernet switch {}".format(self._name))
+        if self._hypervisor:
+            try:
+                yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
+                log.info('Ethernet switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+            except DynamipsError:
+                log.debug("Could not properly delete Ethernet switch {}".format(self._name))
         if self._hypervisor and self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
             yield from self.hypervisor.stop()
+            self._hypervisor = None
+        return True
 
     @asyncio.coroutine
     def add_nio(self, nio, port_number):

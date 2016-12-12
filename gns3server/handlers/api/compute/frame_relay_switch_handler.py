@@ -52,10 +52,10 @@ class FrameRelaySwitchHandler:
 
         # Use the Dynamips Frame Relay switch to simulate this node
         dynamips_manager = Dynamips.instance()
-        node = yield from dynamips_manager.create_device(request.json.pop("name"),
+        node = yield from dynamips_manager.create_node(request.json.pop("name"),
                                                          request.match_info["project_id"],
                                                          request.json.get("node_id"),
-                                                         device_type="frame_relay_switch",
+                                                         node_type="frame_relay_switch",
                                                          mappings=request.json.get("mappings"))
         response.set_status(201)
         response.json(node)
@@ -76,7 +76,7 @@ class FrameRelaySwitchHandler:
     def show(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(node)
 
     @Route.put(
@@ -97,7 +97,7 @@ class FrameRelaySwitchHandler:
     def update(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         if "name" in request.json and node.name != request.json["name"]:
             yield from node.set_name(request.json["name"])
         if "mappings" in request.json:
@@ -120,7 +120,7 @@ class FrameRelaySwitchHandler:
     def delete(request, response):
 
         dynamips_manager = Dynamips.instance()
-        yield from dynamips_manager.delete_device(request.match_info["node_id"])
+        yield from dynamips_manager.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -137,7 +137,7 @@ class FrameRelaySwitchHandler:
         description="Start a Frame Relay switch")
     def start(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -154,7 +154,7 @@ class FrameRelaySwitchHandler:
         description="Stop a Frame Relay switch")
     def stop(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -171,7 +171,7 @@ class FrameRelaySwitchHandler:
         description="Suspend a Frame Relay switch")
     def suspend(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -193,7 +193,7 @@ class FrameRelaySwitchHandler:
     def create_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = yield from dynamips_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
         yield from node.add_nio(nio, port_number)
@@ -217,7 +217,7 @@ class FrameRelaySwitchHandler:
     def delete_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         nio = yield from node.remove_nio(port_number)
         yield from nio.delete()
@@ -241,7 +241,7 @@ class FrameRelaySwitchHandler:
     def start_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(node.project.capture_working_directory(), request.json["capture_file_name"])
         yield from node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
@@ -264,7 +264,7 @@ class FrameRelaySwitchHandler:
     def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         yield from node.stop_capture(port_number)
         response.set_status(204)

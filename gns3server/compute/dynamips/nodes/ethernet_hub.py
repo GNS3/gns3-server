@@ -111,6 +111,10 @@ class EthernetHub(Bridge):
 
     @asyncio.coroutine
     def delete(self):
+        return (yield from self.close())
+
+    @asyncio.coroutine
+    def close(self):
         """
         Deletes this hub.
         """
@@ -126,6 +130,8 @@ class EthernetHub(Bridge):
             log.debug("Could not properly delete Ethernet hub {}".format(self._name))
         if self._hypervisor and not self._hypervisor.devices:
             yield from self.hypervisor.stop()
+            self._hypervisor = None
+        return True
 
     @asyncio.coroutine
     def add_nio(self, nio, port_number):

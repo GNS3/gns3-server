@@ -73,10 +73,11 @@ class DynamipsVMHandler:
                                                      request.match_info["project_id"],
                                                      request.json.get("node_id"),
                                                      request.json.get("dynamips_id"),
-                                                     platform,
+                                                     platform=platform,
                                                      console=request.json.get("console"),
                                                      aux=request.json.get("aux"),
-                                                     chassis=request.json.pop("chassis", default_chassis))
+                                                     chassis=request.json.pop("chassis", default_chassis),
+                                                     node_type="dynamips")
 
         yield from dynamips_manager.update_vm_settings(vm, request.json)
         response.set_status(201)

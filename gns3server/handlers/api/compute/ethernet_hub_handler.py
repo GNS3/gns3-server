@@ -53,18 +53,11 @@ class EthernetHubHandler:
 
         # Use the Dynamips Ethernet hub to simulate this node
         dynamips_manager = Dynamips.instance()
-        node = yield from dynamips_manager.create_device(request.json.pop("name"),
+        node = yield from dynamips_manager.create_node(request.json.pop("name"),
                                                          request.match_info["project_id"],
                                                          request.json.get("node_id"),
-                                                         device_type="ethernet_hub",
+                                                         node_type="ethernet_hub",
                                                          ports=request.json.get("ports_mapping"))
-
-        # On Linux, use the generic hub
-        # builtin_manager = Builtin.instance()
-        # node = yield from builtin_manager.create_node(request.json.pop("name"),
-        #                                               request.match_info["project_id"],
-        #                                               request.json.get("node_id"),
-        #                                               node_type="ethernet_hub")
 
         response.set_status(201)
         response.json(node)
@@ -85,10 +78,8 @@ class EthernetHubHandler:
     def show(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
-        # builtin_manager = Builtin.instance()
-        # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(node)
 
     @Route.put(
@@ -109,14 +100,12 @@ class EthernetHubHandler:
     def update(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         if "name" in request.json and node.name != request.json["name"]:
             yield from node.set_name(request.json["name"])
         if "ports_mapping" in request.json:
             node.ports_mapping = request.json["ports_mapping"]
 
-        # builtin_manager = Builtin.instance()
-        # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         node.updated()
         response.json(node)
 
@@ -135,9 +124,7 @@ class EthernetHubHandler:
     def delete(request, response):
 
         dynamips_manager = Dynamips.instance()
-        yield from dynamips_manager.delete_device(request.match_info["node_id"])
-        # builtin_manager = Builtin.instance()
-        # yield from builtin_manager.delete_node(request.match_info["node_id"])
+        yield from dynamips_manager.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -154,7 +141,7 @@ class EthernetHubHandler:
         description="Start an Ethernet hub")
     def start(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -171,7 +158,7 @@ class EthernetHubHandler:
         description="Stop an Ethernet hub")
     def stop(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -188,7 +175,7 @@ class EthernetHubHandler:
         description="Suspend an Ethernet hub")
     def suspend(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -210,14 +197,10 @@ class EthernetHubHandler:
     def create_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = yield from dynamips_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
         yield from node.add_nio(nio, port_number)
-
-        #builtin_manager = Builtin.instance()
-        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        #nio = yield from builtin_manager.create_nio(request.json["nio"])
 
         response.set_status(201)
         response.json(nio)
@@ -239,9 +222,7 @@ class EthernetHubHandler:
     def delete_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        #builtin_manager = Builtin.instance()
-        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         nio = yield from node.remove_nio(port_number)
         yield from nio.delete()
@@ -265,9 +246,7 @@ class EthernetHubHandler:
     def start_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        #builtin_manager = Builtin.instance()
-        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(node.project.capture_working_directory(), request.json["capture_file_name"])
         yield from node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
@@ -290,9 +269,7 @@ class EthernetHubHandler:
     def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        #builtin_manager = Builtin.instance()
-        #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         yield from node.stop_capture(port_number)
         response.set_status(204)

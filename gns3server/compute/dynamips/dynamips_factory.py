@@ -17,6 +17,13 @@
 
 
 from .dynamips_error import DynamipsError
+from .nodes.c1700 import C1700
+from .nodes.c2600 import C2600
+from .nodes.c2691 import C2691
+from .nodes.c3600 import C3600
+from .nodes.c3725 import C3725
+from .nodes.c3745 import C3745
+from .nodes.c7200 import C7200
 from .nodes.atm_switch import ATMSwitch
 from .nodes.ethernet_switch import EthernetSwitch
 from .nodes.ethernet_hub import EthernetHub
@@ -25,21 +32,36 @@ from .nodes.frame_relay_switch import FrameRelaySwitch
 import logging
 log = logging.getLogger(__name__)
 
+PLATFORMS = {'c1700': C1700,
+             'c2600': C2600,
+             'c2691': C2691,
+             'c3725': C3725,
+             'c3745': C3745,
+             'c3600': C3600,
+             'c7200': C7200}
+
+
 DEVICES = {'atm_switch': ATMSwitch,
            'frame_relay_switch': FrameRelaySwitch,
            'ethernet_switch': EthernetSwitch,
            'ethernet_hub': EthernetHub}
 
 
-class DynamipsDeviceFactory:
+class DynamipsFactory:
 
     """
-    Factory to create an Device object based on the type
+    Factory to create an Router object based on the correct platform.
     """
 
-    def __new__(cls, name, node_id, project, manager, device_type, **kwargs):
+    def __new__(cls, name, node_id, project, manager, node_type="dynamips", dynamips_id=None, platform=None, **kwargs):
 
-        if device_type not in DEVICES:
-            raise DynamipsError("Unknown device type: {}".format(device_type))
+        if node_type == "dynamips":
+            if platform not in PLATFORMS:
+                raise DynamipsError("Unknown router platform: {}".format(platform))
 
-        return DEVICES[device_type](name, node_id, project, manager, **kwargs)
+            return PLATFORMS[platform](name, node_id, project, manager, dynamips_id, **kwargs)
+        else:
+            if node_type not in DEVICES:
+                raise DynamipsError("Unknown device type: {}".format(node_type))
+
+            return DEVICES[node_type](name, node_id, project, manager, **kwargs)

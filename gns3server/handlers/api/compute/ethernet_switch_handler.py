@@ -53,10 +53,10 @@ class EthernetSwitchHandler:
 
         # Use the Dynamips Ethernet switch to simulate this node
         dynamips_manager = Dynamips.instance()
-        node = yield from dynamips_manager.create_device(request.json.pop("name"),
+        node = yield from dynamips_manager.create_node(request.json.pop("name"),
                                                          request.match_info["project_id"],
                                                          request.json.get("node_id"),
-                                                         device_type="ethernet_switch",
+                                                         node_type="ethernet_switch",
                                                          ports=request.json.get("ports_mapping"))
 
         # On Linux, use the generic switch
@@ -85,7 +85,7 @@ class EthernetSwitchHandler:
     def show(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
         # builtin_manager = Builtin.instance()
         # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -109,7 +109,7 @@ class EthernetSwitchHandler:
     def update(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         if "name" in request.json and node.name != request.json["name"]:
             yield from node.set_name(request.json["name"])
         if "ports_mapping" in request.json:
@@ -136,9 +136,7 @@ class EthernetSwitchHandler:
     def delete(request, response):
 
         dynamips_manager = Dynamips.instance()
-        yield from dynamips_manager.delete_device(request.match_info["node_id"])
-        # builtin_manager = Builtin.instance()
-        # yield from builtin_manager.delete_node(request.match_info["node_id"])
+        yield from dynamips_manager.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -155,7 +153,7 @@ class EthernetSwitchHandler:
         description="Start an Ethernet switch")
     def start(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -172,7 +170,7 @@ class EthernetSwitchHandler:
         description="Stop an Ethernet switch")
     def stop(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -189,7 +187,7 @@ class EthernetSwitchHandler:
         description="Suspend an Ethernet switch")
     def suspend(request, response):
 
-        Dynamips.instance().get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(
@@ -211,7 +209,7 @@ class EthernetSwitchHandler:
     def create_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = yield from dynamips_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
         yield from node.add_nio(nio, port_number)
@@ -240,7 +238,7 @@ class EthernetSwitchHandler:
     def delete_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
@@ -266,7 +264,7 @@ class EthernetSwitchHandler:
     def start_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
@@ -291,7 +289,7 @@ class EthernetSwitchHandler:
     def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
-        node = dynamips_manager.get_device(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
