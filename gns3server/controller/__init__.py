@@ -277,7 +277,10 @@ class Controller:
 
         :param compute_id: Compute server identifier
         """
-        compute = self.get_compute(compute_id)
+        try:
+            compute = self.get_compute(compute_id)
+        except aiohttp.web.HTTPNotFound:
+            return
 
         for project in self._projects.values():
             if compute in project.computes:
