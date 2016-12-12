@@ -573,9 +573,10 @@ class Project:
 
     @asyncio.coroutine
     def delete(self):
-        if self._status == "opened":
-            yield from self.close()
+        if self._status != "opened":
+            yield from self.open()
         yield from self.delete_on_computes()
+        yield from self.close()
         try:
             shutil.rmtree(self.path)
         except OSError as e:
