@@ -298,7 +298,7 @@ class DynamipsHypervisor:
 
                 # Does it contain an error code?
                 if self.error_re.search(data[-1]):
-                    raise DynamipsError(data[-1][4:])
+                    raise DynamipsError("Dynamips error when running command '{}': {}".format(command, data[-1][4:]))
 
                 # Or does the last line begin with '100-'? Then we are done!
                 if data[-1][:4] == '100-':
