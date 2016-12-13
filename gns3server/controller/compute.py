@@ -594,6 +594,10 @@ class Compute:
         if other_compute == self:
             return (self.host_ip, self.host_ip)
 
+        # Perhaps the user has correct network gateway, we trust him
+        if (self.host_ip not in ('0.0.0.0', '127.0.0.1') and other_compute.host_ip not in ('0.0.0.0', '127.0.0.1')):
+            return (self.host_ip, other_compute.host_ip)
+
         this_compute_interfaces = yield from self.interfaces()
         other_compute_interfaces = yield from other_compute.interfaces()
 
@@ -624,7 +628,4 @@ class Compute:
                 if this_network.overlaps(other_network):
                     return (this_interface["ip_address"], other_interface["ip_address"])
 
-        # Perhaps the user has correct network gateway
-        if (self.host_ip not in ('0.0.0.0', '127.0.0.1') and other_compute.host_ip not in ('0.0.0.0', '127.0.0.1')):
-            return (self.host_ip, other_compute.host_ip)
         raise ValueError("No common subnet for compute {} and {}".format(self.name, other_compute.name))
