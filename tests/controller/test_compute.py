@@ -429,7 +429,7 @@ def test_get_ip_on_same_subnet(controller, async_run):
     assert async_run(compute1.get_ip_on_same_subnet(compute2)) == ("192.168.1.1", "192.168.1.2")
 
     # Case 2 compute2 host is on a different network but a common interface is available
-    compute2 = Compute("compute2", host="192.168.4.2", controller=controller)
+    compute2 = Compute("compute2", host="127.0.0.1", controller=controller)
     compute2._interfaces_cache = [
         {
             "ip_address": "127.0.0.1",
