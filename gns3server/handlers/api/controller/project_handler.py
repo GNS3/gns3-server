@@ -456,8 +456,9 @@ class ProjectHandler:
                     if not packet:
                         break
                     f.write(packet)
-
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
             raise aiohttp.web.HTTPForbidden()
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text=str(e))
