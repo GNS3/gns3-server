@@ -72,7 +72,7 @@ class DynamipsVMHandler:
         vm = yield from dynamips_manager.create_node(request.json.pop("name"),
                                                      request.match_info["project_id"],
                                                      request.json.get("node_id"),
-                                                     request.json.get("dynamips_id"),
+                                                     dynamips_id=request.json.get("dynamips_id"),
                                                      platform=platform,
                                                      console=request.json.get("console"),
                                                      aux=request.json.get("aux"),
