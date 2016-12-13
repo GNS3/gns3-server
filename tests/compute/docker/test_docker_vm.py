@@ -742,7 +742,7 @@ def test_add_ubridge_connection_no_free_interface(loop, vm):
     with pytest.raises(DockerError):
 
         # We create fake ethernet interfaces for docker
-        interfaces = ["veth-gns3-e{}".format(index) for index in range(4096)]
+        interfaces = ["tap-gns3-e{}".format(index) for index in range(4096)]
 
         with patch("psutil.net_if_addrs", return_value=interfaces):
             loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))

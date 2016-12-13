@@ -642,11 +642,10 @@ class DockerVM(BaseNode):
                                                                                                            adapter_number=adapter_number))
 
         for index in range(4096):
-            if "veth-gns3-e{}".format(index) not in psutil.net_if_addrs():
-                adapter.ifc = "eth{}".format(str(index))
+            if "tap-gns3-e{}".format(index) not in psutil.net_if_addrs():
                 adapter.host_ifc = "tap-gns3-e{}".format(str(index))
                 break
-        if not hasattr(adapter, "ifc"):
+        if adapter.host_ifc is None:
             raise DockerError("Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(name=self.name,
                                                                                                                                                                     adapter_number=adapter_number))
 
