@@ -108,3 +108,6 @@ class Device:
         """
 
         raise NotImplementedError
+
+    def hw_virtualization(self):
+        return False
