@@ -348,7 +348,7 @@ class DockerVM(BaseNode):
             yield from self._clean_servers()
 
             yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
-            namespace = yield from self._get_namespace()
+            self._namespace = yield from self._get_namespace()
 
             yield from self._start_ubridge()
 
@@ -356,7 +356,7 @@ class DockerVM(BaseNode):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
                 with (yield from self.manager.ubridge_lock):
                     try:
-                        yield from self._add_ubridge_connection(nio, adapter_number, namespace)
+                        yield from self._add_ubridge_connection(nio, adapter_number)
                     except UbridgeNamespaceError:
                         yield from self.stop()
 
@@ -626,13 +626,12 @@ class DockerVM(BaseNode):
             return
 
     @asyncio.coroutine
-    def _add_ubridge_connection(self, nio, adapter_number, namespace):
+    def _add_ubridge_connection(self, nio, adapter_number):
         """
         Creates a connection in uBridge.
 
         :param nio: NIO instance or None if it's a dummy interface (if an interface is missing in ubridge you can't see it via ifconfig in the container)
         :param adapter_number: adapter number
-        :param namespace: Container namespace (pid)
         """
 
         try:
@@ -652,44 +651,33 @@ class DockerVM(BaseNode):
         yield from self._ubridge_send('bridge create bridge{}'.format(adapter_number))
         yield from self._ubridge_send('bridge add_nio_tap bridge{adapter_number} {hostif}'.format(adapter_number=adapter_number,
                                                                                                   hostif=adapter.host_ifc))
-        log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.host_ifc, namespace)
+        log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.host_ifc, self._namespace)
         try:
             yield from self._ubridge_send('docker move_to_ns {ifc} {ns} eth{adapter}'.format(ifc=adapter.host_ifc,
-                                                                                             ns=namespace,
+                                                                                             ns=self._namespace,
                                                                                              adapter=adapter_number))
         except UbridgeError as e:
             raise UbridgeNamespaceError(e)
 
-        if isinstance(nio, NIOUDP):
-            yield from self._ubridge_send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
-                                                                                                              lport=nio.lport,
-                                                                                                              rhost=nio.rhost,
-                                                                                                              rport=nio.rport))
-
-        if nio and nio.capturing:
-            yield from self._ubridge_send('bridge start_capture bridge{adapter} "{pcap_file}"'.format(adapter=adapter_number,
-                                                                                                      pcap_file=nio.pcap_output_file))
-
         if nio:
-            yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
-
-    def _delete_ubridge_connection(self, adapter_number):
-        """Deletes a connection in uBridge.
-
-        :param adapter_number: adapter number
-        """
-        if not self.ubridge:
-            return
-
-        try:
-            yield from self._ubridge_send("bridge delete bridge{name}".format(name=adapter_number))
-        except UbridgeError as e:
-            log.debug(str(e))
+            yield from self._connect_nio(adapter_number, nio)
 
     @asyncio.coroutine
     def _get_namespace(self):
         result = yield from self.manager.query("GET", "containers/{}/json".format(self._cid))
         return int(result['State']['Pid'])
+
+    @asyncio.coroutine
+    def _connect_nio(self, adapter_number, nio):
+        yield from self._ubridge_send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
+                                                                                                          lport=nio.lport,
+                                                                                                          rhost=nio.rhost,
+                                                                                                          rport=nio.rport))
+
+        if nio.capturing:
+            yield from self._ubridge_send('bridge start_capture bridge{adapter} "{pcap_file}"'.format(adapter=adapter_number,
+                                                                                                      pcap_file=nio.pcap_output_file))
+        yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
 
     @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, nio):
@@ -705,28 +693,7 @@ class DockerVM(BaseNode):
                                                                                                            adapter_number=adapter_number))
 
         if self.status == "started" and self.ubridge:
-            # the container is running, let's add the UDP tunnel to connect to another node
-            yield from self._ubridge_send('bridge create bridge{}'.format(adapter_number))
-            yield from self._ubridge_send('bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(ifc=adapter.host_ifc, adapter=adapter_number))
-
-            yield from self._ubridge_send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
-                                                                                                              lport=nio.lport,
-                                                                                                              rhost=nio.rhost,
-                                                                                                              rport=nio.rport))
-
-            yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
-
-        if self.status == "started" and self.ubridge:
-            # the container is running, let's add the UDP tunnel to connect to another node
-            yield from self._ubridge_hypervisor.send('bridge create bridge{}'.format(adapter_number))
-            yield from self._ubridge_hypervisor.send('bridge add_nio_linux_raw bridge{adapter} {ifc}'.format(ifc=adapter.host_ifc, adapter=adapter_number))
-
-            yield from self._ubridge_hypervisor.send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
-                                                                                                                         lport=nio.lport,
-                                                                                                                         rhost=nio.rhost,
-                                                                                                                         rport=nio.rport))
-
-            yield from self._ubridge_hypervisor.send('bridge start bridge{adapter}'.format(adapter=adapter_number))
+            yield from self._connect_nio(adapter_number, nio)
 
         adapter.add_nio(0, nio)
         log.info("Docker container '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -749,13 +716,15 @@ class DockerVM(BaseNode):
             raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
                                                                                                     adapter_number=adapter_number))
 
+        if self.ubridge:
+            nio = adapter.get_nio(0)
+            yield from self._ubridge_send("bridge stop bridge{name}".format(name=adapter_number))
+            yield from self._ubridge_send('bridge remove_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
+                                                                                                                 lport=nio.lport,
+                                                                                                                 rhost=nio.rhost,
+                                                                                                                 rport=nio.rport))
+
         adapter.remove_nio(0)
-        if self.status == "started" and self.ubridge:
-            # the container is running, just delete the UDP tunnel so we can reconnect it later if needed
-            yield from self._ubridge_send("bridge delete bridge{name}".format(name=adapter_number))
-        else:
-            # the container is not running, let's completely delete the connection
-            yield from self._delete_ubridge_connection(adapter_number)
 
         log.info("Docker VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
                                                                                                  id=self.id,

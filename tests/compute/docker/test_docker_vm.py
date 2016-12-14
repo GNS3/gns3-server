@@ -419,7 +419,7 @@ def test_start(loop, vm, manager, free_console_port):
         loop.run_until_complete(asyncio.async(vm.start()))
 
     mock_query.assert_called_with("POST", "containers/e90e34656842/start")
-    vm._add_ubridge_connection.assert_called_once_with(nio, 0, 42)
+    vm._add_ubridge_connection.assert_called_once_with(nio, 0)
     assert vm._start_ubridge.called
     assert vm._start_console.called
     assert vm._start_aux.called
@@ -445,7 +445,7 @@ def test_start_namespace_failed(loop, vm, manager, free_console_port):
                                 loop.run_until_complete(asyncio.async(vm.start()))
 
     mock_query.assert_any_call("POST", "containers/e90e34656842/start")
-    mock_add_ubridge_connection.assert_called_once_with(nio, 0, 42)
+    mock_add_ubridge_connection.assert_called_once_with(nio, 0)
     assert mock_start_ubridge.called
     assert vm.status == "stopped"
 
@@ -691,8 +691,9 @@ def test_add_ubridge_connection(loop, vm):
     nio = vm.manager.create_nio(nio)
     nio.startPacketCapture("/tmp/capture.pcap")
     vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
 
-    loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
+    loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
 
     calls = [
         call.send('bridge create bridge0'),
@@ -710,8 +711,9 @@ def test_add_ubridge_connection_none_nio(loop, vm):
 
     nio = None
     vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
 
-    loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
+    loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
 
     calls = [
         call.send('bridge create bridge0'),
@@ -731,7 +733,7 @@ def test_add_ubridge_connection_invalid_adapter_number(loop, vm):
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
-        loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 12, 42)))
+        loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 12)))
 
 
 def test_add_ubridge_connection_no_free_interface(loop, vm):
@@ -747,25 +749,7 @@ def test_add_ubridge_connection_no_free_interface(loop, vm):
         interfaces = ["tap-gns3-e{}".format(index) for index in range(4096)]
 
         with patch("psutil.net_if_addrs", return_value=interfaces):
-            loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
-
-
-def test_delete_ubridge_connection(loop, vm):
-
-    vm._ubridge_hypervisor = MagicMock()
-    nio = {"type": "nio_udp",
-           "lport": 4242,
-           "rport": 4343,
-           "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(nio)
-
-    loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0, 42)))
-    loop.run_until_complete(asyncio.async(vm._delete_ubridge_connection(0)))
-
-    calls = [
-        call.send("bridge delete bridge0"),
-    ]
-    vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
+            loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
 
 
 def test_adapter_add_nio_binding(vm, loop):
@@ -789,16 +773,21 @@ def test_adapter_add_nio_binding_invalid_adapter(vm, loop):
 
 
 def test_adapter_remove_nio_binding(vm, loop):
+    vm.ubridge = MagicMock()
+    vm.ubridge.is_running.return_value = True
+
     nio = {"type": "nio_udp",
            "lport": 4242,
            "rport": 4343,
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
-    with asyncio_patch("gns3server.compute.docker.DockerVM._delete_ubridge_connection") as delete_ubridge_mock:
+
+    with asyncio_patch("gns3server.compute.docker.DockerVM._ubridge_send") as delete_ubridge_mock:
         loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(0)))
         assert vm._ethernet_adapters[0].get_nio(0) is None
-        delete_ubridge_mock.assert_called_with(0)
+        delete_ubridge_mock.assert_any_call('bridge stop bridge0')
+        delete_ubridge_mock.assert_any_call('bridge remove_nio_udp bridge0 4242 127.0.0.1 4343')
 
 
 def test_adapter_remove_nio_binding_invalid_adapter(vm, loop):
