@@ -243,17 +243,21 @@ class DockerHandler:
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        container.name = request.json.get("name", container.name)
-        container.console = request.json.get("console", container.console)
-        container.aux = request.json.get("aux", container.aux)
-        container.console_type = request.json.get("console_type", container.console_type)
-        container.console_resolution = request.json.get("console_resolution", container.console_resolution)
-        container.console_http_port = request.json.get("console_http_port", container.console_http_port)
-        container.console_http_path = request.json.get("console_http_path", container.console_http_path)
-        container.start_command = request.json.get("start_command", container.start_command)
-        container.environment = request.json.get("environment", container.environment)
-        container.adapters = request.json.get("adapters", container.adapters)
-        yield from container.update()
+
+        props = [
+            "name", "console", "aux", "console_type", "console_resolution",
+            "console_http_port", "console_http_path", "start_command",
+            "environment", "adapters"
+        ]
+
+        changed = False
+        for prop in props:
+            if prop in request.json and request.json[prop] != getattr(container, prop):
+                setattr(container, prop, request.json[prop])
+                changed = True
+        # We don't call container.update for nothing because it will restart the container
+        if changed:
+            yield from container.update()
         container.updated()
         response.json(container)
 
