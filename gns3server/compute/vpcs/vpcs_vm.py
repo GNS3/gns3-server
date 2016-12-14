@@ -375,7 +375,7 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
         elif self.is_running():
             raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
@@ -402,7 +402,7 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._ubridge_send("bridge delete {name}".format(name="VPCS-{}".format(self._id)))
         elif self.is_running():
             raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
@@ -444,7 +444,7 @@ class VPCSVM(BaseNode):
 
         nio.startPacketCapture(output_file)
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VPCS-{}".format(self._id),
                                                                                                output_file=output_file))
 
@@ -471,7 +471,7 @@ class VPCSVM(BaseNode):
 
         nio.stopPacketCapture()
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._ubridge_send('bridge stop_capture {name}'.format(name="VPCS-{}".format(self._id)))
 
         log.info("VPCS '{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,

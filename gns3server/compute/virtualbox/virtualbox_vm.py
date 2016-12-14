@@ -932,7 +932,7 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                         self._local_udp_tunnels[adapter_number][1],
                                                         nio)
@@ -976,7 +976,7 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
         else:
             vm_state = yield from self._get_vm_state()
@@ -1026,7 +1026,7 @@ class VirtualBoxVM(BaseNode):
 
         nio.startPacketCapture(output_file)
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VBOX-{}-{}".format(self._id, adapter_number),
                                                                                                output_file=output_file))
 
@@ -1054,7 +1054,7 @@ class VirtualBoxVM(BaseNode):
 
         nio.stopPacketCapture()
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             yield from self._ubridge_send('bridge stop_capture {name}'.format(name="VBOX-{}-{}".format(self._id, adapter_number)))
 
         log.info("VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,

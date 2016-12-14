@@ -491,7 +491,8 @@ def test_restart(loop, vm):
 
 
 def test_stop(loop, vm):
-    vm._ubridge_hypervisor = MagicMock()
+    mock = MagicMock()
+    vm._ubridge_hypervisor = mock
     vm._ubridge_hypervisor.is_running.return_value = True
     vm._fix_permissions = MagicMock()
 
@@ -499,7 +500,8 @@ def test_stop(loop, vm):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
             loop.run_until_complete(asyncio.async(vm.stop()))
             mock_query.assert_called_with("POST", "containers/e90e34656842/stop", params={"t": 5})
-    assert vm._ubridge_hypervisor.stop.called
+    assert mock.stop.called
+    assert vm._ubridge_hypervisor is None
     assert vm._fix_permissions.called
 
 

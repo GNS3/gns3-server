@@ -824,7 +824,7 @@ class IOUVM(BaseNode):
                                                                                              adapter_number=adapter_number,
                                                                                              port_number=port_number))
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
             yield from self._ubridge_send("iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(name=bridge_name,
                                                                                                                                iol_id=self.application_id,
@@ -864,7 +864,7 @@ class IOUVM(BaseNode):
                                                                                                  adapter_number=adapter_number,
                                                                                                  port_number=port_number))
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
             yield from self._ubridge_send("iol_bridge delete_nio_udp {name} {bay} {unit}".format(name=bridge_name,
                                                                                                  bay=adapter_number,
@@ -1157,7 +1157,7 @@ class IOUVM(BaseNode):
                                                                                                                           port_number=port_number,
                                                                                                                           output_file=output_file))
 
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
             yield from self._ubridge_send('iol_bridge start_capture {name} {bay} {unit} "{output_file}" {data_link_type}'.format(name=bridge_name,
                                                                                                                                  bay=adapter_number,
@@ -1194,7 +1194,7 @@ class IOUVM(BaseNode):
                                                                                                          id=self._id,
                                                                                                          adapter_number=adapter_number,
                                                                                                          port_number=port_number))
-        if self.ubridge and self.ubridge.is_running():
+        if self.ubridge:
             bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
             yield from self._ubridge_send('iol_bridge stop_capture {name} {bay} {unit}'.format(name=bridge_name,
                                                                                                bay=adapter_number,

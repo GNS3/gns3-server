@@ -478,6 +478,8 @@ class BaseNode:
         :returns: path to uBridge
         """
 
+        if self._ubridge_hypervisor and not self._ubridge_hypervisor.is_running():
+            self._ubridge_hypervisor = None
         return self._ubridge_hypervisor
 
     @ubridge.setter
@@ -547,6 +549,7 @@ class BaseNode:
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             log.info("Stopping uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
             yield from self._ubridge_hypervisor.stop()
+        self._ubridge_hypervisor = None
 
     @asyncio.coroutine
     def _add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
