@@ -207,7 +207,7 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
 
 def test_export_fix_path(tmpdir, project, async_run):
     """
-    Fix absolute image path
+    Fix absolute image path, except for Docker
     """
 
     path = project.path
@@ -220,6 +220,12 @@ def test_export_fix_path(tmpdir, project, async_run):
                             "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
                         },
                         "node_type": "dynamips"
+                    },
+                {
+                        "properties": {
+                            "image": "gns3/webterm:lastest"
+                        },
+                        "node_type": "docker"
                     }
             ]
         }
@@ -238,6 +244,7 @@ def test_export_fix_path(tmpdir, project, async_run):
             content = myfile.read().decode()
             topology = json.loads(content)
     assert topology["topology"]["nodes"][0]["properties"]["image"] == "c3725-adventerprisek9-mz.124-25d.image"
+    assert topology["topology"]["nodes"][1]["properties"]["image"] == "gns3/webterm:lastest"
 
 
 def test_export_with_images(tmpdir, project, async_run):

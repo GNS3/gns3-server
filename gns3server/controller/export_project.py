@@ -142,7 +142,7 @@ def _export_project_file(project, path, z, include_images, keep_compute_id, allo
                 if not keep_compute_id:
                     node["compute_id"] = "local"  # To make project portable all node by default run on local
 
-                if "properties" in node and node["node_type"] != "Docker":
+                if "properties" in node and node["node_type"] != "docker":
                     for prop, value in node["properties"].items():
                         if prop.endswith("image"):
                             if not keep_compute_id:  # If we keep the original compute we can keep the image path
