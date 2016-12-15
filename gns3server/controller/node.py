@@ -425,7 +425,7 @@ class Node:
         Stop a node
         """
         try:
-            yield from self.post("/stop", timeout=240)
+            yield from self.post("/stop", timeout=240, dont_connect=True)
         # We don't care if a node is down at this step
         except (ComputeError, aiohttp.errors.ClientHttpProcessingError, aiohttp.web.HTTPError):
             pass

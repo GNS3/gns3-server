@@ -107,6 +107,8 @@ class Compute:
         # Cache of interfaces on remote host
         self._interfaces_cache = None
 
+        self._connection_failure = 0
+
     def _session(self):
         if self._http_session is None or self._http_session.closed is True:
             self._http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True))
@@ -344,14 +346,17 @@ class Compute:
         return StreamResponse(response)
 
     @asyncio.coroutine
-    def http_query(self, method, path, data=None, **kwargs):
-        if not self._connected:
+    def http_query(self, method, path, data=None, dont_connect=False, **kwargs):
+        """
+        :param dont_connect: If true do not reconnect if not connected
+        """
+        if not self._connected and not dont_connect:
             if self._id == "vm" and not self._controller.gns3vm.running:
                 yield from self._controller.gns3vm.start()
 
             yield from self.connect()
-        if not self._connected:
-            raise aiohttp.web.HTTPConflict(text="Can't connect to {}".format(self._name))
+        if not self._connected and not dont_connect:
+            raise ComputeError("Can't connect to {}".format(self._name))
         response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
@@ -366,7 +371,12 @@ class Compute:
             except ComputeError:
                 # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+                    self._connection_failure += 1
+                    # After 5 failure we close the project using the compute to avoid sync issues
+                    if self._connection_failure == 5:
+                        yield from self._controller.close_compute_projects(self)
                     asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
+
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
@@ -383,6 +393,7 @@ class Compute:
 
             self._notifications = asyncio.gather(self._connect_notification())
             self._connected = True
+            self._connection_failure = 0
             self._controller.notification.emit("compute.updated", self.__json__())
 
     @asyncio.coroutine

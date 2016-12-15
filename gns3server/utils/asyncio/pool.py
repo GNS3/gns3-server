@@ -36,6 +36,7 @@ class Pool():
         Wait for all task to finish
         """
         pending = set()
+        exceptions = set()
         while len(self._tasks) > 0 or len(pending) > 0:
             while len(self._tasks) > 0 and len(pending) < self._concurrency:
                 task, args, kwargs = self._tasks.pop(0)
@@ -43,7 +44,9 @@ class Pool():
             (done, pending) = yield from asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 if task.exception():
-                    raise task.exception()
+                    exceptions.add(task.exception())
+        if len(exceptions) > 0:
+            raise exceptions.pop()
 
 
 def main():

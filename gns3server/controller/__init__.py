@@ -271,6 +271,15 @@ class Controller:
             return self._computes[compute_id]
 
     @asyncio.coroutine
+    def close_compute_projects(self, compute):
+        """
+        Close projects running on a compute
+        """
+        for project in self._projects.values():
+            if compute in project.computes:
+                yield from project.close()
+
+    @asyncio.coroutine
     def delete_compute(self, compute_id):
         """
         Delete a compute node. Project using this compute will be close
@@ -281,11 +290,7 @@ class Controller:
             compute = self.get_compute(compute_id)
         except aiohttp.web.HTTPNotFound:
             return
-
-        for project in self._projects.values():
-            if compute in project.computes:
-                yield from project.close()
-
+        yield from self.close_compute_projects(compute)
         yield from compute.close()
         del self._computes[compute_id]
         self.save()

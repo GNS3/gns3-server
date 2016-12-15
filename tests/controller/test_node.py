@@ -366,7 +366,7 @@ def test_stop(node, compute, project, async_run):
     compute.post = AsyncioMagicMock()
 
     async_run(node.stop())
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id), timeout=240)
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id), timeout=240, dont_connect=True)
 
 
 def test_suspend(node, compute, project, async_run):

@@ -541,7 +541,7 @@ class Project:
         yield from self.stop_all()
         for compute in self._project_created_on_compute:
             try:
-                yield from compute.post("/projects/{}/close".format(self._id))
+                yield from compute.post("/projects/{}/close".format(self._id), dont_connect=True)
             # We don't care if a compute is down at this step
             except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
                 pass
