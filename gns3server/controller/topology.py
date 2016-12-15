@@ -370,7 +370,7 @@ def _convert_1_3_later(topo, topo_path):
             height=int(font_info[1]) * 2,
             width=int(font_info[1]) * len(note["text"]),
             fill="#" + note["color"][-6:],
-            opacity=round(1.0 / 255 * int(note["color"][:3][-2:], base=16), 2),  # Extract the alpha channel from the hexa version
+            opacity=round(1.0 / 255 * int(note.get("color", "#ffffffff")[:3][-2:], base=16), 2),  # Extract the alpha channel from the hexa version
             family=font_info[0],
             size=int(font_info[1]),
             weight=weight,
