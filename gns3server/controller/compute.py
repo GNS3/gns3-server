@@ -451,6 +451,8 @@ class Compute:
             elif data is not None:
                 if hasattr(data, '__json__'):
                     data = json.dumps(data.__json__())
+                elif isinstance(data, aiohttp.streams.EmptyStreamReader):
+                    data = None
                 # Stream the request
                 elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, bytes):
                     chunked = True
