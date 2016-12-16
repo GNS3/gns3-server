@@ -344,6 +344,8 @@ class DockerVM(BaseNode):
         state = yield from self._get_container_state()
         if state == "paused":
             yield from self.unpause()
+        elif state == "running":
+            return
         else:
             yield from self._clean_servers()
 
