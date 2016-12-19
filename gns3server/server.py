@@ -30,7 +30,6 @@ import time
 import atexit
 
 from .web.route import Route
-from .web.request_handler import RequestHandler
 from .config import Config
 from .modules import MODULES
 from .modules.port_manager import PortManager
@@ -199,6 +198,11 @@ class Server:
         Starts the server.
         """
 
+        server_logger = logging.getLogger('aiohttp.server')
+        # In debug mode we don't use the standard request log but a more complete in response.py
+        if log.getEffectiveLevel() == logging.DEBUG:
+            server_logger.setLevel(logging.CRITICAL)
+
         logger = logging.getLogger("asyncio")
         logger.setLevel(logging.ERROR)
 
@@ -239,7 +243,7 @@ class Server:
             m.port_manager = self._port_manager
 
         log.info("Starting server on {}:{}".format(self._host, self._port))
-        self._handler = app.make_handler(handler=RequestHandler)
+        self._handler = app.make_handler()
         server = self._run_application(self._handler, ssl_context)
         self._loop.run_until_complete(server)
         self._signal_handling()
