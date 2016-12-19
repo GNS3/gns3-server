@@ -19,7 +19,7 @@ import aiohttp.web
 import logging
 
 
-class RequestHandler(aiohttp.web.RequestHandler):
+class RequestHandler(aiohttp.web_server.RequestHandler):
 
     def log_access(self, message, environ, response, time):
 
