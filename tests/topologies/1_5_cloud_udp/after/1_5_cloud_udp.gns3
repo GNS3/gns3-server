@@ -1,0 +1,60 @@
+{
+    "auto_start": false,
+    "name": "untitled",
+    "project_id": "a22527ce-c976-48d6-afe9-2a04dea47a99",
+    "revision": 6,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "local",
+                "host": "127.0.0.1",
+                "name": "Local",
+                "port": 3080,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [
+        ],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": null,
+                "console_type": null,
+                "first_port_name": null,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "Cloud 1",
+                    "x": 55,
+                    "y": -25
+                },
+                "name": "Cloud 1",
+                "node_id": "ANYSTR",
+                "node_type": "cloud",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "interfaces": [
+                    ],
+                    "ports_mapping": [
+                        {
+                            "lport": 30000,
+                            "name": "UDP tunnel 1",
+                            "port_number": 1,
+                            "rhost": "127.0.0.1",
+                            "rport": 20000,
+                            "type": "udp"
+                        }
+                    ]
+                },
+                "symbol": ":/symbols/cloud.svg",
+                "x": -210,
+                "y": -167,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "ANYSTR"
+}

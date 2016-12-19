@@ -1,0 +1,55 @@
+{
+    "auto_start": false,
+    "name": "untitled",
+    "project_id": "a22527ce-c976-48d6-afe9-2a04dea47a99",
+    "revision": 4,
+    "topology": {
+        "links": [
+        ],
+        "nodes": [
+            {
+                "description": "Cloud",
+                "id": 1,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "Cloud 1",
+                    "x": 55.6015625,
+                    "y": -25.0
+                },
+                "ports": [
+                    {
+                        "description": "connected to PC1 on port Ethernet0",
+                        "id": 2,
+                        "link_id": 1,
+                        "name": "nio_udp:30000:127.0.0.1:20000",
+                        "nio": "NIO_UDP",
+                        "stub": true
+                    }
+                ],
+                "properties": {
+                    "name": "Cloud 1",
+                    "nios": [
+                        "nio_udp:30000:127.0.0.1:20000"
+                    ]
+                },
+                "server_id": 1,
+                "type": "Cloud",
+                "x": -210.5,
+                "y": -167.0
+            }
+        ],
+        "servers": [
+            {
+                "host": "127.0.0.1",
+                "id": 1,
+                "local": true,
+                "port": 3080,
+                "protocol": "http",
+                "vm": false
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.1"
+}

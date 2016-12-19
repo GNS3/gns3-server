@@ -485,15 +485,28 @@ def _create_cloud(node, old_node, icon):
             port_type = "ethernet"
         elif old_port["name"].startswith("nio_tap"):
             port_type = "tap"
+        elif old_port["name"].startswith("nio_udp"):
+            port_type = "udp"
         else:
             raise NotImplementedError("The conversion of cloud with {} is not supported".format(old_port["name"]))
 
-        port = {
-            "interface": old_port["name"].split(":")[1],
-            "name": old_port["name"].split(":")[1],
-            "port_number": len(ports) + 1,
-            "type": port_type
-        }
+        if port_type == "udp":
+            _, lport, rhost, rport = old_port["name"].split(":")
+            port = {
+                "name": "UDP tunnel {}".format(len(ports) + 1),
+                "port_number": len(ports) + 1,
+                "type": port_type,
+                "lport": int(lport),
+                "rhost": rhost,
+                "rport": int(rport)
+            }
+        else:
+            port = {
+                "interface": old_port["name"].split(":")[1],
+                "name": old_port["name"].split(":")[1],
+                "port_number": len(ports) + 1,
+                "type": port_type
+            }
         ports.append(port)
 
     node["properties"]["ports_mapping"] = ports
