@@ -268,18 +268,6 @@ def test_iou_start_capture(http_compute, vm, tmpdir, project):
             assert "test.pcap" in response.json["pcap_file_path"]
 
 
-def test_iou_start_capture_not_started(http_compute, vm, tmpdir):
-
-    with patch("gns3server.compute.iou.iou_vm.IOUVM.is_running", return_value=False) as mock:
-        with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start_capture") as start_capture:
-
-            params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
-            response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params)
-
-            assert not start_capture.called
-            assert response.status == 409
-
-
 def test_iou_stop_capture(http_compute, vm, tmpdir, project):
 
     with patch("gns3server.compute.iou.iou_vm.IOUVM.is_running", return_value=True) as mock:
@@ -290,17 +278,6 @@ def test_iou_stop_capture(http_compute, vm, tmpdir, project):
             assert response.status == 204
 
             assert stop_capture.called
-
-
-def test_iou_stop_capture_not_started(http_compute, vm, tmpdir):
-
-    with patch("gns3server.compute.iou.iou_vm.IOUVM.is_running", return_value=False) as mock:
-        with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.stop_capture") as stop_capture:
-
-            response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]))
-
-            assert not stop_capture.called
-            assert response.status == 409
 
 
 def test_images(http_compute, fake_iou_bin):

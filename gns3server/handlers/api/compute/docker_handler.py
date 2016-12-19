@@ -284,8 +284,6 @@ class DockerHandler:
         adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(container.project.capture_working_directory(), request.json["capture_file_name"])
 
-        if not container.is_running():
-            raise HTTPConflict(text="Cannot capture traffic on a non started Docker container")
         yield from container.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": str(pcap_file_path)})
 
@@ -308,9 +306,6 @@ class DockerHandler:
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
-        if not container.is_running():
-            raise HTTPConflict(text="Cannot capture traffic on a non started Docker container")
 
         adapter_number = int(request.match_info["adapter_number"])
         yield from container.stop_capture(adapter_number)

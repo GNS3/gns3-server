@@ -270,8 +270,6 @@ class IOUHandler:
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        if not vm.is_running():
-            raise HTTPConflict(text="Cannot capture traffic on a non started VM")
         yield from vm.start_capture(adapter_number, port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": str(pcap_file_path)})
 
@@ -294,9 +292,6 @@ class IOUHandler:
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
-        if not vm.is_running():
-            raise HTTPConflict(text="Cannot capture traffic on a non started VM")
 
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
