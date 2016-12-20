@@ -1,5 +1,40 @@
 # Change Log
 
+## 2.0.0 beta 2 20/12/2016
+
+* Fix an error when docker hub failed to anwser
+* Fix an issue with Docker and IOU packet capture
+* Support aiohttp 1.2 (but not compatible with previous versions)
+* Support UDP cloud from 1.5
+* Relax permission check on OSX, it seem returning wrong info for setuid
+* Fix start all create error if a docker container is already running
+* Close project if one one the compute of the project is down
+* Fix error when you upload an empty file
+* Fix KeyError: 'color' when converting some 1.3 topologies
+* Fix move a docker restart it
+* Fix export of projects with docker with a / in the image name
+* Fix an error on Linux during export
+* Fix hot link issues in Docker
+* Fix Can't delete link between docker VM after they were in use
+* Fix hardware virtualization detection when an ethernet switch is running
+* Trust user for host binding of link adress
+* Code cleanup for docker interface creation
+* Fix a rare crash when writing a file on a remote server
+* Fix delete project on remote compute server
+* Fix trouble with builtin devices when we free ports
+* When a dynamips command failed display the full command to the user
+* Raise error when we can't found VboxManage at GNS3 VM startup
+* Catch auth errors when adding a compute
+* Do not block server startup if one project use non implemented conversion
+* Fix an error when deleting a compute already deleted
+* Catch cancelled error when you Ctrl-C during server initalisation
+* Handle OSerror when listing images
+* Fix a rare crash when stopping qemu
+* Improve docker HTTP console
+* Fix configuration lost during save as on remote server
+* Add support for bios images
+* Fix error when controller config file is corrupted
+
 ## 2.0.0 beta 1 07/12/2016
 
 * Fix crash if at controller loading the remote server is not a GNS3 server
