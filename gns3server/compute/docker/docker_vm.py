@@ -268,6 +268,8 @@ class DockerVM(BaseNode):
             log.info("Image %s is missing pulling it from docker hub", self._image)
             yield from self.pull_image(self._image)
             image_infos = yield from self._get_image_information()
+            if image_infos is None:
+                raise DockerError("Can't get image informations, please try again.")
 
         params = {
             "Hostname": self._name,
