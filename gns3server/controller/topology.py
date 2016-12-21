@@ -112,7 +112,7 @@ def load_topology(path):
     try:
         with open(path, encoding="utf-8") as f:
             topo = json.load(f)
-    except (OSError, UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
+    except (OSError, UnicodeDecodeError, ValueError) as e:
         raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
     if "revision" not in topo or topo["revision"] < 5:
         # If it's an old GNS3 file we need to convert it

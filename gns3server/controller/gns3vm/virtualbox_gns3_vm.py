@@ -234,7 +234,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             if resp:
                 try:
                     json_data = yield from resp.json()
-                except json.decoder.JSONDecodeError:
+                except ValueError:
                     pass
                 resp.close()
 
