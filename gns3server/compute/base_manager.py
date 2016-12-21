@@ -481,7 +481,10 @@ class BaseManager:
         :returns: Array of hash
         """
 
-        return list_images(self._NODE_TYPE)
+        try:
+            return list_images(self._NODE_TYPE)
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Can not list images {}".format(e))
 
     def get_images_directory(self):
         """
