@@ -844,6 +844,9 @@ class VirtualBoxVM(BaseNode):
                     yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
                     yield from self._modify_vm('--nictracefile{} "{}"'.format(adapter_number + 1, nio.pcap_output_file))
 
+                if self.use_ubridge and not self._ethernet_adapters[adapter_number].get_nio(0):
+                    yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+
         for adapter_number in range(self._adapters, self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_number))
             yield from self._modify_vm("--nic{} none".format(adapter_number + 1))
@@ -936,6 +939,7 @@ class VirtualBoxVM(BaseNode):
             yield from self._add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                         self._local_udp_tunnels[adapter_number][1],
                                                         nio)
+            yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
         else:
             vm_state = yield from self._get_vm_state()
             if vm_state == "running":
@@ -978,6 +982,7 @@ class VirtualBoxVM(BaseNode):
 
         if self.ubridge:
             yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
+            yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
         else:
             vm_state = yield from self._get_vm_state()
             if vm_state == "running":
