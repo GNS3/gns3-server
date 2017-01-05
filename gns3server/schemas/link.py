@@ -93,7 +93,7 @@ LINK_CAPTURE_SCHEMA = {
     "properties": {
         "data_link_type": {
             "description": "PCAP data link type (http://www.tcpdump.org/linktypes.html)",
-            "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC"]
+            "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC", "DLT_PPP_SERIAL"]
         },
         "capture_file_name": {
             "description": "Read only property. The name of the capture file if capture is running",

@@ -85,7 +85,7 @@ NODE_CAPTURE_SCHEMA = {
         },
         "data_link_type": {
             "description": "PCAP data link type (http://www.tcpdump.org/linktypes.html)",
-            "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC"]
+            "enum": ["DLT_ATM_RFC1483", "DLT_EN10MB", "DLT_FRELAY", "DLT_C_HDLC", "DLT_PPP_SERIAL"]
         }
     },
     "additionalProperties": False,
