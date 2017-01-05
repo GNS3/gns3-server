@@ -253,13 +253,13 @@ class Cloud(BaseNode):
                                                                                                     interface=port_info["interface"]))
             return
         if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
-            raise NodeError("Interface {} don't have a netmask".format(port_info["interface"]))
+            raise NodeError("Interface {} has no netmask, interface down?".format(port_info["interface"]))
         yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
 
     @asyncio.coroutine
     def _add_windows_ethernet(self, port_info, bridge_name):
         if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
-            raise NodeError("Interface {} don't have a netmask".format(port_info["interface"]))
+            raise NodeError("Interface {} has no netmask, interface down?".format(port_info["interface"]))
         yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
 
     @asyncio.coroutine
