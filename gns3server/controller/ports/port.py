@@ -50,6 +50,9 @@ class Port:
 
     @property
     def short_name(self):
+        # If port name format has change we use the port name as the short name (1.X behavior)
+        if not self._name.startswith(self.long_name_type()):
+            return self._name
         return self.short_name_type + "{}/{}".format(self._interface_number, self._port_number)
 
     def __json__(self):
