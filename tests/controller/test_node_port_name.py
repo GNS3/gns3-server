@@ -22,6 +22,7 @@ from tests.utils import AsyncioMagicMock
 
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
+from gns3server.controller.ports.ethernet_port import EthernetPort
 
 
 @pytest.fixture
@@ -135,7 +136,7 @@ def test_list_ports_adapters_cloud(project, compute):
     assert node.__json__()["ports"] == [
         {
             "name": "eth0",
-            "short_name": "e0/0",
+            "short_name": "eth0",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
@@ -548,3 +549,10 @@ def test_list_ports_dynamips(project, compute):
             "link_type": "serial"
         }
     ]
+
+
+def test_short_name():
+    # If no customization of port name format return the default short name
+    assert EthernetPort("Ethernet0", 0, 0, 0).short_name == "e0/0"
+    # If port name format has change we use the port name as the short name (1.X behavior)
+    assert EthernetPort("eth0", 0, 0, 0).short_name == "eth0"
