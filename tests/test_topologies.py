@@ -113,6 +113,10 @@ def compare_dict(path, source, reference):
                 pass
             elif val == "ANYUUID" and len(source[key]) == 36:
                 pass
+            # We test that the revision number has been bumpd to last version. This avoid modifying all the tests
+            # at each new revision bump.
+            elif key == "revision":
+                assert source[key] == GNS3_FILE_FORMAT_REVISION
             else:
                 assert val == source[key], "Wrong value for {}: \n{}\nit should be\n{}".format(key, source[key], val)
         elif isinstance(val, dict):
