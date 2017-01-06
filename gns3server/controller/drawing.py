@@ -126,7 +126,7 @@ class Drawing:
             filename = hashlib.md5(value.encode()).hexdigest() + ".svg"
             file_path = os.path.join(self._project.pictures_directory, filename)
             if not os.path.exists(file_path):
-                with open(file_path, "w+") as f:
+                with open(file_path, "w+", encoding="utf-8") as f:
                     f.write(value)
             self._svg = filename
         else:
