@@ -26,6 +26,18 @@ class Port:
         self._adapter_number = adapter_number
         self._port_number = port_number
         self._name = name
+        self._link = None
+
+    @property
+    def link(self):
+        """
+        Link connected to the port
+        """
+        return self._link
+
+    @link.setter
+    def link(self, val):
+        self._link = val
 
     @property
     def adapter_number(self):

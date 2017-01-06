@@ -74,6 +74,7 @@ def test_add_node(async_run, project, compute):
     assert link._nodes == [
         {
             "node": node1,
+            "port": node1._ports[0],
             "adapter_number": 0,
             "port_number": 4,
             'label': {
@@ -98,6 +99,30 @@ def test_add_node(async_run, project, compute):
     assert link.create.called
     link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
     assert link in node2.link
+
+
+def test_add_node_already_connected(async_run, project, compute):
+    """
+    Raise an error if we try to use an already connected port
+    """
+    project.dump = AsyncioMagicMock()
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.controller.notification.emit = MagicMock()
+    async_run(link.add_node(node1, 0, 4))
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+    async_run(link.add_node(node2, 0, 4))
+
+    assert link.create.called
+    link2 = Link(project)
+    link2.create = AsyncioMagicMock()
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        async_run(link2.add_node(node1, 0, 4))
 
 
 def test_add_node_cloud(async_run, project, compute):
