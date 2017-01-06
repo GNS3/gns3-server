@@ -49,7 +49,8 @@ class NIOUDP(NIO):
 
     @asyncio.coroutine
     def create(self):
-
+        if not self._hypervisor:
+            return
         yield from self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
                                                                                                 lport=self._lport,
                                                                                                 rhost=self._rhost,
