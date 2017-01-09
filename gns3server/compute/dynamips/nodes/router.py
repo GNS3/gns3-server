@@ -325,7 +325,10 @@ class Router(BaseNode):
         Resumes this suspended router
         """
 
-        yield from self._hypervisor.send('vm resume "{name}"'.format(name=self._name))
+        status = yield from self.get_status()
+        if status == "suspended":
+            yield from self._hypervisor.send('vm resume "{name}"'.format(name=self._name))
+            self.status = "started"
         log.info('Router "{name}" [{id}] has been resumed'.format(name=self._name, id=self._id))
 
     @asyncio.coroutine
