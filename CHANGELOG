@@ -35,6 +35,28 @@
 * Add support for bios images
 * Fix error when controller config file is corrupted
 
+## 1.5.3 rc1 20/12/2016
+
+* Support aiohttp 1.2 (but not compatible with previous versions)
+* Explain that segfault on IOU is a issue with the image
+* Fix an issue with finding vmrun and vboxmanage
+* Support named remote servers for VPCS
+* When checking for a free port check if the host and 0.0.0.0 are available
+* smm=off is only for 64bits
+* Fix set hostname on remote server
+* Fix sending smm option to qemu
+* Workaround a bug with KVM, Qemu >= 2.4 and Intel CPU
+* Renable sleep at Vbox exit bug seem to be back
+* Support large project (> 2GB) during export
+* Fix Deleting running telnet docker VM shows error in log
+* Fix when closing a container using VNC, root permission are not reset
+* Use $PATH also for dynamips and cleanup some $PATH usages
+* Fix a lock issue with some virtualbox vm
+* Raise proper error when you try to load an empty qcow2 file
+* Fix upload form crash
+* Search bin from the $PATH for sample configuration file
+* Updated systemd unit file and added sample configuration file
+
 ## 2.0.0 beta 1 07/12/2016
 
 * Fix crash if at controller loading the remote server is not a GNS3 server
@@ -217,7 +239,6 @@
 * Suspend the GNS3VM when closing GNS3
 * Edit the scene size
 * New API
-
 
 ## 1.5.2 18/08/2016
 
