@@ -304,7 +304,8 @@ class ProjectHandler:
 
                 yield from response.write_eof()
         # Will be raise if you have no space left or permission issue on your temporary directory
-        except OSError as e:
+        # RuntimeError: something was wrong during the zip process
+        except (OSError, RuntimeError) as e:
             raise aiohttp.web.HTTPNotFound(text="Can't export project: {}".format(str(e)))
 
     @Route.post(
