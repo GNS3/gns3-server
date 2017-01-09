@@ -69,7 +69,7 @@ class VPCSVM(BaseNode):
         self._local_udp_tunnel = None
 
         # VPCS settings
-        if startup_script is not None:
+        if startup_script is not None and not self.script_file:  # We disallow override at startup
             self.startup_script = startup_script
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
