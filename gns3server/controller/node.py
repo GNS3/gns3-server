@@ -558,10 +558,18 @@ class Node:
         elif self._node_type == "dynamips":
             self._ports = DynamipsPortFactory(self._properties)
             return
-        elif self._node_type in ("cloud", "nat", "ethernet_switch", "ethernet_hub"):
+        elif self._node_type in ("ethernet_switch", "ethernet_hub"):
+            # Basic node we don't want to have adapter number
             port_number = 0
             for port in self._properties["ports_mapping"]:
-                self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet"))
+                self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name="e{}".format(port_number)))
+                port_number += 1
+        elif self._node_type in ("vpcs"):
+            self._ports.append(PortFactory("Ethernet0", 0, 0, 0, "ethernet", short_name="e0"))
+        elif self._node_type in ("cloud", "nat"):
+            port_number = 0
+            for port in self._properties["ports_mapping"]:
+                self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name=port["name"]))
                 port_number += 1
         else:
             self._ports = StandardPortFactory(self._properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)

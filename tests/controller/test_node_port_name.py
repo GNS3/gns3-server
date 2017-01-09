@@ -41,7 +41,7 @@ def project(controller):
 def node(compute, project):
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
-                node_type="vpcs",
+                node_type="qemu",
                 console_type="vnc",
                 properties={"startup_script": "echo test"})
     return node
@@ -55,6 +55,23 @@ def test_list_ports(node):
         {
             "name": "Ethernet0",
             "short_name": "e0/0",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 0,
+            "adapter_number": 0,
+            "link_type": "ethernet"
+        }
+    ]
+
+
+def test_list_ports_vpcs(node):
+    """
+    List port by default
+    """
+    node._node_type = "vpcs"
+    assert node.__json__()["ports"] == [
+        {
+            "name": "Ethernet0",
+            "short_name": "e0",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
@@ -166,7 +183,7 @@ def test_list_ports_ethernet_hub(project, compute):
     assert node.__json__()["ports"] == [
         {
             "name": "Ethernet0",
-            "short_name": "e0/0",
+            "short_name": "e0",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
@@ -174,7 +191,7 @@ def test_list_ports_ethernet_hub(project, compute):
         },
         {
             "name": "Ethernet1",
-            "short_name": "e0/1",
+            "short_name": "e1",
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
             "adapter_number": 0,
@@ -554,5 +571,6 @@ def test_list_ports_dynamips(project, compute):
 def test_short_name():
     # If no customization of port name format return the default short name
     assert EthernetPort("Ethernet0", 0, 0, 0).short_name == "e0/0"
+    assert EthernetPort("Ethernet0", 0, 0, 0, short_name="mgmt").short_name == "mgmt"
     # If port name format has change we use the port name as the short name (1.X behavior)
     assert EthernetPort("eth0", 0, 0, 0).short_name == "eth0"

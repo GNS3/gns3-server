@@ -21,11 +21,12 @@ class Port:
     Base class for port objects.
     """
 
-    def __init__(self, name, interface_number, adapter_number, port_number):
+    def __init__(self, name, interface_number, adapter_number, port_number, short_name=None):
         self._interface_number = interface_number
         self._adapter_number = adapter_number
         self._port_number = port_number
         self._name = name
+        self._short_name = short_name
         self._link = None
 
     @property
@@ -63,7 +64,9 @@ class Port:
     @property
     def short_name(self):
         # If port name format has change we use the port name as the short name (1.X behavior)
-        if not self._name.startswith(self.long_name_type()):
+        if self._short_name:
+            return self._short_name
+        elif not self._name.startswith(self.long_name_type()):
             return self._name
         return self.short_name_type + "{}/{}".format(self._interface_number, self._port_number)
 

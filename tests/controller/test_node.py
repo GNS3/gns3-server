@@ -128,7 +128,7 @@ def test_json(node, compute):
                 "link_type": "ethernet",
                 "name": "Ethernet0",
                 "port_number": 0,
-                "short_name": "e0/0"
+                "short_name": "e0"
             }
         ]
     }
@@ -465,6 +465,7 @@ def test_update_label(node):
 
 
 def test_get_port(node):
+    node._node_type = "qemu"
     node._properties["adapters"] = 2
     node._list_ports()
     port = node.get_port(0, 0)
