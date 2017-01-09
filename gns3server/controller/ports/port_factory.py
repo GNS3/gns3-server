@@ -175,20 +175,15 @@ class DynamipsPortFactory:
     def __new__(cls, properties):
         ports = []
 
-        interface_numbers = {}
-
         adapter_number = 0
         wic_port_number = 16
         for name in sorted(properties.keys()):
             if name.startswith("slot") and properties[name]:
                 port_class = cls.ADAPTER_MATRIX[properties[name]]["port"]
                 if port_class:
-                    interface_numbers.setdefault(port_class, 0)
-                    interface_number = interface_numbers[port_class]
                     for port_number in range(0, cls.ADAPTER_MATRIX[properties[name]]["nb_ports"]):
-                        name = "{}{}/{}".format(port_class.long_name_type(), interface_number, port_number)
-                        ports.append(port_class(name, interface_number, adapter_number, port_number))
-                    interface_numbers[port_class] += 1
+                        name = "{}{}/{}".format(port_class.long_name_type(), adapter_number, port_number)
+                        ports.append(port_class(name, adapter_number, adapter_number, port_number))
                 adapter_number += 1
             elif name.startswith("wic") and properties[name]:
                 port_class = cls.WIC_MATRIX[properties[name]]["port"]
