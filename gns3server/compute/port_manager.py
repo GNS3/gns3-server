@@ -44,7 +44,6 @@ class PortManager:
         self._used_udp_ports = set()
 
         server_config = Config.instance().get_section_config("Server")
-        remote_console_connections = server_config.getboolean("allow_remote_console")
 
         console_start_port_range = server_config.getint("console_start_port_range", 5000)
         console_end_port_range = server_config.getint("console_end_port_range", 10000)
