@@ -69,6 +69,11 @@ class Router(BaseNode):
 
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=aux)
 
+        self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
+        os.makedirs(os.path.join(self._working_directory, "configs"), exist_ok=True)
+        if dynamips_id:
+            self._convert_before_2_0_0_b3(dynamips_id)
+
         self._hypervisor = hypervisor
         self._dynamips_id = dynamips_id
         self._platform = platform
@@ -115,8 +120,27 @@ class Router(BaseNode):
             self._dynamips_id = 0
             self._name = "Ghost"
 
-        self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
-        os.makedirs(os.path.join(self._working_directory, "configs"), exist_ok=True)
+    def _convert_before_2_0_0_b3(self, dynamips_id):
+        """
+        Before 2.0.0 beta3 the node didn't have a folder by node
+        when we start we move the file, we can't do it in the topology
+        conversion due to case of remote servers
+        """
+        dynamips_dir = self.project.module_working_directory(self.manager.module_name.lower())
+        for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
+            dst = os.path.join(self._working_directory, "configs", os.path.basename(path))
+            if not os.path.exists(dst):
+                try:
+                    shutil.move(path, dst)
+                except OSError as e:
+                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
+        for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
+            dst = os.path.join(self._working_directory, os.path.basename(path))
+            if not os.path.exists(dst):
+                try:
+                    shutil.move(path, dst)
+                except OSError as e:
+                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
 
     def __json__(self):
 
