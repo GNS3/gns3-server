@@ -157,7 +157,8 @@ class Docker(BaseManager):
         """
         images = []
         for image in (yield from self.query("GET", "images/json", params={"all": 0})):
-            for tag in image['RepoTags']:
-                if tag != "<none>:<none>":
-                    images.append({'image': tag})
+            if image['RepoTags']:
+                for tag in image['RepoTags']:
+                    if tag != "<none>:<none>":
+                        images.append({'image': tag})
         return sorted(images, key=lambda i: i['image'])
