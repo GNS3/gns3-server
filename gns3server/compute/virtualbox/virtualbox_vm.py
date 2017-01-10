@@ -206,10 +206,11 @@ class VirtualBoxVM(BaseNode):
         """
         Fix the VM uuid in the case of linked clone
         """
-        tree = ET.parse(self._linked_vbox_file())
-        machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
-        machine.set("uuid", "{" + self.id + "}")
-        tree.write(self._linked_vbox_file())
+        if os.path.exists(self._linked_vbox_file()):
+            tree = ET.parse(self._linked_vbox_file())
+            machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
+            machine.set("uuid", "{" + self.id + "}")
+            tree.write(self._linked_vbox_file())
 
     @asyncio.coroutine
     def check_hw_virtualization(self):
