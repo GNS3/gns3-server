@@ -696,13 +696,16 @@ class Project:
         if self._status == "closed":
             yield from self.open()
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-            with open(os.path.join(tmpdir, "project.gns3p"), "wb+") as f:
-                for data in zipstream:
-                    f.write(data)
-            with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
-                project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                with open(os.path.join(tmpdir, "project.gns3p"), "wb+") as f:
+                    for data in zipstream:
+                        f.write(data)
+                with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
+                    project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Can not duplicate project: {}".format(str(e)))
 
         if previous_status == "closed":
             yield from self.close()
