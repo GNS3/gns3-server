@@ -1,0 +1,116 @@
+{
+    "auto_start": false,
+    "name": "untitled",
+    "project_id": "63c75180-b540-4389-94cd-62f4bc6a5e2b",
+    "revision": 4,
+    "topology": {
+        "links": [
+            {
+                "description": "Link from core-1 port Ethernet0 to Cloud 2 port nio_nat:42",
+                "destination_node_id": 3,
+                "destination_port_id": 3,
+                "id": 3,
+                "source_node_id": 7,
+                "source_port_id": 21
+            }
+        ],
+        "nodes": [
+            {
+                "description": "Cloud",
+                "id": 3,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "Cloud 2",
+                    "x": 55.6015625,
+                    "y": -25.0
+                },
+                "ports": [
+                    {
+                        "description": "connected to core-1 on port Ethernet0",
+                        "id": 3,
+                        "link_id": 3,
+                        "name": "nio_nat:42",
+                        "nio": "NIO_NAT",
+                        "stub": true
+                    }
+                ],
+                "properties": {
+                    "name": "Cloud 2",
+                    "nios": [
+                        "nio_nat:42"
+                    ]
+                },
+                "server_id": 1,
+                "type": "Cloud",
+                "x": -144.5,
+                "y": -135.0
+            },
+            {
+                "description": "QEMU VM",
+                "id": 7,
+                "label": {
+                    "color": "#ff000000",
+                    "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
+                    "text": "core-1",
+                    "x": 10.9765625,
+                    "y": -25.0
+                },
+                "linked_clone": true,
+                "port_name_format": "Ethernet{0}",
+                "ports": [
+                    {
+                        "adapter_number": 0,
+                        "description": "connected to Cloud 2 on port nio_nat:42",
+                        "id": 21,
+                        "link_id": 3,
+                        "name": "Ethernet0",
+                        "nio": "NIO_NAT",
+                        "port_number": 0
+                    }
+                ],
+                "properties": {
+                    "acpi_shutdown": false,
+                    "adapter_type": "e1000",
+                    "adapters": 1,
+                    "boot_priority": "c",
+                    "console": 5000,
+                    "console_type": "telnet",
+                    "cpu_throttling": 0,
+                    "cpus": 1,
+                    "hda_disk_image": "core-linux-6.4-internet-0.1.img",
+                    "hda_disk_image_md5sum": "8ebc5a6ec53a1c05b7aa101b5ceefe31",
+                    "hda_disk_interface": "ide",
+                    "hdb_disk_interface": "ide",
+                    "hdc_disk_interface": "ide",
+                    "hdd_disk_interface": "ide",
+                    "legacy_networking": false,
+                    "mac_address": "00:5e:2b:a8:93:00",
+                    "name": "core-1",
+                    "options": "-nographic",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/usr/local/bin/qemu-system-x86_64",
+                    "ram": 256
+                },
+                "server_id": 1,
+                "type": "QemuVM",
+                "vm_id": "c6de0f4e-101d-4c4f-b5a0-47df57e8a893",
+                "x": 72.5,
+                "y": -0.5
+            }
+        ],
+        "servers": [
+            {
+                "host": "127.0.0.1",
+                "id": 1,
+                "local": true,
+                "port": 3080,
+                "protocol": "http",
+                "vm": false
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "1.5.3dev2"
+}

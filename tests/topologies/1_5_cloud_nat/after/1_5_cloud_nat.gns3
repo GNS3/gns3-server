@@ -1,0 +1,53 @@
+{
+    "auto_start": false,
+    "name": "untitled",
+    "project_id": "ANYSTR",
+    "revision": 6,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "local",
+                "host": "127.0.0.1",
+                "name": "Local",
+                "port": 3080,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [
+        ],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": null,
+                "console_type": null,
+                "first_port_name": null,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "Cloud 2",
+                    "x": 55,
+                    "y": -25
+                },
+                "name": "Cloud 2",
+                "node_id": "ANYSTR",
+                "node_type": "cloud",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "interfaces": [
+                    ],
+                    "ports_mapping": [
+                    ]
+                },
+                "symbol": ":/symbols/cloud.svg",
+                "x": -144,
+                "y": -135,
+                "z": 1
+            },
+            {"name": "core-1", "first_port_name": null, "symbol": ":/symbols/cloud.svg", "node_type": "nat", "label": {"style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;", "rotation": 0, "y": -25, "x": 10, "text": "core-1"}, "console_type": null, "port_name_format": "Ethernet{0}", "node_id": "c6de0f4e-101d-4c4f-b5a0-47df57e8a893", "y": 0, "z": 1, "compute_id": "local", "properties": {"ports": [{"name": "nat0", "type": "ethernet", "interface": "eth1", "port_number": 0}]}, "port_segment_size": 0, "console": null, "x": 72}
+      ]
+    },
+    "type": "topology",
+    "version": "ANYSTR"
+}

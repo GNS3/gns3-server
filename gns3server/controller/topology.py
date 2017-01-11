@@ -295,9 +295,9 @@ def _convert_1_3_later(topo, topo_path):
         elif old_node["type"] == "IOUDevice":
             node["node_type"] = "iou"
         elif old_node["type"] == "Cloud":
-            _create_cloud(node, old_node, ":/symbols/cloud.svg")
+            old_node["ports"] = _create_cloud(node, old_node, ":/symbols/cloud.svg")
         elif old_node["type"] == "Host":
-            _create_cloud(node, old_node, ":/symbols/computer.svg")
+            old_node["ports"] = _create_cloud(node, old_node, ":/symbols/computer.svg")
         else:
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 
@@ -483,6 +483,7 @@ def _create_cloud(node, old_node, icon):
     del old_node["properties"]["nios"]
 
     ports = []
+    keep_ports = []
     for old_port in old_node.get("ports", []):
         if old_port["name"].startswith("nio_gen_eth"):
             port_type = "ethernet"
@@ -492,6 +493,8 @@ def _create_cloud(node, old_node, icon):
             port_type = "tap"
         elif old_port["name"].startswith("nio_udp"):
             port_type = "udp"
+        elif old_port["name"].startswith("nio_nat"):
+            continue
         else:
             raise NotImplementedError("The conversion of cloud with {} is not supported".format(old_port["name"]))
 
@@ -512,10 +515,12 @@ def _create_cloud(node, old_node, icon):
                 "port_number": len(ports) + 1,
                 "type": port_type
             }
+        keep_ports.append(old_port)
         ports.append(port)
 
     node["properties"]["ports_mapping"] = ports
     node["properties"]["interfaces"] = []
+    return keep_ports
 
 
 def _convert_snapshots(topo_dir):
