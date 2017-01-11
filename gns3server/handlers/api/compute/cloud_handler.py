@@ -135,7 +135,8 @@ class CloudHandler:
         description="Start a cloud")
     def start(request, response):
 
-        Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        node = Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        yield from node.start()
         response.set_status(204)
 
     @Route.post(

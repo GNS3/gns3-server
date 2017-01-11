@@ -43,7 +43,7 @@ def test_json_with_ports(on_gns3vm, project):
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
-        "status": "started",
+        "status": "stopped",
         "ports_mapping": [
             {
                 "interface": "virbr0",
@@ -69,7 +69,7 @@ def test_json_without_ports(on_gns3vm, project):
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
-        "status": "started",
+        "status": "stopped",
         "ports_mapping": [
             {
                 "interface": "eth0",
@@ -141,6 +141,7 @@ def test_linux_ethernet_raw_add_nio(linux_platform, project, async_run, nio):
         }
     ]
     cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports)
+    cloud.status = "started"
 
     with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
         with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "eth0"}]):
@@ -167,6 +168,7 @@ def test_linux_ethernet_raw_add_nio_bridge(linux_platform, project, async_run, n
         }
     ]
     cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports)
+    cloud.status = "started"
 
     with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
         with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "bridge0"}]):
