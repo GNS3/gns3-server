@@ -80,6 +80,32 @@ def test_list_ports_vpcs(node):
     ]
 
 
+def test_list_ports_docker(node):
+    """
+    List port by default
+    """
+    node._node_type = "docker"
+    node._properties["adapters"] = 2
+    assert node.__json__()["ports"] == [
+        {
+            "name": "eth0",
+            "short_name": "eth0",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 0,
+            "adapter_number": 0,
+            "link_type": "ethernet"
+        },
+        {
+            "name": "eth1",
+            "short_name": "eth1",
+            "data_link_types": {"Ethernet": "DLT_EN10MB"},
+            "port_number": 0,
+            "adapter_number": 1,
+            "link_type": "ethernet"
+        }
+    ]
+
+
 def test_list_ports_port_name_format(node):
     """
     Support port name format

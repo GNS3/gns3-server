@@ -558,6 +558,9 @@ class Node:
         elif self._node_type == "dynamips":
             self._ports = DynamipsPortFactory(self._properties)
             return
+        elif self._node_type == "docker":
+            for adapter_number in range(0, self._properties["adapters"]):
+                self._ports.append(PortFactory("eth{}".format(adapter_number), 0, adapter_number, 0, "ethernet", short_name="eth{}".format(adapter_number)))
         elif self._node_type in ("ethernet_switch", "ethernet_hub"):
             # Basic node we don't want to have adapter number
             port_number = 0
@@ -573,7 +576,6 @@ class Node:
                 port_number += 1
         else:
             self._ports = StandardPortFactory(self._properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)
-            return
 
     def __repr__(self):
         return "<gns3server.controller.Node {} {}>".format(self._node_type, self._name)
