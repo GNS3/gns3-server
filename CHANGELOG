@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.5.3 12/01/2016
+
+* Fix sporadically systemd is unable to start gns3-server
+
 ## 1.5.3 rc1 20/12/2016
 
 * Support aiohttp 1.2 (but not compatible with previous versions)
