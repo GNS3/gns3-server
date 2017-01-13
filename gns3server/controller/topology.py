@@ -19,6 +19,7 @@ import os
 import json
 import copy
 import uuid
+import glob
 import shutil
 import zipfile
 import aiohttp
@@ -36,7 +37,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-GNS3_FILE_FORMAT_REVISION = 6
+GNS3_FILE_FORMAT_REVISION = 7
 
 
 def _check_topology_schema(topo):
@@ -133,9 +134,42 @@ def load_topology(path):
         with open(path, "w+", encoding="utf-8") as f:
             json.dump(topo, f, indent=4, sort_keys=True)
 
+    # Version before GNS3 2.0 beta 3
+    if topo["revision"] < 7:
+        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        topo = _convert_2_0_0_beta_2(topo, path)
+        _check_topology_schema(topo)
+        with open(path, "w+", encoding="utf-8") as f:
+            json.dump(topo, f, indent=4, sort_keys=True)
+
     if topo["revision"] > GNS3_FILE_FORMAT_REVISION:
         raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
     _check_topology_schema(topo)
+    return topo
+
+
+def _convert_2_0_0_beta_2(topo, topo_path):
+    """
+    Convert topologies from GNS3 2.0.0 beta 2 to beta 3.
+
+    Changes:
+     * Node id folders for dynamips
+    """
+    topo_dir = os.path.dirname(topo_path)
+    topo["revision"] = 7
+
+    for node in topo.get("topology", {}).get("nodes", []):
+        if node["node_type"] == "dynamips":
+            node_id = node["node_id"]
+            dynamips_id = node["properties"]["dynamips_id"]
+
+            dynamips_dir = os.path.join(topo_dir, "project-files", "dynamips")
+            node_dir = os.path.join(dynamips_dir, node_id)
+            os.makedirs(os.path.join(node_dir, "configs"), exist_ok=True)
+            for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
+                shutil.move(path, os.path.join(node_dir, os.path.basename(path)))
+            for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
+                shutil.move(path, os.path.join(node_dir, "configs", os.path.basename(path)))
     return topo
 
 

@@ -97,7 +97,9 @@ class IOUVM(BaseNode):
         """
         Called when the NVRAM file has changed
         """
+        log.debug("NVRAM changed: {}".format(path))
         self.save_configs()
+        self.updated()
 
     @asyncio.coroutine
     def close(self):
@@ -206,6 +208,8 @@ class IOUVM(BaseNode):
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
                        "startup_config": self.relative_startup_config_file,
+                       "startup_config_content": self.startup_config_content,
+                       "private_config_content": self.private_config_content,
                        "private_config": self.relative_private_config_file,
                        "use_default_iou_values": self._use_default_iou_values,
                        "command_line": self.command_line}
@@ -485,7 +489,7 @@ class IOUVM(BaseNode):
             # check if there is enough RAM to run
             self.check_available_ram(self.ram)
 
-            self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed, delay=10)
+            self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed, delay=2)
 
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()

@@ -25,10 +25,12 @@ import time
 import sys
 import os
 import glob
+import shlex
 import base64
+import shutil
 import binascii
-
 import logging
+
 log = logging.getLogger(__name__)
 
 from ...base_node import BaseNode
@@ -66,6 +68,11 @@ class Router(BaseNode):
         allocate_aux = manager.config.get_section_config("Dynamips").getboolean("allocate_aux_console_ports", False)
 
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=aux)
+
+        self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
+        os.makedirs(os.path.join(self._working_directory, "configs"), exist_ok=True)
+        if dynamips_id:
+            self._convert_before_2_0_0_b3(dynamips_id)
 
         self._hypervisor = hypervisor
         self._dynamips_id = dynamips_id
@@ -113,11 +120,33 @@ class Router(BaseNode):
             self._dynamips_id = 0
             self._name = "Ghost"
 
+    def _convert_before_2_0_0_b3(self, dynamips_id):
+        """
+        Before 2.0.0 beta3 the node didn't have a folder by node
+        when we start we move the file, we can't do it in the topology
+        conversion due to case of remote servers
+        """
+        dynamips_dir = self.project.module_working_directory(self.manager.module_name.lower())
+        for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
+            dst = os.path.join(self._working_directory, "configs", os.path.basename(path))
+            if not os.path.exists(dst):
+                try:
+                    shutil.move(path, dst)
+                except OSError as e:
+                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
+        for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
+            dst = os.path.join(self._working_directory, os.path.basename(path))
+            if not os.path.exists(dst):
+                try:
+                    shutil.move(path, dst)
+                except OSError as e:
+                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
+
     def __json__(self):
 
         router_info = {"name": self.name,
                        "node_id": self.id,
-                       "node_directory": os.path.join(self.project.module_working_directory(self.manager.module_name.lower())),
+                       "node_directory": os.path.join(self._working_directory),
                        "project_id": self.project.id,
                        "dynamips_id": self._dynamips_id,
                        "platform": self._platform,
@@ -187,8 +216,10 @@ class Router(BaseNode):
     def create(self):
 
         if not self._hypervisor:
-            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
-            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=module_workdir)
+            # We start the hypervisor is the dynamips folder and next we change to node dir
+            # this allow the creation of common files in the dynamips folder
+            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=self.project.module_working_directory(self.manager.module_name.lower()))
+            yield from self._hypervisor.set_working_dir(self._working_directory)
 
         yield from self._hypervisor.send('vm create "{name}" {id} {platform}'.format(name=self._name,
                                                                                      id=self._dynamips_id,
@@ -368,14 +399,13 @@ class Router(BaseNode):
 
         if self._auto_delete_disks:
             # delete nvram and disk files
-            project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
-            files = glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_disk[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_slot[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_rom".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
-            files += glob.glob(os.path.join(glob.escape(project_dir), "{}_i{}_ssa".format(self.platform, self.dynamips_id)))
+            files = glob.glob(os.path.join(glob.escape(self._working_directory), "{}_i{}_disk[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(self._working_directory), "{}_i{}_slot[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(self._working_directory), "{}_i{}_nvram".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(self._working_directory), "{}_i{}_flash[0-1]".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(self._working_directory), "{}_i{}_rom".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(self._working_directory), "{}_i{}_bootflash".format(self.platform, self.dynamips_id)))
+            files += glob.glob(os.path.join(glob.escape(self._working_directory), "{}_i{}_ssa".format(self.platform, self.dynamips_id)))
             for file in files:
                 try:
                     log.debug("Deleting file {}".format(file))
@@ -763,7 +793,7 @@ class Router(BaseNode):
         """
 
         yield from self._hypervisor.send('vm set_ghost_file "{name}" {ghost_file}'.format(name=self._name,
-                                                                                          ghost_file=ghost_file))
+                                                                                          ghost_file=shlex.quote(ghost_file)))
 
         log.info('Router "{name}" [{id}]: ghost file set to {ghost_file}'.format(name=self._name,
                                                                                  id=self._id,
@@ -1456,10 +1486,9 @@ class Router(BaseNode):
         :param new_name: new name string
         """
 
-        module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
         if self._startup_config:
             # change the hostname in the startup-config
-            startup_config_path = os.path.join(module_workdir, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
+            startup_config_path = os.path.join(self._working_directory, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
             if os.path.isfile(startup_config_path):
                 try:
                     with open(startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
@@ -1473,7 +1502,7 @@ class Router(BaseNode):
 
         if self._private_config:
             # change the hostname in the private-config
-            private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
+            private_config_path = os.path.join(self._working_directory, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
             if os.path.isfile(private_config_path):
                 try:
                     with open(private_config_path, "r+", encoding="utf-8", errors="replace") as f:
@@ -1507,9 +1536,8 @@ class Router(BaseNode):
             self._startup_config = startup_config
             self._private_config = private_config
 
-            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             if private_config:
-                private_config_path = os.path.join(module_workdir, private_config)
+                private_config_path = os.path.join(self._working_directory, private_config)
                 try:
                     if not os.path.getsize(private_config_path):
                         # an empty private-config can prevent a router to boot.
@@ -1522,7 +1550,7 @@ class Router(BaseNode):
                     raise DynamipsError("Cannot access the private-config {}: {}".format(private_config_path, e))
 
             try:
-                startup_config_path = os.path.join(module_workdir, startup_config)
+                startup_config_path = os.path.join(self._working_directory, startup_config)
                 with open(startup_config_path) as f:
                     self._startup_config_content = f.read()
             except OSError as e:
@@ -1568,9 +1596,8 @@ class Router(BaseNode):
 
         if self.startup_config or self.private_config:
 
-            module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             try:
-                config_path = os.path.join(module_workdir, "configs")
+                config_path = os.path.join(self._working_directory, "configs")
                 os.makedirs(config_path, exist_ok=True)
             except OSError as e:
                 raise DynamipsError("Could could not create configuration directory {}: {}".format(config_path, e))
@@ -1582,7 +1609,7 @@ class Router(BaseNode):
                 try:
                     config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
                     config = "!\n" + config.replace("\r", "")
-                    config_path = os.path.join(module_workdir, self.startup_config)
+                    config_path = os.path.join(self._working_directory, self.startup_config)
                     with open(config_path, "wb") as f:
                         log.info("saving startup-config to {}".format(self.startup_config))
                         self._startup_config_content = config
@@ -1595,7 +1622,7 @@ class Router(BaseNode):
                     self._private_config = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
                 try:
                     config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
-                    config_path = os.path.join(module_workdir, self.private_config)
+                    config_path = os.path.join(self._working_directory, self.private_config)
                     with open(config_path, "wb") as f:
                         log.info("saving private-config to {}".format(self.private_config))
                         self._private_config_content = config
@@ -1607,31 +1634,10 @@ class Router(BaseNode):
         """
         Delete this VM (including all its files).
         """
-
-        # delete the VM files
-        project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
-        files = glob.glob(os.path.join(project_dir, "{}_i{}*".format(self._platform, self._dynamips_id)))
-
-        module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
-        # delete the startup-config
-        if self._startup_config:
-            startup_config_path = os.path.join(module_workdir, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
-            if os.path.isfile(startup_config_path):
-                files.append(startup_config_path)
-
-        # delete the private-config
-        if self._private_config:
-            private_config_path = os.path.join(module_workdir, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
-            if os.path.isfile(private_config_path):
-                files.append(private_config_path)
-
-        for file in files:
-            try:
-                log.debug("Deleting file {}".format(file))
-                yield from wait_run_in_executor(os.remove, file)
-            except OSError as e:
-                log.warn("Could not delete file {}: {}".format(file, e))
-                continue
+        try:
+            yield from wait_run_in_executor(shutil.rmtree, self._working_directory)
+        except OSError as e:
+            log.warn("Could not delete file {}".format(e))
 
         self.manager.release_dynamips_id(self._project.id, self._dynamips_id)
 
@@ -1643,11 +1649,14 @@ class Router(BaseNode):
 
         yield from self._hypervisor.send('vm clean_delete "{}"'.format(self._name))
         self._hypervisor.devices.remove(self)
+        try:
+            yield from wait_run_in_executor(shutil.rmtree, self._working_directory)
+        except OSError as e:
+            log.warn("Could not delete file {}".format(e))
         log.info('Router "{name}" [{id}] has been deleted (including associated files)'.format(name=self._name, id=self._id))
 
     def _memory_files(self):
-        project_dir = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()))
         return [
-            os.path.join(project_dir, "{}_i{}_rom".format(self.platform, self.dynamips_id)),
-            os.path.join(project_dir, "{}_i{}_nvram".format(self.platform, self.dynamips_id))
+            os.path.join(self._working_directory, "{}_i{}_rom".format(self.platform, self.dynamips_id)),
+            os.path.join(self._working_directory, "{}_i{}_nvram".format(self.platform, self.dynamips_id))
         ]

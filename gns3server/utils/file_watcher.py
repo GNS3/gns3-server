@@ -56,7 +56,7 @@ class FileWatcher:
             self._hashed = {}
             for path in self._paths:
                 try:
-                    # Alder32 is a fast bu insecure hash algorithm
+                    # Alder32 is a fast but insecure hash algorithm
                     self._hashed[path] = zlib.adler32(open(path, 'rb').read())
                 except OSError:
                     self._hashed[path] = None
