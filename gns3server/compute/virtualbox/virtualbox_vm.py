@@ -209,8 +209,9 @@ class VirtualBoxVM(BaseNode):
         if os.path.exists(self._linked_vbox_file()):
             tree = ET.parse(self._linked_vbox_file())
             machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
-            machine.set("uuid", "{" + self.id + "}")
-            tree.write(self._linked_vbox_file())
+            if machine:
+                machine.set("uuid", "{" + self.id + "}")
+                tree.write(self._linked_vbox_file())
 
     @asyncio.coroutine
     def check_hw_virtualization(self):
