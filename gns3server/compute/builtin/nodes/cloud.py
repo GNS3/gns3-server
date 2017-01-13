@@ -134,6 +134,7 @@ class Cloud(BaseNode):
                     except (UbridgeError, NodeError) as e:
                         self.status = "stopped"
                         raise e
+            self.status = "started"
 
     @asyncio.coroutine
     def close(self):
@@ -292,19 +293,21 @@ class Cloud(BaseNode):
                                                                                 id=self._id,
                                                                                 nio=nio,
                                                                                 port=port_number))
-        self._nios[port_number] = nio
         try:
             yield from self.start()
             yield from self._add_ubridge_connection(nio, port_number)
+            self._nios[port_number] = nio
         except NodeError as e:
             self.project.emit("log.error", {"message": str(e)})
             yield from self._stop_ubridge()
             self.status = "stopped"
+            self._nios[port_number] = nio
         # Cleanup stuff
         except UbridgeError as e:
             self.project.emit("log.error", {"message": str(e)})
             yield from self._stop_ubridge()
             self.status = "stopped"
+            self._nios[port_number] = nio
 
     @asyncio.coroutine
     def _delete_ubridge_connection(self, port_number):
