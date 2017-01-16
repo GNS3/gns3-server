@@ -909,7 +909,6 @@ class VirtualBoxVM(BaseNode):
                                      writer=self._remote_pipe,
                                      binary=True,
                                      echo=True)
-        print(self._manager.port_manager.console_host)
         self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
     @asyncio.coroutine
