@@ -54,7 +54,7 @@ def test_cloud_get(http_compute, project, vm):
     assert response.route == "/projects/{project_id}/cloud/nodes/{node_id}"
     assert response.json["name"] == "Cloud 1"
     assert response.json["project_id"] == project.id
-    assert response.json["status"] == "stopped"
+    assert response.json["status"] == "started"
 
 
 def test_cloud_nio_create_udp(http_compute, vm):
