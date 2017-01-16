@@ -340,7 +340,7 @@ class Compute:
                 self._response.close()
 
         url = self._getUrl("/projects/{}/stream/{}".format(project.id, path))
-        response = yield from self._session().request("GET", url, auth=self._auth)
+        response = yield from self._session().request("GET", url, auth=self._auth, timeout=None)
         if response.status == 404:
             raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
         return StreamResponse(response)
