@@ -6,8 +6,5 @@ cache: pip
 install:
 - python setup.py install
 - pip install -rdev-requirements.txt
-- pip install coveralls
 script:
-- py.test -v -s tests --cov gns3server --cov-report term-missing
-after_success:
-- coveralls
+- py.test -v -s tests
