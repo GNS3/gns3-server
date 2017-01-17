@@ -57,7 +57,7 @@ class Project:
         else:
             project_id = str(uuid4())
         self._id = project_id
-
+        self._deleted = False
         self._nodes = set()
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
@@ -181,10 +181,11 @@ class Project:
         """
 
         workdir = self.module_working_path(module_name)
-        try:
-            os.makedirs(workdir, exist_ok=True)
-        except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create module working directory: {}".format(e))
+        if not self._deleted:
+            try:
+                os.makedirs(workdir, exist_ok=True)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not create module working directory: {}".format(e))
         return workdir
 
     def module_working_path(self, module_name):
@@ -207,10 +208,11 @@ class Project:
         """
 
         workdir = os.path.join(self._path, "project-files", node.manager.module_name.lower(), node.id)
-        try:
-            os.makedirs(workdir, exist_ok=True)
-        except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create the node working directory: {}".format(e))
+        if not self._deleted:
+            try:
+                os.makedirs(workdir, exist_ok=True)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not create the node working directory: {}".format(e))
         return workdir
 
     def tmp_working_directory(self):
@@ -227,10 +229,11 @@ class Project:
         """
 
         workdir = os.path.join(self._path, "tmp", "captures")
-        try:
-            os.makedirs(workdir, exist_ok=True)
-        except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create the capture working directory: {}".format(e))
+        if not self._deleted:
+            try:
+                os.makedirs(workdir, exist_ok=True)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not create the capture working directory: {}".format(e))
         return workdir
 
     def add_node(self, node):
@@ -324,6 +327,7 @@ class Project:
                     log.error("Could not close node {}".format(e), exc_info=1)
 
         if cleanup and os.path.exists(self.path):
+            self._deleted = True
             try:
                 yield from wait_run_in_executor(shutil.rmtree, self.path)
                 log.info("Project {id} with path '{path}' deleted".format(path=self._path, id=self._id))
