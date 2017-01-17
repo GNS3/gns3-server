@@ -68,9 +68,9 @@ def test_vpcs_create_port(http_compute, project, free_console_port):
 
 def test_vpcs_nio_create_udp(http_compute, vm):
     response = http_compute.post("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                           "lport": 4242,
-                                                                                                                                                           "rport": 4343,
-                                                                                                                                                           "rhost": "127.0.0.1"},
+                                                                                                                                                                   "lport": 4242,
+                                                                                                                                                                   "rport": 4343,
+                                                                                                                                                                   "rhost": "127.0.0.1"},
                                  example=True)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
@@ -81,7 +81,7 @@ def test_vpcs_nio_create_udp(http_compute, vm):
 def test_vpcs_nio_create_tap(http_compute, vm, ethernet_device):
     with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
         response = http_compute.post("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_tap",
-                                                                                                                                                               "tap_device": ethernet_device})
+                                                                                                                                                                       "tap_device": ethernet_device})
         assert response.status == 201
         assert response.route == "/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
         assert response.json["type"] == "nio_tap"
@@ -89,9 +89,9 @@ def test_vpcs_nio_create_tap(http_compute, vm, ethernet_device):
 
 def test_vpcs_delete_nio(http_compute, vm):
     http_compute.post("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                "lport": 4242,
-                                                                                                                                                "rport": 4343,
-                                                                                                                                                "rhost": "127.0.0.1"})
+                                                                                                                                                        "lport": 4242,
+                                                                                                                                                        "rport": 4343,
+                                                                                                                                                        "rhost": "127.0.0.1"})
     response = http_compute.delete("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 204
     assert response.route == "/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
@@ -129,10 +129,9 @@ def test_vpcs_delete(http_compute, vm):
 
 def test_vpcs_update(http_compute, vm, tmpdir, free_console_port):
     response = http_compute.put("/projects/{project_id}/vpcs/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"name": "test",
-                                                                                                                                   "console": free_console_port,
-                                                                                                                                   "startup_script": "ip 192.168.1.1"},
+                                                                                                                                           "console": free_console_port,
+                                                                                                                                           },
                                 example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
-    assert response.json["startup_script"] == "ip 192.168.1.1"
