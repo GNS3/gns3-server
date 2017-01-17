@@ -99,7 +99,6 @@ class VPCSHandler:
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
-        vm.startup_script = request.json.get("startup_script", vm.startup_script)
         vm.updated()
         response.json(vm)
 
@@ -269,7 +268,6 @@ class VPCSHandler:
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
         yield from vm.start_capture(port_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
-
 
     @Route.post(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
