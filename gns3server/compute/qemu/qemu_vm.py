@@ -1066,7 +1066,14 @@ class QemuVM(BaseNode):
         ])
         if result is None:
             return result
-        return result.rsplit(' ', 1)[1]
+        status = result.rsplit(' ', 1)[1]
+        if status == "running" or status == "prelaunch":
+            self.status = "started"
+        elif status == "suspended":
+            self.status = "suspended"
+        elif status == "shutdown":
+            self.status = "stopped"
+        return status
 
     @asyncio.coroutine
     def suspend(self):
@@ -1078,7 +1085,7 @@ class QemuVM(BaseNode):
             vm_status = yield from self._get_vm_status()
             if vm_status is None:
                 raise QemuError("Suspending a QEMU VM is not supported")
-            elif vm_status == "running":
+            elif vm_status == "running" or vm_status == "prelaunch":
                 yield from self._control_vm("stop")
                 self.status = "suspended"
                 log.debug("QEMU VM has been suspended")
