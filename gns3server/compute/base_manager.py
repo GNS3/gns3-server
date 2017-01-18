@@ -418,7 +418,7 @@ class BaseManager:
 
             # Not found we try the default directory
             s = os.path.split(orig_path)
-            path = force_unix_path(os.path.join(self.get_images_directory(), *s))
+            path = force_unix_path(os.path.join(img_directory, *s))
             if os.path.exists(path):
                 return path
             raise ImageMissingError(orig_path)
@@ -436,7 +436,7 @@ class BaseManager:
                 if os.path.exists(path):
                     return path
                 raise ImageMissingError(orig_path)
-        raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, self.get_images_directory()))
+        raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
 
     def _recursive_search_file_in_directory(self, directory, searched_file):
         """
@@ -468,9 +468,15 @@ class BaseManager:
         if not path:
             return ""
         path = force_unix_path(self.get_abs_image_path(path))
+
+        img_directory = self.get_images_directory()
+
         for directory in images_directories(self._NODE_TYPE):
             if os.path.commonprefix([directory, path]) == directory:
-                return os.path.relpath(path, directory)
+                relpath = os.path.relpath(path, directory)
+                # We don't allow to recurse search from the top image directory just for image type directory (compatibility with old releases)
+                if os.sep not in relpath or directory == img_directory:
+                    return relpath
         return path
 
     @asyncio.coroutine

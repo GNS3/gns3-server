@@ -186,6 +186,7 @@ def test_get_abs_image_recursive_ova(qemu, tmpdir, config):
 
 def test_get_relative_image_path(qemu, tmpdir, config):
     os.makedirs(str(tmpdir / "images1" / "QEMU"))
+    os.makedirs(str(tmpdir / "images1" / "VBOX"))
     path1 = force_unix_path(str(tmpdir / "images1" / "test1.bin"))
     open(path1, 'w+').close()
 
@@ -196,9 +197,17 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     path3 = force_unix_path(str(tmpdir / "images2" / "test3.bin"))
     open(path3, 'w+').close()
 
+    path4 = force_unix_path(str(tmpdir / "test4.bin"))
+    open(path4, 'w+').close()
+
+    # The user use an image of another emulator we return the full path
+    path5 = force_unix_path(str(tmpdir / "images1" / "VBOX" / "test5.bin"))
+    open(path5, 'w+').close()
+
     config.set_section_config("Server", {
         "images_path": str(tmpdir / "images1"),
-        "additional_images_path": str(tmpdir / "images2")
+        "additional_images_path": str(tmpdir / "images2"),
+        "local": True
     })
     assert qemu.get_relative_image_path(path1) == "test1.bin"
     assert qemu.get_relative_image_path("test1.bin") == "test1.bin"
@@ -206,6 +215,8 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     assert qemu.get_relative_image_path("test2.bin") == "test2.bin"
     assert qemu.get_relative_image_path("../test1.bin") == "test1.bin"
     assert qemu.get_relative_image_path("test3.bin") == "test3.bin"
+    assert qemu.get_relative_image_path(path4) == path4
+    assert qemu.get_relative_image_path(path5) == path5
 
 
 def test_get_relative_image_path_ova(qemu, tmpdir, config):
