@@ -76,6 +76,10 @@ def test_name(compute, project):
                 properties={"startup_script": "echo test"})
     assert node.name == "PC2"
 
+    # If we change the name to a name already used we patch the name to a free
+    node.name == "PC1"
+    assert node.name == "PC2"
+
 
 def test_eq(compute, project, node, controller):
     assert node == Node(project, compute, "demo1", node_id=node.id, node_type="qemu")

@@ -286,7 +286,6 @@ class Project:
         if base_name is None:
             return None
         base_name = re.sub(r"[ ]", "", base_name)
-        self.remove_allocated_node_name(base_name)
         if '{0}' in base_name or '{id}' in base_name:
             # base name is a template, replace {0} or {id} by an unique identifier
             for number in range(1, 1000000):
@@ -306,22 +305,10 @@ class Project:
                     return name
         raise aiohttp.web.HTTPConflict(text="A node name could not be allocated (node limit reached?)")
 
-    def has_allocated_node_name(self, name):
-        """
-        Returns either a node name is already allocated or not.
-
-        :param name: node name
-
-        :returns: boolean
-        """
-
-        if name in self._allocated_node_names:
-            return True
-        return False
-
     def update_node_name(self, node, new_name):
 
         if new_name and node.name != new_name:
+            self.remove_allocated_node_name(node.name)
             return self.update_allocated_node_name(new_name)
         return new_name
 
