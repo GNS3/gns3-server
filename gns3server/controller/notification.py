@@ -70,7 +70,7 @@ class Notification:
                 yield from node.parse_node_response(event)
 
                 self.emit("node.updated", node.__json__())
-            except aiohttp.web.HTTPNotFound:
+            except (aiohttp.web.HTTPNotFound, aiohttp.web.HTTPForbidden):  # Project closing
                 return
         elif action == "ping":
             event["compute_id"] = compute_id
