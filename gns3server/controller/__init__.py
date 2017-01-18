@@ -192,6 +192,7 @@ class Controller:
                         password=remote.get("password")
                     )
                 if "vm" in server_settings:
+                    vmname = None
                     vm_settings = server_settings["vm"]
                     if vm_settings["virtualization"] == "VMware":
                         engine = "vmware"
