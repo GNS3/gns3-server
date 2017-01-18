@@ -51,6 +51,8 @@ class RemoteGNS3VM(BaseGNS3VM):
         Starts the GNS3 VM.
         """
 
+        if not self.vmname:
+            return
         vm_compute = None
         for compute in self._controller.computes.values():
             if compute.name == self.vmname:
