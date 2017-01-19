@@ -1,5 +1,50 @@
 # Change Log
 
+## 2.0.0 beta 3 19/01/2017
+
+* Force the dependency on typing because otherwise it's broke on 3.4
+* Fix sometimes you have an exception when closing GNS3
+* Fix duplicate node names
+* Fix bug with other directory of Qemu images
+* Do not raise an error if no VM is selected for remote GNS3 VM
+* Fix UnboundLocalError: local variable 'vmname' referenced before assignment
+* Fix some race condition in project deletion
+* If qemu status change internally we mirror it
+* Fix hostname of VPCS is not changed
+* Fix capture stop with Wireshark
+* Drop a useless debug information
+* Fix sometimes VirtualBox VM are not loading
+* Drop NAT port from cloud from old topologies
+* Fix Port labels for docker VMs incorrect
+* Fix If cloud interface is down the project doesn't open
+* Catch Timeout error from VirtualBox GNS3 VM
+* Fix export of IOU configuration
+* Fix a crash with VirtualBox in some conditions
+* Sata disk interface support for Qemu VMs. (#862)
+* Fix random error in the dynamips test suite after previous commit
+* Support conversion to dynamips new directory layout on remote
+* Catch error when a file is deleted during the compression of project
+* Fix a crash with some docker images
+* Fix Wrong slot numbering on IOS router
+* Fix VPCS configuration is overwritten on project load
+* Fix wrong short label for ethernet switch, hub & VPCS
+* Fix binding console host for VMware and VirtualBox
+* Fix resume of dynamips routers
+* Fix sporadically systemd is unable to start gns3-server
+* Fix RuntimeError: File size has increased during compressing
+* Do not dump local compute configuration when saving topology
+* Change directory layout for dynamips.
+* Ensure we can't connect to occupy port
+* Fix handling of UTF-8 in large SVG files
+* Prevent a crash when you close a dynamips node and create a link at the same time
+* Fix short label diplay instead of custom interface labels
+* Improve error message about the netmask
+* Do not mark VirtualBox adapter as connected when not connected to another node in GNS3.
+* Add missing 'DLT_PPP_SERIAL' PCAP link type in schemas.
+* Fix crash when converting topology with broken link
+* Replace JSONDecodeError by ValueError (Python 3.4 compatibility)
+* Catch an error when we can't create the IOU directory
+
 ## 1.5.3 12/01/2016
 
 * Fix sporadically systemd is unable to start gns3-server
