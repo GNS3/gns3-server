@@ -555,7 +555,7 @@ class IOUVM(BaseNode):
                     if nio.capturing:
                         yield from self._ubridge_send('iol_bridge start_capture {name} "{output_file}" {data_link_type}'.format(name=bridge_name,
                                                                                                                                 output_file=nio.pcap_output_file,
-                                                                                                                                data_link_type=nio.pcap_data_link_type))
+                                                                                                                                data_link_type=re.sub("^DLT_", "", nio.pcap_data_link_type)))
 
                 unit_id += 1
             bay_id += 1
