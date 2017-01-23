@@ -341,6 +341,8 @@ def _convert_1_3_later(topo, topo_path):
 
         node_id_to_node_uuid[old_node["id"]] = node["node_id"]
         for port in old_node.get("ports", []):
+            if node["node_type"] in ("ethernet_hub", "ethernet_switch"):
+                port["port_number"] -= 1
             ports[port["id"]] = port
         new_topo["topology"]["nodes"].append(node)
 

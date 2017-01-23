@@ -4,6 +4,16 @@
     "project_id": "644e3892-4a50-4457-9601-2234d4842169",
     "revision": 4,
     "topology": {
+        "links": [
+            {
+                "description": "",
+                "destination_node_id": 3,
+                "destination_port_id": 10,
+                "id": 1,
+                "source_node_id": 2,
+                "source_port_id": 2
+            }
+        ],
         "nodes": [
             {
                 "description": "ATM switch",

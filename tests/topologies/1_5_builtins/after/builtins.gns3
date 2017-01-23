@@ -14,7 +14,23 @@
             }
         ],
         "drawings": [],
-        "links": [],
+        "links": [
+          {
+            "link_id": "ANYUUID",
+            "nodes": [
+              {
+                "port_number": 1,
+                "node_id": "ANYUUID",
+                "adapter_number": 0
+              },
+              {
+                "port_number": 1,
+                "node_id": "ANYUUID",
+                "adapter_number": 0
+              }
+            ]
+          }
+        ],
         "nodes": [
             {
                 "compute_id": "local",
