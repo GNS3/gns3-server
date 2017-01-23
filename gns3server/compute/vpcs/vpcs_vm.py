@@ -222,8 +222,8 @@ class VPCSVM(BaseNode):
             if match:
                 version = match.group(1)
                 self._vpcs_version = parse_version(version)
-                if self._vpcs_version < parse_version("0.8b") and self._vpcs_version != parse_version("0.6.1"):
-                    raise VPCSError("VPCS executable version must be >= 0.8b or 0.6.1")
+                if self._vpcs_version < parse_version("0.6.1"):
+                    raise VPCSError("VPCS executable version must be >= 0.6.1 but not a 0.8")
             else:
                 raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
         except (OSError, subprocess.SubprocessError) as e:
