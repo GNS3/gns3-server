@@ -408,7 +408,7 @@ def _convert_1_3_later(topo, topo_path):
         svg = '<svg height="{height}" width="{width}"><text fill="{fill}" fill-opacity="{opacity}" font-family="{family}" font-size="{size}" font-weight="{weight}" font-style="{style}">{text}</text></svg>'.format(
             height=int(font_info[1]) * 2,
             width=int(font_info[1]) * len(note["text"]),
-            fill="#" + note["color"][-6:],
+            fill="#" + note.get("color", "#00000000")[-6:],
             opacity=round(1.0 / 255 * int(note.get("color", "#ffffffff")[:3][-2:], base=16), 2),  # Extract the alpha channel from the hexa version
             family=font_info[0],
             size=int(font_info[1]),
