@@ -29,7 +29,10 @@ class Symbols:
     """
 
     def __init__(self):
-        self.list()
+        try:
+            self.list()
+        except OSError:  # The error will be raised and forward later
+            pass
         # Keep a cache of symbols size
         self._symbol_size_cache = {}
 
@@ -79,7 +82,7 @@ class Symbols:
                 return self._symbols_path[symbol_id]
             except KeyError:
                 return self._symbols_path[":/symbols/computer.svg"]
-                
+
     def get_size(self, symbol_id):
         try:
             return self._symbol_size_cache[symbol_id]
