@@ -1,7 +1,7 @@
 -rrequirements.txt
 
 sphinx==1.5.2
-pytest==3.0.5
+pytest==3.0.6
 pep8==1.7.0
 pytest-catchlog==1.2.2
 pytest-timeout==1.2.0
