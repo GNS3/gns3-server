@@ -23,5 +23,5 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-__version__ = "2.0.0dev8"
-__version_info__ = (2, 0, 0, -99)
+__version__ = "2.1.0dev1"
+__version_info__ = (2, 1, 0, -99)
