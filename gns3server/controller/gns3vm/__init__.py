@@ -260,6 +260,9 @@ class GNS3VM:
         """
         engine = self.current_engine()
         if not engine.running:
+            if self._settings["vmname"] is None:
+                return
+
             log.info("Start the GNS3 VM")
             engine.vmname = self._settings["vmname"]
             engine.ram = self._settings["ram"]

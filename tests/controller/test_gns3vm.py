@@ -21,6 +21,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 from gns3server.controller.gns3vm import GNS3VM
 from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 
+
 @pytest.fixture
 def dummy_engine():
     engine = AsyncioMagicMock()
@@ -65,7 +66,8 @@ def test_update_settings(controller, async_run):
     vm = GNS3VM(controller)
     vm.settings = {
         "enable": True,
-        "engine": "vmware"
+        "engine": "vmware",
+        "vmname": "GNS3 VM"
     }
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start"):
         async_run(vm.auto_start_vm())
@@ -94,4 +96,3 @@ def test_auto_start_with_error(async_run, controller, dummy_gns3vm, dummy_engine
     async_run(dummy_gns3vm.auto_start_vm())
     assert dummy_engine.start.called
     assert controller.computes["vm"].name == "GNS3 VM (Test VM)"
-
