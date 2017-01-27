@@ -150,7 +150,7 @@ class ServerHandler:
             # If something is wrong we log the info to the log and we hope the log will be include correctly to the debug export
             log.error("Could not copy VMware VMX file {}".format(e), exc_info=1)
 
-        for compute in Controller.instance().computes.values():
+        for compute in list(Controller.instance().computes.values()):
             try:
                 r = yield from compute.get("/debug", raw=True)
                 data = r.body.decode("utf-8")
