@@ -44,6 +44,17 @@ def test_vm(project, manager):
     assert vm.vmname == "test"
 
 
+def test_rename_vmname(project, manager, async_run):
+    """
+    Rename a VM is not allowed when using linked clone
+    """
+    vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
+    vm._node_status = "started"
+    vm._linked_clone = True
+    with pytest.raises(VirtualBoxError):
+        async_run(vm.set_vmname("toto"))
+
+
 def test_vm_valid_virtualbox_api_version(loop, project, manager):
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute", return_value=["API version:  4_3"]):
         vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)

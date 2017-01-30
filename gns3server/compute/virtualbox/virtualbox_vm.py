@@ -604,6 +604,8 @@ class VirtualBoxVM(BaseNode):
         """
 
         if self.linked_clone:
+            if self.status == "started":
+                raise VirtualBoxError("You can't change the name of running VM {}".format(self._name))
             yield from self._modify_vm('--name "{}"'.format(vmname))
 
         log.info("VirtualBox VM '{name}' [{id}] has set the VM name to '{vmname}'".format(name=self.name, id=self.id, vmname=vmname))
