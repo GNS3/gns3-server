@@ -18,7 +18,7 @@
 import os
 import pytest
 import asyncio
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
 from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
@@ -46,13 +46,30 @@ def test_vm(project, manager):
 
 def test_rename_vmname(project, manager, async_run):
     """
-    Rename a VM is not allowed when using linked clone
+    Rename a VM is not allowed when using a running linked clone
+    or if the vm already exists in Vbox
     """
     vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
-    vm._node_status = "started"
+    vm.manager.list_vms = AsyncioMagicMock(return_value=[{"vmname": "Debian"}])
     vm._linked_clone = True
+    vm._modify_vm = AsyncioMagicMock()
+
+    # Vm is running
+    vm._node_status = "started"
     with pytest.raises(VirtualBoxError):
-        async_run(vm.set_vmname("toto"))
+        async_run(vm.set_vmname("Arch"))
+    assert not vm._modify_vm.called
+
+    vm._node_status = "stopped"
+
+    # Name already use
+    with pytest.raises(VirtualBoxError):
+        async_run(vm.set_vmname("Debian"))
+    assert not vm._modify_vm.called
+
+    # Work
+    async_run(vm.set_vmname("Arch"))
+    assert vm._modify_vm.called
 
 
 def test_vm_valid_virtualbox_api_version(loop, project, manager):
