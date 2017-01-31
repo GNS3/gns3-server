@@ -77,8 +77,11 @@ def wait_for_process_termination(process, timeout=10):
     :param timeout: Timeout in seconds
     """
 
-    if sys.version_info >= (3,5):
-        yield from asyncio.wait_for(process.wait(), timeout=timeout)
+    if sys.version_info >= (3, 5):
+        try:
+            yield from asyncio.wait_for(process.wait(), timeout=timeout)
+        except ProcessLookupError:
+            return
     else:
         while timeout > 0:
             if process.returncode is not None:
