@@ -1,0 +1,71 @@
+{
+    "name": "KEMP Free VLM",
+    "category": "router",
+    "description": "KEMP Technologies free LoadMaster Application Load Balancer is a fully featured member of our award winning and industry leading Load Balancer family. It can be used without charge in production environments with throughput requirements that don\u2019t exceed 20 Mbps, and for services that do not directly generate revenue. It is an ideal choice for low traffic web sites and applications, DevOps testing environments, technical training environments, and for any other deployments that suit your non-commercial needs.",
+    "vendor_name": "KEMP",
+    "vendor_url": "http://freeloadbalancer.com/",
+    "documentation_url": "https://support.kemptechnologies.com/hc/en-us/articles/204427785",
+    "product_name": "KEMP Free VLM",
+    "product_url": "http://freeloadbalancer.com/#about",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Credentials: bal / 1fourall",
+    "symbol": "loadbalancer.svg",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "allow",
+        "options": "-smp 2"
+    },
+    "images": [
+        {
+            "filename": "LoadMaster-VLM-7.2.36.2.14271.RELEASE-Linux-KVM-XEN-FREE.disk",
+            "version": "7.1.36.2",
+            "md5sum": "eebfc96bd6c1c50827d00647206b59dd",
+            "filesize": 17179869185,
+            "download_url": "http://freeloadbalancer.com/download/"
+        },
+        {
+            "filename": "LoadMaster-VLM-7.1.35.0.13244.RELEASE-Linux-KVM-XEN-FREE.disk",
+            "version": "7.1.35.0",
+            "md5sum": "f72e8dffa201c8ec92767872593a52a1",
+            "filesize": 17179869185,
+            "download_url": "http://freeloadbalancer.com/download/"
+        },
+        {
+            "filename": "LoadMaster-VLM-7.1.34.1.12802.RELEASE-Linux-KVM-XEN-FREE.disk",
+            "version": "7.1.34.1",
+            "md5sum": "157b36233bbd9d9dfa18363958b34fd1",
+            "filesize": 17179869185,
+            "download_url": "http://freeloadbalancer.com/download/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "7.2.36.2",
+            "images": {
+                "hda_disk_image": "LoadMaster-VLM-7.2.36.2.14271.RELEASE-Linux-KVM-XEN-FREE.disk"
+            }
+        },
+        {
+            "name": "7.1.35.0",
+            "images": {
+                "hda_disk_image": "LoadMaster-VLM-7.1.35.0.13244.RELEASE-Linux-KVM-XEN-FREE.disk"
+            }
+        },
+        {
+            "name": "7.1.34.1",
+            "images": {
+                "hda_disk_image": "LoadMaster-VLM-7.1.34.1.12802.RELEASE-Linux-KVM-XEN-FREE.disk"
+            }
+        }
+    ]
+}

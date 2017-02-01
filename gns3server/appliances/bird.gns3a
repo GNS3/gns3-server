@@ -1,0 +1,40 @@
+{
+    "name": "BIRD",
+    "category": "router",
+    "description": "The BIRD project aims to develop a fully functional dynamic IP routing daemon primarily targeted on (but not limited to) Linux, FreeBSD and other UNIX-like systems and distributed under the GNU General Public License.",
+    "vendor_name": "CZ.NIC Labs",
+    "vendor_url": "http://bird.network.cz/",
+    "documentation_url": "http://bird.network.cz/?get_doc&f=bird.html",
+    "product_name": "BIRD internet routing daemon",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Configure interfaces in /opt/bootlocal.sh, BIRD configuration is done in /usr/local/etc/bird",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 128,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "bird-tinycore64-1.5.0.img",
+            "version": "1.5.0",
+            "md5sum": "08d50ba2b1b262e2e03e4babf90abf69",
+            "filesize": 22413312,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/bird-tinycore64-1.5.0.img"
+        }
+    ],
+    "versions": [
+        {
+            "name": "1.5.0",
+            "images": {
+                "hda_disk_image": "bird-tinycore64-1.5.0.img"
+            }
+        }
+    ]
+}

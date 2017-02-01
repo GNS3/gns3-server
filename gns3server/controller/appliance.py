@@ -15,13 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .compute_handler import ComputeHandler
-from .project_handler import ProjectHandler
-from .node_handler import NodeHandler
-from .link_handler import LinkHandler
-from .server_handler import ServerHandler
-from .drawing_handler import DrawingHandler
-from .symbol_handler import SymbolHandler
-from .snapshot_handler import SnapshotHandler
-from .appliance_handler import ApplianceHandler
-from .gns3_vm_handler import GNS3VMHandler
+import uuid
+
+
+class Appliance:
+
+    def __init__(self, appliance_id, data):
+        if appliance_id is None:
+            self._id = str(uuid.uuid4())
+        else:
+            self._id = appliance_id
+        self._data = data
+
+    @property
+    def id(self):
+        return self._id
+
+    def __json__(self):
+        """
+        Appliance data (a hash)
+        """
+        return self._data

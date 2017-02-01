@@ -1,0 +1,84 @@
+{
+    "name": "vTM DE",
+    "category": "router",
+    "description": "Take control of your online applications with Brocade virtual Traffic Manager (Developer Edition). Enhance customer experience, inspect traffic in real-time, control service levels to differentiate users and services, and reduce your costs with an extensible delivery platform that can grow with your business using ADC-as-a-Service. A fully functional Developer Edition which needs no license key, is limited to 1 Mbps/100 SSL tps throughput, and has access to the Brocade Community support web pages.",
+    "vendor_name": "Brocade",
+    "vendor_url": "http://www.brocade.com/",
+    "documentation_url": "http://www.brocade.com/en/products-services/software-networking/application-delivery-controllers/virtual-traffic-manager.html",
+    "product_name": "vTM DE",
+    "product_url": "http://www.brocade.com/en/products-services/software-networking/application-delivery-controllers/virtual-traffic-manager.html",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Credentials: admin / admin. The device gets its initial IP address using DHCP. After getting an IP address, you can access the initial configuration using the WebUI at https://IP_ADDRESS:9090",
+    "symbol": "loadbalancer.svg",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 8,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "VirtualTrafficManager-111.qcow2",
+            "version": "11.1",
+            "md5sum": "3c9c63e2071d79c64cb4b17b355d2582",
+            "filesize": 12189564928,
+            "download_url": "http://www1.brocade.com/forms/jsp/steelapp-traffic-manager-developer/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-TrafficManagerDeveloper&intcmp=lp_en_vTMdeveloper_eval_bn_00001"
+        },
+        {
+            "filename": "VirtualTrafficManager-110.img",
+            "version": "11.0",
+            "md5sum": "7fb0bab8e1cf09076e87270b1418ec81",
+            "filesize": 12191531008,
+            "download_url": "http://www1.brocade.com/forms/jsp/steelapp-traffic-manager-developer/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-TrafficManagerDeveloper&intcmp=lp_en_vTMdeveloper_eval_bn_00001"
+        },
+        {
+            "filename": "VirtualTrafficManager-104R1.img",
+            "version": "10.4R1",
+            "md5sum": "395542073d6afb9e62e7d5a7b339c3b3",
+            "filesize": 12193562624,
+            "download_url": "http://my.brocade.com/"
+        },
+        {
+            "filename": "VirtualTrafficManager-104.img",
+            "version": "10.4",
+            "md5sum": "88e31b072e17de12e241ef442bb5faae",
+            "filesize": 12190220288,
+            "download_url": "http://my.brocade.com/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "11.1",
+            "images": {
+                "hda_disk_image": "VirtualTrafficManager-111.qcow2"
+            }
+        },
+        {
+            "name": "11.0",
+            "images": {
+                "hda_disk_image": "VirtualTrafficManager-110.img"
+            }
+        },
+        {
+            "name": "10.4R1",
+            "images": {
+                "hda_disk_image": "VirtualTrafficManager-104R1.img"
+            }
+        },
+        {
+            "name": "10.4",
+            "images": {
+                "hda_disk_image": "VirtualTrafficManager-104.img"
+            }
+        }
+    ]
+}
+

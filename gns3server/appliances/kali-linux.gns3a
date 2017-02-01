@@ -1,0 +1,68 @@
+{
+    "name": "Kali Linux",
+    "category": "guest",
+    "description": "From the creators of BackTrack comes Kali Linux, the most advanced and versatile penetration testing platform  ever created. We have a set of amazing features lined up in our security distribution geared at streamlining the penetration testing experience.",
+    "vendor_name": "Kali Linux",
+    "vendor_url": "https://www.kali.org/",
+    "documentation_url": "https://www.kali.org/kali-linux-documentation/",
+    "product_name": "Kali Linux",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default password is toor",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 8,
+        "ram": 1024,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "kali-linux-2016.2-amd64.iso",
+            "version": "2016.2",
+            "md5sum": "3d163746bc5148e61ad689d94bc263f9",
+            "filesize": 3076767744,
+            "download_url": "http://cdimage.kali.org/kali-2016.2/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2016.2/kali-linux-2016.2-amd64.iso"
+        },
+        {
+            "filename": "kali-linux-2016.1-amd64.iso",
+            "version": "2016.1",
+            "md5sum": "2e1230dc14036935b3279dfe3e49ad39",
+            "filesize": 2945482752,
+            "download_url": "http://cdimage.kali.org/kali-2016.1/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2016.1/kali-linux-2016.1-amd64.iso"
+        },
+        {
+            "filename": "kali-linux-2.0-amd64.iso",
+            "version": "2.0",
+            "md5sum": "ef192433017c5d99a156eaef51fd389d",
+            "filesize": 3320512512,
+            "download_url": "https://www.offensive-security.com/kali-linux-vmware-arm-image-download/",
+            "direct_download_url": "http://images.kali.org/Kali-Linux-2.0.0-vm-amd64.7z"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2016.2",
+            "images": {
+                "cdrom_image": "kali-linux-2016.2-amd64.iso"
+            }
+        },
+        {
+            "name": "2016.1",
+            "images": {
+                "cdrom_image": "kali-linux-2016.1-amd64.iso"
+            }
+        },
+        {
+            "name": "2.0",
+            "images": {
+                "cdrom_image": "kali-linux-2.0-amd64.iso"
+            }
+        }
+    ]
+}

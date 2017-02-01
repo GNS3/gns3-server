@@ -1,0 +1,37 @@
+{
+    "name": "Cisco 3620",
+    "category": "router",
+    "description": "Cisco 3620 Router",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
+    "product_name": "3620",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "dynamips": {
+        "chassis": "3620",
+        "platform": "c3600",
+        "ram": 192,
+        "nvram": 256,
+        "startup_config": "ios_base_startup-config.txt"
+    },
+    "images": [
+        {
+            "filename": "c3620-a3jk8s-mz.122-26c.image",
+            "version": "122-26c",
+            "md5sum": "37b444b29191630e5b688f002de2171c",
+            "filesize": 38947996
+        }
+    ],
+    "versions": [
+        {
+            "name": "122-26c",
+            "idlepc": "0x603a8bac",
+            "images": {
+                "image": "c3620-a3jk8s-mz.122-26c.image"
+            }
+        }
+    ]
+}

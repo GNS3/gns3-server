@@ -1,0 +1,55 @@
+{
+    "name": "Cisco IOS XRv",
+    "category": "router",
+    "description": "IOS XRv supports the control plane features introduced in Cisco IOS XR.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/td/docs/ios_xr_sw/ios_xrv/release/notes/xrv-rn.html",
+    "product_name": "IOS XRv",
+    "product_url": "http://virl.cisco.com/",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "You can set admin username and password on first boot. Don't forget about the two-staged configuration, you have to commit your changes.",
+    "first_port_name": "MgmtEth0/0/CPU0/0",
+    "port_name_format": "Gi0/0/0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 9,
+        "ram": 3072,
+        "arch": "i386",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "iosxrv-k9-demo-6.0.1.qcow2",
+            "version": "6.0.1",
+            "md5sum": "0831ecf43628eccb752ebb275de9a62a",
+            "filesize": 908132352,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
+            "filename": "iosxrv-k9-demo-6.0.0.qcow2",
+            "version": "6.0.0",
+            "md5sum": "f0dccd86d64e370e22f144e681d202b6",
+            "filesize": 860815360,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.0.1",
+            "images": {
+                "hda_disk_image": "iosxrv-k9-demo-6.0.1.qcow2"
+            }
+        },
+        {
+            "name": "6.0.0",
+            "images": {
+                "hda_disk_image": "iosxrv-k9-demo-6.0.0.qcow2"
+            }
+        }
+    ]
+}

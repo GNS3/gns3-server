@@ -1,0 +1,58 @@
+{
+    "name": "Alcatel 7750",
+    "category": "router",
+    "description": "The Alcatel-Lucent 7750 Service Router (SR) portfolio is a suite of multiservice edge routing platforms that deliver high performance, service richness, and creates exceptional value for networking in the cloud era. It is designed for the concurrent delivery of advanced residential, business and wireless broadband IP services, and provides cloud, data center and branch office connectivity for enterprise networking on a common IP edge routing platform.",
+    "vendor_name": "Alcatel",
+    "vendor_url": "https://www.alcatel-lucent.com/",
+    "documentation_url": "https://www.alcatel-lucent.com/support",
+    "product_name": "Alcatel 7750",
+    "product_url": "https://www.alcatel-lucent.com/products/7750-service-router",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Login is admin and password is admin",
+    "first_port_name": "A/1",
+    "port_name_format": "1/1/{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 6,
+        "ram": 2048,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": ""
+    },
+    "images": [
+        {
+            "filename": "TiMOS-SR-12.0.R6-vm.qcow2",
+            "version": "12.0.R6",
+            "md5sum": "7d84d97a5664af2e3546bfa832fc1848",
+            "filesize": 221511680,
+            "download_url": "https://www.alcatel-lucent.com/support",
+            "compression": "zip"
+        },
+        {
+            "filename": "TiMOS-SR-12.0.R18.qcow2",
+            "version": "12.0.R18",
+            "md5sum": "d0bba5feaaf09fd02185f25898a6afc7",
+            "filesize": 223870976,
+            "download_url": "https://www.alcatel-lucent.com/support",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "12.0.R6",
+            "images": {
+                "hda_disk_image": "TiMOS-SR-12.0.R6-vm.qcow2"
+            }
+        },
+        {
+            "name": "12.0.R18",
+            "images": {
+                "hda_disk_image": "TiMOS-SR-12.0.R18.qcow2"
+            }
+        }
+    ]
+}

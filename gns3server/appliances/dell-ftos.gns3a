@@ -1,0 +1,53 @@
+{
+    "name": "Dell FTOS",
+    "category": "router",
+    "description": "Dell Networking OS10 combines the best of Linux, open computing and networking to advance open networking disaggregation. Dell Networking OS10 is a transformational software platform that provides networking hardware abstraction through a common set of APIs. Enable consistency across compute and network resources for your system operators (SysOps) groups that require server-like manageability. Easily leverage your existing network configuration. Dell Networking OS10 incorporates traditional networking integration. Enhance the integration and control you allow your development and operations (DevOps) teams, down to identifying an object as an individual, manageable entity within the platform.",
+    "vendor_name": "Dell Inc.",
+    "vendor_url": "http://www.dell.com/",
+    "product_name": "Dell FTOS",
+    "product_url": "http://www.dell.com/us/business/p/open-platform-software/pd",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Abort the BCM process and format the flash after first boot by entering these commands:\nen\nformat flash:\n\nSometimes the flash device is not available after boot.",
+    "first_port_name": "Management0/0",
+    "port_name_format": "fortyGigE0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 6,
+        "ram": 512,
+        "hda_disk_interface": "ide",
+        "arch": "i386",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "FTOS-SI-9.8.0.0.iso",
+            "version": "9.8.0",
+            "md5sum": "b9b50eda0a73407dc381792ff7975e24",
+            "filesize": 108115968,
+            "download_url": "https://www.force10networks.com/csportal20/Software/Downloads.aspx",
+            "compression": "zip"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.8.0",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "FTOS-SI-9.8.0.0.iso"
+            }
+        }
+    ]
+}

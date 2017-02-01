@@ -1,0 +1,52 @@
+{
+    "name": "IWS VA",
+    "category": "firewall",
+    "description": "Trend Micro InterScan Web Security Virtual Appliance is a secure web gateway that combines application control with zero-day exploit detection, advanced anti-malware and ransomware scanning, real-time web reputation, and flexible URL filtering to provide superior Internet threat protection.",
+    "vendor_name": "Trend Micro Inc.",
+    "vendor_url": "http://www.trendmicro.com/",
+    "documentation_url": "https://success.trendmicro.com/product-support/interscan-web-security-virtual-appliance",
+    "product_name": "IWS VA",
+    "product_url": "http://www.trendmicro.com/enterprise/network-security/interscan-web-security/virtual-appliance/index.html",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 4096,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "IWSVA-6.5-1200-x86_64.iso",
+            "version": "6.5",
+            "md5sum": "7eb0d2a44e20b69ae0c3ce73d6cc1182",
+            "filesize": 1004965888,
+            "download_url": "http://downloadcenter.trendmicro.com/index.php?regs=NABU&clk=latest&clkval=4599&lang_loc=1",
+            "direct_download_url": "http://files.trendmicro.com/products/iwsva/IWSVA-6.5-1200-x86_64.iso"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.5",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "IWSVA-6.5-1200-x86_64.iso"
+            }
+        }
+    ]
+}

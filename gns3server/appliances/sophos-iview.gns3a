@@ -1,0 +1,51 @@
+{
+    "name": "Sophos iView",
+    "category": "guest",
+    "description": "Monitoring a distributed network across multiple locations can be a challenge. That’s where Sophos iView can help. It provides you with an intelligent, uninterrupted view of your network from a single pane of glass. If you have multiple appliances, need consolidated reporting, or could just use help with log management or compliance, Sophos iView is the ideal solution.",
+    "vendor_name": "Sophos",
+    "vendor_url": "https://www.sophos.com",
+    "documentation_url": "https://www.sophos.com/en-us/support/documentation/sophos-iview.aspx",
+    "product_name": "Sophos iView",
+    "product_url": "https://www.sophos.com/en-us/products/next-gen-firewall.aspx",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default CLI password: admin\nDefault WebUI address: http://172.16.16.18\nDefault WebUI credentials: admin / admin",
+    "symbol": "mgmt_station.svg",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 4096,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "VI-SIVOS_02.00.0_MR-2.KVM-776-PRIMARY.qcow2",
+            "version": "2.0.0 MR2",
+            "md5sum": "d78c6f0c42186a4c606d7e57f2f3a6d7",
+            "filesize": 493289472,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SIVOS_02.00.0_MR-2.KVM-776-AUXILARY.qcow2",
+            "version": "2.0.0 MR2",
+            "md5sum": "a52d8cedb1ccd4b5b9f2723dfb41588b",
+            "filesize": 204800,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.0.0 MR2",
+            "images": {
+                "hda_disk_image": "VI-SIVOS_02.00.0_MR-2.KVM-776-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SIVOS_02.00.0_MR-2.KVM-776-AUXILARY.qcow2"
+            }
+        }
+    ]
+}

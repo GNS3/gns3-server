@@ -1,0 +1,39 @@
+{
+    "name": "Cisco 7200",
+    "category": "router",
+    "description": "Cisco 7200 Router",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/c/en/us/products/routers/7200-series-routers/index.html",
+    "product_name": "7200",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "dynamips": {
+        "platform": "c7200",
+        "ram": 512,
+        "nvram": 512,
+        "startup_config": "ios_base_startup-config.txt",
+        "slot0": "C7200-IO-FE",
+        "midplane": "vxr",
+        "npe": "npe-400"
+    },
+    "images": [
+        {
+            "filename": "c7200-adventerprisek9-mz.124-24.T5.image",
+            "version": "124-25.T5",
+            "md5sum": "6b89d0d804e1f2bb5b8bda66b5692047",
+            "filesize": 102345240
+        }
+    ],
+    "versions": [
+        {
+            "name": "124-25.T5",
+            "idlepc": "0x606df838",
+            "images": {
+                "image": "c7200-adventerprisek9-mz.124-24.T5.image"
+            }
+        }
+    ]
+}

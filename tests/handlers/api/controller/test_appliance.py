@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .compute_handler import ComputeHandler
-from .project_handler import ProjectHandler
-from .node_handler import NodeHandler
-from .link_handler import LinkHandler
-from .server_handler import ServerHandler
-from .drawing_handler import DrawingHandler
-from .symbol_handler import SymbolHandler
-from .snapshot_handler import SnapshotHandler
-from .appliance_handler import ApplianceHandler
-from .gns3_vm_handler import GNS3VMHandler
+import unittest
+from tests.utils import asyncio_patch
+
+
+def test_appliance_list(http_controller, controller):
+
+    response = http_controller.get("/appliances")
+    assert response.status == 200
+    assert response.route == "/appliances"
+
+    assert len(response.json) > 0

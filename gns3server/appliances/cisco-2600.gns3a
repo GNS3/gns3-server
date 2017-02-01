@@ -1,0 +1,37 @@
+{
+    "name": "Cisco 2600",
+    "category": "router",
+    "description": "Cisco 2600 Router",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
+    "product_name": "2600",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "dynamips": {
+        "chassis": "2610",
+        "platform": "c2600",
+        "ram": 160,
+        "nvram": 128,
+        "startup_config": "ios_base_startup-config.txt"
+    },
+    "images": [
+        {
+            "filename": "c2600-adventerprisek9-mz.124-15.T14.image",
+            "version": "124-15.T14",
+            "md5sum": "483e3a579a5144ec23f2f160d4b0c0e2",
+            "filesize": 87256400
+        }
+    ],
+    "versions": [
+        {
+            "name": "124-15.T14",
+            "idlepc": "0x8027ec88",
+            "images": {
+                "image": "c2600-adventerprisek9-mz.124-15.T14.image"
+            }
+        }
+    ]
+}

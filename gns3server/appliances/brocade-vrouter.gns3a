@@ -1,0 +1,109 @@
+{
+    "name": "vRouter",
+    "category": "router",
+    "description": "With proven ultra-high performance and scalability, the Brocade vRouter is the networking industry leader in software innovation. The Brocade vRouter has set a the benchmark for all software-based routers, while offering easy scalability, a broad set of capabilities, and the peace of mind that comes with rock solid reliability.",
+    "vendor_name": "Brocade",
+    "vendor_url": "http://www.brocade.com/",
+    "documentation_url": "http://www.brocade.com/en/products-services/software-networking/network-functions-virtualization/vrouter.html",
+    "product_name": "vRouter",
+    "product_url": "http://www.brocade.com/en/products-services/software-networking/network-functions-virtualization/vrouter.html",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "60 days evaluation. The Brocade vRouter must be on-line and have public connectivity in order to communicate with the Brocade licensing server for automated license key generation. Please note that the evaluation software will only run for 24 hours after installation without the activation code being entered into the system. You must enter your activation code in order to retrieve your licensing key after you install the Brocade vRouter software. Default credentials: vyatta / vyatta",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 8,
+        "ram": 4096,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": "-smp 4 -cpu host"
+    },
+    "images": [
+        {
+            "filename": "vyatta-vrouter-5.2R2_B_amd64.iso",
+            "version": "5.2R2",
+            "md5sum": "6b7dcc152a18187ad151483c139fb82c",
+            "filesize": 344981504,
+            "download_url": "http://www1.brocade.com/forms/jsp/vrouter/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-Vrouter&intcmp=lp_en_softevaluations_vrouter_bn_00001"
+        },
+        {
+            "filename": "vyatta-vrouter-5.1R1_B_amd64.iso",
+            "version": "5.1R1",
+            "md5sum": "e374b8bae9eecd52ee841f5e262b3a16",
+            "filesize": 344981504,
+            "download_url": "http://www1.brocade.com/forms/jsp/vrouter/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-Vrouter&intcmp=lp_en_softevaluations_vrouter_bn_00001"
+        },
+        {
+            "filename": "livecd-VR5600_5.0R2_B_amd64.iso",
+            "version": "5.0R2",
+            "md5sum": "ce47dba6f89ef1175ef8850110521104",
+            "filesize": 340787200,
+            "download_url": "http://www1.brocade.com/forms/jsp/vrouter/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-Vrouter&intcmp=lp_en_softevaluations_vrouter_bn_00001"
+        },
+        {
+            "filename": "livecd-VR5600_4.2R1_B_amd64.iso",
+            "version": "4.2R1",
+            "md5sum": "5e3023c64dc409ae01d5bcb1b6732593",
+            "filesize": 326107136,
+            "download_url": "http://www1.brocade.com/forms/jsp/vrouter/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-Vrouter&intcmp=lp_en_softevaluations_vrouter_bn_00001"
+        },
+        {
+            "filename": "vyatta-livecd_3.5R3T60_amd64.iso",
+            "version": "3.5R3",
+            "md5sum": "90360273f818a3dba83fa93ef6da938b",
+            "filesize": 288358400,
+            "download_url": "http://www1.brocade.com/forms/jsp/vrouter/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-Vrouter&intcmp=lp_en_softevaluations_vrouter_bn_00001"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.2R2",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyatta-vrouter-5.2R2_B_amd64.iso"
+            }
+        },
+        {
+            "name": "5.1R1",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyatta-vrouter-5.1R1_B_amd64.iso"
+            }
+        },
+        {
+            "name": "5.0R2",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "livecd-VR5600_5.0R2_B_amd64.iso"
+            }
+        },
+        {
+            "name": "4.2R1",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "livecd-VR5600_4.2R1_B_amd64.iso"
+            }
+        },
+        {
+            "name": "3.5R3",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyatta-livecd_3.5R3T60_amd64.iso"
+            }
+        }
+    ]
+}

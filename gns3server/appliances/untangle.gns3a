@@ -1,0 +1,108 @@
+{
+    "name": "Untangle NG",
+    "category": "firewall",
+    "description": "Untangle\u2019s NG Firewall enables you to quickly and easily create the network policies that deliver the perfect balance between security and productivity. Untangle combines Unified Threat Management (UTM)\u2014to address all of the key network threats\u2014with policy management tools that enable you to define access and control by individuals, groups or company-wide. And with industry-leading reports, you\u2019ll have complete visibility into and control over everything that\u2019s happening on your network.",
+    "vendor_name": "Untangle",
+    "vendor_url": "https://www.untangle.com/",
+    "documentation_url": "http://wiki.untangle.com/index.php/Main_Page",
+    "product_name": "Untangle NG",
+    "product_url": "https://www.untangle.com/untangle-ng-firewall/",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Run the graphical or text based installer using VNC. The installer warns about insufficient memory but the provided 1G is enough, the installation will be successful.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "dc",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "untangle_1220_x64.iso",
+            "version": "12.2.0",
+            "md5sum": "56947f059774f2f0015b6326cf5c63ac",
+            "filesize": 585105408,
+            "download_url": "https://www.untangle.com/get-untangle/"
+        },
+        {
+            "filename": "untangle_1212_x64.iso",
+            "version": "12.1.2",
+            "md5sum": "2f48873316725b1f709015dfeb73d666",
+            "filesize": 575668224,
+            "download_url": "https://www.untangle.com/get-untangle/"
+        },
+        {
+            "filename": "untangle_1211_x64.iso",
+            "version": "12.1.1",
+            "md5sum": "c7f38df4cbba72fa472a49454e476522",
+            "filesize": 574619648,
+            "download_url": "https://www.untangle.com/get-untangle/"
+        },
+        {
+            "filename": "untangle_1210_x64.iso",
+            "version": "12.1.0",
+            "md5sum": "d511cbbd34aac7678c34a111c791806f",
+            "filesize": 573571072,
+            "download_url": "https://www.untangle.com/get-untangle/"
+        },
+        {
+            "filename": "untangle_1201_x64.iso",
+            "version": "12.0.1",
+            "md5sum": "905171d04d2f029b193fe76b02ef9e11",
+            "filesize": 611319808,
+            "download_url": "https://www.untangle.com/get-untangle/"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "12.2.0",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "untangle_1220_x64.iso"
+            }
+        },
+        {
+            "name": "12.1.2",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "untangle_1212_x64.iso"
+            }
+        },
+        {
+            "name": "12.1.1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "untangle_1211_x64.iso"
+            }
+        },
+        {
+            "name": "12.1.0",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "untangle_1210_x64.iso"
+            }
+        },
+        {
+            "name": "12.0.1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "untangle_1201_x64.iso"
+            }
+        }
+    ]
+}

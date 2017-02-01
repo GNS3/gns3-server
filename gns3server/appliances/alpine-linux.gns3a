@@ -1,0 +1,41 @@
+{
+    "name": "Alpine Linux",
+    "category": "guest",
+    "description": "Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.",
+    "vendor_name": "Alpine Linux Development Team",
+    "vendor_url": "http://alpinelinux.org",
+    "documentation_url": "http://wiki.alpinelinux.org",
+    "product_name": "Alpine Linux",
+    "registry_version": 1,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "User is root. Password is gns3",
+    "symbol": "linux_guest.svg",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 32,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "alpine-linux-3.2.3.qcow2",
+            "version": "3.2.3",
+            "md5sum": "b82d895ecba270ecc5e5b445ec53ee02",
+            "filesize": 143065088,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/alpine-linux-3.2.3.qcow2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.2.3",
+            "images": {
+                "hda_disk_image": "alpine-linux-3.2.3.qcow2"
+            }
+        }
+    ]
+}

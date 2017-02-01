@@ -1,0 +1,73 @@
+{
+    "name": "PacketFence ZEN",
+    "category": "guest",
+    "description": "PacketFence is a fully supported, trusted, Free and Open Source network access control (NAC) solution. Boasting an impressive feature set including a captive-portal for registration and remediation, centralized wired and wireless management, 802.1X support, layer-2 isolation of problematic devices, integration with the Snort IDS and the Nessus vulnerability scanner; PacketFence can be used to effectively secure networks - from small to very large heterogeneous networks.",
+    "vendor_name": "Inverse inc.",
+    "vendor_url": "https://packetfence.org/",
+    "documentation_url": "https://packetfence.org/support/index.html#/documentation",
+    "product_name": "PacketFence ZEN",
+    "product_url": "https://packetfence.org/about.html",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Boot the live CD",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 8192,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "PacketFenceZEN_USB-6.4.0.img",
+            "version": "6.4.0",
+            "md5sum": "7f2bea58421d094152ea71f49cc3084a",
+            "filesize": 3221225472,
+            "download_url": "https://packetfence.org/download.html#/zen",
+            "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/6.4.0/PacketFenceZEN_USB-6.4.0.tar.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "PacketFenceZEN_USB-6.3.0.img",
+            "version": "6.3.0",
+            "md5sum": "94e19349faedf292743fdc0ab48f8466",
+            "filesize": 3221225472,
+            "download_url": "https://packetfence.org/download.html#/zen",
+            "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/6.3.0/PacketFenceZEN_USB-6.3.0.tar.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "PacketFenceZEN_USB-6.2.1.img",
+            "version": "6.2.1",
+            "md5sum": "f212be7c8621b90d973f500f00ef1277",
+            "filesize": 3221225472,
+            "download_url": "https://packetfence.org/download.html#/zen",
+            "direct_download_url": "http://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/6.2.1/PacketFenceZEN_USB-6.2.1.tar.bz2/download",
+            "compression": "bzip2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.4.0",
+            "images": {
+                "hda_disk_image": "PacketFenceZEN_USB-6.4.0.img"
+            }
+        },
+        {
+            "name": "6.3.0",
+            "images": {
+                "hda_disk_image": "PacketFenceZEN_USB-6.3.0.img"
+            }
+        },
+        {
+            "name": "6.2.1",
+            "images": {
+                "hda_disk_image": "PacketFenceZEN_USB-6.2.1.img"
+            }
+        }
+    ]
+}

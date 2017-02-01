@@ -1,0 +1,42 @@
+{
+    "name": "NETem",
+    "category": "guest",
+    "description": "NETem emulates a network link, typically a WAN link. It supports bandwidth limitation, delay, jitter and packet loss. All this functionality is already build in the linux kernel, NETem is just a menu system to make the configuration user-friendly.",
+    "vendor_name": "Linux",
+    "vendor_url": "http://www.linuxfoundation.org/",
+    "documentation_url": "http://www.cs.unm.edu/~crandall/netsfall13/TCtutorial.pdf",
+    "product_name": "netem",
+    "registry_version": 1,
+    "status": "experimental",
+    "maintainer": "Bernhard Ehlers",
+    "maintainer_email": "be@bernhard-ehlers.de",
+    "usage": "Insert the NETem VM between two network elements and connect it to them. NETem is fully transparent, it bridges the traffic from one interface to the other one. As NETem only bridges, it needs no IP addresses. On start a menu on the console allows a user-friendy configuration of the line parameters.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 96,
+        "arch": "i386",
+        "console_type": "telnet",
+        "kvm": "allow",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "NETem-v4.qcow2",
+            "version": "0.4",
+            "md5sum": "e678698c97804901c7a53f6b68c8b861",
+            "filesize": 26476544,
+            "download_url": "http://bernhard-ehlers.de/projects/netem/index.html",
+            "direct_download_url": "http://bernhard-ehlers.de/projects/netem/NETem-v4.qcow2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "0.4",
+            "images": {
+                "hda_disk_image": "NETem-v4.qcow2"
+            }
+        }
+    ]
+}

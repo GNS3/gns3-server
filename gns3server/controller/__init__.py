@@ -24,13 +24,14 @@ import aiohttp
 
 from ..config import Config
 from .project import Project
+from .appliance import Appliance
 from .compute import Compute, ComputeError
 from .notification import Notification
 from .symbols import Symbols
 from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
-
+from ..utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
@@ -42,6 +43,9 @@ class Controller:
     def __init__(self):
         self._computes = {}
         self._projects = {}
+        self._appliances = {}
+        self.load_appliances()
+
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
@@ -50,6 +54,12 @@ class Controller:
 
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
+
+    def load_appliances(self):
+        for file in os.listdir(get_resource('appliances')):
+            with open(os.path.join(get_resource('appliances'), file)) as f:
+                appliance = Appliance(None, json.load(f))
+            self._appliances[appliance.id] = appliance
 
     @asyncio.coroutine
     def start(self):
@@ -428,6 +438,13 @@ class Controller:
         :returns: The dictionary of computes managed by GNS3
         """
         return self._projects
+
+    @property
+    def appliances(self):
+        """
+        :returns: The dictionary of appliances managed by GNS3
+        """
+        return self._appliances
 
     def projects_directory(self):
         server_config = Config.instance().get_section_config("Server")

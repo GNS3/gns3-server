@@ -1,0 +1,50 @@
+{
+    "name": "Checkpoint GAiA",
+    "category": "firewall",
+    "description": "Check Point Gaia is the next generation Secure Operating System for all Check Point Appliances, Open Servers and Virtualized Gateways.\n\nGaia combines the best features from IPSO and SecurePlatform (SPLAT) into a single unified OS providing greater efficiency and robust performance. By upgrading to Gaia, customers will benefit from improved appliance connection capacity and reduced operating costs. With Gaia, IP Appliance customers will gain the ability to leverage the full breadth and power of all Check Point Software Blades.\n\nGaia secures IPv6 networks utilizing the Check Point Acceleration & Clustering technology and it protects the most dynamic network and virtualized environments by supporting 5 different dynamic routing protocols. As a 64-Bit OS, Gaia increases the connection capacity of existing appliances supporting up-to 10M concurrent connections for select 2012 Models.\n\nGaia simplifies management with segregation of duties by enabling role-based administrative access. Furthermore, Gaia greatly increases operation efficiency by offering Automatic Software Update.\n\nThe feature-rich Web interface allows for search of any command or property in a second.\n\nGaia provides backward compatibility with IPSO and SPLAT CLI-style commands making it an easy transition for existing Check Point customers.",
+    "vendor_name": "Checkpoint",
+    "vendor_url": "https://www.checkpoint.com",
+    "documentation_url": "http://downloads.checkpoint.com/dc/download.htm?ID=26770",
+    "product_name": "Gaia",
+    "registry_version": 1,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "At boot choose the install on disk options. You need to open quickly the terminal after launching the appliance if you want to see the menu. You need a web browser in order to finalize the installation. You can use the firefox appliance for this.",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 8,
+        "ram": 2048,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "dc",
+        "kvm": "require",
+        "process_priority": "normal"
+    },
+    "images": [
+        {
+            "filename": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso",
+            "version": "77.30",
+            "md5sum": "6fa7586bbb6832fa965d3173276c5b87",
+            "filesize": 2799271936,
+            "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk104859"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "77.30",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso"
+            }
+        }
+    ]
+}

@@ -1,0 +1,53 @@
+{
+    "name": "Smoothwall Express",
+    "category": "firewall",
+    "description": "A Free firewall that includes its own security-hardened GNU/Linux operating system and an easy-to-use web interface.",
+    "vendor_name": "Smoothwall Ltd.",
+    "vendor_url": "http://www.smoothwall.org/",
+    "documentation_url": "https://sourceforge.net/projects/smoothwall/files/SmoothWall%20Manuals/",
+    "product_name": "Smoothwall Express",
+    "product_url": "http://www.smoothwall.org/about/",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "WebUI can be accessed at https://GREEN_IP:441/ after installation. GREEN interface is used for the LAN, RED for the WAN connections. ORANGE and PURPLE can be used for DMZ.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 256,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "dc",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "Express-3.1-x86_64.iso",
+            "version": "3.1",
+            "md5sum": "cfaf7f11901a164cd00c07518c7311ba",
+            "filesize": 214206464,
+            "download_url": "http://www.smoothwall.org/download/",
+            "direct_download_url": "http://sourceforge.net/projects/smoothwall/files/SmoothWall/3.1/Express-3.1-x86_64.iso/download"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.1",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "Express-3.1-x86_64.iso"
+            }
+        }
+    ]
+}

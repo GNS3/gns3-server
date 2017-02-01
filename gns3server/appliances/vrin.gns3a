@@ -1,0 +1,86 @@
+{
+    "name": "vRIN",
+    "category": "guest",
+    "description": "vRIN is a VM appliance capable to inject high number of routes into a network. It was tested on GNS3 topologies using VirtualBox and Qemu with up to 1M BGP routes. Runs Quagga. Supported protocols: BGP (IPv4/6), OSPF, OSPFv3, RIP v2, RIPng",
+    "vendor_name": "Andras Dosztal",
+    "vendor_url": "https://sourceforge.net/projects/vrin/",
+    "product_name": "vRIN",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "Andras Dosztal",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Connect eth0 to the network where you want vRIN to inject routes into then start the VM. You can either run the VM in normal or headless mode; in the latter case you can access vRIN through serial console. User input is not checked; it's your responsibility to enter valid information.\n\nAfter generating the routes, each Quagga process can be reached through eth0 using their default ports:\n - zebra: 2601\n - rip: 2602\n - ripng: 2603\n - ospf: 2604\n - bgp: 2605\n - ospf6d: 2606\nVTY password: vrin\n\nNotes:\n\n - Route generation may take a while when creating lots of routes (i.e. 10k+).\n - Login (serial / VM window): root / vrin",
+    "symbol": "vRIN.svg",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 256,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "vRIN-0.9.qcow2",
+            "version": "0.9",
+            "md5sum": "b9ec187d7a4743bb02339cf262767959",
+            "filesize": 922943488,
+            "download_url": "https://sourceforge.net/projects/vrin/files",
+            "direct_download_url": "http://sourceforge.net/projects/vrin/files/vRIN-0.9.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "vRIN-0.8.qcow2",
+            "version": "0.8",
+            "md5sum": "38eb48d098d3e465422347f7983b9d86",
+            "filesize": 625999872,
+            "download_url": "https://sourceforge.net/projects/vrin/files",
+            "direct_download_url": "http://sourceforge.net/projects/vrin/files/vRIN-0.8.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "vRIN-0.7.qcow2",
+            "version": "0.7",
+            "md5sum": "2e9802c403e34a91871922b9a26592ad",
+            "filesize": 614268928,
+            "download_url": "https://sourceforge.net/projects/vrin/files",
+            "direct_download_url": "http://sourceforge.net/projects/vrin/files/vRIN-0.7.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "vRIN-0.6.qcow2",
+            "version": "0.6",
+            "md5sum": "6c763f609c05b5b9a3b1d422ab89dbac",
+            "filesize": 609681408,
+            "download_url": "https://sourceforge.net/projects/vrin/files",
+            "direct_download_url": "http://sourceforge.net/projects/vrin/files/vRIN-0.6.qcow2.bz2/download",
+            "compression": "bzip2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "0.9",
+            "images": {
+                "hda_disk_image": "vRIN-0.9.qcow2"
+            }
+        },
+        {
+            "name": "0.8",
+            "images": {
+                "hda_disk_image": "vRIN-0.8.qcow2"
+            }
+        },
+        {
+            "name": "0.7",
+            "images": {
+                "hda_disk_image": "vRIN-0.7.qcow2"
+            }
+        },
+        {
+            "name": "0.6",
+            "images": {
+                "hda_disk_image": "vRIN-0.6.qcow2"
+            }
+        }
+    ]
+}

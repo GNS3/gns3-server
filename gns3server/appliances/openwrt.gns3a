@@ -1,0 +1,42 @@
+{
+    "name": "OpenWrt",
+    "category": "router",
+    "description": "OpenWrt is a highly extensible GNU/Linux distribution for embedded devices (typically wireless routers). Unlike many other distributions for these routers, OpenWrt is built from the ground up to be a full-featured, easily modifiable operating system for your router. In practice, this means that you can have all the features you need with none of the bloat, powered by a Linux kernel that's more recent than most other distributions.",
+    "vendor_name": "OpenWrt",
+    "vendor_url": "http://openwrt.org",
+    "documentation_url": "http://wiki.openwrt.org/doc/",
+    "product_name": "OpenWrt",
+    "product_url": "http://openwrt.org",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Ethernet0 is the LAN link, Ethernet1 the WAN link.",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 64,
+        "arch": "i386",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "openwrt-15.05.1-x86-kvm_guest-combined-ext4.img",
+            "version": "15.05.1",
+            "md5sum": "d02f5224b7fbe929efa4d3f10f4dc996",
+            "filesize": 55050240,
+            "download_url": "http://downloads.openwrt.org/chaos_calmer/15.05.1/x86/kvm_guest/",
+            "direct_download_url": "https://downloads.openwrt.org/chaos_calmer/15.05.1/x86/kvm_guest/openwrt-15.05.1-x86-kvm_guest-combined-ext4.img.gz",
+            "compression": "gzip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "Chaos Calmer 15.05.1",
+            "images": {
+                "hda_disk_image": "openwrt-15.05.1-x86-kvm_guest-combined-ext4.img"
+            }
+        }
+    ]
+}

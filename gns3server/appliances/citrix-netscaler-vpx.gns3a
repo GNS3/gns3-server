@@ -1,0 +1,58 @@
+{
+    "name": "NetScaler VPX",
+    "category": "router",
+    "description": "Today’s enterprises face more demands than ever, from cloud computing to 24/7 availability to increasing security threats. NetScaler ADC, an advanced software-defined application delivery controller, is your networking power player. It provides outstanding delivery of business applications—to any device and any location—with unmatched security, superior L4-7 load balancing, reliable GSLB, and 100 percent uptime. In fact, NetScaler ADC offers up to five times the performance of our closest competitor. Plus our TriScale technology saves you money by allowing your network to scale up or down without additional hardware costs.",
+    "vendor_name": "Citrix",
+    "vendor_url": "http://www.citrix.com/",
+    "documentation_url": "https://www.citrix.com/products/netscaler-adc/support.html",
+    "product_name": "NetScaler VPX",
+    "product_url": "https://www.citrix.com/products/netscaler-adc/",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "The image file is large (21.5 GB), make sure you have enough space. Default credentials: nsroot / nsroot",
+    "symbol": "loadbalancer.svg",
+    "port_name_format": "1/{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 2048,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": "-smp 2 -cpu host"
+    },
+    "images": [
+        {
+            "filename": "NSVPX-KVM-11.1-47.14_nc.raw",
+            "version": "11.1-47.14 F",
+            "md5sum": "f7100f8b6588e152ce6f64e45b1e99fc",
+            "filesize": 21474836480,
+            "download_url": "https://www.citrix.com/downloads/netscaler-adc/virtual-appliances/netscaler-vpx-express.html"
+        },
+        {
+            "filename": "NSVPX-KVM-10.5-56.22_nc.raw",
+            "version": "10.5-56.22",
+            "md5sum": "b7569f09d4c348c5cf825627169131e7",
+            "filesize": 21474836480,
+            "download_url": "https://www.citrix.com/downloads/netscaler-adc/virtual-appliances/netscaler-vpx-express.html"
+        }
+    ],
+    "versions": [
+        {
+            "name": "11.1-47.14 F",
+            "images": {
+                "hda_disk_image": "NSVPX-KVM-11.1-47.14_nc.raw"
+            }
+        },
+        {
+            "name": "10.5-56.22",
+            "images": {
+                "hda_disk_image": "NSVPX-KVM-10.5-56.22_nc.raw"
+            }
+        }
+    ]
+}

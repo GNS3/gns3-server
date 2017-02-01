@@ -1,0 +1,53 @@
+{
+    "name": "Proxmox MG",
+    "category": "firewall",
+    "description": "To ensure efficient email communication and business continuity, IT professionals depend on reliable spam and virus blocking software. With Proxmox Mail Gateway you get the job done.\n\nProxmox Mail Gateway helps you protect your business against all email threats like spam, viruses, phishing and trojans at the moment they emerge. The flexible architecture combined with the userfriendly, web-based management make it simple for you to control all incoming and outgoing emails. You maintain a professional email workflow and gain high business reputation as well as customer satisfaction.",
+    "vendor_name": "Proxmox Server Solutions GmbH",
+    "vendor_url": "http://www.proxmox.com/en/",
+    "documentation_url": "http://www.proxmox.com/en/downloads/category/documentation-pmg",
+    "product_name": "Proxmox MG",
+    "product_url": "http://www.proxmox.com/en/proxmox-mail-gateway",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "User: root\nPassword: admin",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 3,
+        "ram": 4096,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "proxmox-mailgateway_4.1-5.iso",
+            "version": "4.1-5",
+            "md5sum": "f0b90f525b6f0fd51889ee48e44980b7",
+            "filesize": 746586112,
+            "download_url": "http://www.proxmox.com/en/downloads",
+            "direct_download_url": "http://www.proxmox.com/en/downloads?task=callelement&format=raw&item_id=201&element=f85c494b-2b32-4109-b8c1-083cca2b7db6&method=download&args[0]=1f39333ff32bef6001584670e439c842"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "4.1-5",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "proxmox-mailgateway_4.1-5.iso"
+            }
+        }
+    ]
+}

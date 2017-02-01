@@ -1,0 +1,50 @@
+{
+    "name": "ClearOS CE",
+    "category": "firewall",
+    "description": "ClearOS is an operating system for your Server, Network, and Gateway systems. It is designed for homes, small to medium businesses, and distributed environments. ClearOS is commonly known as the Next Generation Small Business Server, while including indispensable Gateway and Networking functionality. It delivers a powerful IT solution with an elegant user interface that is completely web-based. Simply put.. ClearOS is the new way of delivering IT.",
+    "vendor_name": "ClearCenter, Corp.",
+    "vendor_url": "https://www.clearos.com/",
+    "documentation_url": "https://www.clearos.com/resources/documentation/clearos-7-documentation-overview",
+    "product_name": "ClearOS CE",
+    "product_url": "https://www.clearos.com/clearfoundation/software/clearos-7-community",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Follow the installer.",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 3,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "ClearOS-7.2-DVD-x86_64.iso",
+            "version": "7.2",
+            "md5sum": "a094763e6ed5d9b073fd4e651f9a48f1",
+            "filesize": 855638016,
+            "download_url": "https://www.clearos.com/clearfoundation/software/clearos-downloads"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "7.2",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "ClearOS-7.2-DVD-x86_64.iso"
+            }
+        }
+    ]
+}

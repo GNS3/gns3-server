@@ -465,3 +465,7 @@ def test_get_free_project_name(controller, async_run):
     async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test-1"))
     assert controller.get_free_project_name("Test") == "Test-2"
     assert controller.get_free_project_name("Hello") == "Hello"
+
+
+def test_appliances(controller):
+    assert len(controller.appliances) > 0

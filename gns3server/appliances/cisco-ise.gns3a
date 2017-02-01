@@ -1,0 +1,70 @@
+{
+    "name": "Cisco ISE",
+    "category": "firewall",
+    "description": "The Cisco ISE platform is a comprehensive, next-generation, contextually-based access control solution. Cisco ISE offers authenticated network access, profiling, posture, guest management, and security group access services along with monitoring, reporting, and troubleshooting capabilities on a single physical or virtual appliance.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/security/identity-services-engine/tsd-products-support-series-home.html",
+    "product_name": "Identity Services Engine",
+    "product_url": "http://www.cisco.com/c/en/us/products/security/identity-services-engine/index.html",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Starting ISE will start an installation of ISE onto a blank 200GB Drive. This will take time. The intial username is setup.\n\nThis appliance requires KVM. You may try it on a system without KVM, but it will run really slow, if at all.",
+    "symbol": "cisco-ise.svg",
+    "port_name_format": "GigabitEthernet{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 4096,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": "-smp 2"
+    },
+    "images": [
+        {
+            "filename": "ise-2.1.0.474.SPA.x86_64.iso",
+            "version": "2.1.0.474",
+            "md5sum": "8dc844696790f2f5f37054899fab3e2a",
+            "filesize": 6161475584,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=283801620&flowid=&softwareid=283802505&release=2.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "ise-2.0.1.130.SPA.x86_64.iso",
+            "version": "2.0.1.130",
+            "md5sum": "25ac842fdbb61f6e75f2f8b26beea28e",
+            "filesize": 5129990144,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=283801620&flowid=&softwareid=283802505&release=2.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "empty200G.qcow2",
+            "version": "1.0",
+            "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
+            "filesize": 200192,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.1.0.474",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.1.0.474.SPA.x86_64.iso"
+            }
+        },
+        {
+            "name": "2.0.1.130",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.0.1.130.SPA.x86_64.iso"
+            }
+        }
+    
+      
+    ]
+}

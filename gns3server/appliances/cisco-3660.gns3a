@@ -1,0 +1,37 @@
+{
+    "name": "Cisco 3660",
+    "category": "router",
+    "description": "Cisco 3660 Router",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
+    "product_name": "3660",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "dynamips": {
+        "chassis": "3660",
+        "platform": "c3600",
+        "ram": 192,
+        "nvram": 256,
+        "startup_config": "ios_base_startup-config.txt"
+    },
+    "images": [
+        {
+            "filename": "c3660-a3jk9s-mz.124-15.T14.image",
+            "version": "124-15.T14",
+            "md5sum": "daed99f508fd42dbaacf711e560643ed",
+            "filesize": 90181268
+        }
+    ],
+    "versions": [
+        {
+            "name": "124-15.T14",
+            "idlepc": "0x6076e0b4",
+            "images": {
+                "image": "c3660-a3jk9s-mz.124-15.T14.image"
+            }
+        }
+    ]
+}

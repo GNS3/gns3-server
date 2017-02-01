@@ -1,0 +1,58 @@
+{
+    "name": "FreeBSD",
+    "category": "guest",
+    "description": "FreeBSD is an advanced computer operating system used to power modern servers, desktops, and embedded platforms. A large community has continually developed it for more than thirty years. Its advanced networking, security, and storage features have made FreeBSD the platform of choice for many of the busiest web sites and most pervasive embedded networking and storage devices.",
+    "vendor_name": "FreeBSD",
+    "vendor_url": "http://www.freebsd.org",
+    "documentation_url": "https://www.freebsd.org/docs.html",
+    "product_name": "FreeBSD",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "User: root, not password is set.",
+    "port_name_format": "em{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 256,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "FreeBSD-11.0-RELEASE-amd64.qcow2",
+            "version": "11.0",
+            "md5sum": "1b04999198f492afd6dc4935b8c7cc22",
+            "filesize": 1384382464,
+            "download_url": "https://www.freebsd.org/where.html",
+            "direct_download_url": "ftp://ftp.freebsd.org/pub/FreeBSD/releases/VM-IMAGES/11.0-RELEASE/amd64/Latest/FreeBSD-11.0-RELEASE-amd64.qcow2.xz",
+            "compression": "xz"
+        },
+        {
+            "filename": "FreeBSD-10.3-RELEASE-amd64.qcow2",
+            "version": "10.3",
+            "md5sum": "1a00cebef520dfac8d2bda10ea16a951",
+            "filesize": 974651392,
+            "download_url": "https://www.freebsd.org/where.html",
+            "direct_download_url": "ftp://ftp.freebsd.org/pub/FreeBSD/releases/VM-IMAGES/10.3-RELEASE/amd64/Latest/FreeBSD-10.3-RELEASE-amd64.qcow2.xz",
+            "compression": "xz"
+        }
+    ],
+    "versions": [
+        {
+            "name": "11.0",
+            "images": {
+                "hda_disk_image": "FreeBSD-11.0-RELEASE-amd64.qcow2"
+            }
+        },
+        {
+            "name": "10.3",
+            "images": {
+                "hda_disk_image": "FreeBSD-10.3-RELEASE-amd64.qcow2"
+            }
+        }
+    ]
+}
