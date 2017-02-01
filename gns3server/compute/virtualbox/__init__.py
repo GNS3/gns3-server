@@ -161,7 +161,7 @@ class VirtualBox(BaseManager):
                 continue
 
     @asyncio.coroutine
-    def list_vms(self):
+    def list_vms(self, allow_clone=False):
         """
         Gets VirtualBox VM list.
         """
@@ -176,7 +176,7 @@ class VirtualBox(BaseManager):
             if vmname == "<inaccessible>":
                 continue  # ignore inaccessible VMs
             extra_data = yield from self.execute("getextradata", [vmname, "GNS3/Clone"])
-            if len(extra_data) == 0 or not extra_data[0].strip() == "Value: yes":
+            if allow_clone or len(extra_data) == 0 or not extra_data[0].strip() == "Value: yes":
                 # get the amount of RAM
                 info_results = yield from self.execute("showvminfo", [vmname, "--machinereadable"])
                 ram = 0

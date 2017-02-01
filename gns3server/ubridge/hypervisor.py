@@ -171,7 +171,7 @@ class Hypervisor(UBridgeHypervisor):
                                                                           env=env)
 
             log.info("ubridge started PID={}".format(self._process.pid))
-        except (OSError, subprocess.SubprocessError) as e:
+        except (OSError, PermissionError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()
             log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
             raise UBridgeHypervisor("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))

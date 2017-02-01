@@ -643,8 +643,11 @@ class Project:
                 # We don't care if a compute is down at this step
                 except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
                     pass
-            if os.path.exists(path + ".backup"):
-                shutil.copy(path + ".backup", path)
+            try:
+                if os.path.exists(path + ".backup"):
+                    shutil.copy(path + ".backup", path)
+            except (PermissionError, OSError):
+                pass
             self._status = "closed"
             self._loading = False
             raise e

@@ -376,7 +376,8 @@ def test_getProject(controller, async_run):
 def test_start(controller, async_run):
     controller.gns3vm.settings = {
         "enable": False,
-        "engine": "vmware"
+        "engine": "vmware",
+        "vmname": "GNS3 VM"
     }
     with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock:
         async_run(controller.start())
@@ -390,7 +391,8 @@ def test_start_vm(controller, async_run):
     """
     controller.gns3vm.settings = {
         "enable": True,
-        "engine": "vmware"
+        "engine": "vmware",
+        "vmname": "GNS3 VM"
     }
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
         with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock_connect:
@@ -415,7 +417,8 @@ def test_stop_vm(controller, async_run):
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
-        "when_exit": "stop"
+        "when_exit": "stop",
+        "vmname": "GNS3 VM"
     }
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
@@ -430,7 +433,8 @@ def test_suspend_vm(controller, async_run):
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
-        "when_exit": "suspend"
+        "when_exit": "suspend",
+        "vmname": "GNS3 VM"
     }
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
@@ -445,7 +449,8 @@ def test_keep_vm(controller, async_run):
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
-        "when_exit": "keep"
+        "when_exit": "keep",
+        "vmname": "GNS3 VM"
     }
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:

@@ -130,8 +130,11 @@ def images_directories(type):
     paths = []
     img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
     type_img_directory = default_images_directory(type)
-    os.makedirs(type_img_directory, exist_ok=True)
-    paths.append(type_img_directory)
+    try:
+        os.makedirs(type_img_directory, exist_ok=True)
+        paths.append(type_img_directory)
+    except (OSError, PermissionError):
+        pass
     for directory in server_config.get("additional_images_path", "").split(";"):
         paths.append(directory)
     # Compatibility with old topologies we look in parent directory
