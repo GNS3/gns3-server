@@ -55,12 +55,11 @@ class Controller:
 
         # Store settings shared by the different GUI will be replace by dedicated API later
         self._settings = None
+        self._appliances = {}
+        self._appliance_templates = {}
 
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
-
-        self._appliance_templates = {}
-        self.load_appliances()
 
     def load_appliances(self):
         self._appliance_templates = {}
@@ -68,6 +67,59 @@ class Controller:
             with open(os.path.join(get_resource('appliances'), file)) as f:
                 appliance = ApplianceTemplate(None, json.load(f))
             self._appliance_templates[appliance.id] = appliance
+
+        self._appliances = {}
+        for vm in self._settings.get("Qemu", {}).get("vms", []):
+            vm["node_type"] = "qemu"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("IOU", {}).get("devices", []):
+            vm["node_type"] = "iou"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("Docker", {}).get("containers", []):
+            vm["node_type"] = "docker"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("Builtin", {}).get("cloud_nodes", []):
+            vm["node_type"] = "cloud"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("Builtin", {}).get("ethernet_switches", []):
+            vm["node_type"] = "ethernet_switch"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("Builtin", {}).get("ethernet_hubs", []):
+            vm["node_type"] = "ethernet_hub"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("Dynamips", {}).get("routers", []):
+            vm["node_type"] = "dynamips"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("VMware", {}).get("vms", []):
+            vm["node_type"] = "vmware"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("VirtualBox", {}).get("vms", []):
+            vm["node_type"] = "virtualbox"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        for vm in self._settings.get("VPCS", {}).get("nodes", []):
+            vm["node_type"] = "vpcs"
+            appliance = Appliance(None, vm)
+            self._appliances[appliance.id] = appliance
+        # Add builtins
+        builtins = []
+        builtins.append(Appliance(None, {"node_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(None, {"node_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(None, {"node_type": "vpcs", "name": "VPCS", "category": 2, "symbol": ":/symbols/vpcs_guest.svg"}, builtin=True))
+        builtins.append(Appliance(None, {"node_type": "ethernet_switch", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
+        builtins.append(Appliance(None, {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
+        builtins.append(Appliance(None, {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
+        builtins.append(Appliance(None, {"node_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
+        for b in builtins:
+            self._appliances[b.id] = b
 
     @asyncio.coroutine
     def start(self):
@@ -172,6 +224,7 @@ class Controller:
         if "gns3vm" in data:
             self.gns3vm.settings = data["gns3vm"]
 
+        self.load_appliances()
         return data["computes"]
 
     @asyncio.coroutine
@@ -288,6 +341,7 @@ class Controller:
     def settings(self, val):
         self._settings = val
         self.save()
+        self.load_appliances()
         self.notification.emit("settings.updated", val)
 
     @asyncio.coroutine
@@ -493,6 +547,13 @@ class Controller:
         :returns: The dictionary of appliances templates managed by GNS3
         """
         return self._appliance_templates
+
+    @property
+    def appliances(self):
+        """
+        :returns: The dictionary of appliances managed by GNS3
+        """
+        return self._appliances
 
     def projects_directory(self):
         server_config = Config.instance().get_section_config("Server")

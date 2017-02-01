@@ -74,10 +74,6 @@ With this project id we can now create two VPCS Node.
         "node_id": "f124dec0-830a-451e-a314-be50bbd58a00",
         "node_type": "vpcs",
         "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
-        "properties": {
-            "startup_script": null,
-            "startup_script_path": null
-        },
         "status": "stopped"
     }
 
@@ -91,10 +87,6 @@ With this project id we can now create two VPCS Node.
         "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74",
         "node_type": "vpcs",
         "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
-        "properties": {
-            "startup_script": null,
-            "startup_script_path": null
-        },
         "status": "stopped"
     }
 
@@ -230,8 +222,52 @@ This will display a red square in the middle of your topologies:
 Tips: you can embed png/jpg... by using a base64 encoding in the SVG.
 
 
-Create a Qemu node
-###################
+Creation of nodes
+#################
+
+Their is two way of adding nodes. Manual by passing all the information require for a Node.
+
+Or by using an appliance. The appliance is a node model saved in your server.
+
+Using an appliance
+------------------
+
+First you need to list the available appliances
+
+.. code-block:: shell-session
+
+    # curl "http://localhost:3080/v2/appliances"
+
+    [
+        {
+            "appliance_id": "5fa8a8ca-0f80-4ac4-8104-2b32c7755443",
+            "category": "guest",
+            "compute_id": "vm",
+            "default_name_format": "{name}-{0}",
+            "name": "MicroCore",
+            "node_type": "qemu",
+            "symbol": ":/symbols/qemu_guest.svg"
+        },
+        {
+            "appliance_id": "9cd59d5a-c70f-4454-8313-6a9e81a8278f",
+            "category": "guest",
+            "compute_id": "vm",
+            "default_name_format": "{name}-{0}",
+            "name": "Chromium",
+            "node_type": "docker",
+            "symbol": ":/symbols/docker_guest.svg"
+        }
+    ]
+
+Now you can use the appliance and put it at a specific position
+
+.. code-block:: shell-session
+
+ # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f -d '{"x": 12, "y": 42}'
+
+
+Manual creation of a Qemu node
+-------------------------------
 
 .. code-block:: shell-session
 
@@ -315,9 +351,8 @@ Create a Qemu node
     }
 
 
-Create a dynamips node
-######################
-
+Manual creation of a dynamips node
+-----------------------------------
 
 .. code-block:: shell-session
 

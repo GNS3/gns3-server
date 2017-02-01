@@ -53,7 +53,7 @@ def test_load_controller_settings(controller, controller_config_path, async_run)
             "compute_id": "test1"
         }
     ]
-    data["settings"] = {"IOU": True}
+    data["settings"] = {"IOU": {"test": True}}
     data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
@@ -465,3 +465,23 @@ def test_load_base_files(controller, config, tmpdir):
     # Check is the file has not been overwrite
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt')) as f:
         assert f.read() == 'test'
+
+
+def test_appliance_templates(controller, async_run):
+    controller.load_appliances()
+    assert len(controller.appliance_templates) > 0
+
+
+def test_load_appliances(controller):
+    controller._settings = {
+        "Qemu": {
+            "vms": [
+                {
+                    "name": "Test"
+                }
+            ]
+        }
+    }
+    controller.load_appliances()
+    assert "Test" in [appliance.name for appliance in controller.appliances.values()]
+    assert "Cloud" in [appliance.name for appliance in controller.appliances.values()]
