@@ -30,8 +30,7 @@ from gns3server.schemas.node import (
 from gns3server.schemas.iou import (
     IOU_CREATE_SCHEMA,
     IOU_START_SCHEMA,
-    IOU_OBJECT_SCHEMA,
-    IOU_CONFIGS_SCHEMA,
+    IOU_OBJECT_SCHEMA
 )
 
 
