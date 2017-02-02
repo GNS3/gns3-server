@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import json
 import socket
+import shutil
 import asyncio
 import aiohttp
 
@@ -30,7 +30,7 @@ from .symbols import Symbols
 from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
-
+from ..utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ class Controller:
     @asyncio.coroutine
     def start(self):
         log.info("Start controller")
+        self.load_base_files()
         yield from self.load()
         server_config = Config.instance().get_section_config("Server")
         host = server_config.get("host", "localhost")
@@ -163,12 +164,35 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
+    def load_base_files(self):
+        """
+        At startup we copy base file to the user location to allow
+        them to customize it
+        """
+        dst_path = self.configs_path()
+        src_path = get_resource('configs')
+        try:
+            for file in os.listdir(src_path):
+                if not os.path.exists(os.path.join(dst_path, file)):
+                    shutil.copy(os.path.join(src_path, file), os.path.join(dst_path, file))
+        except OSError:
+            pass
+
     def images_path(self):
         """
         Get the image storage directory
         """
         server_config = Config.instance().get_section_config("Server")
         images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/projects"))
+        os.makedirs(images_path, exist_ok=True)
+        return images_path
+
+    def configs_path(self):
+        """
+        Get the configs storage directory
+        """
+        server_config = Config.instance().get_section_config("Server")
+        images_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/projects"))
         os.makedirs(images_path, exist_ok=True)
         return images_path
 

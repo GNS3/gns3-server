@@ -106,7 +106,6 @@ def demo_topology():
                     "node_type": "vpcs",
                     "properties": {
                         "startup_script": "",
-                        "startup_script_path": "startup.vpc"
                     },
                     "symbol": ":/symbols/computer.svg",
                     "width": 65,
@@ -131,7 +130,6 @@ def demo_topology():
                     "node_type": "vpcs",
                     "properties": {
                         "startup_script": "",
-                        "startup_script_path": "startup.vpc"
                     },
                     "symbol": ":/symbols/computer.svg",
                     "width": 65,

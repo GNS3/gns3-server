@@ -109,7 +109,7 @@ class VPCSVM(BaseNode):
             raise VPCSError("No path to a VPCS executable has been set")
 
         # This raise an error if ubridge is not available
-        ubridge_path = self.ubridge_path
+        self.ubridge_path
 
         if not os.path.isfile(path):
             raise VPCSError("VPCS program '{}' is not accessible".format(path))
@@ -128,8 +128,6 @@ class VPCSVM(BaseNode):
                 "console": self._console,
                 "console_type": "telnet",
                 "project_id": self.project.id,
-                "startup_script": self.startup_script,
-                "startup_script_path": self.relative_startup_script,
                 "command_line": self.command_line}
 
     @property

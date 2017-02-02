@@ -50,10 +50,6 @@ VPCS_CREATE_SCHEMA = {
             "description": "Content of the VPCS startup script",
             "type": ["string", "null"]
         },
-        "startup_script_path": {
-            "description": "Path of the VPCS startup script relative to project directory (IGNORED)",
-            "type": ["string", "null"]
-        }
     },
     "additionalProperties": False,
     "required": ["name"]
@@ -79,14 +75,6 @@ VPCS_UPDATE_SCHEMA = {
             "description": "Console type",
             "enum": ["telnet"]
         },
-        "startup_script": {
-            "description": "Content of the VPCS startup script",
-            "type": ["string", "null"]
-        },
-        "startup_script_path": {
-            "description": "Path of the VPCS startup script relative to project directory (IGNORED)",
-            "type": ["string", "null"]
-        }
     },
     "additionalProperties": False,
 }
@@ -133,19 +121,11 @@ VPCS_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "startup_script": {
-            "description": "Content of the VPCS startup script",
-            "type": ["string", "null"]
-        },
-        "startup_script_path": {
-            "description": "Path of the VPCS startup script relative to project directory",
-            "type": ["string", "null"]
-        },
         "command_line": {
             "description": "Last command line used by GNS3 to start QEMU",
             "type": "string"
         }
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "status", "console", "console_type", "project_id", "startup_script_path", "command_line"]
+    "required": ["name", "node_id", "status", "console", "console_type", "project_id", "command_line"]
 }

@@ -465,3 +465,17 @@ def test_get_free_project_name(controller, async_run):
     async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test-1"))
     assert controller.get_free_project_name("Test") == "Test-2"
     assert controller.get_free_project_name("Hello") == "Hello"
+
+
+def test_load_base_files(controller, config, tmpdir):
+    config.set_section_config("Server", {"configs_path": str(tmpdir)})
+
+    with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
+        f.write('test')
+
+    controller.load_base_files()
+    assert os.path.exists(str(tmpdir / 'iou_l3_base_startup-config.txt'))
+
+    # Check is the file has not been overwrite
+    with open(str(tmpdir / 'iou_l2_base_startup-config.txt')) as f:
+        assert f.read() == 'test'
