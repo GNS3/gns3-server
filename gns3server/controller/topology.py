@@ -23,7 +23,6 @@ import glob
 import shutil
 import zipfile
 import aiohttp
-import platform
 import jsonschema
 
 
@@ -117,34 +116,33 @@ def load_topology(path):
             topo = json.load(f)
     except (OSError, UnicodeDecodeError, ValueError) as e:
         raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
-    if "revision" not in topo or topo["revision"] < 5:
+
+    if topo.get("revision", 0) > GNS3_FILE_FORMAT_REVISION:
+        raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
+
+    changed = False
+    if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
         # If it's an old GNS3 file we need to convert it
         # first we backup the file
         shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        changed = True
+
+    if "revision" not in topo or topo["revision"] < 5:
         topo = _convert_1_3_later(topo, path)
-        _check_topology_schema(topo)
-        with open(path, "w+", encoding="utf-8") as f:
-            json.dump(topo, f, indent=4, sort_keys=True)
 
     # Version before GNS3 2.0 alpha 4
     if topo["revision"] < 6:
-        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
         topo = _convert_2_0_0_alpha(topo, path)
-        _check_topology_schema(topo)
-        with open(path, "w+", encoding="utf-8") as f:
-            json.dump(topo, f, indent=4, sort_keys=True)
 
     # Version before GNS3 2.0 beta 3
     if topo["revision"] < 7:
-        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
         topo = _convert_2_0_0_beta_2(topo, path)
-        _check_topology_schema(topo)
+
+    _check_topology_schema(topo)
+
+    if changed:
         with open(path, "w+", encoding="utf-8") as f:
             json.dump(topo, f, indent=4, sort_keys=True)
-
-    if topo["revision"] > GNS3_FILE_FORMAT_REVISION:
-        raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
-    _check_topology_schema(topo)
     return topo
 
 
