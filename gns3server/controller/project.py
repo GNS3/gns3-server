@@ -289,7 +289,7 @@ class Project:
         if '{0}' in base_name or '{id}' in base_name:
             # base name is a template, replace {0} or {id} by an unique identifier
             for number in range(1, 1000000):
-                name = base_name.format(number, id=number)
+                name = base_name.format(number, id=number, name="Node")
                 if name not in self._allocated_node_names:
                     self._allocated_node_names.add(name)
                     return name
