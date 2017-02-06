@@ -378,7 +378,7 @@ class Controller:
         :param load: Load the topology
         """
         topo_data = load_topology(path)
-        topology = topo_data.pop("topology")
+        topo_data.pop("topology")
         topo_data.pop("version")
         topo_data.pop("revision")
         topo_data.pop("type")

@@ -440,7 +440,7 @@ class Project:
         Create a link. By default the link is empty
         """
         if link_id and link_id in self._links:
-            return self._links[link.id]
+            return self._links[link_id]
         link = UDPLink(self, link_id=link_id)
         self._links[link.id] = link
         self.dump()
