@@ -636,7 +636,7 @@ class Project:
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
                 node_id = node.pop("node_id")
-                yield from self.add_node(compute, name, node_id, **node, dump=False)
+                yield from self.add_node(compute, name, node_id, dump=False, **node)
             for link_data in topology.get("links", []):
                 link = yield from self.add_link(link_id=link_data["link_id"])
                 for node_link in link_data["nodes"]:
