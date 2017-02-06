@@ -314,10 +314,11 @@ class Project:
 
     @open_required
     @asyncio.coroutine
-    def add_node(self, compute, name, node_id, node_type=None, **kwargs):
+    def add_node(self, compute, name, node_id, dump=True, node_type=None, **kwargs):
         """
         Create a node or return an existing node
 
+        :param dump: Dump topology to disk
         :param kwargs: See the documentation of node
         """
         if node_id in self._nodes:
@@ -349,7 +350,8 @@ class Project:
         yield from node.create()
         self._nodes[node.id] = node
         self.controller.notification.emit("node.created", node.__json__())
-        self.dump()
+        if dump:
+            self.dump()
         return node
 
     @locked_coroutine
@@ -401,17 +403,19 @@ class Project:
 
     @open_required
     @asyncio.coroutine
-    def add_drawing(self, drawing_id=None, **kwargs):
+    def add_drawing(self, drawing_id=None, dump=True, **kwargs):
         """
         Create an drawing or return an existing drawing
 
+        :param dump: Dump the topology to disk
         :param kwargs: See the documentation of drawing
         """
         if drawing_id not in self._drawings:
             drawing = Drawing(self, drawing_id=drawing_id, **kwargs)
             self._drawings[drawing.id] = drawing
             self.controller.notification.emit("drawing.created", drawing.__json__())
-            self.dump()
+            if dump:
+                self.dump()
             return drawing
         return self._drawings[drawing_id]
 
@@ -435,15 +439,18 @@ class Project:
 
     @open_required
     @asyncio.coroutine
-    def add_link(self, link_id=None):
+    def add_link(self, link_id=None, dump=True):
         """
         Create a link. By default the link is empty
+
+        :param dump: Dump topology to disk
         """
         if link_id and link_id in self._links:
             return self._links[link_id]
         link = UDPLink(self, link_id=link_id)
         self._links[link.id] = link
-        self.dump()
+        if dump:
+            self.dump()
         return link
 
     @open_required
@@ -626,15 +633,16 @@ class Project:
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
                 node_id = node.pop("node_id")
-                yield from self.add_node(compute, name, node_id, **node)
+                yield from self.add_node(compute, name, node_id, **node, dump=False)
             for link_data in topology.get("links", []):
                 link = yield from self.add_link(link_id=link_data["link_id"])
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
-                    yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"))
+                    yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
             for drawing_data in topology.get("drawings", []):
-                drawing = yield from self.add_drawing(**drawing_data)
+                yield from self.add_drawing(**drawing_data, dump=False)
 
+            self.dump()
         # We catch all error to be able to rollback the .gns3 to the previous state
         except Exception as e:
             for compute in self._project_created_on_compute:
