@@ -22,14 +22,12 @@ import socket
 import json
 import uuid
 import sys
-import os
 import io
 
 from ..utils import parse_version
-from ..utils.images import list_images, md5sum
+from ..utils.images import list_images
 from ..utils.asyncio import locked_coroutine
 from ..controller.controller_error import ControllerError
-from ..config import Config
 from ..version import __version__
 
 
@@ -381,7 +379,9 @@ class Compute:
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
             except aiohttp.web.HTTPUnauthorized:
-                raise aiohttp.web.HTTPConflict(text="Invalid auth for server {} ".format(self._id))
+                raise aiohttp.web.HTTPConflict(text="Invalid auth for server {}".format(self._id))
+            except aiohttp.web.HTTPServiceUnavailable:
+                raise aiohttp.web.HTTPConflict(text="The server {} is unavailable".format(self._id))
 
             if "version" not in response.json:
                 self._http_session.close()
