@@ -361,6 +361,16 @@ class Compute:
         response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
+    @asyncio.coroutine
+    def _try_reconnect(self):
+        """
+        We catch error during reconnect
+        """
+        try:
+            yield from self.connect()
+        except aiohttp.web.HTTPConflict:
+            pass
+
     @locked_coroutine
     def connect(self):
         """
@@ -375,8 +385,10 @@ class Compute:
                     self._connection_failure += 1
                     # After 5 failure we close the project using the compute to avoid sync issues
                     if self._connection_failure == 5:
+                        log.warning("Can't connect to compute %s", self._id)
                         yield from self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
+
+                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self._try_reconnect()))
 
                 return
             except aiohttp.web.HTTPNotFound:
