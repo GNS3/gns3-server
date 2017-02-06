@@ -214,7 +214,10 @@ class Compute:
         """
         Return the IP associated to the host
         """
-        return socket.gethostbyname(self._host)
+        try:
+            return socket.gethostbyname(self._host)
+        except socket.gaierror:
+            return '0.0.0.0'
 
     @host.setter
     def host(self, host):
