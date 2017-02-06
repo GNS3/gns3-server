@@ -643,7 +643,7 @@ class Project:
                     node = self.get_node(node_link["node_id"])
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
             for drawing_data in topology.get("drawings", []):
-                yield from self.add_drawing(**drawing_data, dump=False)
+                yield from self.add_drawing(dump=False, **drawing_data)
 
             self.dump()
         # We catch all error to be able to rollback the .gns3 to the previous state
