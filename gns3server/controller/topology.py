@@ -163,11 +163,14 @@ def _convert_2_0_0_beta_2(topo, topo_path):
 
             dynamips_dir = os.path.join(topo_dir, "project-files", "dynamips")
             node_dir = os.path.join(dynamips_dir, node_id)
-            os.makedirs(os.path.join(node_dir, "configs"), exist_ok=True)
-            for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
-                shutil.move(path, os.path.join(node_dir, os.path.basename(path)))
-            for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
-                shutil.move(path, os.path.join(node_dir, "configs", os.path.basename(path)))
+            try:
+                os.makedirs(os.path.join(node_dir, "configs"), exist_ok=True)
+                for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
+                    shutil.move(path, os.path.join(node_dir, os.path.basename(path)))
+                for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
+                    shutil.move(path, os.path.join(node_dir, "configs", os.path.basename(path)))
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Can't convert project {}: {}".format(topo_path, str(e)))
     return topo
 
 
