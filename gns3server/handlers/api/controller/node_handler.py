@@ -344,10 +344,7 @@ class NodeHandler:
             raise aiohttp.web.HTTPForbidden
 
         node_type = node.node_type
-        if node_type == "dynamips":
-            path = "/project-files/{}/{}".format(node_type, path)
-        else:
-            path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
+        path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
 
         res = yield from node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), timeout=None, raw=True)
         response.set_status(200)
@@ -384,12 +381,9 @@ class NodeHandler:
             raise aiohttp.web.HTTPForbidden
 
         node_type = node.node_type
-        if node_type == "dynamips":
-            path = "/project-files/{}/{}".format(node_type, path)
-        else:
-            path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
+        path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
 
         data = yield from request.content.read()
 
-        res = yield from node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
+        yield from node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
         response.set_status(201)

@@ -122,7 +122,10 @@ def _asyncio_open_serial_unix(path):
         raise NodeError('Pipe file "{}" is missing'.format(path))
 
     output = SerialReaderWriterProtocol()
-    con = yield from asyncio.get_event_loop().create_unix_connection(lambda: output, path)
+    try:
+        yield from asyncio.get_event_loop().create_unix_connection(lambda: output, path)
+    except ConnectionRefusedError:
+        raise NodeError('Can\'t open pipe file "{}"'.format(path))
     return output
 
 

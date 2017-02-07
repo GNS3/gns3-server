@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import json
 import socket
 import asyncio
@@ -318,7 +317,6 @@ class Controller:
         try:
             return self._computes[compute_id]
         except KeyError:
-            server_config = Config.instance().get_section_config("Server")
             if compute_id == "vm":
                 raise aiohttp.web.HTTPNotFound(text="You try to use a node on the GNS3 VM server but the GNS3 VM is not configured")
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
@@ -380,7 +378,7 @@ class Controller:
         :param load: Load the topology
         """
         topo_data = load_topology(path)
-        topology = topo_data.pop("topology")
+        topo_data.pop("topology")
         topo_data.pop("version")
         topo_data.pop("revision")
         topo_data.pop("type")
