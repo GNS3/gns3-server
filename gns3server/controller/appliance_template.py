@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2016 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,23 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gns3server.web.route import Route
-from gns3server.controller import Controller
-
-import logging
-log = logging.getLogger(__name__)
+import uuid
 
 
-class ApplianceHandler:
-    """API entry points for appliance management."""
+class ApplianceTemplate:
 
-    @Route.get(
-        r"/appliances/templates",
-        description="List of appliance",
-        status_codes={
-            200: "Appliance list returned"
-        })
-    def list(request, response):
+    def __init__(self, appliance_id, data):
+        if appliance_id is None:
+            self._id = str(uuid.uuid4())
+        else:
+            self._id = appliance_id
+        self._data = data
 
-        controller = Controller.instance()
-        response.json([c for c in controller.appliance_templates.values()])
+    @property
+    def id(self):
+        return self._id
+
+    def __json__(self):
+        """
+        Appliance data (a hash)
+        """
+        return self._data

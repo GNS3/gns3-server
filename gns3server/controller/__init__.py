@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import json
 import socket
 import asyncio
@@ -25,6 +24,7 @@ import aiohttp
 from ..config import Config
 from .project import Project
 from .appliance import Appliance
+from .appliance_template import ApplianceTemplate
 from .compute import Compute, ComputeError
 from .notification import Notification
 from .symbols import Symbols
@@ -43,23 +43,27 @@ class Controller:
     def __init__(self):
         self._computes = {}
         self._projects = {}
-        self._appliances = {}
-        self.load_appliances()
+
+        # Store settings shared by the different GUI will be replaced
+        # by dedicated API later
+        self._settings = {}
 
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
-        # Store settings shared by the different GUI will be replace by dedicated API later
-        self._settings = {}
 
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
+        self._appliance_templates = {}
+        self.load_appliances()
+
     def load_appliances(self):
+        self._appliance_templates = {}
         for file in os.listdir(get_resource('appliances')):
             with open(os.path.join(get_resource('appliances'), file)) as f:
-                appliance = Appliance(None, json.load(f))
-            self._appliances[appliance.id] = appliance
+                appliance = ApplianceTemplate(None, json.load(f))
+            self._appliance_templates[appliance.id] = appliance
 
     @asyncio.coroutine
     def start(self):
@@ -440,11 +444,11 @@ class Controller:
         return self._projects
 
     @property
-    def appliances(self):
+    def appliance_templates(self):
         """
-        :returns: The dictionary of appliances managed by GNS3
+        :returns: The dictionary of appliances templates managed by GNS3
         """
-        return self._appliances
+        return self._appliance_templates
 
     def projects_directory(self):
         server_config = Config.instance().get_section_config("Server")
