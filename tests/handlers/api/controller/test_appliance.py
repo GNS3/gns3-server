@@ -15,14 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
-from tests.utils import asyncio_patch
-
 
 def test_appliance_list(http_controller, controller):
 
-    response = http_controller.get("/appliances")
+    response = http_controller.get("/appliances/templates")
     assert response.status == 200
-    assert response.route == "/appliances"
+    assert response.route == "/appliances/templates"
 
     assert len(response.json) > 0

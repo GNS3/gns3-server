@@ -26,7 +26,7 @@ class ApplianceHandler:
     """API entry points for appliance management."""
 
     @Route.get(
-        r"/appliances",
+        r"/appliances/templates",
         description="List of appliance",
         status_codes={
             200: "Appliance list returned"
