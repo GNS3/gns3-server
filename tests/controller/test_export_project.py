@@ -190,9 +190,9 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
     topology = {
         "topology": {
             "nodes": [
-                    {
-                        "node_type": "virtualbox"
-                    }
+                {
+                    "node_type": "cloud"
+                }
             ]
         }
     }
@@ -203,6 +203,24 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
     with pytest.raises(aiohttp.web.HTTPConflict):
         z = async_run(export_project(project, str(tmpdir)))
     z = async_run(export_project(project, str(tmpdir), allow_all_nodes=True))
+
+    # VirtualBox is always disallowed
+    topology = {
+        "topology": {
+            "nodes": [
+                {
+                    "node_type": "virtualbox",
+                    "properties": {
+                        "linked_clone": True
+                    }
+                }
+            ]
+        }
+    }
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        z = async_run(export_project(project, str(tmpdir), allow_all_nodes=True))
 
 
 def test_export_fix_path(tmpdir, project, async_run):

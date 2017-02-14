@@ -427,7 +427,7 @@ def test_duplicate(project, async_run, controller):
     remote_vpcs = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
 
     # We allow node not allowed for standard import / export
-    remote_virtualbox = async_run(project.add_node(compute, "test", None, node_type="virtualbox", properties={"startup_config": "test.cfg"}))
+    remote_virtualbox = async_run(project.add_node(compute, "test", None, node_type="vmware", properties={"startup_config": "test.cfg"}))
 
     new_project = async_run(project.duplicate(name="Hello"))
     assert new_project.id != project.id
