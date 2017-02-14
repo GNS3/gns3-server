@@ -321,10 +321,12 @@ def _convert_1_3_later(topo, topo_path):
                 node["properties"]["ram"] = PLATFORMS_DEFAULT_RAM[old_node["type"].lower()]
         elif old_node["type"] == "VMwareVM":
             node["node_type"] = "vmware"
+            node["properties"]["linked_clone"] = old_node.get("linked_clone", False)
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/vmware_guest.svg"
         elif old_node["type"] == "VirtualBoxVM":
             node["node_type"] = "virtualbox"
+            node["properties"]["linked_clone"] = old_node.get("linked_clone", False)
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/vbox_guest.svg"
         elif old_node["type"] == "IOUDevice":

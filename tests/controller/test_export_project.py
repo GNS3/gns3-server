@@ -202,7 +202,7 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
 
     with pytest.raises(aiohttp.web.HTTPConflict):
         z = async_run(export_project(project, str(tmpdir)))
-        z = async_run(export_project(project, str(tmpdir), allow_all_nodes=True))
+    z = async_run(export_project(project, str(tmpdir), allow_all_nodes=True))
 
 
 def test_export_fix_path(tmpdir, project, async_run):
@@ -215,18 +215,18 @@ def test_export_fix_path(tmpdir, project, async_run):
     topology = {
         "topology": {
             "nodes": [
-                    {
-                        "properties": {
-                            "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
-                        },
-                        "node_type": "dynamips"
-                    },
                 {
-                        "properties": {
-                            "image": "gns3/webterm:lastest"
-                        },
-                        "node_type": "docker"
-                    }
+                    "properties": {
+                        "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
+                    },
+                    "node_type": "dynamips"
+                },
+                {
+                    "properties": {
+                        "image": "gns3/webterm:lastest"
+                    },
+                    "node_type": "docker"
+                }
             ]
         }
     }
