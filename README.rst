@@ -77,8 +77,8 @@ Docker container
 For development you can run the GNS3 server in a container
 
 .. code:: bash
-  docker build -t gns3-server .
-  docker run -i --expose=8001 -p 8001:8001/tcp -t gns3-server python3 -m gns3server --local --port 8001
+
+    bash scripts/docker_dev_server.sh
 
 
 Run as daemon (Unix only)

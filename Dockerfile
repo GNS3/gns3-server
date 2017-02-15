@@ -31,4 +31,4 @@ RUN pip3 install -r /server/requirements.txt
 
 EXPOSE 3080
 
-ENTRYPOINT python3 -m gns3server --local
+CMD python3 -m gns3server --local
