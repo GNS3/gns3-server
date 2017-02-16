@@ -25,3 +25,14 @@
 
 __version__ = "2.1.0dev1"
 __version_info__ = (2, 1, 0, -99)
+
+# If it's a git checkout try to add the commit
+if "dev" in __version__:
+    try:
+        import os
+        import subprocess
+        if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git")):
+            r = subprocess.run(["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE).stdout.decode().strip("\n")
+            __version__ += "-" + r
+    except Exception as e:
+        print(e)

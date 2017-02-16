@@ -19,14 +19,16 @@
 VirtualBox VM instance.
 """
 
-import sys
-import shlex
 import re
 import os
-import tempfile
+import sys
 import json
+import uuid
+import shlex
+import shutil
 import socket
 import asyncio
+import tempfile
 import xml.etree.ElementTree as ET
 
 from gns3server.utils import parse_version
@@ -209,7 +211,16 @@ class VirtualBoxVM(BaseNode):
         if os.path.exists(self._linked_vbox_file()):
             tree = ET.parse(self._linked_vbox_file())
             machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
-            if machine is not None:
+            if machine is not None and machine.get("uuid") != "{" + self.id + "}":
+
+                for image in tree.getroot().findall("{http://www.virtualbox.org/}Image"):
+                    currentSnapshot = machine.get("currentSnapshot")
+                    if currentSnapshot:
+                        newSnapshot = re.sub("\{.*\}", "{" + str(uuid.uuid4()) + "}", currentSnapshot)
+                    shutil.move(os.path.join(self.working_dir, self._vmname, "Snapshots", currentSnapshot) + ".vdi",
+                                os.path.join(self.working_dir, self._vmname, "Snapshots", newSnapshot) + ".vdi")
+                    image.set("uuid", newSnapshot)
+
                 machine.set("uuid", "{" + self.id + "}")
                 tree.write(self._linked_vbox_file())
 

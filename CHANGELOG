@@ -1,5 +1,38 @@
 # Change Log
 
+## 2.0.0 beta 4 16/02/2017
+
+* Lock aiohttp to 1.2.0 because 1.3 create bug with Qt
+* Avoid a crash in some conditions when reading the serial console
+* Disallow export of project with VirtualBox linked clone
+* Fix linked_clone property lost during topology convert
+* Catch permission error when restoring a snapshot
+* Fix a rare crash when closing a project
+* Fix error when you have error on your filesystem during project convertion
+* Catch error when we can't access to a unix socket
+* If we can't resolve compute name return 0.0.0.0
+* Raise an error if you put an invalid key in node name
+* Improve a lot project loading speed
+* Fix a potential crash
+* Fix the server don't start if a remote is unavailable
+* Do not crash if you pass {name} in name
+* Fix import/export of dynamips configuration
+* Simplify conversion process from 1.3 to 2.0
+* Prevent corruption of VM in VirtualBox when using linked clone
+* Fix creation of qemu img
+* Fix rare race condition when stopping ubridge
+* Prevent renaming of a running VirtualBox linked VM
+* Avoid crash when you broke your system permissions
+* Do not crash when you broke permission on your file system during execution
+* Fix a crash when you broke permission on your file system
+* Fix a rare race condition when exporting debug informations
+* Do not try to start the GNS3 VM if the name is none
+* Fix version check for VPCS
+* Fix pcap for PPP link with IOU
+* Correct link are not connected to the correct ethernet switch port after conversion
+* Fix an error if you don't have permissions on your symbols directory
+* Fix an error when converting some topologies from 1.3
+
 ## 2.0.0 beta 3 19/01/2017
 
 * Force the dependency on typing because otherwise it's broke on 3.4
@@ -45,7 +78,7 @@
 * Replace JSONDecodeError by ValueError (Python 3.4 compatibility)
 * Catch an error when we can't create the IOU directory
 
-## 1.5.3 12/01/2016
+## 1.5.3 12/01/2017
 
 * Fix sporadically systemd is unable to start gns3-server
 

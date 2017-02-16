@@ -34,6 +34,7 @@ class SerialReaderWriterProtocol(asyncio.Protocol):
 
     def __init__(self):
         self._output = asyncio.StreamReader()
+        self._closed = False
         self.transport = None
 
     def read(self, n=-1):
@@ -54,9 +55,11 @@ class SerialReaderWriterProtocol(asyncio.Protocol):
         self.transport = transport
 
     def data_received(self, data):
-        self._output.feed_data(data)
+        if not self._closed:
+            self._output.feed_data(data)
 
     def close(self):
+        self._closed = True
         self._output.feed_eof()
 
 

@@ -367,7 +367,8 @@ class Controller:
         return project
 
     def remove_project(self, project):
-        del self._projects[project.id]
+        if project.id in self._projects:
+            del self._projects[project.id]
 
     @asyncio.coroutine
     def load_project(self, path, load=True):
