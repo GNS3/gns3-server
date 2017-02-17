@@ -588,7 +588,7 @@ def test_build_command_two_adapters_mac_address(vm, loop, fake_qemu_binary, port
     vm.adapters = 2
     vm.mac_address = "00:00:ab:0e:0f:09"
     mac_0 = vm._mac_address
-    mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address))
+    mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)
     assert mac_0[:8] == "00:00:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
@@ -605,7 +605,49 @@ def test_build_command_two_adapters_mac_address(vm, loop, fake_qemu_binary, port
         assert "e1000,mac={}".format(mac_1) in cmd
 
 
+def test_build_command_large_number_of_adapters(vm, loop, fake_qemu_binary, port_manager):
+    """
+    When we have more than 28 interface we need to add a pci bridge for
+    additionnal interfaces
+    """
+
+    # It's supported only with Qemu 2.4 and later
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.4.0")
+
+    vm.adapters = 100
+    vm.mac_address = "00:00:ab:0e:0f:09"
+    mac_0 = vm._mac_address
+    mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)
+    assert mac_0[:8] == "00:00:ab"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+
+    assert "e1000,mac={}".format(mac_0) in cmd
+    assert "e1000,mac={}".format(mac_1) in cmd
+    assert "pci-bridge,id=pci-bridge0,bus=dmi_pci_bridge0,chassis_nr=0x1,addr=0x0,shpc=off" not in cmd
+    assert "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off" in cmd
+    assert "pci-bridge,id=pci-bridge2,bus=dmi_pci_bridge2,chassis_nr=0x1,addr=0x2,shpc=off" in cmd
+    assert "i82801b11-bridge,id=dmi_pci_bridge1" in cmd
+
+    mac_29 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 29)
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x04".format(mac_29) in cmd
+    mac_30 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 30)
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x05".format(mac_30) in cmd
+    mac_74 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 74)
+    assert "e1000,mac={},bus=pci-bridge2,addr=0x11".format(mac_74) in cmd
+
+    # Qemu < 2.4 doesn't support large number of adapters
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.0.0")
+    with pytest.raises(QemuError):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+            cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+    vm.adapters = 5
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+
 # Windows accept this kind of mistake
+
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_build_command_with_invalid_options(vm, loop, fake_qemu_binary):
 
