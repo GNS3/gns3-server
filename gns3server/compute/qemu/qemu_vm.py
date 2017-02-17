@@ -1454,7 +1454,13 @@ class QemuVM(BaseNode):
             network_options.extend(["-device", "i82801b11-bridge,id=dmi_pci_bridge{bridge_id}".format(bridge_id=bridge_id)])
             network_options.extend(["-device", "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(bridge_id=bridge_id)])
 
+        if bridge_id > 1:
+            qemu_version = yield from self.manager.get_qemu_version(self.qemu_path)
+            if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
+                raise QemuError("You need to Qemu 2.4 or later in order to support large number of adapters")
+
         pci_device_id = 4 + bridge_id  # Bridge consume PCI ports
+
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
 
