@@ -1457,7 +1457,7 @@ class QemuVM(BaseNode):
         if bridge_id > 1:
             qemu_version = yield from self.manager.get_qemu_version(self.qemu_path)
             if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
-                raise QemuError("You need to Qemu 2.4 or later in order to support large number of adapters")
+                raise QemuError("Qemu version 2.4 or later is required to run this VM with a large number of network adapters")
 
         pci_device_id = 4 + bridge_id  # Bridge consume PCI ports
 
