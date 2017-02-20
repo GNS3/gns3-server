@@ -39,16 +39,17 @@ class Symbols:
     def list(self):
         self._symbols_path = {}
         symbols = []
-        for file in os.listdir(get_resource("symbols")):
-            if file.startswith('.'):
-                continue
-            symbol_id = ':/symbols/' + file
-            symbols.append({
-                'symbol_id': symbol_id,
-                'filename': file,
-                'builtin': True,
-            })
-            self._symbols_path[symbol_id] = os.path.join(get_resource("symbols"), file)
+        if get_resource("symbols"):
+            for file in os.listdir(get_resource("symbols")):
+                if file.startswith('.'):
+                    continue
+                symbol_id = ':/symbols/' + file
+                symbols.append({
+                    'symbol_id': symbol_id,
+                    'filename': file,
+                    'builtin': True,
+                })
+                self._symbols_path[symbol_id] = os.path.join(get_resource("symbols"), file)
         directory = self.symbols_path()
         if directory:
             for file in os.listdir(directory):
