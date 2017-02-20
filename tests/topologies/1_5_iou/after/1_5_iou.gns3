@@ -41,7 +41,6 @@
                     "path": "i86bi-linux-l3-adventerprisek9-15.4.1T.bin",
                     "ram": 256,
                     "serial_adapters": 2,
-                    "startup_config": "startup-config.cfg",
                     "use_default_iou_values": true
                 },
                 "symbol": ":/symbols/router.svg",

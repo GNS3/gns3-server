@@ -515,25 +515,12 @@ class Dynamips(BaseManager):
         default_startup_config_path = os.path.join(module_workdir, vm.id, "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
         default_private_config_path = os.path.join(module_workdir, vm.id, "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
 
-        startup_config_path = settings.get("startup_config")
         startup_config_content = settings.get("startup_config_content")
-        if startup_config_path:
-            yield from vm.set_configs(startup_config_path)
-        elif startup_config_content:
-            startup_config_path = self._create_config(vm, default_startup_config_path, startup_config_content)
-            yield from vm.set_configs(startup_config_path)
-        elif os.path.isfile(default_startup_config_path) and os.path.getsize(default_startup_config_path) == 0:
-            # An empty startup-config may crash Dynamips
-            startup_config_path = self._create_config(vm, default_startup_config_path, "!\n")
-            yield from vm.set_configs(startup_config_path)
-
-        private_config_path = settings.get("private_config")
+        if startup_config_content:
+            self._create_config(vm, default_startup_config_path, startup_config_content)
         private_config_content = settings.get("private_config_content")
-        if private_config_path:
-            yield from vm.set_configs(vm.startup_config, private_config_path)
-        elif private_config_content:
-            private_config_path = self._create_config(vm, default_private_config_path, private_config_content)
-            yield from vm.set_configs(vm.startup_config, private_config_path)
+        if private_config_content:
+            self._create_config(vm, default_private_config_path, private_config_content)
 
     def _create_config(self, vm, path, content=None):
         """
@@ -552,6 +539,11 @@ class Dynamips(BaseManager):
             os.makedirs(config_dir, exist_ok=True)
         except OSError as e:
             raise DynamipsError("Could not create Dynamips configs directory: {}".format(e))
+
+        if content is None or len(content) == 0:
+            content = "!\n"
+            if os.path.exists(path):
+                return
 
         try:
             with open(path, "wb") as f:

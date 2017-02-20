@@ -17,7 +17,6 @@
 
 import os
 import sys
-import base64
 
 from gns3server.web.route import Route
 from gns3server.schemas.nio import NIO_SCHEMA
@@ -78,7 +77,6 @@ class DynamipsVMHandler:
                                                      aux=request.json.get("aux"),
                                                      chassis=request.json.pop("chassis", default_chassis),
                                                      node_type="dynamips")
-
         yield from dynamips_manager.update_vm_settings(vm, request.json)
         response.set_status(201)
         response.json(vm)

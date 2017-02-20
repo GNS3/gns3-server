@@ -43,7 +43,6 @@ def test_vpcs_get(http_compute, project, vm):
     assert response.route == "/projects/{project_id}/vpcs/nodes/{node_id}"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
-    assert response.json["startup_script_path"] is None
     assert response.json["status"] == "stopped"
 
 
@@ -53,8 +52,6 @@ def test_vpcs_create_startup_script(http_compute, project):
     assert response.route == "/projects/{project_id}/vpcs/nodes"
     assert response.json["name"] == "PC TEST 1"
     assert response.json["project_id"] == project.id
-    assert response.json["startup_script"] == os.linesep.join(["ip 192.168.1.2", "echo TEST"])
-    assert response.json["startup_script_path"] == "startup.vpc"
 
 
 def test_vpcs_create_port(http_compute, project, free_console_port):

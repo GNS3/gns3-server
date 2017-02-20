@@ -27,7 +27,6 @@
           "slot0": "Leopard-2FE",
           "idlepc": "0x6057efc8",
           "chassis": "3660",
-          "startup_config": "configs/i1_startup-config.cfg",
           "image": "c3660-a3jk9s-mz.124-25c.bin",
           "mac_addr": "cc01.20b8.0000",
           "aux": 2103,

@@ -18,7 +18,6 @@
             "port_segment_size": 0,
             "first_port_name": null,
             "properties" : {
-               "startup_script_path" : "startup.vpc"
             },
             "label" : {
                "y" : -25,

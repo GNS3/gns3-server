@@ -137,7 +137,7 @@ def test_add_node_local(async_run, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_script": "test.cfg"}))
     assert node.id in project._nodes
 
     compute.post.assert_any_call('/projects', data={
@@ -147,7 +147,7 @@ def test_add_node_local(async_run, controller):
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
-                                       'startup_config': 'test.cfg',
+                                       'startup_script': 'test.cfg',
                                        'name': 'test'},
                                  timeout=120)
     assert compute in project._project_created_on_compute
@@ -167,7 +167,7 @@ def test_add_node_non_local(async_run, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_script": "test.cfg"}))
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
@@ -175,7 +175,7 @@ def test_add_node_non_local(async_run, controller):
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
-                                       'startup_config': 'test.cfg',
+                                       'startup_script': 'test.cfg',
                                        'name': 'test'},
                                  timeout=120)
     assert compute in project._project_created_on_compute

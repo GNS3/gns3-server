@@ -36,7 +36,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-GNS3_FILE_FORMAT_REVISION = 7
+GNS3_FILE_FORMAT_REVISION = 8
 
 
 def _check_topology_schema(topo):
@@ -138,11 +138,43 @@ def load_topology(path):
     if topo["revision"] < 7:
         topo = _convert_2_0_0_beta_2(topo, path)
 
+    # Version before GNS3 2.1
+    if topo["revision"] < 8:
+        topo = _convert_2_0_0(topo, path)
+
     _check_topology_schema(topo)
 
     if changed:
         with open(path, "w+", encoding="utf-8") as f:
             json.dump(topo, f, indent=4, sort_keys=True)
+    return topo
+
+
+def _convert_2_0_0(topo, topo_path):
+    """
+    Convert topologies from GNS3 2.0.0 to 2.1
+
+    Changes:
+     * Remove startup_script_path from VPCS and base config file for IOU and Dynamips
+    """
+    topo["revision"] = 8
+
+    for node in topo.get("topology", {}).get("nodes", []):
+        if "properties" in node:
+            if node["node_type"] == "vpcs":
+                if "startup_script_path" in node["properties"]:
+                    del node["properties"]["startup_script_path"]
+                if "startup_script" in node["properties"]:
+                    del node["properties"]["startup_script"]
+            elif node["node_type"] == "dynamips" or node["node_type"] == "iou":
+                if "startup_config" in node["properties"]:
+                    del node["properties"]["startup_config"]
+                if "private_config" in node["properties"]:
+                    del node["properties"]["private_config"]
+                if "startup_config_content" in node["properties"]:
+                    del node["properties"]["startup_config_content"]
+                if "private_config_content" in node["properties"]:
+                    del node["properties"]["private_config_content"]
     return topo
 
 

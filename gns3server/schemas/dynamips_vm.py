@@ -62,16 +62,8 @@ VM_CREATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1,
         },
-        "startup_config": {
-            "description": "Path to the IOS startup configuration file",
-            "type": "string",
-        },
         "startup_config_content": {
             "description": "Content of IOS startup configuration file",
-            "type": "string",
-        },
-        "private_config": {
-            "description": "Path to the IOS private configuration file",
             "type": "string",
         },
         "private_config_content": {
@@ -295,22 +287,6 @@ VM_UPDATE_SCHEMA = {
         "dynamips_id": {
             "description": "Dynamips ID",
             "type": "integer"
-        },
-        "startup_config": {
-            "description": "Path to the IOS startup configuration file.",
-            "type": "string",
-        },
-        "private_config": {
-            "description": "Path to the IOS private configuration file.",
-            "type": "string",
-        },
-        "startup_config_content": {
-            "description": "Content of IOS startup configuration file",
-            "type": "string",
-        },
-        "private_config_content": {
-            "description": "Content of IOS private configuration file",
-            "type": "string",
         },
         "ram": {
             "description": "Amount of RAM in MB",
@@ -552,14 +528,6 @@ VM_OBJECT_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1,
         },
-        "startup_config": {
-            "description": "Path to the IOS startup configuration file",
-            "type": "string",
-        },
-        "private_config": {
-            "description": "Path to the IOS private configuration file",
-            "type": "string",
-        },
         "ram": {
             "description": "Amount of RAM in MB",
             "type": "integer"
@@ -705,14 +673,6 @@ VM_OBJECT_SCHEMA = {
                 {"type": "string"},
                 {"type": "null"}
             ]
-        },
-        "startup_config_content": {
-            "description": "Content of IOS startup configuration file",
-            "type": "string",
-        },
-        "private_config_content": {
-            "description": "Content of IOS private configuration file",
-            "type": "string",
         },
         # C7200 properties
         "npe": {
