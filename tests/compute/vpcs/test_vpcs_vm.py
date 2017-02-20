@@ -75,7 +75,7 @@ def test_vm_invalid_vpcs_version(loop, manager, vm):
 
 
 def test_vm_invalid_vpcs_path(vm, manager, loop):
-    with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.vpcs_path", return_value="/tmp/fake/path/vpcs"):
+    with patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._vpcs_path", return_value="/tmp/fake/path/vpcs"):
         with pytest.raises(VPCSError):
             nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -97,7 +97,7 @@ def test_start(loop, vm, async_run):
                     nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
                     async_run(vm.port_add_nio_binding(0, nio))
                     loop.run_until_complete(asyncio.async(vm.start()))
-                    assert mock_exec.call_args[0] == (vm.vpcs_path,
+                    assert mock_exec.call_args[0] == (vm._vpcs_path(),
                                                       '-p',
                                                       str(vm._internal_console_port),
                                                       '-m', '1',
@@ -133,7 +133,7 @@ def test_start_0_6_1(loop, vm, async_run):
                 nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
                 async_run(vm.port_add_nio_binding(0, nio))
                 async_run(vm.start())
-                assert mock_exec.call_args[0] == (vm.vpcs_path,
+                assert mock_exec.call_args[0] == (vm._vpcs_path(),
                                                   '-p',
                                                   str(vm._internal_console_port),
                                                   '-m', '1',

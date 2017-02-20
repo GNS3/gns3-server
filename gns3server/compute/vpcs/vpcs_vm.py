@@ -104,7 +104,7 @@ class VPCSVM(BaseNode):
         Check if VPCS is available with the correct version.
         """
 
-        path = self.vpcs_path
+        path = self._vpcs_path()
         if not path:
             raise VPCSError("No path to a VPCS executable has been set")
 
@@ -146,8 +146,7 @@ class VPCSVM(BaseNode):
         else:
             return None
 
-    @property
-    def vpcs_path(self):
+    def _vpcs_path(self):
         """
         Returns the VPCS executable path.
 
@@ -217,7 +216,7 @@ class VPCSVM(BaseNode):
         Checks if the VPCS executable version is >= 0.8b or == 0.6.1.
         """
         try:
-            output = yield from subprocess_check_output(self.vpcs_path, "-v", cwd=self.working_dir)
+            output = yield from subprocess_check_output(self._vpcs_path(), "-v", cwd=self.working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
@@ -225,7 +224,7 @@ class VPCSVM(BaseNode):
                 if self._vpcs_version < parse_version("0.6.1"):
                     raise VPCSError("VPCS executable version must be >= 0.6.1 but not a 0.8")
             else:
-                raise VPCSError("Could not determine the VPCS version for {}".format(self.vpcs_path))
+                raise VPCSError("Could not determine the VPCS version for {}".format(self._vpcs_path()))
         except (OSError, subprocess.SubprocessError) as e:
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
@@ -270,8 +269,8 @@ class VPCSVM(BaseNode):
                 self.status = "started"
             except (OSError, subprocess.SubprocessError) as e:
                 vpcs_stdout = self.read_vpcs_stdout()
-                log.error("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
-                raise VPCSError("Could not start VPCS {}: {}\n{}".format(self.vpcs_path, e, vpcs_stdout))
+                log.error("Could not start VPCS {}: {}\n{}".format(self._vpcs_path(), e, vpcs_stdout))
+                raise VPCSError("Could not start VPCS {}: {}\n{}".format(self._vpcs_path(), e, vpcs_stdout))
 
     def _termination_callback(self, returncode):
         """
@@ -514,7 +513,7 @@ class VPCSVM(BaseNode):
 
         """
 
-        command = [self.vpcs_path]
+        command = [self._vpcs_path()]
         command.extend(["-p", str(self._internal_console_port)])  # listen to console port
         command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
