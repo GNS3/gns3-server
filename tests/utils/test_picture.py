@@ -39,3 +39,7 @@ def test_get_size():
     with open("gns3server/symbols/cloud.svg", "rb") as f:
         res = get_size(f.read())
         assert res == (159, 71, "svg")
+    # Size with px
+    with open("tests/resources/firefox.svg", "rb") as f:
+        res = get_size(f.read())
+        assert res == (66, 70, "svg")
