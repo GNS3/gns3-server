@@ -331,6 +331,14 @@ def _convert_1_3_later(topo, topo_path):
                 node["symbol"] = ":/symbols/vbox_guest.svg"
         elif old_node["type"] == "IOUDevice":
             node["node_type"] = "iou"
+            node["port_name_format"] = old_node.get("port_name_format", "Ethernet{segment0}/{port0}")
+            node["port_segment_size"] = int(old_node.get("port_segment_size", "4"))
+            if node["symbol"] is None:
+                if "l2" in node["properties"].get("path", ""):
+                    node["symbol"] = ":/symbols/multilayer_switch.svg"
+                else:
+                    node["symbol"] = ":/symbols/router.svg"
+
         elif old_node["type"] == "Cloud":
             old_node["ports"] = _create_cloud(node, old_node, ":/symbols/cloud.svg")
         elif old_node["type"] == "Host":
