@@ -1551,8 +1551,11 @@ class Router(BaseNode):
 
             try:
                 startup_config_path = os.path.join(self._working_directory, startup_config)
-                with open(startup_config_path) as f:
-                    self._startup_config_content = f.read()
+                if os.path.exists(startup_config_path):
+                    with open(startup_config_path) as f:
+                        self._startup_config_content = f.read()
+                else:
+                    self._startup_config_content = ''
             except OSError as e:
                 raise DynamipsError("Cannot access the startup-config {}: {}".format(startup_config_path, e))
 
