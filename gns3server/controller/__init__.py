@@ -254,7 +254,7 @@ class Controller:
                 return None
 
             for compute in self._computes.values():
-                if name and compute.name == name:
+                if name and compute.name == name and not force:
                     raise aiohttp.web.HTTPConflict(text='Compute name "{}" already exists'.format(name))
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
