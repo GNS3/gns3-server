@@ -221,7 +221,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         second to a GNS3 endpoint in order to get the list of the interfaces and
         their IP and after that match it with VirtualBox host only.
         """
-        remaining_try = 240
+        remaining_try = 300
         while remaining_try > 0:
             json_data = None
             session = aiohttp.ClientSession()
