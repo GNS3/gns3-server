@@ -534,6 +534,8 @@ class Dynamips(BaseManager):
         elif private_config_content:
             private_config_path = self._create_config(vm, default_private_config_path, private_config_content)
             yield from vm.set_configs(vm.startup_config, private_config_path)
+        elif os.path.isfile(default_private_config_path) and os.path.getsize(default_private_config_path) > 0:
+            yield from vm.set_configs(vm.startup_config, default_private_config_path)
 
     def _create_config(self, vm, path, content=None):
         """
