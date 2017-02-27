@@ -171,6 +171,7 @@ class VPCSVM(BaseNode):
         if self.script_file:
             content = self.startup_script
             content = content.replace(self._name, new_name)
+            content = re.sub(r"^set pcname .+$", "set pcname " + new_name, content, flags=re.MULTILINE)
             self.startup_script = content
 
         super(VPCSVM, VPCSVM).name.__set__(self, new_name)
