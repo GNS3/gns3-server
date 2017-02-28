@@ -426,7 +426,7 @@ class Compute:
             except aiohttp.errors.WSServerHandshakeError:
                 self._ws = None
                 break
-            if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error:
+            if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error or response.data is None:
                 self._connected = False
                 break
             msg = json.loads(response.data)

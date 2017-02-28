@@ -18,6 +18,7 @@
 import os
 import sys
 import struct
+import aiohttp
 import platform
 
 
@@ -94,6 +95,7 @@ class CrashReport:
                 "os:win_32": " ".join(platform.win32_ver()),
                 "os:mac": "{} {}".format(platform.mac_ver()[0], platform.mac_ver()[2]),
                 "os:linux": " ".join(platform.linux_distribution()),
+                "aiohttp:version": aiohttp.__version__,
                 "python:version": "{}.{}.{}".format(sys.version_info[0],
                                                     sys.version_info[1],
                                                     sys.version_info[2]),

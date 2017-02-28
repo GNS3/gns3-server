@@ -55,16 +55,21 @@ class Controller:
     def start(self):
         log.info("Start controller")
         self.load_base_files()
-        yield from self.load()
         server_config = Config.instance().get_section_config("Server")
         host = server_config.get("host", "localhost")
+
         # If console_host is 0.0.0.0 client will use the ip they use
         # to connect to the controller
         console_host = host
         if host == "0.0.0.0":
             host = "127.0.0.1"
+
+        name = socket.gethostname()
+        if name == "gns3vm":
+            name = "Main server"
+
         yield from self.add_compute(compute_id="local",
-                                    name=socket.gethostname(),
+                                    name=name,
                                     protocol=server_config.get("protocol", "http"),
                                     host=host,
                                     console_host=console_host,
@@ -72,6 +77,7 @@ class Controller:
                                     user=server_config.get("user", ""),
                                     password=server_config.get("password", ""),
                                     force=True)
+        yield from self._load_controller_settings()
         yield from self.load_projects()
         yield from self.gns3vm.auto_start_vm()
         yield from self._project_auto_open()
@@ -118,7 +124,7 @@ class Controller:
             json.dump(data, f, indent=4)
 
     @asyncio.coroutine
-    def load(self):
+    def _load_controller_settings(self):
         """
         Reload the controller configuration from disk
         """
@@ -279,7 +285,7 @@ class Controller:
                 return None
 
             for compute in self._computes.values():
-                if name and compute.name == name:
+                if name and compute.name == name and not force:
                     raise aiohttp.web.HTTPConflict(text='Compute name "{}" already exists'.format(name))
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)

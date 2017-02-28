@@ -303,6 +303,16 @@ class VirtualBoxVM(BaseNode):
             if self.acpi_shutdown:
                 # use ACPI to shutdown the VM
                 result = yield from self._control_vm("acpipowerbutton")
+                trial = 0
+                while True:
+                    vm_state = yield from self._get_vm_state()
+                    if vm_state == "poweroff":
+                        break
+                    yield from asyncio.sleep(1)
+                    trial += 1
+                    if trial >= 120:
+                        yield from self._control_vm("poweroff")
+                        break
                 self.status = "stopped"
                 log.debug("ACPI shutdown result: {}".format(result))
             else:

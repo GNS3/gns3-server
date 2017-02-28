@@ -75,7 +75,7 @@ def test_vm_invalid_vpcs_version(loop, manager, vm):
 
 
 def test_vm_invalid_vpcs_path(vm, manager, loop):
-    with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.vpcs_path", return_value="/tmp/fake/path/vpcs"):
+    with patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._vpcs_path", return_value="/tmp/fake/path/vpcs"):
         with pytest.raises(VPCSError):
             nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
@@ -97,7 +97,7 @@ def test_start(loop, vm, async_run):
                     nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
                     async_run(vm.port_add_nio_binding(0, nio))
                     loop.run_until_complete(asyncio.async(vm.start()))
-                    assert mock_exec.call_args[0] == (vm.vpcs_path,
+                    assert mock_exec.call_args[0] == (vm._vpcs_path(),
                                                       '-p',
                                                       str(vm._internal_console_port),
                                                       '-m', '1',
@@ -133,7 +133,7 @@ def test_start_0_6_1(loop, vm, async_run):
                 nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
                 async_run(vm.port_add_nio_binding(0, nio))
                 async_run(vm.start())
-                assert mock_exec.call_args[0] == (vm.vpcs_path,
+                assert mock_exec.call_args[0] == (vm._vpcs_path(),
                                                   '-p',
                                                   str(vm._internal_console_port),
                                                   '-m', '1',
@@ -243,12 +243,12 @@ def test_update_startup_script(vm):
 
 
 def test_update_startup_script_h(vm):
-    content = "setname %h\n"
+    content = "set pcname %h\n"
     vm.name = "pc1"
     vm.startup_script = content
     assert os.path.exists(vm.script_file)
     with open(vm.script_file) as f:
-        assert f.read() == "setname pc1\n"
+        assert f.read() == "set pcname pc1\n"
 
 
 def test_get_startup_script(vm):
@@ -275,11 +275,18 @@ def test_change_name(vm, tmpdir):
     path = os.path.join(vm.working_dir, 'startup.vpc')
     vm.name = "world"
     with open(path, 'w+') as f:
-        f.write("name world")
+        f.write("set pcname world")
     vm.name = "hello"
     assert vm.name == "hello"
     with open(path) as f:
-        assert f.read() == "name hello"
+        assert f.read() == "set pcname hello"
+    # Support when the name is not sync with config
+    with open(path, 'w+') as f:
+        f.write("set pcname alpha")
+    vm.name = "beta"
+    assert vm.name == "beta"
+    with open(path) as f:
+        assert f.read() == "set pcname beta"
 
 
 def test_close(vm, port_manager, loop):

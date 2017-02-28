@@ -120,7 +120,8 @@ def _svg_convert_size(size):
         "pc": 15,
         "mm": 3.543307,
         "cm": 35.43307,
-        "in": 90
+        "in": 90,
+        "px": 1
     }
     if len(size) > 3:
         if size[-2:] in conversion_table:

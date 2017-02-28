@@ -24,6 +24,7 @@ import asyncio
 import time
 import sys
 import os
+import re
 import glob
 import shlex
 import base64
@@ -1474,7 +1475,7 @@ class Router(BaseNode):
             try:
                 with open(startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
                     old_config = f.read()
-                    new_config = old_config.replace(self.name, new_name)
+                    new_config = re.sub(r"^hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
                     f.seek(0)
                     f.write(new_config)
             except OSError as e:

@@ -43,6 +43,7 @@ class Drawing:
             self._id = str(uuid.uuid4())
         else:
             self._id = drawing_id
+        self._svg = "<svg></svg>"
         self.svg = svg
         self._x = x
         self._y = y

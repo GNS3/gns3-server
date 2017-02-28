@@ -47,6 +47,9 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
     if project.is_running():
         raise aiohttp.web.HTTPConflict(text="Running topology could not be exported")
 
+    # Make sure we save the project
+    project.dump()
+
     z = zipstream.ZipFile(allowZip64=True)
 
     if not os.path.exists(project._path):

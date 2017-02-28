@@ -298,6 +298,14 @@ def test_change_name(vm, tmpdir):
     assert vm.name == "hello"
     with open(path) as f:
         assert f.read() == "hostname hello"
+    # support hostname not sync
+    vm.name = "alpha"
+    with open(path, 'w+') as f:
+        f.write("no service password-encryption\nhostname beta\nno ip icmp rate-limit unreachable")
+    vm.name = "charlie"
+    assert vm.name == "charlie"
+    with open(path) as f:
+        assert f.read() == "no service password-encryption\nhostname charlie\nno ip icmp rate-limit unreachable"
 
 
 def test_library_check(loop, vm):

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
+
 from .atm_port import ATMPort
 from .frame_relay_port import FrameRelayPort
 from .gigabitethernet_port import GigabitEthernetPort
@@ -64,11 +66,14 @@ class StandardPortFactory:
                     port_name = first_port_name
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
                 else:
-                    port_name = port_name_format.format(
-                        interface_number,
-                        segment_number,
-                        adapter=adapter_number,
-                        **cls._generate_replacement(interface_number, segment_number))
+                    try:
+                        port_name = port_name_format.format(
+                            interface_number,
+                            segment_number,
+                            adapter=adapter_number,
+                            **cls._generate_replacement(interface_number, segment_number))
+                    except (ValueError, KeyError) as e:
+                        raise aiohttp.web.HTTPConflict(text="Invalid port name format {}: {}".format(port_name_format, str(e)))
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
                     interface_number += 1
                     if port_segment_size:

@@ -33,7 +33,9 @@ from gns3server.controller.export_project import export_project, _filter_files
 
 @pytest.fixture
 def project(controller):
-    return Project(controller=controller, name="Test")
+    p = Project(controller=controller, name="Test")
+    p.dump = MagicMock()
+    return p
 
 
 @pytest.fixture
