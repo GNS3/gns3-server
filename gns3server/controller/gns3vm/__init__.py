@@ -222,8 +222,14 @@ class GNS3VM:
         """
         engine = self._get_engine(engine)
         vms = []
-        for vm in (yield from engine.list()):
-            vms.append({"vmname": vm["vmname"]})
+        try:
+            for vm in (yield from engine.list()):
+                vms.append({"vmname": vm["vmname"]})
+        except GNS3VMError as e:
+            # We raise error only if user activated the GNS3 VM
+            # otherwise you have noise when VMware is not installed
+            if self.enable:
+                raise e
         return vms
 
     @asyncio.coroutine
@@ -267,6 +273,7 @@ class GNS3VM:
             engine.vmname = self._settings["vmname"]
             engine.ram = self._settings["ram"]
             engine.vpcus = self._settings["vcpus"]
+            engine.headless = self._settings["headless"]
             compute = yield from self._controller.add_compute(compute_id="vm",
                                                               name="GNS3 VM is starting ({})".format(engine.vmname),
                                                               host=None,
@@ -277,6 +284,7 @@ class GNS3VM:
             except Exception as e:
                 yield from self._controller.delete_compute("vm")
                 log.error("Can't start the GNS3 VM: {}", str(e))
+                yield from compute.update(name="GNS3 VM ({})".format(engine.vmname))
                 raise e
             yield from compute.update(name="GNS3 VM ({})".format(engine.vmname),
                                       protocol=self.protocol,

@@ -78,14 +78,6 @@ IOU_CREATE_SCHEMA = {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
         },
-        "startup_config": {
-            "description": "Path to the startup-config of IOU",
-            "type": ["string", "null"]
-        },
-        "private_config": {
-            "description": "Path to the private-config of IOU",
-            "type": ["string", "null"]
-        },
         "startup_config_content": {
             "description": "Startup-config of IOU",
             "type": ["string", "null"]
@@ -94,10 +86,6 @@ IOU_CREATE_SCHEMA = {
             "description": "Private-config of IOU",
             "type": ["string", "null"]
         },
-        "iourc_content": {
-            "description": "Content of the iourc file. Ignored if Null",
-            "type": ["string", "null"]
-        }
     },
     "additionalProperties": False,
     "required": ["name", "path"]
@@ -187,29 +175,9 @@ IOU_OBJECT_SCHEMA = {
             "description": "Always up ethernet interface",
             "type": "boolean"
         },
-        "startup_config": {
-            "description": "Path of the startup-config content relative to project directory",
-            "type": ["string", "null"]
-        },
-        "private_config": {
-            "description": "Path of the private-config content relative to project directory",
-            "type": ["string", "null"]
-        },
         "use_default_iou_values": {
             "description": "Use default IOU values",
             "type": ["boolean", "null"]
-        },
-        "startup_config_content": {
-            "description": "Startup-config of IOU",
-            "type": ["string", "null"]
-        },
-        "private_config_content": {
-            "description": "Private-config of IOU",
-            "type": ["string", "null"]
-        },
-        "iourc_content": {
-            "description": "Content of the iourc file. Ignored if Null",
-            "type": ["string", "null"]
         },
         "command_line": {
             "description": "Last command line used by GNS3 to start QEMU",
@@ -217,24 +185,4 @@ IOU_OBJECT_SCHEMA = {
         }
     },
     "additionalProperties": False
-}
-
-
-IOU_CONFIGS_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Request validation to get the startup and private configuration file",
-    "type": "object",
-    "properties": {
-        "startup_config_content": {
-            "description": "Content of the startup configuration file",
-            "type": ["string", "null"],
-            "minLength": 1,
-        },
-        "private_config_content": {
-            "description": "Content of the private configuration file",
-            "type": ["string", "null"],
-            "minLength": 1,
-        },
-    },
-    "additionalProperties": False,
 }

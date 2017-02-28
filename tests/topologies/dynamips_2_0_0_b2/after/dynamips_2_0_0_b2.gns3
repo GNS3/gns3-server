@@ -61,8 +61,6 @@
                         1,
                         1
                     ],
-                    "private_config": "",
-                    "private_config_content": "",
                     "ram": 512,
                     "sensors": [
                         22,
@@ -78,8 +76,6 @@
                     "slot5": null,
                     "slot6": null,
                     "sparsemem": true,
-                    "startup_config": "configs/i1_startup-config.cfg",
-                    "startup_config_content": "!\n!\nservice timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption\n!\nhostname R1\n!\nip cef\nno ip domain-lookup\nno ip icmp rate-limit unreachable\nip tcp synwait 5\nno cdp log mismatch duplex\n!\nline con 0\n exec-timeout 0 0\n logging synchronous\n privilege level 15\n no login\nline aux 0\n exec-timeout 0 0\n logging synchronous\n privilege level 15\n no login\n!\n!\nend\n",
                     "system_id": "FTX0945W0MY"
                 },
                 "symbol": ":/symbols/router.svg",
@@ -129,8 +125,6 @@
                         1,
                         1
                     ],
-                    "private_config": "",
-                    "private_config_content": "",
                     "ram": 512,
                     "sensors": [
                         22,
@@ -146,8 +140,6 @@
                     "slot5": null,
                     "slot6": null,
                     "sparsemem": true,
-                    "startup_config": "configs/i2_startup-config.cfg",
-                    "startup_config_content": "!\n!\nservice timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption\n!\nhostname R2\n!\nip cef\nno ip domain-lookup\nno ip icmp rate-limit unreachable\nip tcp synwait 5\nno cdp log mismatch duplex\n!\nline con 0\n exec-timeout 0 0\n logging synchronous\n privilege level 15\n no login\nline aux 0\n exec-timeout 0 0\n logging synchronous\n privilege level 15\n no login\n!\n!\nend\n",
                     "system_id": "FTX0945W0MY"
                 },
                 "symbol": ":/symbols/router.svg",

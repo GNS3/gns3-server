@@ -34,6 +34,7 @@ class SerialReaderWriterProtocol(asyncio.Protocol):
 
     def __init__(self):
         self._output = asyncio.StreamReader()
+        self._closed = False
         self.transport = None
 
     def read(self, n=-1):
@@ -54,9 +55,11 @@ class SerialReaderWriterProtocol(asyncio.Protocol):
         self.transport = transport
 
     def data_received(self, data):
-        self._output.feed_data(data)
+        if not self._closed:
+            self._output.feed_data(data)
 
     def close(self):
+        self._closed = True
         self._output.feed_eof()
 
 
@@ -122,7 +125,10 @@ def _asyncio_open_serial_unix(path):
         raise NodeError('Pipe file "{}" is missing'.format(path))
 
     output = SerialReaderWriterProtocol()
-    con = yield from asyncio.get_event_loop().create_unix_connection(lambda: output, path)
+    try:
+        yield from asyncio.get_event_loop().create_unix_connection(lambda: output, path)
+    except ConnectionRefusedError:
+        raise NodeError('Can\'t open pipe file "{}"'.format(path))
     return output
 
 

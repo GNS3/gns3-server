@@ -18,6 +18,7 @@
 import os
 import json
 import socket
+import shutil
 import asyncio
 import aiohttp
 
@@ -68,16 +69,22 @@ class Controller:
     @asyncio.coroutine
     def start(self):
         log.info("Start controller")
-        yield from self.load()
+        self.load_base_files()
         server_config = Config.instance().get_section_config("Server")
         host = server_config.get("host", "localhost")
+
         # If console_host is 0.0.0.0 client will use the ip they use
         # to connect to the controller
         console_host = host
         if host == "0.0.0.0":
             host = "127.0.0.1"
+
+        name = socket.gethostname()
+        if name == "gns3vm":
+            name = "Main server"
+
         yield from self.add_compute(compute_id="local",
-                                    name=socket.gethostname(),
+                                    name=name,
                                     protocol=server_config.get("protocol", "http"),
                                     host=host,
                                     console_host=console_host,
@@ -85,6 +92,7 @@ class Controller:
                                     user=server_config.get("user", ""),
                                     password=server_config.get("password", ""),
                                     force=True)
+        yield from self._load_controller_settings()
         yield from self.load_projects()
         yield from self.gns3vm.auto_start_vm()
         yield from self._project_auto_open()
@@ -131,7 +139,7 @@ class Controller:
             json.dump(data, f, indent=4)
 
     @asyncio.coroutine
-    def load(self):
+    def _load_controller_settings(self):
         """
         Reload the controller configuration from disk
         """
@@ -177,12 +185,35 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
+    def load_base_files(self):
+        """
+        At startup we copy base file to the user location to allow
+        them to customize it
+        """
+        dst_path = self.configs_path()
+        src_path = get_resource('configs')
+        try:
+            for file in os.listdir(src_path):
+                if not os.path.exists(os.path.join(dst_path, file)):
+                    shutil.copy(os.path.join(src_path, file), os.path.join(dst_path, file))
+        except OSError:
+            pass
+
     def images_path(self):
         """
         Get the image storage directory
         """
         server_config = Config.instance().get_section_config("Server")
         images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/projects"))
+        os.makedirs(images_path, exist_ok=True)
+        return images_path
+
+    def configs_path(self):
+        """
+        Get the configs storage directory
+        """
+        server_config = Config.instance().get_section_config("Server")
+        images_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/projects"))
         os.makedirs(images_path, exist_ok=True)
         return images_path
 
@@ -269,7 +300,7 @@ class Controller:
                 return None
 
             for compute in self._computes.values():
-                if name and compute.name == name:
+                if name and compute.name == name and not force:
                     raise aiohttp.web.HTTPConflict(text='Compute name "{}" already exists'.format(name))
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
@@ -332,7 +363,6 @@ class Controller:
         try:
             return self._computes[compute_id]
         except KeyError:
-            server_config = Config.instance().get_section_config("Server")
             if compute_id == "vm":
                 raise aiohttp.web.HTTPNotFound(text="You try to use a node on the GNS3 VM server but the GNS3 VM is not configured")
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
@@ -383,7 +413,8 @@ class Controller:
         return project
 
     def remove_project(self, project):
-        del self._projects[project.id]
+        if project.id in self._projects:
+            del self._projects[project.id]
 
     @asyncio.coroutine
     def load_project(self, path, load=True):
@@ -394,7 +425,7 @@ class Controller:
         :param load: Load the topology
         """
         topo_data = load_topology(path)
-        topology = topo_data.pop("topology")
+        topo_data.pop("topology")
         topo_data.pop("version")
         topo_data.pop("revision")
         topo_data.pop("type")

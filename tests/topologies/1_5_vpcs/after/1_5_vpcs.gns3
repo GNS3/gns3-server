@@ -50,7 +50,6 @@
                 "port_segment_size": 0,
                 "first_port_name": null,
                 "properties": {
-                    "startup_script_path": "startup.vpc"
                 },
                 "symbol": ":/symbols/vpcs_guest.svg",
                 "x": -87,
@@ -75,7 +74,6 @@
                 "port_segment_size": 0,
                 "first_port_name": null,
                 "properties": {
-                    "startup_script_path": "startup.vpc"
                 },
                 "symbol": ":/symbols/vpcs_guest.svg",
                 "x": 123,

@@ -23,7 +23,6 @@ import glob
 import shutil
 import zipfile
 import aiohttp
-import platform
 import jsonschema
 
 
@@ -37,7 +36,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-GNS3_FILE_FORMAT_REVISION = 7
+GNS3_FILE_FORMAT_REVISION = 8
 
 
 def _check_topology_schema(topo):
@@ -117,34 +116,65 @@ def load_topology(path):
             topo = json.load(f)
     except (OSError, UnicodeDecodeError, ValueError) as e:
         raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
-    if "revision" not in topo or topo["revision"] < 5:
+
+    if topo.get("revision", 0) > GNS3_FILE_FORMAT_REVISION:
+        raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
+
+    changed = False
+    if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
         # If it's an old GNS3 file we need to convert it
         # first we backup the file
         shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        changed = True
+
+    if "revision" not in topo or topo["revision"] < 5:
         topo = _convert_1_3_later(topo, path)
-        _check_topology_schema(topo)
-        with open(path, "w+", encoding="utf-8") as f:
-            json.dump(topo, f, indent=4, sort_keys=True)
 
     # Version before GNS3 2.0 alpha 4
     if topo["revision"] < 6:
-        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
         topo = _convert_2_0_0_alpha(topo, path)
-        _check_topology_schema(topo)
-        with open(path, "w+", encoding="utf-8") as f:
-            json.dump(topo, f, indent=4, sort_keys=True)
 
     # Version before GNS3 2.0 beta 3
     if topo["revision"] < 7:
-        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
         topo = _convert_2_0_0_beta_2(topo, path)
-        _check_topology_schema(topo)
+
+    # Version before GNS3 2.1
+    if topo["revision"] < 8:
+        topo = _convert_2_0_0(topo, path)
+
+    _check_topology_schema(topo)
+
+    if changed:
         with open(path, "w+", encoding="utf-8") as f:
             json.dump(topo, f, indent=4, sort_keys=True)
+    return topo
 
-    if topo["revision"] > GNS3_FILE_FORMAT_REVISION:
-        raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
-    _check_topology_schema(topo)
+
+def _convert_2_0_0(topo, topo_path):
+    """
+    Convert topologies from GNS3 2.0.0 to 2.1
+
+    Changes:
+     * Remove startup_script_path from VPCS and base config file for IOU and Dynamips
+    """
+    topo["revision"] = 8
+
+    for node in topo.get("topology", {}).get("nodes", []):
+        if "properties" in node:
+            if node["node_type"] == "vpcs":
+                if "startup_script_path" in node["properties"]:
+                    del node["properties"]["startup_script_path"]
+                if "startup_script" in node["properties"]:
+                    del node["properties"]["startup_script"]
+            elif node["node_type"] == "dynamips" or node["node_type"] == "iou":
+                if "startup_config" in node["properties"]:
+                    del node["properties"]["startup_config"]
+                if "private_config" in node["properties"]:
+                    del node["properties"]["private_config"]
+                if "startup_config_content" in node["properties"]:
+                    del node["properties"]["startup_config_content"]
+                if "private_config_content" in node["properties"]:
+                    del node["properties"]["private_config_content"]
     return topo
 
 
@@ -165,11 +195,14 @@ def _convert_2_0_0_beta_2(topo, topo_path):
 
             dynamips_dir = os.path.join(topo_dir, "project-files", "dynamips")
             node_dir = os.path.join(dynamips_dir, node_id)
-            os.makedirs(os.path.join(node_dir, "configs"), exist_ok=True)
-            for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
-                shutil.move(path, os.path.join(node_dir, os.path.basename(path)))
-            for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
-                shutil.move(path, os.path.join(node_dir, "configs", os.path.basename(path)))
+            try:
+                os.makedirs(os.path.join(node_dir, "configs"), exist_ok=True)
+                for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
+                    shutil.move(path, os.path.join(node_dir, os.path.basename(path)))
+                for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
+                    shutil.move(path, os.path.join(node_dir, "configs", os.path.basename(path)))
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Can't convert project {}: {}".format(topo_path, str(e)))
     return topo
 
 
@@ -320,14 +353,24 @@ def _convert_1_3_later(topo, topo_path):
                 node["properties"]["ram"] = PLATFORMS_DEFAULT_RAM[old_node["type"].lower()]
         elif old_node["type"] == "VMwareVM":
             node["node_type"] = "vmware"
+            node["properties"]["linked_clone"] = old_node.get("linked_clone", False)
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/vmware_guest.svg"
         elif old_node["type"] == "VirtualBoxVM":
             node["node_type"] = "virtualbox"
+            node["properties"]["linked_clone"] = old_node.get("linked_clone", False)
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/vbox_guest.svg"
         elif old_node["type"] == "IOUDevice":
             node["node_type"] = "iou"
+            node["port_name_format"] = old_node.get("port_name_format", "Ethernet{segment0}/{port0}")
+            node["port_segment_size"] = int(old_node.get("port_segment_size", "4"))
+            if node["symbol"] is None:
+                if "l2" in node["properties"].get("path", ""):
+                    node["symbol"] = ":/symbols/multilayer_switch.svg"
+                else:
+                    node["symbol"] = ":/symbols/router.svg"
+
         elif old_node["type"] == "Cloud":
             old_node["ports"] = _create_cloud(node, old_node, ":/symbols/cloud.svg")
         elif old_node["type"] == "Host":

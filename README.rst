@@ -71,6 +71,16 @@ To run tests use:
    py.test -v
 
 
+Docker container
+****************
+
+For development you can run the GNS3 server in a container
+
+.. code:: bash
+
+    bash scripts/docker_dev_server.sh
+
+
 Run as daemon (Unix only)
 **************************
 

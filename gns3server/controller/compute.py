@@ -22,14 +22,12 @@ import socket
 import json
 import uuid
 import sys
-import os
 import io
 
 from ..utils import parse_version
-from ..utils.images import list_images, md5sum
+from ..utils.images import list_images
 from ..utils.asyncio import locked_coroutine
 from ..controller.controller_error import ControllerError
-from ..config import Config
 from ..version import __version__
 
 
@@ -216,7 +214,10 @@ class Compute:
         """
         Return the IP associated to the host
         """
-        return socket.gethostbyname(self._host)
+        try:
+            return socket.gethostbyname(self._host)
+        except socket.gaierror:
+            return '0.0.0.0'
 
     @host.setter
     def host(self, host):
@@ -360,6 +361,16 @@ class Compute:
         response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
+    @asyncio.coroutine
+    def _try_reconnect(self):
+        """
+        We catch error during reconnect
+        """
+        try:
+            yield from self.connect()
+        except aiohttp.web.HTTPConflict:
+            pass
+
     @locked_coroutine
     def connect(self):
         """
@@ -374,14 +385,18 @@ class Compute:
                     self._connection_failure += 1
                     # After 5 failure we close the project using the compute to avoid sync issues
                     if self._connection_failure == 5:
+                        log.warning("Can't connect to compute %s", self._id)
                         yield from self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self.connect()))
+
+                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self._try_reconnect()))
 
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
             except aiohttp.web.HTTPUnauthorized:
-                raise aiohttp.web.HTTPConflict(text="Invalid auth for server {} ".format(self._id))
+                raise aiohttp.web.HTTPConflict(text="Invalid auth for server {}".format(self._id))
+            except aiohttp.web.HTTPServiceUnavailable:
+                raise aiohttp.web.HTTPConflict(text="The server {} is unavailable".format(self._id))
 
             if "version" not in response.json:
                 self._http_session.close()
@@ -411,7 +426,7 @@ class Compute:
             except aiohttp.errors.WSServerHandshakeError:
                 self._ws = None
                 break
-            if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error:
+            if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error or response.data is None:
                 self._connected = False
                 break
             msg = json.loads(response.data)

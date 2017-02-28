@@ -26,8 +26,6 @@ import re
 import asyncio
 import subprocess
 import shutil
-import argparse
-import threading
 import configparser
 import struct
 import hashlib
@@ -207,10 +205,6 @@ class IOUVM(BaseNode):
                        "ram": self._ram,
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
-                       "startup_config": self.relative_startup_config_file,
-                       "startup_config_content": self.startup_config_content,
-                       "private_config_content": self.private_config_content,
-                       "private_config": self.relative_private_config_file,
                        "use_default_iou_values": self._use_default_iou_values,
                        "command_line": self.command_line}
 
@@ -307,7 +301,7 @@ class IOUVM(BaseNode):
 
         if self.startup_config_file:
             content = self.startup_config_content
-            content = content.replace(self._name, new_name)
+            content = re.sub(r"^hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
             self.startup_config_content = content
 
         super(IOUVM, IOUVM).name.__set__(self, new_name)
@@ -1167,7 +1161,7 @@ class IOUVM(BaseNode):
                                                                                                                                  bay=adapter_number,
                                                                                                                                  unit=port_number,
                                                                                                                                  output_file=output_file,
-                                                                                                                                 data_link_type=data_link_type))
+                                                                                                                                 data_link_type=re.sub("^DLT_", "", data_link_type)))
 
     @asyncio.coroutine
     def stop_capture(self, adapter_number, port_number):

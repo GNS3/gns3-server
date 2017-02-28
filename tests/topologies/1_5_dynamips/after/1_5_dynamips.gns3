@@ -53,7 +53,6 @@
                     "ram": 256,
                     "slot0": "GT96100-FE",
                     "sparsemem": true,
-                    "startup_config": "configs/i1_startup-config.cfg",
                     "system_id": "FTX0945W0MY"
                 },
                 "symbol": ":/symbols/router.svg",
@@ -100,7 +99,6 @@
                     "slot0": "Leopard-2FE",
                     "slot1": "NM-16ESW",
                     "sparsemem": true,
-                    "startup_config": "configs/i2_startup-config.cfg",
                     "system_id": "FTX0945W0MY"
                 },
                 "symbol": ":/symbols/multilayer_switch.svg",

@@ -88,19 +88,6 @@ def test_eq(compute, project, node, controller):
     assert node != Node(Project(str(uuid.uuid4()), controller=controller), compute, "demo3", node_id=node.id, node_type="qemu")
 
 
-def test_properties_filter(project, compute):
-    """
-    Some properties are private and should not be exposed
-    """
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="vpcs",
-                console_type="vnc",
-                properties={"startup_script": "echo test", "iourc_content": "test"})
-    assert node._properties == {"startup_script": "echo test", "iourc_content": "test"}
-    assert node._filter_properties() == {"startup_script": "echo test"}
-
-
 def test_json(node, compute):
     assert node.__json__() == {
         "compute_id": str(compute.id),
@@ -205,6 +192,30 @@ def test_create_image_missing(node, compute, project, async_run):
 
     assert async_run(node.create()) is True
     node._upload_missing_image.called is True
+
+
+def test_create_base_script(node, config, compute, tmpdir, async_run):
+    config.set_section_config("Server", {"configs_path": str(tmpdir)})
+
+    with open(str(tmpdir / 'test.txt'), 'w+') as f:
+        f.write('hostname test')
+
+    node._properties = {"base_script_file": "test.txt"}
+    node._console = 2048
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    assert async_run(node.create()) is True
+    data = {
+        "console": 2048,
+        "console_type": "vnc",
+        "node_id": node.id,
+        "startup_script": "hostname test",
+        "name": "demo"
+    }
+    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=120)
 
 
 def test_symbol(node, symbols_dir):

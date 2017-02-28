@@ -20,6 +20,7 @@ import os
 import uuid
 import shutil
 import asyncio
+import aiohttp.web
 from datetime import datetime, timezone
 
 
@@ -80,10 +81,13 @@ class Snapshot:
         # We don't send close notif to clients because the close / open dance is purely internal
         yield from self._project.close(ignore_notification=True)
         self._project.controller.notification.emit("snapshot.restored", self.__json__())
-        if os.path.exists(os.path.join(self._project.path, "project-files")):
-            shutil.rmtree(os.path.join(self._project.path, "project-files"))
-        with open(self._path, "rb") as f:
-            project = yield from import_project(self._project.controller, self._project.id, f, location=self._project.path)
+        try:
+            if os.path.exists(os.path.join(self._project.path, "project-files")):
+                shutil.rmtree(os.path.join(self._project.path, "project-files"))
+            with open(self._path, "rb") as f:
+                project = yield from import_project(self._project.controller, self._project.id, f, location=self._project.path)
+        except (OSError, PermissionError) as e:
+            raise aiohttp.web.HTTPConflict(text=str(e))
         yield from project.open()
         return project
 

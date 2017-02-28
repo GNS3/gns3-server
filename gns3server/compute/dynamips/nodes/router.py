@@ -24,6 +24,7 @@ import asyncio
 import time
 import sys
 import os
+import re
 import glob
 import shlex
 import base64
@@ -78,8 +79,6 @@ class Router(BaseNode):
         self._dynamips_id = dynamips_id
         self._platform = platform
         self._image = ""
-        self._startup_config = ""
-        self._private_config = ""
         self._ram = 128  # Megabytes
         self._nvram = 128  # Kilobytes
         self._mmap = True
@@ -102,8 +101,6 @@ class Router(BaseNode):
         self._slots = []
         self._ghost_flag = ghost_flag
         self._memory_watcher = None
-        self._startup_config_content = ""
-        self._private_config_content = ""
 
         if not ghost_flag:
             if not dynamips_id:
@@ -152,8 +149,6 @@ class Router(BaseNode):
                        "platform": self._platform,
                        "image": self._image,
                        "image_md5sum": md5sum(self._image),
-                       "startup_config": self._startup_config,
-                       "private_config": self._private_config,
                        "ram": self._ram,
                        "nvram": self._nvram,
                        "mmap": self._mmap,
@@ -171,9 +166,7 @@ class Router(BaseNode):
                        "console_type": "telnet",
                        "aux": self.aux,
                        "mac_addr": self._mac_addr,
-                       "system_id": self._system_id,
-                       "startup_config_content": self._startup_config_content,
-                       "private_config_content": self._private_config_content}
+                       "system_id": self._system_id}
 
         # return the relative path if the IOS image is in the images_path directory
         router_info["image"] = self.manager.get_relative_image_path(self._image)
@@ -289,6 +282,16 @@ class Router(BaseNode):
             if not self._ghost_flag:
                 self.check_available_ram(self.ram)
 
+            startup_config_path = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
+            private_config_path = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
+
+            if not os.path.exists(private_config_path) or not os.path.getsize(private_config_path):
+                # an empty private-config can prevent a router to boot.
+                private_config_path = ''
+            yield from self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(
+                name=self._name,
+                startup=startup_config_path,
+                private=private_config_path))
             yield from self._hypervisor.send('vm start "{name}"'.format(name=self._name))
             self.status = "started"
             log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))
@@ -1458,26 +1461,6 @@ class Router(BaseNode):
 
         return self._slots
 
-    @property
-    def startup_config(self):
-        """
-        Returns the startup-config for this router.
-
-        :returns: path to startup-config file
-        """
-
-        return self._startup_config
-
-    @property
-    def private_config(self):
-        """
-        Returns the private-config for this router.
-
-        :returns: path to private-config file
-        """
-
-        return self._private_config
-
     @asyncio.coroutine
     def set_name(self, new_name):
         """
@@ -1486,88 +1469,33 @@ class Router(BaseNode):
         :param new_name: new name string
         """
 
-        if self._startup_config:
-            # change the hostname in the startup-config
-            startup_config_path = os.path.join(self._working_directory, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
-            if os.path.isfile(startup_config_path):
-                try:
-                    with open(startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
-                        old_config = f.read()
-                        new_config = old_config.replace(self.name, new_name)
-                        f.seek(0)
-                        self._startup_config_content = new_config
-                        f.write(new_config)
-                except OSError as e:
-                    raise DynamipsError("Could not amend the configuration {}: {}".format(startup_config_path, e))
+        # change the hostname in the startup-config
+        startup_config_path = os.path.join(self._working_directory, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
+        if os.path.isfile(startup_config_path):
+            try:
+                with open(startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                    old_config = f.read()
+                    new_config = re.sub(r"^hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
+                    f.seek(0)
+                    f.write(new_config)
+            except OSError as e:
+                raise DynamipsError("Could not amend the configuration {}: {}".format(startup_config_path, e))
 
-        if self._private_config:
-            # change the hostname in the private-config
-            private_config_path = os.path.join(self._working_directory, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
-            if os.path.isfile(private_config_path):
-                try:
-                    with open(private_config_path, "r+", encoding="utf-8", errors="replace") as f:
-                        old_config = f.read()
-                        new_config = old_config.replace(self.name, new_name)
-                        f.seek(0)
-                        self._private_config_content = new_config
-                        f.write(new_config)
-                except OSError as e:
-                    raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
+        # change the hostname in the private-config
+        private_config_path = os.path.join(self._working_directory, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
+        if os.path.isfile(private_config_path):
+            try:
+                with open(private_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                    old_config = f.read()
+                    new_config = old_config.replace(self.name, new_name)
+                    f.seek(0)
+                    f.write(new_config)
+            except OSError as e:
+                raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
 
         yield from self._hypervisor.send('vm rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
         log.info('Router "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name, id=self._id, new_name=new_name))
         self._name = new_name
-
-    @asyncio.coroutine
-    def set_configs(self, startup_config, private_config=''):
-        """
-        Sets the config files that are pushed to startup-config and
-        private-config in NVRAM when the instance is started.
-
-        :param startup_config: path to statup-config file
-        :param private_config: path to private-config file
-        (keep existing data when if an empty string)
-        """
-
-        startup_config = startup_config.replace("\\", '/')
-        private_config = private_config.replace("\\", '/')
-
-        if self._startup_config != startup_config or self._private_config != private_config:
-            self._startup_config = startup_config
-            self._private_config = private_config
-
-            if private_config:
-                private_config_path = os.path.join(self._working_directory, private_config)
-                try:
-                    if not os.path.getsize(private_config_path):
-                        # an empty private-config can prevent a router to boot.
-                        private_config = ''
-                        self._private_config_content = ""
-                    else:
-                        with open(private_config_path) as f:
-                            self._private_config_content = f.read()
-                except OSError as e:
-                    raise DynamipsError("Cannot access the private-config {}: {}".format(private_config_path, e))
-
-            try:
-                startup_config_path = os.path.join(self._working_directory, startup_config)
-                with open(startup_config_path) as f:
-                    self._startup_config_content = f.read()
-            except OSError as e:
-                raise DynamipsError("Cannot access the startup-config {}: {}".format(startup_config_path, e))
-
-            yield from self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(name=self._name,
-                                                                                                     startup=startup_config,
-                                                                                                     private=private_config))
-
-            log.info('Router "{name}" [{id}]: has a new startup-config set: "{startup}"'.format(name=self._name,
-                                                                                                id=self._id,
-                                                                                                startup=startup_config))
-
-            if private_config:
-                log.info('Router "{name}" [{id}]: has a new private-config set: "{private}"'.format(name=self._name,
-                                                                                                    id=self._id,
-                                                                                                    private=private_config))
 
     @asyncio.coroutine
     def extract_config(self):
@@ -1594,41 +1522,35 @@ class Router(BaseNode):
         Saves the startup-config and private-config to files.
         """
 
-        if self.startup_config or self.private_config:
+        try:
+            config_path = os.path.join(self._working_directory, "configs")
+            os.makedirs(config_path, exist_ok=True)
+        except OSError as e:
+            raise DynamipsError("Could could not create configuration directory {}: {}".format(config_path, e))
 
+        startup_config_base64, private_config_base64 = yield from self.extract_config()
+        if startup_config_base64:
+            startup_config = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
             try:
-                config_path = os.path.join(self._working_directory, "configs")
-                os.makedirs(config_path, exist_ok=True)
-            except OSError as e:
-                raise DynamipsError("Could could not create configuration directory {}: {}".format(config_path, e))
+                config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
+                config = "!\n" + config.replace("\r", "")
+                config_path = os.path.join(self._working_directory, startup_config)
+                with open(config_path, "wb") as f:
+                    log.info("saving startup-config to {}".format(startup_config))
+                    f.write(config.encode("utf-8"))
+            except (binascii.Error, OSError) as e:
+                raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
-            startup_config_base64, private_config_base64 = yield from self.extract_config()
-            if startup_config_base64:
-                if not self.startup_config:
-                    self._startup_config = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
-                try:
-                    config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
-                    config = "!\n" + config.replace("\r", "")
-                    config_path = os.path.join(self._working_directory, self.startup_config)
-                    with open(config_path, "wb") as f:
-                        log.info("saving startup-config to {}".format(self.startup_config))
-                        self._startup_config_content = config
-                        f.write(config.encode("utf-8"))
-                except (binascii.Error, OSError) as e:
-                    raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
-
-            if private_config_base64 and base64.b64decode(private_config_base64) != b'\nkerberos password \nend\n':
-                if not self.private_config:
-                    self._private_config = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
-                try:
-                    config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
-                    config_path = os.path.join(self._working_directory, self.private_config)
-                    with open(config_path, "wb") as f:
-                        log.info("saving private-config to {}".format(self.private_config))
-                        self._private_config_content = config
-                        f.write(config.encode("utf-8"))
-                except (binascii.Error, OSError) as e:
-                    raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
+        if private_config_base64 and base64.b64decode(private_config_base64) != b'\nkerberos password \nend\n':
+            private_config = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
+            try:
+                config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
+                config_path = os.path.join(self._working_directory, private_config)
+                with open(config_path, "wb") as f:
+                    log.info("saving private-config to {}".format(private_config))
+                    f.write(config.encode("utf-8"))
+            except (binascii.Error, OSError) as e:
+                raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
 
     def delete(self):
         """

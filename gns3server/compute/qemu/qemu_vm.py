@@ -23,12 +23,13 @@ order to run a QEMU VM.
 import sys
 import os
 import re
+import math
 import shutil
-import subprocess
 import shlex
 import asyncio
 import socket
 import gns3server
+import subprocess
 
 from gns3server.utils import parse_version
 from .qemu_error import QemuError
@@ -1446,6 +1447,20 @@ class QemuVM(BaseNode):
                 # this is a patched Qemu if version is below 1.1.0
                 patched_qemu = True
 
+        # Each 32 PCI device we need to add a PCI bridge with max 9 bridges
+        pci_devices = 4 + len(self._ethernet_adapters)  # 4 PCI devices are use by default by qemu
+        bridge_id = 0
+        for bridge_id in range(1, math.floor(pci_devices / 32) + 1):
+            network_options.extend(["-device", "i82801b11-bridge,id=dmi_pci_bridge{bridge_id}".format(bridge_id=bridge_id)])
+            network_options.extend(["-device", "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(bridge_id=bridge_id)])
+
+        if bridge_id > 1:
+            qemu_version = yield from self.manager.get_qemu_version(self.qemu_path)
+            if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
+                raise QemuError("Qemu version 2.4 or later is required to run this VM with a large number of network adapters")
+
+        pci_device_id = 4 + bridge_id  # Bridge consume PCI ports
+
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
 
@@ -1483,8 +1498,14 @@ class QemuVM(BaseNode):
 
             else:
                 # newer QEMU networking syntax
+                device_string = "{},mac={}".format(self._adapter_type, mac)
+                bridge_id = math.floor(pci_device_id / 32)
+                if bridge_id > 0:
+                    addr = pci_device_id % 32
+                    device_string = "{},bus=pci-bridge{bridge_id},addr=0x{addr:02x}".format(device_string, bridge_id=bridge_id, addr=addr)
+                pci_device_id += 1
                 if nio:
-                    network_options.extend(["-device", "{},mac={},netdev=gns3-{}".format(self._adapter_type, mac, adapter_number)])
+                    network_options.extend(["-device", "{},netdev=gns3-{}".format(device_string, adapter_number)])
                     if isinstance(nio, NIOUDP):
                         network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
                                                                                                                 nio.rhost,
@@ -1494,7 +1515,7 @@ class QemuVM(BaseNode):
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-netdev", "tap,id=gns3-{},ifname={},script=no,downscript=no".format(adapter_number, nio.tap_device)])
                 else:
-                    network_options.extend(["-device", "{},mac={}".format(self._adapter_type, mac)])
+                    network_options.extend(["-device", device_string])
 
         return network_options
 

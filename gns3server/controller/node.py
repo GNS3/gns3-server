@@ -146,6 +146,15 @@ class Node:
     def properties(self, val):
         self._properties = val
 
+    def _base_config_file_content(self, path):
+        if not os.path.isabs(path):
+            path = os.path.join(self.project.controller.configs_path(), path)
+        try:
+            with open(path) as f:
+                return f.read()
+        except (PermissionError, OSError):
+            return None
+
     @property
     def project(self):
         return self._project
@@ -366,8 +375,12 @@ class Node:
                 self._console_type = value
             elif key == "name":
                 self.name = value
-            elif key in ["node_id", "project_id", "console_host"]:
-                pass
+            elif key in ["node_id", "project_id", "console_host",
+                         "startup_config_content",
+                         "private_config_content",
+                         "startup_script"]:
+                if key in self._properties:
+                    del self._properties[key]
             else:
                 self._properties[key] = value
         self._list_ports()
@@ -384,6 +397,17 @@ class Node:
             data = copy.copy(properties)
         else:
             data = copy.copy(self._properties)
+            # We replace the startup script name by the content of the file
+            mapping = {
+                "base_script_file": "startup_script",
+                "startup_config": "startup_config_content",
+                "private_config": "private_config_content",
+            }
+            for k, v in mapping.items():
+                if k in list(self._properties.keys()):
+                    data[v] = self._base_config_file_content(self._properties[k])
+                    del data[k]
+                    del self._properties[k]  # We send the file only one time
         data["name"] = self._name
         if self._console:
             # console is optional for builtin nodes
@@ -585,17 +609,6 @@ class Node:
             return False
         return self.id == other.id and other.project.id == self.project.id
 
-    def _filter_properties(self):
-        """
-        Some properties are private and should not be exposed
-        """
-        PRIVATE_PROPERTIES = ("iourc_content", )
-        prop = copy.copy(self._properties)
-        for k in list(prop.keys()):
-            if k in PRIVATE_PROPERTIES:
-                del prop[k]
-        return prop
-
     def __json__(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
@@ -608,7 +621,7 @@ class Node:
                 "name": self._name,
                 "console": self._console,
                 "console_type": self._console_type,
-                "properties": self._filter_properties(),
+                "properties": self._properties,
                 "label": self._label,
                 "x": self._x,
                 "y": self._y,
@@ -631,7 +644,7 @@ class Node:
             "console_host": str(self._compute.console_host),
             "console_type": self._console_type,
             "command_line": self._command_line,
-            "properties": self._filter_properties(),
+            "properties": self._properties,
             "status": self._status,
             "label": self._label,
             "x": self._x,

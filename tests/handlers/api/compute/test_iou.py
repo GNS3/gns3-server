@@ -80,7 +80,6 @@ def test_iou_create_with_params(http_compute, project, base_params):
     params["l1_keepalives"] = True
     params["startup_config_content"] = "hostname test"
     params["use_default_iou_values"] = True
-    params["iourc_content"] = "test"
 
     response = http_compute.post("/projects/{project_id}/iou/nodes".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -94,7 +93,6 @@ def test_iou_create_with_params(http_compute, project, base_params):
     assert response.json["l1_keepalives"] is True
     assert response.json["use_default_iou_values"] is True
 
-    assert "startup-config.cfg" in response.json["startup_config"]
     with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
 
@@ -115,7 +113,6 @@ def test_iou_create_startup_config_already_exist(http_compute, project, base_par
     assert response.status == 201
     assert response.route == "/projects/{project_id}/iou/nodes"
 
-    assert "startup-config.cfg" in response.json["startup_config"]
     with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "echo hello"
 
@@ -183,9 +180,7 @@ def test_iou_update(http_compute, vm, tmpdir, free_console_port, project):
         "ethernet_adapters": 4,
         "serial_adapters": 0,
         "l1_keepalives": True,
-        "startup_config_content": "hostname test",
         "use_default_iou_values": True,
-        "iourc_content": "test"
     }
     response = http_compute.put("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params, example=True)
     assert response.status == 200
@@ -197,9 +192,6 @@ def test_iou_update(http_compute, vm, tmpdir, free_console_port, project):
     assert response.json["nvram"] == 2048
     assert response.json["l1_keepalives"] is True
     assert response.json["use_default_iou_values"] is True
-    assert "startup-config.cfg" in response.json["startup_config"]
-    with open(startup_config_file(project, response.json)) as f:
-        assert f.read() == "hostname test"
 
 
 def test_iou_nio_create_udp(http_compute, vm):

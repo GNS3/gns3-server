@@ -63,7 +63,6 @@
                     ],
                     "slot0": "C7200-IO-FE",
                     "sparsemem": true,
-                    "startup_config": "configs/i1_startup-config.cfg",
                     "system_id": "FTX0945W0MY"
                 },
                 "x": -112,

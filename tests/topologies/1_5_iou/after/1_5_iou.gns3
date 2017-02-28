@@ -30,8 +30,8 @@
                 "name": "IOU1",
                 "node_id": "aaeb2288-a7d8-42a9-b9d8-c42ab464a390",
                 "node_type": "iou",
-                "port_name_format": "Ethernet{0}",
-                "port_segment_size": 0,
+                "port_name_format": "Ethernet{segment0}/{port0}",
+                "port_segment_size": 4,
                 "first_port_name": null,
                 "properties": {
                     "ethernet_adapters": 2,
@@ -41,7 +41,6 @@
                     "path": "i86bi-linux-l3-adventerprisek9-15.4.1T.bin",
                     "ram": 256,
                     "serial_adapters": 2,
-                    "startup_config": "startup-config.cfg",
                     "use_default_iou_values": true
                 },
                 "symbol": ":/symbols/router.svg",

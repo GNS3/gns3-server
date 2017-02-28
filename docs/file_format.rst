@@ -23,6 +23,7 @@ A minimal version:
 
 The revision is the version of file format:
 
+* 8: GNS3 2.1
 * 7: GNS3 2.0
 * 6: GNS3 2.0 < beta 3
 * 5: GNS3 2.0 < alpha 4

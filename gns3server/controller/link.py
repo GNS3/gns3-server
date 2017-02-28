@@ -52,9 +52,11 @@ class Link:
         return self._created
 
     @asyncio.coroutine
-    def add_node(self, node, adapter_number, port_number, label=None):
+    def add_node(self, node, adapter_number, port_number, label=None, dump=True):
         """
         Add a node to the link
+
+        :param dump: Dump project on disk
         """
 
         port = node.get_port(adapter_number, port_number)
@@ -101,7 +103,8 @@ class Link:
             self._created = True
             self._project.controller.notification.emit("link.created", self.__json__())
 
-        self._project.dump()
+        if dump:
+            self._project.dump()
 
     @asyncio.coroutine
     def update_nodes(self, nodes):

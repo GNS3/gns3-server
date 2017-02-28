@@ -47,6 +47,9 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
     if project.is_running():
         raise aiohttp.web.HTTPConflict(text="Running topology could not be exported")
 
+    # Make sure we save the project
+    project.dump()
+
     z = zipstream.ZipFile(allowZip64=True)
 
     if not os.path.exists(project._path):
@@ -136,6 +139,8 @@ def _export_project_file(project, path, z, include_images, keep_compute_id, allo
     if "topology" in topology:
         if "nodes" in topology["topology"]:
             for node in topology["topology"]["nodes"]:
+                if node["node_type"] == "virtualbox" and node.get("properties", {}).get("linked_clone"):
+                    raise aiohttp.web.HTTPConflict(text="Topology with a linked {} clone could not be exported. Use qemu instead.".format(node["node_type"]))
                 if not allow_all_nodes and node["node_type"] in ["virtualbox", "vmware", "cloud"]:
                     raise aiohttp.web.HTTPConflict(text="Topology with a {} could not be exported".format(node["node_type"]))
 

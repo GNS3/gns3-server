@@ -18,6 +18,7 @@
 import os
 import sys
 import struct
+import aiohttp
 import platform
 
 
@@ -53,7 +54,7 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "sync+https://b7430bad849c4b88b3a928032d6cce5e:f140bfdd2ebb4bf4b929c002b45b2357@sentry.io/38482"
+    DSN = "sync+https://83564b27a6f6475488a3eb74c78f1760:ed5ac7c6d3f7428d960a84da98450b69@sentry.io/38482"
     if hasattr(sys, "frozen"):
         cacert = get_resource("cacert.pem")
         if cacert is not None and os.path.isfile(cacert):
@@ -94,6 +95,7 @@ class CrashReport:
                 "os:win_32": " ".join(platform.win32_ver()),
                 "os:mac": "{} {}".format(platform.mac_ver()[0], platform.mac_ver()[2]),
                 "os:linux": " ".join(platform.linux_distribution()),
+                "aiohttp:version": aiohttp.__version__,
                 "python:version": "{}.{}.{}".format(sys.version_info[0],
                                                     sys.version_info[1],
                                                     sys.version_info[2]),

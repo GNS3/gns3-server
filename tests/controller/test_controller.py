@@ -39,7 +39,7 @@ def test_save(controller, controller_config_path):
         assert data["gns3vm"] == controller.gns3vm.__json__()
 
 
-def test_load(controller, controller_config_path, async_run):
+def test_load_controller_settings(controller, controller_config_path, async_run):
     controller.save()
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -57,7 +57,7 @@ def test_load(controller, controller_config_path, async_run):
     data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
-    async_run(controller.load())
+    async_run(controller._load_controller_settings())
     assert controller.settings["IOU"]
     assert controller.computes["test1"].__json__() == {
         "compute_id": "test1",
@@ -101,7 +101,7 @@ def test_import_computes_1_x(controller, controller_config_path, async_run):
     with open(os.path.join(config_dir, "gns3_gui.conf"), "w+") as f:
         json.dump(gns3_gui_conf, f)
 
-    async_run(controller.load())
+    async_run(controller._load_controller_settings())
     for compute in controller.computes.values():
         if compute.id != "local":
             assert len(compute.id) == 36
@@ -143,7 +143,7 @@ def test_import_gns3vm_1_x(controller, controller_config_path, async_run):
         json.dump(gns3_gui_conf, f)
 
     controller.gns3vm.settings["engine"] = None
-    async_run(controller.load())
+    async_run(controller._load_controller_settings())
     assert controller.gns3vm.settings["engine"] == "vmware"
     assert controller.gns3vm.settings["enable"]
     assert controller.gns3vm.settings["headless"]
@@ -199,7 +199,7 @@ def test_import_remote_gns3vm_1_x(controller, controller_config_path, async_run)
         json.dump(gns3_gui_conf, f)
 
     with asyncio_patch("gns3server.controller.compute.Compute.connect"):
-        async_run(controller.load())
+        async_run(controller._load_controller_settings())
     assert controller.gns3vm.settings["engine"] == "remote"
     assert controller.gns3vm.settings["vmname"] == "http://127.0.0.1:3081"
 
@@ -466,3 +466,17 @@ def test_get_free_project_name(controller, async_run):
 
 def test_appliance_templates(controller):
     assert len(controller.appliance_templates) > 0
+
+
+def test_load_base_files(controller, config, tmpdir):
+    config.set_section_config("Server", {"configs_path": str(tmpdir)})
+
+    with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
+        f.write('test')
+
+    controller.load_base_files()
+    assert os.path.exists(str(tmpdir / 'iou_l3_base_startup-config.txt'))
+
+    # Check is the file has not been overwrite
+    with open(str(tmpdir / 'iou_l2_base_startup-config.txt')) as f:
+        assert f.read() == 'test'

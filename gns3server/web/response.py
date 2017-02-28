@@ -39,6 +39,7 @@ class Response(aiohttp.web.Response):
         self._route = route
         self._output_schema = output_schema
         self._request = request
+        headers['Connection'] = "close"  # Disable keep alive because create trouble with old Qt (5.2, 5.3 and 5.4)
         headers['X-Route'] = self._route
         headers['Server'] = "Python/{0[0]}.{0[1]} GNS3/{1}".format(sys.version_info, __version__)
         super().__init__(headers=headers, **kwargs)
