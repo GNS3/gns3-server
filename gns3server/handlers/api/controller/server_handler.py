@@ -114,7 +114,10 @@ class ServerHandler:
     def write_settings(request, response):
         controller = Controller.instance()
         controller.settings = request.json
-        controller.save()
+        try:
+            controller.save()
+        except (OSError, PermissionError) as e:
+            raise HTTPConflict(text="Can't save the settings {}".format(str(e)))
         response.json(controller.settings)
         response.set_status(201)
 
