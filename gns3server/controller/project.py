@@ -293,7 +293,7 @@ class Project:
                     name = base_name.format(number, id=number, name="Node")
                 except KeyError as e:
                     raise aiohttp.web.HTTPConflict(text="{" + e.args[0] + "} is not a valid replacement string in the node name")
-                except ValueError as e:
+                except (ValueError, IndexError) as e:
                     raise aiohttp.web.HTTPConflict(text="{} is not a valid replacement string in the node name".format(base_name))
                 if name not in self._allocated_node_names:
                     self._allocated_node_names.add(name)
