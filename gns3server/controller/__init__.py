@@ -62,8 +62,13 @@ class Controller:
         console_host = host
         if host == "0.0.0.0":
             host = "127.0.0.1"
+
+        name = socket.gethostname()
+        if name == "gns3vm":
+            name = "Main server"
+
         yield from self.add_compute(compute_id="local",
-                                    name=socket.gethostname(),
+                                    name=name,
                                     protocol=server_config.get("protocol", "http"),
                                     host=host,
                                     console_host=console_host,
