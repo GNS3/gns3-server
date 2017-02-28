@@ -222,8 +222,14 @@ class GNS3VM:
         """
         engine = self._get_engine(engine)
         vms = []
-        for vm in (yield from engine.list()):
-            vms.append({"vmname": vm["vmname"]})
+        try:
+            for vm in (yield from engine.list()):
+                vms.append({"vmname": vm["vmname"]})
+        except GNS3VMError as e:
+            # We raise error only if user activated the GNS3 VM
+            # otherwise you have noise when VMware is not installed
+            if self.enable:
+                raise e
         return vms
 
     @asyncio.coroutine
