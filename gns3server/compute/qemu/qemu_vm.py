@@ -934,6 +934,7 @@ class QemuVM(BaseNode):
         except OSError as e:
             raise QemuError("Could not start QEMU console {}\n".format(e))
 
+    @asyncio.coroutine
     def _termination_callback(self, returncode):
         """
         Called when the process has stopped.
@@ -943,9 +944,7 @@ class QemuVM(BaseNode):
 
         if self.started:
             log.info("QEMU process has stopped, return code: %d", returncode)
-            self.status = "stopped"
-            self._hw_virtualization = False
-            self._process = None
+            yield from self.stop()
             # A return code of 1 seem fine on Windows
             if returncode != 0 and (returncode != 1 or not sys.platform.startswith("win")):
                 self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})

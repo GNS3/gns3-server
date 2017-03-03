@@ -533,7 +533,7 @@ class BaseNode:
 
         server_config = self._manager.config.get_section_config("Server")
         server_host = server_config.get("host")
-        if not self._ubridge_hypervisor:
+        if not self.ubridge:
             self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
         log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
         yield from self._ubridge_hypervisor.start()
