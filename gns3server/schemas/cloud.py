@@ -75,7 +75,7 @@ CLOUD_CREATE_SCHEMA = {
                      {"$ref": "#/definitions/HostInterfaces"}
                  ]},
             ]
-        },
+        }
     },
     "additionalProperties": False,
     "required": ["name"]
@@ -122,6 +122,10 @@ CLOUD_OBJECT_SCHEMA = {
                      {"$ref": "#/definitions/HostInterfaces"}
                  ]},
             ]
+        },
+        "node_directory": {
+            "description": "Path to the VM working directory",
+            "type": "string"
         },
         "status": {
             "description": "Node status",

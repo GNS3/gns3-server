@@ -103,7 +103,7 @@ VMWARE_OBJECT_SCHEMA = {
             "enum": ["started", "stopped", "suspended"]
         },
         "node_directory": {
-            "decription": "Path to the node working directory",
+            "description": "Path to the node working directory",
             "type": ["string", "null"]
         },
         "project_id": {
