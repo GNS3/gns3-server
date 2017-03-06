@@ -138,7 +138,11 @@ def load_topology(path):
     if topo["revision"] < 7:
         topo = _convert_2_0_0_beta_2(topo, path)
 
-    _check_topology_schema(topo)
+    try:
+        _check_topology_schema(topo)
+    except aiohttp.web.HTTPConflict as e:
+        log.error("Can't load the topology %s", path)
+        raise e
 
     if changed:
         with open(path, "w+", encoding="utf-8") as f:
