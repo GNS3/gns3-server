@@ -15,12 +15,6 @@ Response status codes
 **********************
 - **200**: List of links returned
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_projectsprojectidlinks.txt
-
 
 POST /v2/projects/**{project_id}**/links
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,8 +26,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Link created
+- **400**: Invalid request
 
 Input
 *******
@@ -64,10 +58,4 @@ Output
     <tr><td>nodes</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinks.txt
 

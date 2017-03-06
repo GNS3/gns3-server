@@ -9,12 +9,12 @@ Resume a suspended Dynamips VM instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance resumed
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance resumed
 

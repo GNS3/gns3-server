@@ -13,12 +13,6 @@ Parameters
 
 Response status codes
 **********************
-- **404**: The project doesn't exist
 - **204**: Project closed
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_post_projectsprojectidclose.txt
+- **404**: The project doesn't exist
 

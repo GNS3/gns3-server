@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Instance created
+- **400**: Invalid request
 
 Input
 *******
@@ -78,12 +78,6 @@ Output
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z position of the node</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidnodes.txt
-
 
 GET /v2/projects/**{project_id}**/nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,10 +90,4 @@ Parameters
 Response status codes
 **********************
 - **200**: List of nodes returned
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_projectsprojectidnodes.txt
 

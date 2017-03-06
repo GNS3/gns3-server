@@ -21,12 +21,6 @@ Output
     <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_version.txt
-
 
 POST /v2/version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,10 +50,4 @@ Output
     <tr><td>local</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether this is a local server or not</td>                     </tr>
     <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_version.txt
 

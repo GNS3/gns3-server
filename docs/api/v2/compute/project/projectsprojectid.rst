@@ -34,12 +34,6 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: opened, closed</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_get_projectsprojectid.txt
-
 
 DELETE /v2/compute/projects/**{project_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -51,12 +45,6 @@ Parameters
 
 Response status codes
 **********************
-- **404**: The project doesn't exist
 - **204**: Changes have been written on disk
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_delete_projectsprojectid.txt
+- **404**: The project doesn't exist
 

@@ -9,13 +9,13 @@ Start capture on a link instance. By default we consider it as an Ethernet link
 
 Parameters
 **********
-- **link_id**: Link UUID
 - **project_id**: Project UUID
+- **link_id**: Link UUID
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Capture started
+- **400**: Invalid request
 
 Input
 *******
@@ -24,7 +24,7 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>capture_file_name</td>                    <td> </td>                     <td>string</td>                     <td>Read only property. The name of the capture file if capture is running</td>                     </tr>
-    <tr><td>data_link_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: DLT_ATM_RFC1483, DLT_EN10MB, DLT_FRELAY, DLT_C_HDLC</td>                     </tr>
+    <tr><td>data_link_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: DLT_ATM_RFC1483, DLT_EN10MB, DLT_FRELAY, DLT_C_HDLC, DLT_PPP_SERIAL</td>                     </tr>
     </table>
 
 Output
@@ -41,10 +41,4 @@ Output
     <tr><td>nodes</td>                    <td>&#10004;</td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinkslinkidstartcapture.txt
 

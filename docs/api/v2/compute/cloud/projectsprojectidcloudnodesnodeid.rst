@@ -9,8 +9,8 @@ Get a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -26,17 +26,12 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>interfaces</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Cloud name</td>                     </tr>
+    <tr><td>node_directory</td>                    <td> </td>                     <td>string</td>                     <td>Path to the VM working directory</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>ports_mapping</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_get_projectsprojectidcloudnodesnodeid.txt
 
 
 PUT /v2/compute/projects/**{project_id}**/cloud/nodes/**{node_id}**
@@ -45,8 +40,8 @@ Update a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -80,6 +75,7 @@ Body
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>interfaces</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Cloud name</td>                     </tr>
+    <tr><td>node_directory</td>                    <td> </td>                     <td>string</td>                     <td>Path to the VM working directory</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>ports_mapping</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
@@ -94,17 +90,12 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>interfaces</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Cloud name</td>                     </tr>
+    <tr><td>node_directory</td>                    <td> </td>                     <td>string</td>                     <td>Path to the VM working directory</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>ports_mapping</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_put_projectsprojectidcloudnodesnodeid.txt
 
 
 DELETE /v2/compute/projects/**{project_id}**/cloud/nodes/**{node_id}**
@@ -113,18 +104,12 @@ Delete a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance deleted
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_delete_projectsprojectidcloudnodesnodeid.txt
 
