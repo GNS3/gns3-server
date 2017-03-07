@@ -11,9 +11,3 @@ Response status codes
 **********************
 - **200**: OK
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_gns3vmengines.txt
-

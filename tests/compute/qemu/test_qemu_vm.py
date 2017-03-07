@@ -144,7 +144,7 @@ def test_termination_callback(vm, async_run):
     vm.status = "started"
 
     with NotificationManager.instance().queue() as queue:
-        vm._termination_callback(0)
+        async_run(vm._termination_callback(0))
         assert vm.status == "stopped"
 
         async_run(queue.get(0))  #  Ping
@@ -163,10 +163,10 @@ def test_termination_callback_error(vm, tmpdir, async_run):
     vm._stdout_file = str(tmpdir / "qemu.log")
 
     with NotificationManager.instance().queue() as queue:
-        vm._termination_callback(1)
+        async_run(vm._termination_callback(1))
         assert vm.status == "stopped"
 
-        async_run(queue.get(0))  #  Ping
+        async_run(queue.get(0))  # Ping
 
         (action, event, kwargs) = queue.get_nowait()
         assert action == "node.updated"

@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Instance created
+- **400**: Invalid request
 - **409**: Conflict
 
 Input
@@ -26,6 +26,8 @@ Input
     <tr><td>acpi_shutdown</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>ACPI shutdown support</td>                     </tr>
     <tr><td>adapter_type</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Number of adapters</td>                     </tr>
+    <tr><td>bios_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU bios image path</td>                     </tr>
+    <tr><td>bios_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU bios image checksum</td>                     </tr>
     <tr><td>boot_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: c, d, n, cn, cd</td>                     </tr>
     <tr><td>cdrom_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU cdrom image path</td>                     </tr>
     <tr><td>cdrom_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
@@ -72,6 +74,8 @@ Output
     <tr><td>acpi_shutdown</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>ACPI shutdown support</td>                     </tr>
     <tr><td>adapter_type</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU adapter type</td>                     </tr>
     <tr><td>adapters</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Number of adapters</td>                     </tr>
+    <tr><td>bios_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU bios image path</td>                     </tr>
+    <tr><td>bios_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU bios image checksum</td>                     </tr>
     <tr><td>boot_priority</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: c, d, n, cn, cd</td>                     </tr>
     <tr><td>cdrom_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU cdrom image path</td>                     </tr>
     <tr><td>cdrom_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
@@ -100,7 +104,7 @@ Output
     <tr><td>legacy_networking</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Use QEMU legagy networking commands (-net syntax)</td>                     </tr>
     <tr><td>mac_address</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU MAC address</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU VM instance name</td>                     </tr>
-    <tr><td>node_directory</td>                    <td>&#10004;</td>                     <td>string</td>                     <td></td>                     </tr>
+    <tr><td>node_directory</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Path to the VM working directory</td>                     </tr>
     <tr><td>node_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>options</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Additional QEMU options</td>                     </tr>
     <tr><td>platform</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: aarch64, alpha, arm, cris, i386, lm32, m68k, microblaze, microblazeel, mips, mips64, mips64el, mipsel, moxie, or32, ppc, ppc64, ppcemb, s390x, sh4, sh4eb, sparc, sparc64, tricore, unicore32, x86_64, xtensa, xtensaeb</td>                     </tr>
@@ -111,10 +115,4 @@ Output
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the QEMU VM</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_post_projectsprojectidqemunodes.txt
 

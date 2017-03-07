@@ -29,21 +29,29 @@ def nio():
     return NIOUDP(4242, "127.0.0.1", 4343)
 
 
-def test_json_with_ports(on_gns3vm, project):
+@pytest.fixture
+def manager():
+    m = MagicMock()
+    m.module_name = "builtins"
+    return m
+
+
+def test_json_with_ports(on_gns3vm, project, manager):
     ports = [
         {
             "interface": "virbr0",
             "name": "virbr0",
             "port_number": 0,
-            "type": "ethernet"
+            "type": "ethernet",
         }
     ]
-    cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports)
+    cloud = Cloud("cloud1", str(uuid.uuid4()), project, manager, ports=ports)
     assert cloud.__json__() == {
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
         "status": "stopped",
+        "node_directory": cloud.working_dir,
         "ports_mapping": [
             {
                 "interface": "virbr0",
@@ -60,16 +68,17 @@ def test_json_with_ports(on_gns3vm, project):
     }
 
 
-def test_json_without_ports(on_gns3vm, project):
+def test_json_without_ports(on_gns3vm, project, manager):
     """
     If no interface is provide the cloud is prefill with non special interfaces
     """
-    cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=None)
+    cloud = Cloud("cloud1", str(uuid.uuid4()), project, manager, ports=None)
     assert cloud.__json__() == {
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
         "status": "stopped",
+        "node_directory": cloud.working_dir,
         "ports_mapping": [
             {
                 "interface": "eth0",

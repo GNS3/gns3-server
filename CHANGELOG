@@ -1,5 +1,43 @@
 # Change Log
 
+## 2.0.0 RC 1 06/03/2017
+
+* Update the documentation
+* Enable show in file manager for cloud
+* Improve error log when you have trouble to load a topology
+* Fix when qemu exit by itself clean other processes
+* Fix an issue with some node name format
+* Catch error when we can't save the settings
+* Do not prevent the creation of a local server on a machine named gns3vm
+* Load local server before anything else
+* Remove noise from log when VMware is not installed
+* Fix an error with some SVG
+* Patch hostname in configuration file even if name is unsync
+* If the GNS3 VM as failed to start reset his status
+* Update the documentation
+* Enable show in file manager for cloud
+* Improve error log when you have trouble to load a topology
+* Fix when qemu exit by itself clean other processes
+* Fix an issue with some node name format
+* Catch error when we can't save the settings
+* Do not prevent the creation of a local server on a machine named gns3vm
+* Load local server before anything else
+* Remove noise from log when VMware is not installed
+* Fix an error with some SVG
+* Patch hostname in configuration file even if name is unsync
+* If the GNS3 VM as failed to start reset his status
+* Report aiohttp version in crash report
+* Catch some invalid node name formatting
+* Ensure we dump a .gns3 before exporting it
+* Improve ACPI shutdown for virtualbox
+* Fix an issue with serial capture for IOU
+* Fix restoration of private config when using dynamips
+* Avoid a crash when the connection with the server close
+* Increase timeout for detecting VirtualBox GNS3 VM
+* Fix headless startup of the GNS3 VM
+* Do not crash at startup if local server as the same name as remote server
+* Yarl 0.9.8 is require by aiohttp 1.3
+
 ## 2.0.0 beta 4 16/02/2017
 
 * Lock aiohttp to 1.2.0 because 1.3 create bug with Qt

@@ -503,7 +503,7 @@ QEMU_OBJECT_SCHEMA = {
             "enum": ["c", "d", "n", "cn", "cd"]
         },
         "node_directory": {
-            "decription": "Path to the VM working directory",
+            "description": "Path to the VM working directory",
             "type": "string"
         },
         "ram": {

@@ -44,12 +44,6 @@ Output
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z position of the node</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_projectsprojectidnodesnodeid.txt
-
 
 PUT /v2/projects/**{project_id}**/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,12 +117,6 @@ Output
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z position of the node</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_put_projectsprojectidnodesnodeid.txt
-
 
 DELETE /v2/projects/**{project_id}**/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,18 +124,12 @@ Delete a node instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance deleted
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_delete_projectsprojectidnodesnodeid.txt
 

@@ -16,9 +16,3 @@ Response status codes
 - **200**: Success
 - **400**: Invalid request
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_gns3vmenginesenginevms.txt
-

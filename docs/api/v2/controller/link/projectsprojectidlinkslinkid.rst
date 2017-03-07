@@ -9,13 +9,13 @@ Update a link instance
 
 Parameters
 **********
-- **link_id**: Link UUID
 - **project_id**: Project UUID
+- **link_id**: Link UUID
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Link updated
+- **400**: Invalid request
 
 Input
 *******
@@ -54,17 +54,11 @@ Delete a link instance
 
 Parameters
 **********
-- **link_id**: Link UUID
 - **project_id**: Project UUID
+- **link_id**: Link UUID
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **204**: Link deleted
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_delete_projectsprojectidlinkslinkid.txt
+- **400**: Invalid request
 

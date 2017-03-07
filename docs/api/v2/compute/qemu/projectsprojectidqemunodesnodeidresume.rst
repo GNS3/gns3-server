@@ -9,18 +9,12 @@ Resume a Qemu VM instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance resumed
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance resumed
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_post_projectsprojectidqemunodesnodeidresume.txt
 

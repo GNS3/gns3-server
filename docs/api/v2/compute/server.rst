@@ -1,8 +1,8 @@
-Version
+Server
 -----------------------------
 
 .. toctree::
    :glob:
    :maxdepth: 2
 
-   version/*
+   server/*

@@ -9,14 +9,14 @@ Suspend a node instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance suspended
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance suspended
 
 Output
 *******
@@ -48,10 +48,4 @@ Output
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y position of the node</td>                     </tr>
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z position of the node</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidnodesnodeidsuspend.txt
 

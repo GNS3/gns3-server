@@ -14,12 +14,6 @@ Parameters
 
 Response status codes
 **********************
-- **404**: The project or snapshot doesn't exist
 - **204**: Changes have been written on disk
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_delete_projectsprojectidsnapshotssnapshotid.txt
+- **404**: The project or snapshot doesn't exist
 

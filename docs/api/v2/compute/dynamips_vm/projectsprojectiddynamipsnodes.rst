@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Instance created
+- **400**: Invalid request
 - **409**: Conflict
 
 Input
@@ -94,7 +94,7 @@ Output
     <tr><td>midplane</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: std, vxr</td>                     </tr>
     <tr><td>mmap</td>                    <td> </td>                     <td>boolean</td>                     <td>MMAP feature</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Dynamips VM instance name</td>                     </tr>
-    <tr><td>node_directory</td>                    <td> </td>                     <td>string</td>                     <td></td>                     </tr>
+    <tr><td>node_directory</td>                    <td> </td>                     <td>string</td>                     <td>Path to the vm working directory</td>                     </tr>
     <tr><td>node_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>npe</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: npe-100, npe-150, npe-175, npe-200, npe-225, npe-300, npe-400, npe-g2</td>                     </tr>
     <tr><td>nvram</td>                    <td> </td>                     <td>integer</td>                     <td>Amount of NVRAM in KB</td>                     </tr>

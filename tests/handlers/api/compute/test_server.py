@@ -35,5 +35,5 @@ def test_version_output(http_compute):
 
 
 def test_debug_output(http_compute):
-    response = http_compute.get('/debug', example=True)
+    response = http_compute.get('/debug')
     assert response.status == 200

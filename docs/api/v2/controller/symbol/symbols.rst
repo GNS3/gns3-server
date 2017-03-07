@@ -11,9 +11,3 @@ Response status codes
 **********************
 - **200**: Symbols list returned
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_symbols.txt
-

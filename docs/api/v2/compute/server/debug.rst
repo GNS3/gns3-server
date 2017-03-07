@@ -1,20 +1,13 @@
-/v2/compute/projects/{project_id}/frame_relay_switch/nodes/{node_id}/stop
+/v2/compute/debug
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-POST /v2/compute/projects/**{project_id}**/frame_relay_switch/nodes/**{node_id}**/stop
+GET /v2/compute/debug
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Stop a Frame Relay switch
-
-Parameters
-**********
-- **project_id**: Project UUID
-- **node_id**: Node UUID
+Return debug informations about the compute
 
 Response status codes
 **********************
-- **204**: Instance stopped
-- **400**: Invalid request
-- **404**: Instance doesn't exist
+- **201**: Writed
 

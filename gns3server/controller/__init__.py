@@ -275,6 +275,7 @@ class Controller:
     @settings.setter
     def settings(self, val):
         self._settings = val
+        self.save()
         self.notification.emit("settings.updated", val)
 
     @asyncio.coroutine

@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Instance created
+- **400**: Invalid request
 - **409**: Conflict
 
 Input

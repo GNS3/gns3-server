@@ -124,7 +124,7 @@ VBOX_OBJECT_SCHEMA = {
             "enum": ["started", "stopped", "suspended"]
         },
         "node_directory": {
-            "decription": "Path to the VM working directory",
+            "description": "Path to the VM working directory",
             "type": ["string", "null"]
         },
         "headless": {
