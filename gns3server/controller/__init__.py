@@ -53,6 +53,9 @@ class Controller:
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
 
+        # Store settings shared by the different GUI will be replace by dedicated API later
+        self._settings = None
+
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
@@ -83,6 +86,7 @@ class Controller:
         if name == "gns3vm":
             name = "Main server"
 
+        computes = yield from self._load_controller_settings()
         yield from self.add_compute(compute_id="local",
                                     name=name,
                                     protocol=server_config.get("protocol", "http"),
@@ -92,7 +96,11 @@ class Controller:
                                     user=server_config.get("user", ""),
                                     password=server_config.get("password", ""),
                                     force=True)
-        yield from self._load_controller_settings()
+        for c in computes:
+            try:
+                yield from self.add_compute(**c)
+            except aiohttp.web_exceptions.HTTPConflict:
+                pass  # Skip not available servers at loading
         yield from self.load_projects()
         yield from self.gns3vm.auto_start_vm()
         yield from self._project_auto_open()
@@ -116,6 +124,9 @@ class Controller:
         """
         Save the controller configuration on disk
         """
+        # We don't save during the loading otherwise we could lost stuff
+        if self._settings is None:
+            return
         data = {
             "computes": [],
             "settings": self._settings,
@@ -151,18 +162,17 @@ class Controller:
                 data = json.load(f)
         except (OSError, ValueError) as e:
             log.critical("Cannot load %s: %s", self._config_file, str(e))
-            return
+            self._settings = {}
+            return []
 
-        if "settings" in data:
+        if "settings" in data and data["settings"] is not None:
             self._settings = data["settings"]
+        else:
+            self._settings = {}
         if "gns3vm" in data:
             self.gns3vm.settings = data["gns3vm"]
 
-        for c in data["computes"]:
-            try:
-                yield from self.add_compute(**c)
-            except aiohttp.web_exceptions.HTTPConflict:
-                pass  # Skip not available servers at loading
+        return data["computes"]
 
     @asyncio.coroutine
     def load_projects(self):
@@ -264,12 +274,14 @@ class Controller:
                         "headless": vm_settings.get("headless", False),
                         "vmname": vmname
                     }
+                self._settings = {}
 
     @property
     def settings(self):
         """
         Store settings shared by the different GUI will be replace by dedicated API later. Dictionnary
         """
+        assert self._settings is not None
         return self._settings
 
     @settings.setter

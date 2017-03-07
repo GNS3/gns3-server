@@ -57,23 +57,8 @@ def test_load_controller_settings(controller, controller_config_path, async_run)
     data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
-    async_run(controller._load_controller_settings())
+    assert len(async_run(controller._load_controller_settings())) == 1
     assert controller.settings["IOU"]
-    assert controller.computes["test1"].__json__() == {
-        "compute_id": "test1",
-        "connected": False,
-        "host": "localhost",
-        "port": 8000,
-        "protocol": "http",
-        "user": "admin",
-        "name": "http://admin@localhost:8000",
-        "cpu_usage_percent": None,
-        "memory_usage_percent": None,
-        "capabilities": {
-            "version": None,
-            "node_types": []
-        }
-    }
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
