@@ -1,0 +1,38 @@
+{
+    "name": "Cisco 1700",
+    "category": "router",
+    "description": "Cisco 1700 Router",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
+    "product_name": "1700",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "dynamips": {
+        "chassis": "1720",
+        "platform": "c1700",
+        "ram": 160,
+        "nvram": 128,
+        "startup_config": "ios_base_startup-config.txt",
+        "slot0": "C1700-MB-1FE"
+    },
+    "images": [
+        {
+            "filename": "c1700-adventerprisek9-mz.124-25d.image",
+            "version": "124-25d",
+            "md5sum": "7f4ae12a098391bc0edcaf4f44caaf9d",
+            "filesize": 57475320
+        }
+    ],
+    "versions": [
+        {
+            "name": "124-25d",
+            "idlepc": "0x80358a60",
+            "images": {
+                "image": "c1700-adventerprisek9-mz.124-25d.image"
+            }
+        }
+    ]
+}

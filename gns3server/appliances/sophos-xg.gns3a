@@ -1,0 +1,92 @@
+{
+    "name": "Sophos XG Firewall",
+    "category": "firewall",
+    "description": "Sophos XG Firewall delivers the ultimate enterprise firewall performance, security, and control.\n\nFastpath packet optimization technology with up to 140Gbps throughput\nRevolutionary Security Heartbeat\u2122 for improved Advanced Threat Protection (ATP) and response\nPatented Layer-8 user identity control and visibility\nUnified App, Web, QoS, and IPS Policy simplifies management\nApp risk factor and user threat quotient monitors risk levels",
+    "vendor_name": "Sophos",
+    "vendor_url": "https://www.sophos.com",
+    "documentation_url": "https://www.sophos.com/en-us/support/documentation/sophos-xg-firewall.aspx",
+    "product_name": "Sophos XG Firewall",
+    "product_url": "https://www.sophos.com/en-us/products/next-gen-firewall.aspx",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Port 0 => You computer for the configurtation\nPort 1 => WAN\n\n1. You need a serial number. You can get a trial from Sophos for free.\nUpon starting for the first time, access the setup screen at https://172.16.16.16 (Note: it may take a few minutes for the necessary services to start before the setup screen is ready).\n3. When you are prompted the default administrator credentials are:\nUsername: admin\nPassword: admin\n\n4. Make sure the device is setup for internet access (required for activation): change the network settings from the Basic Setup screen if necessary.\n5. Enter your serial number (provided below) into the setup screen and click \"Activate Device\".\n6. Then register your device with your MySophos ID by clicking \"Register Device\" and entering your MySophos ID and password that you used to download the software.\\\n7. Once the device is registered, you can initiate License Synchronization and proceed with the rest of the configuration.",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "VI-SFOS_16.05.0_RC-1.KVM-098-PRIMARY.qcow2",
+            "version": "16.05.1 RC1",
+            "md5sum": "1826ca8a34945de5251876dc3fc7fe63",
+            "filesize": 285736960,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFOS_16.05.0_RC-1.KVM-098-AUXILARY.qcow2",
+            "version": "16.05.1 RC1",
+            "md5sum": "a9c60a65c1e7b5be8369e5ceaeb358f9",
+            "filesize": 59441152,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFOS_16.01.1.KVM-202-PRIMARY.qcow2",
+            "version": "16.01.1",
+            "md5sum": "818d9f973b7a32c50d9b84814c6f1ee3",
+            "filesize": 277479424,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFOS_16.01.1.KVM-202-AUXILARY.qcow2",
+            "version": "16.01.1",
+            "md5sum": "1f6fc0b751aaec9bfd4401b0e0cbc6dc",
+            "filesize": 59441152,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFMOS_15.01.0.KVM-301-PRIMARY.qcow2",
+            "version": "15.01",
+            "md5sum": "a2cb14ed93de1550afef49984b11b56f",
+            "filesize": 706412544,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFMOS_15.01.0.KVM-301-AUXILARY.qcow2",
+            "version": "15.01",
+            "md5sum": "43cf82ac1f7b0eb6550f0e203daa6b96",
+            "filesize": 199168,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        }
+    ],
+    "versions": [
+        {
+            "name": "16.05.1 RC1",
+            "images": {
+                "hda_disk_image": "VI-SFOS_16.05.0_RC-1.KVM-098-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SFOS_16.05.0_RC-1.KVM-098-AUXILARY.qcow2"
+            }
+        },
+        {
+            "name": "16.01.1",
+            "images": {
+                "hda_disk_image": "VI-SFOS_16.01.1.KVM-202-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SFOS_16.01.1.KVM-202-AUXILARY.qcow2"
+            }
+        },
+        {
+            "name": "15.01",
+            "images": {
+                "hda_disk_image": "VI-SFMOS_15.01.0.KVM-301-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SFMOS_15.01.0.KVM-301-AUXILARY.qcow2"
+            }
+        }
+    ]
+}

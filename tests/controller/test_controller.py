@@ -24,10 +24,7 @@ import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
-from gns3server.controller import Controller
 from gns3server.controller.compute import Compute
-from gns3server.controller.project import Project
-from gns3server.config import Config
 from gns3server.version import __version__
 
 
@@ -465,6 +462,10 @@ def test_get_free_project_name(controller, async_run):
     async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test-1"))
     assert controller.get_free_project_name("Test") == "Test-2"
     assert controller.get_free_project_name("Hello") == "Hello"
+
+
+def test_appliance_templates(controller):
+    assert len(controller.appliance_templates) > 0
 
 
 def test_load_base_files(controller, config, tmpdir):

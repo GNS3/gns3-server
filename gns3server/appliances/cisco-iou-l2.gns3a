@@ -1,0 +1,47 @@
+{
+    "name": "Cisco IOU L2",
+    "category": "multilayer_switch",
+    "description": "Cisco IOS on UNIX Layer 2 image.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com",
+    "product_name": "Cisco IOU L2",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "iou": {
+        "ethernet_adapters": 4,
+        "serial_adapters": 0,
+        "nvram": 128,
+        "ram": 256,
+        "startup_config": "iou_l2_base_startup-config.txt"
+    },
+    "images": [
+        {
+            "filename": "i86bi-linux-l2-ipbasek9-15.1g.bin",
+            "version": "15.1g",
+            "md5sum": "0b8b9e14ca99b68c654e44c4296857ba",
+            "filesize": 62137336
+        },
+        {
+            "filename": "i86bi-linux-l2-adventerprisek9-15.1a.bin",
+            "version": "15.1a",
+            "md5sum": "9549a20a7391fb849da32caa77a0d254",
+            "filesize": 72726092
+        }
+    ],
+    "versions": [
+        {
+            "name": "15.1g",
+            "images": {
+                "image": "i86bi-linux-l2-ipbasek9-15.1g.bin"
+            }
+        },
+        {
+            "name": "15.1a",
+            "images": {
+                "image": "i86bi-linux-l2-adventerprisek9-15.1a.bin"
+            }
+        }
+    ]
+}

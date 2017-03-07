@@ -1,0 +1,68 @@
+{
+    "name": "AsteriskNOW",
+    "category": "guest",
+    "description": "AsteriskNOW makes it easy to create custom telephony solutions by automatically installing the 'plumbing'. It's a complete Linux distribution with Asterisk, the DAHDI driver framework, and, the FreePBX administrative GUI. Much of the complexity of Asterisk and Linux is handled by the installer, the yum package management utility and the administrative GUI. With AsteriskNOW, application developers and integrators can concentrate on building solutions, not maintaining the plumbing.",
+    "vendor_name": "Digium",
+    "vendor_url": "http://www.asterisk.org/",
+    "documentation_url": "https://wiki.asterisk.org/wiki/display/AST/Installing+AsteriskNOW",
+    "product_name": "AsteriskNOW",
+    "product_url": "http://www.asterisk.org/downloads/asterisknow",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Select 'No RAID' option when installing the appliance using the VNC console. Installing the freepbx package takes a lot of time (15+ minutes).",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "AsteriskNOW-612-current-64.iso",
+            "version": "6.12",
+            "md5sum": "cc31e6d9b88d49e8eb182f1e2fb85479",
+            "filesize": 1135714304,
+            "download_url": "http://www.asterisk.org/downloads/asterisknow/all-asterisknow-versions",
+            "direct_download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/AsteriskNOW-612-current-64.iso"
+        },
+        {
+            "filename": "AsteriskNOW-5211-current-64.iso",
+            "version": "5.211",
+            "md5sum": "aef2b0fffd637b9c666e8ce904bbd714",
+            "filesize": 1124741120,
+            "download_url": "http://www.asterisk.org/downloads/asterisknow/all-asterisknow-versions",
+            "direct_download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/AsteriskNOW-5211-current-64.iso"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.12",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "AsteriskNOW-612-current-64.iso"
+            }
+        },
+        {
+            "name": "5.211",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "AsteriskNOW-5211-current-64.iso"
+            }
+        }
+    ]
+}

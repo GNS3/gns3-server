@@ -1,0 +1,50 @@
+{
+    "name": "Cisco IOS XRv 9000",
+    "category": "router",
+    "description": "IOS XRv 9000 (aka Sunstone) is the 1st VM released running the 64-bit IOS XR operating system as used on the NCS-6xxx platform. This appliance requires 4 vCPUs and 16GB of memory to run!",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/td/docs/ios_xr_sw/ios_xrv/release/notes/xrv-rn.html",
+    "product_name": "IOS XRv 9000",
+    "product_url": "http://virl.cisco.com/",
+    "registry_version": 1,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username/password: admin/admin, cisco/cisco and lab/lab. There is no default configuration present.",
+    "first_port_name": "MgmtEth0/0/CPU0/0",
+    "port_name_format": "GigabitEthernet0/0/0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 16384,
+        "arch": "i386",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-smp 4"
+    },
+    "images": [
+        {
+            "filename": "xrv9k-fullk9-x.qcow2-6.0.1",
+            "version": "6.0.1",
+            "md5sum": "e20d046807075046c35b6ce7d6766a7f",
+            "filesize": 2109210624,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
+            "filename": "xrv9k-fullk9-x.qcow2-6.0.0",
+            "version": "6.0.0",
+            "md5sum": "64c538c34252aaeb4ed1ddb93d6803fd",
+            "filesize": 2572943360,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.0.0",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x.qcow2-6.0.0"
+            }
+        }
+    ]
+}

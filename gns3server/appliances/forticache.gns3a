@@ -1,0 +1,67 @@
+{
+    "name": "FortiCache",
+    "category": "guest",
+    "description": "FortiCache VM high performance Web Caching virtual appliances address bandwidth saturation, high latency, and poor performance caused by caching popular internet content locally for carriers, service providers, enterprises and educational networks. FortiCache VM appliances reduce the cost and impact of cached content on the network, while increasing performance and end- user satisfaction by improving the speed of delivery of popular repeated content.",
+    "vendor_name": "Fortinet",
+    "vendor_url": "http://www.fortinet.com/",
+    "documentation_url": "http://docs.fortinet.com/forticache/admin-guides",
+    "product_name": "FortiCache",
+    "product_url": "https://www.fortinet.com/products-services/products/wan-appliances/forticache.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username is admin, no password is set.",
+    "port_name_format": "Port{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 3,
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "FCHKVM-v400-build0112-FORTINET.out.kvm.qcow2",
+            "version": "4.1.3",
+            "md5sum": "554ebdf8874753b275c2f1ed9104e081",
+            "filesize": 25812992,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FCHKVM-v400-build0109-FORTINET.out.kvm.qcow2",
+            "version": "4.1.2",
+            "md5sum": "c54246365b3d3f03c9ff2184127695ea",
+            "filesize": 25829376,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "4.1.3",
+            "images": {
+                "hda_disk_image": "FCHKVM-v400-build0112-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
+        {
+            "name": "4.1.2",
+            "images": {
+                "hda_disk_image": "FCHKVM-v400-build0109-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        }
+    ]
+}

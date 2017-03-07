@@ -1,0 +1,80 @@
+{
+    "name": "F5 BIG-IQ CM",
+    "category": "guest",
+    "description": "When you go from managing a few boxes to managing a few dozen, your processes, logistics, and needs all change. BIG-IQ Centralized Management brings all of your devices together, so you can discover, track, upgrade, and deploy more efficiently. You can also monitor key metrics from one location, saving yourself both time and effort.\n\nCentrally manage up to 200 physical, virtual, or virtual clustered multiprocessing (vCMP) based BIG-IP devices. BIG-IQ Centralized Management also handles licensing for up to 5,000 unmanaged devices, so you can spin BIG-IP virtual editions (VEs) up or down as needed.",
+    "vendor_name": "F5",
+    "vendor_url": "http://www.f5.com/",
+    "documentation_url": "https://support.f5.com/csp/#/knowledge-center/software/BIG-IQ?module=BIG-IQ%20Centralized%20Management",
+    "product_name": "F5 BIG-IQ CM",
+    "product_url": "https://f5.com/products/big-iq-centralized-management",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Console credentials: root/default\nWebUI credentials: admin/admin\nThe boot process might take a few minutes without providing any output to the console. Please be patient (or set console to vnc to see tty outputs).",
+    "first_port_name": "mgmt",
+    "port_name_format": "1.{port1}",
+    "symbol": "mgmt_station.svg",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 4096,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "hdd_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-smp 2 -cpu host"
+    },
+    "images": [
+        {
+            "filename": "BIG-IQ-5.1.0.0.0.631.qcow2",
+            "version": "5.1.0",
+            "md5sum": "f8f52d9ef56c6bdd0a0604f1b50b81c6",
+            "filesize": 2335440896,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.1.0/english/v5.1.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.1.0&container=v5.1.0&file=BIG-IQ-5.1.0.0.0.631.qcow2.zip"
+        },
+        {
+            "filename": "BIG-IQ-5.0.0.0.0.3026.qcow2",
+            "version": "5.0.0",
+            "md5sum": "072194d6eb052ee083cf8cef9e7a87d6",
+            "filesize": 2301820928,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.0.0/english/v5.0.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.0.0&container=v5.0.0&file=BIG-IQ-5.0.0.0.0.3026.qcow2.zip"
+        },
+        {
+            "filename": "BIG-IQ-5.x.DATASTOR.LTM.qcow2",
+            "version": "5.x",
+            "md5sum": "c7f82b8834436eb67b7d619767ac7476",
+            "filesize": 393216,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.0.0/english/v5.0.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.0.0&container=v5.0.0&file=BIG-IQ-5.0.0.0.0.3026.qcow2.zip"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.1.0",
+            "images": {
+                "hda_disk_image": "BIG-IQ-5.1.0.0.0.631.qcow2",
+                "hdb_disk_image": "empty100G.qcow2",
+                "hdd_disk_image": "BIG-IQ-5.x.DATASTOR.LTM.qcow2"
+            }
+        },
+        {
+            "name": "5.0.0",
+            "images": {
+                "hda_disk_image": "BIG-IQ-5.0.0.0.0.3026.qcow2",
+                "hdb_disk_image": "empty100G.qcow2",
+                "hdd_disk_image": "BIG-IQ-5.x.DATASTOR.LTM.qcow2"
+            }
+        }
+    ]
+}

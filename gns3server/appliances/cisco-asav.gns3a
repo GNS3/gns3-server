@@ -1,0 +1,96 @@
+{
+    "name": "Cisco ASAv",
+    "category": "firewall",
+    "description": "The Adaptive Security Virtual Appliance is a virtualized network security solution based on the market-leading Cisco ASA 5500-X Series firewalls. It supports both traditional and next-generation software-defined network (SDN) and Cisco Application Centric Infrastructure (ACI) environments to provide policy enforcement and threat inspection across heterogeneous multisite environments.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/security/virtual-adaptive-security-appliance-firewall/products-installation-guides-list.html",
+    "product_name": "ASAv",
+    "product_url": "http://www.cisco.com/c/en/us/products/security/virtual-adaptive-security-appliance-firewall/index.html",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "There is no default password and enable password. A default configuration is present. ASAv goes through a double-boot before becoming active. This is normal and expected.",
+    "symbol": ":/symbols/asa.svg",
+    "first_port_name": "Management0/0",
+    "port_name_format": "Gi0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 8,
+        "ram": 2048,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+       {
+            "filename": "asav971.qcow2",
+            "version": "9.7.1",
+            "md5sum": "cb31f53e70a9e409829d2f832ff09191",
+            "filesize": 199688192,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.7.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "asav962.qcow2",
+            "version": "9.6.2",
+            "md5sum": "a4c892afe610776dde8a176f1049ae96",
+            "filesize": 177274880,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.6.2&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "asav961.qcow2",
+            "version": "9.6.1",
+            "md5sum": "c8726827cb72f4eed8cb52a64bca091c",
+            "filesize": 173801472,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.6.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "asav952-204.qcow2",
+            "version": "9.5.2-204",
+            "md5sum": "73a1126283de6b70c4cc12edfc46d547",
+            "filesize": 169345024,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
+            "filename": "asav951-201.qcow2",
+            "version": "9.5.1-200",
+            "md5sum": "ca071370278ecbd5dfdb1c5a4161571a",
+            "filesize": 160038912,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        }  
+    ],
+    "versions": [
+         {
+            "name": "9.7.1",
+            "images": {
+                "hda_disk_image": "asav971.qcow2"
+            }
+        },
+        {
+            "name": "9.6.2",
+            "images": {
+                "hda_disk_image": "asav962.qcow2"
+            }
+        }, 
+        {
+            "name": "9.6.1",
+            "images": {
+                "hda_disk_image": "asav961.qcow2"
+            }
+        },
+        {
+            "name": "9.5.2-204",
+            "images": {
+                "hda_disk_image": "asav952-204.qcow2"
+            }
+        },
+        {
+            "name": "9.5.1-201",
+            "images": {
+                "hda_disk_image": "asav951-201.qcow2"
+            }
+        }
+    ]
+}
+

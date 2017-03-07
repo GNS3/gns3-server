@@ -1,0 +1,87 @@
+{
+    "name": "FortiWeb",
+    "category": "firewall",
+    "description": "FortiWeb Web Application Firewalls provide specialized, layered web application threat protection for medium/large enterprises, application service providers, and SaaS providers.",
+    "vendor_name": "Fortinet",
+    "vendor_url": "http://www.fortinet.com/",
+    "documentation_url": "http://docs.fortinet.com/fortiweb",
+    "product_name": "FortiWeb",
+    "product_url": "http://www.fortinet.com/products/fortiweb/index.html",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username is admin, no password is set. Console keeps sending 'access uuid file failed, error number 2' messages; ignore it.",
+    "port_name_format": "Port{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "FWB_KVM-v500-build0739-FORTINET.out.kvm-log.qcow2",
+            "version": "5.5.4",
+            "md5sum": "d42225723d2e2ee0160f101c5b9663d5",
+            "filesize": 7602176,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FWB_KVM-v500-FORTINET.out.kvm-log.qcow2",
+            "version": "5.5.2 - 5.5.3",
+            "md5sum": "b90cd0a382cb09db31cef1d0cdf7d6e9",
+            "filesize": 7602176,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FWB_KVM-v500-build0739-FORTINET.out.kvm-boot.qcow2",
+            "version": "5.5.4",
+            "md5sum": "a11b91efacce70212b6b9e1f9916cc3e",
+            "filesize": 87228416,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FWB_KVM-v500-build0730-FORTINET.out.kvm-boot.qcow2",
+            "version": "5.5.3",
+            "md5sum": "12ebec432a54900e6c63540af8ebfbb4",
+            "filesize": 87228416,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FWB_KVM-v500-build0723-FORTINET.out.kvm-boot.qcow2",
+            "version": "5.5.2",
+            "md5sum": "0a613191948d3618ae16cd9f11988448",
+            "filesize": 87162880,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.5.4",
+            "images": {
+                "hda_disk_image": "FWB_KVM-v500-build0739-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FWB_KVM-v500-build0739-FORTINET.out.kvm-log.qcow2"
+            }
+        },
+        {
+            "name": "5.5.3",
+            "images": {
+                "hda_disk_image": "FWB_KVM-v500-build0730-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FWB_KVM-v500-FORTINET.out.kvm-log.qcow2"
+            }
+        },
+        {
+            "name": "5.5.2",
+            "images": {
+                "hda_disk_image": "FWB_KVM-v500-build0723-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FWB_KVM-v500-FORTINET.out.kvm-log.qcow2"
+            }
+        }
+    ]
+}

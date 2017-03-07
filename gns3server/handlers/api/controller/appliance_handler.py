@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2015 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,13 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .compute_handler import ComputeHandler
-from .project_handler import ProjectHandler
-from .node_handler import NodeHandler
-from .link_handler import LinkHandler
-from .server_handler import ServerHandler
-from .drawing_handler import DrawingHandler
-from .symbol_handler import SymbolHandler
-from .snapshot_handler import SnapshotHandler
-from .appliance_handler import ApplianceHandler
-from .gns3_vm_handler import GNS3VMHandler
+from gns3server.web.route import Route
+from gns3server.controller import Controller
+
+import logging
+log = logging.getLogger(__name__)
+
+
+class ApplianceHandler:
+    """API entry points for appliance management."""
+
+    @Route.get(
+        r"/appliances/templates",
+        description="List of appliance",
+        status_codes={
+            200: "Appliance list returned"
+        })
+    def list(request, response):
+
+        controller = Controller.instance()
+        response.json([c for c in controller.appliance_templates.values()])

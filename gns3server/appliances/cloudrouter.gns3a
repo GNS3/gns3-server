@@ -1,0 +1,70 @@
+{
+    "name": "CloudRouter",
+    "category": "router",
+    "description": "The CloudRouter Project is a collaborative open source project focused on developing a powerful, easy to use router designed for the cloud.\nCompute resources are rapidly migrating from physical infrastructure to a combination of physical, virtual and cloud environments. A similar transition is emerging in the networking space, with network control logic shifting from proprietary hardware-based platforms to open source software-based platforms. CloudRouter is a software-based router distribution designed to run on physical, virtual and cloud environments, supporting software-defined networking infrastructure. It includes the features of traditional hardware routers, as well as support for emerging technologies such as containers and software-defined interconnection. CloudRouter aims to facilitate migration to the cloud without giving up control over network routing and governance.",
+    "vendor_name": "CloudRouter Community",
+    "vendor_url": "https://cloudrouter.org/",
+    "documentation_url": "https://cloudrouter.atlassian.net/wiki/display/CPD/CloudRouter+Project+Information",
+    "product_name": "CloudRouter",
+    "product_url": "https://cloudrouter.org/about/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default credentials: cloudrouter / gns3",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 16,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "cloudrouter-centos-cloud-full.raw",
+            "version": "4.0 Full",
+            "md5sum": "d148288ecc0806e08f8347ef0ad755e8",
+            "filesize": 10737418240,
+            "download_url": "https://cloudrouter.atlassian.net/wiki/display/CPD/CloudRouter+Downloads",
+            "direct_download_url": "https://repo.cloudrouter.org/4/centos/7/images/cloudrouter-centos-cloud-full.raw.xz",
+            "compression": "xz"
+        },
+        {
+            "filename": "cloudrouter-centos-cloud-minimal.raw",
+            "version": "4.0 Minimal",
+            "md5sum": "8d982a37a49bc446a0edc59cefcadcdb",
+            "filesize": 10737418240,
+            "download_url": "https://cloudrouter.atlassian.net/wiki/display/CPD/CloudRouter+Downloads",
+            "direct_download_url": "https://repo.cloudrouter.org/4/centos/7/images/cloudrouter-centos-cloud-minimal.raw.xz",
+            "compression": "xz"
+        },
+        {
+            "filename": "cloudrouter-init-gns3.iso",
+            "version": "1.0",
+            "md5sum": "8cfb7e338bf241cc64abc084243e9be1",
+            "filesize": 374784,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/cloudrouter-init-gns3.iso/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "4.0 Full",
+            "images": {
+                "hda_disk_image": "cloudrouter-centos-cloud-full.raw",
+                "cdrom_image": "cloudrouter-init-gns3.iso"
+            }
+        },
+        {
+            "name": "4.0 Minimal",
+            "images": {
+                "hda_disk_image": "cloudrouter-centos-cloud-minimal.raw",
+                "cdrom_image": "cloudrouter-init-gns3.iso"
+            }
+        }
+    ]
+}

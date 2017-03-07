@@ -1,0 +1,133 @@
+{
+    "name": "Cumulus VX",
+    "category": "multilayer_switch",
+    "description": "Cumulus VX is a community-supported virtual appliance that enables cloud admins and network engineers to preview and test Cumulus Networks technology at zero cost. You can build sandbox environments to learn Open Networking concepts, prototype network operations and script & develop applications risk-free. With Cumulus VX, you can get started with Open Networking at your pace, on your time, and in your environment!",
+    "vendor_name": "Cumulus Network",
+    "vendor_url": "https://www.cumulusnetworks.com",
+    "documentation_url": "http://docs.cumulusnetworks.com/",
+    "product_name": "Cumulus VX",
+    "product_url": "https://cumulusnetworks.com/cumulus-vx/",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username is cumulus and password is CumulusLinux!",
+    "first_port_name": "eth0",
+    "port_name_format": "swp{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 7,
+        "ram": 256,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "cumulus-linux-3.2.0-vx-amd64-1481684769.ac46c24z090952a.qcow2",
+            "version": "3.2.0",
+            "md5sum": "4cd6cee606483d4403d3329a72697ca4",
+            "filesize": 1217593344,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
+        {
+            "filename": "cumulus-linux-3.1.2-vx-amd64-1478059878.e1f18b3zacdc5c1.qcow2",
+            "version": "3.1.2",
+            "md5sum": "e25d4dde0d2d5378a469380bd1d8d082",
+            "filesize": 1291911168,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
+        {
+            "filename": "cumulus-linux-3.1.1-vx-amd64-1474681409.bd4e10cz3c4e23f.qcow2",
+            "version": "3.1.1",
+            "md5sum": "ad7688721417f167ea3537e60feac3da",
+            "filesize": 1230372864,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
+        {
+            "filename": "cumulus-linux-3.1.0-vx-amd64-1471979027.dc7e2adza017cfb.qcow2",
+            "version": "3.1.0",
+            "md5sum": "6a68b8c8ef45c7227e80009e9920729c",
+            "filesize": 1190789120,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
+        {
+            "filename": "cumulus-linux-3.0.1-vx-amd64-1468215109.5d83176z20fa23d.qcow2",
+            "version": "3.0.1",
+            "md5sum": "9f312bf4de1b410ce48e26b38f3bef48",
+            "filesize": 1284112384,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
+        {
+            "filename": "cumulus-linux-3.0.0-vx-amd64-1464279382.a8e7985zf0f5ad5.qcow2",
+            "version": "3.0.0",
+            "md5sum": "ef23948870b77bb1373b9f06de4e7742",
+            "filesize": 1237581824,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
+        {
+            "filename": "CumulusVX-2.5.5-cc665123486ac43d.qcow2",
+            "version": "2.5.5",
+            "md5sum": "e0cad2491d47f859828703a0b50cf633",
+            "filesize": 1092550656,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
+        {
+            "filename": "CumulusVX-2.5.3-4eb681f3df86c478.qcow2",
+            "version": "2.5.3",
+            "md5sum": "5128aec2568991ea0586293cb85f7a97",
+            "filesize": 1040973824,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.2.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.2.0-vx-amd64-1481684769.ac46c24z090952a.qcow2"
+            }
+        },
+        {
+            "name": "3.1.2",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.1.2-vx-amd64-1478059878.e1f18b3zacdc5c1.qcow2"
+            }
+        },
+        {
+            "name": "3.1.1",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.1.1-vx-amd64-1474681409.bd4e10cz3c4e23f.qcow2"
+            }
+        },
+        {
+            "name": "3.1.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.1.0-vx-amd64-1471979027.dc7e2adza017cfb.qcow2"
+            }
+        },
+        {
+            "name": "3.0.1",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.0.1-vx-amd64-1468215109.5d83176z20fa23d.qcow2"
+            }
+        },
+        {
+            "name": "3.0.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.0.0-vx-amd64-1464279382.a8e7985zf0f5ad5.qcow2"
+            }
+        },
+        {
+            "name": "2.5.5",
+            "images": {
+                "hda_disk_image": "CumulusVX-2.5.5-cc665123486ac43d.qcow2"
+            }
+        },
+        {
+            "name": "2.5.3",
+            "images": {
+                "hda_disk_image": "CumulusVX-2.5.3-4eb681f3df86c478.qcow2"
+            }
+        }
+    ]
+}

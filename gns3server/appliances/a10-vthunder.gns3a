@@ -1,0 +1,54 @@
+{
+    "name": "A10 vThunder",
+    "category": "router",
+    "description": "vThunder, part of A10 Networks' award-winning A10 Thunder and AX Series Application Delivery Controller (ADC) family, is designed to meet the growing needs of organizations that require a flexible and easy-to-deploy application delivery and server load balancer solution running within a virtualized infrastructure.",
+    "vendor_name": "A10",
+    "vendor_url": "https://www.a10networks.com/",
+    "documentation_url": "https://www.a10networks.com/support",
+    "product_name": "A10 vThunder",
+    "product_url": "https://www.a10networks.com/products/thunder-series-appliances/vthunder-virtualized-application_delivery_controller/",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "First boot might take a long time. Credentials for installation (1st boot): install/password. Credentials for installed appliance: admin/a10. Default management IP: 172.31.31.31/24",
+    "symbol": "loadbalancer.svg",
+    "first_port_name": "mgmt",
+    "port_name_format": "ethernet {port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 4096,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "cd",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "ACOS_vThunder_4_0_1_214.iso",
+            "version": "4.0.1",
+            "md5sum": "7bd500c166fb5cee953a8bb708635895",
+            "filesize": 785524736,
+            "download_url": "https://www.a10networks.com/vthunder-embed"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "4.0.1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "ACOS_vThunder_4_0_1_214.iso"
+            }
+        }
+    ]
+}

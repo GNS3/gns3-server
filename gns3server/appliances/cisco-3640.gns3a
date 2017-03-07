@@ -1,0 +1,37 @@
+{
+    "name": "Cisco 3640",
+    "category": "router",
+    "description": "Cisco 3640 Router",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
+    "product_name": "3640",
+    "registry_version": 2,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "dynamips": {
+        "chassis": "3640",
+        "platform": "c3600",
+        "ram": 192,
+        "nvram": 256,
+        "startup_config": "ios_base_startup-config.txt"
+    },
+    "images": [
+        {
+            "filename": "c3640-a3js-mz.124-25d.image",
+            "version": "124-25d",
+            "md5sum": "493c4ef6578801d74d715e7d11596964",
+            "filesize": 65688632
+        }
+    ],
+    "versions": [
+        {
+            "name": "124-25d",
+            "idlepc": "0x6050b114",
+            "images": {
+                "image": "c3640-a3js-mz.124-25d.image"
+            }
+        }
+    ]
+}

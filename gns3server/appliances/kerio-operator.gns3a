@@ -1,0 +1,45 @@
+{
+    "name": "Kerio Operator",
+    "category": "guest",
+    "description": "Stay connected to your customers and colleagues without being chained to your desk.\nKerio Operator is a VoIP based phone system that provides powerful yet affordable enterprise-class voice and video communication capabilities for small and mid-sized businesses globally.",
+    "vendor_name": "Kerio Technologies Inc.",
+    "vendor_url": "http://www.kerio.com",
+    "documentation_url": "http://kb.kerio.com/product/kerio-operator/",
+    "product_name": "Kerio Operator",
+    "product_url": "http://www.kerio.com/products/kerio-operator",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default credentials: root (no password set)",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "kerio-operator-appliance-2.5.2-6404-vmware.vmdk",
+            "version": "2.5.2",
+            "md5sum": "0279baebe587b17f32bfc3302df9352c",
+            "filesize": 561512448,
+            "download_url": "http://www.kerio.com/support/kerio-operator",
+            "direct_download_url": "http://download.kerio.com/dwn/kerio-operator-appliance-vmware.zip",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.5.2",
+            "images": {
+                "hda_disk_image": "kerio-operator-appliance-2.5.2-6404-vmware.vmdk"
+            }
+        }
+    ]
+}

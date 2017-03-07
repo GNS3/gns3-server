@@ -1,0 +1,98 @@
+{
+    "name": "Zentyal Server",
+    "category": "guest",
+    "description": "The on-premise Mail and Directory server. Native compatibility with Microsoft Active Directory. You can control your IT infrastructure from a single point of user management, regardless of the different offices and locations your business has. True Microsoft Outlook compatibility. Your users can continue using their favorite email clients, without any service interruptions and without having to install any plug-in or connector.",
+    "vendor_name": "Zentyal S.L.",
+    "vendor_url": "http://www.zentyal.com/",
+    "documentation_url": "https://wiki.zentyal.org/wiki/Zentyal_Wiki",
+    "product_name": "Zentyal Server",
+    "product_url": "http://www.zentyal.com/zentyal-server/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Follow installation instructions. Once the installation process is done, you can access the web interface using a web browser: https://<zentyal-ip-address>:8443/",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 3,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "zentyal-5.0-development-amd64.iso",
+            "version": "5.0",
+            "md5sum": "d40696eef13d795acb13114df58231d2",
+            "filesize": 748224512,
+            "download_url": "http://download.zentyal.com/",
+            "direct_download_url": "http://download.zentyal.com/zentyal-5.0-development-amd64.iso"
+        },
+        {
+            "filename": "zentyal-4.2-development-amd64.iso",
+            "version": "4.2",
+            "md5sum": "22b165a49adbc4eff033ced01e71fe3a",
+            "filesize": 629284864,
+            "download_url": "http://download.zentyal.com/",
+            "direct_download_url": "http://download.zentyal.com/zentyal-4.2-development-amd64.iso"
+        },
+        {
+            "filename": "zentyal-4.1-development-amd64.iso",
+            "version": "4.1",
+            "md5sum": "40a8ff15a60ff862a110a17f941edf2a",
+            "filesize": 612206592,
+            "download_url": "http://download.zentyal.com/",
+            "direct_download_url": "http://download.zentyal.com/zentyal-4.1-development-amd64.iso"
+        },
+        {
+            "filename": "zentyal-4.0-amd64.iso",
+            "version": "4.0",
+            "md5sum": "d63b15f1edcd2c3c03ab3a36e833e211",
+            "filesize": 666370048,
+            "download_url": "http://download.zentyal.com/",
+            "direct_download_url": "http://download.zentyal.com/zentyal-4.0-amd64.iso"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.0",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "zentyal-5.0-development-amd64.iso"
+            }
+        },
+        {
+            "name": "4.2",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "zentyal-4.2-development-amd64.iso"
+            }
+        },
+        {
+            "name": "4.1",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "zentyal-4.1-development-amd64.iso"
+            }
+        },
+        {
+            "name": "4.0",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "zentyal-4.0-amd64.iso"
+            }
+        }
+    ]
+}

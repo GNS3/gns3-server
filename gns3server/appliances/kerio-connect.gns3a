@@ -1,0 +1,45 @@
+{
+    "name": "Kerio Connect",
+    "category": "guest",
+    "description": "Kerio Connect makes email, calendars, contacts and task management easy and affordable. With Kerio Connect, you have immediate, secure access to your communications anytime, anywhere, on any device — without complexity or expensive overhead.",
+    "vendor_name": "Kerio Technologies Inc.",
+    "vendor_url": "http://www.kerio.com",
+    "documentation_url": "http://kb.kerio.com/product/kerio-connect/",
+    "product_name": "Kerio Connect",
+    "product_url": "http://www.kerio.com/products/kerio-connect",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default ucredentials: root / kerio",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "kerio-connect-appliance-9.2.1-vmware-disk1.vmdk",
+            "version": "9.2.1",
+            "md5sum": "f1d60094c237f55e6737b0da9b5912ce",
+            "filesize": 1851523072,
+            "download_url": "http://www.kerio.com/support/kerio-connect",
+            "direct_download_url": "http://download.kerio.com/dwn/kerio-connect-appliance-vmware-amd64.zip",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.2.1",
+            "images": {
+                "hda_disk_image": "kerio-connect-appliance-9.2.1-vmware-disk1.vmdk"
+            }
+        }
+    ]
+}

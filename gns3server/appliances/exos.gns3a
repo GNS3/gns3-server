@@ -1,0 +1,130 @@
+{
+    "name": "EXOS",
+    "category": "router",
+    "description": "ExtremeXOS was designed from the ground up to meet the needs of large cloud and private data centers, service providers, intelligent, converged enterprise edge networks, and everything in between. It provides the high performance and rich features required by these diverse environments.",
+    "vendor_name": "Extreme Networks",
+    "vendor_url": "http://www.extremenetworks.com/",
+    "documentation_url": "http://www.extremenetworks.com/support/documentation",
+    "product_name": "EXOS",
+    "product_url": "http://www.extremenetworks.com/product/extremexos-network-operating-system",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "You can change the console to telnet after install. Default user: admin (no password set)",
+    "first_port_name": "Management",
+    "port_name_format": "Port{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 13,
+        "ram": 256,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": "-smp 2 -cpu host"
+    },
+    "images": [
+        {
+            "filename": "exosvm-22.1.1.5.iso",
+            "version": "22.1.1.5",
+            "md5sum": "df3897ca2d7c7053582587ed120114fa",
+            "filesize": 44220416,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.1.1.5.iso"
+        },
+        {
+            "filename": "exosvm-21.1.2.14.iso",
+            "version": "21.1.2.14",
+            "md5sum": "de0752d56e41d92027ce1fccd604b14b",
+            "filesize": 41101312,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/vm-21.1.2.14.iso?raw=true"
+        },
+        {
+            "filename": "exosvm-21.1.1.4.iso",
+            "version": "21.1.1.4",
+            "md5sum": "4d5db0e01a39b08775ed6a3e2c8bf663",
+            "filesize": 41046016,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/vm-21.1.1.4.iso?raw=true"
+        },
+        {
+            "filename": "exospc-16.2.1.6.iso",
+            "version": "16.2.1.6",
+            "md5sum": "b4be339afb02c03dcb4349630c1adb4f",
+            "filesize": 36306944,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/exospc-16.2.1.6.iso?raw=true"
+        },
+        {
+            "filename": "exospc-16.1.3.6.iso",
+            "version": "16.1.3.6",
+            "md5sum": "4c17b2bf2a4909527f6c866a68ba406e",
+            "filesize": 35758080,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/exospc-16.1.3.6.iso?raw=true"
+        },
+        {
+            "filename": "exospc-16.1.2.14.iso",
+            "version": "16.1.2.14",
+            "md5sum": "140cdc11f426156ffcbde150b2f46768",
+            "filesize": 35743744,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/exospc-16.1.2.14.iso?raw=true"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "22.1.1.5",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exosvm-22.1.1.5.iso"
+            }
+        },
+        {
+            "name": "21.1.2.14",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exosvm-21.1.2.14.iso"
+            }
+        },
+        {
+            "name": "21.1.1.4",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exosvm-21.1.1.4.iso"
+            }
+        },
+        {
+            "name": "16.2.1.6",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exospc-16.2.1.6.iso"
+            }
+        },
+        {
+            "name": "16.1.3.6",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exospc-16.1.3.6.iso"
+            }
+        },
+        {
+            "name": "16.1.2.14",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exospc-16.1.2.14.iso"
+            }
+        }
+    ]
+}

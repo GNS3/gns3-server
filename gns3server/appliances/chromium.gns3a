@@ -1,0 +1,17 @@
+{
+    "name": "Chromium",
+    "category": "guest",
+    "description": "The chromium browser",
+    "vendor_name": "Chromium",
+    "vendor_url": "https://www.chromium.org/",
+    "product_name": "Chromium",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/chromium:latest",
+        "console_type": "vnc"
+    }
+}

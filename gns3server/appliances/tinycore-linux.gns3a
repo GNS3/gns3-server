@@ -1,0 +1,57 @@
+{
+    "name": "Tiny Core Linux",
+    "category": "guest",
+    "description": "Core Linux is a smaller variant of Tiny Core without a graphical desktop.\n\nIt's provide a complete Linux system in few MB.",
+    "vendor_name": "Team Tiny Core",
+    "vendor_url": "http://distro.ibiblio.org/tinycorelinux",
+    "documentation_url": "http://wiki.tinycorelinux.net/",
+    "product_name": "Tiny Core Linux",
+    "product_url": "http://distro.ibiblio.org/tinycorelinux",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Login is gns3/gns3. sudo works without password",
+    "symbol": "linux_guest.svg",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 96,
+        "arch": "i386",
+        "console_type": "vnc",
+        "kvm": "allow",
+        "options": "-vga std -usbdevice tablet"
+    },
+    "images": [
+        {
+            "filename": "linux-tinycore-6.4-2.img",
+            "version": "6.4",
+            "md5sum": "dcbb5318c3e18ab085088d4474d8de85",
+            "filesize": 36503552,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/linux-tinycore-linux-6.4-2.img"
+        },
+        {
+            "filename": "linux-tinycore-6.4.img",
+            "version": "6.4",
+            "md5sum": "e3de478780c0acb76ef92f872fe734c4",
+            "filesize": 22544384,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/linux-tinycore-linux-6.4.img"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.4~2",
+            "images": {
+                "hda_disk_image": "linux-tinycore-6.4-2.img"
+            }
+        },
+        {
+            "name": "6.4~1",
+            "images": {
+                "hda_disk_image": "linux-tinycore-6.4.img"
+            }
+        }
+    ]
+}

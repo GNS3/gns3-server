@@ -1,0 +1,106 @@
+{
+    "name": "Cisco CSR1000v",
+    "category": "router",
+    "description": "The Cisco Cloud Services Router 1000V (CSR 1000V) is a router and network services platform in virtual form factor that is intended for deployment in cloud and virtual data centers. It is optimized to serve as a single-tenant or multitenant WAN gateway. Using proven, industry-leading Cisco IOS\u00ae XE Software networking and security features, the CSR 1000V enables enterprises to transparently extend their WANs into external provider-hosted clouds and cloud providers to offer their tenants enterprise-class networking services.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/products-installation-and-configuration-guides-list.html",
+    "product_name": "CSR1000v",
+    "product_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/tsd-products-support-series-home.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "There is no default password and enable password. A default configuration is present.",
+    "port_name_format": "Gi{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 3072,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2",
+            "version": "3.17",
+            "md5sum": "06cbfcd11f3557391db64fe2a6015a6e",
+            "filesize": 1346305024,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.2.2-ext.qcow2",
+            "version": "16.2.2",
+            "md5sum": "6c7e61b2f091ce1e9562dc3f2da43ebe",
+            "filesize": 1586637824,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.3.1-build2.qcow2",
+            "version": "16.3.1-build2",
+            "md5sum": "a770e96de928265515304c9c9d6b46b9",
+            "filesize": 1280835584,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.03.01.qcow2",
+            "version": "16.3.1",
+            "md5sum": "0a7f3a4b93d425c2dcb2df5505816fa5",
+            "filesize": 1351352320,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&softwareid=282046477&release=Denali-16.3.1"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.03.02.qcow2",
+            "version": "16.3.2",
+            "md5sum": "01868950c960b1eeaa0fe9e035b25e48",
+            "filesize": 1327693824,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&softwareid=282046477&release=Denali-16.3.2"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.04.01-serial.qcow2",
+            "version": "16.4.1",
+            "md5sum": "8f190db9fd06a34d66f0c82812e56fd2",
+            "filesize": 1457651712,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&softwareid=282046477&release=Everest-16.4.1"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.17",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2"
+            }
+        },
+        {
+            "name": "16.2.2",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.2.2-ext.qcow2"
+            }
+        },
+        {
+            "name": "16.3.1",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.03.01.qcow2"
+            }
+        },
+        {
+            "name": "16.3.1-build2",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.3.1-build2.qcow2"
+            }
+        }, 
+       {
+            "name": "16.3.2",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.03.02.qcow2"
+            }
+        },           
+        {
+            "name": "16.4.1",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.04.01-serial.qcow2"
+            }
+        }
+    ]
+}

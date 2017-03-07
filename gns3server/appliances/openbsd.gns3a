@@ -1,0 +1,42 @@
+{
+    "name": "OpenBSD",
+    "category": "guest",
+    "description": "The OpenBSD project produces a FREE, multi-platform 4.4BSD-based UNIX-like operating system. Our efforts emphasize portability, standardization, correctness, proactive security and integrated cryptography. As an example of the effect OpenBSD has, the popular OpenSSH software comes from OpenBSD.",
+    "vendor_name": "OpenBSD",
+    "vendor_url": "http://www.openbsd.org",
+    "documentation_url": "http://www.openbsd.org/faq/index.html",
+    "product_name": "OpenBSD",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "User root, password gns3",
+    "first_port_name": "fxp0",
+    "port_name_format": "em{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 8,
+        "ram": 256,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "openbsd-5.8.qcow2",
+            "version": "5.8",
+            "md5sum": "b2488d81bbe1328ae3d6072ccd7e0bc2",
+            "filesize": 517275648,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/openbsd-5.8.qcow2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.8",
+            "images": {
+                "hda_disk_image": "openbsd-5.8.qcow2"
+            }
+        }
+    ]
+}

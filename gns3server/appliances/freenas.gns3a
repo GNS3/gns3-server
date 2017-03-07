@@ -1,0 +1,54 @@
+{
+    "name": "FreeNAS",
+    "category": "guest",
+    "description": "FreeNAS is a Free and Open Source Network Attached Storage (NAS) software appliance. This means that you can use FreeNAS to share data over file-based sharing protocols, including CIFS for Windows users, NFS for Unix-like operating systems, and AFP for Mac OS X users. FreeNAS uses the ZFS file system to store, manage, and protect data. ZFS provides advanced features like snapshots to keep old versions of files, incremental remote backups to keep your data safe on another device without huge file transfers, and intelligent compression, which reduces the size of files so quickly and efficiently that it actually helps transfers happen faster.",
+    "vendor_name": "iXsystems",
+    "vendor_url": "http://www.freenas.org",
+    "documentation_url": "https://doc.freenas.org/9.10/freenas.html",
+    "product_name": "FreeNAS",
+    "product_url": "http://www.openfiler.com/products",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 8096,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "FreeNAS-9.10.1-U4.iso",
+            "version": "9.10",
+            "md5sum": "b4fb14513dcbb4eb4c5596c5911ca9cc",
+            "filesize": 533098496,
+            "download_url": "http://www.freenas.org/download/",
+            "direct_download_url": "https://download.freenas.org/9.10/STABLE/latest/x64/FreeNAS-9.10.1-U4.iso"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.10",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "FreeNAS-9.10.1-U4.iso"
+            }
+        }
+    ]
+}

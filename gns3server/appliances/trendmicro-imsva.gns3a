@@ -1,0 +1,53 @@
+{
+    "name": "IMS VA",
+    "category": "firewall",
+    "description": "Trend Micro InterScan Messaging Security stops email threats in the cloud with global threat intelligence, protects your data with data loss prevention and encryption, and identifies targeted email attacks,ransomware, and APTs as part of the Trend Micro Network Defense Solution. The hybrid SaaS deployment combines the privacy and control of an on-premises virtual appliance with the proactive protection of a cloud-based pre-filter service. It’s the enterprise-level protection you need with the highest spam and phishing detection rates—consistently #1 in quarterly Opus One competitive tests since 2011.",
+    "vendor_name": "Trend Micro Inc.",
+    "vendor_url": "http://www.trendmicro.com/",
+    "documentation_url": "https://success.trendmicro.com/product-support/interscan-messaging-security",
+    "product_name": "IMS VA",
+    "product_url": "http://www.trendmicro.com/enterprise/network-security/interscan-message-security/index.html",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default credentials: admin / imsva",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 4096,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "IMSVA-9.1-1600-x86-64-r1.iso",
+            "version": "9.1",
+            "md5sum": "581278e8ddb25486539dfe3ad0b3ac94",
+            "filesize": 797560832,
+            "download_url": "http://downloadcenter.trendmicro.com/index.php?regs=NABU&clk=latest&clkval=4913&lang_loc=1",
+            "direct_download_url": "http://files.trendmicro.com/products/imsva/9.1/IMSVA-9.1-1600-x86_64-r1.iso"
+        },
+        {
+            "filename": "empty200G.qcow2",
+            "version": "1.0",
+            "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
+            "filesize": 200192,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.1",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "IMSVA-9.1-1600-x86-64-r1.iso"
+            }
+        }
+    ]
+}

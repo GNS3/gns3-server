@@ -1,0 +1,107 @@
+{
+    "name": "vSRX",
+    "category": "firewall",
+    "description": "The vSRX delivers core firewall, networking, advanced security, and automated lifecycle management capabilities for enterprises and service providers. The industry\u2019s fastest virtual security platform, the vSRX offers firewall speeds up to 17 Gbps using only two virtual CPUs, providing scalable, secure protection across private, public, and hybrid clouds.\n\nJuniper version 12 can support only 1GB of ram.",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net/us/en/",
+    "documentation_url": "http://www.juniper.net/techpubs/",
+    "product_name": "Juniper vSRX",
+    "product_url": "https://www.juniper.net/us/en/products-services/security/srx-series/vsrx/",
+    "registry_version": 1,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Initial username is root, no password.",
+    "port_name_format": "ge-0/0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 6,
+        "ram": 4096,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-smp 2"
+    },
+    "images": [
+        {
+            "filename": "media-vsrx-vmdisk-15.1X49-D70.3.qcow2",
+            "version": "15.1X49-D70",
+            "md5sum": "7b11babaef0b775f36281ec1d16f1708",
+            "filesize": 3115450368,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "junos-vsrx-vmdisk-15.1X49-D60.qcow2",
+            "version": "15.1X49-D60",
+            "md5sum": "d2ec79880f67e141c4dd662c656da278",
+            "filesize": 3094478848,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "junos-vsrx-vmdisk-15.1X49-D50.qcow2",
+            "version": "15.1X49-D50",
+            "md5sum": "60e1b80603c2ecf8aa9920c384209863",
+            "filesize": 3063021568,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "junos-vsrx-vmdisk-15.1X49-D40.qcow2",
+            "version": "15.1X49-D40",
+            "md5sum": "8d929c0262fd1eea3b3d02ef9e73c8c5",
+            "filesize": 3054043136,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "junos-vsrx-vmdisk-15.1X49-D20.2.qcow2",
+            "version": "15.1X49-D20.2",
+            "md5sum": "43e8000870207db47c1382192319eb45",
+            "filesize": 2904096768,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "junos-vsrx-12.1X47-D20.7-domestic-disk1.vmdk",
+            "version": "12.1X47-D20.7",
+            "md5sum": "d22ed7a7eb131984e892a4430c5f4730",
+            "filesize": 235894272,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "15.1X49-D70",
+            "images": {
+                "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D70.3.qcow2"
+            }
+        },
+        {
+            "name": "15.1X49-D60",
+            "images": {
+                "hda_disk_image": "junos-vsrx-vmdisk-15.1X49-D60.qcow2"
+            }
+        },
+        {
+            "name": "15.1X49-D50",
+            "images": {
+                "hda_disk_image": "junos-vsrx-vmdisk-15.1X49-D50.qcow2"
+            }
+        },
+        {
+            "name": "15.1X49-D40",
+            "images": {
+                "hda_disk_image": "junos-vsrx-vmdisk-15.1X49-D40.qcow2"
+            }
+        },
+        {
+            "name": "15.1X49-D20",
+            "images": {
+                "hda_disk_image": "junos-vsrx-vmdisk-15.1X49-D20.2.qcow2"
+            }
+        },
+        {
+            "name": "12.1X47-D20",
+            "images": {
+                "hda_disk_image": "junos-vsrx-12.1X47-D20.7-domestic-disk1.vmdk"
+            }
+        }
+    ]
+}

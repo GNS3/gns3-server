@@ -1,0 +1,53 @@
+{
+    "name": "Cisco DCNM",
+    "category": "guest",
+    "description": "Cisco Data Center Network Manager (DCNM) 10 unifies and automates Cisco Nexus and Cisco MDS 9000 Family multitenant infrastructure for data center management across Cisco Nexus 5000, 6000, 7000, and 9000 Series Switches in NX‑OS mode using Cisco NX-OS Software as well as across Cisco MDS 9100 and 9300 Series Multilayer Fabric Switches, 9200 Series Multiservice Switches, and 9500 and 9700 Series Multilayer Directors. Data Center Network Manager 10 lets you manage very large numbers of devices while providing ready-to-use management and automation capabilities plus Virtual Extensible LAN (VXLAN) overlay visibility into Cisco Nexus LAN fabrics.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/support/cloud-systems-management/data-center-network-manager-10/model.html",
+    "product_name": "DCNM",
+    "product_url": "http://www.cisco.com/c/en/us/products/cloud-systems-management/prime-data-center-network-manager/index.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default credentials: root / cisco123",
+    "port_name_format": "eth{0}",
+    "symbol": "mgmt_station.svg",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 8192,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require",
+        "options": "-smp 2"
+    },
+    "images": [
+        {
+            "filename": "dcnm-va.10.1.1.iso",
+            "version": "10.1.1",
+            "md5sum": "4eca14506decaf166251c64e67adb110",
+            "filesize": 2927532032,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=281722751&softwareid=282088134&release=10.1(1)&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "10.1.1",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "dcnm-va.10.1.1.iso"
+            }
+        }
+    ]
+}

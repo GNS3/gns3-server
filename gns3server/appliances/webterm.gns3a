@@ -1,0 +1,19 @@
+{
+    "name": "webterm",
+    "category": "guest",
+    "description": "webterm is a debian based networking toolbox.\nIt contains the firefox web browser plus the following utilities: net-tools, iproute2, ping, traceroute, curl, host, iperf3, mtr, socat, ssh client, tcpdump and the multicast testing tools msend/mreceive.",
+    "vendor_name": "webterm",
+    "vendor_url": "https://www.debian.org",
+    "product_name": "webterm",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "The /root directory is persistent.",
+    "symbol": "firefox.svg",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/webterm:latest",
+        "console_type": "vnc"
+    }
+}

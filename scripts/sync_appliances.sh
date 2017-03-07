@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/bin/sh
 #
 # Copyright (C) 2016 GNS3 Technologies Inc.
 #
@@ -15,13 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .compute_handler import ComputeHandler
-from .project_handler import ProjectHandler
-from .node_handler import NodeHandler
-from .link_handler import LinkHandler
-from .server_handler import ServerHandler
-from .drawing_handler import DrawingHandler
-from .symbol_handler import SymbolHandler
-from .snapshot_handler import SnapshotHandler
-from .appliance_handler import ApplianceHandler
-from .gns3_vm_handler import GNS3VMHandler
+#
+# This script will sync the appliances
+#
+
+rm gns3server/appliances/*
+rmdir gns3server/appliances
+rm -Rf /tmp/gns3-registry
+
+git clone https://github.com/GNS3/gns3-registry.git /tmp/gns3-registry
+mv /tmp/gns3-registry/appliances gns3server/appliances
+
+

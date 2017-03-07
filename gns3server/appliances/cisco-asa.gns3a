@@ -1,0 +1,84 @@
+{
+    "name": "Cisco ASA",
+    "category": "firewall",
+    "description": "Cisco ASA firewall",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "product_name": "ASA",
+    "product_url": "http://www.cisco.com/c/en/us/products/security/adaptive-security-appliance-asa-software/index.html",
+    "registry_version": 1,
+    "status": "broken",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "This appliance will use 100% of your CPU, please use ASAv instead. There is no default password and enable password.",
+    "symbol": ":/symbols/asa.svg",
+    "port_name_format": "Gi{0}",
+    "qemu": {
+        "adapter_type": "i82559er",
+        "adapters": 4,
+        "ram": 512,
+        "arch": "i386",
+        "console_type": "telnet",
+        "kernel_command_line": "ide_generic.probe_mask=0x01 ide_core.chs=0.0:980,16,32 auto nousb console=ttyS0,9600 bigphysarea=65536 ide1=noprobe no-hlt",
+        "kvm": "disable",
+        "options": "-no-kvm -icount auto -hdachs 980,16,32",
+        "cpu_throttling": 80,
+        "process_priority": "low"
+    },
+    "images": [
+        {
+            "filename": "asa915-16-initrd.gz",
+            "version": "9.1.5",
+            "md5sum": "5411dd2ebf108f054cd4c9ade651e9a1",
+            "filesize": 25474199,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=280582808&softwareid=280775065"
+        },
+        {
+            "filename": "asa915-16-vmlinuz",
+            "version": "9.1.5",
+            "md5sum": "44a93260390c249cd0b6f4ba0fd327a3",
+            "filesize": 1359376,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=280582808&softwareid=280775065"
+        },
+        {
+            "filename": "asa842-initrd.gz",
+            "version": "8.4.2",
+            "md5sum": "4751641f7f65fa93ee7b75d744eb3766",
+            "filesize": 23504439,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=280582808&softwareid=280775065"
+        },
+        {
+            "filename": "asa842-vmlinuz",
+            "version": "8.4.2",
+            "md5sum": "4012e0b147f1eb22a7b6c2c01d522d85",
+            "filesize": 1359344,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=280582808&softwareid=280775065"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.1.5",
+            "images": {
+                "kernel_image": "asa915-16-vmlinuz",
+                "initrd": "asa915-16-initrd.gz",
+                "hda_disk_image": "empty8G.qcow2"
+            }
+        },
+        {
+            "name": "8.4.2",
+            "images": {
+                "kernel_image": "asa842-vmlinuz",
+                "initrd": "asa842-initrd.gz",
+                "hda_disk_image": "empty8G.qcow2"
+            }
+        }
+    ]
+}

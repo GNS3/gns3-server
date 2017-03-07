@@ -1,0 +1,79 @@
+{
+    "name": "HP VSR1001",
+    "category": "router",
+    "description": "The HP VSR1000 Virtual Services Router Series is a software application, running on a server, which provides functionality similar to that of a physical router: robust routing between networked devices using a number of popular routing protocols. It also delivers the critical network services associated with today's enterprise routers such as VPN gateway, firewall and other security and traffic management functions.\n\nThe virtual services router (VSR) application runs on a hypervisor on the server, and supports VMware vSphere and Linux KVM hypervisors. From one to eight virtual CPUs are supported, depending on license.\n\nBecause the VSR1000 Series application runs the same HP Comware version 7 operating system as HP switches and routers, it enables significant operational savings. And being virtual, additional agility and ease of deployment is realized, as resources on the VSR can be dynamically allocated and upgraded upon demand as performance requirements grow.\n\nA variety of deployment models are supported including enterprise branch CPE routing, and cloud offload for small to medium workloads.",
+    "vendor_name": "HP",
+    "vendor_url": "http://www.hp.com",
+    "documentation_url": "http://h20195.www2.hp.com/v2/default.aspx?cc=us&lc=en&oid=5443878",
+    "product_name": "VSR1001",
+    "product_url": "http://www8.hp.com/us/en/products/networking-routers/product-detail.html?oid=5443878",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "At first boot the router will be installed from the cdrom.",
+    "port_name_format": "GE{port1}/0",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 16,
+        "ram": 1024,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "dc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "VSR1000_HPE-CMW710-E0324-X64.iso",
+            "version": "7.10.R0204P01",
+            "md5sum": "e826cfea44a9629587220476e049bbc8",
+            "filesize": 253442048,
+            "download_url": "https://h10145.www1.hp.com/Downloads/DownloadSoftware.aspx?SoftwareReleaseUId=18977&ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&SaidNumber="
+        },
+        {
+            "filename": "VSR1000_HPE-CMW710-E0321P01-X64.iso",
+            "version": "7.10.E0321P01",
+            "md5sum": "1675fed446449e782819c383293a35f6",
+            "filesize": 286515200,
+            "download_url": "https://h10145.www1.hp.com/Downloads/DownloadSoftware.aspx?SoftwareReleaseUId=16838&ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&OrderNumber=&PurchaseDate="
+        },
+        {
+            "filename": "VSR1000_HP-CMW710-R0204P01-X64.iso",
+            "version": "7.10.R0204P01",
+            "md5sum": "d0b539f3ba9723ad8c3ed46f6d772627",
+            "filesize": 236687360,
+            "download_url": "https://h10145.www1.hp.com/Downloads/DownloadSoftware.aspx?SoftwareReleaseUId=11832&ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&OrderNumber=&PurchaseDate="
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "7.10.E0324",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "VSR1000_HPE-CMW710-E0324-X64.iso"
+            }
+        },
+        {
+            "name": "7.10.E0321P01",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "VSR1000_HPE-CMW710-E0321P01-X64.iso"
+            }
+        },
+        {
+            "name": "7.10.R0204P01",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "VSR1000_HP-CMW710-R0204P01-X64.iso"
+            }
+        }
+    ]
+}

@@ -1,0 +1,20 @@
+{
+    "name": "ntopng",
+    "category": "guest",
+    "description": "ntopng is the next generation version of the original ntop, a network traffic probe that shows the network usage, similar to what the popular top Unix command does. ntopng is based on libpcap and it has been written in a portable way in order to virtually run on every Unix platform, MacOSX and on Windows as well. ntopng users can use a a web browser to navigate through ntop (that acts as a web server) traffic information and get a dump of the network status. In the latter case, ntopng can be seen as a simple RMON-like agent with an embedded web interface.",
+    "vendor_name": "ntop",
+    "vendor_url": "http://www.ntop.org/",
+    "product_name": "ntopng",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "In the web interface login as admin/admin",
+    "docker": {
+        "adapters": 1,
+        "image": "lucaderi/ntopng-docker:latest",
+        "console_type": "http",
+        "console_http_port": 3000,
+        "console_http_path": "/"
+    }
+}
