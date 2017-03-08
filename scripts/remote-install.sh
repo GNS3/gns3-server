@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #
-# Install GNS3 on a remote Ubuntu 14.04 LTS server
+# Install GNS3 on a remote Ubuntu LTS server
 # This create a dedicated user and setup all the package
 # and optionnaly a VPN
 #
@@ -36,10 +36,10 @@ function log {
   tput sgr0
 }
 
-lsb_release -d | grep "Ubuntu 14.04" > /dev/null
+lsb_release -d | grep "LTS" > /dev/null
 if [ $? != 0 ]
 then
-  echo "You can use this script on Ubuntu 14.04 LTS only"
+  echo "You can use this script on Ubuntu LTS only"
   exit 1
 fi
 
@@ -90,37 +90,61 @@ set -e
 
 export DEBIAN_FRONTEND="noninteractive"
 
+UBUNTU_VERSION=`lsb_release -r -s`
+if [ "$UBUNTU_VERSION" == "14.04" ]
+then
+    UBUNTU_CODENAME="trusty"
+else
+    UBUNTU_CODENAME="xenial"
+fi
+
 log "Add GNS3 repository"
 
-if [ $UNSTABLE == 1 ]
+if [ "$UBUNTU_CODENAME" == "trusty" ]
 then
-cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
-deb http://ppa.launchpad.net/gns3/unstable/ubuntu trusty main
-deb-src http://ppa.launchpad.net/gns3/unstable/ubuntu trusty main
-deb http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main
-deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main
+    if [ $UNSTABLE == 1 ]
+    then
+        cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
+deb http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
+deb-src http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
+deb http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main
+deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main
 EOFLIST
+    else
+        cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
+deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+deb http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main 
+deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main 
+EOFLIST
+    fi
 else
-cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
-deb http://ppa.launchpad.net/gns3/ppa/ubuntu trusty main
-deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu trusty main
-deb http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
-deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu trusty main 
+    if [ $UNSTABLE == 1 ]
+    then
+        cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
+deb http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
+deb-src http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
 EOFLIST
+    else
+       cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
+    deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+    deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+EOFLIST
+    fi
 fi
 
 if [ $I386_REPO == 1 ]
 then
     cat <<EOFLIST2  >> /etc/apt/sources.list
 ###### Ubuntu Main Repos
-deb http://archive.ubuntu.com/ubuntu/ trusty main universe multiverse 
-deb-src http://archive.ubuntu.com/ubuntu/ trusty main universe multiverse 
+deb http://archive.ubuntu.com/ubuntu/ $UBUNTU_CODENAME main universe multiverse 
+deb-src http://archive.ubuntu.com/ubuntu/ $UBUNTU_CODENAME main universe multiverse 
 
 ###### Ubuntu Update Repos
-deb http://archive.ubuntu.com/ubuntu/ trusty-security main universe multiverse 
-deb http://archive.ubuntu.com/ubuntu/ trusty-updates main universe multiverse 
-deb-src http://archive.ubuntu.com/ubuntu/ trusty-security main universe multiverse 
-deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates main universe multiverse 
+deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-security main universe multiverse 
+deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main universe multiverse 
+deb-src http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-security main universe multiverse 
+deb-src http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main universe multiverse 
 EOFLIST2
 fi
 
@@ -189,6 +213,8 @@ EOFC
 chown -R gns3:gns3 /etc/gns3
 chmod -R 700 /etc/gns3
 
+if [ "$UBUNTU_CODENAME" == "trusty" ]
+then
 cat <<EOFI > /etc/init/gns3.conf
 description "GNS3 server"
 author      "GNS3 Team"
@@ -222,6 +248,35 @@ set +e
 service gns3 stop
 set -e
 service gns3 start
+
+else
+    # Install systemd service
+    cat <<EOFI > /lib/systemd/system/gns3.service
+[Unit]
+Description=GNS3 server
+
+[Service]
+Type=forking
+User=gns3
+Group=gns3
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/gns3 /var/run/gns3
+ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /var/run/gns3
+ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log \
+     --pid /var/run/gns3/gns3.pid --daemon
+Restart=on-abort
+PIDFile=/var/run/gns3/gns3.pid
+
+[Install]
+WantedBy=multi-user.target
+EOFI
+    chmod 755 /lib/systemd/system/gns3.service
+    chown root:root /lib/systemd/system/gns3.service
+
+    log "Start GNS3 service"
+    systemctl enable gns3
+    systemctl start gns3
+fi
 
 log "GNS3 installed with success"
 
