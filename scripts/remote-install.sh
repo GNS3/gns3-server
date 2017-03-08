@@ -127,8 +127,8 @@ deb-src http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
 EOFLIST
     else
        cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
-    deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
-    deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
 EOFLIST
     fi
 fi
