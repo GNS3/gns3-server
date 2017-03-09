@@ -451,6 +451,8 @@ def test_get_free_project_name(controller, async_run):
 
 def test_appliance_templates(controller):
     assert len(controller.appliance_templates) > 0
+    for appliance in controller.appliance_templates.values():
+        assert appliance.__json__()["status"] != "broken"
 
 
 def test_load_base_files(controller, config, tmpdir):

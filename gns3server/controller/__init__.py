@@ -67,7 +67,8 @@ class Controller:
         for file in os.listdir(get_resource('appliances')):
             with open(os.path.join(get_resource('appliances'), file)) as f:
                 appliance = ApplianceTemplate(None, json.load(f))
-            self._appliance_templates[appliance.id] = appliance
+            if appliance.status != 'broken':
+                self._appliance_templates[appliance.id] = appliance
 
     @asyncio.coroutine
     def start(self):
