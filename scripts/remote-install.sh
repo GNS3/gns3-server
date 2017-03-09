@@ -31,9 +31,7 @@ function help {
 }
 
 function log {
-  tput setaf 2
   echo "=> $1"  >&2
-  tput sgr0
 }
 
 lsb_release -d | grep "LTS" > /dev/null
