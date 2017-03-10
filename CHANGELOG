@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.0.0rc2 10/03/2017
+
+* Drop color logging for remote install, seem to fail in some conditions
+* Cleanup the remote install script
+* Support for Xenial in remote install
+* Fix GNS3VM settings are lost at startup
+* When we receive settings from the client save them on disk
+
 ## 2.0.0 RC 1 06/03/2017
 
 * Update the documentation
