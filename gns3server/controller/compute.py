@@ -397,6 +397,8 @@ class Compute:
                 raise aiohttp.web.HTTPConflict(text="Invalid auth for server {}".format(self._id))
             except aiohttp.web.HTTPServiceUnavailable:
                 raise aiohttp.web.HTTPConflict(text="The server {} is unavailable".format(self._id))
+            except ValueError:
+                raise aiohttp.web.HTTPConflict(text="Invalid server url for server {}".format(self._id))
 
             if "version" not in response.json:
                 self._http_session.close()
