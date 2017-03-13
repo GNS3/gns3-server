@@ -10,3 +10,11 @@ install:
 - pip install -rdev-requirements.txt
 script:
 - py.test -v -s tests
+deploy:
+  provider: pypi
+  user: noplay
+  password:
+    secure: Fa66zp8ML4oSGwzkUMZi07MIYfO3tbS5gHFUaLN2mk2MBknhCjDYexmFJqT//sC/+xqv6sSJE6rz1EPoy/THbxj8R96ZgIyiUZIbDCbzgdy92d7J/eusrDoNdpApBLke8NqQqtFETb3addMZZNofQ3IDANFD2m2jY+KECU8z8NI=
+  on:
+    tags: true
+    repo: GNS3/gns3-server
