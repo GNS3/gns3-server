@@ -75,7 +75,10 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
             else:
                 projects_path = controller.projects_directory()
                 path = os.path.join(projects_path, project_name)
-            os.makedirs(path, exist_ok=True)
+            try:
+                os.makedirs(path, exist_ok=True)
+            except UnicodeEncodeError as e:
+                raise aiohttp.web.HTTPConflict(text="The project name contain non supported or invalid characters")
             myzip.extractall(path)
 
             topology = load_topology(os.path.join(path, "project.gns3"))
