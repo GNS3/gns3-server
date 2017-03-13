@@ -201,7 +201,10 @@ class Hypervisor(UBridgeHypervisor):
             except asyncio.TimeoutError:
                 if self._process.returncode is None:
                     log.warn("uBridge process {} is still running... killing it".format(self._process.pid))
-                    self._process.kill()
+                    try:
+                        self._process.kill()
+                    except ProcessLookupError:
+                        pass
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:
