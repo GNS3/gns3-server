@@ -196,14 +196,17 @@ class Controller:
                 data = json.load(f)
                 server_settings = data.get("Servers", {})
                 for remote in server_settings.get("remote_servers", []):
-                    yield from self.add_compute(
-                        host=remote.get("host", "localhost"),
-                        port=remote.get("port", 3080),
-                        protocol=remote.get("protocol", "http"),
-                        name=remote.get("url"),
-                        user=remote.get("user"),
-                        password=remote.get("password")
-                    )
+                    try:
+                        yield from self.add_compute(
+                            host=remote.get("host", "localhost"),
+                            port=remote.get("port", 3080),
+                            protocol=remote.get("protocol", "http"),
+                            name=remote.get("url"),
+                            user=remote.get("user"),
+                            password=remote.get("password")
+                        )
+                    except aiohttp.web.HTTPConflict:
+                        pass  # if the server is broken we skip it
                 if "vm" in server_settings:
                     vmname = None
                     vm_settings = server_settings["vm"]
