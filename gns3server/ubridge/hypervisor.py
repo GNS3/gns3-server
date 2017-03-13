@@ -174,7 +174,7 @@ class Hypervisor(UBridgeHypervisor):
         except (OSError, PermissionError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()
             log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
-            raise UBridgeHypervisor("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
+            raise UbridgeError("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
 
     def _termination_callback(self, returncode):
         """
