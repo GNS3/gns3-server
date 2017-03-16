@@ -253,7 +253,10 @@ def _convert_1_3_later(topo, topo_path):
     for old_node in topo.get("nodes", []):
         node = {}
         node["console"] = old_node["properties"].get("console", None)
-        node["compute_id"] = server_id_to_compute_id[old_node["server_id"]]
+        try:
+            node["compute_id"] = server_id_to_compute_id[old_node["server_id"]]
+        except KeyError:
+            node["compute_id"] = "local"
         node["console_type"] = old_node["properties"].get("console_type", "telnet")
         node["name"] = old_node["label"]["text"]
         node["label"] = _convert_label(old_node["label"])
