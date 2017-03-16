@@ -819,7 +819,7 @@ def test_pull_image(loop, vm):
 
     with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
         images = loop.run_until_complete(asyncio.async(vm.pull_image("ubuntu")))
-        mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"})
+        mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
 
 
 def test_start_capture(vm, tmpdir, manager, free_console_port, loop):

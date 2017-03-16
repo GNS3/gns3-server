@@ -768,7 +768,7 @@ class DockerVM(BaseNode):
         Pull image from docker repository
         """
         log.info("Pull %s from docker hub", image)
-        response = yield from self.manager.http_query("POST", "images/create", params={"fromImage": image})
+        response = yield from self.manager.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
         # The pull api will stream status via an HTTP JSON stream
         content = ""
         while True:
