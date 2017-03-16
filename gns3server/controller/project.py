@@ -663,7 +663,10 @@ class Project:
                 pass
             self._status = "closed"
             self._loading = False
-            raise e
+            if isinstance(e, ComputeError):
+                raise aiohttp.web.HTTPConflict(text=str(e))
+            else:
+                raise e
         try:
             os.remove(path + ".backup")
         except OSError:
