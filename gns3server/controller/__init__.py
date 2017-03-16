@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import json
 import socket
 import asyncio
@@ -68,15 +69,19 @@ class Controller:
             name = "Main server"
 
         computes = yield from self._load_controller_settings()
-        yield from self.add_compute(compute_id="local",
-                                    name=name,
-                                    protocol=server_config.get("protocol", "http"),
-                                    host=host,
-                                    console_host=console_host,
-                                    port=server_config.getint("port", 3080),
-                                    user=server_config.get("user", ""),
-                                    password=server_config.get("password", ""),
-                                    force=True)
+        try:
+            yield from self.add_compute(compute_id="local",
+                                        name=name,
+                                        protocol=server_config.get("protocol", "http"),
+                                        host=host,
+                                        console_host=console_host,
+                                        port=server_config.getint("port", 3080),
+                                        user=server_config.get("user", ""),
+                                        password=server_config.get("password", ""),
+                                        force=True)
+        except aiohttp.web_exceptions.HTTPConflict as e:
+            log.fatal("Can't acces to the local server, make sure anything else is not running on the same port")
+            sys.exit(1)
         for c in computes:
             try:
                 yield from self.add_compute(**c)
