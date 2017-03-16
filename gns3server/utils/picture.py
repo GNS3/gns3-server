@@ -99,8 +99,8 @@ def get_size(data, default_width=0, default_height=0):
         root = tree.getroot()
 
         try:
-            width = _svg_convert_size(root.attrib["width"])
-            height = _svg_convert_size(root.attrib["height"])
+            width = _svg_convert_size(root.attrib.get("width", 0))
+            height = _svg_convert_size(root.attrib.get("height", 0))
         except IndexError:
             raise ValueError("Invalid SVG file")
 
