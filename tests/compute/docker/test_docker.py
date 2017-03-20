@@ -19,7 +19,7 @@ import pytest
 import asyncio
 from unittest.mock import MagicMock
 
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_error import DockerError
 
@@ -28,6 +28,8 @@ from gns3server.compute.docker.docker_error import DockerError
 def vm():
     vm = Docker()
     vm._connected = True
+    vm._session = MagicMock()
+    vm._session.closed = False
     return vm
 
 
@@ -42,14 +44,14 @@ def test_query_success(loop, vm):
         return b'{"c": false}'
 
     response.read.side_effect = read
-    with asyncio_patch("aiohttp.client.ClientSession.request", return_value=response) as mock:
-        data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
-    mock.assert_called_with('POST',
-                            'http://docker/test',
-                            data='{"a": true}',
-                            headers={'content-type': 'application/json'},
-                            params={'b': 1},
-                            timeout=300)
+    vm._session.request = AsyncioMagicMock(return_value=response)
+    data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
+    vm._session.request.assert_called_with('POST',
+                                           'http://docker/test',
+                                           data='{"a": true}',
+                                           headers={'content-type': 'application/json'},
+                                           params={'b': 1},
+                                           timeout=300)
 
     assert data == {"c": False}
 
@@ -64,15 +66,15 @@ def test_query_error(loop, vm):
         return b"NOT FOUND"
 
     response.read.side_effect = read
-    with asyncio_patch("aiohttp.client.ClientSession.request", return_value=response) as mock:
-        with pytest.raises(DockerError):
-            data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
-    mock.assert_called_with('POST',
-                            'http://docker/test',
-                            data='{"a": true}',
-                            headers={'content-type': 'application/json'},
-                            params={'b': 1},
-                            timeout=300)
+    vm._session.request = AsyncioMagicMock(return_value=response)
+    with pytest.raises(DockerError):
+        data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
+    vm._session.request.assert_called_with('POST',
+                                           'http://docker/test',
+                                           data='{"a": true}',
+                                           headers={'content-type': 'application/json'},
+                                           params={'b': 1},
+                                           timeout=300)
 
 
 def test_query_error_json(loop, vm):
@@ -85,15 +87,15 @@ def test_query_error_json(loop, vm):
         return b'{"message": "Error"}'
 
     response.read.side_effect = read
-    with asyncio_patch("aiohttp.client.ClientSession.request", return_value=response) as mock:
-        with pytest.raises(DockerError):
-            data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
-    mock.assert_called_with('POST',
-                            'http://docker/test',
-                            data='{"a": true}',
-                            headers={'content-type': 'application/json'},
-                            params={'b': 1},
-                            timeout=300)
+    vm._session.request = AsyncioMagicMock(return_value=response)
+    with pytest.raises(DockerError):
+        data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
+    vm._session.request.assert_called_with('POST',
+                                           'http://docker/test',
+                                           data='{"a": true}',
+                                           headers={'content-type': 'application/json'},
+                                           params={'b': 1},
+                                           timeout=300)
 
 
 def test_list_images(loop):

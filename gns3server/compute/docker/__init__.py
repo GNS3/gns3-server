@@ -46,31 +46,43 @@ class Docker(BaseManager):
         self._connected = False
         # Allow locking during ubridge operations
         self.ubridge_lock = asyncio.Lock()
+        self._version_checked = False
         self._session = None
+        self._connector = None
 
     @asyncio.coroutine
-    def connector(self):
-        if not self._connected or self._connector.closed:
-            if not sys.platform.startswith("linux"):
-                raise DockerError("Docker is supported only on Linux")
-
+    def session(self):
+        if not self._connected or self._session.closed:
             try:
-                self._connector = aiohttp.connector.UnixConnector(self._server_url, conn_timeout=2)
                 self._connected = True
+                connector = self.connector()
+                self._session = aiohttp.ClientSession(connector=connector)
                 version = yield from self.query("GET", "version")
             except (aiohttp.errors.ClientOSError, FileNotFoundError):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
-
             if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
                 raise DockerError("Docker API version is {}. GNS3 requires a minimum API version of {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
+        return self._session
+
+    def connector(self):
+        if self._connector is None or self._connector.closed:
+            if not sys.platform.startswith("linux"):
+                raise DockerError("Docker is supported only on Linux")
+            try:
+                self._connector = aiohttp.connector.UnixConnector(self._server_url, conn_timeout=2)
+            except (aiohttp.errors.ClientOSError, FileNotFoundError):
+                raise DockerError("Can't connect to docker daemon")
         return self._connector
 
     @asyncio.coroutine
     def unload(self):
         yield from super().unload()
         if self._connected:
-            self._connector.close()
+            if self._session and not self._session.closed:
+                yield from self._session.close()
+            if self._connector and not self._connector.closed:
+                yield from self._connector.close()
 
     @asyncio.coroutine
     def query(self, method, path, data={}, params={}):
@@ -108,9 +120,8 @@ class Docker(BaseManager):
         data = json.dumps(data)
         url = "http://docker/" + path
         try:
-            if self._session is None or self._session.closed is True:
-                self._session = aiohttp.ClientSession(connector=(yield from self.connector()))
-            response = yield from self._session.request(
+            session = yield from self.session()
+            response = yield from session.request(
                 method,
                 url,
                 params=params,
@@ -147,7 +158,7 @@ class Docker(BaseManager):
 
         url = "http://docker/" + path
         connection = yield from aiohttp.ws_connect(url,
-                                                   connector=(yield from self.connector()),
+                                                   connector=self.connector(),
                                                    origin="http://docker",
                                                    autoping=True)
         return connection
