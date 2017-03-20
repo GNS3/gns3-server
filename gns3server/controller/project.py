@@ -702,6 +702,7 @@ class Project:
         if self._status == "closed":
             yield from self.open()
 
+        self.dump()
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
