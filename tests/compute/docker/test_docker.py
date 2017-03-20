@@ -28,8 +28,6 @@ from gns3server.compute.docker.docker_error import DockerError
 def vm():
     vm = Docker()
     vm._connected = True
-    vm._connector = MagicMock()
-    vm._connector.closed = False
     return vm
 
 
@@ -48,7 +46,6 @@ def test_query_success(loop, vm):
         data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     mock.assert_called_with('POST',
                             'http://docker/test',
-                            connector=vm._connector,
                             data='{"a": true}',
                             headers={'content-type': 'application/json'},
                             params={'b': 1},
@@ -72,7 +69,6 @@ def test_query_error(loop, vm):
             data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     mock.assert_called_with('POST',
                             'http://docker/test',
-                            connector=vm._connector,
                             data='{"a": true}',
                             headers={'content-type': 'application/json'},
                             params={'b': 1},
@@ -94,7 +90,6 @@ def test_query_error_json(loop, vm):
             data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     mock.assert_called_with('POST',
                             'http://docker/test',
-                            connector=vm._connector,
                             data='{"a": true}',
                             headers={'content-type': 'application/json'},
                             params={'b': 1},

@@ -46,6 +46,7 @@ class Docker(BaseManager):
         self._connected = False
         # Allow locking during ubridge operations
         self.ubridge_lock = asyncio.Lock()
+        self._session = None
 
     @asyncio.coroutine
     def connector(self):
@@ -107,17 +108,16 @@ class Docker(BaseManager):
         data = json.dumps(data)
         url = "http://docker/" + path
         try:
-            session = aiohttp.ClientSession()
-            response = yield from session.request(
+            if self._session is None or self._session.closed is True:
+                self._session = aiohttp.ClientSession(connector=(yield from self.connector()))
+            response = yield from self._session.request(
                 method,
                 url,
-                connector=(yield from self.connector()),
                 params=params,
                 data=data,
                 headers={"content-type": "application/json", },
                 timeout=timeout
             )
-            yield from session.close()
         except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))
         if response.status >= 300:
