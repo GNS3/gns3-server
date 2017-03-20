@@ -44,7 +44,7 @@ def test_query_success(loop, vm):
         return b'{"c": false}'
 
     response.read.side_effect = read
-    with asyncio_patch("aiohttp.request", return_value=response) as mock:
+    with asyncio_patch("aiohttp.client.ClientSession.request", return_value=response) as mock:
         data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     mock.assert_called_with('POST',
                             'http://docker/test',
@@ -67,7 +67,7 @@ def test_query_error(loop, vm):
         return b"NOT FOUND"
 
     response.read.side_effect = read
-    with asyncio_patch("aiohttp.request", return_value=response) as mock:
+    with asyncio_patch("aiohttp.client.ClientSession.request", return_value=response) as mock:
         with pytest.raises(DockerError):
             data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     mock.assert_called_with('POST',
@@ -89,7 +89,7 @@ def test_query_error_json(loop, vm):
         return b'{"message": "Error"}'
 
     response.read.side_effect = read
-    with asyncio_patch("aiohttp.request", return_value=response) as mock:
+    with asyncio_patch("aiohttp.client.ClientSession.request", return_value=response) as mock:
         with pytest.raises(DockerError):
             data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     mock.assert_called_with('POST',
