@@ -504,7 +504,7 @@ class Compute:
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError as e:
             raise ComputeError("Timeout error when connecting to {}".format(url))
-        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.ClientResponseError) as e:
+        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.errors.ServerDisconnectedError, aiohttp.ClientResponseError) as e:
             raise ComputeError(str(e))
         body = yield from response.read()
         if body and not raw:
