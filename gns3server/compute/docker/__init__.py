@@ -93,7 +93,7 @@ class Docker(BaseManager):
         return body
 
     @asyncio.coroutine
-    def http_query(self, method, path, data={}, params={}):
+    def http_query(self, method, path, data={}, params={}, timeout=300):
         """
         Make a query to the docker daemon
 
@@ -101,6 +101,7 @@ class Docker(BaseManager):
         :param path: Endpoint in API
         :param data: Dictionnary with the body. Will be transformed to a JSON
         :param params: Parameters added as a query arg
+        :param timeout: Timeout
         :returns: HTTP response
         """
         data = json.dumps(data)
@@ -113,6 +114,7 @@ class Docker(BaseManager):
                 params=params,
                 data=data,
                 headers={"content-type": "application/json", },
+                timeout=timeout
             )
         except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))

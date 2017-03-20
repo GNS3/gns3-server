@@ -51,7 +51,8 @@ def test_query_success(loop, vm):
                             connector=vm._connector,
                             data='{"a": true}',
                             headers={'content-type': 'application/json'},
-                            params={'b': 1})
+                            params={'b': 1},
+                            timeout=300)
 
     assert data == {"c": False}
 
@@ -74,7 +75,8 @@ def test_query_error(loop, vm):
                             connector=vm._connector,
                             data='{"a": true}',
                             headers={'content-type': 'application/json'},
-                            params={'b': 1})
+                            params={'b': 1},
+                            timeout=300)
 
 
 def test_query_error_json(loop, vm):
@@ -95,7 +97,8 @@ def test_query_error_json(loop, vm):
                             connector=vm._connector,
                             data='{"a": true}',
                             headers={'content-type': 'application/json'},
-                            params={'b': 1})
+                            params={'b': 1},
+                            timeout=300)
 
 
 def test_list_images(loop):
