@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import html
 import json
 import copy
 import uuid
@@ -434,7 +435,7 @@ def _convert_1_3_later(topo, topo_path):
             size=int(font_info[1]),
             weight=weight,
             style=style,
-            text=note["text"]
+            text=html.escape(note["text"])
         )
         new_note = {
             "drawing_id": str(uuid.uuid4()),
@@ -521,7 +522,7 @@ def _convert_label(label):
     """
     style = qt_font_to_style(label.get("font"), label.get("color"))
     return {
-        "text": label["text"],
+        "text": html.escape(label["text"]),
         "rotation": 0,
         "style": style,
         "x": int(label["x"]),
