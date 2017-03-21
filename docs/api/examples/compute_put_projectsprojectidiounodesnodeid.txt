@@ -1,0 +1,47 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/8b936d3d-8b50-437f-a205-15ce77fd4240' -d '{"console": 5005, "ethernet_adapters": 4, "iourc_content": "test", "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "startup_config_content": "hostname test", "use_default_iou_values": true}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/8b936d3d-8b50-437f-a205-15ce77fd4240 HTTP/1.1
+{
+    "console": 5005,
+    "ethernet_adapters": 4,
+    "iourc_content": "test",
+    "l1_keepalives": true,
+    "name": "test",
+    "nvram": 2048,
+    "ram": 512,
+    "serial_adapters": 0,
+    "startup_config_content": "hostname test",
+    "use_default_iou_values": true
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 790
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:31:44 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
+
+{
+    "command_line": "",
+    "console": 5005,
+    "console_type": "telnet",
+    "ethernet_adapters": 4,
+    "l1_keepalives": true,
+    "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
+    "name": "test",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-51/test_json5/project-files/iou/8b936d3d-8b50-437f-a205-15ce77fd4240",
+    "node_id": "8b936d3d-8b50-437f-a205-15ce77fd4240",
+    "nvram": 2048,
+    "path": "iou.bin",
+    "private_config": null,
+    "private_config_content": null,
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 512,
+    "serial_adapters": 0,
+    "startup_config": "startup-config.cfg",
+    "startup_config_content": "hostname test",
+    "status": "stopped",
+    "use_default_iou_values": true
+}

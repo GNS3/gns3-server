@@ -47,6 +47,12 @@ Output
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z property</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_put_projectsprojectiddrawingsdrawingid.txt
+
 
 DELETE /v2/projects/**{project_id}**/drawings/**{drawing_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -61,4 +67,10 @@ Response status codes
 **********************
 - **204**: Drawing deleted
 - **400**: Invalid request
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_delete_projectsprojectiddrawingsdrawingid.txt
 

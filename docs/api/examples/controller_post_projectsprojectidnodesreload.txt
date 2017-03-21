@@ -1,0 +1,14 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/815d273f-becd-43f1-919f-25d1f18fa016/nodes/reload' -d '{}'
+
+POST /v2/projects/815d273f-becd-43f1-919f-25d1f18fa016/nodes/reload HTTP/1.1
+{}
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Tue, 21 Mar 2017 09:32:00 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/projects/{project_id}/nodes/reload
+

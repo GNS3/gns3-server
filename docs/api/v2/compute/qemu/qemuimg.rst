@@ -31,3 +31,9 @@ Input
     <tr><td>zeroed_grain</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: on, off</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_qemuimg.txt
+

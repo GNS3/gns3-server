@@ -20,6 +20,12 @@ Response status codes
 - **400**: Invalid request
 - **404**: Instance doesn't exist
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidqemunodesnodeidadaptersadapternumberdportsportnumberdnio.txt
+
 
 DELETE /v2/compute/projects/**{project_id}**/qemu/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,4 +43,10 @@ Response status codes
 - **204**: NIO deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_delete_projectsprojectidqemunodesnodeidadaptersadapternumberdportsportnumberdnio.txt
 

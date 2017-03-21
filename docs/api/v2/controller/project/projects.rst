@@ -44,6 +44,12 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: opened, closed</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projects.txt
+
 
 GET /v2/projects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,4 +58,10 @@ List projects
 Response status codes
 **********************
 - **200**: List of projects
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projects.txt
 

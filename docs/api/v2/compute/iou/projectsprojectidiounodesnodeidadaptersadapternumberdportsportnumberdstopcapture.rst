@@ -21,3 +21,9 @@ Response status codes
 - **404**: Instance doesn't exist
 - **409**: VM not started
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidiounodesnodeidadaptersadapternumberdportsportnumberdstopcapture.txt
+

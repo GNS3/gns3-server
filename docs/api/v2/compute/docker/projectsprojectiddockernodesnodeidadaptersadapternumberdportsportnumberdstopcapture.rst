@@ -21,3 +21,9 @@ Response status codes
 - **404**: Instance doesn't exist
 - **409**: Container not started
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectiddockernodesnodeidadaptersadapternumberdportsportnumberdstopcapture.txt
+

@@ -1,0 +1,34 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/26188067-49b1-40f6-8b2c-11ed74c7ac18' -d '{"console": 5005, "name": "test"}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/26188067-49b1-40f6-8b2c-11ed74c7ac18 HTTP/1.1
+{
+    "console": 5005,
+    "name": "test"
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 463
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:31:53 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
+
+{
+    "acpi_shutdown": false,
+    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+    "adapters": 0,
+    "console": 5005,
+    "console_type": "telnet",
+    "headless": false,
+    "linked_clone": false,
+    "name": "test",
+    "node_directory": null,
+    "node_id": "26188067-49b1-40f6-8b2c-11ed74c7ac18",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 0,
+    "status": "stopped",
+    "use_any_adapter": false,
+    "vmname": "VMTEST"
+}
