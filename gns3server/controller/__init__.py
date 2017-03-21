@@ -248,7 +248,6 @@ class Controller:
         """
         Store settings shared by the different GUI will be replace by dedicated API later. Dictionnary
         """
-        assert self._settings is not None
         return self._settings
 
     @settings.setter

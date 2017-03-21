@@ -186,6 +186,13 @@ class WebServer:
 
         atexit.register(close_asyncio_loop)
 
+    @asyncio.coroutine
+    def _on_startup(self, *args):
+        """
+        Called when the HTTP server start
+        """
+        yield from Controller.instance().start()
+
     def run(self):
         """
         Starts the server.
@@ -225,8 +232,9 @@ class WebServer:
         for key, val in os.environ.items():
             log.debug("ENV %s=%s", key, val)
 
-        self._loop.run_until_complete(Controller.instance().start())
         self._app = aiohttp.web.Application()
+        # Background task started with the server
+        self._app.on_startup.append(self._on_startup)
 
         # Allow CORS for this domains
         cors = aiohttp_cors.setup(self._app, defaults={
