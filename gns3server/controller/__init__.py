@@ -18,6 +18,7 @@
 import os
 import sys
 import json
+import uuid
 import socket
 import asyncio
 import aiohttp
@@ -253,6 +254,7 @@ class Controller:
     @settings.setter
     def settings(self, val):
         self._settings = val
+        self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings it's help the gui to detect changes
         self.save()
         self.notification.emit("settings.updated", val)
 

@@ -195,7 +195,8 @@ def test_import_remote_gns3vm_1_x(controller, controller_config_path, async_run)
 def test_settings(controller):
     controller._notification = MagicMock()
     controller.settings = {"a": 1}
-    controller._notification.emit.assert_called_with("settings.updated", {"a": 1})
+    controller._notification.emit.assert_called_with("settings.updated", controller.settings)
+    assert controller.settings["modification_uuid"] is not None
 
 
 def test_load_projects(controller, projects_dir, async_run):
