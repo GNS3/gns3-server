@@ -26,9 +26,7 @@ import datetime
 import sys
 import locale
 import argparse
-import shutil
 import psutil
-import asyncio
 
 
 from gns3server.web.web_server import WebServer
@@ -107,7 +105,6 @@ def parse_arguments(argv):
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
     parser.add_argument("--pid", help="store process pid")
     parser.add_argument("--profile", help="Settings profile (blank will use default settings files)")
-    parser.add_argument("--discovery", action="store_true", help="Make server discoverable on the network")
 
     args = parser.parse_args(argv)
     if args.config:
@@ -128,8 +125,7 @@ def parse_arguments(argv):
         "allow": config.getboolean("allow_remote_console", False),
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
-        "logfile": config.getboolean("logfile", ""),
-        "server_discovery": config.getboolean("server_discovery", False)
+        "logfile": config.getboolean("logfile", "")
     }
 
     parser.set_defaults(**defaults)
