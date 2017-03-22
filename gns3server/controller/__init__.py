@@ -48,7 +48,7 @@ class Controller:
         self.symbols = Symbols()
         # Store settings shared by the different GUI will be replace by dedicated API later
         self._settings = None
-
+        self._local_server = None
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
@@ -57,6 +57,7 @@ class Controller:
         log.info("Start controller")
 
         server_config = Config.instance().get_section_config("Server")
+        Config.instance().listen_for_config_changes(self._update_config)
         host = server_config.get("host", "localhost")
 
         # If console_host is 0.0.0.0 client will use the ip they use
@@ -71,15 +72,15 @@ class Controller:
 
         computes = yield from self._load_controller_settings()
         try:
-            yield from self.add_compute(compute_id="local",
-                                        name=name,
-                                        protocol=server_config.get("protocol", "http"),
-                                        host=host,
-                                        console_host=console_host,
-                                        port=server_config.getint("port", 3080),
-                                        user=server_config.get("user", ""),
-                                        password=server_config.get("password", ""),
-                                        force=True)
+            self._local_server = yield from self.add_compute(compute_id="local",
+                                                             name=name,
+                                                             protocol=server_config.get("protocol", "http"),
+                                                             host=host,
+                                                             console_host=console_host,
+                                                             port=server_config.getint("port", 3080),
+                                                             user=server_config.get("user", ""),
+                                                             password=server_config.get("password", ""),
+                                                             force=True)
         except aiohttp.web_exceptions.HTTPConflict as e:
             log.fatal("Can't acces to the local server, make sure anything else is not running on the same port")
             sys.exit(1)
@@ -91,6 +92,16 @@ class Controller:
         yield from self.load_projects()
         yield from self.gns3vm.auto_start_vm()
         yield from self._project_auto_open()
+
+    def _update_config(self):
+        """
+        Call this when the server configuration file
+        change
+        """
+        if self._local_server:
+            server_config = Config.instance().get_section_config("Server")
+            self._local_server.user = server_config.get("user")
+            self._local_server.password = server_config.get("password")
 
     @asyncio.coroutine
     def stop(self):

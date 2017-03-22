@@ -50,6 +50,7 @@ class Config:
 
         # Monitor configuration files for changes
         self._watched_files = {}
+        self._watch_callback = []
 
         if sys.platform.startswith("win"):
 
@@ -116,6 +117,12 @@ class Config:
         self.clear()
         self._watch_config_file()
 
+    def listen_for_config_changes(self, callback):
+        """
+        Call the callback when the configuration file change
+        """
+        self._watch_callback.append(callback)
+
     @property
     def profile(self):
         """
@@ -143,6 +150,8 @@ class Config:
         self.read_config()
         for section in self._override_config:
             self.set_section_config(section, self._override_config[section])
+        for callback in self._watch_callback:
+            callback()
 
     def reload(self):
         """
