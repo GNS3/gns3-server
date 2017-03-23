@@ -128,7 +128,7 @@ class Compute:
             self._user = user.strip()
             if password:
                 self._password = password.strip()
-                self._auth = aiohttp.BasicAuth(self._user, self._password)
+                self._auth = aiohttp.BasicAuth(self._user, self._password, "utf-8")
             else:
                 self._password = None
                 self._auth = aiohttp.BasicAuth(self._user, "")
