@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
 from gns3server.compute.docker import Docker
-from gns3server.compute.docker.docker_error import DockerError
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 
 
 @pytest.fixture
@@ -134,3 +134,31 @@ def test_list_images(loop):
     assert {"image": "ubuntu:latest"} in images
     assert {"image": "ubuntu:12.10"} in images
     assert {"image": "ubuntu:quantal"} in images
+
+
+def test_pull_image(loop):
+    class Response:
+        """
+        Simulate a response splitted in multiple packets
+        """
+
+        def __init__(self):
+            self._read = -1
+
+        @asyncio.coroutine
+        def read(self, size):
+            self._read += 1
+            if self._read == 0:
+                return b'{"progress": "0/100",'
+            elif self._read == 1:
+                return '"id": 42}'
+            else:
+                None
+
+    mock_query = MagicMock()
+    mock_query.content.return_value = Response()
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
+        with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
+            images = loop.run_until_complete(asyncio.async(Docker.instance().pull_image("ubuntu")))
+            mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)

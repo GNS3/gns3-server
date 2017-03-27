@@ -12,6 +12,6 @@ then
 fi
 
 ssh gns3@$SERVER_ADDRESS "sudo service gns3 stop"
-rsync -avz --exclude==".git/*" --exclude=='docs/*' --exclude=='tests/*'  . "gns3@$SERVER_ADDRESS:gns3server"
+rsync -avz --exclude==".git/*" --exclude=='docs/*' --exclude="__pycache__" --exclude=='tests/*'  . "gns3@$SERVER_ADDRESS:gns3server"
 
-ssh gns3@$SERVER_ADDRESS "cd gns3server;python3 -m gns3server"
+ssh gns3@$SERVER_ADDRESS "killall python3;cd gns3server;python3 -m gns3server"
