@@ -26,8 +26,6 @@ import re
 import asyncio
 import subprocess
 import shutil
-import argparse
-import threading
 import configparser
 import struct
 import hashlib
