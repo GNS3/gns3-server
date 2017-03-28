@@ -348,9 +348,11 @@ def _convert_1_3_later(topo, topo_path):
                     node["symbol"] = ":/symbols/router.svg"
 
         elif old_node["type"] == "Cloud":
-            old_node["ports"] = _create_cloud(node, old_node, ":/symbols/cloud.svg")
+            symbol = old_node.get("symbol", ":/symbols/cloud.svg")
+            old_node["ports"] = _create_cloud(node, old_node, symbol)
         elif old_node["type"] == "Host":
-            old_node["ports"] = _create_cloud(node, old_node, ":/symbols/computer.svg")
+            symbol = old_node.get("symbol", ":/symbols/computer.svg")
+            old_node["ports"] = _create_cloud(node, old_node, symbol)
         else:
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 
