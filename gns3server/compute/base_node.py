@@ -28,7 +28,7 @@ import platform
 
 from gns3server.utils.interfaces import interfaces
 from ..compute.port_manager import PortManager
-from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import wait_run_in_executor, locked_coroutine
 from ..utils.asyncio.telnet_server import AsyncioTelnetServer
 from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
@@ -519,11 +519,15 @@ class BaseNode:
         except UbridgeError as e:
             raise UbridgeError("{}: {}".format(e, self._ubridge_hypervisor.read_stdout()))
 
-    @asyncio.coroutine
+    @locked_coroutine
     def _start_ubridge(self):
         """
         Starts uBridge (handles connections to and from this node).
         """
+
+        # Prevent us to start multiple ubridge
+        if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+            return
 
         if self.ubridge_path is None:
             raise NodeError("uBridge is not available, path doesn't exist, or you just installed GNS3 and need to restart your user session to refresh user permissions.")
