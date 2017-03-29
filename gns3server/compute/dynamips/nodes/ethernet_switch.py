@@ -88,7 +88,7 @@ class EthernetSwitch(Device):
         :param ports: ports info
         """
         if ports != self._ports:
-            if len(self._nios) > 0:
+            if len(self._nios) > 0 and len(ports) != len(self._ports):
                 raise NodeError("Can't modify a switch already connected.")
 
             port_number = 0
@@ -98,6 +98,13 @@ class EthernetSwitch(Device):
                 port_number += 1
 
             self._ports = ports
+
+    @asyncio.coroutine
+    def update_port_settings(self):
+        for port_settings in self._ports:
+            port_number = port_settings["port_number"]
+            if port_number in self._nios and self._nios[port_number] is not None:
+                yield from self.set_port_settings(port_number, port_settings)
 
     @asyncio.coroutine
     def create(self):
