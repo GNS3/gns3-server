@@ -54,10 +54,10 @@ class EthernetSwitchHandler:
         # Use the Dynamips Ethernet switch to simulate this node
         dynamips_manager = Dynamips.instance()
         node = yield from dynamips_manager.create_node(request.json.pop("name"),
-                                                         request.match_info["project_id"],
-                                                         request.json.get("node_id"),
-                                                         node_type="ethernet_switch",
-                                                         ports=request.json.get("ports_mapping"))
+                                                       request.match_info["project_id"],
+                                                       request.json.get("node_id"),
+                                                       node_type="ethernet_switch",
+                                                       ports=request.json.get("ports_mapping"))
 
         # On Linux, use the generic switch
         # builtin_manager = Builtin.instance()
@@ -114,6 +114,7 @@ class EthernetSwitchHandler:
             yield from node.set_name(request.json["name"])
         if "ports_mapping" in request.json:
             node.ports_mapping = request.json["ports_mapping"]
+            yield from node.update_port_settings()
 
         # builtin_manager = Builtin.instance()
         # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

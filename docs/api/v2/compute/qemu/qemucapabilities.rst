@@ -20,3 +20,9 @@ Output
     <tr><td>kvm</td>                    <td> </td>                     <td>array</td>                     <td>Architectures that KVM is enabled for</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_get_qemucapabilities.txt
+

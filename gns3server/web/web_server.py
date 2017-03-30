@@ -22,11 +22,7 @@ Set up and run the server.
 import os
 import sys
 import signal
-import socket
-import json
-import ipaddress
 import asyncio
-import threading
 import aiohttp
 import aiohttp_cors
 import functools
@@ -38,7 +34,6 @@ from ..config import Config
 from ..compute import MODULES
 from ..compute.port_manager import PortManager
 from ..controller import Controller
-from ..version import __version__
 
 
 # do not delete this import
@@ -191,63 +186,12 @@ class WebServer:
 
         atexit.register(close_asyncio_loop)
 
-    def _udp_server_discovery(self):
+    @asyncio.coroutine
+    def _on_startup(self, *args):
         """
-        UDP multicast and broadcast server discovery (Linux only)
+        Called when the HTTP server start
         """
-
-        import ctypes
-        uint32_t = ctypes.c_uint32
-        in_addr_t = uint32_t
-
-        class in_addr(ctypes.Structure):
-            _fields_ = [('s_addr', in_addr_t)]
-
-        class in_pktinfo(ctypes.Structure):
-            _fields_ = [('ipi_ifindex', ctypes.c_int),
-                        ('ipi_spec_dst', in_addr),
-                        ('ipi_addr', in_addr)]
-
-        IP_PKTINFO = 8
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-            membership = socket.inet_aton("239.42.42.1") + socket.inet_aton("0.0.0.0")
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, membership)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            sock.setsockopt(socket.SOL_IP, IP_PKTINFO, 1)
-            try:
-                sock.bind(("", self._port))
-            except OSError as e:
-                log.error("UDP server discovery could not bind on port {}: {}".format(self._port, e))
-                return
-
-            log.info("UDP server discovery started on port {}".format(self._port))
-            while self._loop.is_running():
-                try:
-                    data, ancdata, _, address = sock.recvmsg(255, socket.CMSG_LEN(255))
-                except OSError as e:
-                    log.error("Error while receiving UDP server discovery request: {}".format(e))
-                    continue
-                cmsg_level, cmsg_type, cmsg_data = ancdata[0]
-                if cmsg_level == socket.SOL_IP and cmsg_type == IP_PKTINFO:
-                    pktinfo = in_pktinfo.from_buffer_copy(cmsg_data)
-                    request_address = ipaddress.IPv4Address(memoryview(pktinfo.ipi_addr).tobytes())
-                    receiving_interface = socket.if_indextoname(pktinfo.ipi_ifindex)
-                    log.debug("UDP server discovery request received on {} using {}".format(receiving_interface,
-                                                                                            request_address))
-                    local_address = ipaddress.IPv4Address(memoryview(pktinfo.ipi_spec_dst).tobytes())
-                    if self._host != "0.0.0.0" and self._host != str(local_address):
-                        log.debug("Ignoring UDP discovery request received on {} instead of {}".format(local_address,
-                                                                                                       self._host))
-                        continue
-                    server_info = {"version": __version__,
-                                   "ip": str(local_address),
-                                   "port": self._port}
-                    data = json.dumps(server_info)
-                    sock.sendto(data.encode(), address)
-                    log.debug("Sent server info to {}:{} {}".format(address[0], address[1], data))
-                time.sleep(1)  # this is to prevent too many request to slow down the server
-        log.debug("UDP server discovery stopped")
+        yield from Controller.instance().start()
 
     def run(self):
         """
@@ -288,8 +232,9 @@ class WebServer:
         for key, val in os.environ.items():
             log.debug("ENV %s=%s", key, val)
 
-        self._loop.run_until_complete(Controller.instance().start())
         self._app = aiohttp.web.Application()
+        # Background task started with the server
+        self._app.on_startup.append(self._on_startup)
 
         # Allow CORS for this domains
         cors = aiohttp_cors.setup(self._app, defaults={
@@ -321,11 +266,6 @@ class WebServer:
 
         if server_config.getboolean("shell"):
             asyncio.async(self.start_shell())
-
-        if sys.platform.startswith("linux") and server_config.getboolean("server_discovery"):
-            # UDP discovery is only supported on Linux
-            udp_server_discovery = threading.Thread(target=self._udp_server_discovery, daemon=True)
-            udp_server_discovery.start()
 
         try:
             self._loop.run_forever()

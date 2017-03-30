@@ -566,7 +566,7 @@ class IOUVM(BaseNode):
         self._terminate_process_iou()
 
         if returncode != 0:
-            if returncode == 11:
+            if returncode == -11:
                 message = "{} process has stopped, return code: {}. This could be an issue with the image using a different image can fix the issue.\n{}".format(process_name, returncode, self.read_iou_stdout())
             else:
                 message = "{} process has stopped, return code: {}\n{}".format(process_name, returncode, self.read_iou_stdout())

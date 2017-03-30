@@ -637,7 +637,7 @@ class Project:
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
-                node_id = node.pop("node_id")
+                node_id = node.pop("node_id", str(uuid.uuid4()))
                 yield from self.add_node(compute, name, node_id, dump=False, **node)
             for link_data in topology.get("links", []):
                 link = yield from self.add_link(link_id=link_data["link_id"])
@@ -663,7 +663,10 @@ class Project:
                 pass
             self._status = "closed"
             self._loading = False
-            raise e
+            if isinstance(e, ComputeError):
+                raise aiohttp.web.HTTPConflict(text=str(e))
+            else:
+                raise e
         try:
             os.remove(path + ".backup")
         except OSError:
@@ -699,6 +702,7 @@ class Project:
         if self._status == "closed":
             yield from self.open()
 
+        self.dump()
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)

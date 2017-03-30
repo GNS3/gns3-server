@@ -69,6 +69,12 @@ Output
     <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the QEMU VM</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_get_projectsprojectidqemunodesnodeid.txt
+
 
 PUT /v2/compute/projects/**{project_id}**/qemu/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -184,6 +190,12 @@ Output
     <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the QEMU VM</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_put_projectsprojectidqemunodesnodeid.txt
+
 
 DELETE /v2/compute/projects/**{project_id}**/qemu/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -199,4 +211,10 @@ Response status codes
 - **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_delete_projectsprojectidqemunodesnodeid.txt
 

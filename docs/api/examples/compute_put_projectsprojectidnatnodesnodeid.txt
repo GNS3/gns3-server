@@ -1,0 +1,30 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/94f5a8c9-1e9e-42b0-bbba-5937d05c9c24' -d '{"name": "test"}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/94f5a8c9-1e9e-42b0-bbba-5937d05c9c24 HTTP/1.1
+{
+    "name": "test"
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 334
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:31:46 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/compute/projects/{project_id}/nat/nodes/{node_id}
+
+{
+    "name": "test",
+    "node_id": "94f5a8c9-1e9e-42b0-bbba-5937d05c9c24",
+    "ports_mapping": [
+        {
+            "interface": "virbr0",
+            "name": "nat0",
+            "port_number": 0,
+            "type": "ethernet"
+        }
+    ],
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "started"
+}

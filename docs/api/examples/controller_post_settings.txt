@@ -1,0 +1,19 @@
+curl -i -X POST 'http://localhost:3080/v2/settings' -d '{"test": true}'
+
+POST /v2/settings HTTP/1.1
+{
+    "test": true
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 20
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:32:04 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/settings
+
+{
+    "test": true
+}

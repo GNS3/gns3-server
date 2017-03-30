@@ -16,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import json
+import uuid
 import socket
 import shutil
 import asyncio
@@ -55,7 +57,7 @@ class Controller:
 
         # Store settings shared by the different GUI will be replace by dedicated API later
         self._settings = None
-
+        self._local_server = None
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
@@ -75,6 +77,7 @@ class Controller:
         log.info("Start controller")
         self.load_base_files()
         server_config = Config.instance().get_section_config("Server")
+        Config.instance().listen_for_config_changes(self._update_config)
         host = server_config.get("host", "localhost")
 
         # If console_host is 0.0.0.0 client will use the ip they use
@@ -88,15 +91,19 @@ class Controller:
             name = "Main server"
 
         computes = yield from self._load_controller_settings()
-        yield from self.add_compute(compute_id="local",
-                                    name=name,
-                                    protocol=server_config.get("protocol", "http"),
-                                    host=host,
-                                    console_host=console_host,
-                                    port=server_config.getint("port", 3080),
-                                    user=server_config.get("user", ""),
-                                    password=server_config.get("password", ""),
-                                    force=True)
+        try:
+            self._local_server = yield from self.add_compute(compute_id="local",
+                                                             name=name,
+                                                             protocol=server_config.get("protocol", "http"),
+                                                             host=host,
+                                                             console_host=console_host,
+                                                             port=server_config.getint("port", 3080),
+                                                             user=server_config.get("user", ""),
+                                                             password=server_config.get("password", ""),
+                                                             force=True)
+        except aiohttp.web_exceptions.HTTPConflict as e:
+            log.fatal("Can't acces to the local server, make sure anything else is not running on the same port")
+            sys.exit(1)
         for c in computes:
             try:
                 yield from self.add_compute(**c)
@@ -105,6 +112,16 @@ class Controller:
         yield from self.load_projects()
         yield from self.gns3vm.auto_start_vm()
         yield from self._project_auto_open()
+
+    def _update_config(self):
+        """
+        Call this when the server configuration file
+        change
+        """
+        if self._local_server:
+            server_config = Config.instance().get_section_config("Server")
+            self._local_server.user = server_config.get("user")
+            self._local_server.password = server_config.get("password")
 
     @asyncio.coroutine
     def stop(self):
@@ -239,14 +256,17 @@ class Controller:
                 data = json.load(f)
                 server_settings = data.get("Servers", {})
                 for remote in server_settings.get("remote_servers", []):
-                    yield from self.add_compute(
-                        host=remote.get("host", "localhost"),
-                        port=remote.get("port", 3080),
-                        protocol=remote.get("protocol", "http"),
-                        name=remote.get("url"),
-                        user=remote.get("user"),
-                        password=remote.get("password")
-                    )
+                    try:
+                        yield from self.add_compute(
+                            host=remote.get("host", "localhost"),
+                            port=remote.get("port", 3080),
+                            protocol=remote.get("protocol", "http"),
+                            name=remote.get("url"),
+                            user=remote.get("user"),
+                            password=remote.get("password")
+                        )
+                    except aiohttp.web.HTTPConflict:
+                        pass  # if the server is broken we skip it
                 if "vm" in server_settings:
                     vmname = None
                     vm_settings = server_settings["vm"]
@@ -282,12 +302,12 @@ class Controller:
         """
         Store settings shared by the different GUI will be replace by dedicated API later. Dictionnary
         """
-        assert self._settings is not None
         return self._settings
 
     @settings.setter
     def settings(self, val):
         self._settings = val
+        self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings it's help the gui to detect changes
         self.save()
         self.notification.emit("settings.updated", val)
 

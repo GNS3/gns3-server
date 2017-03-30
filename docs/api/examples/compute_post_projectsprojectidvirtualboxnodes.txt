@@ -1,0 +1,35 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes' -d '{"linked_clone": false, "name": "VM1", "vmname": "VM1"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes HTTP/1.1
+{
+    "linked_clone": false,
+    "name": "VM1",
+    "vmname": "VM1"
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 459
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:31:52 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes
+
+{
+    "acpi_shutdown": false,
+    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+    "adapters": 0,
+    "console": 5004,
+    "console_type": "telnet",
+    "headless": false,
+    "linked_clone": false,
+    "name": "VM1",
+    "node_directory": null,
+    "node_id": "4c74d21f-6af2-4fde-82a6-5e15c3037dd8",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "ram": 0,
+    "status": "stopped",
+    "use_any_adapter": false,
+    "vmname": "VM1"
+}

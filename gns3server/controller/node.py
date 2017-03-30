@@ -17,6 +17,7 @@
 
 import aiohttp
 import asyncio
+import html
 import copy
 import uuid
 import os
@@ -238,7 +239,7 @@ class Node:
 
             self._label = {
                 "y": round(self._height / 2 + 10) * -1,
-                "text": self._name,
+                "text": html.escape(self._name),
                 "style": style,
                 "x": None,  # None: mean the client should center it
                 "rotation": 0

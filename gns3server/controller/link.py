@@ -18,6 +18,7 @@
 import os
 import re
 import uuid
+import html
 import asyncio
 import aiohttp
 
@@ -83,7 +84,7 @@ class Link:
                 "x": -10,
                 "y": -10,
                 "rotation": 0,
-                "text": "{}/{}".format(adapter_number, port_number),
+                "text": html.escape("{}/{}".format(adapter_number, port_number)),
                 "style": "font-size: 10; font-style: Verdana"
             }
 

@@ -29,4 +29,5 @@ def test_settings(http_controller):
     assert response.status == 201
     response = http_controller.get('/settings', example=True)
     assert response.status == 200
-    assert response.json == query
+    assert response.json["test"] is True
+    assert response.json["modification_uuid"] is not None

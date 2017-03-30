@@ -16,6 +16,12 @@ Response status codes
 - **200**: Project information returned
 - **404**: The project doesn't exist
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projectsprojectid.txt
+
 
 PUT /v2/projects/**{project_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +66,12 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: opened, closed</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_put_projectsprojectid.txt
+
 
 DELETE /v2/projects/**{project_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,4 +85,10 @@ Response status codes
 **********************
 - **204**: Changes have been written on disk
 - **404**: The project doesn't exist
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_delete_projectsprojectid.txt
 
