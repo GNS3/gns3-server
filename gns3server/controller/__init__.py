@@ -31,7 +31,7 @@ from .symbols import Symbols
 from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
-
+from .gns3vm.gns3_vm_error import GNS3VMError
 
 import logging
 log = logging.getLogger(__name__)
@@ -87,10 +87,13 @@ class Controller:
         for c in computes:
             try:
                 yield from self.add_compute(**c)
-            except aiohttp.web_exceptions.HTTPConflict:
+            except (aiohttp.web_exceptions.HTTPConflict):
                 pass  # Skip not available servers at loading
         yield from self.load_projects()
-        yield from self.gns3vm.auto_start_vm()
+        try:
+            yield from self.gns3vm.auto_start_vm()
+        except GNS3VMError as e:
+            log.warn(str(e))
         yield from self._project_auto_open()
 
     def _update_config(self):
