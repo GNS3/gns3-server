@@ -146,9 +146,12 @@ class Controller:
                     "password": c.password,
                     "compute_id": c.id
                 })
-        os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
-        with open(self._config_file, 'w+') as f:
-            json.dump(data, f, indent=4)
+        try:
+            os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
+            with open(self._config_file, 'w+') as f:
+                json.dump(data, f, indent=4)
+        except OSError as e:
+            log.error("Can't write the configuration {}: {}".format(self._config_file, str(e)))
 
     @asyncio.coroutine
     def _load_controller_settings(self):
