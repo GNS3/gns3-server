@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 
 FRAME_RELAY_SWITCH_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -81,5 +82,5 @@ FRAME_RELAY_SWITCH_OBJECT_SCHEMA = {
     "required": ["name", "node_id", "project_id"]
 }
 
-FRAME_RELAY_SWITCH_UPDATE_SCHEMA = FRAME_RELAY_SWITCH_OBJECT_SCHEMA
+FRAME_RELAY_SWITCH_UPDATE_SCHEMA = copy.deepcopy(FRAME_RELAY_SWITCH_OBJECT_SCHEMA)
 del FRAME_RELAY_SWITCH_UPDATE_SCHEMA["required"]

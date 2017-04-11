@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 from .label import LABEL_OBJECT_SCHEMA
 
 NODE_TYPE_SCHEMA = {
@@ -234,5 +235,5 @@ NODE_OBJECT_SCHEMA = {
 }
 
 NODE_CREATE_SCHEMA = NODE_OBJECT_SCHEMA
-NODE_UPDATE_SCHEMA = NODE_OBJECT_SCHEMA
+NODE_UPDATE_SCHEMA = copy.deepcopy(NODE_OBJECT_SCHEMA)
 del NODE_UPDATE_SCHEMA["required"]

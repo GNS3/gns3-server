@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 
 ETHERNET_HUB_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -129,5 +130,5 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
     "required": ["name", "node_id", "project_id", "ports_mapping"]
 }
 
-ETHERNET_HUB_UPDATE_SCHEMA = ETHERNET_HUB_OBJECT_SCHEMA
+ETHERNET_HUB_UPDATE_SCHEMA = copy.deepcopy(ETHERNET_HUB_OBJECT_SCHEMA)
 del ETHERNET_HUB_UPDATE_SCHEMA["required"]
