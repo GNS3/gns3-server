@@ -11,3 +11,9 @@ Response status codes
 **********************
 - **200**: List of IOU images
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_get_iouimages.txt
+

@@ -37,6 +37,12 @@ Output
     <tr><td>snapshot_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Snapshot UUID</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidsnapshots.txt
+
 
 GET /v2/projects/**{project_id}**/snapshots
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,4 +56,10 @@ Response status codes
 **********************
 - **200**: Snasphot list returned
 - **404**: The project doesn't exist
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projectsprojectidsnapshots.txt
 

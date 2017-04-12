@@ -192,7 +192,8 @@ def test_import_remote_gns3vm_1_x(controller, controller_config_path, async_run)
 def test_settings(controller):
     controller._notification = MagicMock()
     controller.settings = {"a": 1}
-    controller._notification.emit.assert_called_with("settings.updated", {"a": 1})
+    controller._notification.emit.assert_called_with("settings.updated", controller.settings)
+    assert controller.settings["modification_uuid"] is not None
 
 
 def test_load_projects(controller, projects_dir, async_run):
@@ -451,6 +452,8 @@ def test_get_free_project_name(controller, async_run):
 
 def test_appliance_templates(controller):
     assert len(controller.appliance_templates) > 0
+    for appliance in controller.appliance_templates.values():
+        assert appliance.__json__()["status"] != "broken"
 
 
 def test_load_base_files(controller, config, tmpdir):

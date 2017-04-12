@@ -24,14 +24,14 @@ import asyncio
 import logging
 import aiohttp
 import json
-import sys
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio import locked_coroutine
+from gns3server.compute.base_manager import BaseManager
+from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
 
 log = logging.getLogger(__name__)
 
-from ..base_manager import BaseManager
-from .docker_vm import DockerVM
-from .docker_error import *
 
 DOCKER_MINIMUM_API_VERSION = "1.21"
 
@@ -46,30 +46,38 @@ class Docker(BaseManager):
         self._connected = False
         # Allow locking during ubridge operations
         self.ubridge_lock = asyncio.Lock()
+        self._connector = None
+        self._session = None
 
     @asyncio.coroutine
-    def connector(self):
-        if not self._connected or self._connector.closed:
-            if not sys.platform.startswith("linux"):
-                raise DockerError("Docker is supported only on Linux")
-
+    def _check_connection(self):
+        if not self._connected:
             try:
-                self._connector = aiohttp.connector.UnixConnector(self._server_url, conn_timeout=2)
                 self._connected = True
+                connector = self.connector()
                 version = yield from self.query("GET", "version")
             except (aiohttp.errors.ClientOSError, FileNotFoundError):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
-
             if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
                 raise DockerError("Docker API version is {}. GNS3 requires a minimum API version of {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
+
+    def connector(self):
+        if self._connector is None or self._connector.closed:
+            if not sys.platform.startswith("linux"):
+                raise DockerError("Docker is supported only on Linux")
+            try:
+                self._connector = aiohttp.connector.UnixConnector(self._server_url, conn_timeout=2, limit=None)
+            except (aiohttp.errors.ClientOSError, FileNotFoundError):
+                raise DockerError("Can't connect to docker daemon")
         return self._connector
 
     @asyncio.coroutine
     def unload(self):
         yield from super().unload()
         if self._connected:
-            self._connector.close()
+            if self._connector and not self._connector.closed:
+                yield from self._connector.close()
 
     @asyncio.coroutine
     def query(self, method, path, data={}, params={}):
@@ -84,7 +92,7 @@ class Docker(BaseManager):
 
         response = yield from self.http_query(method, path, data=data, params=params)
         body = yield from response.read()
-        if len(body):
+        if body and len(body):
             if response.headers['CONTENT-TYPE'] == 'application/json':
                 body = json.loads(body.decode("utf-8"))
             else:
@@ -93,7 +101,7 @@ class Docker(BaseManager):
         return body
 
     @asyncio.coroutine
-    def http_query(self, method, path, data={}, params={}):
+    def http_query(self, method, path, data={}, params={}, timeout=300):
         """
         Make a query to the docker daemon
 
@@ -101,18 +109,28 @@ class Docker(BaseManager):
         :param path: Endpoint in API
         :param data: Dictionnary with the body. Will be transformed to a JSON
         :param params: Parameters added as a query arg
+        :param timeout: Timeout
         :returns: HTTP response
         """
         data = json.dumps(data)
         url = "http://docker/" + path
+
+        if timeout is None:
+            timeout = 60 * 60 * 24 * 31  # One month timeout
+
         try:
-            response = yield from aiohttp.request(
+            if path != "version":  # version is use by check connection
+                yield from self._check_connection()
+            if self._session is None or self._session.closed:
+                connector = self.connector()
+                self._session = aiohttp.ClientSession(connector=connector)
+            response = yield from self._session.request(
                 method,
                 url,
-                connector=(yield from self.connector()),
                 params=params,
                 data=data,
                 headers={"content-type": "application/json", },
+                timeout=timeout
             )
         except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))
@@ -143,10 +161,49 @@ class Docker(BaseManager):
 
         url = "http://docker/" + path
         connection = yield from aiohttp.ws_connect(url,
-                                                   connector=(yield from self.connector()),
+                                                   connector=self.connector(),
                                                    origin="http://docker",
                                                    autoping=True)
         return connection
+
+    @locked_coroutine
+    def pull_image(self, image, progress_callback=None):
+        """
+        Pull image from docker repository
+
+        :params image: Image name
+        :params progress_callback: A function that receive a log message about image download progress
+        """
+
+        try:
+            yield from self.query("GET", "images/{}/json".format(image))
+            return  # We already have the image skip the download
+        except DockerHttp404Error:
+            pass
+
+        if progress_callback:
+            progress_callback("Pull {} from docker hub".format(image))
+        response = yield from self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
+        # The pull api will stream status via an HTTP JSON stream
+        content = ""
+        while True:
+            chunk = yield from response.content.read(1024)
+            if not chunk:
+                break
+            content += chunk.decode("utf-8")
+
+            try:
+                while True:
+                    content = content.lstrip(" \r\n\t")
+                    answer, index = json.JSONDecoder().raw_decode(content)
+                    if "progress" in answer and progress_callback:
+                        progress_callback("Pulling image {}:{}: {}".format(image, answer["id"], answer["progress"]))
+                    content = content[index:]
+            except ValueError:  # Partial JSON
+                pass
+        response.close()
+        if progress_callback:
+            progress_callback("Success pulling image {}".format(image))
 
     @asyncio.coroutine
     def list_images(self):

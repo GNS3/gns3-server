@@ -191,3 +191,5 @@ def _export_images(project, image, z):
             arcname = os.path.join("images", directory, os.path.basename(image))
             z.write(path, arcname)
             break
+        else:
+            raise aiohttp.web.HTTPConflict(text="Topology could not be exported because the image {} is not available. If you use multiple server, we need a copy of the image on the main server.".format(path))

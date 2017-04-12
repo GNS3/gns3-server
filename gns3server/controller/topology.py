@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import html
 import json
 import copy
 import uuid
@@ -285,7 +286,10 @@ def _convert_1_3_later(topo, topo_path):
     for old_node in topo.get("nodes", []):
         node = {}
         node["console"] = old_node["properties"].get("console", None)
-        node["compute_id"] = server_id_to_compute_id[old_node["server_id"]]
+        try:
+            node["compute_id"] = server_id_to_compute_id[old_node["server_id"]]
+        except KeyError:
+            node["compute_id"] = "local"
         node["console_type"] = old_node["properties"].get("console_type", "telnet")
         node["name"] = old_node["label"]["text"]
         node["label"] = _convert_label(old_node["label"])
@@ -376,9 +380,11 @@ def _convert_1_3_later(topo, topo_path):
                     node["symbol"] = ":/symbols/router.svg"
 
         elif old_node["type"] == "Cloud":
-            old_node["ports"] = _create_cloud(node, old_node, ":/symbols/cloud.svg")
+            symbol = old_node.get("symbol", ":/symbols/cloud.svg")
+            old_node["ports"] = _create_cloud(node, old_node, symbol)
         elif old_node["type"] == "Host":
-            old_node["ports"] = _create_cloud(node, old_node, ":/symbols/computer.svg")
+            symbol = old_node.get("symbol", ":/symbols/computer.svg")
+            old_node["ports"] = _create_cloud(node, old_node, symbol)
         else:
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 
@@ -463,7 +469,7 @@ def _convert_1_3_later(topo, topo_path):
             size=int(font_info[1]),
             weight=weight,
             style=style,
-            text=note["text"]
+            text=html.escape(note["text"])
         )
         new_note = {
             "drawing_id": str(uuid.uuid4()),
@@ -550,7 +556,7 @@ def _convert_label(label):
     """
     style = qt_font_to_style(label.get("font"), label.get("color"))
     return {
-        "text": label["text"],
+        "text": html.escape(label["text"]),
         "rotation": 0,
         "style": style,
         "x": int(label["x"]),

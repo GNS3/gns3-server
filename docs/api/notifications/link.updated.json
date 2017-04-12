@@ -1,0 +1,32 @@
+{
+    "capture_file_name": null,
+    "capture_file_path": null,
+    "capturing": false,
+    "link_id": "fab9fae2-1ca7-48a5-a3bf-e6cdebf7d89f",
+    "link_type": "ethernet",
+    "nodes": [
+        {
+            "adapter_number": 0,
+            "label": {
+                "text": "Hello",
+                "x": 64,
+                "y": 0
+            },
+            "node_id": "d978c6d1-4503-46ce-a11c-432b7dace22c",
+            "port_number": 3
+        },
+        {
+            "adapter_number": 2,
+            "label": {
+                "rotation": 0,
+                "style": "font-size: 10; font-style: Verdana",
+                "text": "2/4",
+                "x": -10,
+                "y": -10
+            },
+            "node_id": "d1779d19-320a-471b-9d50-91dd3d3f3ecd",
+            "port_number": 4
+        }
+    ],
+    "project_id": "e49cdc9f-ce2d-48b4-a317-7107f4c2c520"
+}

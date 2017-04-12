@@ -16,3 +16,9 @@ Response status codes
 - **201**: UDP port allocated
 - **404**: The project doesn't exist
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidportsudp.txt
+

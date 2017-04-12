@@ -11,6 +11,12 @@ Response status codes
 **********************
 - **200**: GNS3 VM settings returned
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_gns3vm.txt
+
 
 PUT /v2/gns3vm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -19,4 +25,10 @@ Update GNS3 VM settings
 Response status codes
 **********************
 - **201**: GNS3 VM updated
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_put_gns3vm.txt
 

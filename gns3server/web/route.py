@@ -21,7 +21,6 @@ import urllib
 import asyncio
 import aiohttp
 import logging
-import urllib
 import traceback
 import jsonschema
 
@@ -114,7 +113,7 @@ class Route(object):
             return
 
         if "AUTHORIZATION" in request.headers:
-            if request.headers["AUTHORIZATION"] == aiohttp.helpers.BasicAuth(user, password).encode():
+            if request.headers["AUTHORIZATION"] == aiohttp.helpers.BasicAuth(user, password, "utf-8").encode():
                 return
 
         log.error("Invalid auth. Username should %s", user)

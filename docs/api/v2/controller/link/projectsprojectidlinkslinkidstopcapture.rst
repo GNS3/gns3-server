@@ -17,3 +17,9 @@ Response status codes
 - **201**: Capture stopped
 - **400**: Invalid request
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinkslinkidstopcapture.txt
+

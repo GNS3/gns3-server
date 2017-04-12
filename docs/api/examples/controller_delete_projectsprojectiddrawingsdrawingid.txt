@@ -1,0 +1,14 @@
+curl -i -X DELETE 'http://localhost:3080/v2/projects/24ef7002-5dd6-4054-bf8a-d2aface0885e/drawings/b2f8b12f-a4cc-4621-affc-cf3dcd4ba513'
+
+DELETE /v2/projects/24ef7002-5dd6-4054-bf8a-d2aface0885e/drawings/b2f8b12f-a4cc-4621-affc-cf3dcd4ba513 HTTP/1.1
+
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Tue, 21 Mar 2017 09:31:56 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/projects/{project_id}/drawings/{drawing_id}
+

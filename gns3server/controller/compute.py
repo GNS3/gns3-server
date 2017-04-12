@@ -128,7 +128,7 @@ class Compute:
             self._user = user.strip()
             if password:
                 self._password = password.strip()
-                self._auth = aiohttp.BasicAuth(self._user, self._password)
+                self._auth = aiohttp.BasicAuth(self._user, self._password, "utf-8")
             else:
                 self._password = None
                 self._auth = aiohttp.BasicAuth(self._user, "")
@@ -397,6 +397,8 @@ class Compute:
                 raise aiohttp.web.HTTPConflict(text="Invalid auth for server {}".format(self._id))
             except aiohttp.web.HTTPServiceUnavailable:
                 raise aiohttp.web.HTTPConflict(text="The server {} is unavailable".format(self._id))
+            except ValueError:
+                raise aiohttp.web.HTTPConflict(text="Invalid server url for server {}".format(self._id))
 
             if "version" not in response.json:
                 self._http_session.close()
@@ -502,7 +504,7 @@ class Compute:
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError as e:
             raise ComputeError("Timeout error when connecting to {}".format(url))
-        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.ClientResponseError) as e:
+        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.errors.ServerDisconnectedError, aiohttp.ClientResponseError, ValueError) as e:
             raise ComputeError(str(e))
         body = yield from response.read()
         if body and not raw:

@@ -1,0 +1,14 @@
+curl -i -X POST 'http://localhost:3080/v2/shutdown' -d '{}'
+
+POST /v2/shutdown HTTP/1.1
+{}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Tue, 21 Mar 2017 09:32:03 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/shutdown
+

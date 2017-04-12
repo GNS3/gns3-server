@@ -74,7 +74,7 @@ class Project:
         try:
             if os.path.exists(self.tmp_working_directory()):
                 shutil.rmtree(self.tmp_working_directory())
-        except OSError:
+        except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not clean project directory: {}".format(e))
 
         log.info("Project {id} with path '{path}' created".format(path=self._path, id=self._id))

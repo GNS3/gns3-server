@@ -1,0 +1,56 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/072f522f-9b04-4137-9e70-66c04b1c7d5c/nodes/8a9ab8d0-3491-4823-a165-0e4229eef451/suspend' -d '{}'
+
+POST /v2/projects/072f522f-9b04-4137-9e70-66c04b1c7d5c/nodes/8a9ab8d0-3491-4823-a165-0e4229eef451/suspend HTTP/1.1
+{}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 1080
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:32:00 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/projects/{project_id}/nodes/{node_id}/suspend
+
+{
+    "command_line": null,
+    "compute_id": "example.com",
+    "console": null,
+    "console_host": "<MagicMock name='mock.console_host' id='4443681904'>",
+    "console_type": null,
+    "first_port_name": null,
+    "height": 59,
+    "label": {
+        "rotation": 0,
+        "style": "font-size: 10;font-familly: Verdana",
+        "text": "test",
+        "x": null,
+        "y": -40
+    },
+    "name": "test",
+    "node_directory": null,
+    "node_id": "8a9ab8d0-3491-4823-a165-0e4229eef451",
+    "node_type": "vpcs",
+    "port_name_format": "Ethernet{0}",
+    "port_segment_size": 0,
+    "ports": [
+        {
+            "adapter_number": 0,
+            "data_link_types": {
+                "Ethernet": "DLT_EN10MB"
+            },
+            "link_type": "ethernet",
+            "name": "Ethernet0",
+            "port_number": 0,
+            "short_name": "e0"
+        }
+    ],
+    "project_id": "072f522f-9b04-4137-9e70-66c04b1c7d5c",
+    "properties": {},
+    "status": "stopped",
+    "symbol": ":/symbols/computer.svg",
+    "width": 65,
+    "x": 0,
+    "y": 0,
+    "z": 0
+}

@@ -1014,7 +1014,9 @@ class VirtualBoxVM(BaseNode):
 
         if self.ubridge:
             yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
-            yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
+            vm_state = yield from self._get_vm_state()
+            if vm_state == "running":
+                yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
         else:
             vm_state = yield from self._get_vm_state()
             if vm_state == "running":

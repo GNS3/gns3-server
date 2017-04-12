@@ -36,6 +36,12 @@ Output
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_get_projectsprojectidvpcsnodesnodeid.txt
+
 
 PUT /v2/compute/projects/**{project_id}**/vpcs/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,6 +90,12 @@ Output
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_put_projectsprojectidvpcsnodesnodeid.txt
+
 
 DELETE /v2/compute/projects/**{project_id}**/vpcs/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,4 +111,10 @@ Response status codes
 - **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_delete_projectsprojectidvpcsnodesnodeid.txt
 

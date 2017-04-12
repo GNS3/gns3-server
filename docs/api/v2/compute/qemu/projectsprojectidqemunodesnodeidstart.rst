@@ -69,3 +69,9 @@ Output
     <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the QEMU VM</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidqemunodesnodeidstart.txt
+

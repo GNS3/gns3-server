@@ -103,7 +103,15 @@ class ServerHandler:
         description="Retrieve gui settings from the server. Temporary will we removed in later release")
     def read_settings(request, response):
 
-        response.json(Controller.instance().settings)
+        settings = None
+        while True:
+            # The init of the server could take some times
+            # we ensure settings are loaded before returning them
+            settings = Controller.instance().settings
+            if settings is not None:
+                break
+            yield from asyncio.sleep(0.5)
+        response.json(settings)
 
     @Route.post(
         r"/settings",
@@ -113,6 +121,8 @@ class ServerHandler:
         })
     def write_settings(request, response):
         controller = Controller.instance()
+        if controller.settings is None:  # Server is not loaded ignore settings update to prevent buggy client sync issue
+            return
         controller.settings = request.json
         try:
             controller.save()

@@ -1,0 +1,14 @@
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/92b25428-6f34-41f0-b7ed-876cf67528c4'
+
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/92b25428-6f34-41f0-b7ed-876cf67528c4 HTTP/1.1
+
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Tue, 21 Mar 2017 09:31:45 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/compute/projects/{project_id}/nat/nodes/{node_id}
+

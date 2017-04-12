@@ -31,6 +31,10 @@ class ApplianceTemplate:
     def id(self):
         return self._id
 
+    @property
+    def status(self):
+        return self._data["status"]
+
     def __json__(self):
         """
         Appliance data (a hash)

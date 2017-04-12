@@ -1,0 +1,64 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/a88ca6cb-fea5-40c2-ada6-73f056e94eb7' -d '{"console": 5006, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/a88ca6cb-fea5-40c2-ada6-73f056e94eb7 HTTP/1.1
+{
+    "console": 5006,
+    "hdb_disk_image": "linux\u8f7d.img",
+    "name": "test",
+    "ram": 1024
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 1509
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:31:49 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
+
+{
+    "acpi_shutdown": false,
+    "adapter_type": "e1000",
+    "adapters": 1,
+    "bios_image": "",
+    "bios_image_md5sum": null,
+    "boot_priority": "c",
+    "cdrom_image": "",
+    "cdrom_image_md5sum": null,
+    "command_line": "",
+    "console": 5006,
+    "console_type": "telnet",
+    "cpu_throttling": 0,
+    "cpus": 1,
+    "hda_disk_image": "",
+    "hda_disk_image_md5sum": null,
+    "hda_disk_interface": "ide",
+    "hdb_disk_image": "linux\u8f7d.img",
+    "hdb_disk_image_md5sum": "c4ca4238a0b923820dcc509a6f75849b",
+    "hdb_disk_interface": "ide",
+    "hdc_disk_image": "",
+    "hdc_disk_image_md5sum": null,
+    "hdc_disk_interface": "ide",
+    "hdd_disk_image": "",
+    "hdd_disk_image_md5sum": null,
+    "hdd_disk_interface": "ide",
+    "initrd": "",
+    "initrd_md5sum": null,
+    "kernel_command_line": "",
+    "kernel_image": "",
+    "kernel_image_md5sum": null,
+    "legacy_networking": false,
+    "mac_address": "00:dd:80:4e:b7:00",
+    "name": "test",
+    "node_directory": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp0ha7d1aj/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/a88ca6cb-fea5-40c2-ada6-73f056e94eb7",
+    "node_id": "a88ca6cb-fea5-40c2-ada6-73f056e94eb7",
+    "options": "",
+    "platform": "x86_64",
+    "process_priority": "low",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "qemu_path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmp9s3gyopf/qemu-system-x86_64",
+    "ram": 1024,
+    "status": "stopped",
+    "usage": ""
+}

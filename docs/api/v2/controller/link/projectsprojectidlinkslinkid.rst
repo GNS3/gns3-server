@@ -62,3 +62,9 @@ Response status codes
 - **204**: Link deleted
 - **400**: Invalid request
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_delete_projectsprojectidlinkslinkid.txt
+

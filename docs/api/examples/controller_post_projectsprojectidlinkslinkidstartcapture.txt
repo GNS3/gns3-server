@@ -1,0 +1,23 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/7f25b14b-4f3d-4259-aa4c-f60f02354636/links/43bc51b2-9cea-4fc2-af09-d61b895aaaf7/start_capture' -d '{}'
+
+POST /v2/projects/7f25b14b-4f3d-4259-aa4c-f60f02354636/links/43bc51b2-9cea-4fc2-af09-d61b895aaaf7/start_capture HTTP/1.1
+{}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 247
+Content-Type: application/json
+Date: Tue, 21 Mar 2017 09:31:58 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/projects/{project_id}/links/{link_id}/start_capture
+
+{
+    "capture_file_name": null,
+    "capture_file_path": null,
+    "capturing": false,
+    "link_id": "43bc51b2-9cea-4fc2-af09-d61b895aaaf7",
+    "link_type": "ethernet",
+    "nodes": [],
+    "project_id": "7f25b14b-4f3d-4259-aa4c-f60f02354636"
+}

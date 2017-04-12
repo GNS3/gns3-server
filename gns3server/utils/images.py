@@ -58,7 +58,7 @@ def list_images(type):
                     if filename.endswith(".md5sum") or filename.startswith("."):
                         continue
                     elif ((filename.endswith(".image") or filename.endswith(".bin")) and type == "dynamips") \
-                            or (filename.endswith(".bin") and type == "iou") \
+                            or ((filename.endswith(".bin") or filename.startswith("i86bi")) and type == "iou") \
                             or (not filename.endswith(".bin") and not filename.endswith(".image") and type == "qemu"):
                         files.add(filename)
 

@@ -1,0 +1,14 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/3668274c-d74e-4f59-ab74-ab52442ccf61/suspend' -d '{}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/3668274c-d74e-4f59-ab74-ab52442ccf61/suspend HTTP/1.1
+{}
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Tue, 21 Mar 2017 09:31:49 GMT
+Server: Python/3.6 GNS3/2.0.0dev11
+X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/suspend
+

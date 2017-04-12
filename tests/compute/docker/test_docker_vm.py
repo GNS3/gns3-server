@@ -795,33 +795,6 @@ def test_adapter_remove_nio_binding_invalid_adapter(vm, loop):
         loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(12)))
 
 
-def test_pull_image(loop, vm):
-    class Response:
-        """
-        Simulate a response splitted in multiple packets
-        """
-
-        def __init__(self):
-            self._read = -1
-
-        @asyncio.coroutine
-        def read(self, size):
-            self._read += 1
-            if self._read == 0:
-                return b'{"progress": "0/100",'
-            elif self._read == 1:
-                return '"id": 42}'
-            else:
-                None
-
-    mock_query = MagicMock()
-    mock_query.content.return_value = Response()
-
-    with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
-        images = loop.run_until_complete(asyncio.async(vm.pull_image("ubuntu")))
-        mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"})
-
-
 def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
