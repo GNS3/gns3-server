@@ -18,17 +18,15 @@
 
 import os
 import sys
-import uuid
-import json
 import pytest
 import aiohttp
-import zipfile
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
 from unittest.mock import patch
 from uuid import uuid4
 
 from gns3server.controller.project import Project
+from gns3server.controller.appliance import Appliance
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.config import Config
 
@@ -177,6 +175,42 @@ def test_add_node_non_local(async_run, controller):
                                  data={'node_id': node.id,
                                        'startup_script': 'test.cfg',
                                        'name': 'test'},
+                                 timeout=120)
+    assert compute in project._project_created_on_compute
+    controller.notification.emit.assert_any_call("node.created", node.__json__())
+
+
+def test_add_node_from_appliance(async_run, controller):
+    """
+    For a local server we send the project path
+    """
+    compute = MagicMock()
+    compute.id = "local"
+    project = Project(controller=controller, name="Test")
+    controller._notification = MagicMock()
+    controller._appliances["fakeid"] = Appliance("fakeid", {
+        "server": "local",
+        "name": "Test",
+        "default_name_format": "{name}-{0}",
+        "node_type": "vpcs"
+
+    })
+    controller._computes["local"] = compute
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node_from_appliance("fakeid", x=23, y=12))
+
+    compute.post.assert_any_call('/projects', data={
+        "name": project._name,
+        "project_id": project._id,
+        "path": project._path
+    })
+    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
+                                 data={'node_id': node.id,
+                                       'name': 'Test-1'},
                                  timeout=120)
     assert compute in project._project_created_on_compute
     controller.notification.emit.assert_any_call("node.created", node.__json__())

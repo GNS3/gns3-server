@@ -19,6 +19,7 @@ import re
 import os
 import json
 import uuid
+import copy
 import shutil
 import asyncio
 import aiohttp
@@ -316,6 +317,29 @@ class Project:
             self.remove_allocated_node_name(node.name)
             return self.update_allocated_node_name(new_name)
         return new_name
+
+    @open_required
+    @asyncio.coroutine
+    def add_node_from_appliance(self, appliance_id, x=0, y=0, compute_id=None):
+        """
+        Create a node from an appliance
+        """
+        try:
+            template = copy.copy(self.controller.appliances[appliance_id].data)
+        except KeyError:
+            msg = "Appliance {} doesn't exist".format(appliance_id)
+            log.error(msg)
+            raise aiohttp.web.HTTPNotFound(text=msg)
+        template["x"] = x
+        template["y"] = y
+        node_type = template.pop("node_type")
+        compute = self.controller.get_compute(template.pop("server", compute_id))
+        name = template.pop("name")
+        default_name_format = template.pop("default_name_format", "{name}-{0}")
+        name = default_name_format.replace("{name}", name)
+        node_id = str(uuid.uuid4())
+        node = yield from self.add_node(compute, name, node_id, node_type=node_type, **template)
+        return node
 
     @open_required
     @asyncio.coroutine

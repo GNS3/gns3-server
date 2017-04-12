@@ -1,10 +1,28 @@
 Glossary
 ========
 
+Topology
+--------
+
+The place where you have all things (node, drawing, link...)
+
+
 Node
 -----
 
 A Virtual Machine (Dynamips, IOU, Qemu, VPCS...), a cloud, a builtin device (switch, hub...)
+
+Appliance
+---------
+
+A model for a node. When you drag an appliance to the topology a node is created.
+
+
+Appliance template
+------------------
+
+A file (.gns3a) use for creating new node model.
+
 
 Drawing
 --------

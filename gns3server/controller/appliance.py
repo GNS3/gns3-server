@@ -18,21 +18,56 @@
 import uuid
 
 
+# Convert old GUI category to text category
+ID_TO_CATEGORY = {
+    3: "firewall",
+    2: "guest",
+    1: "switch",
+    0: "router"
+}
+
+
 class Appliance:
 
-    def __init__(self, appliance_id, data):
+    def __init__(self, appliance_id, data, builtin=False):
         if appliance_id is None:
             self._id = str(uuid.uuid4())
         else:
             self._id = appliance_id
         self._data = data
+        self._builtin = builtin
 
     @property
     def id(self):
         return self._id
 
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def name(self):
+        return self._data["name"]
+
+    @property
+    def compute_id(self):
+        return self._data.get("server")
+
+    @property
+    def builtin(self):
+        return self._builtin
+
     def __json__(self):
         """
         Appliance data (a hash)
         """
-        return self._data
+        return {
+            "appliance_id": self._id,
+            "node_type": self._data["node_type"],
+            "name": self._data["name"],
+            "default_name_format": self._data.get("default_name_format", "{name}-{0}"),
+            "category": ID_TO_CATEGORY[self._data["category"]],
+            "symbol": self._data["symbol"],
+            "compute_id": self.compute_id,
+            "builtin": self._builtin
+        }
