@@ -65,7 +65,7 @@ def test_vm_check_vpcs_version_0_6_1(loop, vm, manager):
 def test_vm_invalid_vpcs_version(loop, manager, vm):
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
         with pytest.raises(VPCSError):
-            nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            nio = manager.create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
             assert vm.name == "test"
@@ -73,9 +73,9 @@ def test_vm_invalid_vpcs_version(loop, manager, vm):
 
 
 def test_vm_invalid_vpcs_path(vm, manager, loop):
-    with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.vpcs_path", return_value="/tmp/fake/path/vpcs"):
+    with patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM.vpcs_path", return_value="/tmp/fake/path/vpcs"):
         with pytest.raises(VPCSError):
-            nio = manager.create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            nio = manager.create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.name == "test"
@@ -89,10 +89,10 @@ def test_start(loop, vm):
 
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
-            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            nio = VPCS.instance().create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm.start()))
-            assert mock_exec.call_args[0] == (vm.vpcs_path,
+            assert mock_exec.call_args[0] == (vm.vpcs_path(),
                                               '-p',
                                               str(vm.console),
                                               '-m', '1',
@@ -125,10 +125,10 @@ def test_start_0_6_1(loop, vm):
 
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
-            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            nio = VPCS.instance().create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm.start()))
-            assert mock_exec.call_args[0] == (vm.vpcs_path,
+            assert mock_exec.call_args[0] == (vm.vpcs_path(),
                                               '-p',
                                               str(vm.console),
                                               '-m', '1',
@@ -158,7 +158,7 @@ def test_stop(loop, vm):
 
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            nio = VPCS.instance().create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
 
             loop.run_until_complete(asyncio.async(vm.start()))
@@ -191,7 +191,7 @@ def test_reload(loop, vm):
 
     with asyncio_patch("gns3server.modules.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            nio = VPCS.instance().create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm.start()))
             assert vm.is_running()
@@ -207,7 +207,7 @@ def test_reload(loop, vm):
 
 
 def test_add_nio_binding_udp(vm):
-    nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    nio = VPCS.instance().create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     vm.port_add_nio_binding(0, nio)
     assert nio.lport == 4242
 
@@ -215,21 +215,13 @@ def test_add_nio_binding_udp(vm):
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_add_nio_binding_tap(vm, ethernet_device):
     with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=True):
-        nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_tap", "tap_device": ethernet_device})
+        nio = VPCS.instance().create_nio(vm.vpcs_path(), {"type": "nio_tap", "tap_device": ethernet_device})
         vm.port_add_nio_binding(0, nio)
         assert nio.tap_device == ethernet_device
 
 
-# def test_add_nio_binding_tap_no_privileged_access(vm):
-#     with patch("gns3server.modules.base_manager.BaseManager.has_privileged_access", return_value=False):
-#         with pytest.raises(aiohttp.web.HTTPForbidden):
-#             nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_tap", "tap_device": "test"})
-#             vm.port_add_nio_binding(0, nio)
-#     assert vm._ethernet_adapter.ports[0] is None
-#
-
 def test_port_remove_nio_binding(vm):
-    nio = VPCS.instance().create_nio(vm.vpcs_path, {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    nio = VPCS.instance().create_nio(vm.vpcs_path(), {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
     vm.port_add_nio_binding(0, nio)
     vm.port_remove_nio_binding(0)
     assert vm._ethernet_adapter.ports[0] is None
