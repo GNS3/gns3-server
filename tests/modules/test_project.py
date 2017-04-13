@@ -216,15 +216,15 @@ def test_get_default_project_directory(monkeypatch):
 def test_clean_project_directory(tmpdir):
 
     # A non anonymous project with uuid.
-    project1 = tmpdir / uuid4()
+    project1 = tmpdir / str(uuid4())
     project1.mkdir()
 
     # A non anonymous project.
-    oldproject = tmpdir / uuid4()
+    oldproject = tmpdir / str(uuid4())
     oldproject.mkdir()
 
     # an anonymous project
-    project2 = tmpdir / uuid4()
+    project2 = tmpdir / str(uuid4())
     project2.mkdir()
     tmp = (project2 / ".gns3_temporary")
     with open(str(tmp), 'w+') as f:
