@@ -541,8 +541,6 @@ class IOUVM(BaseVM):
         self._ioucon_thread_stop_event.set()
 
         if returncode != 0:
-            log.info("{} process has stopped, return code: {}".format(process_name, returncode))
-        else:
             if returncode == 11:
                 message = "{} process has stopped, return code: {}. This could be an issue with the image using a different image can fix the issue.\n{}".format(process_name, returncode, self.read_iou_stdout())
             else:
