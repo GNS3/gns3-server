@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.5.4 13/04/2017
+
+* Fix VPCS tests for recent version
+* Freeze server dependencies to the same version used for 1.5.3
+* Fix 1.5: Error message, when stopping IOU router #769
+* Drop color logging for remote install, seem to fail in some conditions
+* Cleanup the remote install script
+* Support for Xenial in remote install
+
 ## 1.5.3 12/01/2016
 
 * Fix sporadically systemd is unable to start gns3-server
