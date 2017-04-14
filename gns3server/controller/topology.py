@@ -259,8 +259,11 @@ def _convert_1_3_later(topo, topo_path):
         except KeyError:
             node["compute_id"] = "local"
         node["console_type"] = old_node["properties"].get("console_type", "telnet")
-        node["name"] = old_node["label"]["text"]
-        node["label"] = _convert_label(old_node["label"])
+        if "label" in old_node:
+            node["name"] = old_node["label"]["text"]
+            node["label"] = _convert_label(old_node["label"])
+        else:
+            node["name"] = old_node["properties"]["name"]
         node["node_id"] = old_node.get("vm_id", str(uuid.uuid4()))
 
         node["symbol"] = old_node.get("symbol", None)
