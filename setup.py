@@ -40,6 +40,9 @@ class PyTest(TestCommand):
 
 dependencies = open("requirements.txt", "r").read().splitlines()
 
+if sys.version_info <= (3, 4):
+    dependencies.append('typing>=3.5.3.0 # Otherwise yarl fail with python 3.4')
+
 setup(
     name="gns3-server",
     version=__import__("gns3server").__version__,
