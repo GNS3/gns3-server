@@ -134,6 +134,8 @@ class Docker(BaseManager):
             )
         except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))
+        except (asyncio.TimeoutError):
+            raise DockerError("Docker timeout " + method + " " + path)
         if response.status >= 300:
             body = yield from response.read()
             try:
