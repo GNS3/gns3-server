@@ -154,6 +154,7 @@ def test_termination_callback(vm, async_run):
         assert event == vm
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_termination_callback_error(vm, tmpdir, async_run):
 
     with open(str(tmpdir / "qemu.log"), "w+") as f:
