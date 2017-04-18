@@ -79,7 +79,7 @@ def list_images(type):
 
                             images.append({
                                 "filename": filename,
-                                "path": path,
+                                "path": force_unix_path(path),
                                 "md5sum": md5sum(os.path.join(root, filename)),
                                 "filesize": os.stat(os.path.join(root, filename)).st_size})
                         except OSError as e:
