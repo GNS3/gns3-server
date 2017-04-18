@@ -4,8 +4,6 @@ image: Visual Studio 2015
 
 platform: x64
 
-shallow_clone: true
-
 environment:
     PYTHON: "C:\\Python36-x64"
     DISTUTILS_USE_SDK: "1"
