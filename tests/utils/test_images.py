@@ -133,7 +133,7 @@ def test_list_images(tmpdir):
                 'filename': 'test2.image',
                 'filesize': 7,
                 'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
-                'path': str(path2)
+                'path': force_unix_path(str(path2))
             }
         ]
 
