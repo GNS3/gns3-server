@@ -219,18 +219,6 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     assert qemu.get_relative_image_path(path5) == path5
 
 
-def test_get_relative_image_path_ova(qemu, tmpdir, config):
-    os.makedirs(str(tmpdir / "QEMU" / "test.ova"))
-    path = str(tmpdir / "QEMU" / "test.ova" / "test.bin")
-    open(path, 'w+').close()
-
-    config.set_section_config("Server", {
-        "images_path": str(tmpdir)
-    })
-    assert qemu.get_relative_image_path(path) == os.path.join("test.ova", "test.bin")
-    assert qemu.get_relative_image_path(os.path.join("test.ova", "test.bin")) == os.path.join("test.ova", "test.bin")
-
-
 def test_list_images(loop, qemu, tmpdir):
 
     fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
