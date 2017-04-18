@@ -1,26 +1,20 @@
 version: '{build}-{branch}'
 
-# Do not build feature branch with open Pull Requests
-skip_branch_with_pr: true
-
 image: Visual Studio 2015
 
 platform: x64
 
 shallow_clone: true
 
-
 environment:
-  matrix:
-    - PYTHON: "C:\\Python36-x64"
-      DISTUTILS_USE_SDK: "1"
-    - PYTHON: "C:\\Python35-x64"
-      DISTUTILS_USE_SDK: "1"
+    PYTHON: "C:\\Python36-x64"
+    DISTUTILS_USE_SDK: "1"
 
 install:
    - "%PYTHON%\\python.exe -m pip install -r dev-requirements.txt"
+   - "%PYTHON%\\python.exe -m pip install -r win-requirements.txt"
 
 build: off
 
 test_script:
-   - "%PYTHON%\\python.exe -m py.test"
+   - "%PYTHON%\\python.exe -m pytest"
