@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 from unittest.mock import patch
 
 
@@ -105,9 +106,10 @@ def test_list_images(tmpdir):
     path = tmpdir / "images2" / "test_invalid.image"
     path.write(b'NOTANELF', ensure=True)
 
-    path3 = tmpdir / "images1" / "IOU" / "test3.bin"
-    path3.write(b'\x7fELF\x01\x02\x01', ensure=True)
-    path3 = force_unix_path(str(path3))
+    if sys.platform.startswith("linux"):
+        path3 = tmpdir / "images1" / "IOU" / "test3.bin"
+        path3.write(b'\x7fELF\x01\x02\x01', ensure=True)
+        path3 = force_unix_path(str(path3))
 
     path4 = tmpdir / "images1" / "QEMU" / "test4.qcow2"
     path4.write("1", ensure=True)
@@ -137,14 +139,15 @@ def test_list_images(tmpdir):
             }
         ]
 
-        assert list_images("iou") == [
-            {
-                'filename': 'test3.bin',
-                'filesize': 7,
-                'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
-                'path': 'test3.bin'
-            }
-        ]
+        if sys.platform.startswith("linux"):
+            assert list_images("iou") == [
+                {
+                    'filename': 'test3.bin',
+                    'filesize': 7,
+                    'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+                    'path': 'test3.bin'
+                }
+            ]
 
         assert list_images("qemu") == [
             {
