@@ -19,6 +19,3 @@ build: off
 
 test_script:
     - "%PYTHON%\\python.exe -m pytest -v"
-
-deploy_script:
-    - curl "https://ci.appveyor.com/api/builds" -XPOST -H 'Authorization: Bearer %API_TOKEN%' -H 'Content-Type: application/json' -d '{"accountName": "gns3-build", "projectSlug": "gns3-build", "branch": "%APPVEYOR_REPO_BRANCH%"}
