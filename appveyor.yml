@@ -7,6 +7,8 @@ platform: x64
 environment:
     PYTHON: "C:\\Python36-x64"
     DISTUTILS_USE_SDK: "1"
+    API_TOKEN:
+        secure: VEKn4bYH3QO0ixtQW5ni4Enmn8cS1NlZV246ludBDgQ=
 
 install:
    - cinst nmap
@@ -16,4 +18,7 @@ install:
 build: off
 
 test_script:
-   - "%PYTHON%\\python.exe -m pytest -v"
+    - "%PYTHON%\\python.exe -m pytest -v"
+
+deploy_script:
+    - curl "https://ci.appveyor.com/api/builds" -XPOST -H 'Authorization: Bearer %API_TOKEN%' -H 'Content-Type: application/json' -d '{"accountName": "gns3-build", "projectSlug": "gns3-build", "branch": "%APPVEYOR_REPO_BRANCH%"}
