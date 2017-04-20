@@ -23,7 +23,7 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-__version__ = "2.0.0rc4"
+__version__ = "2.0.0dev13"
 
 # If it's a git checkout try to add the commit
 if "dev" in __version__:
