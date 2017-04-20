@@ -1,5 +1,22 @@
 # Change Log
 
+## 2.0.0rc4 20/04/2017
+
+* Fix a race condition when handling error at project opening
+* Fix an issue with editing network on windows
+* Fix windows tests
+* Catch timeout error on docker
+* typing is already included in Py >= 3.5 (#979)
+* Fix import of some old topologies
+* Fix AttributeError: 'NoneType' object has no attribute 'returncode'
+* Fix ghost vmware vms
+* Fix required field in schema not use
+* Catch error and log them when we can't write the config
+* Fix bridge 'bridge0' already exist when we have trouble with a container
+* Catch an error at startup when the remote GNS3 VM is not a real GNS3 VM
+* Fixes Qemu sata option. Ref #875.
+* Catch GNS3 VM loading error at startup
+
 ## 1.5.4 13/04/2017
 
 * Fix VPCS tests for recent version
