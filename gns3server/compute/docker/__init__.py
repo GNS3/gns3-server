@@ -33,7 +33,7 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Err
 log = logging.getLogger(__name__)
 
 
-DOCKER_MINIMUM_API_VERSION = "1.21"
+DOCKER_MINIMUM_API_VERSION = "1.27"
 
 
 class Docker(BaseManager):
@@ -113,7 +113,7 @@ class Docker(BaseManager):
         :returns: HTTP response
         """
         data = json.dumps(data)
-        url = "http://docker/" + path
+        url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
 
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
