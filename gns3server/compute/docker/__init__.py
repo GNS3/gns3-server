@@ -20,10 +20,10 @@ Docker server module.
 """
 
 import sys
+import json
 import asyncio
 import logging
 import aiohttp
-import json
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locked_coroutine
 from gns3server.compute.base_manager import BaseManager
@@ -189,7 +189,10 @@ class Docker(BaseManager):
         # The pull api will stream status via an HTTP JSON stream
         content = ""
         while True:
-            chunk = yield from response.content.read(1024)
+            try:
+                chunk = yield from response.content.read(1024)
+            except aiohttp.errors.ServerDisconnectedError:
+                break
             if not chunk:
                 break
             content += chunk.decode("utf-8")
