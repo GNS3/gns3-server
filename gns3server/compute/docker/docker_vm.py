@@ -361,6 +361,7 @@ class DockerVM(BaseNode):
                     try:
                         yield from self._add_ubridge_connection(nio, adapter_number)
                     except UbridgeNamespaceError:
+                        log.error("Container {} failed to start", self.name)
                         yield from self.stop()
 
                         # The container can crash soon after the start, this means we can not move the interface to the container namespace
@@ -517,6 +518,8 @@ class DockerVM(BaseNode):
         state = yield from self._get_container_state()
         if state == "running":
             return True
+        if self.status == "started":  # The container crashed we need to clean
+            yield from self.stop()
         return False
 
     @asyncio.coroutine

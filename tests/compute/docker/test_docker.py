@@ -47,7 +47,7 @@ def test_query_success(loop, vm):
     vm._session.request = AsyncioMagicMock(return_value=response)
     data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     vm._session.request.assert_called_with('POST',
-                                           'http://docker/test',
+                                           'http://docker/v1.25/test',
                                            data='{"a": true}',
                                            headers={'content-type': 'application/json'},
                                            params={'b': 1},
@@ -70,7 +70,7 @@ def test_query_error(loop, vm):
     with pytest.raises(DockerError):
         data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     vm._session.request.assert_called_with('POST',
-                                           'http://docker/test',
+                                           'http://docker/v1.25/test',
                                            data='{"a": true}',
                                            headers={'content-type': 'application/json'},
                                            params={'b': 1},
@@ -91,7 +91,7 @@ def test_query_error_json(loop, vm):
     with pytest.raises(DockerError):
         data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     vm._session.request.assert_called_with('POST',
-                                           'http://docker/test',
+                                           'http://docker/v1.25/test',
                                            data='{"a": true}',
                                            headers={'content-type': 'application/json'},
                                            params={'b': 1},

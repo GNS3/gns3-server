@@ -674,7 +674,7 @@ class Project:
             self.dump()
         # We catch all error to be able to rollback the .gns3 to the previous state
         except Exception as e:
-            for compute in self._project_created_on_compute:
+            for compute in list(self._project_created_on_compute):
                 try:
                     yield from compute.post("/projects/{}/close".format(self._id))
                 # We don't care if a compute is down at this step

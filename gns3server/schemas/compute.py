@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 from .capabilities import CAPABILITIES_SCHEMA
 
 COMPUTE_CREATE_SCHEMA = {
@@ -52,10 +53,10 @@ COMPUTE_CREATE_SCHEMA = {
         }
     },
     "additionalProperties": False,
-    "required": ["compute_id", "protocol", "host", "port"]
+    "required": ["protocol", "host", "port"]
 }
 
-COMPUTE_UPDATE_SCHEMA = COMPUTE_CREATE_SCHEMA
+COMPUTE_UPDATE_SCHEMA = copy.deepcopy(COMPUTE_CREATE_SCHEMA)
 del COMPUTE_UPDATE_SCHEMA["required"]
 
 COMPUTE_OBJECT_SCHEMA = {

@@ -18,6 +18,7 @@
 import sys
 import copy
 import asyncio
+import aiohttp
 
 from ...utils.asyncio import locked_coroutine
 from .vmware_gns3_vm import VMwareGNS3VM
@@ -242,10 +243,13 @@ class GNS3VM:
                 yield from self.start()
             except GNS3VMError as e:
                 # User will receive the error later when they will try to use the node
-                yield from self._controller.add_compute(compute_id="vm",
-                                                        name="GNS3 VM ({})".format(self.current_engine().vmname),
-                                                        host=None,
-                                                        force=True)
+                try:
+                    yield from self._controller.add_compute(compute_id="vm",
+                                                            name="GNS3 VM ({})".format(self.current_engine().vmname),
+                                                            host=None,
+                                                            force=True)
+                except aiohttp.web.HTTPConflict:
+                    pass
                 log.error("Can't start the GNS3 VM: {}", str(e))
 
     @asyncio.coroutine

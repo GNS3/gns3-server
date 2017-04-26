@@ -20,10 +20,10 @@ Docker server module.
 """
 
 import sys
+import json
 import asyncio
 import logging
 import aiohttp
-import json
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locked_coroutine
 from gns3server.compute.base_manager import BaseManager
@@ -33,7 +33,7 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Err
 log = logging.getLogger(__name__)
 
 
-DOCKER_MINIMUM_API_VERSION = "1.21"
+DOCKER_MINIMUM_API_VERSION = "1.25"
 
 
 class Docker(BaseManager):
@@ -113,7 +113,7 @@ class Docker(BaseManager):
         :returns: HTTP response
         """
         data = json.dumps(data)
-        url = "http://docker/" + path
+        url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
 
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
@@ -134,6 +134,8 @@ class Docker(BaseManager):
             )
         except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))
+        except (asyncio.TimeoutError):
+            raise DockerError("Docker timeout " + method + " " + path)
         if response.status >= 300:
             body = yield from response.read()
             try:
@@ -187,7 +189,10 @@ class Docker(BaseManager):
         # The pull api will stream status via an HTTP JSON stream
         content = ""
         while True:
-            chunk = yield from response.content.read(1024)
+            try:
+                chunk = yield from response.content.read(1024)
+            except aiohttp.errors.ServerDisconnectedError:
+                break
             if not chunk:
                 break
             content += chunk.decode("utf-8")

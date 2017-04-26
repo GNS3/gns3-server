@@ -1,5 +1,77 @@
 # Change Log
 
+## 2.0.0rc4 20/04/2017
+
+* Fix a race condition when handling error at project opening
+* Fix an issue with editing network on windows
+* Fix windows tests
+* Catch timeout error on docker
+* typing is already included in Py >= 3.5 (#979)
+* Fix import of some old topologies
+* Fix AttributeError: 'NoneType' object has no attribute 'returncode'
+* Fix ghost vmware vms
+* Fix required field in schema not use
+* Catch error and log them when we can't write the config
+* Fix bridge 'bridge0' already exist when we have trouble with a container
+* Catch an error at startup when the remote GNS3 VM is not a real GNS3 VM
+* Fixes Qemu sata option. Ref #875.
+* Catch GNS3 VM loading error at startup
+
+## 1.5.4 13/04/2017
+
+* Fix VPCS tests for recent version
+* Freeze server dependencies to the same version used for 1.5.3
+* Fix 1.5: Error message, when stopping IOU router #769
+* Drop color logging for remote install, seem to fail in some conditions
+* Cleanup the remote install script
+* Support for Xenial in remote install
+
+## 2.0.0rc3 31/03/2017
+
+* Support IOU image without .bin at the end
+* Allow to change some properties of an already connected ethernet switch
+* Ensure we start only one ubridge
+* Catch some broken hostname for compute node
+* Fix limit of 20 docker containers
+* Fix race conditions in creation of Frame Relay Switch
+* Fix conversion of project from 1.X with custom symbol for cloud
+* Dissallow parallel pull of docker images
+* Add a scripts for running current dev version on GNS3 VM
+* Fix a crash with missing size in the svg files
+* Fix an utf8 error in auth code
+* Improve vmrun timeout message
+* Support utf-8 characters in user and password for auth
+* Handle password configuration change on remote servers
+* Fix Bug when delete fake-running VMBox
+* Fix Can't connect to compute local on some computers
+* Add a modification uuid to settings returned by the server
+* Check python version in setup.py only for install
+* Fix Session is closed when listing docker images
+* Cleanup docker source code
+* Use aiohttp session for docker queries
+* Escape special characters from SVG text
+* Fix some port short name display issues
+* Catch server disconnected errors from computes
+* Generate a node uuid if the uuid is missing in the .gns3
+* Ensure to dump project before exporting it
+* Fix return code check for SIGSEGV of IOU images
+* Prevent vmname change for VirtualBox linked clone
+* Upgrade to aiohttp 1.3.5 to solve issue with big file
+* Handle some invalid svg
+* Try to fix some 1.3 topology with corrupted data
+* Fix ComputeError: Can't connect to Main server
+* Catch error when the server as trouble to access to itself
+* Catch a timeout error in docker
+* Lock yarl version because 0.10 is not compatible with aiohttp 1.3
+* Raise error if image are not avaible on main server during export
+* Fix a race condition when killing ubridge
+* If your settings from 1.X are broken with skip them at import
+* Catch a permission error on symbols
+* Catch unicode error when you try to duplicate a project with invalid characters
+* Catch error when you try to put an invalid server url
+* Fix an error when handling ubridge errors
+* Fix crash when handling an error in project creation
+
 ## 2.0.0rc2 10/03/2017
 
 * Drop color logging for remote install, seem to fail in some conditions

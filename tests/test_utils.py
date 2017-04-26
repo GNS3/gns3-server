@@ -24,6 +24,8 @@ def test_force_unix_path():
     assert force_unix_path("a\\b") == "a/b"
     assert force_unix_path("a\\b\\..\\c") == "a/c"
     assert force_unix_path("C:\Temp") == "C:/Temp"
+    assert force_unix_path(force_unix_path("C:\Temp")) == "C:/Temp"
+    assert force_unix_path("a//b") == "a/b"
 
 
 def test_macaddress_to_int():

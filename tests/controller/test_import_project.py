@@ -181,6 +181,7 @@ def test_import_iou_linux_no_vm(linux_platform, async_run, tmpdir, controller):
                 {
                     "compute_id": "local",
                     "node_type": "iou",
+                    "name": "test",
                     "properties": {}
                 }
             ],
@@ -224,6 +225,7 @@ def test_import_iou_linux_with_vm(linux_platform, async_run, tmpdir, controller)
                     "compute_id": "local",
                     "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
                     "node_type": "iou",
+                    "name": "test",
                     "properties": {}
                 }
             ],
@@ -267,11 +269,13 @@ def test_import_iou_non_linux(windows_platform, async_run, tmpdir, controller):
                     "compute_id": "local",
                     "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
                     "node_type": "iou",
+                    "name": "test",
                     "properties": {}
                 },
                 {
                     "compute_id": "local",
                     "node_type": "vpcs",
+                    "name": "test2",
                     "properties": {}
                 }
             ],
@@ -319,12 +323,14 @@ def test_import_node_id(linux_platform, async_run, tmpdir, controller):
                     "compute_id": "local",
                     "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
                     "node_type": "iou",
+                    "name": "test",
                     "properties": {}
                 },
                 {
                     "compute_id": "local",
                     "node_id": "c3ae286c-c81f-40d9-a2d0-5874b2f2478d",
                     "node_type": "iou",
+                    "name": "test2",
                     "properties": {}
                 }
             ],
@@ -409,6 +415,7 @@ def test_import_keep_compute_id(windows_platform, async_run, tmpdir, controller)
                     "compute_id": "local",
                     "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
                     "node_type": "iou",
+                    "name": "test",
                     "properties": {}
                 }
             ],

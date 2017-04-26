@@ -1,0 +1,21 @@
+version: '{build}-{branch}'
+
+image: Visual Studio 2015
+
+platform: x64
+
+environment:
+    PYTHON: "C:\\Python36-x64"
+    DISTUTILS_USE_SDK: "1"
+    API_TOKEN:
+        secure: VEKn4bYH3QO0ixtQW5ni4Enmn8cS1NlZV246ludBDgQ=
+
+install:
+   - cinst nmap
+   - "%PYTHON%\\python.exe -m pip install -r dev-requirements.txt"
+   - "%PYTHON%\\python.exe -m pip install -r win-requirements.txt"
+
+build: off
+
+test_script:
+    - "%PYTHON%\\python.exe -m pytest -v"

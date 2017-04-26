@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 
 ETHERNET_SWITCH_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -153,5 +154,5 @@ ETHERNET_SWITCH_OBJECT_SCHEMA = {
     "required": ["name", "node_id", "project_id"]
 }
 
-ETHERNET_SWITCH_UPDATE_SCHEMA = ETHERNET_SWITCH_OBJECT_SCHEMA
+ETHERNET_SWITCH_UPDATE_SCHEMA = copy.deepcopy(ETHERNET_SWITCH_OBJECT_SCHEMA)
 del ETHERNET_SWITCH_UPDATE_SCHEMA["required"]

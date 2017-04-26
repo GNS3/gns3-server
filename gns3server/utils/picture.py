@@ -17,7 +17,7 @@
 
 import io
 import struct
-from xml.etree.ElementTree import ElementTree
+from xml.etree.ElementTree import ElementTree, ParseError
 
 
 def get_size(data, default_width=0, default_height=0):
@@ -95,7 +95,11 @@ def get_size(data, default_width=0, default_height=0):
         filetype = "svg"
         fhandle = io.BytesIO(data)
         tree = ElementTree()
-        tree.parse(fhandle)
+        try:
+            tree.parse(fhandle)
+        except ParseError:
+            raise ValueError("Invalid SVG file")
+
         root = tree.getroot()
 
         try:

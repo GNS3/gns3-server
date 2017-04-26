@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 
 ATM_SWITCH_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -81,5 +82,5 @@ ATM_SWITCH_OBJECT_SCHEMA = {
     "required": ["name", "node_id", "project_id"]
 }
 
-ATM_SWITCH_UPDATE_SCHEMA = ATM_SWITCH_OBJECT_SCHEMA
+ATM_SWITCH_UPDATE_SCHEMA = copy.deepcopy(ATM_SWITCH_OBJECT_SCHEMA)
 del ATM_SWITCH_UPDATE_SCHEMA["required"]

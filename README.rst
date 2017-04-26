@@ -216,3 +216,8 @@ If you want test coverage:
 .. code:: bash
 
     py.test --cov-report term-missing --cov=gns3server
+
+Security issues
+----------------
+Please contact us using contact informations available here:
+http://docs.gns3.com/1ON9JBXSeR7Nt2-Qum2o3ZX0GU86BZwlmNSUgvmqNWGY/index.html

@@ -35,6 +35,7 @@ from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
 from ..utils.get_resource import get_resource
+from .gns3vm.gns3_vm_error import GNS3VMError
 
 import logging
 log = logging.getLogger(__name__)
@@ -159,10 +160,13 @@ class Controller:
         for c in computes:
             try:
                 yield from self.add_compute(**c)
-            except aiohttp.web_exceptions.HTTPConflict:
+            except (aiohttp.web_exceptions.HTTPConflict):
                 pass  # Skip not available servers at loading
         yield from self.load_projects()
-        yield from self.gns3vm.auto_start_vm()
+        try:
+            yield from self.gns3vm.auto_start_vm()
+        except GNS3VMError as e:
+            log.warn(str(e))
         yield from self._project_auto_open()
 
     def _update_config(self):
@@ -215,9 +219,12 @@ class Controller:
                     "password": c.password,
                     "compute_id": c.id
                 })
-        os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
-        with open(self._config_file, 'w+') as f:
-            json.dump(data, f, indent=4)
+        try:
+            os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
+            with open(self._config_file, 'w+') as f:
+                json.dump(data, f, indent=4)
+        except OSError as e:
+            log.error("Can't write the configuration {}: {}".format(self._config_file, str(e)))
 
     @asyncio.coroutine
     def _load_controller_settings(self):

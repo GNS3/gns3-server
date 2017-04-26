@@ -588,8 +588,9 @@ class VMware(BaseManager):
 
         for vm_settings in vm_entries.values():
             if "displayname" in vm_settings and "config" in vm_settings:
-                log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["displayname"], vm_settings["config"]))
-                vmware_vms.append({"vmname": vm_settings["displayname"], "vmx_path": vm_settings["config"]})
+                if os.path.exists(vm_settings["config"]):
+                    log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["displayname"], vm_settings["config"]))
+                    vmware_vms.append({"vmname": vm_settings["displayname"], "vmx_path": vm_settings["config"]})
         return vmware_vms
 
     def _get_vms_from_directory(self, directory):
