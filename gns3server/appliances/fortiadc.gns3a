@@ -34,6 +34,13 @@
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
+            "filename": "FAD_KVM-V400-build0828-FORTINET.out.kvm-boot.qcow2",
+            "version": "4.7.0",
+            "md5sum": "4a0bf9d4ad29628ca08a1638662a43a6",
+            "filesize": 67960832,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FAD_KVM-V400-build0679-FORTINET.out.kvm-boot.qcow2",
             "version": "4.6.2",
             "md5sum": "31147f42b54ce8e9c953dea519a4b9a6",
@@ -84,6 +91,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "4.7.0",
+            "images": {
+                "hda_disk_image": "FAD_KVM-V400-build0828-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+            }
+        },
         {
             "name": "4.6.2",
             "images": {

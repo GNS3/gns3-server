@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "vyatta-vrouter-17.1.0_B_amd64.iso",
+            "version": "17.1.0",
+            "md5sum": "ff524e06fda6d982b9b66f25940fe63b",
+            "filesize": 346030080,
+            "download_url": "http://www1.brocade.com/forms/jsp/vrouter/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-Vrouter&intcmp=lp_en_softevaluations_vrouter_bn_00001"
+        },
+        {
             "filename": "vyatta-vrouter-5.2R2_B_amd64.iso",
             "version": "5.2R2",
             "md5sum": "6b7dcc152a18187ad151483c139fb82c",
@@ -70,6 +77,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.1.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyatta-vrouter-17.1.0_B_amd64.iso"
+            }
+        },
         {
             "name": "5.2R2",
             "images": {

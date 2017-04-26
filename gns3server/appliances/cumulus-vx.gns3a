@@ -19,10 +19,17 @@
         "adapters": 7,
         "ram": 256,
         "arch": "x86_64",
-        "console_type": "vnc",
+        "console_type": "telnet",
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "cumulus-linux-3.2.1-vx-amd64-1486153138.ac46c24zd00d13e.qcow2",
+            "version": "3.2.1",
+            "md5sum": "145519af273d7f21ee1845780de7dce3",
+            "filesize": 1232601088,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+        },
         {
             "filename": "cumulus-linux-3.2.0-vx-amd64-1481684769.ac46c24z090952a.qcow2",
             "version": "3.2.0",
@@ -81,6 +88,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "3.2.1",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.2.1-vx-amd64-1486153138.ac46c24zd00d13e.qcow2"
+            }
+        },
         {
             "name": "3.2.0",
             "images": {

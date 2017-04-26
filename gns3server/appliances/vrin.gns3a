@@ -5,7 +5,7 @@
     "vendor_name": "Andras Dosztal",
     "vendor_url": "https://sourceforge.net/projects/vrin/",
     "product_name": "vRIN",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "Andras Dosztal",
     "maintainer_email": "developers@gns3.net",
@@ -20,6 +20,24 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "vRIN-0.9.2.qcow2",
+            "version": "0.9.2",
+            "md5sum": "40afad2f5136e56f0cb45466847eae63",
+            "filesize": 957087744,
+            "download_url": "https://sourceforge.net/projects/vrin/files",
+            "direct_download_url": "http://sourceforge.net/projects/vrin/files/vRIN-0.9.2.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "vRIN-0.9.1.qcow2",
+            "version": "0.9.1",
+            "md5sum": "9f09f104917e19649598d9e2a5a3476b",
+            "filesize": 1008926720,
+            "download_url": "https://sourceforge.net/projects/vrin/files",
+            "direct_download_url": "http://sourceforge.net/projects/vrin/files/vRIN-0.9.1.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
         {
             "filename": "vRIN-0.9.qcow2",
             "version": "0.9",
@@ -58,6 +76,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "0.9.2",
+            "images": {
+                "hda_disk_image": "vRIN-0.9.2.qcow2"
+            }
+        },
+        {
+            "name": "0.9.1",
+            "images": {
+                "hda_disk_image": "vRIN-0.9.1.qcow2"
+            }
+        },
         {
             "name": "0.9",
             "images": {

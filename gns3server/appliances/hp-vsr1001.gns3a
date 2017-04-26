@@ -24,8 +24,15 @@
     },
     "images": [
         {
+            "filename": "VSR1000_HPE-CMW710-E0325-X64.iso",
+            "version": "7.10.R0325",
+            "md5sum": "002e6f18b78bee1ffac324e4f4547ca7",
+            "filesize": 253782016,
+            "download_url": "https://h10145.www1.hp.com/Downloads/DownloadSoftware.aspx?SoftwareReleaseUId=20278&ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&SaidNumber="
+        },
+        {
             "filename": "VSR1000_HPE-CMW710-E0324-X64.iso",
-            "version": "7.10.R0204P01",
+            "version": "7.10.E0324",
             "md5sum": "e826cfea44a9629587220476e049bbc8",
             "filesize": 253442048,
             "download_url": "https://h10145.www1.hp.com/Downloads/DownloadSoftware.aspx?SoftwareReleaseUId=18977&ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&SaidNumber="
@@ -54,6 +61,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.10.E0325",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "VSR1000_HPE-CMW710-E0325-X64.iso"
+            }
+        },
         {
             "name": "7.10.E0324",
             "images": {

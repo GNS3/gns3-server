@@ -25,33 +25,33 @@
     },
     "images": [
         {
+            "filename": "ostinato-0.8-97c7d79.qcow2",
+            "version": "0.8-97c7d79",
+            "md5sum": "5aad15c1eb7baac588a4c8c3faafa380",
+            "filesize": 98631680,
+            "download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/index.html",
+            "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.8-97c7d79.qcow2"
+        },
+        {
             "filename": "ostinato-0.8-1.qcow2",
             "version": "0.8",
             "md5sum": "12e990ba695103cfac82f8771b8015d4",
             "filesize": 57344000,
             "download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/index.html",
             "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.8-1.qcow2"
-        },
-        {
-            "filename": "ostinato-0.7.1-3.qcow2",
-            "version": "0.7.1",
-            "md5sum": "d1b1173ab4ad12b3b4e34c3b078dcd9e",
-            "filesize": 57081856,
-            "download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/index.html",
-            "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.7.1-3.qcow2"
         }
     ],
     "versions": [
         {
-            "name": "0.8",
+            "name": "0.8-97c7d79",
             "images": {
-                "hda_disk_image": "ostinato-0.8-1.qcow2"
+                "hda_disk_image": "ostinato-0.8-97c7d79.qcow2"
             }
         },
         {
-            "name": "0.7.1",
+            "name": "0.8",
             "images": {
-                "hda_disk_image": "ostinato-0.7.1-3.qcow2"
+                "hda_disk_image": "ostinato-0.8-1.qcow2"
             }
         }
     ]

@@ -27,8 +27,8 @@
         {
             "filename": "zentyal-5.0-development-amd64.iso",
             "version": "5.0",
-            "md5sum": "d40696eef13d795acb13114df58231d2",
-            "filesize": 748224512,
+            "md5sum": "ddaa3b2bf2cd6cae8bcfbcb88ca636a8",
+            "filesize": 914565120,
             "download_url": "http://download.zentyal.com/",
             "direct_download_url": "http://download.zentyal.com/zentyal-5.0-development-amd64.iso"
         },

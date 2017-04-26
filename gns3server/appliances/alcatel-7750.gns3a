@@ -25,6 +25,14 @@
     },
     "images": [
         {
+            "filename": "TiMOS-SR-13.0.R4-vm.qcow2",
+            "version": "13.0.R4",
+            "md5sum": "d7a3609e506acdcb55f6db5328dba8ed",
+            "filesize": 368508928,
+            "download_url": "https://www.alcatel-lucent.com/support",
+            "compression": "zip"
+        },
+        {
             "filename": "TiMOS-SR-12.0.R6-vm.qcow2",
             "version": "12.0.R6",
             "md5sum": "7d84d97a5664af2e3546bfa832fc1848",
@@ -42,6 +50,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "13.0.R4",
+            "images": {
+                "hda_disk_image": "TiMOS-SR-13.0.R4-vm.qcow2"
+            }
+        },
         {
             "name": "12.0.R6",
             "images": {

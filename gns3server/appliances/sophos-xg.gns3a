@@ -24,6 +24,20 @@
     },
     "images": [
         {
+            "filename": "VI-SFOS_16.05.1_MR-1.KVM-139-PRIMARY.qcow2",
+            "version": "16.05.1 MR1",
+            "md5sum": "3d81cf163fb0f4c5c9ba26e92a0ddc13",
+            "filesize": 285671424,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFOS_16.05.1_MR-1.KVM-139-AUXILARY.qcow2",
+            "version": "16.05.1 MR1",
+            "md5sum": "499541728460331a6b68b9e60c8207a3",
+            "filesize": 59441152,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
             "filename": "VI-SFOS_16.05.0_RC-1.KVM-098-PRIMARY.qcow2",
             "version": "16.05.1 RC1",
             "md5sum": "1826ca8a34945de5251876dc3fc7fe63",
@@ -68,7 +82,14 @@
     ],
     "versions": [
         {
-            "name": "16.05.1 RC1",
+            "name": "16.05.1 MR1",
+            "images": {
+                "hda_disk_image": "VI-SFOS_16.05.1_MR-1.KVM-139-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SFOS_16.05.1_MR-1.KVM-139-AUXILARY.qcow2"
+            }
+        },
+        {
+            "name": "16.05.1 MR1",
             "images": {
                 "hda_disk_image": "VI-SFOS_16.05.0_RC-1.KVM-098-PRIMARY.qcow2",
                 "hdb_disk_image": "VI-SFOS_16.05.0_RC-1.KVM-098-AUXILARY.qcow2"

@@ -1,6 +1,6 @@
 {
     "name": "EXOS",
-    "category": "router",
+    "category": "multilayer_switch",
     "description": "ExtremeXOS was designed from the ground up to meet the needs of large cloud and private data centers, service providers, intelligent, converged enterprise edge networks, and everything in between. It provides the high performance and rich features required by these diverse environments.",
     "vendor_name": "Extreme Networks",
     "vendor_url": "http://www.extremenetworks.com/",
@@ -15,7 +15,7 @@
     "first_port_name": "Management",
     "port_name_format": "Port{port1}",
     "qemu": {
-        "adapter_type": "virtio-net-pci",
+        "adapter_type": "e1000",
         "adapters": 13,
         "ram": 256,
         "hda_disk_interface": "ide",
@@ -23,9 +23,17 @@
         "console_type": "telnet",
         "boot_priority": "cd",
         "kvm": "require",
-        "options": "-smp 2 -cpu host"
+        "options": "-smp 2 -cpu core2duo"
     },
     "images": [
+        {
+            "filename": "exosvm-22.2.1.5.iso",
+            "version": "22.2.1.5",
+            "md5sum": "bf51fd5b3c5e9dab10a616055265bcf2",
+            "filesize": 44578816,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.2.1.5.iso"
+        },
         {
             "filename": "exosvm-22.1.1.5.iso",
             "version": "22.1.1.5",
@@ -84,6 +92,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "22.2.1.5",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exosvm-22.2.1.5.iso"
+            }
+        },
         {
             "name": "22.1.1.5",
             "images": {

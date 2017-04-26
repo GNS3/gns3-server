@@ -16,11 +16,21 @@
         "adapter_type": "e1000",
         "adapters": 4,
         "ram": 512,
-        "arch": "i386",
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "IOSv_startup_config.img",
+            "version": "1",
+            "md5sum": "bc605651c4688276f81fd59dcf5cc786",
+            "filesize": 1048576,
+            "download_url": "https://sourceforge.net/projects/gns-3/files",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Qemu Appliances/IOSv_startup_config.img/download"
+        },
         {
             "filename": "vios-adventerprisek9-m.vmdk.SPA.156-2.T",
             "version": "15.6(2)T",
@@ -47,19 +57,22 @@
         {
             "name": "15.6(2)T",
             "images": {
-                "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.156-2.T"
+                "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.156-2.T",
+                "hdb_disk_image": "IOSv_startup_config.img"
             }
         },
         {
             "name": "15.6(1)T",
             "images": {
-                "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.156-1.T"
+                "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.156-1.T",
+                "hdb_disk_image": "IOSv_startup_config.img"
             }
         },
         {
             "name": "15.5(3)M",
             "images": {
-                "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.155-3.M"
+                "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.155-3.M",
+                "hdb_disk_image": "IOSv_startup_config.img"
             }
         }
     ]

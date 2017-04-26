@@ -41,6 +41,13 @@
             "download_url": "https://software.cisco.com/download/release.html?mdfid=283801620&flowid=&softwareid=283802505&release=2.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
         },
         {
+            "filename": "ise-2.0.0.306.SPA.x86_64.iso",
+            "version": "2.0.0.306",
+            "md5sum": "b7a454ee235db29b5c208b19bfd1fbd1",
+            "filesize": 5088827392,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=283801620&flowid=&softwareid=283802505&release=2.0.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
             "filename": "empty200G.qcow2",
             "version": "1.0",
             "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
@@ -63,8 +70,14 @@
                 "hda_disk_image": "empty200G.qcow2",
                 "cdrom_image": "ise-2.0.1.130.SPA.x86_64.iso"
             }
+        },
+        {
+            "name": "2.0.0.306",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.0.0.306.SPA.x86_64.iso"
+            }
         }
-    
       
     ]
 }

@@ -25,11 +25,19 @@
     },
     "images": [
         {
+            "filename": "AsteriskNow-1013-current-64.iso",
+            "version": "10.13",
+            "md5sum": "1badc6d68b59b57406e1b9ae69acf2e2",
+            "filesize": 1343909888,
+            "download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/",
+            "direct_download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/AsteriskNow-1013-current-64.iso"
+        },
+        {
             "filename": "AsteriskNOW-612-current-64.iso",
             "version": "6.12",
             "md5sum": "cc31e6d9b88d49e8eb182f1e2fb85479",
             "filesize": 1135714304,
-            "download_url": "http://www.asterisk.org/downloads/asterisknow/all-asterisknow-versions",
+            "download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/",
             "direct_download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/AsteriskNOW-612-current-64.iso"
         },
         {
@@ -37,7 +45,7 @@
             "version": "5.211",
             "md5sum": "aef2b0fffd637b9c666e8ce904bbd714",
             "filesize": 1124741120,
-            "download_url": "http://www.asterisk.org/downloads/asterisknow/all-asterisknow-versions",
+            "download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/",
             "direct_download_url": "http://downloads.asterisk.org/pub/telephony/asterisk-now/AsteriskNOW-5211-current-64.iso"
         },
         {
@@ -50,6 +58,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.13",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "AsteriskNow-1013-current-64.iso"
+            }
+        },
         {
             "name": "6.12",
             "images": {

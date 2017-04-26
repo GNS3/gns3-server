@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "vEOS-lab-4.18.0.vmdk",
+            "version": "4.18.0",
+            "md5sum": "4aac678baa475c89ddb2e4c516c423cb",
+            "filesize": 293666816,
+            "download_url": "https://www.arista.com/en/support/software-download"
+        },
+        {
             "filename": "vEOS-lab-4.17.2F.vmdk",
             "version": "4.17.2F",
             "md5sum": "3b4845edfa77cf9aaeb9c0a005d3e277",
@@ -75,6 +82,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "4.18.0",
+            "images": {
+                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
+                "hdb_disk_image": "vEOS-lab-4.18.0.vmdk"
+            }
+        },
         {
             "name": "4.17.2F",
             "images": {

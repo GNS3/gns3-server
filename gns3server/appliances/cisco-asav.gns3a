@@ -20,7 +20,8 @@
         "adapters": 8,
         "ram": 2048,
         "arch": "x86_64",
-        "console_type": "telnet",
+        "console_type": "vnc",
+        "hda_disk_interface": "virtio",
         "kvm": "require"
     },
     "images": [
@@ -58,7 +59,7 @@
             "md5sum": "ca071370278ecbd5dfdb1c5a4161571a",
             "filesize": 160038912,
             "download_url": "https://virl.mediuscorp.com/my-account/"
-        }  
+        }
     ],
     "versions": [
          {
@@ -72,7 +73,7 @@
             "images": {
                 "hda_disk_image": "asav962.qcow2"
             }
-        }, 
+        },
         {
             "name": "9.6.1",
             "images": {

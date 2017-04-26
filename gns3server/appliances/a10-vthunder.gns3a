@@ -11,7 +11,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "First boot might take a long time. Credentials for installation (1st boot): install/password. Credentials for installed appliance: admin/a10. Default management IP: 172.31.31.31/24",
+    "usage": "Default credentials:\n- CLI: admin / a10.\n- Enable mode: <none>\n\nDefault management IP: 172.31.31.31/24",
     "symbol": "loadbalancer.svg",
     "first_port_name": "mgmt",
     "port_name_format": "ethernet {port1}",
@@ -23,31 +23,35 @@
         "arch": "x86_64",
         "console_type": "telnet",
         "boot_priority": "cd",
-        "kvm": "allow"
+        "kvm": "require"
     },
     "images": [
         {
-            "filename": "ACOS_vThunder_4_0_1_214.iso",
-            "version": "4.0.1",
-            "md5sum": "7bd500c166fb5cee953a8bb708635895",
-            "filesize": 785524736,
+            "filename": "vThunder_410_P3.qcow2",
+            "version": "4.1.0",
+            "md5sum": "daacefa4e0eb1cad9b253926624be4b9",
+            "filesize": 6098780160,
             "download_url": "https://www.a10networks.com/vthunder-embed"
         },
         {
-            "filename": "empty30G.qcow2",
-            "version": "1.0",
-            "md5sum": "3411a599e822f2ac6be560a26405821a",
-            "filesize": 197120,
-            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+            "filename": "vth401.GA.12G_Disk.qcow2",
+            "version": "4.0.1",
+            "md5sum": "311806ad414403359216da6119ddb823",
+            "filesize": 4768464896,
+            "download_url": "https://www.a10networks.com/vthunder-embed"
         }
     ],
     "versions": [
         {
+            "name": "4.1.0",
+            "images": {
+                "hda_disk_image": "vThunder_410_P3.qcow2"
+            }
+        },
+        {
             "name": "4.0.1",
             "images": {
-                "hda_disk_image": "empty30G.qcow2",
-                "cdrom_image": "ACOS_vThunder_4_0_1_214.iso"
+                "hda_disk_image": "vth401.GA.12G_Disk.qcow2"
             }
         }
     ]

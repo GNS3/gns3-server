@@ -27,12 +27,30 @@
     },
     "images": [
         {
+            "filename": "chr-6.38.5.img",
+            "version": "6.38.5",
+            "md5sum": "8147f42ea1ee96f580a35a298b7f9354",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download2.mikrotik.com/routeros/6.38.5/chr-6.38.5.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.38.1.img",
+            "version": "6.38.1",
+            "md5sum": "753ed7c86e0f54fd9e18d044db64538d",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download2.mikrotik.com/routeros/6.38.1/chr-6.38.1.img.zip",
+            "compression": "zip"
+        },
+        {
             "filename": "chr-6.38.img",
             "version": "6.38",
             "md5sum": "37e2165112f8a9beccac06a9a6009000",
             "filesize": 134217728,
             "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "http://download2.mikrotik.com/routeros/6.38/chr-6.38.vhdx",
+            "direct_download_url": "http://download2.mikrotik.com/routeros/6.38/chr-6.38.img.zip",
             "compression": "zip"
         },
         {
@@ -163,6 +181,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.38.5",
+            "images": {
+                "hda_disk_image": "chr-6.38.5.img"
+            }
+        },
+        {
+            "name": "6.38.1",
+            "images": {
+                "hda_disk_image": "chr-6.38.1.img"
+            }
+        },
         {
             "name": "6.38",
             "images": {
