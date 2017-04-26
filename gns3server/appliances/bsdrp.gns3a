@@ -1,0 +1,40 @@
+{
+    "name": "BSDRP",
+    "category": "router",
+    "description": "BSD Router Project (BSDRP) is an embedded free and open source router distribution based on FreeBSD with Quagga and Bird.",
+    "vendor_name": "Olivier Cochard-Labbe",
+    "vendor_url": "https://bsdrp.net/",
+    "product_name": "BSDRP",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default user: root (no password set)",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 256,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "BSDRP-1.70-full-amd64-serial.img",
+            "version": "1.70",
+            "md5sum": "9c11f61ddf03ee9a9ae4149676175821",
+            "filesize": 1000000000,
+            "download_url": "https://bsdrp.net/downloads",
+            "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.70/amd64/BSDRP-1.70-full-amd64-serial.img.xz/download",
+            "compression": "xz"
+        }
+    ],
+    "versions": [
+        {
+            "name": "1.70",
+            "images": {
+                "hda_disk_image": "BSDRP-1.70-full-amd64-serial.img"
+            }
+        }
+    ]
+}

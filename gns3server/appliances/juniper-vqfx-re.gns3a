@@ -1,0 +1,43 @@
+{
+    "name": "Juniper vQFX RE",
+    "category": "multilayer_switch",
+    "description": "The vQFX10000 makes it easy for you to try out our physical QFX10000 high-performance data center switch without the wait for physical delivery. Although the virtual version has limited performance relative to the physical switch, it lets you quickly emulate the same features for the control plane of the physical switch, or both its control and data planes.",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net/us/en/",
+    "documentation_url": "http://www.juniper.net/techpubs/",
+    "product_name": "Juniper vQFX RE",
+    "product_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "none",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "juniper-vqfx.svg",
+    "usage": "Initial username is root, password is Juniper (capitol J).\n\nUSAGE INSTRUCTIONS\n\nConnect the first interface (em0) to your admin VLAN. Connect the second interface (em1) directly to the second interface (em1) of the PFE. The switch ports connect here on the RE",
+    "port_name_format": "em{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 12,
+        "ram": 1024,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-nographic -smp 2"
+    },
+    "images": [
+        {
+           "filename": "vqfx10k-re-15.1X53-D60.vmdk",
+           "version": "15.1X53-D60",
+           "md5sum": "758669e88213fbd7943f5da7f6d7bd59",
+           "filesize": 355542528,
+           "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "15.1X53-D60",
+            "images": {
+                "hda_disk_image": "vqfx10k-re-15.1X53-D60.vmdk"
+            }
+        }
+    ]
+}

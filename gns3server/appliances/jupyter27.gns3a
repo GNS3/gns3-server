@@ -1,0 +1,19 @@
+{
+    "name": "Jupyter 2.7",
+    "category": "guest",
+    "description": "The Jupyter Notebook is an open-source web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. Uses include: data cleaning and transformation, numerical simulation, statistical modeling, machine learning and much more. This appliance provide python 2.7.",
+    "vendor_name": "Project Jupyter",
+    "vendor_url": "http://jupyter.org/",
+    "product_name": "Jupyter",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/jupyter27:v2",
+        "console_type": "http",
+        "console_http_port": 8888,
+        "console_http_path": "/"
+    }
+}

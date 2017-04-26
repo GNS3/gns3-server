@@ -1,0 +1,372 @@
+{
+    "name": "Juniper vMX vCP",
+    "category": "router",
+    "description": "The vMX is a full-featured, carrier-grade virtual MX Series 3D Universal Edge Router that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm. This appliance is for the Virtual Control Plane (vCP) VM and is meant to be paired with the Virtual Forwarding Plane (vFP) VM.",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net/us/en/",
+    "documentation_url": "http://www.juniper.net/techpubs/",
+    "product_name": "Juniper vMX vCP",
+    "product_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "none",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "juniper-vmx.svg",
+    "usage": "Initial username is root, no password.\n\nUSAGE INSTRUCTIONS\n\nConnect the first interface (fxp0) to your admin VLAN. Connect the second interface (em1) directly to the second interface (eth1) of the vFP.",
+    "first_port_name": "fxp0",
+    "port_name_format": "em{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 2048,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-nographic -enable-kvm"
+    },
+    "images": [
+        {
+            "filename": "vcp_17.1R1.8-disk1.vmdk",
+            "version": "17.1R1.8-ESXi",
+            "md5sum": "2dba6dff363c0619903f85c3dedce8d8",
+            "filesize": 1065513984
+        },
+        {
+            "filename": "vcp_17.1R1.8-disk2.vmdk",
+            "version": "17.1R1.8-ESXi",
+            "md5sum": "df7016f8b0fd456044425fa92566c129",
+            "filesize": 5928448
+        },
+        {
+            "filename": "vcp_17.1R1.8-disk3.vmdk",
+            "version": "17.1R1.8-ESXi",
+            "md5sum": "e9460158e6e27f7885981ab562e60944",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-17.1R1.8.qcow2",
+            "version": "17.1R1.8-KVM",
+            "md5sum": "4434e70fedfec2ef205412236ae934a4",
+            "filesize": 1192296448
+        },
+        {
+            "filename": "vmxhdd-17.1R1.img",
+            "version": "17.1R1.8-KVM",
+            "md5sum": "3634fa16219852d0dba46b2fb77d5969",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-17.1R1.img",
+            "version": "17.1R1.8-KVM",
+            "md5sum": "e911911dc77e7fef1375e66ae98e41b8",
+            "filesize": 16777216
+        },
+        {
+            "filename": "vcp_16.2R1.6-disk1.vmdk",
+            "version": "16.2R1.6-ESXi",
+            "md5sum": "6407f6b448de3b45b86fccb4d586a977",
+            "filesize": 1093272576
+        },
+        {
+            "filename": "vcp_16.2R1.6-disk2.vmdk",
+            "version": "16.2R1.6-ESXi",
+            "md5sum": "73db51629c009466d39f5d7fdf736224",
+            "filesize": 5928960
+        },
+        {
+            "filename": "vcp_16.2R1.6-disk3.vmdk",
+            "version": "16.2R1.6-ESXi",
+            "md5sum": "6df61c10f25ea6279562e5a13342100d",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-16.2R1.6.qcow2",
+            "version": "16.2R1.6-KVM",
+            "md5sum": "61497595fb62a9d9805724a3e0a56fa0",
+            "filesize": 1217462272
+        },
+        {
+            "filename": "vmxhdd-16.2R1.img",
+            "version": "16.2R1.6-KVM",
+            "md5sum": "ce75a16cf130d8744652c8f23d1d13ef",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-16.2R1.img",
+            "version": "16.2R1.6-KVM",
+            "md5sum": "dded4a98c18ecc79daaa1d11dd0cfb2f",
+            "filesize": 16777216
+        },
+        {
+            "filename": "vcp_16.1R4.7-disk1.vmdk",
+            "version": "16.1R4.7-ESXi",
+            "md5sum": "e438f48a34d6b8047e36994fb323a97b",
+            "filesize": 987702272
+        },
+        {
+            "filename": "vcp_16.1R4.7-disk2.vmdk",
+            "version": "16.1R4.7-ESXi",
+            "md5sum": "fb30d5afd182a03f36daaaf985e0d1ef",
+            "filesize": 5929472
+        },
+        {
+            "filename": "vcp_16.1R4.7-disk3.vmdk",
+            "version": "16.1R4.7-ESXi",
+            "md5sum": "c185a44561890a4b6e84cea6b86ad92a",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-16.1R4.7.qcow2",
+            "version": "16.1R4.7-KVM",
+            "md5sum": "020db6733c158bd871bf28dcd7d039e9",
+            "filesize": 1115815936
+        },
+        {
+            "filename": "vmxhdd-16.1R4.img",
+            "version": "16.1R4.7-KVM",
+            "md5sum": "97b86d9d69f9615fb97d50a8d4aecd97",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-16.1R4.img",
+            "version": "16.1R4.7-KVM",
+            "md5sum": "fb200eec654e14201bfa0720b39a64f0",
+            "filesize": 16777216
+        },
+        {
+            "filename": "vcp_16.1R3.10-disk1.vmdk",
+            "version": "16.1R3.10-ESXi",
+            "md5sum": "532ab7d63c1873e6e6e9b9b057eb83ec",
+            "filesize": 977419776
+        },
+        {
+            "filename": "vcp_16.1R3.10-disk2.vmdk",
+            "version": "16.1R3.10-ESXi",
+            "md5sum": "c563254a38c0d83c4bb9a866cae661f0",
+            "filesize": 5928448
+        },
+        {
+            "filename": "vcp_16.1R3.10-disk3.vmdk",
+            "version": "16.1R3.10-ESXi",
+            "md5sum": "9c8f3a8f26ff418eb6a5acd4803a3ca2",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-16.1R3.10.qcow2",
+            "version": "16.1R3.10-KVM",
+            "md5sum": "f677c8235f579c54ee746daade5ee443",
+            "filesize": 1105526784
+        },
+        {
+            "filename": "vmxhdd-16.1R3.img",
+            "version": "16.1R3.10-KVM",
+            "md5sum": "28626ce47bea74b7d92bb4e28fa85c93",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-16.1R3.img",
+            "version": "16.1R3.10-KVM",
+            "md5sum": "b187253fa654a30a7dd0b331e2c6e6a4",
+            "filesize": 16777216
+        },
+        {
+            "filename": "vcp_16.1R2.11-disk1.vmdk",
+            "version": "16.1R2.11-ESXi",
+            "md5sum": "20945c0114fa4f88cdbedd0551f62d8f",
+            "filesize": 970741248
+        },
+        {
+            "filename": "vcp_16.1R2.11-disk2.vmdk",
+            "version": "16.1R2.11-ESXi",
+            "md5sum": "904acd14a9eef0bdb60f18db63b8a653",
+            "filesize": 5930496
+        },
+        {
+            "filename": "vcp_16.1R2.11-disk3.vmdk",
+            "version": "16.1R2.11-ESXi",
+            "md5sum": "f6f6c24c0f991faf93c45f1fbc2ed0ae",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-16.1R2.11.qcow2",
+            "version": "16.1R2.11-KVM",
+            "md5sum": "da443543eee6d7305a6851d38d0613ea",
+            "filesize": 1194065920
+        },
+        {
+            "filename": "vmxhdd-16.1R2.img",
+            "version": "16.1R2.11-KVM",
+            "md5sum": "962c04d00d2b3272f40f3571d1305d6d",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-16.1R2.img",
+            "version": "16.1R2.11-KVM",
+            "md5sum": "10f219a0b5d23553dbbf3a7ec1358a68",
+            "filesize": 16777216
+        },
+        {
+            "filename": "vcp_16.1R1.7-disk1.vmdk",
+            "version": "16.1R1.7-ESXi",
+            "md5sum": "0a97d16b7014be8e3ae270cc2028d10d",
+            "filesize": 1067432448
+        },
+        {
+            "filename": "vcp_16.1R1.7-disk2.vmdk",
+            "version": "16.1R1.7-ESXi",
+            "md5sum": "e96972233a144b93aa9bcc321b2a215b",
+            "filesize": 5930496
+        },
+        {
+            "filename": "vcp_16.1R1.7-disk3.vmdk",
+            "version": "16.1R1.7-ESXi",
+            "md5sum": "815af90310e6681204ba511d9659d2ad",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-16.1R1.7.qcow2",
+            "version": "16.1R1.7-KVM",
+            "md5sum": "f7b53cc04672a1abf7c0236a772cea51",
+            "filesize": 1194065920
+        },
+        {
+            "filename": "vmxhdd-16.1R1.img",
+            "version": "16.1R1.7-KVM",
+            "md5sum": "c239c4de2a4cf902747c8fc300f08493",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-16.1R1.img",
+            "version": "16.1R1.7-KVM",
+            "md5sum": "47e578bd41890272dcd5aa1e436068d4",
+            "filesize": 16777216
+        },
+        {
+            "filename": "jinstall64-vmx-15.1F4.15-domestic.img",
+            "version": "15.1F4.15",
+            "md5sum": "e6b2e1ad9cba5220aa764ae4dd008952",
+            "filesize": 1003945984,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vmxhdd-15.1.img",
+            "version": "15.1F4.15",
+            "md5sum": "c3c7090ed3b1799e3de7579ac887e39d",
+            "filesize": 108986368,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "metadata-usb-15.1.img",
+            "version": "15.1F4.15",
+            "md5sum": "af48f7e03f94ffcfeecd15a59a4f1567",
+            "filesize": 16777216,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "17.1R1.8-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_17.1R1.8-disk1.vmdk",
+                "hdb_disk_image": "vcp_17.1R1.8-disk2.vmdk",
+                "hdc_disk_image": "vcp_17.1R1.8-disk3.vmdk"
+            }
+        },
+        {
+            "name": "17.1R1.8-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-17.1R1.8.qcow2",
+                "hdb_disk_image": "vmxhdd-17.1R1.img",
+                "hdc_disk_image": "metadata-usb-re-17.1R1.img"
+            }
+        },
+        {
+            "name": "16.2R1.6-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_16.2R1.6-disk1.vmdk",
+                "hdb_disk_image": "vcp_16.2R1.6-disk2.vmdk",
+                "hdc_disk_image": "vcp_16.2R1.6-disk3.vmdk"
+            }
+        },
+        {
+            "name": "16.2R1.6-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-16.2R1.6.qcow2",
+                "hdb_disk_image": "vmxhdd-16.2R1.img",
+                "hdc_disk_image": "metadata-usb-re-16.2R1.img"
+            }
+        },
+        {
+            "name": "16.1R4.7-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_16.1R4.7-disk1.vmdk",
+                "hdb_disk_image": "vcp_16.1R4.7-disk2.vmdk",
+                "hdc_disk_image": "vcp_16.1R4.7-disk3.vmdk"
+            }
+        },
+        {
+            "name": "16.1R4.7-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-16.1R4.7.qcow2",
+                "hdb_disk_image": "vmxhdd-16.1R4.img",
+                "hdc_disk_image": "metadata-usb-re-16.1R4.img"
+            }
+        },
+        {
+            "name": "16.1R3.10-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_16.1R3.10-disk1.vmdk",
+                "hdb_disk_image": "vcp_16.1R3.10-disk2.vmdk",
+                "hdc_disk_image": "vcp_16.1R3.10-disk3.vmdk"
+            }
+        },
+        {
+            "name": "16.1R3.10-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-16.1R3.10.qcow2",
+                "hdb_disk_image": "vmxhdd-16.1R3.img",
+                "hdc_disk_image": "metadata-usb-re-16.1R3.img"
+            }
+        },
+        {
+            "name": "16.1R2.11-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_16.1R2.11-disk1.vmdk",
+                "hdb_disk_image": "vcp_16.1R2.11-disk2.vmdk",
+                "hdc_disk_image": "vcp_16.1R2.11-disk3.vmdk"
+            }
+        },
+        {
+            "name": "16.1R2.11-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-16.1R2.11.qcow2",
+                "hdb_disk_image": "vmxhdd-16.1R2.img",
+                "hdc_disk_image": "metadata-usb-re-16.1R2.img"
+            }
+        },
+        {
+            "name": "16.1R1.7-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_16.1R1.7-disk1.vmdk",
+                "hdb_disk_image": "vcp_16.1R1.7-disk2.vmdk",
+                "hdc_disk_image": "vcp_16.1R1.7-disk3.vmdk"
+            }
+        },
+        {
+            "name": "16.1R1.7-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-16.1R1.7.qcow2",
+                "hdb_disk_image": "vmxhdd-16.1R1.img",
+                "hdc_disk_image": "metadata-usb-re-16.1R1.img"
+            }
+        },
+        {
+            "name": "15.1F4.15",
+            "images": {
+                "hda_disk_image": "jinstall64-vmx-15.1F4.15-domestic.img",
+                "hdb_disk_image": "vmxhdd-15.1.img",
+                "hdc_disk_image": "metadata-usb-15.1.img"
+            }
+         }
+    ]
+}

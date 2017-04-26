@@ -1,0 +1,39 @@
+{
+    "name": "ZeroShell",
+    "category": "router",
+    "description": "Zeroshell is a Linux distribution for servers and embedded devices aimed at providing the main network services a LAN requires. It is available in the form of Live CD or Compact Flash image and you can configure and administer it using your web browser.",
+    "vendor_name": "Fulvio Ricciardi",
+    "vendor_url": "http://www.zeroshell.org",
+    "documentation_url": "http://www.zeroshell.org/documentation/",
+    "product_name": "ZeroShell",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default WebUI credentials: admin / zeroshell",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 256,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "ZeroShell-3.7.1-USB.img",
+            "version": "3.7.1",
+            "md5sum": "22e739a24dc1c233d3eca5d8fedc97c8",
+            "filesize": 1992294400,
+            "download_url": "http://www.zeroshell.org/download/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.7.1",
+            "images": {
+                "hda_disk_image": "ZeroShell-3.7.1-USB.img"
+            }
+        }
+    ]
+}

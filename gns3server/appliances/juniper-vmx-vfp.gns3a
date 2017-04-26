@@ -1,0 +1,202 @@
+{
+    "name": "Juniper vMX vFP",
+    "category": "router",
+    "description": "The vMX is a full-featured, carrier-grade virtual MX Series 3D Universal Edge Router that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm. This appliance is for the Virtual Forwarding Plane (vFP) VM and is meant to be paired with the Virtual Control Plane (vCP) VM.",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net/us/en/",
+    "documentation_url": "http://www.juniper.net/techpubs/",
+    "product_name": "Juniper vMX vFP",
+    "product_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "none",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "juniper-vmx.svg",
+    "usage": "Initial username is root, password is root.\n",
+    "first_port_name": "Eth0",
+    "port_name_format": "Eth{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 12,
+        "ram": 4096,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-nographic -enable-kvm -smp cpus=3"
+    },
+    "images": [
+        {
+            "filename": "vfpc_17.1R1.8-disk1.vmdk",
+            "version": "17.1R1.8-ESXi",
+            "md5sum": "169dd487b8547d58b12b2918a5667360",
+            "filesize": 102820352,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        }, 
+        {
+            "filename": "vFPC-20170216.img",
+            "version": "17.1R1.8-KVM",
+            "md5sum": "e838b8dd116a8b388d8dfd99575e7e98",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vfpc_16.2R1.6-disk1.vmdk",
+            "version": "16.2R1.6-ESXi",
+            "md5sum": "abb15d485cd195b9a693a2f3f091564a",
+            "filesize": 102430208,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vFPC-20161025.img",
+            "version": "16.2R1.6-KVM",
+            "md5sum": "3105a5af7d859fc24b686e71113413a9",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vfpc_16.1R4.7-disk1.vmdk",
+            "version": "16.1R4.7-ESXi",
+            "md5sum": "c381a23038dc5d4f939b7b5c3d074ce2",
+            "filesize": 102431232,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vFPC-20170211.img",
+            "version": "16.1R4.7-KVM",
+            "md5sum": "cdec45ecca1cd9bfefe318b066bd500b",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vfpc_16.1R3.10-disk1.vmdk",
+            "version": "16.1R3.10-ESXi",
+            "md5sum": "03b9d23c0223d8078fa3830c23fcf144",
+            "filesize": 102437376,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vFPC-20161019.img",
+            "version": "16.1R3.10-KVM",
+            "md5sum": "0fbba19da959c3e76b438128b28726f7",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vfpc_16.1R2.11-disk1.vmdk",
+            "version": "16.1R2.11-ESXi",
+            "md5sum": "1a90e5dc0c02c8336b9084cbdf17f635",
+            "filesize": 102431232,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vFPC-20160902.img",
+            "version": "16.1R2.11-KVM",
+            "md5sum": "09ee97c6c18b392b1b72f5e3e4743c2d",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vfpc_16.1R1.7-disk1.vmdk",
+            "version": "16.1R1.7-ESXi",
+            "md5sum": "8475d8b065768f585659a49c50f1d7e1",
+            "filesize": 63884800,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vFPC-20160617.img",
+            "version": "16.1R1.7-KVM",
+            "md5sum": "5ccf252002184a21413cad23fd239c3f",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        }, 
+        {
+            "filename": "vFPC-20151203.img",
+            "version": "15.1F4.15",
+            "md5sum": "b3faa91b4d20836a9a6dd6bad2629dd1",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        } 
+    ],
+
+    "versions": [
+        {
+            "name": "17.1R1.8-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_17.1R1.8-disk1.vmdk"
+            }
+        },
+        {
+            "name": "17.1R1.8-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20170216.img"
+            }
+        },
+        {
+            "name": "16.2R1.6-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_16.2R1.6-disk1.vmdk"
+            }
+        },
+        {
+            "name": "16.2R1.6-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20161025.img"
+            }
+        },
+        {
+            "name": "16.1R4.7-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_16.1R4.7-disk1.vmdk"
+            }
+        },
+        {
+            "name": "16.1R4.7-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20170211.img"
+            }
+        },
+        {
+            "name": "16.1R3.10-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_16.1R3.10-disk1.vmdk"
+            }
+        },
+        {
+            "name": "16.1R3.10-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20161019.img"
+            }
+        },
+        {
+            "name": "16.1R2.11-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_16.1R2.11-disk1.vmdk"
+            }
+        },
+        {
+            "name": "16.1R2.11-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20160902.img"
+            }
+        },
+        {
+            "name": "16.1R1.7-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_16.1R1.7-disk1.vmdk"
+            }
+        },
+        {
+            "name": "16.1R1.7-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20160617.img"
+            }
+        },
+        {
+            "name": "15.1F4.15",
+            "images": {
+                "hda_disk_image": "vFPC-20151203.img"
+            }
+        }
+       
+    ]
+}

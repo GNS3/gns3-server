@@ -1,0 +1,17 @@
+{
+    "name": "Kali Linux CLI",
+    "category": "guest",
+    "description": "From the creators of BackTrack comes Kali Linux, the most advanced and versatile penetration testing platform  ever created. We have a set of amazing features lined up in our security distribution geared at streamlining the penetration testing experience. This version has no GUI.Include packages:\n* nmap\n* metasploit\n* sqlmap\n* hydra\n* telnet client\n* dnsutils (dig)",
+    "vendor_name": "Kali Linux",
+    "vendor_url": "https://www.kali.org/",
+    "documentation_url": "https://www.kali.org/kali-linux-documentation/",
+    "product_name": "Kali Linux",
+    "registry_version": 1,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "docker": {
+        "adapters": 2,
+        "image": "gns3/kalilinux:v2"
+    }
+}

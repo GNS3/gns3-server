@@ -1,0 +1,98 @@
+{
+    "name": "Cisco vWLC",
+    "category": "guest",
+    "description": "The Virtual Wireless Controller can cost-effectively manage, secure, and optimize the performance of local and branch wireless networks. Ideal for small and medium-sized businesses, the Virtual Wireless Controller facilitates server consolidation and improves business continuity in the face of outages.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/products/wireless/wireless-lan-controller/index.html",
+    "product_name": "Virtual Wireless LAN Controller",
+    "product_url": "http://www.cisco.com/c/en/us/support/wireless/virtual-wireless-controller/tsd-products-support-series-home.html",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Starting vWLC will start an installation of vWLC onto a blank 8GB Drive.",
+    "first_port_name": "ServicePort",
+    "port_name_format": "Management{port1}",
+    "symbol": ":/symbols/wlan_controller.svg",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 2048,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": ""
+    },
+    "images": [    
+        {
+            "filename": "Cisco-vWLC-AIR-CTVM-7-3-101-0-file1.iso",
+            "version": "7.3.101.0",
+            "md5sum": "6bf17dceaf46e57aab0fb0d43eb6ea06",
+            "filesize": 157900800,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284464214&flowid=&softwareid=280926587&release=7.3.101.0"
+        },
+        {
+            "filename": "AIR-CTVM-7-6-110-0-file1.iso",
+            "version": "7.6.110.0",
+            "md5sum": "7acbd88120f008a25d849b72b7207e92",
+            "filesize": 185561088,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284464214&flowid=&softwareid=280926587&release=7.6.110.0"
+        },
+        {
+            "filename": "AIR-CTVM-k9-8-1-120.0.iso",
+            "version": "8.1.120.0",
+            "md5sum": "477363f88f07f64499bb4ab80ffa9d2f",
+            "filesize": 302104576,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284464214&flowid=&softwareid=280926587&release=8.1.120.0"
+        },
+        {
+            "filename": "MFG_CTVM_8_2_141_0.iso",
+            "version": "8.2.141.0",
+            "md5sum": "29483229ce7844df55a90564b077c958",
+            "filesize": 351156224,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284464214&flowid=&softwareid=280926587&release=8.2.141.0"
+        },
+        {
+            "filename": "MFG_CTVM_8_3_102_0.iso",
+            "version": "8.3.102.0",
+            "md5sum": "7f6b7968b5bed04b5ecc119b6ba4e41c",
+            "filesize": 365996032,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284464214&flowid=&softwareid=280926587&release=8.3.102.0"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+
+        {
+            "name": "8.1.120.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "AIR-CTVM-k9-8-1-120.0.iso"
+            }
+        },
+        {
+            "name": "8.2.141.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "MFG_CTVM_8_2_141_0.iso"
+            }
+        },
+        {
+            "name": "8.3.102.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "MFG_CTVM_8_3_102_0.iso"
+            }
+        }     
+    ]
+}
