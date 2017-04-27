@@ -30,14 +30,21 @@ class Nat(Cloud):
     """
 
     def __init__(self, *args, **kwargs):
-        if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
-            raise NodeError("virbr0 is missing. You need to install libvirt")
+
+        if sys.platform.startswith("linux"):
+            if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
+                raise NodeError("virbr0 is missing. You need to install libvirt")
+            interface = "virbr0"
+        else:
+            if "vmnet8" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
+                raise NodeError("vmnet8 is missing. You need to install VMware or use the NAT node on GNS3 VM")
+            interface = "vmnet8"
 
         ports = [
             {
                 "name": "nat0",
                 "type": "ethernet",
-                "interface": "virbr0",
+                "interface": interface,
                 "port_number": 0
             }
         ]
@@ -54,7 +61,7 @@ class Nat(Cloud):
 
     @classmethod
     def is_supported(self):
-        return sys.platform.startswith("linux")
+        return True
 
     def __json__(self):
         return {

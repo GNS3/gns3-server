@@ -17,14 +17,12 @@
 
 import uuid
 import pytest
-from unittest.mock import MagicMock
-from tests.utils import asyncio_patch
+from unittest.mock import MagicMock, patch
 
 from gns3server.compute.builtin.nodes.nat import Nat
-from gns3server.compute.vpcs import VPCS
 
 
-def test_json(on_gns3vm, project):
+def test_json_gns3vm(on_gns3vm, project):
     nat = Nat("nat1", str(uuid.uuid4()), project, MagicMock())
     assert nat.__json__() == {
         "name": "nat1",
@@ -34,6 +32,27 @@ def test_json(on_gns3vm, project):
         "ports_mapping": [
             {
                 "interface": "virbr0",
+                "name": "nat0",
+                "port_number": 0,
+                "type": "ethernet"
+            }
+        ]
+    }
+
+
+def test_json_darwin(darwin_platform, project):
+    with patch("gns3server.utils.interfaces.interfaces", return_value=[
+            {"name": "eth0", "special": False, "type": "ethernet"},
+            {"name": "vmnet8", "special": True, "type": "ethernet"}]):
+        nat = Nat("nat1", str(uuid.uuid4()), project, MagicMock())
+    assert nat.__json__() == {
+        "name": "nat1",
+        "node_id": nat.id,
+        "project_id": project.id,
+        "status": "started",
+        "ports_mapping": [
+            {
+                "interface": "vmnet8",
                 "name": "nat0",
                 "port_number": 0,
                 "type": "ethernet"
