@@ -161,7 +161,7 @@ class Docker(BaseManager):
         :returns: Websocket
         """
 
-        url = "http://docker/" + path
+        url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
         connection = yield from aiohttp.ws_connect(url,
                                                    connector=self.connector(),
                                                    origin="http://docker",
