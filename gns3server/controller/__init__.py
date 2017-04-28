@@ -67,7 +67,7 @@ class Controller:
     def load_appliances(self):
         self._appliance_templates = {}
         for file in os.listdir(get_resource('appliances')):
-            with open(os.path.join(get_resource('appliances'), file)) as f:
+            with open(os.path.join(get_resource('appliances'), file), 'r', encoding='utf-8') as f:
                 appliance = ApplianceTemplate(None, json.load(f))
             if appliance.status != 'broken':
                 self._appliance_templates[appliance.id] = appliance
