@@ -113,11 +113,13 @@ class Docker(BaseManager):
         :returns: HTTP response
         """
         data = json.dumps(data)
-        url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
-
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
+        if path == 'version':
+            url = "http://docker/v1.12/" + path         # API of docker v1.0
+        else:
+            url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
         try:
             if path != "version":  # version is use by check connection
                 yield from self._check_connection()
