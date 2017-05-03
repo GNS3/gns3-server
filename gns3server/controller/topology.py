@@ -146,8 +146,11 @@ def load_topology(path):
         raise e
 
     if changed:
-        with open(path, "w+", encoding="utf-8") as f:
-            json.dump(topo, f, indent=4, sort_keys=True)
+        try:
+            with open(path, "w+", encoding="utf-8") as f:
+                json.dump(topo, f, indent=4, sort_keys=True)
+        except (OSError) as e:
+            raise aiohttp.web.HTTPConflict(text="Can't write the topology {}: {}".format(path, str(e)))
     return topo
 
 
