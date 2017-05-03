@@ -125,7 +125,10 @@ def load_topology(path):
     if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
         # If it's an old GNS3 file we need to convert it
         # first we backup the file
-        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        try:
+            shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        except (OSError) as e:
+            raise aiohttp.web.HTTPConflict(text="Can't write backup of the topology {}: {}".format(path, str(e)))
         changed = True
 
     if "revision" not in topo or topo["revision"] < 5:
