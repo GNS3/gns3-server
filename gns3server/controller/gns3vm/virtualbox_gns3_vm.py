@@ -228,7 +228,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             try:
                 resp = None
                 resp = yield from session.get('http://127.0.0.1:{}/v2/compute/network/interfaces'.format(api_port))
-            except (OSError, aiohttp.errors.ClientHttpProcessingError, TimeoutError):
+            except (OSError, aiohttp.errors.ClientHttpProcessingError, TimeoutError, asyncio.TimeoutError):
                 pass
 
             if resp:
