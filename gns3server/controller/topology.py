@@ -306,7 +306,7 @@ def _convert_1_3_later(topo, topo_path):
             node["console_type"] = None
             node["symbol"] = ":/symbols/hub.svg"
             node["properties"]["ports_mapping"] = []
-            for port in old_node["ports"]:
+            for port in old_node.get("ports", []):
                 node["properties"]["ports_mapping"].append({
                     "name": "Ethernet{}".format(port["port_number"] - 1),
                     "port_number": port["port_number"] - 1
