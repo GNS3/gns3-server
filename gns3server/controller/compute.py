@@ -23,6 +23,7 @@ import json
 import uuid
 import sys
 import io
+from operator import itemgetter
 
 from ..utils import parse_version
 from ..utils.images import list_images
@@ -602,7 +603,7 @@ class Compute:
                         images.append(local_image)
         except OSError as e:
             raise ComputeError("Can't list images: {}".format(str(e)))
-        images.sort()
+        images = sorted(images, key=itemgetter('filename'))
         return images
 
     @asyncio.coroutine
