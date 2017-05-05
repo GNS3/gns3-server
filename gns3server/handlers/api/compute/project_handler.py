@@ -112,7 +112,10 @@ class ProjectHandler:
         if ProjectHandler._notifications_listening.setdefault(project.id, 0) <= 1:
             yield from project.close()
             pm.remove_project(project.id)
-            del ProjectHandler._notifications_listening[project.id]
+            try:
+                del ProjectHandler._notifications_listening[project.id]
+            except KeyError:
+                pass
         else:
             log.warning("Skip project closing, another client is listening for project notifications")
         response.set_status(204)
