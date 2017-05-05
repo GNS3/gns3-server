@@ -1556,7 +1556,7 @@ class Router(BaseNode):
             try:
                 startup_config_path = os.path.join(self._working_directory, startup_config)
                 if os.path.exists(startup_config_path):
-                    with open(startup_config_path) as f:
+                    with open(startup_config_path, encoding="utf-8") as f:
                         self._startup_config_content = f.read()
                 else:
                     self._startup_config_content = ''
