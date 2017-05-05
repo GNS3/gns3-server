@@ -602,6 +602,7 @@ class Compute:
                         images.append(local_image)
         except OSError as e:
             raise ComputeError("Can't list images: {}".format(str(e)))
+        images.sort()
         return images
 
     @asyncio.coroutine
