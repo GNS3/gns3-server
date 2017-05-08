@@ -344,7 +344,7 @@ class BaseManager:
                 # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
                 if struct.unpack("<IIIII", caps)[1] & 1 << 13:
                     return True
-        except OSError as e:
+        except (AttributeError, OSError) as e:
             log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
 
         return False
