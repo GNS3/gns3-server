@@ -601,9 +601,11 @@ class Compute:
                 for local_image in list_images(type):
                     if local_image['filename'] not in [i['filename'] for i in images]:
                         images.append(local_image)
+                images = sorted(images, key=itemgetter('filename'))
+            else:
+                images = sorted(images, key=itemgetter('image'))
         except OSError as e:
             raise ComputeError("Can't list images: {}".format(str(e)))
-        images = sorted(images, key=itemgetter('filename'))
         return images
 
     @asyncio.coroutine
