@@ -6,3 +6,4 @@ Jinja2>=2.7.3
 raven>=5.23.0
 psutil>=3.0.0
 zipstream>=1.1.4
+typing>=3.5.3.0 # Otherwise yarl fail with python 3.4
