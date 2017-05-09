@@ -1,5 +1,6 @@
 description "GNS3 server"
 author      "GNS3 Team"
+env LANG=en_US.UTF-8
 
 start on filesystem or runlevel [2345]
 stop on shutdown
