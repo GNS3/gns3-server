@@ -541,8 +541,9 @@ class BaseNode:
             self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
         log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
         yield from self._ubridge_hypervisor.start()
-        log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
-        yield from self._ubridge_hypervisor.connect()
+        if self._ubridge_hypervisor:
+            log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
+            yield from self._ubridge_hypervisor.connect()
 
     @asyncio.coroutine
     def _stop_ubridge(self):
