@@ -287,10 +287,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
@@ -322,10 +322,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
@@ -359,10 +359,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
@@ -400,10 +400,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
