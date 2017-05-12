@@ -576,7 +576,7 @@ def test_list_ports_dynamips(project, compute):
                 "Cisco HDLC": "DLT_C_HDLC",
                 "Cisco PPP": "DLT_PPP_SERIAL",
                 "Frame Relay": "DLT_FRELAY"},
-            "port_number": 18,
+            "port_number": 32,
             "adapter_number": 0,
             "link_type": "serial"
         },
@@ -587,7 +587,7 @@ def test_list_ports_dynamips(project, compute):
                 "Cisco HDLC": "DLT_C_HDLC",
                 "Cisco PPP": "DLT_PPP_SERIAL",
                 "Frame Relay": "DLT_FRELAY"},
-            "port_number": 19,
+            "port_number": 33,
             "adapter_number": 0,
             "link_type": "serial"
         }
