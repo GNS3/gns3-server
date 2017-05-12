@@ -98,6 +98,16 @@ class WinStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
+class LogFilter:
+    """
+    This filter some noise from the logs
+    """
+    def filter(record):
+        if record.name == "aiohttp.access" and "/settings" in record.msg and "200" in record.msg:
+            return 0
+        return 1
+
+
 def init_logger(level, logfile=None, quiet=False):
     if logfile and len(logfile) > 0:
         stream_handler = logging.FileHandler(logfile)
@@ -111,5 +121,7 @@ def init_logger(level, logfile=None, quiet=False):
     if quiet:
         stream_handler.addFilter(logging.Filter(name="user_facing"))
         logging.getLogger('user_facing').propagate = False
+    if level > logging.DEBUG:
+        stream_handler.addFilter(LogFilter)
     logging.basicConfig(level=level, handlers=[stream_handler])
     return logging.getLogger('user_facing')
