@@ -94,7 +94,7 @@ class VirtualBox(BaseManager):
             if not vboxmanage_path:
                 vboxmanage_path = self.find_vboxmanage()
             if not vboxmanage_path:
-                raise VirtualBoxError("Could not found VBoxManage")
+                raise VirtualBoxError("Could not find VBoxManage")
 
             command = [vboxmanage_path, "--nologo", subcommand]
             command.extend(args)
