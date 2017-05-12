@@ -191,9 +191,15 @@ class FrameRelaySwitch(Device):
 
         # remove VCs mapped with the port
         for source, destination in self._active_mappings.copy().items():
-            source_port, source_dlci = map(int, source.split(':'))
-            destination_port, destination_dlci = map(int, destination.split(':'))
+            source_port, source_dlci = source
+            destination_port, destination_dlci = destination
             if port_number == source_port:
+                log.info('Frame Relay switch "{name}" [{id}]: unmapping VC between port {source_port} DLCI {source_dlci} and port {destination_port} DLCI {destination_dlci}'.format(name=self._name,
+                                                                                                                                                                                     id=self._id,
+                                                                                                                                                                                     source_port=source_port,
+                                                                                                                                                                                     source_dlci=source_dlci,
+                                                                                                                                                                                     destination_port=destination_port,
+                                                                                                                                                                                     destination_dlci=destination_dlci))
                 yield from self.unmap_vc(source_port, source_dlci, destination_port, destination_dlci)
                 yield from self.unmap_vc(destination_port, destination_dlci, source_port, source_dlci)
 
@@ -224,6 +230,13 @@ class FrameRelaySwitch(Device):
             destination_port, destination_dlci = map(int, destination.split(':'))
             if self.has_port(destination_port):
                 if (source_port, source_dlci) not in self._active_mappings and (destination_port, destination_dlci) not in self._active_mappings:
+                    log.info('Frame Relay switch "{name}" [{id}]: mapping VC between port {source_port} DLCI {source_dlci} and port {destination_port} DLCI {destination_dlci}'.format(name=self._name,
+                                                                                                                                                                                       id=self._id,
+                                                                                                                                                                                       source_port=source_port,
+                                                                                                                                                                                       source_dlci=source_dlci,
+                                                                                                                                                                                       destination_port=destination_port,
+                                                                                                                                                                                       destination_dlci=destination_dlci))
+
                     yield from self.map_vc(source_port, source_dlci, destination_port, destination_dlci)
                     yield from self.map_vc(destination_port, destination_dlci, source_port, source_dlci)
 
@@ -260,7 +273,7 @@ class FrameRelaySwitch(Device):
                                                                                                                                      port2=port2,
                                                                                                                                      dlci2=dlci2))
 
-        self._active_mappings["{}:{}".format(port1, dlci1)] = "{}:{}".format(port2, dlci2)
+        self._active_mappings[(port1, dlci1)] = (port2, dlci2)
 
     @asyncio.coroutine
     def unmap_vc(self, port1, dlci1, port2, dlci2):
@@ -294,7 +307,7 @@ class FrameRelaySwitch(Device):
                                                                                                                                      dlci1=dlci1,
                                                                                                                                      port2=port2,
                                                                                                                                      dlci2=dlci2))
-        del self._active_mappings["{}:{}".format(port1, dlci1)]
+        del self._active_mappings[(port1, dlci1)]
 
     @asyncio.coroutine
     def start_capture(self, port_number, output_file, data_link_type="DLT_FRELAY"):
