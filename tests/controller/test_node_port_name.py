@@ -548,8 +548,8 @@ def test_list_ports_dynamips(project, compute):
             "link_type": "ethernet"
         },
         {
-            "name": "Serial0/16",
-            "short_name": "s0/16",
+            "name": "Serial0/0",
+            "short_name": "s0/0",
             "data_link_types": {
                 "Cisco HDLC": "DLT_C_HDLC",
                 "Cisco PPP": "DLT_PPP_SERIAL",
@@ -559,8 +559,8 @@ def test_list_ports_dynamips(project, compute):
             "link_type": "serial"
         },
         {
-            "name": "Serial0/17",
-            "short_name": "s0/17",
+            "name": "Serial0/1",
+            "short_name": "s0/1",
             "data_link_types": {
                 "Cisco HDLC": "DLT_C_HDLC",
                 "Cisco PPP": "DLT_PPP_SERIAL",
@@ -570,8 +570,8 @@ def test_list_ports_dynamips(project, compute):
             "link_type": "serial"
         },
         {
-            "name": "Serial0/18",
-            "short_name": "s0/18",
+            "name": "Serial0/2",
+            "short_name": "s0/2",
             "data_link_types": {
                 "Cisco HDLC": "DLT_C_HDLC",
                 "Cisco PPP": "DLT_PPP_SERIAL",
@@ -581,8 +581,8 @@ def test_list_ports_dynamips(project, compute):
             "link_type": "serial"
         },
         {
-            "name": "Serial0/19",
-            "short_name": "s0/19",
+            "name": "Serial0/3",
+            "short_name": "s0/3",
             "data_link_types": {
                 "Cisco HDLC": "DLT_C_HDLC",
                 "Cisco PPP": "DLT_PPP_SERIAL",

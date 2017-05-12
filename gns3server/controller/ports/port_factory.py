@@ -194,7 +194,9 @@ class DynamipsPortFactory:
                 port_class = cls.WIC_MATRIX[properties[name]]["port"]
                 if port_class:
                     for port_number in range(0, cls.WIC_MATRIX[properties[name]]["nb_ports"]):
-                        name = "{}{}/{}".format(port_class.long_name_type(), 0, wic_port_number)
-                        ports.append(port_class(name, 0, 0, wic_port_number))
+                        name = "{}{}/{}".format(port_class.long_name_type(), 0, wic_port_number - 16)
+                        port = port_class(name, 0, 0, wic_port_number)
+                        port.short_name = "{}{}/{}".format(port.short_name_type, 0, wic_port_number - 16)
+                        ports.append(port)
                         wic_port_number += 1
         return ports
