@@ -160,7 +160,7 @@ class Controller:
         for c in computes:
             try:
                 yield from self.add_compute(**c)
-            except (aiohttp.web_exceptions.HTTPConflict):
+            except (aiohttp.web_exceptions.HTTPConflict, KeyError):
                 pass  # Skip not available servers at loading
         yield from self.load_projects()
         try:

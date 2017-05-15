@@ -9,7 +9,8 @@ install:
 - python setup.py install
 - pip install -rdev-requirements.txt
 script:
-- py.test -v -s tests
+- mkdir ‡
+- py.test -v -s tests --basetemp=‡
 deploy:
   provider: pypi
   user: noplay

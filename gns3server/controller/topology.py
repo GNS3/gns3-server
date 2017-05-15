@@ -125,7 +125,10 @@ def load_topology(path):
     if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
         # If it's an old GNS3 file we need to convert it
         # first we backup the file
-        shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        try:
+            shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
+        except (OSError) as e:
+            raise aiohttp.web.HTTPConflict(text="Can't write backup of the topology {}: {}".format(path, str(e)))
         changed = True
 
     if "revision" not in topo or topo["revision"] < 5:
@@ -150,8 +153,11 @@ def load_topology(path):
         raise e
 
     if changed:
-        with open(path, "w+", encoding="utf-8") as f:
-            json.dump(topo, f, indent=4, sort_keys=True)
+        try:
+            with open(path, "w+", encoding="utf-8") as f:
+                json.dump(topo, f, indent=4, sort_keys=True)
+        except (OSError) as e:
+            raise aiohttp.web.HTTPConflict(text="Can't write the topology {}: {}".format(path, str(e)))
     return topo
 
 
@@ -332,7 +338,7 @@ def _convert_1_3_later(topo, topo_path):
             node["console_type"] = None
             node["symbol"] = ":/symbols/hub.svg"
             node["properties"]["ports_mapping"] = []
-            for port in old_node["ports"]:
+            for port in old_node.get("ports", []):
                 node["properties"]["ports_mapping"].append({
                     "name": "Ethernet{}".format(port["port_number"] - 1),
                     "port_number": port["port_number"] - 1
@@ -353,13 +359,15 @@ def _convert_1_3_later(topo, topo_path):
             node["node_type"] = "frame_relay_switch"
             node["symbol"] = ":/symbols/frame_relay_switch.svg"
             node["console_type"] = None
-        elif old_node["type"] in ["C1700", "C2600", "C2691", "C3600", "C3725", "C3745", "C7200", "EtherSwitchRouter"]:
+        elif old_node["type"] in ["C1700", "C2600", "C2691", "C3600", "C3620", "C3640", "C3660", "C3725", "C3745", "C7200", "EtherSwitchRouter"]:
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/router.svg"
             node["node_type"] = "dynamips"
             node["properties"]["dynamips_id"] = old_node.get("dynamips_id")
             if "platform" not in node["properties"] and old_node["type"].startswith("C"):
                 node["properties"]["platform"] = old_node["type"].lower()
+                if node["properties"]["platform"].startswith("c36"):
+                    node["properties"]["platform"] = "c3600"
             if "ram" not in node["properties"] and old_node["type"].startswith("C"):
                 node["properties"]["ram"] = PLATFORMS_DEFAULT_RAM[old_node["type"].lower()]
         elif old_node["type"] == "VMwareVM":

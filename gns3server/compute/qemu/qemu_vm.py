@@ -1132,9 +1132,13 @@ class QemuVM(BaseNode):
                                                                                                  adapter_number=adapter_number))
 
         if self.ubridge:
-            yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
-                                                        self._local_udp_tunnels[adapter_number][1],
-                                                        nio)
+            try:
+                yield from self._add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
+                                                            self._local_udp_tunnels[adapter_number][1],
+                                                            nio)
+            except IndexError:
+                raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
+                                                                                                     adapter_number=adapter_number))
         elif self.is_running():
             raise QemuError("Sorry, adding a link to a started Qemu VM is not supported without using uBridge.")
 

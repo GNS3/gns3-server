@@ -114,7 +114,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
                 # unless it's a linux host without GNS3 VM
                 if not sys.platform.startswith("linux") or controller.has_compute("vm"):
                     for node in topology["topology"]["nodes"]:
-                        if node["node_type"] in ("docker", "qemu", "iou"):
+                        if node["node_type"] in ("docker", "qemu", "iou", "nat"):
                             node["compute_id"] = "vm"
                 else:
                     for node in topology["topology"]["nodes"]:

@@ -103,8 +103,8 @@ class Bridge(Device):
 
         :param nio: NIO instance to remove
         """
-
-        yield from self._hypervisor.send('nio_bridge remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
+        if self._hypervisor:
+            yield from self._hypervisor.send('nio_bridge remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
         self._nios.remove(nio)
 
     @property

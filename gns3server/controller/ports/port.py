@@ -70,6 +70,10 @@ class Port:
             return self._name
         return self.short_name_type + "{}/{}".format(self._interface_number, self._port_number)
 
+    @short_name.setter
+    def short_name(self, val):
+        self._short_name = val
+
     def __json__(self):
         return {
             "name": self._name,

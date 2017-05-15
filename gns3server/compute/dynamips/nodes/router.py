@@ -71,7 +71,10 @@ class Router(BaseNode):
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=aux)
 
         self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
-        os.makedirs(os.path.join(self._working_directory, "configs"), exist_ok=True)
+        try:
+            os.makedirs(os.path.join(self._working_directory, "configs"), exist_ok=True)
+        except OSError as e:
+            raise DynamipsError("Can't create the dynamips config directory: {}".format(str(e)))
         if dynamips_id:
             self._convert_before_2_0_0_b3(dynamips_id)
 

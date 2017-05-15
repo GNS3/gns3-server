@@ -23,6 +23,7 @@ import json
 import uuid
 import sys
 import io
+from operator import itemgetter
 
 from ..utils import parse_version
 from ..utils.images import list_images
@@ -600,6 +601,9 @@ class Compute:
                 for local_image in list_images(type):
                     if local_image['filename'] not in [i['filename'] for i in images]:
                         images.append(local_image)
+                images = sorted(images, key=itemgetter('filename'))
+            else:
+                images = sorted(images, key=itemgetter('image'))
         except OSError as e:
             raise ComputeError("Can't list images: {}".format(str(e)))
         return images

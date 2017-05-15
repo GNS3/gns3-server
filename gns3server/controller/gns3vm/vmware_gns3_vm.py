@@ -118,7 +118,10 @@ class VMwareGNS3VM(BaseGNS3VM):
         if vmware_tools_state not in ("installed", "running"):
             raise GNS3VMError("VMware tools are not installed in {}".format(self.vmname))
 
-        running = yield from self._is_running()
+        try:
+            running = yield from self._is_running()
+        except VMwareError as e:
+            raise GNS3VMError("Could not list VMware VMs: {}".format(str(e)))
         if not running:
             log.info("Update GNS3 VM settings")
             # set the number of vCPUs and amount of RAM

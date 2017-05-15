@@ -55,6 +55,8 @@ class Symbols:
             for file in os.listdir(directory):
                 if file.startswith('.'):
                     continue
+                if not os.path.isfile(os.path.join(directory, file)):
+                    continue
                 symbol_id = file
                 symbols.append({
                     'symbol_id': symbol_id,

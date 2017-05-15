@@ -393,7 +393,7 @@ class DockerVM(BaseNode):
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
         process = yield from asyncio.subprocess.create_subprocess_exec(
-            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do /gns3/bin/busybox sh; done", "/dev/null",
+            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do TERM=vt100 /gns3/bin/busybox sh; done", "/dev/null",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             stdin=asyncio.subprocess.PIPE)

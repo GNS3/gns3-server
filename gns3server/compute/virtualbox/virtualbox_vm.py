@@ -968,9 +968,13 @@ class VirtualBoxVM(BaseNode):
                                                                                                             adapter_number=adapter_number))
 
         if self.ubridge:
-            yield from self._add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
-                                                        self._local_udp_tunnels[adapter_number][1],
-                                                        nio)
+            try:
+                yield from self._add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                                                            self._local_udp_tunnels[adapter_number][1],
+                                                            nio)
+            except KeyError:
+                raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                                adapter_number=adapter_number))
             yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
         else:
             vm_state = yield from self._get_vm_state()

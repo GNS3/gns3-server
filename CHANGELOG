@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.0.0 02/05/2017
+
+* Fix connection to websocket with last docker release
+* Lower docker requirements in tests also
+* Docker minimum api is 1.25
+* Handling server disconnect error when docker daemon die
+* Handle some invalid SVG images
+
 ## 2.0.0rc4 20/04/2017
 
 * Fix a race condition when handling error at project opening

@@ -188,22 +188,33 @@ class ATMSwitch(Device):
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
         # remove VCs mapped with the port
-        pvc_entry = re.compile(r"""^([0-9]*):([0-9]*):([0-9]*)$""")
         for source, destination in self._active_mappings.copy().items():
-            match_source_pvc = pvc_entry.search(source)
-            match_destination_pvc = pvc_entry.search(destination)
-            if match_source_pvc and match_destination_pvc:
+            if len(source) == 3 and len(destination) == 3:
                 # remove the virtual channels mapped with this port/nio
-                source_port, source_vpi, source_vci = map(int, match_source_pvc.group(1, 2, 3))
-                destination_port, destination_vpi, destination_vci = map(int, match_destination_pvc.group(1, 2, 3))
+                source_port, source_vpi, source_vci = source
+                destination_port, destination_vpi, destination_vci = destination
                 if port_number == source_port:
+                    log.info('ATM switch "{name}" [{id}]: unmapping VCC between port {source_port} VPI {source_vpi} VCI {source_vci} and port {destination_port} VPI {destination_vpi} VCI {destination_vci}'.format(name=self._name,
+                                                                                                                                                                                                                     id=self._id,
+                                                                                                                                                                                                                     source_port=source_port,
+                                                                                                                                                                                                                     source_vpi=source_vpi,
+                                                                                                                                                                                                                     source_vci=source_vci,
+                                                                                                                                                                                                                     destination_port=destination_port,
+                                                                                                                                                                                                                     destination_vpi=destination_vpi,
+                                                                                                                                                                                                                     destination_vci=destination_vci))
                     yield from self.unmap_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
                     yield from self.unmap_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
             else:
                 # remove the virtual paths mapped with this port/nio
-                source_port, source_vpi = map(int, source.split(':'))
-                destination_port, destination_vpi = map(int, destination.split(':'))
+                source_port, source_vpi = source
+                destination_port, destination_vpi = destination
                 if port_number == source_port:
+                    log.info('ATM switch "{name}" [{id}]: unmapping VPC between port {source_port} VPI {source_vpi} and port {destination_port} VPI {destination_vpi}'.format(name=self._name,
+                                                                                                                                                                              id=self._id,
+                                                                                                                                                                              source_port=source_port,
+                                                                                                                                                                              source_vpi=source_vpi,
+                                                                                                                                                                              destination_port=destination_port,
+                                                                                                                                                                              destination_vpi=destination_vpi))
                     yield from self.unmap_vp(source_port, source_vpi, destination_port, destination_vpi)
                     yield from self.unmap_vp(destination_port, destination_vpi, source_port, source_vpi)
 
@@ -239,6 +250,14 @@ class ATMSwitch(Device):
                 if self.has_port(destination_port):
                     if (source_port, source_vpi, source_vci) not in self._active_mappings and \
                        (destination_port, destination_vpi, destination_vci) not in self._active_mappings:
+                        log.info('ATM switch "{name}" [{id}]: mapping VCC between port {source_port} VPI {source_vpi} VCI {source_vci} and port {destination_port} VPI {destination_vpi} VCI {destination_vci}'.format(name=self._name,
+                                                                                                                                                                                                                       id=self._id,
+                                                                                                                                                                                                                       source_port=source_port,
+                                                                                                                                                                                                                       source_vpi=source_vpi,
+                                                                                                                                                                                                                       source_vci=source_vci,
+                                                                                                                                                                                                                       destination_port=destination_port,
+                                                                                                                                                                                                                       destination_vpi=destination_vpi,
+                                                                                                                                                                                                                       destination_vci=destination_vci))
                         yield from self.map_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
                         yield from self.map_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
             else:
@@ -247,6 +266,12 @@ class ATMSwitch(Device):
                 destination_port, destination_vpi = map(int, destination.split(':'))
                 if self.has_port(destination_port):
                     if (source_port, source_vpi) not in self._active_mappings and (destination_port, destination_vpi) not in self._active_mappings:
+                        log.info('ATM switch "{name}" [{id}]: mapping VPC between port {source_port} VPI {source_vpi} and port {destination_port} VPI {destination_vpi}'.format(name=self._name,
+                                                                                                                                                                                id=self._id,
+                                                                                                                                                                                source_port=source_port,
+                                                                                                                                                                                source_vpi=source_vpi,
+                                                                                                                                                                                destination_port=destination_port,
+                                                                                                                                                                                destination_vpi=destination_vpi))
                         yield from self.map_vp(source_port, source_vpi, destination_port, destination_vpi)
                         yield from self.map_vp(destination_port, destination_vpi, source_port, source_vpi)
 
@@ -262,10 +287,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
@@ -283,7 +308,7 @@ class ATMSwitch(Device):
                                                                                                                           port2=port2,
                                                                                                                           vpi2=vpi2))
 
-        self._active_mappings["{}:{}".format(port1, vpi1)] = "{}:{}".format(port2, vpi2)
+        self._active_mappings[(port1, vpi1)] = (port2, vpi2)
 
     @asyncio.coroutine
     def unmap_vp(self, port1, vpi1, port2, vpi2):
@@ -297,10 +322,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
@@ -318,7 +343,7 @@ class ATMSwitch(Device):
                                                                                                                           port2=port2,
                                                                                                                           vpi2=vpi2))
 
-        del self._active_mappings["{}:{}".format(port1, vpi1)]
+        del self._active_mappings[(port1, vpi1)]
 
     @asyncio.coroutine
     def map_pvc(self, port1, vpi1, vci1, port2, vpi2, vci2):
@@ -334,10 +359,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
@@ -359,7 +384,7 @@ class ATMSwitch(Device):
                                                                                                                                                 vpi2=vpi2,
                                                                                                                                                 vci2=vci2))
 
-        self._active_mappings["{}:{}:{}".format(port1, vpi1, vci1)] = "{}:{}:{}".format(port2, vpi2, vci2)
+        self._active_mappings[(port1, vpi1, vci1)] = (port2, vpi2, vci2)
 
     @asyncio.coroutine
     def unmap_pvc(self, port1, vpi1, vci1, port2, vpi2, vci2):
@@ -375,10 +400,10 @@ class ATMSwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            return
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            return
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
@@ -399,7 +424,7 @@ class ATMSwitch(Device):
                                                                                                                                                 port2=port2,
                                                                                                                                                 vpi2=vpi2,
                                                                                                                                                 vci2=vci2))
-        del self._active_mappings["{}:{}:{}".format(port1, vpi1, vci1)]
+        del self._active_mappings[(port1, vpi1, vci1)]
 
     @asyncio.coroutine
     def start_capture(self, port_number, output_file, data_link_type="DLT_ATM_RFC1483"):
