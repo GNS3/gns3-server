@@ -33,6 +33,7 @@ from .route import Route
 from ..config import Config
 from ..compute import MODULES
 from ..compute.port_manager import PortManager
+from ..compute.qemu import Qemu
 from ..controller import Controller
 
 
@@ -192,6 +193,10 @@ class WebServer:
         Called when the HTTP server start
         """
         yield from Controller.instance().start()
+        # Because with a large image collection
+        # without md5sum already computed we start the
+        # computing with server start
+        asyncio.async(Qemu.instance().list_images())
 
     def run(self):
         """
