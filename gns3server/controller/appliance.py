@@ -35,6 +35,9 @@ class Appliance:
         else:
             self._id = appliance_id
         self._data = data
+
+        # Version of the gui before 2.1 use linked_base
+        # and the server linked_clone
         if "linked_base" in data:
             self._data["linked_clone"] = data.pop("linked_base")
         self._builtin = builtin
