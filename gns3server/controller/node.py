@@ -36,7 +36,8 @@ log = logging.getLogger(__name__)
 class Node:
     # This properties are used only on controller and are not forwarded to the compute
     CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "width", "height", "symbol", "label", "console_host",
-                                  "port_name_format", "first_port_name", "port_segment_size", "ports"]
+                                  "port_name_format", "first_port_name", "port_segment_size", "ports",
+                                  "category"]
 
     def __init__(self, project, compute, name, node_id=None, node_type=None, **kwargs):
         """
@@ -90,11 +91,14 @@ class Node:
         # Update node properties with additional elements
         for prop in kwargs:
             if prop not in ignore_properties:
-                try:
-                    setattr(self, prop, kwargs[prop])
-                except AttributeError as e:
-                    log.critical("Can't set attribute %s", prop)
-                    raise e
+                if hasattr(self, prop):
+                    try:
+                        setattr(self, prop, kwargs[prop])
+                    except AttributeError as e:
+                        log.critical("Can't set attribute %s", prop)
+                        raise e
+                else:
+                    self.properties[prop] = kwargs[prop]
 
         if self._symbol is None:
             self.symbol = ":/symbols/computer.svg"

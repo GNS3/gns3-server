@@ -81,6 +81,18 @@ def test_name(compute, project):
     assert node.name == "PC2"
 
 
+def test_vmname(compute, project):
+    """
+    Additionnal properties should add to the properties
+    field
+    """
+    node = Node(project, compute, "PC",
+                node_id=str(uuid.uuid4()),
+                node_type="virtualbox",
+                vmname="test")
+    assert node.properties["vmname"] == "test"
+
+
 def test_eq(compute, project, node, controller):
     assert node == Node(project, compute, "demo1", node_id=node.id, node_type="qemu")
     assert node != "a"
