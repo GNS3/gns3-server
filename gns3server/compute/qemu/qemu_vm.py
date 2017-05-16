@@ -1492,7 +1492,7 @@ class QemuVM(BaseNode):
                                                                                                                            adapter_number,
                                                                                                                            nio.rhost,
                                                                                                                            nio.rport,
-                                                                                                                           "0.0.0.0",
+                                                                                                                           "127.0.0.1",
                                                                                                                            nio.lport)])
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
@@ -1513,7 +1513,7 @@ class QemuVM(BaseNode):
                         network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
                                                                                                                 nio.rhost,
                                                                                                                 nio.rport,
-                                                                                                                "0.0.0.0",
+                                                                                                                "127.0.0.1",
                                                                                                                 nio.lport)])
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-netdev", "tap,id=gns3-{},ifname={},script=no,downscript=no".format(adapter_number, nio.tap_device)])
