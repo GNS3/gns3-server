@@ -1,5 +1,38 @@
 # Change Log
 
+## 2.0.1 16/05/2017
+
+* Handle HTTP 504 errors from compute node
+* When connecting to a compute node ask for qemu images list
+* When importing portable project NAT node is loaded on GNS3 VM
+* Fix port numbering for Wic slot 1 & 2
+* Fixes issue with connections when loading an ATM switch.
+* Fixes ATM mapping.
+* Fixes Frame-relay VC mapping.
+* Fix export project is looking into the wrong directory
+* Fix a race condition in logging when ubridge exit fast
+* Fix conversion issue with old topology with C3640
+* Fix error when you have a directory in your symbols directory
+* Catch VMWare errors when getting status after GNS3 VM start
+* Make sure upstart LANG is utf8
+* Always install typing module (compat with python 3.4 on ubuntu)
+* Fix KeyError: 'filename'
+* Catch missing function listxattr on some Linux host.
+* Sort image list
+* Handle a race condition at project closing
+* Fix unicode error when reading ios configuration
+* Fix AttributeError: 'NoneType' object has no attribute 'send'
+* Fix a conversion issue with some 1.3 topologies
+* Fix an error with ethernetswitch when ethertype is null
+* Raise an error if we can't create the dynamips configuration directory
+* Catch timeout error when loading virtualbox VM
+* Handle broken compute at server startup
+* Catch error when we can't backup the topology
+* Catch error when writting the topology file on read only device
+* Catch a race condition in VirtualBox when editing and linking
+* Fix a race condition when editing a qemu vm and connecting it
+* Docker aux console is a VT100 terminal
+
 ## 2.0.0 02/05/2017
 
 * Fix connection to websocket with last docker release
